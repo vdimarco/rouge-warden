@@ -282,17 +282,17 @@ export default {
     /* ---- the brow: the start, two torches at the head of the way down, log steps down to the landing ---- */
     {
       const [sx, sz] = START;
-      torch(sx - 1.4, sz - 1.6, { tall: 1.6 });
-      torch(sx + 2.4, sz - 0.9, { tall: 1.4 });
+      // two low torches either side of the way down, far enough apart that they frame the fen and do not cover the mill
+      torch(sx - 3.6, sz - 1.4, { tall: 1.2, s: 0.65 });
+      torch(sx + 3.8, sz - 1.2, { tall: 1.2, s: 0.65 });
       stair([2.9, 18.2], [4.6, 15.0], { width: 2.2, rise: 0.36, ya: h(2.9, 18.2), yb: DECK });
-      // a leaning signpost with a lantern, the first sick light you see
-      crook(sx - 2.8, sz + 0.4, 0.5, -0.85, { tall: 2.2 });
-      rock(sx + 3.6, sz + 1.0, 0.7, 1); rock(sx - 3.4, sz - 0.8, 0.55, 2); rock(sx + 1.2, sz + 2.8, 0.45, 3);
-      for (let k = 0; k < 40; k++) tufts.push([sx + B.rr(-7, 7), sz + B.rr(-3, 6)]);
+      rock(sx + 3.6, sz + 1.0, 0.7, 1); rock(sx - 3.4, sz + 0.2, 0.55, 2); rock(sx + 1.2, sz + 2.8, 0.45, 3);
+      for (let k = 0; k < 24; k++) tufts.push([sx + B.rr(-7, 7), sz + B.rr(-4, 0)]);
     }
 
-    /* ---- the boardwalk: the main zigzag over the water, its landings, and two branches to the outer huts ---- */
-    for (let i = 0; i < MAIN.length - 1; i++) walkway(MAIN[i], MAIN[i + 1], { lamp: i === 1 || i === 3 || i === 5 ? 2 : -1 });
+    /* ---- the boardwalk: the main zigzag over the water, its landings, and two branches to the outer huts. Its lanterns hang at
+       the far ends of the crossings, out to the sides of the first picture ---- */
+    for (let i = 0; i < MAIN.length - 1; i++) walkway(MAIN[i], MAIN[i + 1], { lamp: i === 1 || i === 3 || i === 5 ? 'end' : -1 });
     for (const p of [J.a, J.b, J.c, J.d, J.e, J.f, J.g]) landing(p);
     walkway(J.a, [12.0, 11.0], { wid: 1.9 });
     walkway(J.c, [-13.4, 4.6], { wid: 1.9, lamp: 1 });
@@ -301,8 +301,8 @@ export default {
     basket(6.0, 13.8, { y: DECK - 0.05, s: 0.8 });
 
     /* ---- the huts ---- */
-    const hut = ({ at: [x, z], r, tall, to, win, long }, i) => {
-      const face = Math.atan2(to[0] - x, to[1] - z), ph = 2.3, lean = B.rr(-0.07, 0.07);
+    const hut = ({ at: [x, z], r, to, win, long }, i) => {
+      const face = Math.atan2(to[0] - x, to[1] - z), ph = 2.3, lean = B.rr(-0.04, 0.04), tall = WALL;
       // the porch: five fat planks across, on six stilts a little out of true, braced
       for (let k = 0; k < 5; k++) {
         const o = -ph + (k + 0.5) * (2 * ph / 5), [cx, cz] = turn(x, z, face, o, 0);
@@ -329,8 +329,8 @@ export default {
       } else {
         // a round hut: a wall of boards, a fat thatch cone with a topknot, sagging a little
         S.lathe([x, PORCH - 0.15, z], tall + 0.15, t => r * (1 - 0.07 * t), { ...wood, mod: boards(x, z) }, { res: 0.13, maxRadius: r });
-        S.lathe([x, PORCH + tall - 0.35, z], 1.8, t => (r + 0.85) * Math.pow(1 - t, 1.25) + 0.08, thatch, { res: 0.14, maxRadius: r + 0.95, ax: tipAx(face, lean, B.rr(-0.08, 0.08)) });
-        S.ball([x, PORCH + tall + 1.35, z], [0.22, 0.3, 0.22], thatch, { res: 0.08 });
+        S.lathe([x, PORCH + tall - 0.25, z], 1.65, t => (r + 0.85) * Math.pow(1 - t, 1.2) + 0.08, thatch, { res: 0.14, maxRadius: r + 0.95, ax: tipAx(face, lean, B.rr(-0.04, 0.04)) });
+        S.ball([x, PORCH + tall + 1.3, z], [0.22, 0.3, 0.22], thatch, { res: 0.08 });
         dr = r - 0.02;
       }
       // the door: a dark slab in a fat frame, facing the walk
@@ -351,8 +351,8 @@ export default {
       if (win === 'warm') ctx.lamp([wx, PORCH + 1.1, wz], 2.6, 0.5, true);
       // a lantern on a post at the porch's front corner
       const [cx, cz] = turn(x, z, face, -side * (ph - 0.2), ph - 0.2);
-      S.tube([[cx, PORCH - 0.1, cz], [cx, PORCH + 2.3, cz]], 0.13, 0.1, wood, { res: 0.09 });
-      { const [lx, lz] = turn(cx, cz, face, side * 0.7, 0.3); S.tube([[cx, PORCH + 2.2, cz], [lx, PORCH + 2.35, lz]], 0.06, 0.05, wood, { res: 0.06 }); lantern(lx, PORCH + 2.3, lz); }
+      S.tube([[cx, PORCH - 0.1, cz], [cx, PORCH + 2.6, cz]], 0.13, 0.1, wood, { res: 0.09 });
+      { const [lx, lz] = turn(cx, cz, face, side * 0.7, 0.3); S.tube([[cx, PORCH + 2.5, cz], [lx, PORCH + 2.65, lz]], 0.06, 0.05, wood, { res: 0.06 }); lantern(lx, PORCH + 2.6, lz); }
       // clutter: a barrel and a crate on the porch, the far side
       { const [bx, bz] = turn(x, z, face, side * 1.6, -1.5); S.lathe([bx, PORCH - 0.02, bz], 0.85, t => 0.32 + 0.06 * Math.sin(t * Math.PI), { ...wood, mod: boards(bx, bz, 0.4) }, { res: 0.08, maxRadius: 0.38 }); }
       { const [bx, bz] = turn(x, z, face, -side * 1.7, -1.3); slab([bx, PORCH + 0.3, bz], [0.36, 0.32, 0.36], plank, { ax: yawAx(face + 0.4), rd: 0.04, res: 0.08 }); }
