@@ -298,10 +298,10 @@ export default {
       }
       for (const lx of lights) sconce(lx, h(lx, zf + 0.6) + 1.9, zf, 0, 1);
     };
-    // the first tier: four cells under the first terrace, one torn open
+    // the first tier: four cells under the first terrace, one torn open, two lit from inside, three sconces between
     cellBlock({ x0: -8.8, x1: 8.8, zf: -0.6, zb: -4.6, top: Y.t1 + 0.1, lights: [-7.3, -0.2, 7.0],
       cells: [{ x: -5.6, skull: true }, { x: -2.0, lit: true }, { x: 1.6, torn: true, skull: true }, { x: 5.2, lit: true }] });
-    // the second tier: three cells under the second terrace
+    // the second tier: three cells under the second terrace, one lit, two sconces
     cellBlock({ x0: -7.4, x1: 7.4, zf: -8.7, zb: -11.8, top: Y.t2 + 0.1, arch: 2.0, half: 0.8, lights: [-6.2, 2.2],
       cells: [{ x: -4.1, lit: true }, { x: -0.6, skull: true }, { x: 5.0 }] });
     // the face below the top: a low wall with a gap for the stair, crenellated, with fat buttresses down its face
