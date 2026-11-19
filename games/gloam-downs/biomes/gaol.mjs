@@ -427,7 +427,7 @@ export default {
     }
 
     /* ---- an old colonnade on the north edge of the top: broken pillars against the sky behind the keep ---- */
-    for (const [x, z, tall] of [[-13.6, -27.2, 2.6], [-11.2, -29.0, 3.4], [-8.6, -30.4, 1.6], [-1.4, -30.6, 2.9]]) {
+    for (const [x, z, tall] of [[-13.6, -27.2, 2.6], [-11.2, -29.0, 3.4], [-8.6, -30.4, 1.6], [4.6, -27.6, 2.2]]) {
       const gy = h(x, z);
       S.box([x, gy + 0.1, z], [0.75, 0.35, 0.75], rough, { rd: 0.08, res: 0.13 });
       S.lathe([x, gy - 0.2, z], tall + 0.2, [0.5, 0.44], stone, { res: 0.12 });
@@ -513,19 +513,19 @@ export default {
       // as the start eye sees them: the keep's bearing, and the moon tucked behind its right shoulder, its top under the page camera's
       // top edge (which sits half a degree below level)
       const toKeep = Math.atan2(KEEP[0] - eye[0], -(KEEP[1] - eye[2])), dKeep = Math.hypot(KEEP[0] - eye[0], KEEP[1] - eye[2]);
-      const deg = Math.PI / 180, mr = 2.0 * deg, az = toKeep + Math.atan((KW + 0.6) / dKeep) + 1.2 * deg, el = -2.75 * deg, D = 215, rm = D * Math.tan(mr);
+      const deg = Math.PI / 180, mr = 2.0 * deg, az = toKeep + Math.atan((KW + 0.6) / dKeep) + 1.2 * deg, el = -2.75 * deg, D = 170, rm = D * Math.tan(mr);
       const dir = (a, e) => [Math.sin(a) * Math.cos(e), Math.sin(e), -Math.cos(a) * Math.cos(e)];
       const u = dir(az, el), M = [eye[0] + u[0] * D, eye[1] + u[1] * D, eye[2] + u[2] * D];
       B.sky(d => (d[1] < 0.05 ? sk[1] : d[1] < 0.2 ? sk[0] : dk), 230);
       // the halo: rings of cold light round the moon, wide enough to stand behind the whole keep, so the keep is a black cut-out
-      // against it; and a low band of haze along the northern horizon
+      // against it; and a low band of haze along the northern horizon. (Glows much past 200 units draw dim, so the sky stays near.)
       for (let i = -34; i <= 34; i++) for (let j = 0; j < 10; j++) {
-        const a = az + i * 0.02 + B.rr(-0.005, 0.005), e = -0.13 + j * 0.016 + B.rr(-0.004, 0.004), p = dir(a, e), R = 222;
+        const a = az + i * 0.02 + B.rr(-0.005, 0.005), e = -0.13 + j * 0.016 + B.rr(-0.004, 0.004), p = dir(a, e), R = 178;
         const dm = Math.hypot((a - az) * 0.75, e - el) / mr, low = 1 - j / 9;
-        const k = Math.max(dm < 2.5 ? 1 : dm < 4.0 ? 0.7 : dm < 6.0 ? 0.42 : 0, Math.abs(a - toKeep) < 0.3 && low > 0.6 ? 0.42 : Math.abs(a - toKeep) < 0.5 && low > 0.3 ? 0.25 : 0);
+        const k = Math.max(dm < 2.3 ? 1 : dm < 3.7 ? 0.7 : dm < 5.4 ? 0.42 : 0, Math.abs(a - toKeep) < 0.3 && low > 0.6 ? 0.42 : Math.abs(a - toKeep) < 0.5 && low > 0.3 ? 0.25 : 0);
         if (k < 0.2 && B.rr(0, 1) < 0.5) continue;
         const c = k >= 1 ? sk[4] : k >= 0.7 ? sk[3] : k >= 0.42 ? sk[2] : sk[1];
-        B.iso(eye[0] + p[0] * R, eye[1] + p[1] * R, eye[2] + p[2] * R, 4.4, B.P[c], 1.6, { em: true, nd: true });
+        B.iso(eye[0] + p[0] * R, eye[1] + p[1] * R, eye[2] + p[2] * R, 3.6, B.P[c], 2.2, { em: true, nd: true });
       }
       // the disc, laid flat to the eye: pale, with darker seas
       const rt = B.norm([-u[2], 0, u[0]]), up = [rt[1] * u[2] - rt[2] * u[1], rt[2] * u[0] - rt[0] * u[2], rt[0] * u[1] - rt[1] * u[0]];
@@ -544,12 +544,12 @@ export default {
       }
       // stars, high up only
       for (let i = 0; i < 70; i++) {
-        const a = B.rr(0, Math.PI * 2), e = B.rr(0.2, 1.2), r = 225;
+        const a = B.rr(0, Math.PI * 2), e = B.rr(0.2, 1.2), r = 195;
         B.iso(Math.cos(a) * Math.cos(e) * r, Math.sin(e) * r, Math.sin(a) * Math.cos(e) * r, B.rr(0.25, 0.45), B.P[B.pick([sk[3], mn[0]])], 3, { em: true, nd: true });
       }
       // torn cloud in the sky
       for (let i = 0; i < 16; i++) {
-        const a = -1.3 + i * 0.17 + B.rr(-0.05, 0.05), e = 0.12 + B.rr(0, 0.16), r = 215;
+        const a = -1.3 + i * 0.17 + B.rr(-0.05, 0.05), e = 0.12 + B.rr(0, 0.16), r = 186;
         const p = [Math.sin(a) * Math.cos(e) * r, Math.sin(e) * r, -Math.cos(a) * Math.cos(e) * r];
         B.axial(p[0], p[1], p[2], [Math.cos(a), 0, Math.sin(a)], B.rr(10, 18), B.rr(1.4, 2.4), B.P[sk[B.pick([0, 1])]], 0.8, { em: true, nd: true });
       }
