@@ -67,7 +67,7 @@ export default {
     pits: [[1, 5, 19, 5], [-14, -70, 36, 9], [-18, -104, 50, 14]],
     flats: [
       { at: [0, 5], box: [10, 9], blend: 7, y: Y.yard }, // the yard
-      { at: [3, 27.2], r: 2.6, blend: 4.5, y: Y.start }, // the rim at the start: it drops away right at the gate
+      { at: [3, 26.6], box: [5.6, 2.6], blend: 3.5, y: Y.start }, // the gate's terrace on the rim: it drops away just past the gate
       { at: GRAVES, r: 4.2, blend: 3, y: Y.graves }, // the burial shelf
       { at: [-2, -20.6], r: 7, blend: 3, y: Y.top }, // the top
       { at: [0, -12.6], box: [10, 1.7], blend: 0.8, y: Y.t2 }, // the second tier
@@ -107,7 +107,7 @@ export default {
       const onPath = (x, z) => polyDist(x, z, PATH) + 0.7 * (B.n3(x * 1.1, z * 1.1, 4) - 0.5) < 1.15;
       const yard = (x, y, z) => y < Y.yard + 0.5 && B.n3(x * 0.5, z * 0.5, 9) > 0.46;
       const near = { r: moor, g: [moor[0], moor[1], mud[1], mud[2], fire[1], fire[2]], mod: grit(1), rf: (x, y, z) => (onPath(x, z) || yard(x, y, z) ? mud : moor) };
-      const mid = { r: moor, mod: grit(1.2), fat: 0.62 }, out = { r: moor, mod: grit(1.4), fat: 0.8 };
+      const mid = { r: moor, mod: grit(1.2), fat: 0.62 }, out = { r: moor, mod: grit(1.4), fat: 0.95 };
       const N = [-24, 24, -31, 31], M = [-56, 56, -56, 56], F = [-108, 108, -108, 108];
       tile(S, h, near, { x0: N[0], x1: N[1], z0: N[2], z1: N[3], res: 0.32 });
       const ring = (o, i, res, mat) => {
@@ -117,7 +117,7 @@ export default {
         tile(S, h, mat, { x0: i[1], x1: o[1], z0: i[2], z1: i[3], res });
       };
       ring(M, N, 0.7, mid);
-      ring(F, M, 1.5, out);
+      ring(F, M, 2.0, out);
     }
 
     /* ---- small props of this place ---- */
@@ -190,22 +190,47 @@ export default {
     // a frame for a slanted cut (rolled about the z axis)
     const rollAx = a => [[Math.cos(a), Math.sin(a), 0], [-Math.sin(a), Math.cos(a), 0], [0, 0, 1]];
 
-    /* ---- the ruined gate on the rim: you start in it, and its pillars frame the first view ---- */
+    /* ---- the ruined gate on the rim: you start in it, its pillars stand on the terrace and frame the first view ---- */
     {
       const gx = START[0], gz = START[1] - 0.4, span = 4.2;
-      const pillar = (x, tall, whole) => {
-        const y0 = Math.min(h(x - 0.7, gz), h(x + 0.7, gz), h(x, gz - 0.7)) - 0.6, gy = h(x, gz);
-        S.box([x, y0 + 0.55, gz], [0.9, 0.55 + 0.6, 0.9], gateStone, { rd: 0.1, res: 0.13 });
-        S.box([x, (y0 + gy + tall) / 2, gz], [0.66, (gy + tall - y0) / 2, 0.66], gateStone, { rd: 0.08, res: 0.13 });
-        if (whole) S.box([x, gy + tall + 0.2, gz], [0.86, 0.22, 0.86], gateStone, { rd: 0.06, res: 0.12 });
-        else S.box([x + 0.15, gy + tall + 0.12, gz - 0.1], [0.55, 0.3, 0.5], gateStone, { ax: rollAx(0.35), rd: 0.06, res: 0.12 });
-        post(x - Math.sign(x - gx) * 1.45, gz - 0.9, { hgt: 1.6, k: 0.5, r: 3.0 });
+      // a pillar of fat stacked drums, each a little askew, on a plinth; a fire basket on its inner face lights the way between
+      const pillar = (x, drums, whole) => {
+        const gy = h(x, gz), side = Math.sign(gx - x);
+        S.box([x, gy - 0.15, gz], [1.02, 0.5, 1.02], gateStone, { rd: 0.12, res: 0.13 });
+        let y = gy + 0.35;
+        drums.forEach((dh, i) => {
+          const tw = B.rr(-0.09, 0.09), sx = B.rr(-0.06, 0.06), last = i === drums.length - 1 && !whole;
+          S.box([x + sx + (last ? side * 0.12 : 0), y + dh / 2, gz + B.rr(-0.05, 0.05)], [0.74, dh / 2, 0.74], gateStone,
+            { ax: last ? rollAx(-side * 0.32) : yawAx(tw), rd: 0.12, res: 0.13 });
+          y += dh;
+        });
+        if (whole) S.box([x, y + 0.24, gz], [0.95, 0.26, 0.95], gateStone, { rd: 0.08, res: 0.13 });
+        sconce(x + side * 0.74, gy + (whole ? 1.95 : 1.35), gz + 0.25, side, 0, { s: 0.75, k: 0.55, r: 3.4 });
+        return y;
       };
-      pillar(gx - span, 3.6, true);
-      pillar(gx + span, 2.2, false);
-      // the lintel lies broken below the short pillar, a chunk of it down the slope
-      S.box([gx - span + 1.2, h(gx - span + 1.2, gz - 2.4) + 0.3, gz - 2.4], [1.6, 0.4, 0.5], gateStone, { ax: yawAx(0.45), rd: 0.08, res: 0.13 });
-      S.box([gx + 1.9, h(gx + 1.9, gz - 5.5) + 0.2, gz - 5.5], [0.6, 0.35, 0.45], rough, { ax: yawAx(1.1), rd: 0.08, res: 0.13 });
+      pillar(gx - span, [1.1, 1.0, 1.15, 0.9], true);
+      pillar(gx + span, [1.0, 0.65], false);
+      // the lintel lies broken on the lip below the tall pillar, and a drum has rolled down the slope
+      S.box([gx - 1.9, h(gx - 1.9, gz - 2.0) + 0.25, gz - 2.0], [1.7, 0.42, 0.52], gateStone, { ax: yawAx(0.4), rd: 0.1, res: 0.13 });
+      S.lathe([gx + 2.6, h(gx + 2.6, gz - 5.6) - 0.35, gz - 5.6], 1.2, 0.68, rough, { ax: [[0, 1, 0], [0.94, 0, 0.34], [0.34, 0, -0.94]], res: 0.13 });
+      // the old road: big worn flagstones in staggered rows across the terrace and over the lip, some sunk or tilted, some gone
+      {
+        const flag = { r: st.slice(0, 4), g: warmStone, mod: (x, y, z) => grit(1.1)(x, y, z) - 0.1 };
+        let row = 0;
+        for (let z = 30.2; z > 22.4; z -= 1.0 + B.rr(-0.06, 0.1), row++) {
+          const px = 3.2 + (30 - z) * 0.08, wide = z < 26.4 && z > 24 ? 3.1 : 1.8 + B.rr(-0.2, 0.3);
+          for (let x = px - wide + (row % 2) * 0.55; x < px + wide - 0.4;) {
+            const w = B.rr(0.42, 0.66);
+            if (B.rr(0, 1) > 0.18) {
+              const cx = x + w + B.rr(-0.04, 0.04), cz = z + B.rr(-0.08, 0.08), gy = h(cx, cz);
+              const tilt = B.rr(0, 1) < 0.3 ? B.rr(-0.14, 0.14) : 0, sunk = B.rr(0, 1) < 0.25 ? -0.1 : 0;
+              S.box([cx, gy + sunk, cz], [w - 0.06, 0.13, 0.42 + B.rr(-0.06, 0.04)], flag,
+                { ax: tilt ? rollAx(tilt) : yawAx(B.rr(-0.08, 0.08)), rd: 0.09, res: 0.15 });
+            }
+            x += 2 * w + 0.06;
+          }
+        }
+      }
       // low broken walls along the rim either side
       const run = (pts, tall) => {
         for (let i = 0; i < pts.length - 1; i++) {
@@ -218,8 +243,8 @@ export default {
           }
         }
       };
-      run([[gx - span - 1.0, gz], [-7, 24.4], [-12, 21.6]], 2.0);
-      run([[gx + span + 1.0, gz], [13, 24.2], [17.5, 20.8]], 2.2);
+      run([[gx - span - 1.2, gz], [-7, 24.4], [-12, 21.6]], 2.0);
+      run([[gx + span + 1.2, gz], [13, 24.2], [17.5, 20.8]], 2.2);
     }
 
     /* ---- the cell blocks: the faces of the two tiers, each a row of barred cells ---- */
