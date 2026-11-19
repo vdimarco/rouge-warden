@@ -518,6 +518,17 @@ export default {
           S.box(at(0.5 + len / 2, 0, 0.1), [0.4, len / 2, 0.025], cloth, { ax, res: 0.07 });
         } else for (let b = 0; b < 3; b++) { const p = at(0.85 + b * 0.5, (b - 1) * 0.22, 0.12); S.ball([p[0], p[1] - 0.2, p[2]], [0.08, 0.22, 0.05], cloth, { res: 0.055 }); }
       }
+      // one warm window high on the south face, between the two lower sails: the mill's only fire until the beacon is lit
+      {
+        const wy = gy + 2.45, wr = 1.95 - 0.5 * ((wy - gy - 0.2) / (bodyTop - gy - 0.2)) + 0.03;
+        S.box([mx, wy, mz + wr], [0.3, 0.24, 0.08], wood, { rd: 0.03, res: 0.06 });
+        ctx.lamp([mx, wy, mz + wr + 0.3], 2.4, 0.55, true);
+        ctx.glow(() => {
+          B.iso(mx, wy, mz + wr + 0.07, 0.12, B.P[fire[4]], 3, { em: true, nd: true, k: 7, ph: 2, sp: 1.8 });
+          B.iso(mx, wy - 0.05, mz + wr + 0.07, 0.1, B.P[fire[3]], 3, { em: true, nd: true });
+          B.iso(mx, wy, mz + wr + 0.3, 0.5, B.P[fire[2]], 0.18, { em: true, nd: true });
+        });
+      }
       // the beacon deck: planks east of the body, two fat stilts and braces, a railing, the stair up its east side
       const dx0 = mx + 1.2, dx1 = mx + 4.4, dz0 = mz - 2.0, dz1 = mz + 1.3, dcx = (dx0 + dx1) / 2, dcz = (dz0 + dz1) / 2;
       for (let k = 0; k < 6; k++) {
