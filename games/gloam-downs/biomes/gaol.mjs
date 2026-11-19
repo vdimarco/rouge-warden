@@ -67,7 +67,8 @@ export default {
     pits: [[1, 5, 19, 5], [-14, -70, 36, 9], [-18, -104, 50, 14]],
     flats: [
       { at: [0, 5], box: [10, 9], blend: 7, y: Y.yard }, // the yard
-      { at: [3, 26.8], box: [5.6, 2.4], blend: 2.6, y: Y.start }, // the gate's terrace on the rim: it drops away just past the gate
+      { at: [3, 30.4], box: [6.2, 3.6], blend: 6, y: Y.start }, // the gate's terrace on the rim, falling gently away behind you
+      { at: [3, 26.8], box: [5.6, 2.4], blend: 2.6, y: Y.start }, // and steeply in front, just past the gate
       { at: GRAVES, r: 4.2, blend: 3, y: Y.graves }, // the burial shelf
       { at: [-2, -20.6], r: 7, blend: 3, y: Y.top }, // the top
       { at: [0, -12.6], box: [10, 1.7], blend: 0.8, y: Y.t2 }, // the second tier
