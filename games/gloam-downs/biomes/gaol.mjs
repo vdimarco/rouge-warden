@@ -303,11 +303,16 @@ export default {
     // the second tier: three cells under the second terrace
     cellBlock({ x0: -7.4, x1: 7.4, zf: -8.7, zb: -11.8, top: Y.t2 + 0.1, arch: 2.0, half: 0.8, lights: [-6.2, 2.2],
       cells: [{ x: -4.1, lit: true }, { x: -0.6, skull: true }, { x: 5.0 }] });
-    // the face below the top: a low wall with a gap for the stair
+    // the face below the top: a low wall with a gap for the stair, crenellated, with fat buttresses down its face
     for (const [a, b] of [[-8.6, 3.0], [6.0, 8.2]]) {
       const yb = Y.t2 - 0.8, tp = Y.top + 0.3;
       S.box([(a + b) / 2, (yb + tp) / 2, -15.1], [(b - a) / 2, (tp - yb) / 2, 0.55], stone, { rd: 0.08, res: 0.15 });
+      for (let x = a + 0.55; x < b - 0.3; x += 1.65) {
+        if (B.rr(0, 1) < 0.2) continue; // a few have fallen
+        S.box([x, tp + 0.3, -15.2], [0.42, 0.32 + B.rr(-0.08, 0.04), 0.5], rough, { rd: 0.06, res: 0.13 });
+      }
     }
+    for (const x of [-6.9, -2.9, 1.6]) S.box([x, Y.t2 + 0.45, -14.35], [0.5, 1.25, 0.42], rough, { ax: [[1, 0, 0], [0, 0.97, 0.24], [0, -0.24, 0.97]], rd: 0.1, res: 0.13 });
 
     /* ---- stairs between the levels ---- */
     stair([-10.4, 1.6], [-10.4, -4.8]); // yard to the first tier (west)
