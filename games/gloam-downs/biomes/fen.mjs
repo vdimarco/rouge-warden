@@ -307,12 +307,13 @@ export default {
       const n = Math.round(ph * 2 / 0.92);
       for (let k = 0; k < n; k++) {
         const o = -ph + (k + 0.5) * (2 * ph / n), [cx, cz] = turn(x, z, face, o, 0);
-        slab([cx, PORCH - 0.12 + B.rr(-0.03, 0.03), cz], [ph / n - 0.03, 0.12, ph + B.rr(-0.15, 0.1)], plank, { ax: yawAx(face + B.rr(-0.03, 0.03)), rd: 0.04, res: 0.14 });
+        slab([cx, PORCH - 0.12 + B.rr(-0.03, 0.03), cz], [ph / n - 0.03, 0.12, ph + B.rr(0, 0.12)], plank, { ax: yawAx(face + B.rr(-0.03, 0.03)), rd: 0.04, res: 0.14 });
       }
       const legs = [[-1, -1], [1, -1], [-1, 1], [1, 1], [-1, 0], [1, 0]].map(([sx, sz]) => turn(x, z, face, sx * (ph - 0.25), sz * (ph - 0.25)));
       for (const [lx, lz] of legs) S.tube([[lx, BED - 0.4, lz], [lx + B.rr(-0.15, 0.15), PORCH - 0.2, lz + B.rr(-0.15, 0.15)]], 0.26, 0.21, wood, { res: 0.11 });
       for (const [p, q] of [[0, 4], [1, 5]]) S.tube([[legs[p][0], 0.1, legs[p][1]], [legs[q][0], PORCH - 0.35, legs[q][1]]], 0.09, 0.09, wood, { res: 0.09 });
-      const [fx, fz] = turn(x, z, face, 0, ph + 0.2), [gx, gz] = turn(x, z, face, 0, ph + 2.0);
+      // (its top step runs a little onto the porch, so there is no crack between them to fall through)
+      const [fx, fz] = turn(x, z, face, 0, ph - 0.1), [gx, gz] = turn(x, z, face, 0, ph + 1.9);
       stair([gx, gz], [fx, fz], { width: 1.7, rise: 0.32, ya: DECK, yb: PORCH });
       return legs;
     };
@@ -613,11 +614,11 @@ export default {
         B.iso(x, y - 0.08, z, 0.13, B.P[lan[1]], 3, { em: true, nd: true });
         B.iso(x, y, z, 0.9, B.P[lan[0]], 0.2, { em: true, nd: true, k: 7, ph: i, sp: 2.4 });
         if (h(x, z) < W - 0.05 && y - W < 4) {
-          B.disc(x, W + 0.03, z, B.UP, 1.0, 0.02, B.P[lan[0]], 0.25, { em: true, nd: true });
-          B.disc(x, W + 0.04, z, B.UP, 0.38, 0.02, B.P[lan[1]], 0.6, { em: true, nd: true });
+          B.disc(x, W + 0.12, z, B.UP, 1.0, 0.02, B.P[lan[0]], 0.25, { em: true, nd: true });
+          B.disc(x, W + 0.13, z, B.UP, 0.38, 0.02, B.P[lan[1]], 0.6, { em: true, nd: true });
           // a broken streak of it on the water toward the start
           const tx = eye[0] - x, tz = eye[2] - z, tl = Math.hypot(tx, tz);
-          for (let k = 1; k <= 4; k++) B.axial(x + tx / tl * k * 0.45 + B.rr(-0.1, 0.1), W + 0.04, z + tz / tl * k * 0.45, [1, 0, 0], 0.32 - k * 0.05, 0.035, B.P[lan[k < 2 ? 1 : 0]], 1.4, { em: true, nd: true, k: 6, ph: k + i, sp: 1.3, rg: 0.04 });
+          for (let k = 1; k <= 4; k++) B.axial(x + tx / tl * k * 0.45 + B.rr(-0.1, 0.1), W + 0.13, z + tz / tl * k * 0.45, [1, 0, 0], 0.32 - k * 0.05, 0.035, B.P[lan[k < 2 ? 1 : 0]], 1.4, { em: true, nd: true, k: 6, ph: k + i, sp: 1.3, rg: 0.04 });
         }
       });
       // the moon's glitter: short bright strokes on the water, in a band that runs from under the moon toward the start
@@ -626,7 +627,7 @@ export default {
         const x = eye[0] + Math.sin(az) * t + Math.cos(az) * wob, z = eye[2] - Math.cos(az) * t + Math.sin(az) * wob;
         if (h(x, z) > W - 0.1 || S.sdf(x, W + 0.1, z) < 0.05) continue;
         const c = Math.abs(wob) < 0.5 && B.rr(0, 1) < 0.5 ? mn[1] : B.pick([mn[0], mn[0], sk[3], wt[3]]);
-        B.axial(x, W + 0.04, z, [Math.cos(az), 0, Math.sin(az)], B.rr(0.25, 0.6), 0.07, B.P[c], 2, { em: true, nd: true, k: 6, ph: B.rr(0, 6), sp: B.rr(0.8, 1.6), rg: 0.05 });
+        B.axial(x, W + 0.13, z, [Math.cos(az), 0, Math.sin(az)], B.rr(0.25, 0.6), 0.07, B.P[c], 2, { em: true, nd: true, k: 6, ph: B.rr(0, 6), sp: B.rr(0.8, 1.6), rg: 0.05 });
       }
       // reeds: each blade three long dabs, darker at the foot; some carry a dark head
       for (const [x, z, n, spread, tall] of reedBeds) {
@@ -656,7 +657,7 @@ export default {
         const x = B.rr(-24, 22), z = B.rr(-8, 15);
         if (h(x, z) > W + 0.2) continue;
         const far = smooth(12, -6, z);
-        B.axial(x, W + B.rr(0.2, 0.8), z, [1, 0, B.rr(-0.2, 0.2)], B.rr(2.2, 4.2), B.rr(0.35, 0.6), B.P[B.pick([wt[3], sk[2], sk[2]])], 0.14 + 0.2 * far, { em: true, nd: true, k: 6, ph: B.rr(0, 6), sp: B.rr(0.12, 0.3), rg: B.rr(0.3, 0.6) });
+        B.axial(x, W + B.rr(0.2, 0.8), z, [1, 0, B.rr(-0.2, 0.2)], B.rr(2.2, 4.2), B.rr(0.35, 0.6), B.P[far > 0.5 ? sk[3] : B.pick([sk[3], sk[2]])], 0.16 + 0.22 * far, { em: true, nd: true, k: 6, ph: B.rr(0, 6), sp: B.rr(0.12, 0.3), rg: B.rr(0.3, 0.6) });
       }
       // marsh lights: a few sick specks drifting low over the water
       lib.motes(B, 24, [-22, 20, W + 0.3, W + 1.6, -6, 14], [lan[0], lan[1]], 0.035);
@@ -664,10 +665,11 @@ export default {
       // the sky
       B.sky(d => (d[1] < 0.03 ? sk[1] : d[1] < 0.14 ? sk[0] : dk), 230);
       // a low band of sick haze along the north, brightest round the moon
-      for (let i = -14; i <= 14; i++) for (let j = 0; j < 4; j++) {
-        const a = az + 0.06 + i * 0.075 + B.rr(-0.02, 0.02), e = -0.1 + j * 0.034, p = dir(a, e), R = 205;
-        const c = Math.abs(i + 1) < 3 && j > 0 && j < 3 ? sk[3] : Math.abs(i) < 8 && j < 3 ? sk[2] : sk[1];
-        B.iso(eye[0] + p[0] * R, eye[1] + p[1] * R, eye[2] + p[2] * R, 9, B.P[c], 1.4, { em: true, nd: true });
+      for (let i = -16; i <= 16; i++) for (let j = 0; j < 5; j++) {
+        const a = az + 0.07 + i * 0.07 + B.rr(-0.02, 0.02), e = -0.11 + j * 0.03, p = dir(a, e), R = 205;
+        const off = Math.abs(a - az - 0.06) + Math.max(0, e - 0.0) * 2;
+        const c = off < 0.2 && j < 4 ? sk[3] : off < 0.55 && j < 4 ? (B.rr(0, 1) < 0.5 ? sk[3] : sk[2]) : off < 0.9 ? sk[2] : sk[1];
+        B.iso(eye[0] + p[0] * R, eye[1] + p[1] * R, eye[2] + p[2] * R, 9, B.P[c], 1.5, { em: true, nd: true });
       }
       // the disc, laid flat to the eye: dim yellow, with darker seas
       const rt = B.norm([-u[2], 0, u[0]]), up = cross(rt, u);
