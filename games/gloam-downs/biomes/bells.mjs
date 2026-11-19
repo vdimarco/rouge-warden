@@ -157,7 +157,8 @@ export default {
     // bronze: dark in shadow, brass where the sun catches it, green-crusted in patches
     const bronzeG = [br[0], br[1], br[3], fire[2], fire[3], fire[4]];
     const crust = s => (x, y, z) => (B.n3(x * s + 2, y * s, z * s + 5) > 0.66 ? verd : null);
-    const grime = (x, y, z) => 0.6 * (0.16 * (B.n3(x * 0.7, y * 0.7, z * 0.7 + 3) - 0.5) + 0.12 * (B.n3(x * 3, y * 3, z * 3) - 0.5)) - (B.n3(x * 0.9 + 4, y * 0.9, z * 0.9) > 0.64 ? 0.18 : 0);
+    // grime on old bronze: a soft tone wander, a fine grain, and small dark pits
+    const grime = (x, y, z) => 0.55 * (0.16 * (B.n3(x * 0.7, y * 0.7, z * 0.7 + 3) - 0.5) + 0.14 * (B.n3(x * 3, y * 3, z * 3) - 0.5)) - (B.n3(x * 2.4 + 4, y * 2.4, z * 2.4) > 0.72 ? 0.1 : 0);
     const bronze = { r: br.slice(0, 4), s: br.slice(2, 6), g: bronzeG, mod: grime };
     const bell = { r: br.slice(0, 4), s: br.slice(1, 6), g: bronzeG, mod: grit(0.35) };
     const oldBell = { ...bell, rf: crust(1.1) };
@@ -371,7 +372,7 @@ export default {
       const n = norm([-gx * 0.85, 1, -gz * 0.85]);
       c[1] = h(c[0], c[2]) + 0.15;
       cog(c, frameW(n), { R: 5.4, Ri: 3.2, n: 16, th: 0.6, tw: 0.5, skip: [7, 8] }, { depth: 1.0, res: 0.15 });
-      bowl(EAST[0], EAST[1] - 0.6, { s: 0.9 });
+      bowl(EAST[0] - 2.8, EAST[1] + 1.6, { s: 0.9 });
     }
 
     /* ---- the fallen bell in the vale: on its side, cracked, its mouth turned to the path ---- */
@@ -392,7 +393,7 @@ export default {
     {
       const [qx, qz] = CLOCK, gy = h(qx, qz), Rc = 3.6;
       // the face leans back into the hill, turned to the east and the start
-      const n = norm([0.5, 1, 0.42]), ax = frameW(n), U = ax[0], V = ax[1];
+      const n = norm([0.45, 0.9, 0.78]), ax = frameW(n), U = ax[0], V = ax[1];
       const c = [qx, gy + 0.2, qz];
       // two halves split along a jagged crack; the lower half has slid a little down the hill
       const half = (side, drop) => {
@@ -425,8 +426,8 @@ export default {
       post(qx + 4.2, qz - 2.0);
     }
 
-    /* ---- pendulum frames: one in the vale by the spur, one behind the knoll ---- */
-    pendulum(8.0, 12.4, 0.35, { swing: 0.36 });
+    /* ---- pendulum frames: one on the east hill's top, black against the band from the start; one behind the knoll ---- */
+    pendulum(EAST[0], EAST[1] - 0.4, -0.47, { swing: 0.34, hgt: 4.4, rod: 2.0 });
     pendulum(6.0, -24, -0.5, { swing: -0.3, hgt: 4.6, rod: 2.0 });
 
     /* ---- chains from the spire's cornice down to stakes on the terraces, east and west ---- */
@@ -448,7 +449,11 @@ export default {
       ctx.later(() => chain([sx, sy + 1.3, sz], [sx + 1.4, h(sx + 1.4, sz - 4.5) + 0.2, sz - 4.5], { sag: 0.6 }));
       const cg = [-3.4, h(-3.4, 23.2) - 0.7, 23.2];
       cog(cg, frameW(norm([0.6, 0, 1])), { R: 1.7, Ri: 0.9, n: 8, th: 0.45, tw: 0.55, skip: [] }, { depth: 0.6, res: 0.1 });
-      bowl(-2.2, 25.8, { s: 0.85 });
+      // a low ring of iron in the grass with a fire in it: warm light by the start that does not block the view
+      const fx = -2.7, fz = 24.2, fy = h(fx, fz);
+      S.torus([fx, fy + 0.08, fz], 0.62, 0.16, iron, { res: 0.06 });
+      for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; S.ball([fx + Math.cos(a) * 0.62, fy + 0.2, fz + Math.sin(a) * 0.62], [0.2, 0.14, 0.2], rough, { res: 0.06 }); }
+      ctx.fire([fx, fy + 0.18, fz], 0.85, { k: 0.75, r: 4.2 });
     }
 
     /* ---- braziers and fire posts along the way ---- */
