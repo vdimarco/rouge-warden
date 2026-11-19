@@ -31,7 +31,7 @@ export default {
   seed: 11,
   palette: [
     ['sky', [0x04050b]],
-    ['skyband', [0x0a0e1e, 0x141b36, 0x222b50, 0x36406c]],
+    ['skyband', [0x0a0e1e, 0x141b36, 0x222b50, 0x36406c, 0x4f5c8a]],
     ['fog', [0x0d1122]],
     ['ink', [0x020308]],
     ['shade', [0x06080e]],
@@ -63,7 +63,8 @@ export default {
     fbm: { amp: 0.5, freq: 1 / 11, oct: 3 },
     warp: { amp: 3, freq: 1 / 22 },
     far: { amp: 8, start: 36, end: 62 },
-    pits: [[1, 5, 19, 5]],
+    // the yard's bowl, and a valley north of the summit: the land behind the keep drops below its foot, so the keep stands on the haze
+    pits: [[1, 5, 19, 5], [-14, -70, 36, 9], [-18, -104, 50, 14]],
     flats: [
       { at: [0, 5], box: [10, 9], blend: 7, y: Y.yard }, // the yard
       { at: [3, 27.2], r: 2.6, blend: 4.5, y: Y.start }, // the rim at the start: it drops away right at the gate
@@ -325,21 +326,34 @@ export default {
       }
     }
 
-    /* ---- the keep on the top: cracked, its north-west corner bitten away, a stair up its east face to the roof and the beacon ---- */
+    /* ---- the keep on the top: a fat block with a battered foot and a proud parapet, a square watch-tower rising from its back corner
+       (cracked, its crown bitten away), a stair up its east face to the roof and the beacon ---- */
     {
       const [kx, kz] = KEEP, gy = h(kx, kz), y0 = gy - 1.2, top = Y.roof, hw = KW;
       const body = S.box([kx, (y0 + top) / 2, kz], [hw, (top - y0) / 2, hw], stone, { hold: true, rd: 0.12 });
-      const biteC = [kx - 2.4, top + 0.5, kz - 2.0], biteR = [1.9, 1.7, 1.9];
-      const bite = S.ball(biteC, biteR, stone, { hold: true });
+      // the battered foot: a wider, lower block the body stands in
+      const foot = S.box([kx, (y0 + gy + 0.9) / 2, kz], [hw + 0.45, (gy + 0.9 - y0) / 2, hw + 0.45], stone, { hold: true, rd: 0.3 });
       const split = S.box([kx + 1.0, top - 0.9, kz + hw], [0.16, 1.5, 0.7], stone, { hold: true, ax: rollAx(-0.2) });
-      const door = S.box([kx - 0.6, gy + 0.95, kz + hw], [0.85, 1.35, 0.75], stone, { hold: true });
-      S.join('cut', body, [bite, split, door], { res: 0.15, inner: st.slice(0, 2) });
-      const bitten = (x, y, z) => ((x - biteC[0]) / biteR[0]) ** 2 + ((y - biteC[1]) / biteR[1]) ** 2 + ((z - biteC[2]) / biteR[2]) ** 2 < 1.2;
-      // crenels round the roof, with a gap where the stair comes up (the north-east corner)
+      const door = S.box([kx - 0.6, gy + 0.95, kz + hw + 0.3], [0.85, 1.35, 0.95], stone, { hold: true });
+      S.join('cut', [body, foot], [split, door], { res: 0.15, inner: st.slice(0, 2) });
+      // the parapet: a course standing proud all round under the crenels, so the top reads heavy against the haze
+      for (const [sx, sz] of [[0, 1], [1, 0], [0, -1], [-1, 0]])
+        S.box([kx + sx * (hw + 0.05), top - 0.32, kz + sz * (hw + 0.05)], [sz ? hw + 0.3 : 0.32, 0.3, sx ? hw + 0.3 : 0.32], rough, { rd: 0.06, res: 0.13 });
+      // the watch-tower: square, on the back west quarter of the roof, its crown corbelled out and bitten away on the west
+      const wx = kx - 1.6, wz = kz - 1.6, wh = 1.3, wt = top + 1.75;
+      const tw = S.box([wx, (top - 0.5 + wt) / 2, wz], [wh, (wt - top + 0.5) / 2, wh], stone, { hold: true, rd: 0.08 });
+      const crown = S.box([wx, wt + 0.12, wz], [wh + 0.28, 0.24, wh + 0.28], rough, { hold: true, rd: 0.06 });
+      const merl = [];
+      for (const [mx, mz] of [[-1, -1], [1, -1], [-1, 1], [1, 1], [0, 1], [1, 0]])
+        merl.push(S.box([wx + mx * (wh - 0.05), wt + 0.62, wz + mz * (wh - 0.05)], [0.36, 0.3, 0.36], rough, { hold: true, rd: 0.05 }));
+      const biteC = [wx - 1.5, wt + 0.7, wz - 1.1], biteR = [1.3, 1.25, 1.5];
+      const bite = S.ball(biteC, biteR, stone, { hold: true });
+      S.join('cut', [tw, crown, ...merl], bite, { res: 0.13, inner: st.slice(0, 2) });
+      // crenels round the roof, with a gap where the stair comes up (the north-east corner) and none under the watch-tower
       for (const [sx, sz, ex, ez] of [[-1, 1, 1, 1], [1, 1, 1, -1], [1, -1, -1, -1], [-1, -1, -1, 1]])
         for (let i = 0; i < 5; i++) {
           const t = (i + 0.5) / 5, x = kx + (sx + (ex - sx) * t) * (hw - 0.3), z = kz + (sz + (ez - sz) * t) * (hw - 0.3);
-          if (bitten(x, top, z) || i % 2 || (x > kx + 1 && z < kz - 1)) continue;
+          if (i % 2 || (x > kx + 1 && z < kz - 1) || (x < wx + wh + 0.4 && z < wz + wh + 0.4)) continue;
           S.box([x, top + 0.32, z], [0.42, 0.34, 0.42], rough, { rd: 0.06, res: 0.12 });
         }
       // the stair: blocks along the east face, rising north from the ground to the roof
@@ -349,20 +363,22 @@ export default {
         S.box([kx + hw + 0.62, (tp + gy - 0.6) / 2, z], [0.66, (tp - gy + 0.6) / 2, (hw - 0.2) / n + 0.03], rough, { rd: 0.05, res: 0.13 });
       }
       // buttresses at the front corners
-      for (const s of [-1, 1]) S.box([kx + s * (hw + 0.25), gy + 0.5, kz + hw - 0.45], [0.42, 1.6, 0.55], rough, { ax: rollAx(s * 0.12), rd: 0.08, res: 0.13 });
+      for (const s of [-1, 1]) S.box([kx + s * (hw + 0.35), gy + 0.7, kz + hw - 0.45], [0.46, 1.8, 0.6], rough, { ax: rollAx(s * 0.12), rd: 0.08, res: 0.13 });
       // a gantry out of the west face, a cage hung against the sky
       S.box([kx - hw - 1.2, top - 1.0, kz + 0.6], [1.35, 0.14, 0.14], wood, { rd: 0.03, res: 0.09 });
       S.tube([[kx - hw, top - 2.2, kz + 0.6], [kx - hw - 0.9, top - 1.05, kz + 0.6]], 0.08, 0.08, wood, { res: 0.08 });
       S.tube([[kx - hw - 2.3, top - 1.05, kz + 0.6], [kx - hw - 2.3, top - 1.9, kz + 0.6]], 0.04, 0.04, iron, { res: 0.07 });
       cage(kx - hw - 2.3, top - 2.6, kz + 0.6);
-      // the beacon: a fire bowl on a plinth in the middle of the roof
-      S.box([kx + 0.2, top + 0.22, kz - 0.2], [0.78, 0.3, 0.78], rough, { rd: 0.05, res: 0.11 });
-      ctx.beacon(bowl(kx + 0.2, kz - 0.2, { y: top + 0.5, lit: false }), 1.7);
-      // the lit slit: the one warm window on the hill
+      // the beacon: a fire bowl on a plinth on the roof, east of the watch-tower
+      const bx = kx + 0.7, bz = kz + 0.4;
+      S.box([bx, top + 0.22, bz], [0.78, 0.3, 0.78], rough, { rd: 0.05, res: 0.11 });
+      ctx.beacon(bowl(bx, bz, { y: top + 0.5, lit: false }), 1.7);
+      // the lit slits: one warm window high in the watch-tower, one in the keep's face
       ctx.glow(() => {
-        const [x, y, z] = [kx - 1.7, top - 1.3, kz + hw + 0.05];
-        B.iso(x, y, z, 0.13, B.P[fire[4]], 3, { em: true, nd: true, k: 7, ph: 1, sp: 2 });
-        B.iso(x, y - 0.3, z, 0.12, B.P[fire[3]], 3, { em: true, nd: true });
+        for (const [x, y, z, s] of [[wx + 0.3, wt - 0.6, wz + wh + 0.06, 1], [kx - 1.7, top - 1.6, kz + hw + 0.06, 0.85]]) {
+          B.iso(x, y, z, 0.13 * s, B.P[fire[4]], 3, { em: true, nd: true, k: 7, ph: 1, sp: 2 });
+          B.iso(x, y - 0.28 * s, z, 0.12 * s, B.P[fire[3]], 3, { em: true, nd: true });
+        }
       });
       rocks(ctx, [[kx - 4.0, kz - 2.6, 0.75], [kx - 4.4, kz - 0.4, 0.5], [kx + 1.6, kz + 4.0, 0.42]], { mat: rough, seed: 40 });
       // a dead tree by the keep's west side
@@ -448,22 +464,27 @@ export default {
     ctx.wisp([GRAVES[0] + 1.2, h(GRAVES[0] + 1.2, GRAVES[1]) + 2.4, GRAVES[1]]); // over the tomb
     ctx.wisp([KEEP[0] + 1, h(KEEP[0] + 1, -29.6) + 1.1, -29.6]); // behind the keep
 
-    /* ---- sky: a dark dome, a moonlit haze low in the north, the moon beside the keep, torn cloud, stars, drifting dust ---- */
+    /* ---- sky: a dark dome, a moonlit haze low in the north, the moon rising behind the keep, torn cloud, stars, drifting dust ---- */
     ctx.glow(({ B }) => {
       const sk = ramp('skyband'), dk = ramp('sky')[0], mn = ramp('moon');
       const sy = h(START[0], START[1]);
       const eye = [START[0], sy + EYE_UP, START[1] + EYE_BACK];
-      // as the start eye sees them: the keep's bearing, and the moon just clear of its stair on the right, its top just under level
+      // as the start eye sees them: the keep's bearing, and the moon tucked behind its right shoulder, its top under the page camera's
+      // top edge (which sits half a degree below level)
       const toKeep = Math.atan2(KEEP[0] - eye[0], -(KEEP[1] - eye[2])), dKeep = Math.hypot(KEEP[0] - eye[0], KEEP[1] - eye[2]);
-      const mr = 1.75 * Math.PI / 180, az = toKeep + Math.atan((KW + 2.6) / dKeep), el = -0.062, D = 175, rm = D * Math.tan(mr);
+      const deg = Math.PI / 180, mr = 2.0 * deg, az = toKeep + Math.atan((KW + 0.6) / dKeep) + 1.2 * deg, el = -2.75 * deg, D = 215, rm = D * Math.tan(mr);
       const dir = (a, e) => [Math.sin(a) * Math.cos(e), Math.sin(e), -Math.cos(a) * Math.cos(e)];
       const u = dir(az, el), M = [eye[0] + u[0] * D, eye[1] + u[1] * D, eye[2] + u[2] * D];
       B.sky(d => (d[1] < 0.05 ? sk[1] : d[1] < 0.2 ? sk[0] : dk), 230);
-      // the haze: a low band of light behind the summit, brightest round the moon
-      for (let i = -9; i <= 9; i++) for (let j = 0; j < 4; j++) {
-        const a = az + i * 0.07 + B.rr(-0.02, 0.02), e = -0.085 + j * 0.034, p = dir(a, e), R = 205;
-        const c = Math.abs(i) < 3 && j < 3 ? sk[3] : Math.abs(i) < 7 || j < 2 ? sk[2] : sk[1];
-        B.iso(eye[0] + p[0] * R, eye[1] + p[1] * R, eye[2] + p[2] * R, 9, B.P[c], 1.6, { em: true, nd: true });
+      // the halo: rings of cold light round the moon, wide enough to stand behind the whole keep, so the keep is a black cut-out
+      // against it; and a low band of haze along the northern horizon
+      for (let i = -34; i <= 34; i++) for (let j = 0; j < 10; j++) {
+        const a = az + i * 0.02 + B.rr(-0.005, 0.005), e = -0.13 + j * 0.016 + B.rr(-0.004, 0.004), p = dir(a, e), R = 222;
+        const dm = Math.hypot((a - az) * 0.75, e - el) / mr, low = 1 - j / 9;
+        const k = Math.max(dm < 2.5 ? 1 : dm < 4.0 ? 0.7 : dm < 6.0 ? 0.42 : 0, Math.abs(a - toKeep) < 0.3 && low > 0.6 ? 0.42 : Math.abs(a - toKeep) < 0.5 && low > 0.3 ? 0.25 : 0);
+        if (k < 0.2 && B.rr(0, 1) < 0.5) continue;
+        const c = k >= 1 ? sk[4] : k >= 0.7 ? sk[3] : k >= 0.42 ? sk[2] : sk[1];
+        B.iso(eye[0] + p[0] * R, eye[1] + p[1] * R, eye[2] + p[2] * R, 4.4, B.P[c], 1.6, { em: true, nd: true });
       }
       // the disc, laid flat to the eye: pale, with darker seas
       const rt = B.norm([-u[2], 0, u[0]]), up = [rt[1] * u[2] - rt[2] * u[1], rt[2] * u[0] - rt[0] * u[2], rt[0] * u[1] - rt[1] * u[0]];
