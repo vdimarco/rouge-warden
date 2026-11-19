@@ -108,8 +108,8 @@ export default {
       const yard = (x, y, z) => y < Y.yard + 0.5 && B.n3(x * 0.5, z * 0.5, 9) > 0.46;
       const near = { r: moor, g: [moor[0], moor[1], mud[1], mud[2], fire[1], fire[2]], mod: grit(1), rf: (x, y, z) => (onPath(x, z) || yard(x, y, z) ? mud : moor) };
       const mid = { r: moor, mod: grit(1.2), fat: 0.85 }, out = { r: moor, mod: grit(1.4), fat: 0.95 };
-      const N = [-24, 24, -31, 31], M = [-56, 56, -56, 56], F = [-108, 108, -108, 108];
-      tile(S, h, near, { x0: N[0], x1: N[1], z0: N[2], z1: N[3], res: 0.32 });
+      const N = [-24, 24, -31, 38], M = [-56, 56, -56, 56], F = [-108, 108, -108, 108];
+      tile(S, h, near, { x0: N[0], x1: N[1], z0: N[2], z1: N[3], res: 0.34 });
       const ring = (o, i, res, mat) => {
         tile(S, h, mat, { x0: o[0], x1: o[1], z0: o[2], z1: i[2], res });
         tile(S, h, mat, { x0: o[0], x1: o[1], z0: i[3], z1: o[3], res });
