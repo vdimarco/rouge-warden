@@ -70,11 +70,11 @@ export default {
     const { S, B, h, ramp } = ctx;
     const grit = (k = 1) => (x, y, z) => k * (0.16 * (B.n3(x * 0.45, z * 0.45, y * 0.3 + 3) - 0.5) + 0.14 * (B.n3(x * 2.6, y * 2.6, z * 2.6) - 0.5));
     const grass = ramp('grass'), chalk = ramp('chalk'), st = ramp('stone');
+    // the ground: dark olive grass, and pale chalk where the paths wear through it
     const ground = {
       r: grass, g: [grass[1]], mod: grit(1),
-      rf: (x, z) => null,
+      rf: (x, y, z) => (Math.min(polyDist(x, z, PATH) - 0.6, polyDist(x, z, SPUR) - 0.4) + 0.5 * (B.n3(x * 1.3, z * 1.3, 4) - 0.5) < 0.4 ? chalk : grass)
     };
-    ground.rf = (x, y, z) => (Math.min(polyDist(x, z, PATH) - 0.6, polyDist(x, z, SPUR) - 0.4) + 0.5 * (B.n3(x * 1.3, z * 1.3, 4) - 0.5) < 0.4 ? chalk : grass);
     groundTiles(ctx, ground, [{ r: grass, g: [grass[1]], mod: grit(1.2), fat: 0.64 }, { r: grass, mod: grit(1.4), fat: 0.88 }]);
 
     const stone = { r: st, s: ramp('sunstone'), g: [st[1]], b: 0.07, mod: grit(0.8), top: { min: 0.99, r: grass.slice(1, 4) } };
@@ -178,7 +178,7 @@ export default {
     // the wall west of the summit tower, broken, falling away down the far slope
     curtain(ctx, WEST, { mat: stone, cap, height: 2.0, thick: 2.2, side: -1, breaks: [[6, 9.5], [16, 19]], res: 0.22 });
 
-    /* ---- the west downs: a tower stump and a stretch of wall on the rise ---- */
+    /* ---- the west downs: a tower stump on the rise, with fallen stone heaped up to its top ---- */
     {
       const sx = -16, sz = 3, top = h(sx, sz) + 2.1;
       squatTower(ctx, sx, sz, { mat: stone, cap, r: 2.2, roof: top, broken: 1.4, gaps: [0.2] });
@@ -236,7 +236,7 @@ export default {
 
     /* ---- rags on the battlements: hung after the walk map, so they never block the feet ---- */
     ctx.later(() => {
-      for (const p of [[11.2, 9.5], [12.9, 3.2], [8.2, -9.6], [0.8, -16.5]]) {
+      for (const p of [[15.5, 27.5], [11.2, 9.5], [6.6, -10.4], [0.8, -16.5]]) {
         const s = sAt(WALL, p), q = W.M.at(s), sd = W.sideAt(s), y = W.walkAt(s) + 0.55;
         const bx = q.x + sd[0] * 1.36, bz = q.z + sd[1] * 1.36;
         rag(ctx, [bx - q.dx * 0.7, bz - q.dz * 0.7], [bx + q.dx * 0.7, bz + q.dz * 0.7], y, { mat: cloth, len: 2.2, n: 4 });
@@ -251,7 +251,7 @@ export default {
     ctx.wisp([20, h(20, -2) + 1.0, -2]); // outside the wall, under T2
     ctx.wisp([-24.5, h(-24.5, -27) + 1.0, -27]); // behind the summit, by the broken west wall
 
-    /* ---- sky: storm violet overhead, the sick band at the horizon, the sun going down red in the west-north-west ---- */
+    /* ---- sky: storm violet overhead, the sick band at the horizon, the sun going down red in the north-west ---- */
     ctx.glow(({ B }) => {
       const sk = ramp('skyband'), sick = ramp('sick'), f = ramp('fire'), sun = ramp('sunstone'), fogc = ramp('fog')[0];
       // the dome: fog-coloured below the horizon, so the far lowland melts into it; storm grey above, near-black overhead
@@ -495,7 +495,6 @@ function ragPole(ctx, x, z, { wood, cloth, iron, y, h = 3, len = 1.6, yaw = 0, n
 function cart(ctx, x, z, yaw, { wood, iron }) {
   const { S, h } = ctx, y = h(x, z);
   const f = [Math.sin(yaw), 0, Math.cos(yaw)], r = [Math.cos(yaw), 0, -Math.sin(yaw)];
-  const F = frameAlong(r, 0); // x across the cart
   const roll = -0.3, c = Math.cos(roll), s = Math.sin(roll);
   // bed frame: across (rolled), up, along
   const U = [r[0] * c, s, r[2] * c], V = norm3(cross(f, U)), Wf = f;
@@ -522,7 +521,6 @@ function cart(ctx, x, z, yaw, { wood, iron }) {
     const p0 = at(sd, -0.05, 1.1), ex = x + r[0] * sd * 1.1 + f[0] * 3.0, ez = z + r[2] * sd * 1.1 + f[2] * 3.0;
     S.tube([p0, [ex, h(ex, ez) + 0.08, ez]], 0.065, 0.055, wood, { res: 0.07 });
   }
-  return F;
 }
 // a siege ladder lying where it fell: two rails and rungs, one rail snapped short
 function ladder(ctx, a, b, { wood, broken = false }) {
