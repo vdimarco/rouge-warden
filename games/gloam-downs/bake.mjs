@@ -38,7 +38,10 @@ export function build(def) {
       const R = family(m.g[0]), k = R.indexOf(m.g[0]);
       m.g = [R[Math.max(0, k - 1)], R[k], fireR[0], fireR[1], fireR[2], fireR[3]];
       m._warm = true;
-    } else if (depth < 1 && !Array.isArray(m.r)) for (const v of Object.values(m)) fixMat(v, depth + 1);
+    }
+    // a material's `top` is a material too: widen its one-step g the same way
+    if (Array.isArray(m.r)) { if (depth < 2) fixMat(m.top, depth + 1); }
+    else if (depth < 1) for (const v of Object.values(m)) fixMat(v, depth + 1);
   };
   const S = new Proxy(S0, {
     get(t, k) {
