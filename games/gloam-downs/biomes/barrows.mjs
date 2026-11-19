@@ -461,8 +461,8 @@ export default {
       // the stair: each slab set level into the slope, its outer face a little wall; one slab to the next is a step up
       const along = [];
       for (let i = 0; i < SPIRAL.length - 1; i++) {
-        const [ax, az] = SPIRAL[i], [bx, bz] = SPIRAL[i + 1], len = Math.hypot(bx - ax, bz - az);
-        for (let k = 0; k < Math.max(1, Math.round(len / 0.95)); k++) along.push([ax + (bx - ax) * (k + 0.5) / Math.round(len / 0.95), az + (bz - az) * (k + 0.5) / Math.round(len / 0.95), Math.atan2(bx - ax, bz - az)]);
+        const [ax, az] = SPIRAL[i], [bx, bz] = SPIRAL[i + 1], m = Math.max(1, Math.round(Math.hypot(bx - ax, bz - az) / 0.95));
+        for (let k = 0; k < m; k++) along.push([ax + (bx - ax) * (k + 0.5) / m, az + (bz - az) * (k + 0.5) / m, Math.atan2(bx - ax, bz - az)]);
       }
       along.forEach(([x, z, yaw], i) => {
         const r = Math.hypot(x - sx, z - sz), ox = (x - sx) / r, oz = (z - sz) / r;
