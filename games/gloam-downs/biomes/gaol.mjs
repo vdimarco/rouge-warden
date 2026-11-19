@@ -330,9 +330,9 @@ export default {
       bowl(-1.6, 7.6, { s: 0.9, k: 0.7 });
     }
 
-    /* ---- gibbets on the first tier, their cages hung out over the yard in front of the cells ---- */
-    gibbet(-4.0, -2.4, 0, 1, { y: Y.t1 + 0.1, reach: 2.6, drop: 4.4, hgt: 4.4 });
-    gibbet(6.9, -2.6, 0, 1, { y: Y.t1 + 0.1, reach: 2.4, drop: 3.6, hgt: 4.6 });
+    /* ---- gibbets on the first tier, their arms reaching out sideways, so from the gate each reads as a hook with its cage ---- */
+    gibbet(-4.0, -2.4, -1, 0, { y: Y.t1 + 0.1, reach: 2.3, drop: 2.2, hgt: 4.4 });
+    gibbet(6.4, -2.6, 1, 0, { y: Y.t1 + 0.1, reach: 2.1, drop: 1.9, hgt: 4.6 });
     bowl(-0.4, -7.0, { s: 0.9 });
 
     /* ---- the inner arch at the head of the last stair ---- */
