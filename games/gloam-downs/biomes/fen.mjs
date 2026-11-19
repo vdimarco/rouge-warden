@@ -28,7 +28,7 @@ const POOL = [-30, 28, -14, 24];
 const J = { land: [4.6, 14.2], a: [3.6, 11.4], b: [-5.6, 9.4], c: [-5.4, 5.6], d: [8.0, 3.6], e: [8.0, 0.2], f: [-5.8, -1.4], g: [-4.8, -5.0], shore: [-4.2, -8.4] };
 const MAIN = [J.land, J.a, J.b, J.c, J.d, J.e, J.f, J.g, J.shore];
 // the way down the brow from the start, and the way up the summit hill in two switchbacks
-const DOWN = [[2, 20], [3.4, 17.0], [4.6, 14.6]];
+const DOWN = [[0.6, 34], [1.0, 27], [2, 20], [3.4, 17.0], [4.6, 14.6]];
 const CLIMB = [[-4.2, -8.4], [5.6, -9.6], [1.0, -12.8], [-0.6, -14.2]];
 const T1 = [5.6, -9.6]; // the terrace at the switchback
 // the huts: where, how big, and the walk their door looks at. In the first picture: one near on the left, one far on the left,
@@ -136,6 +136,7 @@ export default {
     const thatch = { r: [mud[1], st[0], st[1], st[2]], g: [st[0]], mod: straw };
     const iron = { r: ramp('iron'), g: [ramp('iron')[0]] };
     const black = { r: [ramp('ink')[0], ramp('iron')[0]] }; // a lantern's frame: black, so its glass is what you see
+    const glass = { r: [lan[1]], em: true };
     const stone = { r: [sk[0], sk[1], sk[2]], g: [sk[1]], mod: grit(0.9), top: { min: 0.72, r: moss.slice(1, 4) } };
     const cloth = { r: [mud[0], mud[1], st[0]], g: [mud[0]], mod: grit(0.6) };
     const SICK = [st[1], lan[0]];
@@ -181,11 +182,13 @@ export default {
         }
       }, mat, { ax, res });
     // a lantern hung with its ring at (x, y, z): an iron cap and base, a glass that glows sick green, and its green light on what is near
+    // (the glass is a glowing solid inside the frame, as on the lamplighter's own lantern: a small dark frame alone reads as a black blob)
     const lantern = (x, y, z, { r = 3.6, k = 0.9 } = {}) => {
       S.tube([[x, y, z], [x, y - 0.18, z]], 0.03, 0.03, black, { res: 0.04 });
-      S.ball([x, y - 0.22, z], [0.18, 0.08, 0.18], black, { res: 0.05 });
-      S.box([x, y - 0.68, z], [0.14, 0.04, 0.14], black, { res: 0.05, rd: 0.01 });
-      for (const [dx, dz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) S.tube([[x + dx * 0.11, y - 0.66, z + dz * 0.11], [x + dx * 0.12, y - 0.27, z + dz * 0.12]], 0.022, 0.022, black, { res: 0.04 });
+      S.ball([x, y - 0.22, z], [0.19, 0.08, 0.19], black, { res: 0.05 });
+      S.box([x, y - 0.7, z], [0.15, 0.04, 0.15], black, { res: 0.05, rd: 0.01 });
+      S.ball([x, y - 0.46, z], [0.15, 0.22, 0.15], glass, { res: 0.04 });
+      for (const [dx, dz] of [[-1, 0], [1, 0]]) S.tube([[x + dx * 0.15, y - 0.68, z + dz * 0.15], [x + dx * 0.15, y - 0.26, z + dz * 0.15]], 0.016, 0.016, black, { res: 0.04 });
       S.lights.push({ p: [x, y - 0.45, z], r, s: k, sh: true, c: SICK });
       lamps.push([x, y - 0.45, z]);
     };
@@ -584,6 +587,8 @@ export default {
       // a pale scum line where the water meets the bank, and now and then a ripple
       const tex = (x, y, z) => {
         if (h(x, z) > W - 0.13 - 0.08 * B.n3(x * 1.3, z * 1.3, 7)) return wt[3];
+        const far = smooth(12, 34, Math.hypot(x - eye[0], z - eye[2])), band = Math.sin(z * 2.6 + 1.3 * Math.sin(x * 0.35) + 2 * B.n3(x * 0.25, z * 0.6, 3));
+        if (band > 0.93 - 0.35 * far && B.n3(x * 0.5, z * 1.8, 8) > 0.45) return far > 0.5 ? wt[3] : wt[2];
         return Math.sin(z * 5.2 + 1.7 * Math.sin(x * 0.8)) > 0.975 && B.n3(x * 0.7, z * 0.7, 5) > 0.58 ? wt[2] : undefined;
       };
       // the far water holds a little of the sky's haze, the near water is black
@@ -614,8 +619,9 @@ export default {
         B.iso(x, y - 0.08, z, 0.13, B.P[lan[1]], 3, { em: true, nd: true });
         B.iso(x, y, z, 0.9, B.P[lan[0]], 0.2, { em: true, nd: true, k: 7, ph: i, sp: 2.4 });
         if (h(x, z) < W - 0.05 && y - W < 4) {
-          B.disc(x, W + 0.12, z, B.UP, 1.0, 0.02, B.P[lan[0]], 0.25, { em: true, nd: true });
-          B.disc(x, W + 0.13, z, B.UP, 0.38, 0.02, B.P[lan[1]], 0.6, { em: true, nd: true });
+          B.disc(x, W + 0.12, z, B.UP, 1.1, 0.02, B.P[lan[0]], 0.35, { em: true, nd: true });
+          B.disc(x, W + 0.13, z, B.UP, 0.45, 0.02, B.P[lan[0]], 1.2, { em: true, nd: true });
+          B.disc(x, W + 0.14, z, B.UP, 0.18, 0.02, B.P[lan[1]], 1.5, { em: true, nd: true });
           // a broken streak of it on the water toward the start
           const tx = eye[0] - x, tz = eye[2] - z, tl = Math.hypot(tx, tz);
           for (let k = 1; k <= 4; k++) B.axial(x + tx / tl * k * 0.45 + B.rr(-0.1, 0.1), W + 0.13, z + tz / tl * k * 0.45, [1, 0, 0], 0.32 - k * 0.05, 0.035, B.P[lan[k < 2 ? 1 : 0]], 1.4, { em: true, nd: true, k: 6, ph: k + i, sp: 1.3, rg: 0.04 });

@@ -240,7 +240,8 @@ export default {
     // a bell along an axis: mouth centre m, `up` from the mouth to the crown, mouth radius R, height H; a crack and a chip if asked
     const bellAt = (m, up, R, H, { mat = bell, hollow = true, crack = null, res = 0.1 } = {}) => {
       const ax = frameY(up), U = ax[0], W = ax[2];
-      const outer = S.lathe(m, H, t => R * bellR(t), mat, { ax, maxRadius: R, hold: true });
+      const solid = !hollow && !crack;
+      const outer = S.lathe(m, H, t => R * bellR(t), mat, solid ? { ax, maxRadius: R, res } : { ax, maxRadius: R, hold: true });
       const cuts = [];
       if (hollow) cuts.push(S.lathe(add(m, up, -0.05), H * 0.8, t => Math.max(0.05, R * bellR(Math.max(0, (t * H * 0.8 - 0.05) / H)) - R * 0.13), mat, { ax, maxRadius: R, hold: true }));
       if (crack) {
@@ -250,12 +251,12 @@ export default {
         cuts.push(S.box(p, [0.07, H * 0.32, R * 0.3], mat, { ax: [cross(Y, sd), Y, sd], hold: true }));
         cuts.push(S.ball(add(add(m, sd, R * 0.95), cross(up, sd), R * 0.32), R * 0.3, mat, { hold: true }));
       }
-      S.join('cut', outer, cuts, { res, inner: br.slice(0, 2) });
+      if (!solid) S.join('cut', outer, cuts, { res, inner: br.slice(0, 2) });
       // a bead round the lip and a band at the shoulder
       S.torus(add(m, up, H * 0.05), R * 0.95, R * 0.06, mat, { ax, res: res * 0.9 });
       S.torus(add(m, up, H * 0.83), R * 0.53, R * 0.045, mat, { ax, res: res * 0.9 });
       // the crown loop
-      S.torus(add(m, up, H + R * 0.12), R * 0.2, R * 0.07, mat, { ax: [U, W, up].map(v => v), res: res * 0.8 });
+      S.torus(add(m, up, H + R * 0.12), R * 0.2, R * 0.07, mat, { ax: [U, W, up], res: res * 0.8 });
     };
     // a chain from a to b, sagging `sag` below the straight line: chunky round links, every other one turned a quarter
     const chain = (a, b, { sag = 0.8, link = 0.26, wire = 0.07 } = {}) => {
@@ -330,16 +331,16 @@ export default {
         const e = along === 'x' ? [3, 0, 0] : [0, 0, 3];
         holes.push(S.tube([[cx - e[0], spring, cz - e[2]], [cx + e[0], spring, cz + e[2]]], ar, ar, dark, { hold: true }));
       }
-      S.join('cut', body, holes, { res: 0.11, inner: st.slice(0, 2) });
+      S.join('cut', body, holes, { res: 0.13, inner: st.slice(0, 2) });
       // a cornice, two stepped roofs, a squat cap and a bronze finial
-      oct(cx, cz, AP.drum + 0.36, ytop - 0.05, ytop + 0.32, rough, { res: 0.11 });
+      oct(cx, cz, AP.drum + 0.36, ytop - 0.05, ytop + 0.32, rough, { res: 0.13 });
       oct(cx, cz, 1.6, ytop + 0.3, ytop + 0.75, stone, { res: 0.11 });
       oct(cx, cz, 1.0, ytop + 0.7, ytop + 1.05, stone, { res: 0.1 });
       S.lathe([cx, ytop + 1.0, cz], 0.45, t => 0.62 * (1 - t) + 0.08, rough, { res: 0.09 });
       S.ball([cx, ytop + 1.55, cz], 0.18, bronze, { res: 0.06 });
       // the bell, its headstock on a beam across the east-west passage, and its clapper
       S.box([cx, F + 4.12, cz], [AP.drum - 0.1, 0.17, 0.2], bronze, { rd: 0.04, res: 0.08 });
-      bellAt([cx, F + 2.15, cz], [0, 1, 0], 0.86, 1.72, { hollow: true, res: 0.07 });
+      bellAt([cx, F + 2.15, cz], [0, 1, 0], 0.86, 1.72, { hollow: true, res: 0.085 });
       S.ball([cx, F + 2.05, cz], 0.2, iron, { res: 0.05 });
       // the beacon: a fire bowl on a stone post on a raised dais, at the terrace's south-east corner
       const bd = [cx + 4.1 * Math.cos(0.35), cz + 4.1 * Math.sin(0.35)];
@@ -380,8 +381,8 @@ export default {
     /* ---- the fallen bell in the vale: on its side, cracked, its mouth turned to the path ---- */
     {
       const [fx, fz] = FALLEN, gy = h(fx, fz), R = 1.75, H = 3.3;
-      const up = norm([-0.6, 0.06, -0.8]); // from the mouth to the crown: the mouth is turned three-quarters to the start
-      const m = [fx + 0.9, gy + R * 0.82, fz + 1.2];
+      const up = norm([-0.94, 0.06, -0.34]); // from the mouth to the crown: side-on to the start, so its outline reads, the mouth turned a little to the path
+      const m = [fx + 1.5, gy + R * 0.82, fz + 0.55];
       bellAt(m, up, R, H, { crack: { a: 2.2 }, res: 0.1, mat: oldBell });
       // a wisp a metre inside the mouth, a metre over the bell's inner floor
       const w = add(m, up, 0.95), floor = w[1] - (R * bellR(0.95 / H) - R * 0.13);
@@ -466,6 +467,44 @@ export default {
     bowl(-1, -20.5, { s: 0.9 });
     bowl(8.8, -22.4, { s: 0.85 });
 
+    /* ---- the bell graveyard on the south-west hill: small bells sunk in the grass at odd angles, one stood mouth-down ---- */
+    {
+      const list = [[-15.5, 24.5, 0.75, [0.3, 0.5, -0.8]], [-12.6, 21.8, 0.6, [-0.7, 0.4, 0.4]], [-17.8, 21.2, 0.55, [0.9, 0.2, 0.3]], [-13.2, 27.6, 0.65, [-0.2, 0.6, 0.8]]];
+      for (const [x, z, R, d] of list) {
+        const up = norm(d), gy = h(x, z);
+        bellAt([x - up[0] * R * 0.9, gy - up[1] * R * 0.9 + R * 0.25, z - up[2] * R * 0.9], up, R, R * 1.9, { mat: oldBell, hollow: false, res: 0.09 });
+      }
+      // the big one, stood on its mouth: low enough to jump onto
+      const bx = -15.0, bz = 18.6, by = h(bx, bz) - 0.15;
+      bellAt([bx, by, bz], [0, 1, 0], 0.95, 1.2, { mat: oldBell, hollow: false, res: 0.09 });
+      post(-11.2, 19.6, { hgt: 1.2, s: 0.7 });
+    }
+
+    /* ---- the south-east hill: a lone pendulum post with its bob, and the fallen cap of an older spire, to climb on ---- */
+    {
+      const px = 15.2, pz = 22.0, py = h(px, pz) - 0.3;
+      oct(px, pz, 0.5, py, py + 4.2, stone, { res: 0.12 });
+      S.box([px + 0.9, py + 4.0, pz], [1.3, 0.22, 0.24], bronze, { rd: 0.05, res: 0.1 });
+      S.tube([[px + 1.9, py + 3.8, pz], [px + 2.25, py + 2.3, pz + 0.1]], 0.07, 0.07, iron, { res: 0.07 });
+      S.ball([px + 2.35, py + 1.8, pz + 0.12], [0.6, 0.6, 0.22], bronze, { ax: yawAx(0.2), res: 0.08 });
+      // the cap: a stepped octagonal roof lying on its side, its finial ball in the grass
+      const cx2 = 19.4, cz2 = 18.6, cy = h(cx2, cz2), lay = frameW(norm([0.3, 0, -1]));
+      const side = [lay[0], lay[2], lay[1]]; // the cap's own up runs along the ground
+      for (const [ap, a0, a1] of [[1.7, -0.2, 0.7], [1.15, 0.65, 1.3], [0.7, 1.25, 1.8]])
+        S.extrude([octLoop(ap)], add([cx2, cy + 1.2, cz2], lay[2], (a0 + a1) / 2), a1 - a0, rough, { ax: [lay[0], lay[1], lay[2]], res: 0.12 });
+      S.ball(add([cx2, cy + 0.65, cz2], lay[2], 2.4), 0.55, bronze, { res: 0.08 });
+      post(17.2, 15.6, { hgt: 1.2, s: 0.7 });
+    }
+
+    /* ---- the north-west: a cog lying flat like a millstone, half sunk, with a fire bowl on its hub; climb it for the wisp ---- */
+    {
+      const mx = -13.5, mz = -20.5, my = h(mx, mz) + 0.25;
+      S.extrude(gearLoops({ R: 3.0, Ri: 0, n: 12, th: 0.5, tw: 0.5, spokes: 0 }).slice(0, 1), [mx, my, mz], 1.0, bronze, { ax: FLAT, res: 0.14 });
+      S.lathe([mx, my + 0.4, mz], 0.5, 0.75, bronze, { res: 0.09 });
+      bowl(mx + 1.6, mz - 0.9, { y: my + 0.5, s: 0.8 });
+      ctx.wisp([mx - 0.6, my + 0.5 + 1.1, mz + 0.5]);
+    }
+
     /* ---- rocks and shrubs ---- */
     rocks(ctx, [[-3.6, 19.5, 0.6], [3.8, 17.6, 0.5], [-6.5, 12, 0.8], [5.2, 9.5, 0.6], [12, 14, 1.0], [-10, 16, 0.9], [-16, -3, 1.2], [15, -8, 1.1],
       [-20, 18, 1.1], [21, 15, 1.2], [-7, -22, 0.9], [14, -18, 1.0], [24, -2, 1.1]], { mat: rough, seed: 5 });
@@ -491,7 +530,6 @@ export default {
     ctx.wisp([CLOCK[0], h(CLOCK[0], CLOCK[1]) + 1.6, CLOCK[1]]); // over the clock's hub
     ctx.wisp([EAST[0] + 1.6, h(EAST[0] + 1.6, EAST[1] + 1.6) + 1.1, EAST[1] + 1.6]); // at the lookout on the east hill
     ctx.wisp([WHEEL[0] + 1.5, h(WHEEL[0] + 1.5, WHEEL[1] - 1.5) + 1.1, WHEEL[1] - 1.5]); // behind the great wheel
-    ctx.wisp([cx, h(cx, cz - 9.6) + 1.1, cz - 9.6]); // on the first terrace behind the spire
 
     /* ---- the sky: near-black overhead, a maroon to blood-red band low down, the sun behind the belfry, cloud bars, ash ---- */
     ctx.glow(({ B }) => {
