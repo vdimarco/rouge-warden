@@ -25,8 +25,8 @@ The player SHALL be a small original figure: a round hooded lamplighter that car
 - **WHEN** the visitor holds W or the up arrow
 - **THEN** the lamplighter walks away from the camera with its legs swinging, and its shadow stays on the ground under it
 
-### Requirement: Move, jump and look
-The player SHALL move relative to the camera: WASD or the arrow keys, the left stick of a gamepad, or the touch stick. Space, the gamepad A button or the touch Jump button SHALL jump. Shift SHALL walk slowly. Q and E, the right stick, a mouse drag or a touch drag on the right half of the screen SHALL turn the camera. The player SHALL stand on the ground, climb low steps, stop at walls and steep slopes, and fall off ledges. The camera SHALL follow behind and come closer when a hill is between it and the player.
+### Requirement: Move and jump
+The player SHALL move relative to the camera with WASD, the arrow keys, the left stick of a gamepad or the touch stick. Shift SHALL walk slowly. Space, the gamepad A button or the touch Jump button SHALL jump. The lamplighter SHALL stand on the ground, climb low steps, stop at walls and steep slopes, and fall off ledges.
 
 #### Scenario: Wall
 - **WHEN** the lamplighter walks into a wall higher than its jump
@@ -35,6 +35,21 @@ The player SHALL move relative to the camera: WASD or the arrow keys, the left s
 #### Scenario: Jump onto a ledge
 - **WHEN** the lamplighter jumps at a ledge lower than its jump height
 - **THEN** it lands on the ledge
+
+#### Scenario: Low step
+- **WHEN** the lamplighter walks at a step of 0.5 or lower
+- **THEN** it walks up the step without a jump
+
+### Requirement: Look
+Q and E, the right stick, a mouse drag or a touch drag on the right half of the screen SHALL turn the camera. The camera SHALL follow behind the lamplighter and come closer when a hill or a wall is between it and the lamplighter.
+
+#### Scenario: Turn the camera
+- **WHEN** the player holds E or drags on the right half of a touch screen
+- **THEN** the camera turns around the lamplighter
+
+#### Scenario: Hill in the way
+- **WHEN** a hill comes between the camera and the lamplighter
+- **THEN** the camera comes closer, so the lamplighter stays in view
 
 ### Requirement: Wisps and the beacon
 Each place SHALL have five wisps: glowing motes that float above the ground. A wisp SHALL go out and count when the lamplighter touches it. Each place SHALL have one beacon on its summit. When the lamplighter touches the beacon, the beacon SHALL light, a card SHALL say that the way opens, and the next place SHALL load. After Barrow Crown, an end card SHALL show the time and the wisps found, with a button to walk again.
