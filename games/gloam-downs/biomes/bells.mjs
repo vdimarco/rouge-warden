@@ -29,7 +29,7 @@ const GATE = [6.5, 1.4]; // the cog gate
 const WHEEL = [-9.8, 0.4]; // the great wheel on the knoll's west side
 const EAST = [16.2, 0.2]; // the lookout on the east hill
 const CLOCK = [-13.5, 8.5]; // the clock face on the west hill
-const FALLEN = [-3.8, 6.4]; // the fallen bell at the knoll's foot, under the spire as the start sees it
+const FALLEN = [-5.0, 6.6]; // the fallen bell at the knoll's foot, under the spire as the start sees it
 // the start camera's eye (preview: 9 back, pitch 0.3), to hang the sun right behind the belfry
 const EYE = [START[0], YS + 1 + 9 * Math.sin(0.3), START[1] + 9 * Math.cos(0.3)];
 
@@ -388,7 +388,7 @@ export default {
       ctx.wisp([w[0], floor + 1.0, w[2]]);
       // a broken headstock lies by its crown
       S.box([fx - 2.6, gy + 0.25, fz - 1.5], [1.1, 0.25, 0.3], bronze, { ax: yawAx(0.7), rd: 0.05, res: 0.09 });
-      bowl(FALLEN[0] + 3.0, FALLEN[1] + 1.4, { s: 0.85 }); // beside its mouth, so the fire lights the inside
+      bowl(FALLEN[0] + 2.7, FALLEN[1] - 0.4, { s: 0.85 }); // beside its mouth, so the fire lights the inside
     }
 
     /* ---- the broken clock face on the west hill ---- */
@@ -447,14 +447,14 @@ export default {
 
     /* ---- the start: a stone stub and a half-buried cog at the brow ---- */
     {
-      const sx = 2.2, sz = 24.8, sy = h(sx, sz);
+      const sx = 3.4, sz = 23.8, sy = h(sx, sz);
       oct(sx, sz, 0.5, sy - 0.4, sy + 0.75, dark, { res: 0.1 });
       S.box([sx + 0.2, sy + 0.85, sz - 0.1], [0.42, 0.14, 0.38], dark, { ax: yawAx(0.4), rd: 0.04, res: 0.08 });
-      ctx.later(() => chain([sx, sy + 1.3, sz], [sx + 1.4, h(sx + 1.4, sz - 4.5) + 0.2, sz - 4.5], { sag: 0.6 }));
+      ctx.later(() => chain([sx + 0.2, sy + 0.9, sz - 0.1], [sx + 1.4, h(sx + 1.4, sz - 4.5) + 0.2, sz - 4.5], { sag: 0.5 }));
       const cg = [-3.4, h(-3.4, 23.2) - 0.7, 23.2];
       cog(cg, frameW(norm([0.6, 0, 1])), { R: 1.7, Ri: 0.9, n: 8, th: 0.45, tw: 0.55, skip: [] }, { depth: 0.6, res: 0.1 });
       // a low ring of iron in the grass with a fire in it: warm light by the start that does not block the view
-      const fx = -1.9, fz = 25.0, fy = h(fx, fz);
+      const fx = 1.9, fz = 25.4, fy = h(fx, fz);
       S.torus([fx, fy + 0.08, fz], 0.62, 0.16, iron, { res: 0.06 });
       for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; S.ball([fx + Math.cos(a) * 0.62, fy + 0.2, fz + Math.sin(a) * 0.62], [0.2, 0.14, 0.2], rough, { res: 0.06 }); }
       ctx.fire([fx, fy + 0.18, fz], 0.7, { k: 0.7, r: 3.6 });
