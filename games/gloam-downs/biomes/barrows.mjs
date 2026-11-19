@@ -264,7 +264,7 @@ export default {
     fallen(START[0] + 4.2, START[1] - 2.2, { len: 2.4, w: 0.55, d: 0.4, yaw: 0.9, roll: 0.3 });
     menhir(START[0] + 5.6, START[1] - 0.4, { hgt: 1.3, w: 0.45, d: 0.34, yaw: 0.4, tilt: 0.2 });
     kerb(MOUNDS.start, { from: Math.PI * 0.95, to: Math.PI * 2.05, n: 12, r: 0.4 });
-    bowl(-0.6, 24.6, { s: 0.8, k: 0.55 }); // on the brow of the start barrow, where the path tips over the edge
+    bowl(5.0, 25.0, { s: 0.8, k: 0.5, r: 3.2 }); // on the brow of the start barrow, right of the path
     // low stones lining the path down off the barrow
     for (const [x, z, hh, tl] of [[3.9, 23.4, 1.0, 0.2], [0.2, 20.6, 0.8, -0.25], [3.7, 19.8, 1.2, 0.15], [-1.4, 17.0, 0.9, 0.3]])
       menhir(x, z, { hgt: hh, w: 0.42, d: 0.32, yaw: 0.3 + x * 0.1, tilt: tl, roll: tl * 0.5, sink: 0.45, res: 0.11 });
@@ -523,7 +523,8 @@ export default {
       for (let i = 0; i < 260; i++) {
         const x = B.rr(-32, 32), z = B.rr(-32, 22), gy = h(x, z);
         if (gy > 2.8 || B.n3(x * 0.12 + 3, z * 0.12, 7) < 0.36) continue;
-        B.axial(x, gy + B.rr(0.3, 1.1), z, [1, 0, B.rr(-0.25, 0.25)], B.rr(2.6, 5.0), B.rr(0.45, 0.8), B.P[B.pick([fg[1], fg[2], fg[2]])], B.rr(0.3, 0.55), { em: true, nd: true, k: 6, ph: B.rr(0, 6), sp: B.rr(0.1, 0.25), rg: B.rr(0.3, 0.6) });
+        const da = 0.35 + 0.9 * (B.n3(x * 0.05, z * 0.05, 2) - 0.5) + B.rr(-0.2, 0.2); // drifts lie along a slow wind, not all one way
+        B.axial(x, gy + B.rr(0.3, 1.1), z, [Math.cos(da), 0, Math.sin(da)], B.rr(2.6, 5.0), B.rr(0.45, 0.8), B.P[B.pick([fg[1], fg[2], fg[2]])], B.rr(0.3, 0.55), { em: true, nd: true, k: 6, ph: B.rr(0, 6), sp: B.rr(0.1, 0.25), rg: B.rr(0.3, 0.6) });
       }
 
       // the moon: big and low between the keep and the crown, the keep's turret just across its left edge
