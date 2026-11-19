@@ -90,8 +90,8 @@ export default {
         return g(x, y, z) + (f < 0.12 || (u + 1) % 1 < 0.07 ? -0.15 : 0);
       };
     };
-    // lamp light on stone: from cold stone through warm brown to orange, so a torch makes a pool of firelight, not a red smear
-    const warmStone = [st[1], mud[1], mud[2], fire[1], fire[2], fire[3]];
+    // lamp light on stone: from cold stone through deep red and rust to orange, so a torch makes a pool of firelight, not grey mud
+    const warmStone = [st[1], fire[0], ramp('rust')[1], fire[1], fire[2], fire[3]];
     const stone = { r: st, g: warmStone, mod: laid(0.8), top: { min: 0.72, r: ramp('moss') } };
     const rough = { r: st, g: warmStone, mod: grit(0.9), top: { min: 0.78, r: ramp('moss') } };
     const dark = { r: st.slice(0, 3), g: [st[0]], mod: grit(0.6) };
