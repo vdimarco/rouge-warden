@@ -677,9 +677,11 @@ export default {
         B.axial(x, W + B.rr(0.2, 0.8), z, [1, 0, B.rr(-0.2, 0.2)], B.rr(2.2, 4.2), B.rr(0.35, 0.6), B.P[far > 0.5 ? sk[3] : B.pick([sk[3], sk[2]])], 0.16 + 0.22 * far, { em: true, nd: true, k: 6, ph: B.rr(0, 6), sp: B.rr(0.12, 0.3), rg: B.rr(0.3, 0.6) });
       }
       // a thicker bank of it along the north shore, so the summit's foot stands in haze, apart from the fen in front of it
-      for (let i = 0; i < 26; i++) {
-        const x = B.rr(-15, 14), z = B.rr(-8, -4.5);
-        B.axial(x, W + B.rr(0.4, 1.1), z, [1, 0, B.rr(-0.1, 0.1)], B.rr(3.5, 5.5), B.rr(0.5, 0.8), B.P[sk[3]], B.rr(0.25, 0.4), { em: true, nd: true, k: 6, ph: B.rr(0, 6), sp: B.rr(0.1, 0.2), rg: B.rr(0.3, 0.6) });
+      // (in drifts, with gaps between them, not one even sheet)
+      for (let i = 0; i < 56; i++) {
+        const x = B.rr(-16, 15), z = B.rr(-8, -4.5);
+        if (B.n3(x * 0.16 + 4, z * 0.3, 11) < 0.42) continue;
+        B.axial(x, W + B.rr(0.3, 1.2), z, [1, 0, B.rr(-0.15, 0.15)], B.rr(2.0, 3.6), B.rr(0.45, 0.75), B.P[sk[3]], B.rr(0.24, 0.4), { em: true, nd: true, k: 6, ph: B.rr(0, 6), sp: B.rr(0.1, 0.2), rg: B.rr(0.3, 0.6) });
       }
       // marsh lights: a few sick specks drifting low over the water
       lib.motes(B, 24, [-22, 20, W + 0.3, W + 1.6, -6, 14], [lan[0], lan[1]], 0.035);

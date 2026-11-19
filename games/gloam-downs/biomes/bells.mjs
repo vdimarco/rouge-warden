@@ -522,7 +522,7 @@ export default {
       S.lathe([x, gy + tall + 0.45, z], ap * 1.1, t => ap * 0.9 * (1 - t) + 0.12, far, { res: 0.3 });
     };
     farTower(-40, -44, 1.5, 4.6);
-    farTower(42, -46, 1.3, 4.0);
+    farTower(30, -60, 1.3, 4.0);
     S.extrude(gearLoops({ R: 7, Ri: 5.6, n: 16, th: 1.1, tw: 0.5, skip: [3, 4, 11] }), [44, h(44, -6) - 1.5, -6], 1.6, far, { ax: frameW(norm([-1, 0, 0.6])), res: 0.32 });
 
     /* ---- the start, the wisps ---- */
