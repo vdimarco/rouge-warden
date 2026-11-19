@@ -142,7 +142,9 @@ export default {
     const SICK = [st[1], lan[0]];
     const lamps = []; // lanterns, drawn after the bakes
 
-    /* ---- the ground: a fine square over the play area, then strips coarser each time out. Nothing is drawn under the water. ---- */
+    /* ---- the ground: a fine square over the play area, then strips coarser each time out ---- */
+    // Nothing under the water can be seen, so nothing there is drawn: the sculptor skips any surface point S.pre turns down (the fen's
+    // bed, the feet of stilts and posts). Those shapes still stand in the distance field, so the walk map still has them.
     const [px0, px1, pz0, pz1] = POOL;
     const inPool = (x, z) => x > px0 && x < px1 && z > pz0 && z < pz1;
     S.pre = (x, y, z) => !(y < W - 0.06 && inPool(x, z));
@@ -423,7 +425,7 @@ export default {
       ctx.wisp(at(0, 1.25, 0.3)); // over the thwart
     }
 
-    /* ---- the net-menders' islet: a mud hummock with net frames, a drying rack, a fire pit and a stack of crates ---- */
+    /* ---- the net-menders' islet: a mud hummock with two net frames, a fire pit and a stack of crates ---- */
     {
       const [ix, iz] = ISLE, top = 0.6;
       S.ball([ix, -1.0, iz], [3.2, 1.65, 2.6], { r: moss.slice(0, 4), g: [moss[1]], mod: grit(1), rf: (x, y) => (y < 0.25 ? mud : null) }, { res: 0.13 });
