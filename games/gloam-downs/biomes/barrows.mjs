@@ -12,26 +12,31 @@ import { rocks, deadTree, yawAx } from '../lib/props.mjs';
 import { lib, polyDist, tile } from '../lib/common.mjs';
 
 // heights
-const Y = { start: 8.0, bailey: 5.0, summit: 9.4 };
+const Y = { start: 9.0, bailey: 3.4, summit: 9.8 };
 const START = [2, 27];
-const SUMMIT = [4, -20]; // the greatest barrow's top: the crown of stones and the beacon
-const KEEP = [-9.5, -19]; // the keep, on the bailey west of the summit
-const KW = 2.7; // the keep's half width
-const BAILEY = [-2.5, -19.5], BOX = [11, 6.5]; // the flat top of the crown hill, a rounded box
-const SOUTH = BAILEY[1] + BOX[1] - 0.7; // the line of the south curtain wall
-const GATE = [0, SOUTH];
+const SUMMIT = [4, -22]; // the greatest barrow's top: the crown of stones and the beacon
+const DOME = 6.6; // how far the greatest barrow's slope runs out from its top
+const KEEP = [-11, -19.5]; // the keep, on the bailey west of the greatest barrow
+const KW = 2.6; // the keep's half width
+const BAILEY = [-4, -19.5], BOX = [11.5, 6.5]; // the flat top of the crown hill, a rounded box
+const SOUTH = BAILEY[1] + BOX[1] - 0.6; // the line of the south curtain wall
 // the walked line: down off the start barrow, through the hollow between the mounds, up the crown hill's stair to the gate
-const PATH = [[2.6, 36], [2, 27], [1.4, 22.5], [-0.6, 18], [-2.2, 13.5], [-1.6, 9], [0.4, 4.6], [1.4, 0.4], [1.0, -3.6], [0.4, -7.4], [0, -11], [0, SOUTH - 1.2]];
-// inside the gate: the avenue of stones up the dome to the crown, and a branch west to the keep's hall
-const AVENUE = [[0, SOUTH - 1.2], [0.8, -16.2], [2.2, -18.4], [SUMMIT[0], SUMMIT[1]]];
-const HALL = [[0, SOUTH - 1.2], [-3.6, -17.4]];
+const PATH = [[2.6, 36], [2, 27], [1.4, 22.5], [-0.6, 18], [-2.2, 13.5], [-1.6, 9], [0.4, 4.6], [1.4, 0.4], [1.0, -3.6], [0.4, -7.4], [0, -10.5], [0, SOUTH - 1.2]];
+// the stair that winds up the greatest barrow: from its foot on the south-west, east across the face the start sees, to the top
+const SPIRAL = [];
+for (let i = 0; i <= 24; i++) {
+  const t = i / 24, a = 2.3 - t * 3.3, r = 7.7 - t * 5.0;
+  SPIRAL.push([SUMMIT[0] + Math.cos(a) * r, SUMMIT[1] + Math.sin(a) * r]);
+}
+const AVENUE = [[0, SOUTH - 1.2], SPIRAL[0]];
+const HALL = [[0, SOUTH - 1.2], [-5.6, -17.6]];
 // the barrows that are hills of their own: [x, z, radius, height]
 const MOUNDS = {
-  start: [2, 29, 12, 6.6], startW: [-6, 31, 9, 4.2],
-  west: [-12.5, 12, 8, 4.4], east: [14, 6, 9, 5.0],
-  midW: [-10, -3, 7, 3.2], midE: [10.5, -7, 6, 2.6],
-  nw: [-23, 21, 7, 3.4], ne: [22, 23, 8, 4.0], fw: [-25, -6, 8, 4.4], fe: [24, -12, 8, 4.8],
-  bw: [-22, -31, 8, 3.4], be: [21, -31, 9, 3.8]
+  start: [2, 29, 12, 8.2], startW: [-7, 32, 9, 4.5],
+  west: [-13, 11, 9, 5.0], east: [14, 7, 9.5, 5.4],
+  midW: [-10, -4, 7, 3.4], midE: [11, -6, 6.5, 3.0],
+  nw: [-24, 21, 7, 3.6], ne: [23, 22, 8, 4.4], fw: [-26, -8, 8, 4.6], fe: [25, -12, 8, 5.0],
+  bw: [-24, -32, 8, 3.4], be: [22, -33, 9, 4.0]
 };
 const DOLMEN = [9.5, 18.5]; // a table of stone at the foot of the start barrow
 // where the start camera's eye is (preview: 9 back, pitch 0.3), to hang the moon between the keep and the crown
