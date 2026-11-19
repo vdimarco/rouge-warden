@@ -32,15 +32,18 @@ const DOWN = [[2, 20], [3.4, 17.0], [4.6, 14.6]];
 const CLIMB = [[-4.2, -8.4], [5.6, -9.6], [1.0, -12.8], [-0.6, -14.2]];
 const T1 = [5.6, -9.6]; // the terrace at the switchback
 // the huts: where, how big, and the walk their door looks at. In the first picture: one near on the left, one far on the left,
-// one on the right; the other two stand out of it, east and west
+// one on the right; the other two stand out of it, east and west. The walls are tall enough that the eaves clear the porch by 1.8,
+// so the porch can be walked all the way round under them
 const HUTS = [
-  { at: [-9.4, 11.4], r: 1.6, tall: 1.9, to: J.b, win: 'warm' },
-  { at: [12.2, 4.6], r: 1.7, tall: 2.0, to: J.d, win: 'sick' },
-  { at: [-10.4, -2.2], r: 1.5, tall: 1.8, to: J.f, win: 'warm', long: true },
-  { at: [16.6, 11.0], r: 1.5, tall: 1.8, to: [12.0, 11.0], win: 'sick' },
-  { at: [-18.4, 3.6], r: 1.5, tall: 1.8, to: [-13.4, 4.6], win: 'warm' }
+  { at: [-9.4, 11.4], r: 1.6, to: J.b, win: 'warm' },
+  { at: [12.2, 4.6], r: 1.7, to: J.d, win: 'sick' },
+  { at: [-10.4, -2.2], r: 1.5, to: J.f, win: 'warm', long: true },
+  { at: [16.6, 11.0], r: 1.5, to: [12.0, 11.0], win: 'sick' },
+  { at: [-18.4, 3.6], r: 1.5, to: [-13.4, 4.6], win: 'warm' }
 ];
-const BOAT = [16.6, -3.0];
+const WALL = 2.25; // a hut's wall, porch to eaves
+const STAGE = [12.2, -2.6]; // a roofless stage on stilts where fish are dried: you can wade under it
+const BOAT = [16.6, -4.2];
 const ISLE = [-17.4, 11.0]; // the net-menders' islet
 const CAIRN = [24.5, -5]; // an old stone cairn on the east hill
 const DROWNED = [2.6, -3.6]; // a hut that sank: only its roof shows, tipped over
@@ -83,7 +86,7 @@ export default {
   // the key light is cold moonlight from the west, a little toward the start, so the faces you first see are not all black (the moon
   // you see hangs low in the north-west: the light is set for form, not to match it)
   light: { sun: [-0.62, 0.58, 0.5], amb: 0.1, sky: 0.14, sunK: 0.46, shK: 7 },
-  fog: { color: 'fog', far: 76, start: 0.5, max: 0.84 },
+  fog: { color: 'fog', far: 88, start: 0.5, max: 0.84 },
   dither: 0.5,
   outline: 0.45,
   walk: { half: 34 },

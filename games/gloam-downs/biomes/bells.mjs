@@ -24,10 +24,10 @@ const PATH = [[0, 34], [0, 27], [-0.4, 22.5], [0.2, 18], [1.2, 14], [1.6, 10], [
 // round the second terrace from the east stair to the plinth stair
 const PATH2 = [[6.4, -9], [5.4, -4.4], [2.4, -1.8], [-1.6, -1.2], [-4.6, -2.6]];
 // a side path east from the vale to the tilted cog on the east hill
-const SPUR = [[2.2, 9.2], [6.5, 8.6], [9.8, 7.4]];
+const SPUR = [[2.2, 9.2], [5.4, 8.8], [7.2, 7.0]];
 const GATE = [6.5, 1.4]; // the cog gate
 const WHEEL = [-9.8, 0.4]; // the great wheel on the knoll's west side
-const EAST = [17.5, 1.0]; // the lookout on the east hill
+const EAST = [16.2, 0.2]; // the lookout on the east hill
 const CLOCK = [-13.5, 8.5]; // the clock face on the west hill
 const FALLEN = [-3.4, 12.6]; // the fallen bell in the vale
 // the start camera's eye (preview: 9 back, pitch 0.3), to hang the sun right behind the belfry
@@ -95,10 +95,10 @@ export default {
     ['fog', [0x250b13]],
     ['ink', [0x040205]],
     ['shade', [0x060308]],
-    ['grass', [0x0b0605, 0x170c08, 0x25130b, 0x361c0f, 0x4b2814]],
+    ['grass', [0x0a0505, 0x150a08, 0x21100b, 0x2f170e, 0x41200f]],
     ['stone', [0x0b0811, 0x17111e, 0x251b2f, 0x382a43, 0x4f3c59]],
     ['lit', [0x45171a, 0x702521, 0x9c3b29]],
-    ['bronze', [0x190e07, 0x36200c, 0x5e3a14, 0x8a5c20, 0xb88a34, 0xe2b95c]],
+    ['bronze', [0x1c1208, 0x3a2810, 0x664818, 0x987024, 0xc89a38, 0xeac466]],
     ['verd', [0x141c1a, 0x22302b]],
     ['rust', [0x1a0a07, 0x3a1709, 0x5c2a12]]
   ],
@@ -159,7 +159,8 @@ export default {
     const crust = s => (x, y, z) => (B.n3(x * s + 2, y * s, z * s + 5) > 0.66 ? verd : null);
     // grime on old bronze: a soft tone wander, a fine grain, and small dark pits
     const grime = (x, y, z) => 0.55 * (0.16 * (B.n3(x * 0.7, y * 0.7, z * 0.7 + 3) - 0.5) + 0.14 * (B.n3(x * 3, y * 3, z * 3) - 0.5)) - (B.n3(x * 2.4 + 4, y * 2.4, z * 2.4) > 0.72 ? 0.1 : 0);
-    const bronze = { r: br.slice(0, 4), s: br.slice(2, 6), g: bronzeG, mod: grime };
+    // (faces turned up, the tops of teeth and the walked rims, are worn brighter)
+    const bronze = { r: br.slice(0, 4), s: br.slice(2, 6), g: bronzeG, mod: grime, top: { min: 0.8, r: br.slice(1, 5), s: br.slice(2, 6), g: bronzeG, mod: grime } };
     const bell = { r: br.slice(0, 4), s: br.slice(1, 6), g: bronzeG, mod: grit(0.35) };
     const oldBell = { ...bell, rf: crust(1.1) };
     const iron = { r: rust, g: [rust[0], rust[1], rust[2], fire[1], fire[2], fire[3]], mod: grit(0.4) };
@@ -366,13 +367,12 @@ export default {
 
     /* ---- the tilted cog on the east hill: its rim is the path up ---- */
     {
-      const c = [13.5, 0, 4.0];
+      const c = [11.6, 0, 4.4];
       // lean the cog to the slope: its normal from the hill's own fall, a little straighter
       const e = 1.5, gx = (h(c[0] + e, c[2]) - h(c[0] - e, c[2])) / (2 * e), gz = (h(c[0], c[2] + e) - h(c[0], c[2] - e)) / (2 * e);
       const n = norm([-gx * 0.85, 1, -gz * 0.85]);
       c[1] = h(c[0], c[2]) + 0.15;
-      cog(c, frameW(n), { R: 5.4, Ri: 3.2, n: 16, th: 0.6, tw: 0.5, skip: [7, 8] }, { depth: 1.0, res: 0.15 });
-      bowl(EAST[0] - 2.8, EAST[1] + 1.6, { s: 0.9 });
+      cog(c, frameW(n), { R: 4.7, Ri: 2.9, n: 14, th: 0.6, tw: 0.5, skip: [6] }, { depth: 1.0, res: 0.14 });
     }
 
     /* ---- the fallen bell in the vale: on its side, cracked, its mouth turned to the path ---- */
@@ -428,6 +428,7 @@ export default {
 
     /* ---- pendulum frames: one on the east hill's top, black against the band from the start; one behind the knoll ---- */
     pendulum(EAST[0], EAST[1] - 0.4, -0.47, { swing: 0.34, hgt: 4.4, rod: 2.0 });
+    bowl(EAST[0] - 0.9, EAST[1] + 1.5, { s: 0.9, k: 0.8 }); // close by the bob, so the fire lights it
     pendulum(6.0, -24, -0.5, { swing: -0.3, hgt: 4.6, rod: 2.0 });
 
     /* ---- chains from the spire's cornice down to stakes on the terraces, east and west ---- */
@@ -485,7 +486,7 @@ export default {
     /* ---- the start, the wisps ---- */
     ctx.spawn([START[0], h(START[0], START[1]), START[1]], Math.PI);
     ctx.wisp([CLOCK[0], h(CLOCK[0], CLOCK[1]) + 1.6, CLOCK[1]]); // over the clock's hub
-    ctx.wisp([EAST[0], h(EAST[0], EAST[1]) + 1.1, EAST[1] + 0.8]); // at the lookout on the east hill
+    ctx.wisp([EAST[0] + 1.6, h(EAST[0] + 1.6, EAST[1] + 1.6) + 1.1, EAST[1] + 1.6]); // at the lookout on the east hill
     ctx.wisp([WHEEL[0] + 1.5, h(WHEEL[0] + 1.5, WHEEL[1] - 1.5) + 1.1, WHEEL[1] - 1.5]); // behind the great wheel
     ctx.wisp([cx, h(cx, cz - 9.6) + 1.1, cz - 9.6]); // on the first terrace behind the spire
 
