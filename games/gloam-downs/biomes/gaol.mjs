@@ -206,7 +206,9 @@ export default {
           y += dh;
         });
         if (whole) S.box([x, y + 0.24, gz], [0.95, 0.26, 0.95], gateStone, { rd: 0.08, res: 0.13 });
-        sconce(x + side * 0.74, gy + (whole ? 1.95 : 1.35), gz + 0.25, side, 0, { s: 0.75, k: 0.55, r: 3.4 });
+        // the whole pillar keeps its fire basket; the broken one's lies cold on the ground at its foot
+        if (whole) sconce(x + side * 0.74, gy + 1.95, gz + 0.25, side, 0, { s: 0.62, k: 0.5, r: 3.2 });
+        else S.ball([x + side * 1.3, gy + 0.12, gz + 0.9], [0.24, 0.13, 0.22], iron, { ax: rollAx(0.6), res: 0.06 });
         return y;
       };
       pillar(gx - span, [1.1, 1.0, 1.15, 0.9], true);
