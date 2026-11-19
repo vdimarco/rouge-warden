@@ -208,8 +208,10 @@ export default {
     const ghostLight = (p, r = 4, k = 0.8) => { S.lights.push({ p, r, s: k, sh: true, c: GHOSTLIGHT }); ghosts.push(p); };
     /* a barrow's door-mouth at (x, z), looking the way `face` (a yaw: 0 looks to +z). Two fat jambs, a lintel, the passage's roof slabs
        going back into the mound, a black hollow between the jambs, a threshold stone and a low kerb either side */
+    const doors = []; // (the ghost fog keeps clear of them, so their mouths stay black)
     const mouth = (x, z, face, { wide = 0.9, tall = 1.9, glow = false, torch = 0 } = {}) => {
       const fx = Math.sin(face), fz = Math.cos(face), rx = Math.cos(face), rz = -Math.sin(face), ax = yawAx(face);
+      doors.push([x + fx * 1.5, z + fz * 1.5]);
       const gy = h(x, z) - 0.05;
       const at = (s, f) => [x + rx * s + fx * f, z + rz * s + fz * f];
       // the hollow: a black block reaching back into the mound
@@ -259,7 +261,8 @@ export default {
       S.ball([x - 0.1 * s, y0 + 3.5 * s, z + 0.1 * s], [0.55 * s, 0.6 * s, 0.55 * s], leaf, { res: 0.12 });
     };
 
-    /* ---- the start barrow: two leaning stones either side of where you stand frame the first view; the kerb round its north foot ---- */
+    /* ---- the start barrow: a leaning stone on the left and a fallen one on the right frame the first view; a fire on its brow, the
+       kerb round its north foot, and low stones down the path ---- */
     menhir(START[0] - 4.6, START[1] - 1.4, { hgt: 2.7, w: 0.6, d: 0.42, yaw: -0.5, tilt: -0.2, roll: -0.16 });
     fallen(START[0] + 4.2, START[1] - 2.2, { len: 2.4, w: 0.55, d: 0.4, yaw: 0.9, roll: 0.3 });
     menhir(START[0] + 5.6, START[1] - 0.4, { hgt: 1.3, w: 0.45, d: 0.34, yaw: 0.4, tilt: 0.2 });
@@ -522,7 +525,7 @@ export default {
       // ghost fog: long flat soft dabs lying low in the hollows, in drifts
       for (let i = 0; i < 260; i++) {
         const x = B.rr(-32, 32), z = B.rr(-32, 22), gy = h(x, z);
-        if (gy > 2.8 || B.n3(x * 0.12 + 3, z * 0.12, 7) < 0.36) continue;
+        if (gy > 2.8 || B.n3(x * 0.12 + 3, z * 0.12, 7) < 0.36 || doors.some(([dx, dz]) => Math.hypot(x - dx, z - dz) < 4.2)) continue;
         const da = 0.35 + 0.9 * (B.n3(x * 0.05, z * 0.05, 2) - 0.5) + B.rr(-0.2, 0.2); // drifts lie along a slow wind, not all one way
         B.axial(x, gy + B.rr(0.3, 1.1), z, [Math.cos(da), 0, Math.sin(da)], B.rr(2.6, 5.0), B.rr(0.45, 0.8), B.P[B.pick([fg[1], fg[2], fg[2]])], B.rr(0.3, 0.55), { em: true, nd: true, k: 6, ph: B.rr(0, 6), sp: B.rr(0.1, 0.25), rg: B.rr(0.3, 0.6) });
       }
