@@ -135,6 +135,7 @@ export default {
     const dark = { r: [wd[0], ramp('ink')[0]] };
     const thatch = { r: [mud[1], st[0], st[1], st[2]], g: [st[0]], mod: straw };
     const iron = { r: ramp('iron'), g: [ramp('iron')[0]] };
+    const black = { r: [ramp('ink')[0], ramp('iron')[0]] }; // a lantern's frame: black, so its glass is what you see
     const stone = { r: [sk[0], sk[1], sk[2]], g: [sk[1]], mod: grit(0.9), top: { min: 0.72, r: moss.slice(1, 4) } };
     const cloth = { r: [mud[0], mud[1], st[0]], g: [mud[0]], mod: grit(0.6) };
     const SICK = [st[1], lan[0]];
@@ -181,10 +182,10 @@ export default {
       }, mat, { ax, res });
     // a lantern hung with its ring at (x, y, z): an iron cap and base, a glass that glows sick green, and its green light on what is near
     const lantern = (x, y, z, { r = 3.6, k = 0.9 } = {}) => {
-      S.tube([[x, y, z], [x, y - 0.18, z]], 0.03, 0.03, iron, { res: 0.04 });
-      S.ball([x, y - 0.22, z], [0.18, 0.08, 0.18], iron, { res: 0.05 });
-      S.box([x, y - 0.68, z], [0.14, 0.04, 0.14], iron, { res: 0.05, rd: 0.01 });
-      for (const [dx, dz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) S.tube([[x + dx * 0.11, y - 0.66, z + dz * 0.11], [x + dx * 0.12, y - 0.27, z + dz * 0.12]], 0.022, 0.022, iron, { res: 0.04 });
+      S.tube([[x, y, z], [x, y - 0.18, z]], 0.03, 0.03, black, { res: 0.04 });
+      S.ball([x, y - 0.22, z], [0.18, 0.08, 0.18], black, { res: 0.05 });
+      S.box([x, y - 0.68, z], [0.14, 0.04, 0.14], black, { res: 0.05, rd: 0.01 });
+      for (const [dx, dz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) S.tube([[x + dx * 0.11, y - 0.66, z + dz * 0.11], [x + dx * 0.12, y - 0.27, z + dz * 0.12]], 0.022, 0.022, black, { res: 0.04 });
       S.lights.push({ p: [x, y - 0.45, z], r, s: k, sh: true, c: SICK });
       lamps.push([x, y - 0.45, z]);
     };
@@ -245,7 +246,7 @@ export default {
           const tall = (i * 2 + (s > 0 ? 1 : 0)) % 5 === 0 ? 0.8 : 0.06; // now and then a post stands up as a stump of rail
           S.tube([[px, gy - 0.3, pz], [px + B.rr(-0.06, 0.06), y + tall, pz + B.rr(-0.06, 0.06)]], 0.17, 0.15, wood, { res: 0.1 });
         }
-        if (i === lamp) crook(x + qx * (wid / 2 + 0.1), z + qz * (wid / 2 + 0.1), qx, qz);
+        if (i === lamp || (lamp === 'end' && i === np)) crook(x + qx * (wid / 2 + 0.1), z + qz * (wid / 2 + 0.1), qx, qz);
       }
     };
     // a square landing where the boardwalk turns, on four posts
