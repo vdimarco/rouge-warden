@@ -536,9 +536,8 @@ export default {
       // the beacon: an iron basket on a block in the middle of the deck
       slab([dcx + 0.2, Y.deck + 0.12, dcz], [0.6, 0.15, 0.6], plank, { rd: 0.04, res: 0.09 });
       ctx.beacon(basket(dcx + 0.2, dcz, { y: Y.deck + 0.25, lit: false }), 1.7);
-      // stones round the summit and a dead tree on its west side
+      // stones round the summit (nothing tall beside the mill, so its outline stays clean)
       rock(mx - 3.4, mz - 2.2, 0.8, 21); rock(mx - 2.8, mz + 3.0, 0.55, 22); rock(mx + 6.6, mz + 3.0, 0.6, 23); rock(mx + 2.0, mz - 4.0, 0.7, 24);
-      fenTree(mx - 4.2, mz + 1.0, { tall: 3.0, seed: 4 });
     }
 
     /* ---- the east hill: an old cairn of stacked stones with a lantern by it, and stones to climb ---- */
@@ -587,7 +586,7 @@ export default {
         return Math.sin(z * 5.2 + 1.7 * Math.sin(x * 0.8)) > 0.975 && B.n3(x * 0.7, z * 0.7, 5) > 0.58 ? wt[2] : undefined;
       };
       // the far water holds a little of the sky's haze, the near water is black
-      const mod = (x, y, z) => 0.2 * (B.fbm(x * 0.3 + 3, z * 0.3, 0.5, 2) - 0.5) + 0.3 * smooth(16, 34, Math.hypot(x - eye[0], z - eye[2])) - 0.1;
+      const mod = (x, y, z) => 0.2 * (B.fbm(x * 0.3 + 3, z * 0.3, 0.5, 2) - 0.5) + 0.45 * smooth(14, 34, Math.hypot(x - eye[0], z - eye[2])) - 0.15;
       const water = { r: wt, mod, tex, fat: 0.62 };
       S.add({
         bc: [(px0 + px1) / 2, W - 0.3, (pz0 + pz1) / 2],
@@ -610,9 +609,9 @@ export default {
 
       // each lantern: a bright glass, a soft halo, and a pool of its light on the water under it
       lamps.forEach(([x, y, z], i) => {
-        B.iso(x, y, z, 0.12, B.P[lan[2]], 3, { em: true, nd: true, k: 6, ph: i * 0.7, sp: 3, rg: 0.01 });
-        B.iso(x, y - 0.05, z, 0.1, B.P[lan[1]], 3, { em: true, nd: true });
-        B.iso(x, y, z, 0.8, B.P[lan[0]], 0.16, { em: true, nd: true, k: 7, ph: i, sp: 2.4 });
+        B.iso(x, y, z, 0.15, B.P[lan[2]], 3, { em: true, nd: true, k: 6, ph: i * 0.7, sp: 3, rg: 0.01 });
+        B.iso(x, y - 0.08, z, 0.13, B.P[lan[1]], 3, { em: true, nd: true });
+        B.iso(x, y, z, 0.9, B.P[lan[0]], 0.2, { em: true, nd: true, k: 7, ph: i, sp: 2.4 });
         if (h(x, z) < W - 0.05 && y - W < 4) {
           B.disc(x, W + 0.03, z, B.UP, 1.0, 0.02, B.P[lan[0]], 0.25, { em: true, nd: true });
           B.disc(x, W + 0.04, z, B.UP, 0.38, 0.02, B.P[lan[1]], 0.6, { em: true, nd: true });
@@ -627,7 +626,7 @@ export default {
         const x = eye[0] + Math.sin(az) * t + Math.cos(az) * wob, z = eye[2] - Math.cos(az) * t + Math.sin(az) * wob;
         if (h(x, z) > W - 0.1 || S.sdf(x, W + 0.1, z) < 0.05) continue;
         const c = Math.abs(wob) < 0.5 && B.rr(0, 1) < 0.5 ? mn[1] : B.pick([mn[0], mn[0], sk[3], wt[3]]);
-        B.axial(x, W + 0.04, z, [Math.cos(az), 0, Math.sin(az)], B.rr(0.15, 0.45), 0.03, B.P[c], 2, { em: true, nd: true, k: 6, ph: B.rr(0, 6), sp: B.rr(0.8, 1.6), rg: 0.05 });
+        B.axial(x, W + 0.04, z, [Math.cos(az), 0, Math.sin(az)], B.rr(0.25, 0.6), 0.07, B.P[c], 2, { em: true, nd: true, k: 6, ph: B.rr(0, 6), sp: B.rr(0.8, 1.6), rg: 0.05 });
       }
       // reeds: each blade three long dabs, darker at the foot; some carry a dark head
       for (const [x, z, n, spread, tall] of reedBeds) {
@@ -648,8 +647,8 @@ export default {
         const gy = h(x, z);
         if (gy < W + 0.3) continue;
         for (let k = 0; k < 4; k++) {
-          const a = B.rr(0, Math.PI * 2), L = B.rr(0.25, 0.5);
-          B.stick(x + Math.cos(a) * 0.12, gy + L * 0.45, z + Math.sin(a) * 0.12, unit([Math.cos(a) * 0.5, 1, Math.sin(a) * 0.5]), L * 0.5, 0.04, B.P[B.pick([moss[2], moss[3], st[0]])], 3);
+          const a = B.rr(0, Math.PI * 2), L = B.rr(0.16, 0.32);
+          B.stick(x + Math.cos(a) * 0.1, gy + L * 0.45, z + Math.sin(a) * 0.1, unit([Math.cos(a) * 0.5, 1, Math.sin(a) * 0.5]), L * 0.5, 0.035, B.P[B.pick([moss[1], moss[2], st[0]])], 3);
         }
       }
       // mist: long flat soft dabs lying low on the water, thicker toward the north shore, drifting
@@ -657,7 +656,7 @@ export default {
         const x = B.rr(-24, 22), z = B.rr(-8, 15);
         if (h(x, z) > W + 0.2) continue;
         const far = smooth(12, -6, z);
-        B.axial(x, W + B.rr(0.2, 0.8), z, [1, 0, B.rr(-0.2, 0.2)], B.rr(2.2, 4.2), B.rr(0.35, 0.6), B.P[B.pick([sk[1], sk[2], sk[2]])], 0.12 + 0.16 * far, { em: true, nd: true, k: 6, ph: B.rr(0, 6), sp: B.rr(0.12, 0.3), rg: B.rr(0.3, 0.6) });
+        B.axial(x, W + B.rr(0.2, 0.8), z, [1, 0, B.rr(-0.2, 0.2)], B.rr(2.2, 4.2), B.rr(0.35, 0.6), B.P[B.pick([wt[3], sk[2], sk[2]])], 0.14 + 0.2 * far, { em: true, nd: true, k: 6, ph: B.rr(0, 6), sp: B.rr(0.12, 0.3), rg: B.rr(0.3, 0.6) });
       }
       // marsh lights: a few sick specks drifting low over the water
       lib.motes(B, 24, [-22, 20, W + 0.3, W + 1.6, -6, 14], [lan[0], lan[1]], 0.035);
