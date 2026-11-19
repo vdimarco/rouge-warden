@@ -2,8 +2,9 @@
 // at the knoll. It climbs in two grass terraces to a stepped stone plinth, and on the plinth stands an octagonal spire with an open belfry
 // and one huge bell in it. The sun is going down right behind the belfry, so the bell hangs black in a red disc. Giant bronze cogs lie
 // half sunk in the slopes: one stands like a gate on the path up, one great spoked wheel rises out of the knoll's west side, and one lies
-// tilted on the east hill so its rim makes a path. A fallen cracked bell lies in the vale, a broken clock face lies on the west hill,
-// and pendulum frames and rusted chains stand about. Maroon sky, violet shadow, rust-brown grass, bronze, and fire.
+// tilted on the east hill so its rim makes a path. A fallen cracked bell lies at the knoll's foot, a broken clock face lies on the west
+// hill, small bells lie sunk in the grass by the start, and pendulum frames and rusted chains stand about. Maroon sky, violet shadow,
+// rust-brown grass, bronze, and fire.
 //
 // The follow camera looks down at a low pitch, so the top of its first picture is about level with its eye. Anything higher is cut off.
 // So the knoll's terrace sits a little under the start, the spire is kept short enough to fit, and the beacon stands on a raised dais
@@ -154,7 +155,7 @@ export default {
     const rough = { r: st, s: [st[2], lit[0], lit[1], lit[2]], g: warmStone, mod: grit(0.9) };
     const dark = { r: st.slice(0, 3), mod: grit(0.6) };
     const far = { r: st.slice(0, 2), mod: grit(0.5) };
-    // bronze: dark in shadow, brass where the sun catches it, green-crusted in patches
+    // bronze: dark in shadow, brass where the sun catches it; old fallen bells are green-crusted in patches
     const bronzeG = [br[0], br[1], br[3], fire[2], fire[3], fire[4]];
     const crust = s => (x, y, z) => (B.n3(x * s + 2, y * s, z * s + 5) > 0.66 ? verd : null);
     // grime on old bronze: a soft tone wander, a fine grain, and small dark pits
@@ -172,7 +173,7 @@ export default {
 
     /* ---- the ground: a fine rectangle over the play area, then strips coarser each time out ---- */
     {
-      // worn flagstones on the paths, set stones on the terraces close round the spire
+      // worn flagstones on the paths
       const onPath = (x, z) => Math.min(polyDist(x, z, PATH) - 0.1, polyDist(x, z, PATH2) - 0.2, polyDist(x, z, SPUR) - 0.25) + 0.7 * (B.n3(x * 1.1, z * 1.1, 4) - 0.5) < 1.0;
       const flags = (x, y, z) => grit(0.8)(x, y, z) + ((Math.floor(x / 0.9) + Math.floor(z / 0.9)) % 2 ? -0.06 : 0.04);
       const g1 = grit(1);
@@ -318,7 +319,7 @@ export default {
       // the stair up the plinth from the second terrace, on the south-west
       const dir = norm([-0.42, 0, 0.9]);
       stair([cx + dir[0] * 7.5, cz + dir[2] * 7.5], [cx + dir[0] * 4.6, cz + dir[2] * 4.6], { width: 2.3, ya: T2, yb: F, rise: 0.3 });
-      // the drum: solid, too tall to jump onto
+      // the drum: solid, too tall to jump onto from the terrace
       oct(cx, cz, AP.drum, F - 0.4, F + 1.6, stone, { res: 0.12 });
       oct(cx, cz, AP.drum + 0.18, F + 1.45, F + 1.75, rough, { res: 0.1 });
       // the belfry: an octagon cut through by two arched passages, north-south and east-west, leaving four fat corner piers
@@ -342,7 +343,7 @@ export default {
       S.box([cx, F + 4.12, cz], [AP.drum - 0.1, 0.17, 0.2], bronze, { rd: 0.04, res: 0.08 });
       bellAt([cx, F + 2.15, cz], [0, 1, 0], 0.86, 1.72, { hollow: true, res: 0.085 });
       S.ball([cx, F + 2.05, cz], 0.2, iron, { res: 0.05 });
-      // the beacon: a fire bowl on a stone post on a raised dais, at the terrace's south-east corner
+      // the beacon: a fire bowl on a stone post on a stepped dais, on the terrace east of south, so the start sees it beside the belfry
       const bd = [cx + 4.1 * Math.cos(0.35), cz + 4.1 * Math.sin(0.35)];
       oct(bd[0], bd[1], 1.25, F - 0.3, F + 0.42, rough, { res: 0.1 });
       oct(bd[0], bd[1], 1.05, F + 0.38, F + 0.84, rough, { res: 0.1 });
@@ -378,7 +379,7 @@ export default {
       cog(c, frameW(n), { R: 4.7, Ri: 2.9, n: 14, th: 0.6, tw: 0.5, skip: [6] }, { depth: 1.0, res: 0.14, mat: walked });
     }
 
-    /* ---- the fallen bell in the vale: on its side, cracked, its mouth turned to the path ---- */
+    /* ---- the fallen bell at the knoll's foot: on its side, cracked, its mouth turned to the path ---- */
     {
       const [fx, fz] = FALLEN, gy = h(fx, fz), R = 1.75, H = 3.3;
       const up = norm([-0.94, 0.06, -0.34]); // from the mouth to the crown: side-on to the start, so its outline reads, the mouth turned a little to the path
@@ -434,7 +435,7 @@ export default {
     bowl(EAST[0] - 0.9, EAST[1] + 1.5, { s: 0.9, k: 0.8 }); // close by the bob, so the fire lights it
     pendulum(6.0, -24, -0.5, { swing: -0.3, hgt: 4.6, rod: 2.0 });
 
-    /* ---- chains from the spire's cornice down to stakes on the terraces, east and west ---- */
+    /* ---- chains from the spire's cornice down to stakes on the first terrace, north-east and north-west ---- */
     ctx.later(() => {
       for (const s of [-1, 1]) {
         const top = [cx + s * (AP.drum + 0.3), F + 4.4, cz - 0.9], sx = cx + s * 7.6, sz = cz - 6.2, sy = h(sx, sz);
@@ -446,7 +447,7 @@ export default {
       S.tube([[sx, sy - 0.3, sz], [sx, sy + 0.8, sz]], 0.2, 0.14, iron, { res: 0.06 });
     }
 
-    /* ---- the start: a stone stub and a half-buried cog at the brow ---- */
+    /* ---- the start: a broken stub with a chain, a half-buried cog, and a fire ring by the path ---- */
     {
       const sx = 3.4, sz = 23.8, sy = h(sx, sz);
       oct(sx, sz, 0.5, sy - 0.4, sy + 0.75, dark, { res: 0.1 });
@@ -488,10 +489,10 @@ export default {
       S.tube([[px + 1.9, py + 3.8, pz], [px + 2.25, py + 2.3, pz + 0.1]], 0.07, 0.07, iron, { res: 0.07 });
       S.ball([px + 2.35, py + 1.8, pz + 0.12], [0.6, 0.6, 0.22], bronze, { ax: yawAx(0.2), res: 0.08 });
       // the cap: a stepped octagonal roof lying on its side, its finial ball in the grass
+      // (each tier is an octagon stood upright and extruded along the ground, so the cap's own up runs along the grass)
       const cx2 = 19.4, cz2 = 18.6, cy = h(cx2, cz2), lay = frameW(norm([0.3, 0, -1]));
-      const side = [lay[0], lay[2], lay[1]]; // the cap's own up runs along the ground
       for (const [ap, a0, a1] of [[1.7, -0.2, 0.7], [1.15, 0.65, 1.3], [0.7, 1.25, 1.8]])
-        S.extrude([octLoop(ap)], add([cx2, cy + 1.2, cz2], lay[2], (a0 + a1) / 2), a1 - a0, rough, { ax: [lay[0], lay[1], lay[2]], res: 0.12 });
+        S.extrude([octLoop(ap)], add([cx2, cy + 1.2, cz2], lay[2], (a0 + a1) / 2), a1 - a0, rough, { ax: lay, res: 0.12 });
       S.ball(add([cx2, cy + 0.65, cz2], lay[2], 2.4), 0.55, bronze, { res: 0.08 });
       post(17.2, 15.6, { hgt: 1.2, s: 0.7 });
     }
@@ -499,6 +500,7 @@ export default {
     /* ---- the north-west: a cog lying flat like a millstone, half sunk, with a fire bowl on its hub; climb it for the wisp ---- */
     {
       const mx = -13.5, mz = -20.5, my = h(mx, mz) + 0.1;
+      // (only the toothed outline: no hole in a millstone)
       S.extrude(gearLoops({ R: 3.0, Ri: 0, n: 12, th: 0.5, tw: 0.5, spokes: 0 }).slice(0, 1), [mx, my, mz], 1.0, walked, { ax: FLAT, res: 0.14 });
       S.lathe([mx, my + 0.4, mz], 0.5, 0.75, walked, { res: 0.09 });
       bowl(mx + 1.6, mz - 0.9, { y: my + 0.5, s: 0.8 });

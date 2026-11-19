@@ -597,7 +597,8 @@ export default {
           if (h(x, z) < W + 0.03 && S.sdf(x, W + 0.03, z) > 0.01) pts.push(x, z);
         }
       }
-      // a pale scum line where the water meets the bank, and now and then a ripple
+      // a pale scum line where the water meets the bank; the sky's haze lying on it in long level streaks, many far off and few close
+      // by; and now and then a ripple
       const tex = (x, y, z) => {
         if (h(x, z) > W - 0.13 - 0.08 * B.n3(x * 1.3, z * 1.3, 7)) return wt[3];
         const far = smooth(12, 34, Math.hypot(x - eye[0], z - eye[2])), band = Math.sin(z * 2.6 + 1.3 * Math.sin(x * 0.35) + 2 * B.n3(x * 0.25, z * 0.6, 3));
@@ -619,7 +620,7 @@ export default {
     ctx.glow(({ B }) => {
       const dk = ramp('sky')[0], mn = ramp('moon');
       // as the start eye sees it: the moon just left of the sails' hub, its upper-left sail across the moon's edge
-      const hub = [MILL[0], 7.55, MILL[1] + 1.9];
+      const hub = [MILL[0], 7.55, MILL[1] + 1.9]; // where the summit block puts the sails' hub
       const toHub = Math.atan2(hub[0] - eye[0], -(hub[2] - eye[2])), dHub = Math.hypot(hub[0] - eye[0], hub[2] - eye[2]);
       const elHub = Math.atan2(hub[1] - eye[1], dHub);
       const mr = 1.75 * Math.PI / 180, az = toHub - 0.062, el = elHub + 0.011, D = 175, rm = D * Math.tan(mr);
