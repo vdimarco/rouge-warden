@@ -45,7 +45,7 @@ export default {
   ],
   // the key light is cold moonlight from the west, a little toward the start, so the cell faces read against their black mouths
   // (the moon you see hangs low in the north: the light is set for form, not to match it)
-  light: { sun: [-0.75, 0.5, 0.3], amb: 0.11, sky: 0.15, sunK: 0.46, shK: 7 },
+  light: { sun: [-0.5, 0.6, 0.62], amb: 0.11, sky: 0.15, sunK: 0.46, shK: 7 },
   fog: { color: 'fog', far: 72, start: 0.5, max: 0.88 },
   dither: 0.5,
   outline: 0.45,
@@ -129,11 +129,11 @@ export default {
       ctx.fire([x, y0 + hgt + 0.1, z], s, { k, r });
     };
     // an iron sconce on a wall: a bracket out from the face (nx, nz) and a cup with a flame
-    const sconce = (x, y, z, nx, nz, { s = 0.7, k = 0.7, r = 3.6 } = {}) => {
+    const sconce = (x, y, z, nx, nz, { s = 0.7, k = 0.7, r = 3.6, n = 2 } = {}) => {
       const ox = x + nx * 0.45, oz = z + nz * 0.45;
       S.tube([[x, y - 0.3, z], [ox, y - 0.06, oz]], 0.07, 0.05, iron, { res: 0.06 });
       S.ball([ox, y, oz], [0.2, 0.12, 0.2], iron, { res: 0.06 });
-      ctx.fire([ox, y + 0.08, oz], s, { k, r });
+      ctx.fire([ox, y + 0.08, oz], s, { k, r, n });
     };
     // an iron fire bowl on three fat legs; returns the top of the bowl
     const bowl = (x, z, { y, s = 0.9, lit = true, k = 0.6 } = {}) => {
@@ -276,15 +276,20 @@ export default {
         // inside: a chain from the vault, and in some a skull on the floor
         S.tube([[c.x + 0.25, sp + 0.7, zf - deep + 0.3], [c.x + 0.3, sp - 0.3, zf - deep + 0.35]], 0.04, 0.04, bars, { res: 0.06 });
         if (c.skull) S.ball([c.x - 0.3, fy + 0.12, zf - deep + 0.55], [0.16, 0.15, 0.17], bone, { res: 0.06 });
+        // a lit cell: a small fire on its floor at the back, so its bars stand black against the glow
+        if (c.lit) {
+          S.ball([c.x + 0.2, fy - 0.02, zf - deep + 0.62], [0.32, 0.12, 0.3], iron, { res: 0.07 });
+          ctx.fire([c.x + 0.2, fy + 0.12, zf - deep + 0.62], 0.55, { n: 2, r: 2.6, k: 1.0 });
+        }
       }
       for (const lx of lights) sconce(lx, h(lx, zf + 0.6) + 1.9, zf, 0, 1);
     };
     // the first tier: four cells under the first terrace, one torn open
-    cellBlock({ x0: -8.8, x1: 8.8, zf: -0.6, zb: -4.6, top: Y.t1 + 0.1, lights: [-7.3, -3.8, -0.2, 3.4, 7.0],
-      cells: [{ x: -5.6, skull: true }, { x: -2.0 }, { x: 1.6, torn: true, skull: true }, { x: 5.2 }] });
+    cellBlock({ x0: -8.8, x1: 8.8, zf: -0.6, zb: -4.6, top: Y.t1 + 0.1, lights: [-7.3, -0.2, 7.0],
+      cells: [{ x: -5.6, skull: true }, { x: -2.0, lit: true }, { x: 1.6, torn: true, skull: true }, { x: 5.2, lit: true }] });
     // the second tier: three cells under the second terrace
-    cellBlock({ x0: -7.4, x1: 7.4, zf: -8.7, zb: -11.8, top: Y.t2 + 0.1, arch: 2.0, half: 0.8, lights: [-5.9, -2.3, 3.0],
-      cells: [{ x: -4.1 }, { x: -0.6, skull: true }, { x: 5.0 }] });
+    cellBlock({ x0: -7.4, x1: 7.4, zf: -8.7, zb: -11.8, top: Y.t2 + 0.1, arch: 2.0, half: 0.8, lights: [-6.2, 2.2],
+      cells: [{ x: -4.1, lit: true }, { x: -0.6, skull: true }, { x: 5.0 }] });
     // the face below the top: a low wall with a gap for the stair
     for (const [a, b] of [[-8.6, 3.0], [6.0, 8.2]]) {
       const yb = Y.t2 - 0.8, tp = Y.top + 0.3;
