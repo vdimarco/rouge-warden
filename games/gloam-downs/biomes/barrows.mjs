@@ -260,11 +260,11 @@ export default {
     };
 
     /* ---- the start barrow: two leaning stones either side of where you stand frame the first view; the kerb round its north foot ---- */
-    menhir(START[0] - 3.3, START[1] - 1.6, { hgt: 3.0, w: 0.6, d: 0.42, yaw: -0.4, tilt: -0.16, roll: -0.12 });
-    menhir(START[0] + 3.5, START[1] - 1.2, { hgt: 2.3, w: 0.55, d: 0.4, yaw: 0.5, tilt: -0.1, roll: 0.22 });
-    fallen(START[0] + 4.4, START[1] + 1.4, { len: 2.2, yaw: 1.2 });
+    menhir(START[0] - 4.6, START[1] - 1.4, { hgt: 2.7, w: 0.6, d: 0.42, yaw: -0.5, tilt: -0.2, roll: -0.16 });
+    fallen(START[0] + 4.2, START[1] - 2.2, { len: 2.4, w: 0.55, d: 0.4, yaw: 0.9, roll: 0.3 });
+    menhir(START[0] + 5.6, START[1] - 0.4, { hgt: 1.3, w: 0.45, d: 0.34, yaw: 0.4, tilt: 0.2 });
     kerb(MOUNDS.start, { from: Math.PI * 0.95, to: Math.PI * 2.05, n: 12, r: 0.4 });
-    bowl(3.6, 19.4, { s: 0.85 }); // at the foot of the start barrow, beside the path
+    bowl(-1.5, 22.6, { s: 0.8, k: 0.55 }); // where the path tips over the edge of the start barrow
 
     /* ---- the hollow: the west barrow's door looks at the path; the east barrow wears a stone ring and a ghost-lit door ---- */
     {
@@ -467,13 +467,13 @@ export default {
       }
       // the crown: tall stones leaning out like points, a gap where the stair comes in
       const arrive = Math.atan2(SPIRAL[SPIRAL.length - 1][1] - sz, SPIRAL[SPIRAL.length - 1][0] - sx);
-      const crown = stoneRing(sx, sz, 3.1, 8, { gone: [0], down: [5], hgt: 2.4, lean: 0.26, a0: arrive, w: 0.6, d: 0.42 });
+      const crown = stoneRing(sx, sz, 3.1, 7, { gone: [0], down: [4], hgt: 2.5, lean: 0.27, a0: arrive, w: 0.72, d: 0.44 });
       // the dais and the beacon
       S.lathe([sx, Y.summit - 0.5, sz], 1.05, [1.35, 1.2], rough, { res: 0.11 });
       ctx.beacon(bowl(sx, sz, { y: Y.summit + 0.52, lit: false }), 1.7);
       // ghost-green signs cut in two of the stones, on the faces turned in, glowing faintly
       ctx.glow(() => {
-        for (const { a, top } of [crown[1], crown[4]]) {
+        for (const { a, top } of [crown[1], crown[3]]) {
           const ix = -Math.cos(a), iz = -Math.sin(a), cx = top[0] + ix * 0.5, cz = top[2] + iz * 0.5, cy = top[1] - 1.0;
           for (let k = 0; k < 8; k++) {
             const t = (k / 8) * Math.PI * 2;
@@ -514,10 +514,10 @@ export default {
         }
       }
       // ghost fog: long flat soft dabs lying low in the hollows, in drifts
-      for (let i = 0; i < 220; i++) {
+      for (let i = 0; i < 260; i++) {
         const x = B.rr(-32, 32), z = B.rr(-32, 22), gy = h(x, z);
-        if (gy > 2.6 || B.n3(x * 0.12 + 3, z * 0.12, 7) < 0.38) continue;
-        B.axial(x, gy + B.rr(0.25, 1.0), z, [1, 0, B.rr(-0.25, 0.25)], B.rr(2.4, 4.6), B.rr(0.4, 0.7), B.P[B.pick([fg[1], fg[1], fg[2]])], B.rr(0.18, 0.36), { em: true, nd: true, k: 6, ph: B.rr(0, 6), sp: B.rr(0.1, 0.25), rg: B.rr(0.3, 0.6) });
+        if (gy > 2.8 || B.n3(x * 0.12 + 3, z * 0.12, 7) < 0.36) continue;
+        B.axial(x, gy + B.rr(0.3, 1.1), z, [1, 0, B.rr(-0.25, 0.25)], B.rr(2.6, 5.0), B.rr(0.45, 0.8), B.P[B.pick([fg[1], fg[2], fg[2]])], B.rr(0.3, 0.55), { em: true, nd: true, k: 6, ph: B.rr(0, 6), sp: B.rr(0.1, 0.25), rg: B.rr(0.3, 0.6) });
       }
 
       // the moon: big and low between the keep and the crown, the keep's turret just across its left edge
