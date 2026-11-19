@@ -525,7 +525,7 @@ export default {
         const a = az + i * 0.02 + B.rr(-0.005, 0.005), e = -0.13 + j * 0.016 + B.rr(-0.004, 0.004), p = dir(a, e), R = 178;
         const dm = Math.hypot((a - az) * 0.75, e - el) / mr, low = 1 - j / 9;
         const k = Math.max(dm < 2.3 ? 1 : dm < 3.7 ? 0.7 : dm < 5.4 ? 0.42 : 0, Math.abs(a - toKeep) < 0.3 && low > 0.6 ? 0.42 : Math.abs(a - toKeep) < 0.5 && low > 0.3 ? 0.25 : 0);
-        if (k < 0.2 && B.rr(0, 1) < 0.5) continue;
+        if (k < 0.2) continue; // the dome is already sk[1] low down: no hard top edge to the haze
         const c = k >= 1 ? sk[4] : k >= 0.7 ? sk[3] : k >= 0.42 ? sk[2] : sk[1];
         B.iso(eye[0] + p[0] * R, eye[1] + p[1] * R, eye[2] + p[2] * R, 3.6, B.P[c], 2.2, { em: true, nd: true });
       }
