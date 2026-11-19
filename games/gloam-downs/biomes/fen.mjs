@@ -366,6 +366,28 @@ export default {
     };
     HUTS.forEach(hut);
 
+    /* ---- the drying stage: a roofless porch on stilts off the east turn, a rack of poles on it with fish and a net hung to dry.
+       It has no roof, so the space under it stays open to the water: a wisp waits down there ---- */
+    {
+      const [x, z] = STAGE, face = Math.atan2(J.e[0] - x, J.e[1] - z), ph = 1.8;
+      const legs = stilted(x, z, face, ph);
+      const at = (lx, ly, lz) => { const [a, b] = turn(x, z, face, lx, lz); return [a, PORCH + ly, b]; };
+      // two crossed pairs of poles at the ends, a ridge pole along the back between them
+      for (const s of [-1, 1]) {
+        S.tube([at(s * 1.25 - 0.45, -0.1, -0.7), at(s * 1.25 + 0.2, 2.05, -0.7)], 0.08, 0.06, wood, { res: 0.07 });
+        S.tube([at(s * 1.25 + 0.45, -0.1, -0.7), at(s * 1.25 - 0.2, 2.05, -0.7)], 0.08, 0.06, wood, { res: 0.07 });
+      }
+      S.tube([at(-1.7, 1.92, -0.7), at(1.7, 1.92, -0.7)], 0.08, 0.08, wood, { res: 0.07 });
+      for (let k = 0; k < 6; k++) { const p = at(-1.0 + k * 0.4, 1.58, -0.7); S.ball(p, [0.09, 0.28, 0.05], cloth, { res: 0.05 }); }
+      ctx.later(() => { const p = at(0.0, 1.45, -0.62); net(p[0], p[1], p[2], face + Math.PI / 2, 0.9, 0.42); });
+      // a lantern on a post at the front corner
+      const c = at(-1.55, 0, 1.55);
+      S.tube([[c[0], PORCH - 0.1, c[2]], [c[0], PORCH + 2.6, c[2]]], 0.13, 0.1, wood, { res: 0.09 });
+      { const p = at(-2.2, 2.65, 1.85); S.tube([[c[0], PORCH + 2.5, c[2]], p], 0.06, 0.05, wood, { res: 0.06 }); lantern(p[0], p[1] - 0.05, p[2]); }
+      for (const [lx, lz] of [legs[1], legs[3]]) reeds(lx + B.rr(-0.6, 0.6), lz + B.rr(-0.6, 0.6), 7, 0.6, 1.3);
+      { const p = at(0, -PORCH + W + 0.6, 0.7); ctx.wisp(p); } // under the stage, between its stilts
+    }
+
     /* ---- the drowned hut: only its roof shows above the water, tipped over, its topknot pointing east ---- */
     {
       const [x, z] = DROWNED, ax = tipAx(0.9, 0.5, 0.15);
@@ -478,17 +500,19 @@ export default {
       const hub = [mx, bodyTop + 0.35, mz + 1.9];
       S.tube([[mx, hub[1], mz + 0.6], hub], 0.18, 0.16, wood, { res: 0.08 });
       S.ball(hub, 0.32, iron, { res: 0.07 });
-      // four sails in a cross turned a little off square: each a stock with a lattice of rails and bars, rags and fish hung on some
+      // four sails in a cross turned a little off square, chunky enough to read from across the fen: each a fat stock and a frame of
+      // rails and bars. Two carry a sheet of dark sacking (one torn short); the other two are bare racks with fish and rags hung to dry
       const L = 2.2;
       for (let k = 0; k < 4; k++) {
         const a = Math.PI / 4 + 0.05 + k * Math.PI / 2, ux = Math.cos(a), uy = Math.sin(a), ax = [[uy, -ux, 0], [ux, uy, 0], [0, 0, 1]];
         const at = (s, o, dz = 0) => [hub[0] + ux * s + uy * o, hub[1] + uy * s - ux * o, hub[2] + 0.12 + dz];
-        S.box(at(L / 2, 0), [0.08, L / 2 + 0.1, 0.08], wood, { ax, rd: 0.02, res: 0.07 });
-        for (const o of [-0.36, 0.36]) S.box(at(0.4 + (L - 0.4) / 2, o, 0.04), [0.055, (L - 0.4) / 2, 0.055], wood, { ax, res: 0.065 });
-        for (let b = 0; b < 4; b++) S.box(at(0.55 + b * (L - 0.7) / 3, 0, 0.04), [0.4, 0.045, 0.045], wood, { ax, res: 0.06 });
-        // a torn rag on two of the sails, a string of fish on another
-        if (k === 0 || k === 2) S.box(at(1.3, k ? 0.12 : -0.14, 0.07), [0.25, 0.6, 0.02], cloth, { ax, res: 0.06 });
-        if (k === 1) for (let b = 0; b < 3; b++) { const p = at(0.9 + b * 0.5, 0.2, 0.09); S.ball([p[0], p[1] - 0.18, p[2]], [0.06, 0.18, 0.04], cloth, { res: 0.045 }); }
+        S.box(at(L / 2, 0), [0.12, L / 2 + 0.12, 0.12], wood, { ax, rd: 0.03, res: 0.08 });
+        for (const o of [-0.42, 0.42]) S.box(at(0.45 + (L - 0.45) / 2, o, 0.05), [0.08, (L - 0.45) / 2, 0.08], wood, { ax, rd: 0.02, res: 0.08 });
+        for (let b = 0; b < 4; b++) S.box(at(0.55 + b * (L - 0.7) / 3, 0, 0.05), [0.48, 0.065, 0.065], wood, { ax, rd: 0.02, res: 0.07 });
+        if (k === 1 || k === 3) {
+          const len = k === 1 ? L - 0.55 : 1.05;
+          S.box(at(0.5 + len / 2, 0, 0.1), [0.4, len / 2, 0.025], cloth, { ax, res: 0.07 });
+        } else for (let b = 0; b < 3; b++) { const p = at(0.85 + b * 0.5, (b - 1) * 0.22, 0.12); S.ball([p[0], p[1] - 0.2, p[2]], [0.08, 0.22, 0.05], cloth, { res: 0.055 }); }
       }
       // the beacon deck: planks east of the body, two fat stilts and braces, a railing, the stair up its east side
       const dx0 = mx + 1.2, dx1 = mx + 4.4, dz0 = mz - 2.0, dz1 = mz + 1.3, dcx = (dx0 + dx1) / 2, dcz = (dz0 + dz1) / 2;
@@ -539,8 +563,11 @@ export default {
     for (let k = 0; k < 60; k++) tufts.push([B.rr(-30, 30), B.rr(-30, 30)]);
 
     /* ---- the wisps out in the fen, and the start ---- */
-    ctx.wisp([HUTS[0].at[0] + 1.2, PORCH + 1.0, HUTS[0].at[1] - 1.4]); // on the first hut's porch
-    ctx.wisp([HUTS[1].at[0], W + 0.6, HUTS[1].at[1]]); // under the second hut, between its stilts
+    {
+      // on the first hut's porch, round the side from its door
+      const { at: [x, z], to } = HUTS[0], [wx, wz] = turn(x, z, Math.atan2(to[0] - x, to[1] - z), -1.5, 1.6);
+      ctx.wisp([wx, PORCH + 1.0, wz]);
+    }
     ctx.spawn([START[0], h(START[0], START[1]), START[1]], Math.PI);
 
     /* ---- the water: a flat dark teal sheet, laid after the walk map so it never blocks the feet ---- */

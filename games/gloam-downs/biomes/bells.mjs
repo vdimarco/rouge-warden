@@ -160,7 +160,9 @@ export default {
     // grime on old bronze: a soft tone wander, a fine grain, and small dark pits
     const grime = (x, y, z) => 0.55 * (0.16 * (B.n3(x * 0.7, y * 0.7, z * 0.7 + 3) - 0.5) + 0.14 * (B.n3(x * 3, y * 3, z * 3) - 0.5)) - (B.n3(x * 2.4 + 4, y * 2.4, z * 2.4) > 0.72 ? 0.1 : 0);
     // (faces turned up, the tops of teeth and the walked rims, are worn brighter)
-    const bronze = { r: br.slice(0, 4), s: br.slice(2, 6), g: bronzeG, mod: grime, top: { min: 0.8, r: br.slice(1, 5), s: br.slice(2, 6), g: bronzeG, mod: grime } };
+    const bronze = { r: br.slice(0, 4), s: br.slice(2, 6), g: bronzeG, mod: grime, top: { min: 0.85, r: br.slice(1, 5), s: br.slice(2, 6), g: bronzeG, mod: grime } };
+    // the cog you walk on: its whole face is turned up, so only a little brighter than plain bronze
+    const walked = { r: br.slice(0, 4), s: br.slice(1, 5), g: bronzeG, mod: grime, top: { min: 0.85, r: br.slice(0, 4), s: br.slice(1, 4), g: bronzeG, mod: grit(0.8) } };
     const bell = { r: br.slice(0, 4), s: br.slice(1, 6), g: bronzeG, mod: grit(0.35) };
     const oldBell = { ...bell, rf: crust(1.1) };
     const iron = { r: rust, g: [rust[0], rust[1], rust[2], fire[1], fire[2], fire[3]], mod: grit(0.4) };
@@ -340,7 +342,7 @@ export default {
       bellAt([cx, F + 2.15, cz], [0, 1, 0], 0.86, 1.72, { hollow: true, res: 0.07 });
       S.ball([cx, F + 2.05, cz], 0.2, iron, { res: 0.05 });
       // the beacon: a fire bowl on a stone post on a raised dais, at the terrace's south-east corner
-      const bd = [cx + 2.9, cz + 2.9];
+      const bd = [cx + 4.1 * Math.cos(0.35), cz + 4.1 * Math.sin(0.35)];
       oct(bd[0], bd[1], 1.25, F - 0.3, F + 0.42, rough, { res: 0.1 });
       oct(bd[0], bd[1], 1.05, F + 0.38, F + 0.84, rough, { res: 0.1 });
       oct(bd[0], bd[1], 0.85, F + 0.8, F + 1.25, rough, { res: 0.1 });
@@ -372,14 +374,14 @@ export default {
       const e = 1.5, gx = (h(c[0] + e, c[2]) - h(c[0] - e, c[2])) / (2 * e), gz = (h(c[0], c[2] + e) - h(c[0], c[2] - e)) / (2 * e);
       const n = norm([-gx * 0.85, 1, -gz * 0.85]);
       c[1] = h(c[0], c[2]) + 0.15;
-      cog(c, frameW(n), { R: 4.7, Ri: 2.9, n: 14, th: 0.6, tw: 0.5, skip: [6] }, { depth: 1.0, res: 0.14 });
+      cog(c, frameW(n), { R: 4.7, Ri: 2.9, n: 14, th: 0.6, tw: 0.5, skip: [6] }, { depth: 1.0, res: 0.14, mat: walked });
     }
 
     /* ---- the fallen bell in the vale: on its side, cracked, its mouth turned to the path ---- */
     {
       const [fx, fz] = FALLEN, gy = h(fx, fz), R = 1.75, H = 3.3;
-      const up = norm([-0.9, 0.06, -0.4]); // from the mouth to the crown
-      const m = [fx + 1.4, gy + R * 0.82, fz + 0.62];
+      const up = norm([-0.6, 0.06, -0.8]); // from the mouth to the crown: the mouth is turned three-quarters to the start
+      const m = [fx + 0.9, gy + R * 0.82, fz + 1.2];
       bellAt(m, up, R, H, { crack: { a: 2.2 }, res: 0.1, mat: oldBell });
       // a wisp a metre inside the mouth, a metre over the bell's inner floor
       const w = add(m, up, 0.95), floor = w[1] - (R * bellR(0.95 / H) - R * 0.13);
@@ -445,13 +447,13 @@ export default {
 
     /* ---- the start: a stone stub and a half-buried cog at the brow ---- */
     {
-      const sx = 2.8, sz = 23.6, sy = h(sx, sz);
+      const sx = 2.2, sz = 24.8, sy = h(sx, sz);
       oct(sx, sz, 0.5, sy - 0.4, sy + 1.6, rough, { res: 0.1 });
       ctx.later(() => chain([sx, sy + 1.3, sz], [sx + 1.4, h(sx + 1.4, sz - 4.5) + 0.2, sz - 4.5], { sag: 0.6 }));
       const cg = [-3.4, h(-3.4, 23.2) - 0.7, 23.2];
       cog(cg, frameW(norm([0.6, 0, 1])), { R: 1.7, Ri: 0.9, n: 8, th: 0.45, tw: 0.55, skip: [] }, { depth: 0.6, res: 0.1 });
       // a low ring of iron in the grass with a fire in it: warm light by the start that does not block the view
-      const fx = -2.7, fz = 24.2, fy = h(fx, fz);
+      const fx = -1.9, fz = 25.0, fy = h(fx, fz);
       S.torus([fx, fy + 0.08, fz], 0.62, 0.16, iron, { res: 0.06 });
       for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; S.ball([fx + Math.cos(a) * 0.62, fy + 0.2, fz + Math.sin(a) * 0.62], [0.2, 0.14, 0.2], rough, { res: 0.06 }); }
       ctx.fire([fx, fy + 0.18, fz], 0.85, { k: 0.75, r: 4.2 });
