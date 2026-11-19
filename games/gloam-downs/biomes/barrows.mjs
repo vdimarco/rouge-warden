@@ -358,7 +358,7 @@ export default {
     // the gate: two squat round towers and a lintel high enough to walk under; rubble inside to climb onto the wall west of it
     {
       for (const s of [-1, 1]) {
-        const tx = GATE[0] + s * 2.3, tz = GATE[1], gy = h(tx, tz), tt = 3.3;
+        const tx = GATE[0] + s * 2.65, tz = GATE[1], gy = h(tx, tz), tt = 3.3;
         S.lathe([tx, gy - 1.2, tz], tt + 1.2, [1.45, 1.25], stone, { res: 0.13 });
         for (let i = 0; i < 6; i++) {
           const a = (i / 6) * Math.PI * 2 + 0.2;
@@ -366,7 +366,7 @@ export default {
           S.box([tx + Math.cos(a) * 1.1, gy + tt + 0.3, tz + Math.sin(a) * 1.1], [0.3, 0.32, 0.3], rough, { ax: yawAx(-a), rd: 0.05, res: 0.11 });
         }
       }
-      S.box([GATE[0], Y.bailey + 2.7 + 0.4, GATE[1]], [1.6, 0.42, 0.75], rough, { rd: 0.08, res: 0.12 });
+      S.box([GATE[0], Y.bailey + 2.7 + 0.4, GATE[1]], [1.85, 0.42, 0.75], rough, { rd: 0.08, res: 0.12 });
       // rags hanging from the lintel
       ctx.later(() => {
         for (const [ox, len] of [[-0.6, 1.0], [0.1, 0.6], [0.5, 1.2]]) S.box([GATE[0] + ox, Y.bailey + 2.7 - len / 2, GATE[1] + 0.8], [0.18, len / 2, 0.03], rag, { res: 0.06 });
