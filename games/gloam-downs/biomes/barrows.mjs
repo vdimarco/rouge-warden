@@ -264,7 +264,7 @@ export default {
     fallen(START[0] + 4.2, START[1] - 2.2, { len: 2.4, w: 0.55, d: 0.4, yaw: 0.9, roll: 0.3 });
     menhir(START[0] + 5.6, START[1] - 0.4, { hgt: 1.3, w: 0.45, d: 0.34, yaw: 0.4, tilt: 0.2 });
     kerb(MOUNDS.start, { from: Math.PI * 0.95, to: Math.PI * 2.05, n: 12, r: 0.4 });
-    bowl(-1.4, 23.6, { s: 0.8, k: 0.55 }); // where the path tips over the edge of the start barrow
+    bowl(-0.6, 24.6, { s: 0.8, k: 0.55 }); // on the brow of the start barrow, where the path tips over the edge
     // low stones lining the path down off the barrow
     for (const [x, z, hh, tl] of [[3.9, 23.4, 1.0, 0.2], [0.2, 20.6, 0.8, -0.25], [3.7, 19.8, 1.2, 0.15], [-1.4, 17.0, 0.9, 0.3]])
       menhir(x, z, { hgt: hh, w: 0.42, d: 0.32, yaw: 0.3 + x * 0.1, tilt: tl, roll: tl * 0.5, sink: 0.45, res: 0.11 });
@@ -283,7 +283,7 @@ export default {
       const [ex, ez, er] = MOUNDS.east;
       stoneRing(ex, ez, 3.1, 8, { gone: [2, 6], down: [5], hgt: 2.6, lean: 0.14, a0: 0.3 });
       ctx.wisp([ex, h(ex, ez) + 1.1, ez]); // in the ring on the east barrow
-      kerb(MOUNDS.east, { n: 16 });
+      kerb(MOUNDS.east, { n: 12 });
       // its door looks west at the hollow, a ghost light in it
       const face = -Math.PI / 2 - 0.35, dx = Math.sin(face), dz = Math.cos(face), dr = er * 0.52;
       mouth(ex + dx * dr, ez + dz * dr, face, { glow: true, wide: 0.8, tall: 1.7 });
@@ -392,7 +392,7 @@ export default {
       const doorTop = S.tube([[kx - 0.4, gy + 2.3, kz + hw + 0.5], [kx - 0.4, gy + 2.3, kz + hw - 0.8]], 0.8, 0.8, stone, { hold: true });
       const win = S.box([kx + 1.15, top - 2.6, kz + hw], [0.3, 0.75, 0.6], stone, { hold: true });
       const slits = [[-1.6, gy + 4.4], [1.4, gy + 3.2], [-0.4, gy + 5.6]].map(([ox, sy]) => S.box([kx + ox, sy, kz + hw], [0.12, 0.45, 0.5], stone, { hold: true }));
-      S.join('cut', body, [bite1, bite2, crack, door, doorTop, win, ...slits], { res: 0.14, inner: st.slice(0, 2) });
+      S.join('cut', body, [bite1, bite2, crack, door, doorTop, win, ...slits], { res: 0.15, inner: st.slice(0, 2) });
       // the doorway is black inside
       S.box([kx - 0.4, gy + 1.1, kz + hw - 0.75], [0.78, 1.4, 0.06], hollow, { res: 0.1 });
       // crenels on the east half, still standing
@@ -460,11 +460,11 @@ export default {
         const top = h(x, z) + 0.12, low = Math.min(h(x + ox * 1.1, z + oz * 1.1), top) - 0.5;
         S.box([x, (top + low) / 2, z], [1.1, (top - low) / 2, 0.52], rough, { ax: yawAx(yaw), rd: 0.07, res: 0.13 });
         // torches on the outer edge every so often
-        if (i === 3 || i === 9 || i === 15) post(x + ox * 1.25, z + oz * 1.25, { y: top - 0.1, hgt: 1.4, s: 0.7, k: 0.6, r: 3.4 });
+        if (i === 2 || i === 7 || i === 12) post(x + ox * 1.25, z + oz * 1.25, { y: top - 0.1, hgt: 1.4, s: 0.7, k: 0.6, r: 3.4 });
       });
       // the kerb round the dome's foot
-      for (let i = 0; i < 18; i++) {
-        const a = (i / 18) * Math.PI * 2, x = sx + Math.cos(a) * (TOP + DOME - 0.4), z = sz + Math.sin(a) * (TOP + DOME - 0.4);
+      for (let i = 0; i < 13; i++) {
+        const a = (i / 13) * Math.PI * 2, x = sx + Math.cos(a) * (TOP + DOME - 0.4), z = sz + Math.sin(a) * (TOP + DOME - 0.4);
         if (polyDist(x, z, SPIRAL) < 1.8 || polyDist(x, z, AVENUE) < 1.6 || B.rr(0, 1) < 0.2 || Math.hypot(x - KEEP[0], z - KEEP[1]) < KW + 4) continue;
         menhir(x, z, { hgt: B.rr(0.6, 0.9), w: 0.45, d: 0.34, yaw: Math.atan2(Math.cos(a), Math.sin(a)), tilt: 0.1, sink: 0.4, res: 0.12 });
       }
