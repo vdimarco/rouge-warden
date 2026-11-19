@@ -224,7 +224,7 @@ export default {
           const px = 3.2 + (30 - z) * 0.08, wide = z < 26.4 && z > 24 ? 3.1 : 1.8 + B.rr(-0.2, 0.3);
           for (let x = px - wide + (row % 2) * 0.55; x < px + wide - 0.4;) {
             const w = B.rr(0.42, 0.66);
-            if (B.rr(0, 1) > 0.18) {
+            if (B.rr(0, 1) > 0.18 && Math.hypot(x + w - START[0], z - START[1]) > 1.0) {
               const cx = x + w + B.rr(-0.04, 0.04), cz = z + B.rr(-0.08, 0.08), gy = h(cx, cz);
               const tilt = B.rr(0, 1) < 0.3 ? B.rr(-0.14, 0.14) : 0, sunk = B.rr(0, 1) < 0.25 ? -0.1 : 0;
               S.box([cx, gy + sunk, cz], [w - 0.06, 0.13, 0.42 + B.rr(-0.06, 0.04)], flag,
@@ -233,6 +233,8 @@ export default {
             x += 2 * w + 0.06;
           }
         }
+        // the slab you start on, set square
+        S.box([START[0], h(START[0], START[1]), START[1]], [0.62, 0.13, 0.5], flag, { rd: 0.09, res: 0.15 });
       }
       // low broken walls along the rim either side
       const run = (pts, tall) => {
@@ -412,8 +414,8 @@ export default {
       cage(kx - hw - 2.3, top - 2.6, kz + 0.6);
       // the beacon: a fire bowl on a plinth on the roof, east of the watch-tower
       const bx = kx + 0.7, bz = kz + 0.4;
-      S.box([bx, top + 0.22, bz], [0.78, 0.3, 0.78], rough, { rd: 0.05, res: 0.11 });
-      ctx.beacon(bowl(bx, bz, { y: top + 0.5, lit: false }), 1.7);
+      S.box([bx, top + 0.3, bz], [0.78, 0.38, 0.78], rough, { rd: 0.05, res: 0.11 });
+      ctx.beacon(bowl(bx, bz, { y: top + 0.66, lit: false }), 1.7);
       // the lit slits: one warm window high in the watch-tower, one in the keep's face
       ctx.glow(() => {
         for (const [x, y, z, s] of [[wx + 0.3, wt - 0.6, wz + wh + 0.06, 1], [kx - 1.7, top - 1.6, kz + hw + 0.06, 0.85]]) {
@@ -499,7 +501,7 @@ export default {
     farTower(52, 16, 1.9, 6);
 
     /* ---- the start, the other wisps ---- */
-    ctx.spawn([START[0], h(START[0], START[1]), START[1]], Math.PI);
+    ctx.spawn([START[0], h(START[0], START[1]) + 0.13, START[1]], Math.PI); // on the top of the start slab
     ctx.wisp([1.6, h(1.6, -1.6) + 1.0, -1.6]); // inside the torn cell
     ctx.wisp([7.6, Y.t1 + 1.3, -2.2]); // on the ledge above the cells
     ctx.wisp([GRAVES[0] + 1.2, h(GRAVES[0] + 1.2, GRAVES[1]) + 2.4, GRAVES[1]]); // over the tomb
@@ -508,12 +510,12 @@ export default {
     /* ---- sky: a dark dome, a moonlit haze low in the north, the moon rising behind the keep, torn cloud, stars, drifting dust ---- */
     ctx.glow(({ B }) => {
       const sk = ramp('skyband'), dk = ramp('sky')[0], mn = ramp('moon');
-      const sy = h(START[0], START[1]);
+      const sy = h(START[0], START[1]) + 0.13;
       const eye = [START[0], sy + EYE_UP, START[1] + EYE_BACK];
       // as the start eye sees them: the keep's bearing, and the moon tucked behind its right shoulder, its top under the page camera's
       // top edge (which sits half a degree below level)
       const toKeep = Math.atan2(KEEP[0] - eye[0], -(KEEP[1] - eye[2])), dKeep = Math.hypot(KEEP[0] - eye[0], KEEP[1] - eye[2]);
-      const deg = Math.PI / 180, mr = 2.0 * deg, az = toKeep + Math.atan((KW + 0.6) / dKeep) + 1.2 * deg, el = -2.75 * deg, D = 170, rm = D * Math.tan(mr);
+      const deg = Math.PI / 180, mr = 2.0 * deg, az = toKeep + Math.atan((KW + 0.6) / dKeep) + 1.2 * deg, el = -3.0 * deg, D = 170, rm = D * Math.tan(mr);
       const dir = (a, e) => [Math.sin(a) * Math.cos(e), Math.sin(e), -Math.cos(a) * Math.cos(e)];
       const u = dir(az, el), M = [eye[0] + u[0] * D, eye[1] + u[1] * D, eye[2] + u[2] * D];
       B.sky(d => (d[1] < 0.05 ? sk[1] : d[1] < 0.2 ? sk[0] : dk), 230);
