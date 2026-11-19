@@ -29,7 +29,7 @@ const GATE = [6.5, 1.4]; // the cog gate
 const WHEEL = [-9.8, 0.4]; // the great wheel on the knoll's west side
 const EAST = [16.2, 0.2]; // the lookout on the east hill
 const CLOCK = [-13.5, 8.5]; // the clock face on the west hill
-const FALLEN = [-3.4, 12.6]; // the fallen bell in the vale
+const FALLEN = [-3.8, 6.4]; // the fallen bell at the knoll's foot, under the spire as the start sees it
 // the start camera's eye (preview: 9 back, pitch 0.3), to hang the sun right behind the belfry
 const EYE = [START[0], YS + 1 + 9 * Math.sin(0.3), START[1] + 9 * Math.cos(0.3)];
 
@@ -388,7 +388,7 @@ export default {
       ctx.wisp([w[0], floor + 1.0, w[2]]);
       // a broken headstock lies by its crown
       S.box([fx - 2.6, gy + 0.25, fz - 1.5], [1.1, 0.25, 0.3], bronze, { ax: yawAx(0.7), rd: 0.05, res: 0.09 });
-      bowl(-0.6, 14.4, { s: 0.85 }); // in front of its mouth, so the fire lights the inside
+      bowl(FALLEN[0] + 3.0, FALLEN[1] + 1.4, { s: 0.85 }); // beside its mouth, so the fire lights the inside
     }
 
     /* ---- the broken clock face on the west hill ---- */
@@ -436,19 +436,20 @@ export default {
     /* ---- chains from the spire's cornice down to stakes on the terraces, east and west ---- */
     ctx.later(() => {
       for (const s of [-1, 1]) {
-        const top = [cx + s * (AP.drum + 0.4), F + 4.4, cz + 0.3], sx = cx + s * 9.6, sz = cz + 1.4, sy = h(sx, sz);
+        const top = [cx + s * (AP.drum + 0.3), F + 4.4, cz - 0.9], sx = cx + s * 7.6, sz = cz - 6.2, sy = h(sx, sz);
         chain(top, [sx, sy + 0.6, sz], { sag: 1.6 });
       }
     });
     for (const s of [-1, 1]) {
-      const sx = cx + s * 9.6, sz = cz + 1.4, sy = h(sx, sz);
+      const sx = cx + s * 7.6, sz = cz - 6.2, sy = h(sx, sz);
       S.tube([[sx, sy - 0.3, sz], [sx, sy + 0.8, sz]], 0.2, 0.14, iron, { res: 0.06 });
     }
 
     /* ---- the start: a stone stub and a half-buried cog at the brow ---- */
     {
       const sx = 2.2, sz = 24.8, sy = h(sx, sz);
-      oct(sx, sz, 0.5, sy - 0.4, sy + 1.6, rough, { res: 0.1 });
+      oct(sx, sz, 0.5, sy - 0.4, sy + 0.75, dark, { res: 0.1 });
+      S.box([sx + 0.2, sy + 0.85, sz - 0.1], [0.42, 0.14, 0.38], dark, { ax: yawAx(0.4), rd: 0.04, res: 0.08 });
       ctx.later(() => chain([sx, sy + 1.3, sz], [sx + 1.4, h(sx + 1.4, sz - 4.5) + 0.2, sz - 4.5], { sag: 0.6 }));
       const cg = [-3.4, h(-3.4, 23.2) - 0.7, 23.2];
       cog(cg, frameW(norm([0.6, 0, 1])), { R: 1.7, Ri: 0.9, n: 8, th: 0.45, tw: 0.55, skip: [] }, { depth: 0.6, res: 0.1 });
@@ -456,7 +457,7 @@ export default {
       const fx = -1.9, fz = 25.0, fy = h(fx, fz);
       S.torus([fx, fy + 0.08, fz], 0.62, 0.16, iron, { res: 0.06 });
       for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; S.ball([fx + Math.cos(a) * 0.62, fy + 0.2, fz + Math.sin(a) * 0.62], [0.2, 0.14, 0.2], rough, { res: 0.06 }); }
-      ctx.fire([fx, fy + 0.18, fz], 0.85, { k: 0.75, r: 4.2 });
+      ctx.fire([fx, fy + 0.18, fz], 0.7, { k: 0.7, r: 3.6 });
     }
 
     /* ---- braziers and fire posts along the way ---- */
@@ -466,7 +467,7 @@ export default {
     bowl(8.8, -22.4, { s: 0.85 });
 
     /* ---- rocks and shrubs ---- */
-    rocks(ctx, [[-3.6, 19.5, 0.6], [3.8, 17.6, 0.5], [-6.5, 8, 0.8], [5.2, 9.5, 0.6], [12, 14, 1.0], [-10, 16, 0.9], [-16, -3, 1.2], [15, -8, 1.1],
+    rocks(ctx, [[-3.6, 19.5, 0.6], [3.8, 17.6, 0.5], [-6.5, 12, 0.8], [5.2, 9.5, 0.6], [12, 14, 1.0], [-10, 16, 0.9], [-16, -3, 1.2], [15, -8, 1.1],
       [-20, 18, 1.1], [21, 15, 1.2], [-7, -22, 0.9], [14, -18, 1.0], [24, -2, 1.1]], { mat: rough, seed: 5 });
     shrubs(ctx, [[-2.5, 21, 0.5], [3.6, 20.2, 0.55], [-5, 15, 0.6], [4.5, 13, 0.5], [-9.5, 3.5, 0.6], [10.5, 5.5, 0.6], [-14, -6, 0.7], [16.5, -5, 0.6],
       [-6, -18, 0.6], [5.5, -18.5, 0.6], [20, 9, 0.6], [-18, 14, 0.6]], { mat: grassM });
