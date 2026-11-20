@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Five dark places on rolling hills
-Gloam Downs SHALL have five places, in this order: The Sunken Gaol, Crow Ramparts, Lantern Fen, The Bell Knoll and Barrow Crown. Each place SHALL be a world of Ink Studio splats on rolling hills, sculpted and baked offline, with its own palette, sky, fog and landmark. The landmark with the beacon SHALL stand on a summit that the player can see from the start point.
+Gloam Downs SHALL have five places, in this order: The Sunken Gaol, The Crow Wall, Lantern Fen, The Bell Knoll and Barrow Crown. Each place SHALL be a world of Ink Studio splats on rolling hills, sculpted and baked offline, with its own palette, sky, fog and landmark. The landmark with the beacon SHALL stand on a summit that the player can see from the start point.
 
 #### Scenario: Open the piece
 - **WHEN** a visitor opens `/lab/gloam-downs/`
@@ -41,7 +41,7 @@ The player SHALL move relative to the camera with WASD, the arrow keys, the left
 - **THEN** it walks up the step without a jump
 
 ### Requirement: Look
-Q and E, the right stick, a mouse drag or a touch drag on the right half of the screen SHALL turn the camera. The camera SHALL follow behind the lamplighter and come closer when a hill or a wall is between it and the lamplighter.
+Q and E, the right stick, a mouse drag or a touch drag on the right half of the screen SHALL turn the camera. The camera SHALL follow behind the lamplighter and come closer when a hill or a wall is between it and the lamplighter. In a run, the combat camera and the boss camera of gloam-downs-run SHALL apply.
 
 #### Scenario: Turn the camera
 - **WHEN** the player holds E or drags on the right half of a touch screen
@@ -60,7 +60,7 @@ Each place SHALL have five wisps, glowing motes that float above the ground, and
 
 #### Scenario: Beacon
 - **WHEN** the lamplighter touches the beacon of The Sunken Gaol in Wander
-- **THEN** the beacon lights, a card shows, and then Crow Ramparts loads
+- **THEN** the beacon lights, a card shows, and then The Crow Wall loads
 
 ### Requirement: The end of the walk
 In Wander, when all five beacons burn, in any order, an end card SHALL show the time, the wisps found and the best time, with a button to walk again. Walk again SHALL put out every beacon, start the time again at zero and go back to The Sunken Gaol. The places reached SHALL stay open. While a beacon is still dark, the walk SHALL not end. If the beacon of Barrow Crown lights then, a card SHALL say how many beacons are still dark.
