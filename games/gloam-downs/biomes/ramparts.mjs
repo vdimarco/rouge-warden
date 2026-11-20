@@ -102,7 +102,7 @@ export default {
       rf: (x, y, z) => {
         const n = 0.5 * (B.n3(x * 1.3, z * 1.3, 4) - 0.5);
         if (Math.min(polyDist(x, z, PATH) - 0.7, polyDist(x, z, SPUR) - 0.4) + n < 0.4) return chalk;
-        return B.n3(x * 0.16, z * 0.16, 11) + 0.25 * B.n3(x * 0.9, z * 0.9, 12) > 0.86 ? wd : grass;
+        return B.n3(x * 0.16, z * 0.16, 11) + 0.3 * B.n3(x * 0.9, z * 0.9, 12) > 0.93 ? wd : grass;
       }
     };
     groundTiles(ctx, ground, [{ r: grass, g: [grass[1]], mod: grit(1.2), fat: 0.7 }, { r: grass, mod: grit(1.4), fat: 1.15 }]);
@@ -286,7 +286,7 @@ export default {
     const beak = { r: [ramp('iron')[0]] };
     crow(ctx, T2[0] + 2.2, r2 + 0.78, T2[1] + 0.8, -2.2, black, beak);
     crow(ctx, T3[0] - 1.9, r3 + 0.78, T3[1] + 1.5, 2.8, black, beak);
-    crow(ctx, C[0] + Math.cos(1.45) * (TR - 0.08), roof1 + 0.84, C[1] + Math.sin(1.45) * (TR - 0.08), 2.4, black, beak);
+    { const a = (6 / 15) * Math.PI * 2; crow(ctx, C[0] + Math.cos(a) * (TR - 0.08), roof1 + 0.84, C[1] + Math.sin(a) * (TR - 0.08), 1.9, black, beak); } // on a merlon of the summit's drum
     crow(ctx, -3.3, h(-3.5, 22.6) + 3.64, 22.75, 2.6, black, beak); // on the gate post, the first thing that watches you
     crow(ctx, 5.3, h(6.5, 22.5) + 2.05, 22.0, -1.2, black, beak, 1.4); // in the dead tree by the gate
 
