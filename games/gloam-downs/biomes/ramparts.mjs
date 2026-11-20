@@ -80,14 +80,20 @@ export default {
   build(ctx) {
     const { S, B, h, ramp } = ctx;
     const grit = (k = 1) => (x, y, z) => k * (0.16 * (B.n3(x * 0.45, z * 0.45, y * 0.3 + 3) - 0.5) + 0.14 * (B.n3(x * 2.6, y * 2.6, z * 2.6) - 0.5));
-    // laid stone: grit, each block its own tone, and on the upright faces dark mortar between courses and between blocks
-    const laid = (k = 0.8, ch = 0.66) => {
+    // laid stone: courses of blocks, each block its own tone (mod), and dark mortar between them on the upright faces (tex: a fixed
+    // dark colour, so the joints show in sun and in shade alike)
+    const course = (x, y, z, ch = 0.66) => {
+      const c = y / ch + 0.15 * B.n3(x * 0.3, z * 0.3, 8), row = Math.floor(c), u0 = (x * 0.72 + z * 0.69) / 1.2 + row * 0.5, col = Math.floor(u0);
+      return { row, col, f: c - row, u: u0 - col };
+    };
+    const laid = (k = 0.8) => {
       const g = grit(k);
-      return (x, y, z, ny) => {
-        const c = y / ch + 0.15 * B.n3(x * 0.3, z * 0.3, 8), row = Math.floor(c), f = c - row, u0 = (x * 0.72 + z * 0.69) / 1.2 + row * 0.5, col = Math.floor(u0), u = u0 - col;
-        const tone = g(x, y, z) + 0.17 * (B.n3(col * 3.7, row * 1.9, 5.5) - 0.5);
-        return Math.abs(ny) > 0.6 ? tone : tone + (f < 0.16 || u < 0.07 ? -0.18 : 0);
-      };
+      return (x, y, z) => { const q = course(x, y, z); return g(x, y, z) + 0.17 * (B.n3(q.col * 3.7, q.row * 1.9, 5.5) - 0.5); };
+    };
+    const mortar = (x, y, z, ny) => {
+      if (Math.abs(ny) > 0.55) return undefined;
+      const q = course(x, y, z);
+      return q.f < 0.15 || q.u < 0.07 ? st[1] : undefined;
     };
     const grass = ramp('grass'), chalk = ramp('chalk'), st = ramp('stone'), wd = ramp('wood');
     // the ground: dark olive grass, rust-dark bracken in patches, and pale chalk where the road wears through
@@ -104,7 +110,7 @@ export default {
     // stone: shaded on the violet ramp; where the low sun still reaches, a ramp from violet up to warm, so a face it grazes is mottled
     // violet and rose and only a face turned full to it goes warm
     const sunR = [st[2], ...ramp('sunstone')];
-    const stone = { r: st, s: sunR, g: [st[1]], mod: laid(0.8), top: { min: 0.99, r: grass.slice(0, 3) } };
+    const stone = { r: st, s: sunR, g: [st[1]], mod: laid(0.8), tex: mortar, top: { min: 0.8, r: grass.slice(0, 3) } }; // the walks go to grass
     const cap = { r: st, s: sunR, g: [st[1]], mod: grit(0.9) };
     // fallen stone: darker, gone green on top
     const rubble = { r: st.slice(0, 4), s: sunR, g: [st[1]], mod: grit(1.1), top: { min: 0.82, r: grass.slice(0, 3) } };
