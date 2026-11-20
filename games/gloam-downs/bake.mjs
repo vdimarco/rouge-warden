@@ -149,7 +149,7 @@ export function build(def) {
   };
   const stats = {
     splats: world.count, build: Math.round(t1 - t0), walk: Math.round(t2 - t1), bake: Math.round(t3 - t2), avatar: Math.round(t4 - t3),
-    finish: Math.round(t5 - t4), gaps: walk.gaps, boned: boned.length, scenery: nScenery, glow: world.count - nScenery - boned.length
+    finish: Math.round(t5 - t4), gaps: walk.gaps, cracks: walk.cracks, boned: boned.length, scenery: nScenery, glow: world.count - nScenery - boned.length
   };
   return { world, meta, walk, stats, P };
 }

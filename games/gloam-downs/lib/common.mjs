@@ -5,6 +5,7 @@
 //   4. what glows (flames, wisps, the beacon's fire, motes, the sky dome, the moon), then finish
 // The page gets the splat rows, the walk map and a small JSON file; it never runs the toolkit.
 import { createRequire } from 'node:module';
+import { closeCracks } from './cracks.mjs';
 const require = createRequire(import.meta.url);
 const ink = require('@shapeshift-labs/ink-studio');
 export const lib = ink.load();
@@ -139,7 +140,8 @@ export function terrain(S, h, mat, { near = 26, res = 0.24, rings = [[52, 0.5], 
 /* ---------------- the walk map ----------------
    For each cell of a grid: the top surface (T); and where a gap of at least `clear` opens under it, the floor below the gap (G) and the
    gap's underside (U), the bottom of what lies over the gap. A cell with no gap has G = T and U = 0. Read from the scenery's own distance
-   field (S.sdf, once S.ready() has placed its solids), so what you see is what you stand on. */
+   field (S.sdf, once S.ready() has placed its solids), so what you see is what you stand on. Then the cracks one cell wide, narrower than
+   the lamplighter, are closed (lib/cracks.mjs) */
 export function walkMap(S, h, { x0, x1, z0, z1, step = 0.25, above = 10, clear = 1.8 }) {
   const nx = Math.round((x1 - x0) / step) + 1, nz = Math.round((z1 - z0) / step) + 1;
   const T = new Int16Array(nx * nz), G = new Int16Array(nx * nz), U = new Int16Array(nx * nz);
@@ -148,7 +150,6 @@ export function walkMap(S, h, { x0, x1, z0, z1, step = 0.25, above = 10, clear =
   /* each step down is at least 0.01, so this many always ends on a surface or under the ground. A column just off a wall's face creeps
      down it at that least step, all the way to the wall's foot; a shorter march would leave it in mid-air and keep that as the top */
   const steps = Math.ceil((above + 3) / 0.01) + 10;
-  let gaps = 0;
   for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
     const x = x0 + i * step, z = z0 + j * step, hy = h(x, z), top = hy + above;
     let y = top, d = sdf(x, y, z), t;
@@ -171,13 +172,16 @@ export function walkMap(S, h, { x0, x1, z0, z1, step = 0.25, above = 10, clear =
         if (inside && dd > 0.02) { inside = false; under = yy; }
         else if (!inside && dd < 0.006) break;
       }
-      if (under !== null && under - yy >= clear) { g = Math.max(yy, hy - 0.2); u = under; gaps++; }
+      if (under !== null && under - yy >= clear) { g = Math.max(yy, hy - 0.2); u = under; }
     }
     T[j * nx + i] = cm(t);
     G[j * nx + i] = cm(g);
     U[j * nx + i] = u ? cm(u) : 0;
   }
-  return { x0, z0, step, nx, nz, T, G, U, gaps };
+  const cracks = closeCracks({ T, G, U, nx, nz }, { clear: cm(clear) });
+  let gaps = 0;
+  for (let k = 0; k < T.length; k++) if (G[k] < T[k]) gaps++;
+  return { x0, z0, step, nx, nz, T, G, U, gaps, cracks };
 }
 // the walk file: the layers one after the other, as the page's makeWalk reads them (the JSON names them in walk.layers)
 export const WALK_LAYERS = ['T', 'G', 'U'];

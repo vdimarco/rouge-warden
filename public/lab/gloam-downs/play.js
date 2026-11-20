@@ -3,7 +3,7 @@
 
 export const PARAMS = {
   walk: 3.0, run: 6.4, accel: 36, airAccel: 14, jumpV: 8.2, gravity: 24, fallMul: 1.6, coyote: 0.12, buffer: 0.15,
-  stepUp: 0.5, stepDown: 0.6, slope: 1.1, radius: 0.3, turnRate: 12, touch: 1.0
+  stepUp: 0.5, stepDown: 0.6, slope: 1.1, radius: 0.3, turnRate: 12, touch: 1.0, slopeLift: 0.4
 };
 // highest a jump lifts the feet: v² / 2g
 export const JUMP = (PARAMS.jumpV * PARAMS.jumpV) / (2 * PARAMS.gravity);
@@ -28,32 +28,32 @@ export function makeWalk(info, cells) {
   };
   const top = (x, z) => sample(T, x, z);
   const floor = (x, z) => sample(G, x, z);
-  const gap = k => G[k] < T[k] - 5;
+  // a corner with a gap: the bake writes G = T where there is none, and G under T where there is one
+  const gap = k => G[k] < T[k];
   const under = k => (U ? U[k] * 0.01 : G[k] * 0.01 + clear);
-  /* are feet at `feet` in the gap of a cell, below its roof? oa..od mark the corners that ask: a gap under a top out of reach. The gap's
-     underside under the point is blended (with the corners' own weights) from those, and from the gap corners whose top is in reach and
-     whose underside is above the floor of every corner that asks: the same roof, sloping down under the feet. A corner whose underside is
-     below that floor belongs to the floor, as a grate or a boardwalk over a pit does, so it does not count. The feet are in the gap when
-     they are lower than the blend. So all the gap corners of a cell agree: a landing never blends a roof corner with a floor corner, and a
-     thin roof over a sloped floor is roof all across */
-  const inGap = (ka, kb, kc, kd, oa, ob, oc, od, u, v, feet) => {
-    const uu = clamp(u, 0, 1), vv = clamp(v, 0, 1), NO = -40000;
-    const ground = Math.max(oa ? G[ka] : NO, ob ? G[kb] : NO, oc ? G[kc] : NO, od ? G[kd] : NO) * 0.01; // the highest floor that asks
+  const UNDER = k => (gap(k) ? under(k) : NaN);
+  /* are feet at `feet` under the roof of corner q? The underside under the point is blended, with the corners' own weights (wq), over the
+     gap corners of the cell (undersides hq, NaN where there is no gap) that are the same roof as q: their underside is within SAME of
+     q's (a walkable slope, 2.77 per unit, rises about SAME across a cell's diagonal), and so is their top (tq) when it is in reach (aq
+     false), for a roof that slopes down under the feet goes on in its top too. A gap corner further off belongs to another solid: a
+     grate or a boardwalk over a pit beside a vault, the body of a hut over its crawl space beside the porch under its eave, a lean-to
+     whose top the feet stand on, against a hall. It has no say */
+  const SAME = 1.0, tq = [0, 0, 0, 0], hq = [0, 0, 0, 0], wq = [0, 0, 0, 0], aq = [false, false, false, false];
+  const roofed = (q, feet) => {
     let s = 0, w = 0, m = 0, n = 0;
-    const add = (k, asks, wk) => {
-      if (!gap(k)) return;
-      const h = under(k);
-      if (asks || h > ground) { s += wk * h; w += wk; m += h; n++; }
-    };
-    add(ka, oa, (1 - uu) * (1 - vv)); add(kb, ob, uu * (1 - vv)); add(kc, oc, (1 - uu) * vv); add(kd, od, uu * vv);
-    return n > 0 && feet < (w > 1e-9 ? s / w : m / n);
+    for (let r = 0; r < 4; r++) {
+      if (!(Math.abs(hq[r] - hq[q]) <= SAME && (aq[r] || Math.abs(tq[r] - tq[q]) <= SAME))) continue;
+      s += wq[r] * hq[r]; w += wq[r]; m += hq[r]; n++;
+    }
+    return feet < (w > 1e-9 ? s / w : m / n);
   };
   /* each corner gives its top if that is at or below y. Else, at a corner with a gap, it gives the floor under the gap when the feet are
-     in the gap, even if that floor is above them (then it is a step or a wall at the floor's own height); else its top, above them.
+     under its roof, even if that floor is above them (then it is a step or a wall at the floor's own height); else its top, above them.
      The feet decide, not the reach: so from a ledge in an archway the floor under the arch is a drop, on a floor that slopes up under a
      roof the higher side is floor, a jump under a high roof does not meet the roof, and from a roof, a crown or an arch's top a higher
-     part of it is a slope or a wall, never a hole down to the floor under it. The layer is chosen at the corners and then blended, so an
-     arch's edge is flat floor from below and a clean edge from above */
+     part of it is a slope or a wall, never a hole down to the floor under it. The corners of one roof agree, so a landing never blends a
+     roof corner with a floor corner of the same roof, and a thin roof over a sloped floor is roof all across. The layer is chosen at the
+     corners and then blended, so an arch's edge is flat floor from below and a clean edge from above */
   const grad = [0, 0]; // the slope of the floor at the last floorAt, per unit across
   const floorAt = (x, z, y, feet = y) => {
     const fx = (x - x0) / step, fz = (z - z0) / step, i = Math.floor(fx), j = Math.floor(fz), u = fx - i, v = fz - j;
@@ -61,11 +61,16 @@ export function makeWalk(info, cells) {
     const ka = j0 + i0, kb = j0 + i1, kc = j1 + i0, kd = j1 + i1, reach = y + 1e-4;
     let a = T[ka] * 0.01, b = T[kb] * 0.01, c = T[kc] * 0.01, d = T[kd] * 0.01;
     const oa = a > reach && gap(ka), ob = b > reach && gap(kb), oc = c > reach && gap(kc), od = d > reach && gap(kd);
-    if ((oa || ob || oc || od) && inGap(ka, kb, kc, kd, oa, ob, oc, od, u, v, feet)) {
-      if (oa) a = G[ka] * 0.01;
-      if (ob) b = G[kb] * 0.01;
-      if (oc) c = G[kc] * 0.01;
-      if (od) d = G[kd] * 0.01;
+    if (oa || ob || oc || od) {
+      const uu = clamp(u, 0, 1), vv = clamp(v, 0, 1);
+      tq[0] = a; tq[1] = b; tq[2] = c; tq[3] = d;
+      hq[0] = UNDER(ka); hq[1] = UNDER(kb); hq[2] = UNDER(kc); hq[3] = UNDER(kd);
+      wq[0] = (1 - uu) * (1 - vv); wq[1] = uu * (1 - vv); wq[2] = (1 - uu) * vv; wq[3] = uu * vv;
+      aq[0] = oa; aq[1] = ob; aq[2] = oc; aq[3] = od;
+      if (oa && roofed(0, feet)) a = G[ka] * 0.01;
+      if (ob && roofed(1, feet)) b = G[kb] * 0.01;
+      if (oc && roofed(2, feet)) c = G[kc] * 0.01;
+      if (od && roofed(3, feet)) d = G[kd] * 0.01;
     }
     const e = a - b - c + d;
     grad[0] = (b - a + e * v) / step;
@@ -85,7 +90,8 @@ export function makeWalk(info, cells) {
    where the feet last stood on a slope (a floor no steeper than climb per radius). A steeper floor is the face of a wall or a step:
    on it the base stays where the face began, so the feet rise no more than climb up a face, from any heading and in steps of any size,
    and a wall more than climb high stops the disc before its centre reaches the face. In the air nothing inside the disc may rise above
-   the feet, except the slope under the centre (no steeper than climb per radius), up to its own plane. */
+   the feet, except the slope under the centre (no steeper than climb per radius), up to its own plane; the feet do not rise up through
+   a roof over the centre; and a jump up a steep slope is held back so that the feet still rise slopeLift over it. */
 const climbOf = P => P.stepUp + P.slope * P.radius;
 const steepOf = P => climbOf(P) / P.radius;
 const RAYS = Array.from({ length: 16 }, (_, k) => [Math.cos((k * Math.PI) / 8), Math.sin((k * Math.PI) / 8)]);
@@ -122,7 +128,8 @@ function nearest(walk, x, z, top, feet, R, any = false, lean = null) {
 }
 
 /* ---------------- the lamplighter ----------------
-   Input: { mx, mz } in -1..1 relative to the camera (mz forward), slow (walk instead of run), jump (held). Yaw 0 faces +z. */
+   Input: { mx, mz } in -1..1 relative to the camera (mz forward), slow (walk instead of run), jump (held). Yaw 0 faces +z. Each step
+   leaves in s.events what happened in it: 'jump', 'fall' (off an edge), 'land', 'bump' (the feet met a roof from under it). */
 export function makeBody(walk, start, bounds, P = PARAMS) {
   const s = {
     x: start.p[0], z: start.p[2], y: walk.support(start.p[0], start.p[2], start.p[1] + 1) ?? start.p[1],
@@ -131,6 +138,8 @@ export function makeBody(walk, start, bounds, P = PARAMS) {
   };
   s.floor = s.base = s.y;
   const lim = bounds - 0.6, climb = climbOf(P), steep = steepOf(P);
+  // the fastest the slope under a rising jump may climb: then the jump lifts the feet slopeLift over it (v² = 2 g slopeLift at its top)
+  const rise = Math.max(0, P.jumpV - Math.sqrt(2 * P.gravity * P.slopeLift));
   // can the disc stand at (x, z) with nothing in it above `top` (or the slope's plane, lean), for feet at `feet`? Where the disc already
   // reaches over something higher (it landed by a wall, or walked down a slope beside a ledge), it may move along that or away from it,
   // but not nearer: so it never sticks to a wall and never works its way into one
@@ -151,6 +160,10 @@ export function makeBody(walk, start, bounds, P = PARAMS) {
   }
   // in the air, anything above the feet (top) is a wall, but for the slope under the centre (lean), and the feet are read at that height
   const flyTo = (x, z) => { s.x = x; s.z = z; };
+  /* do feet rising from lo to hi pass up through a roof's underside over the centre? With the reach held at lo, the corners under the
+     centre give the floor under their gap for feet at lo, and their roof, above lo, for feet at hi. However thin the roof and however
+     far the feet rise in one step */
+  const throughRoof = (lo, hi) => walk.floorAt(s.x, s.z, lo) <= lo + 1e-4 && walk.floorAt(s.x, s.z, lo, hi) > lo + 1e-4;
   // the face of the wall in front: the mean direction to the floors above `wall` (or the slope's plane, lean) on two rings (at 1.2 and 2
   // radii), so a wall that is a staircase on the grid reads as one face. Taken over the half ahead of the move, then twice more over the
   // half ahead of that mean, so the face of a wall the move runs along is not tilted towards the move. -> its normal (into the wall), or
@@ -246,14 +259,14 @@ export function makeBody(walk, start, bounds, P = PARAMS) {
     s.held = !!inp.jump;
     s.coy = s.ground ? P.coyote : Math.max(0, s.coy - dt);
     if (s.buf > 0 && s.coy > 0) { s.vy = P.jumpV; s.ground = false; s.buf = s.coy = 0; s.events.push('jump'); }
-    const dx = s.vx * dt, dz = s.vz * dt, x0 = s.x, z0 = s.z;
+    const x0 = s.x, z0 = s.z;
     if (s.ground) {
-      slid(move(dx, dz, walkFit, walkTo, walkTop, walkFeet));
+      slid(move(s.vx * dt, s.vz * dt, walkFit, walkTo, walkTop, walkFeet));
       if (s.ground) { s.vy = 0; s.airTime = 0; }
     } else {
-      const g = s.vy < 0 || !s.held ? P.gravity * P.fallMul : P.gravity;
+      const vy0 = s.vy, g = vy0 < 0 || !s.held ? P.gravity * P.fallMul : P.gravity;
       // the exact fall over the step, so a jump lifts the feet JUMP at any frame rate
-      const y1 = s.y + s.vy * dt - 0.5 * g * dt * dt;
+      const y1 = s.y + vy0 * dt - 0.5 * g * dt * dt;
       s.vy -= g * dt;
       s.airTime += dt;
       const top = Math.max(s.y, y1) + 0.05, at = () => top;
@@ -263,7 +276,15 @@ export function makeBody(walk, start, bounds, P = PARAMS) {
          off the slope's plane, as a wall or a ledge does, is still a wall above the feet */
       const f0 = walk.floorAt(s.x, s.z, top), gx = walk.grad[0], gz = walk.grad[1];
       const lean = f0 <= top + 1e-4 && Math.hypot(gx, gz) <= steep ? [f0 + 0.05, gx, gz, s.x, s.z] : null;
-      slid(move(dx, dz, (x, z) => fits(x, z, top, top, lean), flyTo, at, at, lean));
+      /* a jump up a slope that rises nearly as fast as the jump: while the feet rise faster than rise and are less than slopeLift over
+         the slope, the move up the slope is held back so that the slope rises under them no faster than rise. Then the feet still get
+         slopeLift over the slope (a held jump), on any slope and at any frame rate, and after that the run picks up again in the air.
+         A gentler slope, a walk, or a move across or down the slope is not held back */
+      if (lean && vy0 > rise && s.y - f0 < P.slopeLift) {
+        const k2 = gx * gx + gz * gz, up = s.vx * gx + s.vz * gz;
+        if (up > rise) { const e = (up - rise) / k2; s.vx -= e * gx; s.vz -= e * gz; }
+      }
+      slid(move(s.vx * dt, s.vz * dt, (x, z) => fits(x, z, top, top, lean), flyTo, at, at, lean));
       /* it lands on the floor under its centre when the feet are at or below it and it is in reach (on the slope's plane it may be a
          little over the feet). That holds on the way up too: on a run up a slope that rises nearly as fast as the jump, the slope meets
          the feet before the top of the jump, and it lands there and runs on. On a sloped roof or crown the higher side reads as roof, and
@@ -272,6 +293,11 @@ export function makeBody(walk, start, bounds, P = PARAMS) {
       const f = walk.floorAt(s.x, s.z, top);
       if (y1 <= f && f <= limit(top, lean, s.x, s.z) + 1e-4) {
         s.landK = clamp(-s.vy / 14, 0, 1); s.landAge = 0; s.y = s.base = f; s.vy = 0; s.ground = true; s.events.push('land');
+      } else if (y1 > s.y && throughRoof(s.y + 0.05, top)) {
+        /* the feet would rise up through the underside of a roof over the centre (a jump from under the edge of a higher roof, just
+           walked off a lower one). They stop under it and fall, as they would against a wall, and never stand on the roof's edge between
+           the two heights */
+        s.vy = 0; s.events.push('bump');
       } else s.y = y1;
     }
     const moved = Math.hypot(s.x - x0, s.z - z0);
