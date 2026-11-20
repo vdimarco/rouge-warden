@@ -36,9 +36,21 @@ The player SHALL move relative to the camera with WASD, the arrow keys, the left
 - **WHEN** the lamplighter walks or jumps into a wall or a ledge of 1.0 or more at any angle, on a 30, 60, 120 or 144 Hz screen
 - **THEN** it slides along the wall and stays on the ground below it, unless it jumps onto a ledge lower than its jump
 
+#### Scenario: Step on a ledge's lip
+- **WHEN** the lamplighter walks at a ledge of 1.2 that has a step of 0.7 on its lip, at any angle and frame rate
+- **THEN** it stops below the step, and a jump gets it onto the ledge
+
 #### Scenario: Under an arch
 - **WHEN** the lamplighter walks or runs under an arch or a tree crown with 1.8 of clearance, at any speed or frame rate
 - **THEN** its feet stay on the floor under it
+
+#### Scenario: On a roof
+- **WHEN** the lamplighter jumps on, or falls onto, a sloped roof, an arch's top or a tree crown with a gap under it, on a 30, 60, 120 or 144 Hz screen
+- **THEN** it lands on the top and does not fall through to the floor under it, and its shadow lies under its feet
+
+#### Scenario: Higher roof
+- **WHEN** the lamplighter walks on a roof into a higher roof
+- **THEN** it stops at the higher roof, or walks up it when the step is 0.5 or lower, and does not fall through
 
 #### Scenario: Jump onto a ledge
 - **WHEN** the lamplighter jumps at a ledge lower than its jump height

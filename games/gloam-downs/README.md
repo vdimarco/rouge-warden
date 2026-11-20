@@ -77,10 +77,11 @@ export default {
   - Keep prop spacing (`res`) at 0.08–0.14. Big flat walls can go to 0.12–0.16.
   - Far silhouettes beyond the play area can go to 0.3.
 - **Reach:** the start stands on the ground, and the beacon and every wisp can be reached on foot. The rules are:
-  - a step up of 0.5 (plus slope), and a jump that lifts the feet 1.40, so ledges up to about 1.2;
-  - the lamplighter is a disc of radius 0.3, so a way through must be wider than 0.6 on the walk map, where a bar or post takes up at least one 0.25 cell;
+  - a step up of 0.5 (plus slope), and a jump that lifts the feet 1.40, so ledges up to 1.3;
+  - the lamplighter is a disc of radius 0.3, so a way through must be wider than 0.6 on the walk map, where a bar or post takes up at least one 0.25 cell. Keep 3 clear cells or more. A bar that hangs in a doorway is a wall on the walk map, unless it touches the stone above it or lies on the floor;
   - a slope steeper than about 2.8 rise per unit is a face, and a face more than 0.83 high needs a jump;
-  - the reach check jumps onto the next grid cell only, so a jump across a gap does not count;
+  - the reach check jumps up to 1.3 and up to 1.0 across, along a row or a column of the grid. It lands only where the lamplighter can stand on a slope, so it does not land on the tip of a post or on the edge of a ledge. A gap of two cells can be jumped;
+  - from the top of a roof, an arch or a crown, a higher part of it is a wall, so a roof built in steps needs steps of 0.5 or less, or a jump;
   - any drop is allowed;
   - a wisp is touched from a floor 0.7 below it up to 2.1 under it, within 0.8 across.
 - **Summit:** the beacon stands at least 2 above the start, on a summit that the start's camera can see.

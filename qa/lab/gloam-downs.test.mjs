@@ -1,6 +1,7 @@
 // Gloam Downs, checked in node with no browser (public/lab/gloam-downs/):
 //   the five baked places (budget, palette, bones, wisps, beacon, the start on the ground, everything in reach by the controller's rules),
-//   the controller on made-up ground (walk, run, jump height, walls, steps, ledges, falls, walking under an arch),
+//   the controller on made-up ground (walk, run, jump height, walls, steps, ledges, a step on a ledge's lip, falls, walking under an
+//   arch, landing on a sloped roof or crown over a gap), the reach search's walks and jumps against the controller,
 //   the pose (the bones put the figure where the body is), and the saved game (rubbish in, a clean save out).
 // Run: node qa/lab/gloam-downs.test.mjs
 import assert from 'node:assert/strict';
@@ -272,6 +273,67 @@ const toward = (dx, dz) => { const l = Math.hypot(dx, dz); return { mx: dx / l, 
   }
   pass('steps are walked, a 1.0 ledge is jumped, a 2.0 ledge is too high, at every frame step and heading');
 }
+// made-up ground from a function of (x, z): a height, or [top, floor under its gap]
+const layered = fn => {
+  const info = { x0: -20, z0: -20, step: 0.25, nx: 161, nz: 161 }, N = info.nx * info.nz, cells = new Int16Array(2 * N);
+  for (let j = 0; j < info.nz; j++) for (let i = 0; i < info.nx; i++) {
+    const v = fn(info.x0 + i * info.step, info.z0 + j * info.step), [t, g] = Array.isArray(v) ? v : [v, v];
+    cells[j * info.nx + i] = Math.round(t * 100);
+    cells[N + j * info.nx + i] = Math.round((g ?? t) * 100);
+  }
+  return makeWalk(info, cells);
+};
+{ /* the base: a ledge of 1.2 with a step of 0.7 on its lip, one cell out. The step's face is steeper than climb per radius, so the base
+     stays at its foot, and the step and the ledge behind it together are more than a climb: no walk gets up, at any frame step or
+     heading. If the base came up the face with the feet, the climb would be spent again on each frame and the walk would creep up */
+  const lip = layered(x => (x < -0.01 ? 0 : x < 0.01 ? 0.7 : 1.2));
+  for (const dt of DTS) for (const slow of [false, true]) for (const deg of [0, 30, 60]) {
+    const a = deg * Math.PI / 180, w = makeBody(lip, { p: [-2, 0, 0], yaw: 0 }, 20);
+    const high = hold(w, 2, { ...toward(Math.cos(a), Math.sin(a)), slow }, dt);
+    assert(high < 0.05, `${hz(dt)} Hz${slow ? ' walking' : ''}, ${deg}° to the stepped lip: stood at ${high}`);
+  }
+  // and a jump gets onto it
+  for (const dt of DTS) {
+    const w = makeBody(lip, { p: [-1, 0, 0], yaw: 0 }, 20);
+    const high = hold(w, 1.5, t => ({ ...toward(1, 0), jump: t < 0.5 }), dt);
+    assert(near(high, 1.2, 0.02), `${hz(dt)} Hz: jumped onto the stepped lip: stood at ${high}`);
+  }
+  pass('a step on the lip of a 1.2 ledge does not let a walk up it: the climb is spent once');
+}
+{ /* roofs and crowns with a gap under them: a jump in place lands back on the top, a fall from above lands on it, and the shadow lies
+     under the feet; from a low roof, a higher roof is a wall and a 0.6 step up, not a hole down to the floor under them */
+  const roof = layered((x, z) => (Math.abs(x) <= 4 && Math.abs(z) <= 4 ? [3 + 0.5 * x, 0] : 0));
+  const dome = layered((x, z) => (Math.hypot(x, z) <= 4 ? [3 + 2 * Math.cos(Math.hypot(x, z) / 4 * Math.PI / 2), 0] : 0));
+  let tries = 0;
+  // spots off the grid points, where the corners round the feet differ
+  for (const [name, W2] of [['roof', roof], ['dome', dome]]) for (const dt of DTS) for (let x = -2; x <= 2; x += 0.37) for (let z = -2; z <= 2; z += 0.53) {
+    const b = makeBody(W2, { p: [x, 9, z], yaw: 0 }, 20), y0 = b.s.y;
+    assert(near(y0, W2.top(x, z), 1e-3), `${name}: put down on the top at ${x}, ${z}`);
+    let apex = 0;
+    for (let i = 0; i < 1.2 / dt; i++) {
+      b.step(dt, { jump: i * dt < 0.4 }, 0);
+      if (b.s.ground) assert(b.s.floor === b.s.y, `${name}, ${hz(dt)} Hz at ${x}, ${z}: the shadow is at ${b.s.floor}, the feet at ${b.s.y}`);
+      else if (b.s.y > apex) { apex = b.s.y; assert(near(b.s.floor, y0, 0.05), `${name}, ${hz(dt)} Hz at ${x}, ${z}: in the air the shadow is at ${b.s.floor}, not on the top under it`); }
+    }
+    assert(b.s.ground && near(b.s.y, y0, 0.02), `${name}, ${hz(dt)} Hz: a jump in place at ${x}, ${z} came down to ${b.s.y}, not the top at ${y0}`);
+    const c = makeBody(W2, { p: [x, 9, z], yaw: 0 }, 20);
+    c.s.ground = false; c.s.y = y0 + 3;
+    for (let i = 0; i < 1.5 / dt; i++) c.step(dt, {}, 0);
+    assert(c.s.ground && near(c.s.y, y0, 0.02), `${name}, ${hz(dt)} Hz: a fall onto ${x}, ${z} came down to ${c.s.y}, not the top at ${y0}`);
+    tries++;
+  }
+  for (const [rise, up] of [[1.5, false], [0.6, true]]) {
+    const W2 = layered((x, z) => (Math.abs(z) <= 4 && Math.abs(x) <= 6 ? [x < 0 ? 3 : 3 + rise, 0] : 0));
+    for (const dt of DTS) for (const z of [-1, 0, 1.1]) for (const slow of [false, true]) {
+      const b = makeBody(W2, { p: [-3, 9, z], yaw: 0 }, 20);
+      let low = Infinity, high = -Infinity;
+      for (let i = 0; i < 1.5 / dt; i++) { b.step(dt, { mx: 1, slow }, 0); if (b.s.x < 5) low = Math.min(low, b.s.y); if (b.s.ground) high = Math.max(high, b.s.y); }
+      assert(low > 2.95, `${hz(dt)} Hz${slow ? ' walking' : ''}: walking into a roof ${rise} higher, the feet fell to ${low}`);
+      assert(up ? near(high, 3 + rise, 0.01) : high < 3.05, `${hz(dt)} Hz${slow ? ' walking' : ''}: into a roof ${rise} higher, stood at ${high}`);
+    }
+  }
+  pass('jumps and falls land on a sloped roof or crown over a gap, and a higher roof is a wall or a step', { tries });
+}
 { // walking off an edge falls, and lands below
   const b = makeBody(W, { p: [8, 0, -7], yaw: Math.PI }, 20);
   run(b, 1.5, { mz: 1 }, 0);
@@ -340,6 +402,42 @@ const toward = (dx, dz) => { const l = Math.hypot(dx, dz); return { mx: dx / l, 
   assert(!R.near([4.5, 3.5, 0], 0.6) && !R.near([12.5, 10.5, 0], 0.6), 'the tops of the walls are not');
   assert(!R.near([-7.5, 3.5, 0], 0.4) && R.near([-7.5, 0.5, 0], 0.4), 'under the arch is, its top is not');
   pass('the reach search matches the controller');
+}
+{ /* the reach search jumps as the controller does: up to JUMP - 0.1, and across a gap to land up to 1.0 away. Flat ground at 0 with a
+     block 1.25 high and one 1.6 high, and two trenches 6 deep across the whole map: to the north two rows of the grid (from its edge
+     the first place to stand is 1.0 away), to the south five rows. The search reaches the 1.25 top and the north side, and the
+     controller gets there at every frame step; the 1.6 top and the south side are out of the search's reach */
+  const J = layered((x, z) => {
+    if (z > 2.1 && z < 2.6) return -6;
+    if (z < -2.1 && z > -3.4) return -6;
+    if (x >= -6 && x <= -4.5 && Math.abs(z) <= 1.5) return 1.25;
+    if (x >= 4.5 && x <= 6 && Math.abs(z) <= 1.5) return 1.6;
+    return 0;
+  });
+  const R = reachable(J, { p: [0, 0, 0] }, 20);
+  assert(R.near([-5.25, 2.3, 0], 0.4), 'the search jumps onto the 1.25 block');
+  assert(!R.near([5.25, 2.6, 0], 0.4), 'the search does not get onto the 1.6 block');
+  assert(R.near([0, 0.5, 4], 0.4), 'the search jumps the north trench');
+  assert(!R.near([0, 0.5, -5], 0.4), 'the search does not jump the south trench');
+  for (const dt of DTS) {
+    // onto the 1.25 block, from a run-up and from standing against it
+    for (const x of [-3, -4.15]) {
+      const b = makeBody(J, { p: [x, 0, 0], yaw: 0 }, 20);
+      const high = hold(b, 1.5, t => ({ ...toward(-1, 0), jump: t > (x < -4 ? 0 : 0.2) && t < 0.7 }), dt);
+      assert(near(high, 1.25, 0.01), `${hz(dt)} Hz: a jump from x ${x} onto the 1.25 block stood at ${high}`);
+    }
+    // not onto the 1.6 block
+    const c = makeBody(J, { p: [3, 0, 0], yaw: 0 }, 20);
+    const high = hold(c, 1.5, t => ({ ...toward(1, 0), jump: t > 0.2 && t < 0.7 }), dt);
+    assert(high < 0.05, `${hz(dt)} Hz: a jump at the 1.6 block stood at ${high}`);
+    // over the north trench, walking or running, jumping at its edge
+    for (const slow of [false, true]) {
+      const d = makeBody(J, { p: [0, 0, 0], yaw: 0 }, 20);
+      hold(d, 2, () => ({ ...toward(0, 1), slow, jump: d.s.z > 1.7 && d.s.z < 2.2 }), dt);
+      assert(d.s.ground && d.s.z > 3 && near(d.s.y, 0, 0.01), `${hz(dt)} Hz${slow ? ' walking' : ''}: over the north trench to z ${d.s.z}, y ${d.s.y}`);
+    }
+  }
+  pass('the reach search jumps up to JUMP - 0.1 and 1.0 across, and the controller makes those jumps');
 }
 
 /* ---------------- the pose ---------------- */

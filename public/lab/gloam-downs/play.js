@@ -11,9 +11,10 @@ const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 
 /* ---------------- the walk map ----------------
    Two layers of heights in centimetres on a grid: T, the top surface, and G, the floor under a gap (G = T where there is no gap).
-   floorAt(x, z, y) is the floor that feet at y meet there; above y means a wall. support(x, z, y) is that floor, or null for a wall. */
+   A gap is at least info.clear high (the bake's clear, 1.8). floorAt(x, z, y) is the floor that feet at y meet there; above y means a
+   wall. support(x, z, y) is that floor, or null for a wall. */
 export function makeWalk(info, cells) {
-  const { x0, z0, step, nx, nz } = info, N = nx * nz;
+  const { x0, z0, step, nx, nz } = info, N = nx * nz, clear = info.clear ?? 1.8;
   if (!(cells instanceof Int16Array) || cells.length < 2 * N) throw new Error('walk map is the wrong size');
   const T = cells.subarray(0, N), G = cells.subarray(N, 2 * N);
   const at = (L, i, j) => L[clamp(j, 0, nz - 1) * nx + clamp(i, 0, nx - 1)] * 0.01;
@@ -24,12 +25,14 @@ export function makeWalk(info, cells) {
   };
   const top = (x, z) => sample(T, x, z);
   const floor = (x, z) => sample(G, x, z);
-  // one corner for feet at y: its top if that is at or below y, else the floor under its gap if that is, else its top (above the feet)
+  /* one corner for feet at y: its top if that is at or below y; else the floor under its gap, if that is at or below y and y is lower
+     than the gap is high (feet that low are in the gap, not on its roof); else its top, above the feet. So from a roof, a crown or an
+     arch's top, a higher part of it is a slope or a wall, never a hole down to the floor under it */
   const corner = (k, y) => {
     const t = T[k] * 0.01;
     if (t <= y + 1e-4) return t;
     const g = G[k] * 0.01;
-    return g < t - 0.05 && g <= y + 1e-4 ? g : t;
+    return g < t - 0.05 && g <= y + 1e-4 && y < g + clear ? g : t;
   };
   // the layer is chosen at each corner and then blended, so an arch's edge is flat floor from below and a clean edge from above
   const grad = [0, 0]; // the slope of the floor at the last floorAt, per unit across
@@ -45,7 +48,7 @@ export function makeWalk(info, cells) {
     const f = floorAt(x, z, y);
     return f <= y + 1e-4 ? f : null;
   };
-  return { info, top, floor, floorAt, grad, support, x0, z0, step, nx, nz, T, G, x1: x0 + (nx - 1) * step, z1: z0 + (nz - 1) * step };
+  return { info, top, floor, floorAt, grad, support, clear, x0, z0, step, nx, nz, T, G, x1: x0 + (nx - 1) * step, z1: z0 + (nz - 1) * step };
 }
 
 /* ---------------- the rules for the feet ----------------
@@ -218,6 +221,7 @@ export function makeBody(walk, start, bounds, P = PARAMS) {
       s.airTime += dt;
       const top = Math.max(s.y, y1) + 0.05;
       slid(move(dx, dz, (x, z) => fits(x, z, top), flyTo, () => top));
+      // it lands on the floor under its centre; on a sloped roof or crown, the higher side reads as roof, so the landing is not missed
       const f = walk.floorAt(s.x, s.z, top);
       if (f <= top + 1e-4 && s.vy <= 0 && y1 <= f) {
         s.landK = Math.min(1, -s.vy / 14); s.landAge = 0; s.y = s.base = f; s.vy = 0; s.ground = true; s.events.push('land');
@@ -229,7 +233,8 @@ export function makeBody(walk, start, bounds, P = PARAMS) {
     s.moveK += ((s.ground ? Math.min(1, sp / P.walk) : 0) - s.moveK) * Math.min(1, dt * 12);
     s.runK += ((s.ground ? clamp((sp - P.walk) / (P.run - P.walk), 0, 1) : 0) - s.runK) * Math.min(1, dt * 8);
     s.landAge += dt;
-    s.floor = walk.support(s.x, s.z, s.y + 0.05) ?? s.y;
+    // the floor for the shadow: under the feet on the ground, else the floor they would land on
+    s.floor = s.ground ? s.y : walk.support(s.x, s.z, s.y + 0.05) ?? s.y;
     return s;
   }
   function place(p, yaw) {
@@ -362,10 +367,11 @@ export const touches = (s, p, r = PARAMS.touch) => Math.hypot(p[0] - s.x, p[2] -
 export const atBeacon = (s, b) => Math.hypot(b.p[0] - s.x, b.p[2] - s.z) < b.r && Math.abs(b.p[1] - s.y) < 2.6;
 
 /* ---------------- what can be reached ----------------
-   A search over the walk grid with the controller's own rules: the disc, the base and climb, a jump up to a ledge a little under
-   JUMP, and any drop. It is never more open than the controller: it tests the controller's own disc at each grid point and half way
-   to it; it moves the base only where every cell round a point is a slope; and a disc that reaches over something too high goes no
-   further. Returns near(p, ...) -> boolean, and the number of cells reached. */
+   A search over the walk grid with the controller's own rules: the disc, the base and climb, any drop, and a jump that rises up to
+   JUMP - 0.1 and lands up to 1.0 away along a row or a column. It is never more open than the controller: it tests the controller's
+   own disc at each grid point and half way to it; it moves the base only where every cell round a point is a slope; a disc that
+   reaches over something too high goes no further; and a jump lands only where the disc can stand on a slope, with nothing on the way
+   higher than both ends. Returns near(p, ...) -> boolean, and the number of cells reached. */
 export function reachable(walk, start, bounds, P = PARAMS) {
   const { nx, nz, x0, z0, step } = walk, lim = bounds - 0.6, climb = climbOf(P), steep = steepOf(P);
   const open = (x, z, top) => nearest(walk, x, z, top, P.radius, true) === Infinity;
@@ -386,24 +392,39 @@ export function reachable(walk, start, bounds, P = PARAMS) {
   const ci = x => Math.round((x - x0) / step), cj = z => Math.round((z - z0) / step);
   const y0 = walk.support(start.p[0], start.p[2], start.p[1] + 1) ?? start.p[1];
   visit(ci(start.p[0]), cj(start.p[2]), y0, y0);
-  const jumpUp = (P.jumpV * P.jumpV) / (2 * P.gravity) - 0.2; // JUMP for PARAMS
+  // a jump rises up to 0.1 short of its top (JUMP for PARAMS) and lands up to 1.0 away along a row or a column of the grid
+  const jumpUp = (P.jumpV * P.jumpV) / (2 * P.gravity) - 0.1, far = P.jumpV > 0 ? Math.max(1, Math.floor(1.0 / step + 1e-6)) : 0;
   for (let q = 0; q < queue.length; q++) {
     const [i, j, y, base, k] = queue[q];
     if (seen.get(k).base > base + 1e-6) continue; // reached again since with a higher base
     const ox = x0 + i * step, oz = z0 + j * step;
     for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-      const i2 = i + di, j2 = j + dj, x = x0 + i2 * step, z = z0 + j2 * step, mx = (ox + x) / 2, mz = (oz + z) / 2;
-      if (i2 < 0 || j2 < 0 || i2 >= nx || j2 >= nz || Math.abs(x) > lim || Math.abs(z) > lim) continue;
+      const inside = d => {
+        const i2 = i + di * d, j2 = j + dj * d;
+        return i2 >= 0 && j2 >= 0 && i2 < nx && j2 < nz && Math.abs(x0 + i2 * step) <= lim && Math.abs(z0 + j2 * step) <= lim;
+      };
+      if (!inside(1)) continue;
+      const x = ox + di * step, z = oz + dj * step, mx = ox + di * step / 2, mz = oz + dj * step / 2;
       // a walk: the disc clear within climb of the base, half way and there; on a slope the base comes to the feet
       let top = base + climb;
       if (open(mx, mz, top) && open(x, z, top)) {
         const f = walk.floorAt(x, z, top);
-        visit(i2, j2, f, slope(x, z, top) ? f : Math.min(base, f));
-        continue;
+        visit(i + di, j + dj, f, slope(x, z, top) ? f : Math.min(base, f));
+        if (f > y - 0.1) continue; // level or up: a jump this way starts from there instead
       }
-      // a jump: the same at the top of the jump, and it lands on the floor there
+      /* a jump: the disc clear at the top of the jump at every grid point and half way along the line. It lands at a grid point where
+         the disc can stand and every cell round it is a slope (so a landing near it is a landing on it, not on the tip of a stake or
+         the edge of a ledge). No floor on the way stands higher than both ends, so nothing between stops it or is landed on first */
       top = y + jumpUp;
-      if (open(mx, mz, top) && open(x, z, top)) { const f = walk.floorAt(x, z, top); visit(i2, j2, f, f); }
+      let high = -Infinity;
+      for (let d = 1; d <= far && inside(d); d++) {
+        const hx = ox + di * (d - 0.5) * step, hz = oz + dj * (d - 0.5) * step, px = ox + di * d * step, pz = oz + dj * d * step;
+        if (!open(hx, hz, top) || !open(px, pz, top)) break;
+        high = Math.max(high, walk.floorAt(hx, hz, top));
+        const f = walk.floorAt(px, pz, top), ft = f + climb;
+        if (high <= Math.max(y, f) + 1e-4 && Math.abs(walk.floorAt(px, pz, ft) - f) < 1e-3 && open(px, pz, ft) && slope(px, pz, ft)) visit(i + di * d, j + dj * d, f, f);
+        high = Math.max(high, f);
+      }
     }
   }
   const byCell = new Map();
