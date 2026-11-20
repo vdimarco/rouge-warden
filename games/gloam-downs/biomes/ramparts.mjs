@@ -349,7 +349,7 @@ export default {
       }
       // the sun, sinking into the far downs in a gap of the far broken wall, a thin bar of cloud across its top
       {
-        const e0 = skyline(bSun), s0 = at(bSun, e0 + 0.45 * deg, 170);
+        const e0 = skyline(bSun), s0 = at(bSun, e0 + 0.3 * deg, 170);
         B.iso(s0[0], s0[1], s0[2], 3.0, B.P[f[1]], 3, { em: true, nd: true });
         B.iso(s0[0], s0[1] + 0.4, s0[2], 1.8, B.P[f[2]], 3, { em: true, nd: true });
         B.iso(s0[0], s0[1], s0[2], 10, B.P[sun[0]], 0.35, { em: true, nd: true });
