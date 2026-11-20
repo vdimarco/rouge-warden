@@ -521,26 +521,26 @@ export default {
        The page's first picture cuts off anything much higher than the beacon, so the mill is fat rather than tall: its cap and its
        top sails stop under the fire cage, and the cage on its mast is the highest thing on the hill. */
     {
-      const [mx, mz] = MILL, gy = Y.top, bodyTop = gy + 2.75, rAt = y => 1.95 - 0.75 * Math.max(0, Math.min(1, (y - gy - 0.2) / (bodyTop - gy - 0.2)));
-      // a footing of fat stones, then the body: a fat barrel of boards that narrows hard toward the cap, banded with iron, so the
-      // sails reach well past it on both sides and read as a cross against the haze
-      S.lathe([mx, gy - 0.7, mz], 1.1, t => 2.3 - 0.2 * t, stone, { res: 0.13, maxRadius: 2.35 });
-      S.lathe([mx, gy + 0.2, mz], bodyTop - gy - 0.2, t => 1.95 - 0.75 * t, { ...wood, mod: boards(mx, mz, 0.7) }, { res: 0.13, maxRadius: 2.0 });
+      const [mx, mz] = MILL, gy = Y.top, bodyTop = gy + 2.9, rAt = y => 1.55 - 0.6 * Math.max(0, Math.min(1, (y - gy - 0.2) / (bodyTop - gy - 0.2)));
+      // a footing of fat stones, then the body: a stout tower of boards that narrows toward the cap, banded with iron. It is much
+      // narrower than the sails' reach, so from across the fen the cross stands out round it against the haze
+      S.lathe([mx, gy - 0.7, mz], 1.1, t => 1.95 - 0.2 * t, stone, { res: 0.13, maxRadius: 2.0 });
+      S.lathe([mx, gy + 0.2, mz], bodyTop - gy - 0.2, t => 1.55 - 0.6 * t, { ...wood, mod: boards(mx, mz, 0.7) }, { res: 0.12, maxRadius: 1.6 });
       for (const y of [gy + 0.9, bodyTop - 0.4]) S.torus([mx, y, mz], rAt(y) + 0.04, 0.11, iron, { res: 0.08 });
       // the door at the foot, wide and dark, under a fat lintel
       S.box([mx + 0.2, gy + 0.85, mz + rAt(gy + 0.85) - 0.08], [0.55, 0.75, 0.14], dark, { res: 0.08 });
       S.box([mx + 0.2, gy + 1.7, mz + rAt(gy + 1.7) - 0.02], [0.8, 0.14, 0.16], wood, { rd: 0.04, res: 0.08 });
       // the cap: a fat thatch dome, sagging a little to one side, and a short topknot
-      S.lathe([mx, bodyTop - 0.15, mz], 0.95, t => 1.6 * Math.sqrt(Math.max(0, 1 - t * t)) + 0.06, thatch, { res: 0.12, maxRadius: 1.7, ax: tipAx(0.4, 0.07, 0.03) });
-      S.ball([mx + 0.05, bodyTop + 0.82, mz - 0.05], [0.2, 0.18, 0.2], thatch, { res: 0.08 });
+      S.lathe([mx, bodyTop - 0.15, mz], 0.8, t => 1.2 * Math.sqrt(Math.max(0, 1 - t * t)) + 0.06, thatch, { res: 0.11, maxRadius: 1.3, ax: tipAx(0.4, 0.07, 0.03) });
+      S.ball([mx + 0.05, bodyTop + 0.68, mz - 0.05], [0.18, 0.16, 0.18], thatch, { res: 0.08 });
       // the windshaft out of the south face, past the cap's rim, and a fat iron hub
-      const hub = [mx, gy + 2.2, mz + 1.8];
+      const hub = [mx, gy + 2.25, mz + 1.45];
       S.tube([[mx, hub[1], mz + 0.6], hub], 0.2, 0.18, wood, { res: 0.08 });
       S.ball(hub, 0.32, iron, { res: 0.07 });
       // four sails in a cross at forty-five degrees (the lowest a cross can stand), few and fat members: a stock, two rails and two
-      // bars of dark wood, which read against the haze. Three carry pale sacking, which reads against the dark body (one is torn
-      // short); the fourth is a bare rack with fish hung to dry
-      const L = 2.3, sack = { r: [st[0], st[1], st[2]], g: [st[1]], mod: grit(0.7) };
+      // bars. Three carry dark sacking (one torn short), the fourth is a bare rack with fish hung to dry; all dark, so the cross
+      // reads black against the lit haze
+      const L = 2.3, sack = { r: [mud[0], mud[1], st[0]], g: [mud[1]], mod: grit(0.7) };
       for (let k = 0; k < 4; k++) {
         const a = Math.PI / 4 + 0.03 + k * Math.PI / 2, ux = Math.cos(a), uy = Math.sin(a), ax = [[uy, -ux, 0], [ux, uy, 0], [0, 0, 1]];
         const at = (s, o, dz = 0) => [hub[0] + ux * s + uy * o, hub[1] + uy * s - ux * o, hub[2] + 0.14 + dz];
@@ -565,7 +565,7 @@ export default {
       }
       // the deck: planks east of the body on four fat stilts with braces, a railing on its north and east sides, a stair up from the
       // south where the climb comes in
-      const dx0 = mx + 1.8, dx1 = mx + 5.2, dz0 = mz - 1.8, dz1 = mz + 1.6, dcx = (dx0 + dx1) / 2, dcz = (dz0 + dz1) / 2, dy = Y.deck;
+      const dx0 = mx + 1.5, dx1 = mx + 4.9, dz0 = mz - 1.8, dz1 = mz + 1.6, dcx = (dx0 + dx1) / 2, dcz = (dz0 + dz1) / 2, dy = Y.deck;
       for (let k = 0; k < 6; k++) {
         const z = dz0 + (k + 0.5) * (dz1 - dz0) / 6;
         slab([dcx, dy - 0.13 + B.rr(-0.02, 0.02), z], [(dx1 - dx0) / 2 + B.rr(-0.05, 0.12), 0.13, (dz1 - dz0) / 12 - 0.02], plank, { ax: yawAx(B.rr(-0.02, 0.02)), rd: 0.03, res: 0.12 });
@@ -663,7 +663,7 @@ export default {
       const dk = ramp('sky')[0], mn = ramp('moon');
       // as the page's first picture sees it: the moon just left of the mill, the tip of its upper-left sail over the moon's edge, and
       // its top well under the picture's top edge (half a degree below level)
-      const tip = [MILL[0] - 1.65, Y.top + 2.2 + 1.65, MILL[1] + 1.94]; // where the summit block puts that sail's tip
+      const tip = [MILL[0] - 1.7, Y.top + 2.25 + 1.65, MILL[1] + 1.6]; // where the summit block puts that sail's tip
       const toTip = Math.atan2(tip[0] - eye[0], -(tip[2] - eye[2])), dTip = Math.hypot(tip[0] - eye[0], tip[2] - eye[2]);
       const deg = Math.PI / 180, mr = 1.75 * deg, az = toTip - 0.7 * mr, el = -3.15 * deg, D = 175, rm = D * Math.tan(mr);
       const toMill = Math.atan2(MILL[0] + 1.6 - eye[0], -(MILL[1] - eye[2])); // the middle of the mill and its deck
@@ -753,7 +753,7 @@ export default {
           const a = toMill + (i + (j % 2) * 0.5) * 0.024 + B.rr(-0.006, 0.006);
           const dm = Math.hypot((a - az) * 0.6, e - el) / mr + B.rr(-0.9, 0.9);
           const dh = Math.hypot((a - toMill) * 0.7, (e + 0.065) * 1.5) / mr + B.rr(-0.9, 0.9);
-          const c = dm < 2.5 ? sk[3] : dm < 4.4 || dh < 4.6 ? sk[2] : null;
+          const c = dm < 2.5 || dh < 1.9 ? sk[3] : dm < 4.4 || dh < 4.6 ? sk[2] : null;
           if (c === null || e > -0.014 + B.rr(-0.01, 0.006)) continue;
           const p = dir(a, e), R = 185;
           B.axial(eye[0] + p[0] * R, eye[1] + p[1] * R, eye[2] + p[2] * R, [Math.cos(a), 0, Math.sin(a)], R * 0.02, R * 0.0042, B.P[c], 1.6, { em: true, nd: true });
