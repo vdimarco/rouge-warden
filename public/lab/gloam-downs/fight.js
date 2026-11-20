@@ -257,8 +257,7 @@ background:rgba(18,8,8,.78);box-shadow:0 0 0 2px #ff9a32,0 0 10px rgba(210,85,28
 #notches .notch i{position:absolute;left:3px;right:3px;bottom:3px;border-radius:0 0 12px 12px;background:#d2551c;max-height:calc(100% - 6px)}
 #notches .notch b{position:absolute;left:50%;top:50%;width:0;height:0;margin:-6px 0 0 -3px;border:6px solid transparent;border-left:9px solid #ffd77a;
 transform-origin:3px 6px;transform:rotate(var(--a)) translateX(14px)}
-#notches .notch.keepers{box-shadow:0 0 0 2px #ffd77a,0 0 12px rgba(255,154,50,.8)}
-.hud.low #count i{color:#ff9a32}.hud.beat #count i{text-shadow:0 0 6px #d2551c,0 0 2px #ff9a32}`;
+#notches .notch.keepers{box-shadow:0 0 0 2px #ffd77a,0 0 12px rgba(255,154,50,.8)}`;
       doc.head.appendChild(st);
       doc.body.appendChild(box);
     }
@@ -272,8 +271,8 @@ transform-origin:3px 6px;transform:rotate(var(--a)) translateX(14px)}
       d.firstChild.style.height = `${Math.round(n.fill * 100)}%`;
       d.lastChild.style.setProperty('--a', `${n.angle}rad`);
     });
-    const hud = doc.getElementById('hud');
-    if (hud) { hud.classList.toggle('low', feel.low); hud.classList.toggle('beat', G.game < G.beatTo); }
+    // the health bar pulses for 12 steps after each heartbeat (the HUD sets .low itself, below 30% health)
+    doc.getElementById('hud')?.classList.toggle('beat', G.game < G.beatTo);
     G.shown = list;
     return list;
   };

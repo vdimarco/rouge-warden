@@ -10,8 +10,9 @@ import { makeWalk, makeBody, makeCamera, camLayout, pose, touches, atBeacon, PAR
 import { makeCombat, makeMoveLock, asFoes } from './cameras.js';
 import { ORDER, load, store, wispCount, fresh } from './save.js';
 import * as RS from './run-save.js';
-import { STEP, stepCount, startRun, reload, goTo, chooseWick, maxOf, flasksOf, makeRunner, newSeed, WICKS } from './run.js';
+import { STEP, stepCount, startRun, reload, goTo, chooseWick, buy, maxOf, flasksOf, makeRunner, newSeed, WICKS } from './run.js';
 import { nearest, faceYaw, makePost, HITS } from './moves.js';
+import { NUMERAL, NAMES, fmt, stepsOf, INK, inkAt, TIMED, hudOf, wickLine, wickName, upgradeRows, lampButtons, summaryOf, routeOf, ASKS, cardOnLoad } from './screens.js';
 import { makeInput, navStep, readPads, heldNav } from './input.js';
 import * as cards from './cards.js';
 import { makePool } from './pool.js';
@@ -24,7 +25,6 @@ const canvas = $('view'), loading = $('loading'), loadLine = $('loadLine'), barF
 const q = new URLSearchParams(location.search);
 const coarse = matchMedia('(pointer: coarse)').matches;
 const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const NUMERAL = ['I', 'II', 'III', 'IV', 'V'];
 const TARGET = { low: 30000, mid: 64000, high: 110000 };
 // the combat run is behind ?run until it is finished; ?run&test&lineup gives a pool of one of each figure, to look at them
 const RUN = q.has('run'), LOOK = RUN && q.has('lineup');
@@ -176,21 +176,41 @@ function updateHud() {
   const others = meta.id === ORDER.at(-1) && ORDER.some(id => !save.lit[id]); // the last place lit before the rest
   $('hint').textContent = !beaconLit ? meta.hint || 'Light the beacon on the summit.' : others ? 'Other beacons are still dark. Use the map.' : 'The way is open. Use the map, or walk on.';
 }
-// the run's HUD line, until stage 2's health bar: health, flasks, wisps and glim carried
+// the run's HUD: the health bar with its number and a pip for each flask, then the wisps of this place and the glim carried
 function updateRunHud() {
-  const run = rs.run;
+  const h = hudOf(rs, runner?.wisps.size || 0);
   $('where').textContent = meta.name;
-  if (!run) { $('count').textContent = ''; return; }
-  $('count').innerHTML = `<i>♥ ${run.hp}/${maxOf(rs)}</i> · ⚗ ${run.flasks}/${flasksOf(rs)} · <b>◆ ${runner?.wisps.size || 0}/5</b> · ● ${run.carried} glim`;
+  $('life').hidden = !h;
+  hud.classList.toggle('low', !!h?.low);
+  $('count').hidden = !h;
+  $('hint').hidden = !h;
   $('hint').textContent = beaconLit ? 'The beacon burns.' : 'Put out the keepers, then light the beacon.';
-  $('healN').textContent = String(Math.min(5, run.flasks));
+  if (!h) return;
+  $('hpN').textContent = h.text;
+  $('hpFill').style.width = `${(h.share * 100).toFixed(1)}%`;
+  const pips = $('pips');
+  while (pips.children.length < h.pips.length) pips.appendChild(document.createElement('i'));
+  while (pips.children.length > h.pips.length) pips.lastChild.remove();
+  h.pips.forEach((on, i) => pips.children[i].classList.toggle('on', on));
+  $('life').setAttribute('aria-label', `Health ${h.text}, ${h.pips.filter(Boolean).length} of ${h.pips.length} flasks`);
+  $('count').innerHTML = `<b>◆ ${h.wisps}/5</b> wisps · <em>● ${h.glim}</em> glim`;
+  $('healN').textContent = String(Math.min(5, rs.run.flasks));
 }
+// in a run the toast sits 8 px under the HUD's measured bottom, at every width, and again whenever the HUD changes size
+function placeToast() {
+  if (!RUN || hud.hidden) return;
+  const r = hud.getBoundingClientRect();
+  if (r.height > 0) document.body.style.setProperty('--toastTop', `${Math.ceil(r.bottom + 8)}px`);
+}
+if (RUN) { if ('ResizeObserver' in window) new ResizeObserver(placeToast).observe(hud); addEventListener('resize', placeToast); }
+// in a run a toast and the arrival card last whole steps of the game clock (screensTick), so they wait while a card shows
+let toastLeft = 0, arriveLeft = 0;
 function toast(html, ms = 1800) {
   const t = $('toast');
   t.innerHTML = html;
   t.classList.add('on');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('on'), ms);
+  if (RUN) { placeToast(); toastLeft = stepsOf(ms); } else toastTimer = setTimeout(() => t.classList.remove('on'), ms);
 }
 function arrive() {
   const i = ORDER.indexOf(meta.id);
@@ -200,7 +220,8 @@ function arrive() {
   const a = $('arrive');
   a.classList.remove('off');
   clearTimeout(arriveTimer);
-  arriveTimer = setTimeout(() => a.classList.add('off'), still ? 2400 : 3200);
+  if (RUN) arriveLeft = stepsOf(still ? 2400 : 3200);
+  else arriveTimer = setTimeout(() => a.classList.add('off'), still ? 2400 : 3200);
 }
 // the controls for the input in use: the pad once the page has seen one, else touch on a touch screen, else the keys and the mouse
 const CONTROLS = {
@@ -252,7 +273,6 @@ function openMap() {
   mode = 'map';
   showCard({ el: $('map'), main: () => box.querySelector('[aria-current="true"]') });
 }
-const NAMES = { gaol: 'The Sunken Gaol', ramparts: 'The Crow Wall', fen: 'Lantern Fen', bells: 'The Bell Knoll', barrows: 'Barrow Crown' };
 $('bMap').addEventListener('click', () => {
   if (RUN) { if (mode === 'play') openPause(); else if (mode === 'pause' && !asking) resume(); return; }
   mode === 'map' ? closePanels() : openMap();
@@ -263,13 +283,13 @@ $('bStart').addEventListener('click', closePanels);
 $('bEndStay').addEventListener('click', closePanels);
 $('bAgain').addEventListener('click', () => { closePanels(); save.lit = {}; save.time = 0; save.at = 'gaol'; store(disk, save); go('gaol'); });
 for (const p of panels) $(p).addEventListener('pointerdown', e => { if (e.target === $(p) && p !== 'help') closePanels(); });
-const fmt = t => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
 
 /* ---------------- the run's cards ----------------
-   Until stage 2 builds the Lamp-room, the HUD and the full screens, these are the run's plain cards: the help with Begin the run, the
-   pause panel with End the run, the beacon card's wick choice and Walk on, and the summary of an ended run. In a run, a press outside
-   a card's box does nothing, but on the pause panel, where it resumes */
-let asking = false, chosen = null;
+   The help card, the beacon card (the wick choice, then Spend glim and Walk on), the Lamp-room, the pause panel and the run summary;
+   screens.js gives what each shows. In a run a press outside a card's box does nothing, but on the pause panel, where it resumes. B
+   and Escape go back where a card has a back action: Resume, No, Back to the beacon and Back to Wander. Before a wick is chosen, only
+   a wick button closes the beacon card */
+let asking = null, placeFresh = true, deadAt = -1;
 const storeRun = () => { sinceStore = 0; return RS.store(disk, rs); };
 function openCard(id, m, main, backFn = null) {
   $(id).hidden = false;
@@ -278,95 +298,184 @@ function openCard(id, m, main, backFn = null) {
   showControls();
   showCard({ el: $(id), main, back: backFn });
 }
+function hideCard(id) { $(id).hidden = true; cards.shut($(id)); }
 function closeCard(id) {
-  $(id).hidden = true;
-  cards.shut($(id));
+  hideCard(id);
   mode = 'play';
   inp.swallowAll();
   canvas.focus?.();
 }
 function openRunHelp() { openCard('runHelp', 'help', () => $('bBegin')); }
-$('bBegin').addEventListener('click', () => {
+// a new run starts in the Gaol: on the place as it loaded, or on the Gaol loaded again once this place has been played
+function beginRun(card) {
   rs.seen = true;
-  if (!rs.run) { startRun(rs, seed()); if (meta.id !== rs.run.place) { storeRun(); closeCard('runHelp'); go(rs.run.place); return; } newRunner(); }
+  startRun(rs, seed());
   storeRun();
-  closeCard('runHelp');
+  closeCard(card);
+  if (meta.id !== rs.run.place || !placeFresh) return go(rs.run.place);
+  newRunner();
   updateHud();
-});
+}
+$('bBegin').addEventListener('click', () => beginRun('runHelp'));
 const seed = () => (q.has('seed') ? Number(q.get('seed')) >>> 0 || 1 : newSeed(rs.runs));
+
+// the pause panel: the run's places, its time, Resume, the sound switch (stage 3 makes the sound), Back to the start and End the run
 function openPause() {
   if (!rs.run) return;
-  asking = false;
-  $('route').innerHTML = ORDER.map((id, i) => {
-    const at = ORDER.indexOf(rs.run.place), state = i < at ? 'passed' : i === at ? 'here' : 'ahead';
-    return `<li class="${state}"><span>${NUMERAL[i]}</span> ${NAMES[id]}<em>${state === 'here' ? 'now' : state}</em></li>`;
-  }).join('');
+  asking = null;
+  $('route').innerHTML = routeOf(rs.run.place).map(p => `<li class="${p.state}"><span>${p.n}</span> ${p.name}<em>${p.state === 'here' ? 'now' : p.state}</em></li>`).join('');
   $('pauseLine').textContent = `Run time ${fmt(rs.run.time)}`;
+  soundLabel();
   $('pauseRow').hidden = false;
   $('askRow').hidden = true;
   openCard('pause', 'pause', () => (asking ? $('bNo') : $('bResume')), () => (asking ? no() : resume()));
 }
-function resume() { asking = false; closeCard('pause'); }
-function no() { asking = false; $('askRow').hidden = true; $('pauseRow').hidden = false; cards.focusMain(); }
+function resume() { asking = null; closeCard('pause'); }
+function no() { asking = null; $('askRow').hidden = true; $('pauseRow').hidden = false; cards.focusMain(); }
+// End the run and Back to the start ask again first; while they ask, Escape and B choose No
+function ask(kind) {
+  asking = kind;
+  $('askLine').textContent = ASKS[kind].line(rs.run.place);
+  $('bYes').textContent = ASKS[kind].yes;
+  $('pauseRow').hidden = true;
+  $('askRow').hidden = false;
+  cards.focusMain();
+}
+function soundLabel() { $('bSound').textContent = rs.sound ? 'Sound on' : 'Sound off'; $('bSound').setAttribute('aria-pressed', String(rs.sound)); }
 $('bResume').addEventListener('click', resume);
-$('bEnd').addEventListener('click', () => { asking = true; $('pauseRow').hidden = true; $('askRow').hidden = false; cards.focusMain(); });
+$('bSound').addEventListener('click', () => { rs.sound = !rs.sound; storeRun(); soundLabel(); });
+$('bEnd').addEventListener('click', () => ask('end'));
+$('bRestart').addEventListener('click', () => ask('restart'));
 $('bNo').addEventListener('click', no);
 $('bYes').addEventListener('click', () => {
-  asking = false;
-  $('pause').hidden = true;
-  cards.shut($('pause'));
+  const kind = asking;
+  asking = null;
+  hideCard('pause');
+  // Back to the start restarts the place as a reload does: health and flasks no higher than at its start, its glim and foes back
+  if (kind === 'restart') { reload(rs.run); storeRun(); go(rs.run.place); return; }
   // End the run ends it as a death does
   mode = 'play';
   for (const e of runner.kill([])) runEvent(e);
 });
 $('pause').addEventListener('pointerdown', e => { if (e.target === $('pause') && !asking) resume(); });
-function openBeacon(offer) {
-  chosen = null;
-  $('beaconLine').textContent = 'Choose a wick. It burns for the rest of the run.';
-  const box = $('wicks');
+
+// the beacon card: two wicks to choose from, then Spend glim (the Lamp-room) and Walk on. Its offer is in the save, so a reload before
+// the choice shows the same two wicks over the next place
+function openBeacon() {
+  const run = rs.run, offer = run.offer, box = $('wicks');
   box.textContent = '';
-  for (const id of offer) {
-    const w = WICKS.find(x => x.id === id), b = document.createElement('button');
+  for (const id of offer || []) {
+    const b = document.createElement('button'), name = document.createElement('b');
     b.type = 'button';
     b.className = 'wick';
     b.dataset.wick = id;
-    b.textContent = `${w.name} · ${w.text}`;
+    name.textContent = wickName(id);
+    b.append(name, wickLine(id).slice(name.textContent.length));
     b.addEventListener('click', () => {
-      if (chosen || !chooseWick(rs, id)) return;
-      chosen = id;
+      if (!rs.run?.offer || !chooseWick(rs, id)) return;
       storeRun();
-      for (const x of box.children) x.hidden = true;
-      $('beaconLine').textContent = `${w.name} burns in the lamp.`;
-      $('bWalkOn').hidden = false;
-      cards.focusMain();
       updateHud();
+      openBeacon();
     });
     box.appendChild(b);
   }
-  $('bWalkOn').hidden = true;
+  $('beaconLine').textContent = offer ? 'Choose a wick. It burns for the rest of the run.' : `${wickName(run.wicks.at(-1))} burns in the lamp.`;
+  $('beaconBank').innerHTML = `Banked: <b class="bank">${rs.bank} glim</b>. Spend it in the Lamp-room, or walk on.`;
+  $('beaconBank').hidden = $('beaconRow').hidden = !!offer;
   // before the wick is chosen only a wick button closes the card: it has no back action
-  openCard('beaconCard', 'beacon', () => (chosen ? $('bWalkOn') : box.querySelector('button')));
+  openCard('beaconCard', 'beacon', () => (rs.run?.offer ? box.querySelector('button') : $('bWalkOn')));
 }
 // Walk on loads the next place; after a reload at the card, the card already shows over it
-$('bWalkOn').addEventListener('click', () => { if (meta.id === rs.run.place) return closeCard('beaconCard'); $('beaconCard').hidden = true; cards.shut($('beaconCard')); go(rs.run.place); });
-function openSummary() {
-  const e = rs.ended;
-  $('sumT').textContent = e.won ? 'The downs are lit' : 'The lamp goes out';
-  $('sumPlace').textContent = `${NUMERAL[ORDER.indexOf(e.place)]} · ${NAMES[e.place]}`;
-  $('sumTime').textContent = fmt(e.time);
-  $('sumFoes').textContent = String(e.foes);
-  $('sumLost').textContent = `${e.lost} glim`;
-  $('sumBanked').textContent = `${e.banked} glim`;
-  openCard('summary', 'ended', () => $('bNewRun'));
+$('bWalkOn').addEventListener('click', () => { if (meta.id === rs.run.place) return closeCard('beaconCard'); hideCard('beaconCard'); go(rs.run.place); });
+$('bSpend').addEventListener('click', () => { hideCard('beaconCard'); openLamp('beacon'); });
+
+/* the Lamp-room: the bank, the five lasting upgrades with Buy, and Begin the run. From a beacon card it shows Back to the beacon in
+   place of Begin the run and Wander; with a run in progress, Go on with the run. A buy stores the run at once */
+const LAMP = { back: 'bLampBack', begin: 'bLampBegin', goon: 'bLampGoOn', wander: 'bLampWander', toWander: 'bLampToWander' };
+// stage 3 opens Wander after the first win or a finished explorer walk, and builds it behind ?wander
+const wanderOpen = () => false;
+const toWander = () => location.assign('./?wander');
+function openLamp(from = null) {
+  const b = lampButtons(rs, from, wanderOpen());
+  for (const [k, id] of Object.entries(LAMP)) $(id).hidden = !b.list.includes(k);
+  fillLamp();
+  openCard('lamp', 'lamp', () => $(LAMP[b.main]), b.back ? () => $(LAMP[b.back]).click() : null);
 }
-$('bNewRun').addEventListener('click', () => {
-  rs.ended = null;
-  startRun(rs, seed());
+function fillLamp() {
+  $('lampLine').innerHTML = `Banked: <b class="bank">${rs.bank} glim</b>. What you buy here lasts for every run.`;
+  const list = $('ups');
+  for (const row of upgradeRows(rs)) {
+    let li = list.querySelector(`li[data-up="${row.id}"]`);
+    if (!li) {
+      li = document.createElement('li');
+      li.dataset.up = row.id;
+      li.innerHTML = '<span></span><b class="lv"></b><button type="button"></button>';
+      li.querySelector('button').addEventListener('click', () => buyUp(row.id));
+      list.appendChild(li);
+    }
+    li.classList.toggle('top', row.top);
+    li.querySelector('span').textContent = row.label;
+    const lv = li.querySelector('.lv');
+    lv.innerHTML = Array.from({ length: row.max }, (_, i) => `<i${i < row.lvl ? ' class="on"' : ''}></i>`).join('');
+    lv.setAttribute('aria-label', `level ${row.lvl} of ${row.max}`);
+    const btn = li.querySelector('button');
+    btn.hidden = row.top;
+    btn.textContent = row.buy || '';
+    btn.setAttribute('aria-disabled', String(!!row.need));
+    btn.setAttribute('aria-label', row.need ? `${row.label}: ${row.need} more glim needed` : `Buy ${row.label}`);
+  }
+}
+function buyUp(id) {
+  const btn = $('ups').querySelector(`li[data-up="${id}"] button`), had = document.activeElement === btn;
+  if (!buy(rs, id)) return;
   storeRun();
-  $('summary').hidden = true;
-  cards.shut($('summary'));
-  go(rs.run.place);
+  fillLamp();
+  updateHud();
+  // at its top level a row has no Buy button: the focus goes on to the next Buy button, or to the main button
+  if (had && btn.hidden) {
+    const all = [...$('ups').querySelectorAll('li')].map(li => li.querySelector('button')), at = all.indexOf(btn);
+    const next = [...all.slice(at + 1), ...all.slice(0, at)].find(b => !b.hidden);
+    next ? next.focus({ preventScroll: true }) : cards.focusMain();
+  }
+}
+$('bLampBack').addEventListener('click', () => { hideCard('lamp'); openBeacon(); });
+$('bLampBegin').addEventListener('click', () => beginRun('lamp'));
+// Go on with the run goes on as a reload does, at the start of the run's place
+$('bLampGoOn').addEventListener('click', () => { reload(rs.run); storeRun(); hideCard('lamp'); go(rs.run.place); });
+$('bLampWander').addEventListener('click', toWander);
+$('bLampToWander').addEventListener('click', toWander);
+
+// the run summary: the place reached, the time, the foes put out, the glim lost and banked. Closing it clears the ended run, and the
+// Lamp-room follows over the Gaol, where the next run starts with every foe back
+function openSummary() {
+  const s = summaryOf(rs.ended), dds = $('summary').querySelectorAll('dd');
+  $('sumT').textContent = s.title;
+  s.rows.forEach(([, v], i) => { dds[i].textContent = v; });
+  openCard('summary', 'ended', () => $('bSumLamp'));
+}
+$('bSumLamp').addEventListener('click', () => {
+  rs.ended = null;
+  storeRun();
+  hideCard('summary');
+  go(ORDER[0]);
 });
+// the card that a load of the page opens over the place (screens.js cardOnLoad)
+function openOnLoad() {
+  const card = cardOnLoad(rs);
+  if (card === 'summary') openSummary();
+  else if (card === 'help') openRunHelp();
+  else if (card === 'lamp') openLamp();
+  else if (card === 'beacon') openBeacon();
+}
+// one step of the game clock in a run: the toast and the arrival card count down, and a place that has been played is no longer fresh
+function screensTick() {
+  if (mode === 'play' && rs.run) placeFresh = false;
+  if (toastLeft > 0 && --toastLeft === 0) $('toast').classList.remove('on');
+  if (arriveLeft > 0 && --arriveLeft === 0) $('arrive').classList.add('off');
+}
+// the fade to ink at death: the grade does it when the foes' feel is on (world.anim.grade), the overlay otherwise
+const inkNow = () => inkAt(deadAt < 0 ? -1 : steps - deadAt);
+const hex = c => `#${(c >>> 0).toString(16).padStart(6, '0')}`;
 
 /* ---------------- wisps and the beacon ---------------- */
 // put splats out (density 0) or back; the renderer then uploads only the changed 512-splat rows
@@ -462,8 +571,8 @@ function runEvent(e) {
     case 'dark': toast(e.why || 'The beacon will not catch yet', 2600); break;
     case 'toast': toast(e.what === 'full' ? 'Health is full' : 'No flask left. A lit beacon fills the flasks.', 2200); break;
     case 'fall': cam.snap(body.s, body.s.yaw + Math.PI); toast('A fall · −10 health'); break;
-    // stage 2 draws the fade to ink over 72 steps before the summary
-    case 'dead': endAt = steps + 72; mode = 'dying'; break;
+    // the fade to ink over 72 steps, then the summary; the ended run is already stored
+    case 'dead': endAt = steps + INK; deadAt = steps; mode = 'dying'; arriveLeft = 0; $('arrive').classList.add('off'); break;
     case 'store': storeRun(); break;
   }
   if (['wisp', 'drink', 'hurt', 'fall', 'beacon', 'win', 'store', 'glim', 'foeOut'].includes(e.type)) updateHud();
@@ -541,6 +650,13 @@ async function go(id) {
     beaconLit = false;
     setLit(meta.beacon.fire, false);
     posts.length = 0;
+    // the screens start again with the place: no ink, no toast left over, and a place not yet played
+    deadAt = -1;
+    placeFresh = true;
+    toastLeft = 0;
+    $('toast').classList.remove('on');
+    $('ink').style.background = hex(meta.pal?.[0] ?? 0x05060c);
+    $('ink').style.opacity = '0';
     newRunner();
     gallery = null;
     if (LOOK && !manual) startGallery();
@@ -565,9 +681,7 @@ async function go(id) {
   arrive();
   if (manual && !nodraw) draw();
   if (RUN) {
-    if (rs.ended) openSummary();
-    else if (!rs.run) openRunHelp();
-    else if (rs.run.offer) openBeacon(rs.run.offer);
+    openOnLoad();
     storeRun();
   } else if (!save.seen) {
     $('helpKeys').hidden = coarse;
@@ -595,11 +709,12 @@ function update() {
       if (rs.run && ++sinceStore >= 120) storeRun();
     }
     if (gallery) stepGallery();
+    if (runner && TIMED.includes(mode)) screensTick();
     if (endAt && steps >= endAt && ['dying', 'won', 'lit'].includes(mode)) {
       const was = mode;
       endAt = 0;
       mode = 'play';
-      if (was === 'lit') openBeacon(rs.run.offer);
+      if (was === 'lit') openBeacon();
       else openSummary();
     }
   } else if (mode === 'play') {
@@ -649,6 +764,7 @@ function draw(o = {}) {
     if (lost || canvas.getContext('webgl2')?.isContextLost()) { lost = true; return; }
     console.warn(err); paused = true; loadLine.textContent = `The picture stopped: ${err.message}`; loading.classList.remove('done');
   }
+  if (RUN) $('ink').style.opacity = world.anim.grade ? '0' : String(inkNow());
   frames++;
 }
 function frame(now) {
@@ -785,6 +901,7 @@ window.__gloam = {
     }
     // o.bossHp is stage 3's (the boss fight)
     updateHud();
+    if (mode === 'lamp') fillLamp();
     storeRun();
     return runState();
   },
@@ -803,6 +920,11 @@ window.__gloam = {
     ev.forEach(runEvent);
     return r;
   },
+  /* the run's screens (?run&test): kill() ends the run as a death does (a test kill); toast(text, ms) shows a toast and gives its
+     rect; lamp(from) opens the Lamp-room as from a beacon card ('beacon'), from Wander's Map ('wander') or on its own */
+  kill: () => { if (RUN && runner) runner.kill([]).forEach(runEvent); return RUN ? runState() : null; },
+  toast: (text, ms = 1800) => { toast(String(text).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]), ms); return $('toast').getBoundingClientRect().toJSON(); },
+  lamp: (from = null) => { if (RUN) openLamp(from); return mode; },
   project,
   // stage 2 hands the page its foes as targets
   setTargets: fn => { foeTargets = fn; },

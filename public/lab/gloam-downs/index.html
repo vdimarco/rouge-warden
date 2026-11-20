@@ -101,6 +101,7 @@
   .route li.here { color: var(--bone); border-color: var(--emberd); }
   .route li.passed { color: #c9c2ae; }
   .wicks { display: grid; gap: 8px; margin: 8px 0 12px; }
+  .wicks:empty { display: none; }
   .wicks button { width: 100%; text-align: left; padding: 10px 14px; line-height: 1.3; }
   .panel .ask { margin: 4px 0 10px; color: var(--bone); }
   .panel .row[hidden] { display: none; }
@@ -109,6 +110,63 @@
   @media (max-width: 520px) { .hud .hint { display: none; } .hud p { font-size: 12px; } .tools button { padding: 0 10px; font-size: 13px; } }
   /* in a run the second tool reads Pause, a little wider than Map: tighter padding keeps it clear of the HUD at 320 */
   @media (max-width: 520px) { body.run .tools button { padding: 0 8px; } }
+  /* the run's HUD: under the place, one row of a health bar in ember, its number and a pip for each flask, then the wisps and the glim
+     carried. The row is made of i and b, not span, so the Lab kit's pill style for .hud span stays out of it. At 520 px wide or less
+     the row is 12 px with a 56 x 8 px bar and 6 px pips, so the HUD is at most 88 px tall there; in the boss fight the hint hides */
+  .hud .life { display: none; }
+  body.run .hud .life { display: flex; align-items: center; gap: 6px; }
+  body.run .hud .life[hidden] { display: none; }
+  .hud .life b { font: 700 13px/1 var(--body); color: #ffe2bd; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .hud .hpbar { position: relative; display: block; flex: none; width: 120px; height: 10px; background: #1c0d0b; box-shadow: 0 0 0 1px #5a3424; }
+  .hud .hpbar i { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; background: linear-gradient(90deg, var(--emberd), var(--ember)); }
+  .hud.low .hpbar { box-shadow: 0 0 0 1px var(--ember); }
+  .hud.beat .hpbar { box-shadow: 0 0 0 2px var(--ember), 0 0 8px rgba(210, 85, 28, 0.8); }
+  .hud .pips { display: flex; gap: 2px; flex: none; }
+  .hud .pips i { display: block; width: 8px; height: 8px; box-sizing: border-box; border-radius: 50%; border: 1px solid #3f8f78; }
+  .hud .pips i.on { background: #8cf0cc; border-color: #c8f6e6; }
+  body.run .hud .count em { font-style: normal; color: #ffd77a; }
+  .hud.boss .hint { display: none; }
+  @media (max-width: 520px) {
+    body.run .hud .life { gap: 5px; }
+    .hud .life b { font-size: 12px; }
+    .hud .hpbar { width: 56px; height: 8px; }
+    .hud .pips { gap: 2px; }
+    .hud .pips i { width: 6px; height: 6px; }
+  }
+  /* the fade to ink at death, over the picture and under the HUD (the grade does it when the foes' feel is on: see main.js draw) */
+  .ink { position: fixed; inset: 0; z-index: 1; background: var(--night); opacity: 0; pointer-events: none; }
+  /* in a run the toast sits 8 px under the HUD's measured bottom (main.js sets top), and the toast and the arrival card wait under a card */
+  body.run .toast { top: var(--toastTop, calc(var(--sat) + 116px)); margin: 0; }
+  body.run:has(.panel:not([hidden])) .toast, body.run:has(.panel:not([hidden])) .arrive { visibility: hidden; }
+  body.run:has(.toast.on) .arrive { opacity: 0; }
+  /* the run's cards clear the Lab bar row, so no card button lies under ◀ Lab or Games, and fit the window with no scroll */
+  body.run .panel { box-sizing: border-box; padding: calc(var(--sat) + 60px) 12px calc(var(--sab) + 12px); }
+  body.run .panel .box { max-height: calc(100dvh - var(--sat) - var(--sab) - 72px); }
+  body.run .panel .row button { white-space: normal; line-height: 1.15; padding: 4px 10px; }
+  #pauseRow { display: grid; gap: 8px; }
+  #pauseRow[hidden] { display: none; }
+  #bSound[aria-pressed="false"] { color: var(--ash); }
+  .panel .ups { list-style: none; margin: 8px 0 12px; padding: 0; display: grid; gap: 6px; }
+  .ups li { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2px 10px; padding: 4px 4px 4px 10px; border-radius: 10px; border: 1px solid var(--edge); }
+  .ups li span { font: 600 14px/1.25 var(--body); color: var(--bone); }
+  .ups li .lv { grid-column: 1; display: flex; gap: 3px; }
+  .ups li .lv i { width: 7px; height: 7px; border-radius: 50%; border: 1px solid var(--emberd); }
+  .ups li .lv i.on { background: var(--ember); }
+  .ups li button { grid-column: 2; grid-row: 1 / span 2; min-width: 88px; padding: 4px 10px; line-height: 1.15; white-space: normal; }
+  .ups li button[aria-disabled="true"] { color: var(--ash); border-color: var(--edge); background: rgba(20, 18, 26, 0.9); cursor: default; font-weight: 600; font-size: 13px; }
+  .ups li.top span { color: var(--ash); }
+  .panel .bank { color: #ffd77a; font-weight: 700; }
+  /* short windows: smaller titles and padding, so the pause panel and the Lamp-room fit 640 and 600 px with no scroll */
+  @media (max-height: 660px) {
+    body.run .panel .box { padding: 12px 14px; }
+    body.run .panel h2 { font-size: 22px; }
+    body.run .panel p { margin: 4px 0 8px; font-size: 14px; }
+    body.run .panel ul:not(.ups) { margin-bottom: 8px; font-size: 13px; line-height: 1.35; }
+    body.run .route { margin: 4px 0 6px; gap: 3px; }
+    body.run .route li { padding: 4px 10px; font-size: 13px; }
+    .panel .ups { margin: 6px 0 8px; gap: 4px; }
+    .ups li span { font-size: 13px; }
+  }
   @media (max-height: 420px) { .arrive { top: 40%; } .arrive p { display: none; } }
   @media (prefers-reduced-motion: reduce) { .arrive, .veil, .loading, .bar i { transition: none; } }
 </style>
@@ -117,8 +175,10 @@
 <canvas class="view" id="view" aria-label="Gloam Downs: a dark place on rolling hills, drawn as pixel art"></canvas>
 <nav class="labbar"><a class="back" href="/lab/">◀ Lab</a><button type="button" id="menu" data-switch>Games</button></nav>
 
+<div class="ink" id="ink" aria-hidden="true"></div>
 <div class="hud" id="hud" hidden>
   <p class="where" id="where">The Sunken Gaol</p>
+  <p class="life" id="life" aria-label="Health and flasks"><i class="hpbar"><i id="hpFill"></i></i><b id="hpN">100/100</b><i class="pips" id="pips"></i></p>
   <p class="count" id="count"><b>◆ 0/5</b> wisps · <i>beacon dark</i></p>
   <p class="hint" id="hint">Climb to the keep. Light the beacon.</p>
 </div>
@@ -168,7 +228,7 @@
 
 <div class="panel" id="runHelp" hidden><div class="box" role="dialog" aria-labelledby="runHelpT">
   <h2 id="runHelpT">Gloam Downs</h2>
-  <p>A run through five dark places, with a blade, a roll and two flasks. Put out each beacon's keepers, then light it. A lit beacon banks the glim you carry.</p>
+  <p>A run through five dark places, with a blade, a roll and two flasks. Put out each beacon's keepers, then light it. A lit beacon banks the glim you carry. Spend it in the Lamp-room, on upgrades that last.</p>
   <ul id="runControls"></ul>
   <div class="row"><button type="button" class="go" id="bBegin">Begin the run</button></div>
 </div></div>
@@ -178,21 +238,32 @@
   <ol class="route" id="route"></ol>
   <p id="pauseLine">Run time 0:00</p>
   <ul id="pauseControls"></ul>
-  <div class="row" id="pauseRow"><button type="button" class="go" id="bResume">Resume</button><button type="button" id="bEnd">End the run</button></div>
-  <div class="row" id="askRow" hidden><p class="ask">End the run? The glim you carry is lost.</p><button type="button" class="go" id="bNo">No</button><button type="button" id="bYes">Yes, end it</button></div>
+  <div id="pauseRow">
+    <div class="row"><button type="button" class="go" id="bResume">Resume</button><button type="button" id="bSound" aria-pressed="true">Sound on</button></div>
+    <div class="row"><button type="button" id="bRestart">Back to the start</button><button type="button" id="bEnd">End the run</button></div>
+  </div>
+  <div class="row" id="askRow" hidden><p class="ask" id="askLine">End the run? The glim you carry is lost.</p><button type="button" class="go" id="bNo">No</button><button type="button" id="bYes">Yes, end it</button></div>
 </div></div>
 
 <div class="panel" id="beaconCard" hidden><div class="box" role="dialog" aria-labelledby="beaconT">
   <h2 id="beaconT">The beacon burns</h2>
   <p id="beaconLine">Choose a wick. It burns for the rest of the run.</p>
   <div class="wicks" id="wicks"></div>
-  <div class="row"><button type="button" class="go" id="bWalkOn" hidden>Walk on</button></div>
+  <p id="beaconBank" hidden>Banked: 0 glim. Spend it in the Lamp-room, or walk on.</p>
+  <div class="row" id="beaconRow" hidden><button type="button" id="bSpend">Spend glim</button><button type="button" class="go" id="bWalkOn">Walk on</button></div>
+</div></div>
+
+<div class="panel" id="lamp" hidden><div class="box" role="dialog" aria-labelledby="lampT">
+  <h2 id="lampT">The Lamp-room</h2>
+  <p id="lampLine">Banked: 0 glim. What you buy here lasts for every run.</p>
+  <ul class="ups" id="ups"></ul>
+  <div class="row" id="lampRow"><button type="button" class="go" id="bLampBack" hidden>Back to the beacon</button><button type="button" class="go" id="bLampBegin" hidden>Begin the run</button><button type="button" class="go" id="bLampGoOn" hidden>Go on with the run</button><button type="button" id="bLampWander" hidden>Wander</button><button type="button" id="bLampToWander" hidden>Back to Wander</button></div>
 </div></div>
 
 <div class="panel" id="summary" hidden><div class="box" role="dialog" aria-labelledby="sumT">
   <h2 id="sumT">The lamp goes out</h2>
   <dl class="score"><dt>Reached</dt><dd id="sumPlace"></dd><dt>Time</dt><dd id="sumTime"></dd><dt>Foes put out</dt><dd id="sumFoes"></dd><dt>Glim lost</dt><dd id="sumLost"></dd><dt>Glim banked</dt><dd id="sumBanked"></dd></dl>
-  <div class="row"><button type="button" class="go" id="bNewRun">Begin a new run</button></div>
+  <div class="row"><button type="button" class="go" id="bSumLamp">To the Lamp-room</button></div>
 </div></div>
 
 <div class="veil" id="veil"></div>

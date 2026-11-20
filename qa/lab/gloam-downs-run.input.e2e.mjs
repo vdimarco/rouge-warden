@@ -206,7 +206,7 @@ try {
     await tick(page, 0.9, {});
     r = await run(page);
     assert.deepEqual([r.hp, r.flasks], [75, 1]);
-    assert.match(await page.textContent('#count'), /75\/100/);
+    assert.equal(await page.textContent('#hpN'), '75/100', 'the health line shows the drink');
     await G(page, () => window.__gloam.set({ hp: 100 }));
     await tick(page, 0.1, { heal: true });
     assert.match(await page.textContent('#toast'), /Health is full/);
@@ -232,8 +232,8 @@ try {
     await page.keyboard.press('p');
     assert(await page.isVisible('#pause'));
     assert.equal(await active(page), 'bResume');
-    for (let i = 0; i < 2; i++) await page.keyboard.press('Tab');
-    assert.equal(await active(page), 'bResume', 'Tab wraps between Resume and End the run');
+    for (let i = 0; i < 4; i++) await page.keyboard.press('Tab');
+    assert.equal(await active(page), 'bResume', "Tab wraps through the panel's four buttons");
     await page.click('#bEnd');
     assert(await page.isVisible('#askRow'));
     assert.equal(await active(page), 'bNo');
@@ -330,9 +330,10 @@ try {
     assert.equal((await G(page, () => window.__gloam.sounds())).filter(c => c.cue === 'roll').length, rolls + 1, 'pressed again, it rolls');
     // the d-pad moves the focus in the pause panel and wraps
     await G(page, () => window.__press(9, true)); await tick(page, 0.05, 'live'); await G(page, () => window.__press(9, false)); await tick(page, 0.05, 'live');
-    await G(page, () => window.__press(13, true)); await tick(page, 0.05, 'live'); await G(page, () => window.__press(13, false)); await tick(page, 0.05, 'live');
-    assert.equal(await active(page), 'bEnd');
-    await G(page, () => window.__press(13, true)); await tick(page, 0.05, 'live'); await G(page, () => window.__press(13, false)); await tick(page, 0.05, 'live');
+    const down = async () => { await G(page, () => window.__press(13, true)); await tick(page, 0.05, 'live'); await G(page, () => window.__press(13, false)); await tick(page, 0.05, 'live'); };
+    await down();
+    assert.equal(await active(page), 'bSound');
+    for (let i = 0; i < 3; i++) await down();
     assert.equal(await active(page), 'bResume', 'the focus wraps');
     await G(page, () => window.__press(8, true)); await tick(page, 0.05, 'live'); await G(page, () => window.__press(8, false)); await tick(page, 0.05, 'live');
     assert.equal((await run(page)).mode, 'play', "the pad's Back closes the pause panel");
