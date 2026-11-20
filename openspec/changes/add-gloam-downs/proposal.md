@@ -48,3 +48,5 @@ Then: "beautiful now can we turn this into a playable game?" So the walk becomes
 A Lab piece. The run adds enemies, combat and sound. Names, places, characters, enemies, items and the UI are original. No name, level layout, character, enemy, item, UI or exact look comes from Dead Cells or Super Mario 64.
 
 The second place was called "Crow Ramparts", which shares a word with a Dead Cells biome. For originality, its display name is now "The Crow Wall". The id `ramparts`, its files, its bake, its order and its look stay. design.md records this under "The names and the order of the places".
+
+Barrow Crown keeps its name, because it is a place the user chose, and its crown is a ring of standing stones. Two lines that echo Dead Cells change: the boss card's first line and the Gaol's subtitle. design.md records this in the same section.
