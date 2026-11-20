@@ -750,19 +750,25 @@ const layered = fn => {
   }
   pass('the lamplighter walks under an arch at every frame step and speed');
 }
-{ // the camera comes in front of a wall between it and the lamplighter, and its eye stays out of the wall
+{ /* the camera rises over a wall between it and the lamplighter and stays back; only where no rise clears the wall (a 3 m wall less
+     0.4 m behind) does it come in. Its eye stays out of the wall, and it sees the head */
   const eyeOf = v => {
     const cp = Math.cos(v.pitch);
     return [v.target[0] + v.dist * Math.sin(v.yaw) * cp, v.target[1] + v.dist * Math.sin(v.pitch), v.target[2] + v.dist * Math.cos(v.yaw) * cp];
   };
   const clear = v => { const e = eyeOf(v); return e[1] - W.top(e[0], e[2]); };
+  const sight = (v, s) => { const e = eyeOf(v); for (let k = 1; k < 40; k++) { const t = k / 40, x = s.x + (e[0] - s.x) * t, y = s.y + 1.3 + (e[1] - s.y - 1.3) * t, z = s.z + (e[2] - s.z) * t; if (y < W.top(x, z)) return false; } return true; };
   let v;
+  const seen = [];
   for (const x of [3.6, 3.4, 3.0, 2.6, 2.2, 1.8]) {
     const b = makeBody(W, { p: [x, 0, 0], yaw: -Math.PI / 2 }, 20);
     const cam = makeCamera(W, { yaw: Math.PI / 2, dist: 8.5, auto: false });
     cam.snap(b.s, Math.PI / 2);
     for (let i = 0; i < 120; i++) { v = cam.follow(b.s, 1 / 60, {}); assert(clear(v) > 0.1, `body at x ${x}, frame ${i}: the eye ${eyeOf(v).map(n => n.toFixed(2))} is in the wall`); }
-    assert(v.dist < 2.5, `the camera came in: dist ${v.dist}`);
+    assert(sight(v, b.s), `body at x ${x}: the eye sees the head`);
+    if (x <= 3.4) assert(near(v.dist, 8.5, 0.05) && v.pitch > 0.5, `body at x ${x}: it rose over the wall and stayed back (dist ${v.dist}, pitch ${v.pitch})`);
+    else assert(v.dist < 2.5, `body at x ${x}: no rise clears the wall, so it came in: dist ${v.dist}`);
+    seen.push([x, +v.dist.toFixed(2), +v.pitch.toFixed(2)]);
   }
   // backing into the wall with the camera behind
   const b = makeBody(W, { p: [0, 0, 0], yaw: Math.PI / 2 }, 20);
@@ -779,7 +785,7 @@ const layered = fn => {
   open.snap(ob.s, -Math.PI / 2);
   for (let i = 0; i < 60; i++) v = open.follow(ob.s, 1 / 60, {});
   assert(near(v.dist, 8.5, 0.01) && near(v.pitch, 0.34, 1e-6), 'with nothing in the way it stays back');
-  pass('the camera comes in front of a wall and keeps out of it');
+  pass('the camera rises over a wall, comes in only where no rise clears it, and keeps out of it', { 'x, dist, pitch': seen });
 }
 { // touch rules
   const s = { x: 0, y: 0, z: 0 };

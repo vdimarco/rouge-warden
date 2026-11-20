@@ -6,7 +6,8 @@
 import { createRenderer } from './ink/webgl/renderer.mjs';
 import { makeCamera as viewCamera } from './ink/webgl/view.mjs';
 import { loadPlace } from './world.js';
-import { makeWalk, makeBody, makeCamera, pose, touches, atBeacon, PARAMS } from './play.js';
+import { makeWalk, makeBody, makeCamera, camLayout, pose, touches, atBeacon, PARAMS } from './play.js';
+import { makeCombat, makeMoveLock, asFoes } from './cameras.js';
 import { ORDER, load, store, wispCount, fresh } from './save.js';
 import * as RS from './run-save.js';
 import { STEP, stepCount, startRun, reload, goTo, chooseWick, maxOf, flasksOf, makeRunner, newSeed, WICKS } from './run.js';
@@ -41,7 +42,7 @@ const disk = (() => { try { return window.localStorage; } catch { return null; }
 let save = q.has('fresh') ? fresh() : load(disk);
 // the run's own save, under its own key: the explorer's save is never written in a run
 const rs = RUN ? (q.has('fresh') ? RS.fresh() : RS.load(disk)) : null;
-let renderer = null, place = null, walk = null, body = null, cam = null, world = null, meta = null, runner = null;
+let renderer = null, place = null, walk = null, body = null, cam = null, world = null, meta = null, runner = null, combat = null, held = null;
 let mode = 'loading', paused = false, lost = false, last = 0, time = 0, frames = 0, acc = 0, steps = 0;
 let artTarget = TARGET[q.get('q')] || (coarse ? 46000 : TARGET.mid), adapt = !q.has('q');
 let art = { w: 320, h: 200, s: 1 };
@@ -70,7 +71,13 @@ function stepGallery() {
 }
 const targets = () => [...posts.filter(p => p.alive), ...foeTargets()];
 // what the cameras need from a fight: the awake foes (home: standing at home; homing: walking home; rising) and the blade's target
-const combat = () => (fight ? { foes: fight.foes.awake(), target: fight.foes.target() } : { foes: [], target: null });
+const fightView = () => (fight ? { foes: fight.foes.awake(), target: fight.foes.target() } : { foes: [], target: null });
+/* what the combat camera turns toward: the training posts (?test), and the awake foes of the fight (or, with no fight, the targets that
+   a test hands the page with setTargets). A foe at home, walking home or sinking is never its foe */
+const awake = () => [
+  ...asFoes(posts.filter(p => p.alive)),
+  ...(fight ? fightView().foes.map(f => ({ id: f.id, x: f.x, y: f.y, z: f.z, home: f.home || f.homing || f.state === 'sink' })) : asFoes(foeTargets()))
+];
 
 /* ---------------- the art size: a small picture scaled up by a whole number ---------------- */
 function sizeArt() {
@@ -80,9 +87,9 @@ function sizeArt() {
   canvas.style.width = `${(art.w * s) / dpr}px`;
   canvas.style.height = `${(art.h * s) / dpr}px`;
 }
-// a tall screen sees little to the sides, so the camera stands further back there
-const camDist = () => (innerWidth < innerHeight ? 8.5 * Math.min(1.5, 1 + 0.6 * (innerHeight / innerWidth - 1)) : 8.5);
-addEventListener('resize', () => { sizeArt(); if (cam) cam.c.want = camDist(); });
+// the camera's framing for this window (play.js camLayout): a tall screen keeps its width of view, so it still sees 4 m to each side
+const layoutNow = () => camLayout(innerWidth, innerHeight);
+addEventListener('resize', () => { sizeArt(); if (cam) cam.layout(layoutNow()); });
 
 /* ---------------- input ---------------- */
 const jumpBtn = $('bJump'), stickEl = $('stick'), actBtns = [$('bAttack'), $('bRoll'), $('bHeal')];
@@ -152,7 +159,7 @@ function face() {
   const t = RUN ? nearest(targets(), body.s) : null;
   if (t) { cam.c.yaw = faceYaw(body.s, t); cam.c.idle = 0; } else lookAhead();
 }
-function lookAhead() { if (cam && body) { cam.c.yaw = body.s.yaw + Math.PI; cam.c.pitch = 0.34; cam.c.idle = 0; } }
+function lookAhead() { if (cam && body) { cam.c.yaw = body.s.yaw + Math.PI; cam.c.pitch = cam.c.base; cam.c.idle = 0; } }
 
 /* ---------------- the HUD and the cards ---------------- */
 const hud = $('hud'), tools = $('tools');
@@ -511,8 +518,11 @@ async function go(id) {
   walk = makeWalk(meta.walk, place.walk);
   // a run's moves drive the body through its own copy of PARAMS
   body = makeBody(walk, meta.spawn, meta.bounds, RUN ? { ...PARAMS } : PARAMS);
-  cam = makeCamera(walk, { yaw: meta.spawn.yaw + Math.PI, auto: !still, dist: camDist() });
+  cam = makeCamera(walk, { yaw: meta.spawn.yaw + Math.PI, auto: !still, ...layoutNow() });
   cam.snap(body.s, meta.spawn.yaw + Math.PI);
+  // in a run, the combat camera turns the view toward the foes (cameras.js); reduced motion keeps it still
+  combat = RUN ? makeCombat({ foes: awake, still }) : null;
+  held = RUN ? makeMoveLock() : null;
   // the fog: the bake set it for a camera 9 back; keep it at the same depths whatever the distance
   fogNear = meta.fog.start * 2 * (meta.fogFar - 9) + 2 * 9 - meta.fogFar;
   // the lamplighter's splats ride bones that the page writes every frame
@@ -579,7 +589,9 @@ function update() {
   if (RUN) {
     if (runner && ['play', 'dying', 'won', 'lit'].includes(mode)) {
       const play = mode === 'play';
-      for (const e of runner.step(play ? input : {}, cam.c.yaw)) runEvent(e);
+      // while a camera turns by itself, a held move keeps its world direction
+      const yaw = play && held ? held.yaw(input, cam.c) : cam.c.yaw;
+      for (const e of runner.step(play ? input : {}, yaw)) runEvent(e);
       if (rs.run && ++sinceStore >= 120) storeRun();
     }
     if (gallery) stepGallery();
@@ -598,7 +610,7 @@ function update() {
     if (!beaconLit && atBeacon(s, meta.beacon)) lightBeacon();
     if (s.y < -25) { body.place(meta.spawn.p, meta.spawn.yaw); cam.snap(body.s, meta.spawn.yaw + Math.PI); toast('Back to the start'); }
   }
-  view = cam.follow(body.s, STEP, input);
+  view = cam.follow(body.s, STEP, input, combat && mode === 'play' ? combat.turn : null);
   input.dyaw = input.dpitch = 0;
   if (veils) unveil();
 }
@@ -701,7 +713,9 @@ window.__gloam = {
   state: () => ({
     mode, place: meta?.id, x: body?.s.x, y: body?.s.y, z: body?.s.z, ground: body?.s.ground, yaw: body?.s.yaw,
     wisps: meta ? (RUN ? runner?.wisps.size ?? 0 : save.wisps[meta.id]?.length || 0) : 0, lit: beaconLit, frames, art: { ...art }, target: artTarget, count: world?.count,
-    reached: save.reached.slice(), cam: cam ? { yaw: cam.c.yaw, dist: cam.c.dist, pitch: cam.c.pitch } : null
+    reached: save.reached.slice(),
+    // pitch is the player's; view is what is drawn (with the rise over walls), want the layout's distance, foe the combat camera's
+    cam: cam ? { yaw: cam.c.yaw, dist: cam.c.dist, pitch: cam.c.pitch, want: cam.c.want, fov: cam.c.fov, aim: cam.c.aim, lift: cam.c.lift, view: view ? view.pitch : null, foe: combat?.foe?.id ?? null, turning: cam.c.turning } : null
   }),
   // in a run, go(id) moves the run to the start of a place as Walk on does: the entry snapshot is taken from the values now
   go: id => { if (RUN && rs.run) { goTo(rs, id); storeRun(); } return go(id); },
@@ -730,6 +744,13 @@ window.__gloam = {
   },
   // draw({ time, pool }): at game time `time` (the same picture each time), with every foe parked for this draw when pool is false
   draw: (o = {}) => { draw(o || {}); return frames; },
+  // ?test: frame the camera as a window of w x h would (camLayout), or with { fov, dist, pitch, aim } given; null puts this window's back
+  layout: (o = null) => {
+    cam.layout(o ? (o.w ? camLayout(o.w, o.h) : o) : layoutNow());
+    cam.snap(body.s, cam.c.yaw);
+    view = null;
+    return window.__gloam.state().cam;
+  },
   // draw, then read the picture back before the browser shows it: mean luminance (0..1), the share over 0.55, and how many colours
   stats: () => {
     draw();
@@ -795,7 +816,7 @@ window.__gloam = {
   hold: (foe, move, t = 0) => fight?.hooks.hold(foe, move, t) ?? null,
   out: q => { if (!fight) return { ok: false }; const r = fight.hooks.out(q); updateHud(); return r; },
   notches: () => (fight ? fight.showNotches(view || cam.follow(body.s, 0, input), mode === 'play').map(n => ({ kind: n.kind, foe: n.foe, edge: n.edge, x: n.x, y: n.y, fill: n.fill, bearing: n.bearing, rect: { ...n.rect } })) : []),
-  combat,
+  combat: fightView,
   // ?run: the pool's slots, and (with ?test&lineup) one of each figure stood in a row in front of the lamplighter
   pool: () => pool && { count: world.count, boned: world.anim.boned.length, extra: pool.extra.end - pool.extra.first, slots: pool.slots.map(s => ({ i: s.i, code: s.code, awake: s.awake, first: s.first, end: s.end, base: s.base, at: s.at })) },
   lineup: (o = {}) => { const r = lineup(pool, walk, { x: body.s.x, z: body.s.z, yaw: body.s.yaw }, o); if (o.draw) draw(); return r; },
