@@ -7,6 +7,8 @@ We read "supermarket 64" as Super Mario 64: the chunky, low-resolution 3D look o
 
 Ink Studio sculpts signed-distance solids, bakes the light into pixel-art Gaussian splats, and has its own WebGL 2 renderer. Nothing in the arcade uses it yet.
 
+Then: "beautiful now can we turn this into a playable game?" So the walk becomes a combat run in the spirit of Dead Cells, with the same places and look.
+
 ## What changes
 - A new Lab piece at `/lab/gloam-downs/`: five dark environments on rolling hills, each one a separate world.
   1. **The Sunken Gaol**: a prison sunk into moor hills by moonlight, with torches at the cell mouths.
@@ -19,5 +21,18 @@ Ink Studio sculpts signed-distance solids, bakes the light into pixel-art Gaussi
 - Keyboard, gamepad and touch controls. Progress is saved in the browser.
 - The piece gets its cabinet at the end of the Lab row, its switcher entry (Lab only), its Corridor piece after Splat Isle, its Lab card and its dates.
 
+### The combat run
+- The page opens in a combat run. A run goes through the five places in order, from The Sunken Gaol to Barrow Crown. There is no map travel in a run.
+- The lamplighter gets a blade with a string of three hits, a dodge roll, a plunge from a jump, and flasks that heal.
+- Four original foe types and one boss. Each place brings one new thing: the Snuffer in the Gaol, the Pitchrook on the Ramparts, the Mirelight in the Fen, the Ironback at the Bells, and the Barrow Reeve, the boss of Barrow Crown. Every foe attack has a warning move.
+- Foes stand in zones. A guard zone keeps each beacon dark until it is cleared. A lit beacon banks the glim you carry, fills the flasks, and offers a wick: one of two boons for the rest of the run.
+- When the lamplighter dies, the glim it carries is lost, a run summary shows, and the next run starts again in the Gaol.
+- Glim buys five lasting upgrades in the Lamp-room.
+- The boss holds the last light of the downs. When it falls, the lamplighter carries that light up to the beacon, and the run is won.
+- The walk of today stays as **Wander**. It opens after the first win, or at once for a player who finished the walk before.
+- The HUD shows health, flasks, glim and a boss bar. Touch screens get Attack, Roll and Heal buttons. Keys and gamepads get the same moves. Sound is made in code.
+- The five place files do not change. Foes come from one shared baked file, and the boss from a second file.
+- A new capability, `gloam-downs-run`. The explorer's requirements for wisps, the beacon, the end of the walk, the Map and the save now apply to Wander.
+
 ## Scope
-A Lab piece about the environments. It has no enemies, no combat and no sound. Names, places and characters are original. No name, level, character or exact look comes from Dead Cells or Super Mario 64.
+A Lab piece. The run adds enemies, combat and sound. Names, places, characters, enemies, items and the UI are original. No name, level layout, character, enemy, item, UI or exact look comes from Dead Cells or Super Mario 64.

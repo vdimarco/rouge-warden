@@ -52,32 +52,32 @@ Q and E, the right stick, a mouse drag or a touch drag on the right half of the 
 - **THEN** the camera comes closer, so the lamplighter stays in view
 
 ### Requirement: Wisps and the beacon
-Each place SHALL have five wisps: glowing motes that float above the ground. A wisp SHALL go out and count when the lamplighter touches it. Each place SHALL have one beacon on its summit. When the lamplighter touches the beacon, the beacon SHALL light. While another beacon is still dark and the place has a next place, a card SHALL say that the way opens, and the next place SHALL load. Otherwise the walk SHALL follow The end of the walk.
+Each place SHALL have five wisps, glowing motes that float above the ground, and one beacon on its summit. In Wander, a wisp SHALL go out and count when the lamplighter touches it, and the beacon SHALL light when the lamplighter touches it. While another beacon is still dark and the place has a next place, a card SHALL say that the way opens, and the next place SHALL load. Otherwise the walk SHALL follow The end of the walk. In a run, the run's rules apply instead.
 
 #### Scenario: Wisp
-- **WHEN** the lamplighter touches a wisp
+- **WHEN** the lamplighter touches a wisp in Wander
 - **THEN** the wisp goes out and the count goes up by one
 
 #### Scenario: Beacon
-- **WHEN** the lamplighter touches the beacon of The Sunken Gaol
+- **WHEN** the lamplighter touches the beacon of The Sunken Gaol in Wander
 - **THEN** the beacon lights, a card shows, and then Crow Ramparts loads
 
 ### Requirement: The end of the walk
-When all five beacons burn, in any order, an end card SHALL show the time, the wisps found and the best time, with a button to walk again. Walk again SHALL put out every beacon, start the time again at zero and go back to The Sunken Gaol. The places reached SHALL stay open. While a beacon is still dark, the walk SHALL not end. If the beacon of Barrow Crown lights then, a card SHALL say how many beacons are still dark.
+In Wander, when all five beacons burn, in any order, an end card SHALL show the time, the wisps found and the best time, with a button to walk again. Walk again SHALL put out every beacon, start the time again at zero and go back to The Sunken Gaol. The places reached SHALL stay open. While a beacon is still dark, the walk SHALL not end. If the beacon of Barrow Crown lights then, a card SHALL say how many beacons are still dark.
 
 #### Scenario: The last beacon
-- **WHEN** four beacons burn and the lamplighter lights the fifth
+- **WHEN** four beacons burn in Wander and the lamplighter lights the fifth
 - **THEN** the end card shows the time, the wisps found and the best time
 
 #### Scenario: Walk again
-- **WHEN** the player chooses Walk again on the end card, goes to Barrow Crown on the Map and lights only its beacon
+- **WHEN** the player chooses Walk again on the end card in Wander, goes to Barrow Crown on the Map and lights only its beacon
 - **THEN** the Map shows all five places open, a card says that four beacons are still dark, no end card shows, and the best time does not change
 
 ### Requirement: Map and saved progress
-The Map control and the M key SHALL show the five places. A place the player has reached SHALL be open, and the others SHALL be locked. The page SHALL save the places reached and the wisps found in the browser, and SHALL check each saved field, so a bad save cannot break the page.
+In Wander, the Map control and the M key SHALL show the five places. A place the player has reached SHALL be open, and the others SHALL be locked. The page SHALL save the places reached and the wisps found in the browser, under the explorer's own key, and SHALL check each saved field, so a bad save cannot break the page. The run SHALL keep its own save, under another key.
 
 #### Scenario: Come back
-- **WHEN** the visitor reaches Lantern Fen, reloads the page and opens the Map
+- **WHEN** the visitor reaches Lantern Fen in Wander, reloads the page and opens the Map
 - **THEN** the first three places are open, and the wisps found before are still counted
 
 #### Scenario: Bad save
