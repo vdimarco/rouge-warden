@@ -653,6 +653,9 @@ const lowestNear = (W2, [cx, cy, cz], r, from = 1.6) => {
   assert.equal(seam.closed, 33, `the seam: ${seam.closed} cells closed, not 33`);
   for (let z = -4; z <= 4; z += 0.25) assert.deepEqual(seam.at(0, z), [25, 25, 0], `the seam at z ${z}: ${seam.at(0, z)}`);
   assert.equal(run1((x, z) => (on(x, 0) && Math.abs(z) <= 4 ? -2 : x < 0 ? 0 : 0.5), { stands: () => false }).closed, 0, 'feet that cannot stand by the seam closed it');
+  // the floors on both sides must be stood on: with feet only on the west floor, or only on the east floor, the seam stays
+  const xOf = k => -20 + (k % 161) * 0.25;
+  for (const side of [-1, 1]) assert.equal(run1((x, z) => (on(x, 0) && Math.abs(z) <= 4 ? -2 : x < 0 ? 0 : 0.5), { stands: k => Math.sign(xOf(k)) === side }).closed, 0, `feet only ${side < 0 ? 'west' : 'east'} of the seam closed it`);
   const sLow = lowestNear(seam.walk(), [0, 0.25, 0], 0.15);
   assert(sLow > -0.05, `walks across the seam between 0 and 0.5 stood in it at ${sLow.toFixed(2)}`);
   const notch = run1((x, z) => (Math.abs(x) > 4 || Math.abs(z) > 4 ? 0 : (on(x, 0) || on(x, 0.25)) && (on(z, 0) || on(z, 0.25)) ? 3.4 : 4.9));
@@ -682,7 +685,7 @@ const lowestNear = (W2, [cx, cy, cz], r, from = 1.6) => {
   assert(late.closed === 2 && late.at(0.25, 0)[0] === 50 && late.at(0.5, 0)[0] === 50, `planks: ${late.closed} closed, (0.25, 0) at ${late.at(0.25, 0)}, (0.5, 0) at ${late.at(0.5, 0)}`);
   /* the same with feet only on the plank along z and on the end of the plank along x (stands): (0.5, 0), once closed to the planks'
      floor, counts as stood on, and closes (0.25, 0) against the plank's end */
-  const lateOn = run1((x, z) => ((x >= -1 && x <= 0.01 && on(z, 0)) || (on(x, 0.5) && Math.abs(z) <= 1 && !on(z, 0)) ? 0.5 : -0.5), { stands: k => on(-20 + (k % 161) * 0.25, 0.5) || k === 80 * 161 + 80 });
+  const lateOn = run1((x, z) => ((x >= -1 && x <= 0.01 && on(z, 0)) || (on(x, 0.5) && Math.abs(z) <= 1 && !on(z, 0)) ? 0.5 : -0.5), { stands: k => (on(-20 + (k % 161) * 0.25, 0.5) && k !== 80 * 161 + 82) || k === 80 * 161 + 80 });
   assert(lateOn.closed === 2 && lateOn.at(0.25, 0)[0] === 50, `planks, feet on one plank: ${lateOn.closed} closed, (0.25, 0) at ${lateOn.at(0.25, 0)}`);
   /* three: planks at 0.5 along x at z 0 (x -1 to 0.5), along z at x 1 (but z 0), and along x at z -0.5 (x 0.75 to 1.5). The crack at
      (1, 0) is closed by the first pass; (0.75, 0), between the plank's end and it, by the second; (0.75, -0.25), between that and the
@@ -705,6 +708,9 @@ const lowestNear = (W2, [cx, cy, cz], r, from = 1.6) => {
     const m = two(far), got = [m.at(0, 0)[0], m.at(0.25, 0)[0]];
     assert.deepEqual(got, want, `two cells between 0 and ${far}: came up to ${got}, not ${want}`);
   }
+  // with feet only on the floor at 0, the floor at 0.6 past the two cells is not stood on, so they stay
+  const twoWest = run1((x, z) => (Math.abs(z) > 2 ? 0 : (on(x, 0) || on(x, 0.25)) ? -1.5 : x < 0 ? 0 : 0.6), { stands: k => xOf(k) < 0 });
+  assert.equal(twoWest.closed, 0, `two cells with feet on one side only: ${twoWest.closed} closed`);
   // in a porch over the water (underside 1.4, the water at -0.5) that slopes from 1.7 to 1.85 across them
   const porch2 = run1((x, z) => (Math.abs(x) > 3 || Math.abs(z) > 3 ? -0.5 : (on(x, 0) || on(x, 0.25)) && on(z, 0) ? -0.5 : [x < 0 ? 1.7 : 1.85, -0.5, 1.4]));
   assert.deepEqual([porch2.at(0, 0), porch2.at(0.25, 0)], [[175, -50, 140], [180, -50, 140]], `two cells in a sloped porch: ${porch2.at(0, 0)} and ${porch2.at(0.25, 0)}`);
@@ -729,6 +735,12 @@ const lowestNear = (W2, [cx, cy, cz], r, from = 1.6) => {
   const beamSearch = mapOf(beamAt), bw = beamSearch.walk(), bInfo = { ...beamSearch.info };
   assert.equal(closeCracks(beamSearch.L, { stands: standsIn(reachable(bw, { p: [0, 3.9, -3] }, 20), bInfo) }), 1, 'the beam: with stands from the search the pass should close the hole alone');
   assert.deepEqual([beamSearch.at(0.25, 0), beamSearch.at(-0.5, 0)], [[390, 390, 0], [390, 390, 0]], 'the beam, with stands: the missed point stays and the hole comes up to the floor');
+  // the bake's closeWalk() on it, from the floor: it changes the hole alone
+  const beamBake = mapOf(beamAt), bbBefore = beamBake.cells.slice();
+  closeWalk({ ...beamBake.info, T: beamBake.L.T, G: beamBake.L.G, U: beamBake.L.U }, { spawn: { p: [0, 3.9, -3] }, beacon: { p: [8, 3.9, 8], r: 1.6 }, bounds: 20 });
+  const bbChanged = [];
+  for (let k = 0; k < beamBake.N; k++) if ([0, 1, 2].some(l => beamBake.cells[l * beamBake.N + k] !== bbBefore[l * beamBake.N + k])) bbChanged.push(`${xOf(k)},${-20 + Math.floor(k / 161) * 0.25}`);
+  assert.deepEqual(bbChanged, ['-0.5,0'], `closeWalk() on the beam changed ${bbChanged.join(' ')}`);
   for (const [name, m] of [['every floor', beam], ['stands', beamSearch]]) for (const dt of DTS) for (const x of [-0.5, -0.375, 0.125, 0.25, 0.375]) {
     const b = makeBody(m.walk(), { p: [x, 3.9, -2], yaw: 0 }, 20);
     hold(b, 2, toward(0, 1), dt);
@@ -752,7 +764,8 @@ const lowestNear = (W2, [cx, cy, cz], r, from = 1.6) => {
      3. Traps wider than a crack, or that a jump gets into, fail with their place named: a pit 1 m across, a sunken courtyard 3 by 3, a
      trench a metre wide between walls 3 high, open only at its west end, a notch 3 by 3 in a platform at 1.0, and a pocket at -0.5
      behind a wall 1.2 high and one cell thick, walled 3 high round it, which the controller enters with a running jump over the wall
-     (the search's own jumps never go over anything higher than both ends; its wide jumps do).
+     (the search's own jumps never go over anything higher than both ends; its wide jumps do), and a pocket past a moat 1.75 wide, which
+     only a wide jump that carries further than 1 m gets into.
      4. The search's way back (trapped()): on open ground nothing is a trap, with no beacon and no help from the controller; a place
      0.07 over a reached floor leads back; a row of one-cell holes, each of which the given out() leads only to the next one east and
      the last to the ground, all lead back (out() is tried until nothing changes); and a hole's way in is the state that reached it
@@ -807,7 +820,9 @@ const lowestNear = (W2, [cx, cy, cz], r, from = 1.6) => {
   };
   const holes = { block: [10, 0, [108, 108, 0]], roof: [-10, 5, [500, 138, 330]], porch: [10, 5, [138, -200, -10]], grate: [-4, -6, [0, -400, -180]] };
   // fillTraps() alone, on the traps of the march (no crack pass), fills each hole by its rules, and nothing else
-  const flRaw = mapOf(fillFn), flFill = mapOf(fillFn), flTraps = findTraps(flFill.walk(), place).traps;
+  const flRaw = mapOf(fillFn), flFill = mapOf(fillFn), flFound = findTraps(flFill.walk(), place), flTraps = flFound.traps;
+  // the block's top is reached by wide jumps only: it counts for near(..., all), not for near() (the beacon and the wisps)
+  assert(!flFound.R.near([10, 1.38, 0.5], 0.3, -0.1, 0.1) && flFound.R.near([10, 1.38, 0.5], 0.3, -0.1, 0.1, true), 'the block that only wide jumps reach should count for near(..., all) alone');
   const flCells = fillTraps(flFill.L, flTraps).map(k => `${-20 + (k % 161) * 0.25},${-20 + Math.floor(k / 161) * 0.25}`);
   assert.deepEqual(flCells.sort(), Object.values(holes).map(([x, z]) => `${x},${z}`).sort(), `fillTraps() filled ${flCells.join(' ')}`);
   for (const [kind, [x, z, want]] of Object.entries(holes)) assert.deepEqual(flFill.at(x, z), want, `fillTraps(): the ${kind}'s hole was filled to ${flFill.at(x, z)}`);
@@ -832,7 +847,9 @@ const lowestNear = (W2, [cx, cy, cz], r, from = 1.6) => {
     ['a sunken courtyard 3 by 3', (x, z) => (at(x, z, 4, 7, -1.5, 1.5) ? -2.5 : 0), [4, 7, -1.5, 1.5]],
     ['a trench a metre wide', (x, z) => (at(x, z, 0, 3, 8, 9) ? -2 : at(x, z, 0, 3.25, 7.75, 9.25) ? 3 : 0), [0, 3, 8, 9]],
     ['a notch 3 by 3', (x, z) => (at(x, z, 10, 10.5, 0, 0.5) ? -0.45 : at(x, z, 9, 12, -2, 2) ? 1.0 : 0), [10, 10.5, 0, 0.5]],
-    ['a pocket behind a thin wall', pocketFn, [4.25, 5.75, -1.5, 1.5]]
+    ['a pocket behind a thin wall', pocketFn, [4.25, 5.75, -1.5, 1.5]],
+    // a pocket at -0.6 past a moat 1.75 wide and 3 deep (its floor rises to the ground at z -10) and a lip 0.9 high, walled 3 high
+    ['a pocket past a moat', (x, z) => (at(x, z, 3.25, 5, -12, 6) ? Math.min(0, -3 + Math.max(0, (-4 - z) * 0.5)) : at(x, z, 5.25, 5.25, -1.75, 1.75) ? 0.9 : at(x, z, 5.5, 7, -1.5, 1.5) ? -0.6 : x > 5.1 && x < 9 && Math.abs(z) < 6.01 ? 3 : 0), [5.5, 7, -1.5, 1.5]]
   ];
   for (const [what, fn, box] of fails) {
     const m = mapOf(fn), inBox = (x, z) => at(x, z, ...box);
@@ -883,7 +900,8 @@ const lowestNear = (W2, [cx, cy, cz], r, from = 1.6) => {
   try { check = await import('../../games/gloam-downs/lib/check.mjs'); } catch (err) { console.log(`SKIP the check's 'no trap' line: ${err.message.split('\n')[0]} (npm ci --prefix games/gloam-downs)`); }
   if (check) {
     const line = m => check.checkPlace({ meta: { id: 'made', count: 0, pal: [], walk: m.info, spawn: place.spawn, beacon: place.beacon, wisps: [], bounds: 20 }, walk: { T: m.L.T, G: m.L.G, U: m.L.U } }).find(r => r.what.startsWith('no trap'));
-    const bad = line(mapOf(crackFn)), good = line(cr);
+    const bad = line(mapOf(crackFn)), good = line(cr), pocketLine = line(mapOf(pocketFn));
+    assert(pocketLine && !pocketLine.ok, `the check on the pocket behind a thin wall (wide jumps): ${pocketLine?.ok ? 'ok' : 'FAIL'} ${pocketLine?.what}`);
     assert(bad && !bad.ok && /\(1[01] trap cells left/.test(bad.what), `the check on the march: ${bad?.ok ? 'ok' : 'FAIL'} ${bad?.what}`);
     assert(good && good.ok, `the check after closeWalk(): ${good?.ok ? 'ok' : 'FAIL'} ${good?.what}`);
   }
