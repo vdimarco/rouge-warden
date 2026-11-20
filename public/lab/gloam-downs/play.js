@@ -319,66 +319,172 @@ export function makeBody(walk, start, bounds, P = PARAMS) {
 }
 
 /* ---------------- the follow camera ----------------
-   Behind and above, eased. It swings behind the lamplighter when it runs and nobody is turning the view, and it comes in close when
-   the hills or a wall stand between the eye and the lamplighter. The eye never goes past the first thing in the way; when that is
-   too close to frame the figure, the view tilts up (lift) until the eye clears it. */
+   The framing of a window (camLayout): in landscape the vertical field of view stays 48°, so a wider window sees more to the sides; in a
+   window narrower than that, the horizontal field of view stays at least 2·atan(0.30) (Godot's KEEP_WIDTH for portrait), so a phone held
+   upright still sees 4 m to each side. The camera stands far enough back that the view is at least 9.2 m wide at the lamplighter, and
+   never nearer than 8.5 m. The pitch puts the horizon 12.8% from the top in landscape and 24% (below the HUD) in a tall window, and the
+   aim point (the screen's middle, over the feet) rises from 0.75 to 1.8, so the lamplighter sits a little low in a tall window and the
+   4 m round it stays above the touch buttons. */
+export const VIEW = { fov: 48 * Math.PI / 180, dist: 8.5, tanH: 0.30, half: 4.6, horizon: [0.128, 0.24], aim: [0.75, 1.8], tall: 0.25 };
+export function camLayout(w, h) {
+  const asp = w / h, tanH = Math.max(Math.tan(VIEW.fov / 2) * asp, VIEW.tanH), tanV = tanH / asp;
+  const t = clamp((1 - asp) / VIEW.tall, 0, 1), yh = VIEW.horizon[0] + (VIEW.horizon[1] - VIEW.horizon[0]) * t;
+  return { fov: 2 * Math.atan(tanV), dist: Math.max(VIEW.dist, VIEW.half / tanH), pitch: Math.atan((1 - 2 * yh) * tanV), aim: VIEW.aim[0] + (VIEW.aim[1] - VIEW.aim[0]) * t };
+}
+/* Behind and above, eased. It swings behind the lamplighter when it runs and nobody is turning the view (a run's cameras may take that
+   over: follow's `turn`). When the hills or a wall stand between the eye and the figure (its head and chest), it rises over them (lift)
+   before it comes any closer, as Cinemachine's Deoccluder does with Preserve Camera Height, and only what no rise clears brings it in.
+   The rise is never faster than 4 rad/s; it starts for where the figure will be 0.25 s ahead, so it is under way before a wall comes
+   between, and it settles back slowly. Something that comes between while the eye itself is clear may hide the figure for 0.15 s before
+   the camera comes in (the Deoccluder's minimum occlusion time). A thin thing in the way (a post, a lantern, a stake: open 0.55 m to
+   both sides of the line and no longer than 0.6 m along it) is looked past, but the eye itself is never inside anything. Foes are not in
+   the walk map, so they never move it. */
 export function makeCamera(walk, o = {}) {
-  const c = { yaw: o.yaw ?? 0, pitch: o.pitch ?? 0.34, dist: o.dist ?? 8.5, want: o.dist ?? 8.5, target: null, idle: 9, auto: o.auto !== false, lift: 0 };
-  const NEAR = 0.5, FRAME = 2.0, TOP = 1.45;
-  // is a point clear of the scenery by 0.35: above the top, or inside the gap under an arch (at least 1.8 high)?
-  const open = (x, y, z) => {
+  const pitch0 = o.pitch ?? 0.34, dist0 = o.dist ?? 8.5;
+  const c = {
+    yaw: o.yaw ?? 0, pitch: pitch0, base: pitch0, dist: dist0, want: dist0, fov: o.fov ?? null, aim: o.aim ?? 1.15, target: null, idle: 9,
+    auto: o.auto !== false, lift: 0, goal: { lift: 0, dist: dist0 }, goals: [], turning: false, from: null, hidden: 0
+  };
+  const NEAR = 0.5, TOP = 1.35, LIFT = 0.08, THIN = 0.55, SHORT = 0.6, AHEAD = 0.25, RISE = 4, GRACE = 0.15, HEAD = 1.3, CHEST = 0.8;
+  // is a point clear of the scenery by `cl`: above the top, or inside the gap under an arch (at least 1.8 high)?
+  const open = (x, y, z, cl = 0.35) => {
     const t = walk.top(x, z);
-    if (y >= t + 0.35) return true;
+    if (y >= t + cl) return true;
     const g = walk.floor(x, z);
-    return g < t - 0.05 && y >= g + 0.35 && y <= g + 1.45;
+    return g < t - 0.05 && y >= g + cl && y <= g + 1.45;
   };
-  // the farthest the eye can go back at a pitch: two samples short of the first that is in the way
-  const free = pitch => {
-    const cp = Math.cos(pitch), ux = Math.sin(c.yaw) * cp, uy = Math.sin(pitch), uz = Math.cos(c.yaw) * cp, [x, y, z] = c.target;
-    for (let t = 0.3; t <= c.want; t += 0.1) if (!open(x + ux * t, y + uy * t, z + uz * t)) return Math.max(0, t - 0.25);
-    return c.want;
+  /* a thing in the way is thin when it is open THIN to both sides of the line and no longer than SHORT along it: a post or a lantern,
+     not a boulder or a ridge. blocked(t, ...) keeps the start of the run of thin samples; -> the distance where the line is blocked, or
+     null */
+  const run = { from: null };
+  const blocked = (t, px, py, pz, cl, sx, sz) => {
+    if (open(px, py, pz, cl)) { run.from = null; return null; }
+    if (t > 1 && open(px + sx, py, pz + sz, cl) && open(px - sx, py, pz - sz, cl)) {
+      run.from ??= t;
+      return t - run.from > SHORT ? run.from : null;
+    }
+    return run.from ?? t;
   };
-  function follow(s, dt, inp = {}) {
-    const ox = inp.ox || 0, oy = inp.oy || 0;
-    if (Math.abs(ox) > 0.01 || Math.abs(oy) > 0.01) c.idle = 0; else c.idle += dt;
+  /* how far the eye can go back from (x, y, z) at this yaw and pitch, up to `far`: two samples short of the first thing in the way that
+     is not thin, and then in until the eye itself is clear by 0.35. The line of sight may pass closer to the ground near the aim (a
+     lamplighter in the water below a bank), so its clearance grows from 0.1 at the aim to 0.35 at 1.25 m */
+  const reach = (x, y, z, yaw, pitch, far) => {
+    const cp = Math.cos(pitch), ux = Math.sin(yaw) * cp, uy = Math.sin(pitch), uz = Math.cos(yaw) * cp, sx = Math.cos(yaw) * THIN, sz = -Math.sin(yaw) * THIN;
+    let d = far;
+    run.from = null;
+    for (let t = 0.3; t <= far; t += 0.1) {
+      const b = blocked(t, x + ux * t, y + uy * t, z + uz * t, Math.min(0.35, 0.1 + 0.2 * t), sx, sz);
+      if (b === null) continue;
+      d = Math.max(0, b - 0.25);
+      break;
+    }
+    while (d > 0.3 && !open(x + ux * d, y + uy * d, z + uz * d)) d -= 0.1;
+    return Math.max(0.3, d);
+  };
+  const eyeOpen = (x, y, z, yaw, pitch, d) => open(x + Math.sin(yaw) * Math.cos(pitch) * d, y + Math.sin(pitch) * d, z + Math.cos(yaw) * Math.cos(pitch) * d);
+  /* can an eye at e see the point h on the figure? Thin things do not count; the line may pass close to the ground near the figure, and
+     needs 0.3 of clearance from 2.5 m out, for the ground's splats stand above the walk map */
+  const sees = (h, e) => {
+    const dx = e[0] - h[0], dy = e[1] - h[1], dz = e[2] - h[2], L = Math.hypot(dx, dz) || 1, n = Math.ceil(Math.hypot(dx, dy, dz) / 0.15);
+    const sx = (-dz / L) * THIN, sz = (dx / L) * THIN;
+    run.from = null;
+    for (let i = 1; i < n; i++) {
+      const k = i / n, t = i * 0.15;
+      if (blocked(t, h[0] + dx * k, h[1] + dy * k, h[2] + dz * k, Math.min(0.3, 0.05 + 0.1 * t), sx, sz) !== null) return false;
+    }
+    return true;
+  };
+  /* the least rise that lets the eye stand at its full distance and see the head and the chest (a high aim can clear the brow of a hill
+     that hides the figure); failing that, the rise that lets it stand farthest back */
+  function solve(x, y, z, yaw, head) {
+    let best = { lift: 0, dist: -1 };
+    const chest = [head[0], head[1] - HEAD + CHEST, head[2]];
+    for (let l = 0; c.pitch + l <= TOP + 1e-6; l += LIFT) {
+      const p = c.pitch + l, d = reach(x, y, z, yaw, p, c.want), cp = Math.cos(p);
+      const e = [x + Math.sin(yaw) * cp * c.want, y + Math.sin(p) * c.want, z + Math.cos(yaw) * cp * c.want];
+      if (d >= c.want - 0.05 && sees(head, e) && sees(chest, e)) return { lift: l, dist: c.want };
+      if (d > best.dist + 0.3) best = { lift: l, dist: d };
+    }
+    return best;
+  }
+  const wrap = a => Math.atan2(Math.sin(a), Math.cos(a));
+  // turn: (c, s, dt, looked) -> true when a run's camera took the place of the swing this step
+  function follow(s, dt, inp = {}, turn = null) {
+    const ox = inp.ox || 0, oy = inp.oy || 0, yaw0 = c.yaw;
+    let looked = Math.abs(ox) > 0.01 || Math.abs(oy) > 0.01;
     c.yaw += ox * (inp.rate ?? 2.6) * dt;
     c.pitch = clamp(c.pitch + oy * 1.6 * dt, 0.08, 1.05);
-    if (inp.dyaw) { c.yaw += inp.dyaw; c.idle = 0; }
-    if (inp.dpitch) { c.pitch = clamp(c.pitch + inp.dpitch, 0.08, 1.05); c.idle = 0; }
+    if (inp.dyaw) { c.yaw += inp.dyaw; looked = true; }
+    if (inp.dpitch) { c.pitch = clamp(c.pitch + inp.dpitch, 0.08, 1.05); looked = true; }
+    if (looked) c.idle = 0; else c.idle += dt;
+    // a run's camera that turns by itself sets c.turning; c.from is the yaw where that turn started (cameras.js holds a move to it)
+    const was = c.turning, before = c.yaw;
+    c.turning = false;
     // swing in behind a running lamplighter
-    const sp = Math.hypot(s.vx, s.vz);
-    if (c.auto && c.idle > 0.8 && sp > 1) {
-      let d = s.yaw + Math.PI - c.yaw;
-      d = Math.atan2(Math.sin(d), Math.cos(d));
+    const sp = Math.hypot(s.vx, s.vz), ran = !!(turn && turn(c, s, dt, looked));
+    if (c.turning && !was) c.from = before;
+    if (!ran && c.auto && c.idle > 0.8 && sp > 1) {
+      const d = wrap(s.yaw + Math.PI - c.yaw);
       if (Math.abs(d) < 2.6) c.yaw += d * Math.min(1, dt * 0.9 * Math.min(1, sp / 5));
     }
-    const want = [s.x, s.y + 1.15, s.z];
+    const want = [s.x, s.y + c.aim, s.z];
     if (!c.target) c.target = want.slice();
-    const k = 1 - Math.exp(-9 * dt), ky = 1 - Math.exp(-5 * dt);
+    // the aim follows the height at 10/s on the ground (down a steep slope it would lag far above the figure), and at 5/s in a jump
+    const k = 1 - Math.exp(-9 * dt), ky = 1 - Math.exp(-(s.ground ? 10 : 5) * dt);
     c.target[0] += (want[0] - c.target[0]) * k;
     c.target[2] += (want[2] - c.target[2]) * k;
     c.target[1] += (want[1] - c.target[1]) * ky;
-    // tilt up only as far as it takes to frame the figure from in front of whatever blocks the view
-    const need = Math.min(c.want, FRAME);
-    let lift = 0, best = -1;
-    for (let l = 0; c.pitch + l <= TOP + 1e-6; l += 0.12) {
-      const f = free(c.pitch + l);
-      if (f > best + 0.05) { best = f; lift = l; }
-      if (f >= need) { lift = l; break; }
-    }
-    c.lift += (lift - c.lift) * Math.min(1, (lift > c.lift ? 10 : 2) * dt);
-    // so close the eye would be in the figure: tilt at once
-    if (lift > c.lift && free(Math.min(TOP, c.pitch + c.lift)) < 1) c.lift = lift;
-    // tilted, it stays as close as the untilted view would let it (but far enough to frame the figure)
-    const pitch = Math.min(TOP, c.pitch + c.lift), room = Math.max(NEAR, Math.min(free(pitch), c.lift > 1e-3 ? Math.max(need, free(c.pitch)) : c.want));
-    // come in at once (the eye is never in a wall), go back eased
-    c.dist = room < c.dist ? room : c.dist + (room - c.dist) * Math.min(1, 2.5 * dt);
-    return { target: c.target.slice(), dist: c.dist, yaw: c.yaw, pitch };
+    // the rise it needs now, and for where the aim and the yaw will be a moment ahead: the larger
+    const [tx, ty, tz] = c.target, spin = dt > 0 ? wrap(c.yaw - yaw0) / dt : 0;
+    const head = [s.x, s.y + HEAD, s.z], now = solve(tx, ty, tz, c.yaw, head);
+    /* in a lane or round a corner: when the view must rise more than 0.35 or come in, and the lamplighter runs away from the eye or
+       across the view (never toward it, as when backing into a wall), with no look input for 0.4 s and no run camera turning it, the
+       view turns at up to 1.2 rad/s toward the nearest yaw within 60° that is open with 0.25 less rise */
+    if (c.auto && !c.turning && c.idle > 0.4 && sp > 1 && Math.abs(wrap(s.yaw + Math.PI - c.yaw)) < 1.75 && (now.lift > 0.35 || now.dist < c.want - 0.05))
+      for (const j of [1, -1, 2, -2, 3, -3]) {
+        const g = solve(tx, ty, tz, c.yaw + j * 0.35, head);
+        if (g.dist >= c.want - 0.05 && g.lift <= now.lift - 0.25) { c.yaw += clamp(j * 0.35, -1.2 * dt, 1.2 * dt); break; }
+      }
+    // the point ahead stands on the floor there, as the lamplighter will
+    const ax = s.x + s.vx * AHEAD, az = s.z + s.vz * AHEAD, af = walk.support(ax, az, s.y + 1.2) ?? s.y;
+    const soon = solve(tx + s.vx * AHEAD, Math.max(ty, af + c.aim), tz + s.vz * AHEAD, c.yaw + clamp(spin, -3, 3) * AHEAD, [ax, af + HEAD, az]);
+    // the rise follows the least of the last three goals up (a goal for one step alone is a flicker) and the goal down
+    c.goals.push(Math.max(now.lift, soon.lift));
+    if (c.goals.length > 3) c.goals.shift();
+    c.goal = { lift: Math.min(...c.goals), dist: now.dist };
+    // up quickly but never faster than RISE, down slowly
+    const up = c.goal.lift > c.lift, cap = c.lift + RISE * dt;
+    c.lift += clamp((c.goal.lift - c.lift) * Math.min(1, (up ? 12 : 2) * dt), -RISE * dt, RISE * dt);
+    let pitch = Math.min(TOP, c.pitch + c.lift), room = reach(tx, ty, tz, c.yaw, pitch, c.want);
+    // where the eased rise would bring the eye in, it rises further first, as far as RISE allows this step
+    if (room < c.dist - 0.05)
+      for (let l = c.lift + 0.01; l <= Math.min(Math.max(c.goal.lift, now.lift), cap) + 1e-6; l += 0.01) {
+        const r = reach(tx, ty, tz, c.yaw, Math.min(TOP, c.pitch + l), c.want);
+        if (r > room) { c.lift = l; room = r; pitch = Math.min(TOP, c.pitch + l); }
+        if (r >= c.dist - 0.05) break;
+      }
+    room = Math.max(NEAR, room);
+    /* something comes between the eye and the aim while the eye itself is still clear: wait up to GRACE before coming in, as the rise
+       may clear it by then. The eye is never in a wall: then it comes in at once */
+    if (room < c.dist - 0.05 && eyeOpen(tx, ty, tz, c.yaw, pitch, c.dist) && (c.hidden += dt) <= GRACE) room = c.dist;
+    else if (room >= c.dist - 0.05) c.hidden = 0;
+    // come in at once, go back eased
+    const to = Math.min(room, Math.max(c.goal.dist, NEAR));
+    c.dist = room < c.dist ? room : c.dist + (to - c.dist) * Math.min(1, 4 * dt);
+    return { target: c.target.slice(), dist: c.dist, yaw: c.yaw, pitch, ...(c.fov ? { fov: c.fov } : {}) };
   }
   function snap(s, yaw) {
-    c.yaw = yaw; c.target = [s.x, s.y + 1.15, s.z]; c.dist = c.want; c.idle = 9; c.lift = 0;
+    c.yaw = yaw; c.target = [s.x, s.y + c.aim, s.z]; c.idle = 9;
+    c.goal = solve(c.target[0], c.target[1], c.target[2], yaw, [s.x, s.y + HEAD, s.z]);
+    c.lift = c.goal.lift; c.goals = [c.lift]; c.hidden = 0;
+    c.dist = Math.max(NEAR, reach(c.target[0], c.target[1], c.target[2], yaw, Math.min(TOP, c.pitch + c.lift), c.want));
   }
-  return { c, follow, snap };
+  // a new window: its framing, keeping the pitch the player set relative to the layout's
+  function layout(L) {
+    c.want = L.dist; c.fov = L.fov ?? c.fov; c.aim = L.aim ?? c.aim;
+    if (Number.isFinite(L.pitch)) { c.pitch = clamp(c.pitch + L.pitch - c.base, 0.08, 1.05); c.base = L.pitch; }
+  }
+  return { c, follow, snap, layout, reach };
 }
 
 /* ---------------- the pose ----------------
