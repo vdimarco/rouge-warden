@@ -50,8 +50,9 @@ addEventListener('keydown', e => {
   if (mode === 'play' && k === 'm') { openMap(); e.preventDefault(); return; }
   if (mode === 'map' && k === 'm') { closePanels(); return; }
   if (mode === 'play' && k === 'r') { lookAhead(); return; }
-  // in an open dialog, Space presses the focused button and the arrows scroll the box
-  if (e.target.closest?.('.panel:not([hidden])')) return;
+  // keys steer the lamplighter only in play. In a dialog, on the end card and on the loading screen they are the page's: Space and Enter
+  // press the focused button (Try again too), and the arrows scroll a dialog's box
+  if (mode !== 'play' || e.target.closest?.('.panel:not([hidden])')) return;
   if ([' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) e.preventDefault();
   keys.add(k);
 });
@@ -267,6 +268,7 @@ async function go(id) {
     const r = $('bRetry');
     r.hidden = false;
     r.onclick = () => go(id);
+    r.focus(); // so Space or Enter tries again without a Tab
     return;
   }
   ({ meta, world } = place);

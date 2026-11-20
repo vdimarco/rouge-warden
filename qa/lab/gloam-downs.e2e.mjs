@@ -2,7 +2,7 @@
 //   the page loads and draws; Escape closes the help for good; every place is dark with fire in it (read back from the canvas); keys
 //   move and jump the lamplighter; a wisp counts; the map shows the places and Space presses its buttons; the beacon opens the next
 //   place; the save comes back after a reload and a bad save is ignored; after Walk again one beacon is not the end of the walk;
-//   blocked site data does not stop the page; on a phone the stick moves and the controls are 44 px and inside the screen; 320 and
+//   blocked site data does not stop the page; Space and Enter on Try again load a place that failed; on a phone the stick moves and the controls are 44 px and inside the screen; 320 and
 //   1280 wide have no sideways scroll; without WebGL or DecompressionStream the page says so.
 // The page runs with ?test: the game is stepped by __gloam.tick() and drawn by __gloam.draw(), because software WebGL takes about a
 // second a frame. Needs the site served: python3 -m http.server 8765 --bind 0.0.0.0 --directory public
@@ -200,6 +200,32 @@ try {
     await bc.close();
     pass('with site data blocked the page loads and plays');
   }
+  { // a place that does not load: Space on the focused Try again asks for it again, and Enter too
+    const fc = await browser.newContext({ viewport: { width: 960, height: 540 } });
+    await fc.route('**/api/**', r => r.fulfill({ status: 204, body: '' }));
+    let asked = 0, fail = true;
+    await fc.route('**/worlds/gaol.bin.gz', r => { asked++; return fail ? r.fulfill({ status: 500, body: '' }) : r.continue(); });
+    const p = await fc.newPage();
+    const fe = [];
+    p.on('pageerror', e => fe.push(e.message));
+    await p.goto(`${SITE}/lab/gloam-downs/?fresh&test`);
+    await p.waitForSelector('#bRetry', { state: 'visible', timeout: 60000 });
+    assert.match(await p.textContent('#loadLine'), /Could not load The Sunken Gaol/);
+    assert.equal(asked, 1);
+    const askedFor = async n => { for (let i = 0; i < 100 && asked < n; i++) await p.waitForTimeout(100); return asked; };
+    await p.focus('#bRetry');
+    await p.keyboard.press(' ');
+    assert.equal(await askedFor(2), 2, 'Space on Try again asks for the place again');
+    await p.waitForSelector('#bRetry', { state: 'visible', timeout: 60000 });
+    fail = false;
+    await p.focus('#bRetry');
+    await p.keyboard.press('Enter');
+    await p.waitForFunction(() => window.__gloam.ready() && window.__gloam.state().place === 'gaol', null, { timeout: 120000 });
+    assert.equal(asked, 3);
+    assert.deepEqual(fe, []);
+    await fc.close();
+    pass('a place that does not load: Space and Enter on Try again ask for it again', { asked });
+  }
 
   /* ---------------- phone ---------------- */
   {
@@ -270,6 +296,7 @@ try {
     const p = await b2.newPage();
     await p.goto(`${SITE}/lab/gloam-downs/?fresh&test`);
     await p.waitForFunction(() => /WebGL 2/.test(document.getElementById('loadLine').textContent), null, { timeout: 30000 });
+    assert(!(await p.isVisible('#bRetry')));
     await b2.close();
     pass('without WebGL 2 the page says so in words');
   }

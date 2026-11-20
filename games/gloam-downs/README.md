@@ -60,13 +60,17 @@ export default {
   - `lamp(p, r, s)`: a baked light. A material with `g: [index]` turns warm near it: the bake widens a one-step `g` into a six-step ramp, from that colour's own darker step through the shared fire ramp, so lamp light falls off as a warm pool. You can give `g` a full ramp of your own instead.
   - `fire(p, s, { embers, lamp, r, k, hot })`: a flame, embers and its lamp.
   - `wisp(p)` (exactly five), `beacon(p, r)` (one), `spawn(p, yaw)` (one; yaw 0 faces +z).
-  - `later(fn)`: solids that must not block the feet, such as water, hanging cloth or chains. They are left out of the walk map and baked with the scenery, so its shadows fall on them. `S.sdf` inside `fn` reads the scenery alone.
+  - `later(fn)`: solids that must not block the feet, such as water, hanging cloth or chains. They are left out of the walk map and baked with the scenery, so its shadows fall on them.
   - `glow(fn)`: emissive extras after every bake (sky dome `B.sky`, moon `B.iso`, motes, clouds).
+  - **Where `S.sdf` is valid:**
+    - Inside a `later` callback, `S.sdf` reads the scenery alone.
+    - Inside a `glow` callback, `S.sdf` reads the scenery and the `later` solids. The lamplighter has a sculptor of its own, so it is never in this field.
+    - In `build` itself, outside these callbacks, do not use `S.sdf`. The field does not know where the solids are until the bake calls `S.ready()` before the walk map.
 - **Props:** `lib/props.mjs` has `torch`, `brazier`, `steps`, `wall`, `tower`, `deadTree`, `roundTree`, `gibbet`, `cage`, `stakes`, `rocks` and `shrubs`. Write place-only props in your own biome file.
 - **Order of the bake:**
   1. your scenery;
   2. the walk map, read from the scenery's distance field (`S.ready()` builds it before the bake);
-  3. `later` solids, then one bake of them with the scenery, then the lamplighter with its own bake;
+  3. `later` solids, then one bake of them with the scenery, then the lamplighter, in its own sculptor and its own bake;
   4. glows, then finish.
 - **Materials:** `{ r: ramp, g: [lit base], mod: (x,y,z) => tone shift, rf: (x,y,z) => ramp, top: { min, r }, em, fat }`.
 

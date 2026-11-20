@@ -61,7 +61,8 @@ All five places, the lamplighter and the names are original.
 
 ## Speed
 - The renderer sorts all splats on the CPU when the view changes. That costs about 3 ms for 100k splats and 7.5 ms for 300k. Each place is kept under 260k splats.
-- The art size is about 64,000 pixels (320×200), scaled up by a whole number. If the median frame time is over 40 ms, the page steps the art size down.
+- The art size is about 64,000 pixels (320×200), or 46,000 on a touch screen, scaled up by a whole number. The page keeps the last 40 frame times. If their median is over 45 ms for two seconds, the page steps the art size down to 72% of its pixels. It stops when the art size is 24,000 pixels or less.
+- The game moves in steps of at most 1/30 s, as many as the frame took, up to 0.25 s for each frame. So a slow phone does not play in slow motion, and a long pause does not move the lamplighter far.
 
 ## Not done
 - Sound, enemies and combat.

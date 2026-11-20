@@ -52,7 +52,7 @@ Q and E, the right stick, a mouse drag or a touch drag on the right half of the 
 - **THEN** the camera comes closer, so the lamplighter stays in view
 
 ### Requirement: Wisps and the beacon
-Each place SHALL have five wisps: glowing motes that float above the ground. A wisp SHALL go out and count when the lamplighter touches it. Each place SHALL have one beacon on its summit. When the lamplighter touches the beacon, the beacon SHALL light, a card SHALL say that the way opens, and the next place SHALL load. After Barrow Crown, an end card SHALL show the time and the wisps found, with a button to walk again.
+Each place SHALL have five wisps: glowing motes that float above the ground. A wisp SHALL go out and count when the lamplighter touches it. Each place SHALL have one beacon on its summit. When the lamplighter touches the beacon, the beacon SHALL light, a card SHALL say that the way opens, and the next place SHALL load.
 
 #### Scenario: Wisp
 - **WHEN** the lamplighter touches a wisp
@@ -61,6 +61,17 @@ Each place SHALL have five wisps: glowing motes that float above the ground. A w
 #### Scenario: Beacon
 - **WHEN** the lamplighter touches the beacon of The Sunken Gaol
 - **THEN** the beacon lights, a card shows, and then Crow Ramparts loads
+
+### Requirement: The end of the walk
+When all five beacons burn, in any order, an end card SHALL show the time, the wisps found and the best time, with a button to walk again. Walk again SHALL put out every beacon, start the time again at zero and go back to The Sunken Gaol. The places reached SHALL stay open. While a beacon is still dark, the walk SHALL not end. If the beacon of Barrow Crown lights then, a card SHALL say how many beacons are still dark.
+
+#### Scenario: The last beacon
+- **WHEN** four beacons burn and the lamplighter lights the fifth
+- **THEN** the end card shows the time, the wisps found and the best time
+
+#### Scenario: Walk again
+- **WHEN** the player chooses Walk again on the end card, goes to Barrow Crown on the Map and lights only its beacon
+- **THEN** the Map shows all five places open, a card says that four beacons are still dark, no end card shows, and the best time does not change
 
 ### Requirement: Map and saved progress
 The Map control and the M key SHALL show the five places. A place the player has reached SHALL be open, and the others SHALL be locked. The page SHALL save the places reached and the wisps found in the browser, and SHALL check each saved field, so a bad save cannot break the page.
@@ -74,11 +85,22 @@ The Map control and the M key SHALL show the five places. A place the player has
 - **THEN** the page ignores the bad fields and starts as normal
 
 ### Requirement: Controls and layout
-Every touch control SHALL be at least 44 px on its shorter side. The page SHALL fit 390 by 844, 320 by 640 and 1280 by 720 with no sideways scroll. On a touch screen a stick SHALL show where the thumb first touches on the left half of the screen. The page SHALL stop its loop while the game switcher is open or the page is hidden. Without WebGL 2 the page SHALL say so in words.
+Every touch control SHALL be at least 44 px on its shorter side. The page SHALL fit 390 by 844, 320 by 640 and 1280 by 720 with no sideways scroll. On a touch screen a stick SHALL show where the thumb first touches on the left half of the screen. The page SHALL stop its loop while the game switcher is open or the page is hidden. In a dialog, on the end card and on the loading screen, Space and Enter SHALL press the focused button. In play, Space SHALL jump.
 
 #### Scenario: Phone
 - **WHEN** the piece opens at 390 by 844 on a touch screen
-- **THEN** the Jump, Map and Look controls are at least 44 px and inside the screen, and a drag on the left half moves the lamplighter
+- **THEN** the Jump, Map and Look controls and the Lab bar's ◀ Lab and Games controls are at least 44 px and inside the screen, and a drag on the left half moves the lamplighter
+
+### Requirement: Loading and old browsers
+When a place does not load, the loading screen SHALL say so and show Try again. Without WebGL 2 the page SHALL say so in words. Without DecompressionStream, which unpacks the places, the page SHALL also say so in words, and SHALL not show Try again.
+
+#### Scenario: A place does not load
+- **WHEN** a place's file does not load, and the player presses Space or Enter on the focused Try again
+- **THEN** the page asks for the place again, and the place shows when its file loads
+
+#### Scenario: An old browser
+- **WHEN** the browser has no WebGL 2, or no DecompressionStream
+- **THEN** the page says in words what the browser does not have, and does not show Try again
 
 ### Requirement: Size and speed
 Each baked world SHALL have no more than 260,000 splats and no more than 48 palette colors, and its download SHALL be no more than 1.5 MB. The page SHALL draw at a small art size that scales up by a whole number. If frames take too long, the page SHALL draw at a smaller art size.
