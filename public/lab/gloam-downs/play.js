@@ -302,9 +302,10 @@ export function makeBody(walk, start, bounds, P = PARAMS) {
     }
     const moved = Math.hypot(s.x - x0, s.z - z0);
     if (s.ground) s.phase += (moved / 0.62) * Math.PI;
-    const sp = Math.hypot(s.vx, s.vz);
-    s.moveK += ((s.ground ? Math.min(1, sp / P.walk) : 0) - s.moveK) * Math.min(1, dt * 12);
-    s.runK += ((s.ground ? clamp((sp - P.walk) / (P.run - P.walk), 0, 1) : 0) - s.runK) * Math.min(1, dt * 8);
+    // a run's moves drive the body with run = walk = the move's speed (moves.js), so neither share may divide by zero
+    const sp = Math.hypot(s.vx, s.vz), span = P.run - P.walk;
+    s.moveK += ((s.ground && P.walk > 0 ? Math.min(1, sp / P.walk) : 0) - s.moveK) * Math.min(1, dt * 12);
+    s.runK += ((s.ground && span > 0 ? clamp((sp - P.walk) / span, 0, 1) : 0) - s.runK) * Math.min(1, dt * 8);
     s.landAge += dt;
     // the floor for the shadow: under the feet on the ground, else the floor they would land on
     s.floor = s.ground ? s.y : walk.support(s.x, s.z, s.y + 0.05) ?? s.y;
@@ -398,18 +399,69 @@ function put(out, b, A, t) {
   for (let i = 0; i < 9; i++) out[o + i] = A[i];
   out[o + 9] = t[0]; out[o + 10] = t[1]; out[o + 11] = t[2];
 }
+/* the moves of a run (moves.js sets s.act = { move, ph, k }, k from 0 to 1 through the phase). The right arm is the blade arm: a cut
+   swings it across the front, the finisher lifts it overhead and chops. The roll turns the whole figure over round its middle. The
+   plunge holds the blade arm down in front and swings the lantern arm up behind, not a seated drop. -> what it changes in the pose */
+const ease = k => k * k * (3 - 2 * k);
+function actPose(a, parts) {
+  const k = a.k, e = ease(k), back = 1 - e;
+  let lean = 0, spin = 0, twist = 0, squash = 1;
+  switch (a.move) {
+    case 'cut1':
+      if (a.ph === 'wind') { parts.armR = mul(rotX(-1.3 * e), rotZ(-1.1 * e)); twist = 0.35 * e; }
+      else if (a.ph === 'act') { parts.armR = mul(rotX(-1.35), rotZ(-1.1 + 2.3 * e)); twist = 0.35 - 0.75 * e; lean = 0.12; }
+      else { parts.armR = mul(rotX(-1.35 * back), rotZ(1.2 * back)); twist = -0.4 * back; lean = 0.12 * back; }
+      break;
+    case 'cut2':
+      if (a.ph === 'wind') { parts.armR = mul(rotX(-1.25 * e), rotZ(1.15 * e)); twist = -0.35 * e; }
+      else if (a.ph === 'act') { parts.armR = mul(rotX(-1.3), rotZ(1.15 - 2.4 * e)); twist = -0.35 + 0.75 * e; lean = 0.12; }
+      else { parts.armR = mul(rotX(-1.3 * back), rotZ(-1.25 * back)); twist = 0.4 * back; lean = 0.12 * back; }
+      break;
+    case 'fin':
+      if (a.ph === 'wind') { parts.armR = rotX(-2.7 * e); parts.armL = rotX(0.5 * e); lean = -0.18 * e; }
+      else if (a.ph === 'act') { parts.armR = rotX(-2.7 + 3.1 * e); parts.armL = rotX(0.5); lean = -0.18 + 0.48 * e; squash = 1 - 0.08 * e; }
+      else { parts.armR = rotX(0.4 * back); parts.armL = rotX(0.5 * back); lean = 0.3 * back; squash = 1 - 0.08 * back; }
+      break;
+    case 'roll':
+      spin = (a.back ? -1 : 1) * 2 * Math.PI * e;
+      squash = 1 - 0.22 * Math.sin(Math.PI * k);
+      parts.armL = parts.armR = rotX(-0.9);
+      parts.legL = parts.legR = rotX(-1.0);
+      parts.head = rotX(0.35);
+      break;
+    case 'hang':
+      parts.armR = rotX(-2.5 * e); parts.armL = rotX(1.4 * e);
+      parts.legL = parts.legR = rotX(-0.8 * e);
+      break;
+    case 'plunge':
+      parts.armR = mul(rotX(-0.3), rotZ(0.35)); parts.armL = mul(rotX(2.6), rotZ(-0.3));
+      parts.legL = parts.legR = rotX(-0.45);
+      lean = 0.32;
+      break;
+    case 'land':
+      parts.armR = mul(rotX(-0.3 * back), rotZ(0.35 * back)); parts.armL = rotX(2.6 * back);
+      lean = 0.32 * back; squash = 1 - 0.2 * back;
+      break;
+    case 'drink':
+      parts.armR = mul(rotX(-2.1 * Math.min(1, k * 4)), rotZ(0.7 * Math.min(1, k * 4)));
+      parts.head = rotX(-0.28 * Math.sin(Math.PI * k));
+      break;
+    case 'hurt':
+      parts.armR = rotZ(-0.7 * back); parts.armL = rotZ(0.7 * back);
+      lean = -0.4 * back;
+      break;
+  }
+  return { lean, spin, twist, squash };
+}
 export function pose(out, rig, s, time = 0, still = false) {
   const { names, pivots } = rig;
   const P0 = pivots[0], F = [P0[0], P0[1] - 0.1, P0[2]];
+  // the hurt blink: the figure's bones park far under the map, scaled to nothing (a bone at scale 0 alone still draws a dot)
+  const HIDE = scl(0, 0, 0);
   const sw = Math.sin(s.phase), m = s.moveK, air = !s.ground;
   const land = s.landK * Math.exp(-s.landAge * 9);
   const rising = air && s.vy > 0 ? Math.min(1, s.vy / 8) : 0;
-  const sy = 1 - 0.28 * land + 0.1 * rising, sxz = 1 + 0.14 * land - 0.04 * rising;
   const breath = still ? 0 : Math.sin(time * 2.1) * 0.02;
-  const lean = 0.2 * s.runK + 0.06 * m + (air ? -0.08 : 0);
-  const Ab = mul(rotY(s.yaw), mul(scl(sxz, sy * (1 + breath), sxz), mul(rotX(lean), rotZ(0.05 * sw * m))));
-  const bob = Math.abs(sw) * 0.07 * m;
-  const P = [s.x, s.y + bob, s.z];
   const parts = {
     body: [1, 0, 0, 0, 1, 0, 0, 0, 1],
     head: mul(rotX(0.07 * Math.sin(s.phase * 2) * m - 0.06 * s.runK + breath * 2), rotY(0.05 * sw * m)),
@@ -418,8 +470,21 @@ export function pose(out, rig, s, time = 0, still = false) {
     armL: rotX(air ? -0.5 : 0.22 * sw * m + 0.05 * Math.sin(time * 1.7)),
     armR: mul(rotX(air ? -0.9 : -0.65 * sw * m), rotZ(air ? 0.5 : 0.08))
   };
+  const act = s.act ? actPose(s.act, parts) : null;
+  const sy = (1 - 0.28 * land + 0.1 * rising) * (act ? act.squash : 1), sxz = 1 + 0.14 * land - 0.04 * rising;
+  const lean = 0.2 * s.runK + 0.06 * m + (air ? -0.08 : 0) + (act ? act.lean : 0);
+  let Ab = mul(rotY(s.yaw + (act ? act.twist : 0)), mul(scl(sxz, sy * (1 + breath), sxz), mul(rotX(lean), rotZ(0.05 * sw * m))));
+  const bob = Math.abs(sw) * 0.07 * m;
+  const P = [s.x, s.y + bob, s.z];
+  if (act && act.spin) {
+    // turn over round the middle of the figure, 0.45 over the feet: that point stays where it was
+    const Ab2 = mul(Ab, rotX(act.spin)), a1 = app(Ab, [0, 0.45, 0]), a2 = app(Ab2, [0, 0.45, 0]);
+    P[0] += a1[0] - a2[0]; P[1] += a1[1] - a2[1]; P[2] += a1[2] - a2[2];
+    Ab = Ab2;
+  }
   names.forEach((name, b) => {
     const pv = pivots[b];
+    if (s.hide && name !== 'shadow') { put(out, b, HIDE, [0, -500, 0]); return; }
     if (name === 'shadow') {
       const hgt = Math.max(0, s.y - s.floor), k = 1 / (1 + 0.45 * hgt);
       const A = scl(k, 1, k);
