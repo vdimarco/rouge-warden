@@ -76,7 +76,39 @@
   .bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--emberd), var(--ember)); transition: width 0.15s; }
   .veil { position: fixed; inset: 0; z-index: 25; background: #000; opacity: 0; pointer-events: none; transition: opacity 0.45s; }
   .veil.on { opacity: 1; }
+  /* the run's touch buttons: a right-thumb group at the bottom right (design.md "HUD and layouts"), small in windows 660 px tall or
+     less. Attack, Roll and Heal show only in a run; Jump takes the run's size there */
+  .act { position: fixed; z-index: 8; box-sizing: border-box; padding: 0; border-radius: 50%; touch-action: none; display: grid; place-items: center; align-content: center; gap: 1px;
+    background: rgba(60, 20, 12, 0.72); border: 2px solid var(--emberd); color: #ffd9a8; font: 800 12px/1 var(--body); letter-spacing: 0.05em; cursor: pointer; }
+  .act.on { background: rgba(140, 50, 20, 0.85); }
+  .act[hidden] { display: none; }
+  .act b { font: 800 13px/1 var(--body); color: #ffe2bd; }
+  .act.attack { width: 76px; height: 76px; right: calc(16px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 84px); font-size: 13px; }
+  .act.roll { width: 60px; height: 60px; right: calc(100px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 18px); background: rgba(20, 18, 30, 0.72); border-color: #6a6478; color: var(--bone); }
+  .act.heal { width: 48px; height: 48px; right: calc(104px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 94px); font-size: 10px; background: rgba(14, 40, 34, 0.72); border-color: #3f8f78; color: #c8f6e6; }
+  body.run .jump { width: 64px; height: 64px; right: calc(16px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 12px); padding: 0; }
+  @media (min-height: 661px) {
+    .act.attack { width: 84px; height: 84px; bottom: calc(var(--sab) + 96px); font-size: 14px; }
+    .act.roll { width: 64px; height: 64px; right: calc(112px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 30px); }
+    .act.heal { width: 52px; height: 52px; right: calc(112px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 110px); }
+    body.run .jump { width: 72px; height: 72px; bottom: calc(var(--sab) + 16px); }
+  }
+  /* the run's cards: the places of the run, the wick choice and the question before End the run */
+  .route { list-style: none; margin: 8px 0 10px; padding: 0; display: grid; gap: 4px; }
+  .route li { display: grid; grid-template-columns: 1.8em 1fr auto; gap: 8px; align-items: center; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--edge); font: 600 14px/1.2 var(--body); color: var(--ash); }
+  .route li span { font: 700 15px/1 var(--title); color: var(--ember); text-align: center; }
+  .route li em { font: 700 11px/1 var(--body); font-style: normal; text-transform: uppercase; letter-spacing: 0.1em; }
+  .route li.here { color: var(--bone); border-color: var(--emberd); }
+  .route li.passed { color: #c9c2ae; }
+  .wicks { display: grid; gap: 8px; margin: 8px 0 12px; }
+  .wicks button { width: 100%; text-align: left; padding: 10px 14px; line-height: 1.3; }
+  .panel .ask { margin: 4px 0 10px; color: var(--bone); }
+  .panel .row[hidden] { display: none; }
+  #askRow { flex-wrap: wrap; }
+  #askRow .ask { flex-basis: 100%; }
   @media (max-width: 520px) { .hud .hint { display: none; } .hud p { font-size: 12px; } .tools button { padding: 0 10px; font-size: 13px; } }
+  /* in a run the second tool reads Pause, a little wider than Map: tighter padding keeps it clear of the HUD at 320 */
+  @media (max-width: 520px) { body.run .tools button { padding: 0 8px; } }
   @media (max-height: 420px) { .arrive { top: 40%; } .arrive p { display: none; } }
   @media (prefers-reduced-motion: reduce) { .arrive, .veil, .loading, .bar i { transition: none; } }
 </style>
@@ -95,6 +127,9 @@
   <button type="button" id="bMap" title="The five places (M)">Map</button>
 </div>
 <button type="button" class="jump" id="bJump" hidden>JUMP</button>
+<button type="button" class="act attack" id="bAttack" hidden aria-label="Attack">ATTACK</button>
+<button type="button" class="act roll" id="bRoll" hidden aria-label="Roll">ROLL</button>
+<button type="button" class="act heal" id="bHeal" hidden aria-label="Heal">HEAL<b id="healN">2</b></button>
 <div class="stick" id="stick" hidden><i></i></div>
 
 <div class="arrive off" id="arrive" aria-live="polite"><small id="arriveN">I · The first place</small><h1 id="arriveName">The Sunken Gaol</h1><p id="arriveSub"></p></div>
@@ -129,6 +164,35 @@
   <p>All five beacons burn. The lamplighter can rest.</p>
   <dl class="score"><dt>Time</dt><dd id="endTime">0:00</dd><dt>Wisps</dt><dd id="endWisps">0/25</dd><dt>Best time</dt><dd id="endBest">–</dd></dl>
   <div class="row"><button type="button" id="bEndStay">Stay</button><button type="button" class="go" id="bAgain">Walk again</button></div>
+</div></div>
+
+<div class="panel" id="runHelp" hidden><div class="box" role="dialog" aria-labelledby="runHelpT">
+  <h2 id="runHelpT">Gloam Downs</h2>
+  <p>A run through five dark places, with a blade, a roll and two flasks. Put out each beacon's keepers, then light it. A lit beacon banks the glim you carry.</p>
+  <ul id="runControls"></ul>
+  <div class="row"><button type="button" class="go" id="bBegin">Begin the run</button></div>
+</div></div>
+
+<div class="panel" id="pause" hidden><div class="box" role="dialog" aria-labelledby="pauseT">
+  <h2 id="pauseT">Paused</h2>
+  <ol class="route" id="route"></ol>
+  <p id="pauseLine">Run time 0:00</p>
+  <ul id="pauseControls"></ul>
+  <div class="row" id="pauseRow"><button type="button" class="go" id="bResume">Resume</button><button type="button" id="bEnd">End the run</button></div>
+  <div class="row" id="askRow" hidden><p class="ask">End the run? The glim you carry is lost.</p><button type="button" class="go" id="bNo">No</button><button type="button" id="bYes">Yes, end it</button></div>
+</div></div>
+
+<div class="panel" id="beaconCard" hidden><div class="box" role="dialog" aria-labelledby="beaconT">
+  <h2 id="beaconT">The beacon burns</h2>
+  <p id="beaconLine">Choose a wick. It burns for the rest of the run.</p>
+  <div class="wicks" id="wicks"></div>
+  <div class="row"><button type="button" class="go" id="bWalkOn" hidden>Walk on</button></div>
+</div></div>
+
+<div class="panel" id="summary" hidden><div class="box" role="dialog" aria-labelledby="sumT">
+  <h2 id="sumT">The lamp goes out</h2>
+  <dl class="score"><dt>Reached</dt><dd id="sumPlace"></dd><dt>Time</dt><dd id="sumTime"></dd><dt>Foes put out</dt><dd id="sumFoes"></dd><dt>Glim lost</dt><dd id="sumLost"></dd><dt>Glim banked</dt><dd id="sumBanked"></dd></dl>
+  <div class="row"><button type="button" class="go" id="bNewRun">Begin a new run</button></div>
 </div></div>
 
 <div class="veil" id="veil"></div>

@@ -21,7 +21,7 @@ export function checkPlace({ meta, walk, world }, { gzBytes, frame } = {}) {
   const out = [];
   const ok = (cond, what) => out.push({ ok: !!cond, what });
   ok(meta.count <= BUDGET.splats, `splats ${meta.count} <= ${BUDGET.splats}`);
-  if (gzBytes !== undefined) ok(gzBytes <= BUDGET.gzBytes, `download ${(gzBytes / 1e6).toFixed(2)} MB <= 1.5 MB`);
+  if (gzBytes !== undefined) ok(gzBytes <= BUDGET.gzBytes, `download ${(gzBytes / 1e6).toFixed(3)} MB <= 1.5 MB (splats, walk map and JSON)`);
   ok(meta.pal.length <= BUDGET.colors, `palette ${meta.pal.length} <= 48`);
   const W = makeWalk(meta.walk, walkCells(walk));
   const sy = W.support(meta.spawn.p[0], meta.spawn.p[2], meta.spawn.p[1] + 1);

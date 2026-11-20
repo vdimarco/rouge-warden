@@ -161,8 +161,9 @@ export function save(id, { world, meta, walk }, out = OUT) {
   const wgz = zlib.gzipSync(Buffer.from(walkCells(walk).buffer), { level: 9 });
   fs.writeFileSync(path.join(out, id + '.bin.gz'), gz);
   fs.writeFileSync(path.join(out, id + '.walk.bin.gz'), wgz);
-  fs.writeFileSync(path.join(out, id + '.json'), JSON.stringify(meta));
-  return { splatsGz: gz.length, walkGz: wgz.length };
+  const json = JSON.stringify(meta);
+  fs.writeFileSync(path.join(out, id + '.json'), json);
+  return { splatsGz: gz.length, walkGz: wgz.length, json: Buffer.byteLength(json) };
 }
 
 // a CPU picture of a place: the lamplighter stood at the start point, seen from the follow camera, from the beacon, or from above
@@ -226,7 +227,8 @@ async function main() {
       if (prev) console.log(`  previews in ${out}`);
     }
     if (args.includes('--check')) {
-      const res = checkPlace(built, { gzBytes: sizes.splatsGz + sizes.walkGz, frame });
+      // a place's 1.5 MB counts its three files: the splats, the walk map and its JSON
+      const res = checkPlace(built, { gzBytes: sizes.splatsGz + sizes.walkGz + sizes.json, frame });
       for (const r of res) console.log(`  ${r.ok ? 'ok  ' : 'FAIL'} ${r.what}`);
       if (res.some(r => !r.ok)) process.exitCode = 1;
     }
