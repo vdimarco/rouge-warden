@@ -136,9 +136,10 @@ export function readFigures(json) {
    makePool(world, meta, slots): world is the place as world.js loads it (its anim holds the lamplighter's bones); slots is a list of
    { code, type, src } with src the figure file's decoded { data } (foes or boss). The world's data, count and anim are replaced with
    ones that hold the slots. Every slot starts parked. pool.rows holds the 512-splat rows changed since the page last drew; the page
-   passes them to the renderer as changedRows and clears the set. */
+   passes them to the renderer as changedRows and clears the set. extra splats after the slots are a reserve on no bone, parked at
+   density 0 (the spark pool of sparks.js): pool.extra is their range { first, end }. */
 const FLASH = 0xff + 0xf4 * 256 + 0xcc * 65536; // fire step 5, fff4cc: the hit flash
-export function makePool(world, meta, slots) {
+export function makePool(world, meta, slots, { extra = 0 } = {}) {
   const base0 = meta.bones.names.length, lampFirst = meta.bones.first, lampEnd = meta.bones.end;
   // the place's own rows, kept so that a later call (when the boss files come in) builds the pool again from them
   world.place ||= { data: world.data.subarray(0, world.count * 16), count: world.count };
@@ -149,8 +150,11 @@ export function makePool(world, meta, slots) {
     nb += type.bones.length;
     return s;
   });
+  const reserve = { first: count, end: count + extra };
+  count += extra;
   const data = new Float32Array(count * 16);
   data.set(world.place.data);
+  for (let i = reserve.first; i < reserve.end; i++) { data[i * 16 + 1] = -50; data[i * 16 + 11] = 48; data[i * 16 + 15] = -100; }
   for (const s of list) {
     data.set(s.src.data.subarray(s.type.first * 16, s.type.end * 16), s.first * 16);
     for (let i = s.first; i < s.end; i++) {
@@ -189,7 +193,7 @@ export function makePool(world, meta, slots) {
   };
   const slotOf = q => (typeof q === 'number' ? list[q] : q);
   const pool = {
-    slots: list, rows, bones,
+    slots: list, rows, bones, extra: reserve,
     // a free slot of this type (code 'S', 'P', 'M', 'I', 'B' or 'L'), or null
     free: code => list.find(s => s.code === code && !s.awake) || null,
     // wake a slot at a point: on the bones first, then its density back; it stands at rest until posed again

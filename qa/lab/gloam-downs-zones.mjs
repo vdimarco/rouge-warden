@@ -16,6 +16,7 @@ import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 import { makeWalk, reachable } from '../../public/lab/gloam-downs/play.js';
 import { ZONES, POOLS, ROUTES, zoneJson, poolTypes } from '../../games/gloam-downs/lib/zones.mjs';
+import { freeSlots, fits, makeRoom } from '../../public/lab/gloam-downs/foes.js';
 
 export const DIR = fileURLToPath(new URL('../../public/lab/gloam-downs/worlds/', import.meta.url));
 export const PLACES = ['gaol', 'ramparts', 'fen', 'bells', 'barrows'];
@@ -31,42 +32,11 @@ const foesOf = z => [...z.foes].filter(t => 'SPMI'.includes(t));
 const dist = (a, x, z) => Math.hypot(a.c[0] - x, a.c[2] - z);
 
 /* ---------------- the wake rule ----------------
-   free(types, awake): the slots of each type the awake zones leave free. fits(zone, awake, pool): the zone's foes and the awake foes
-   come to 6 or fewer, and there is a free slot of the right type for each of its foes. */
-export function freeSlots(pool, awake) {
-  const free = { ...pool };
-  for (const z of awake) for (const t of foesOf(z)) free[t] = (free[t] || 0) - 1;
-  return free;
-}
-export function fits(zone, awake, pool) {
-  const n = awake.reduce((s, z) => s + foesOf(z).length, 0) + foesOf(zone).length;
-  if (n > RULE.cap) return false;
-  const free = freeSlots(pool, awake), need = {};
-  for (const t of foesOf(zone)) need[t] = (need[t] || 0) + 1;
-  return Object.entries(need).every(([t, k]) => (free[t] || 0) >= k);
-}
-/* the guard rule: awake is the zones awake when the lamplighter at (x, z) comes within reach of the guard. Returns the zones that give
-   up their slots (farthest from (x, z) first, only those that help), or null when even all of them do not make room */
-export function makeRoom(guard, awake, pool, x, z) {
-  let keep = awake.slice();
-  const gone = [];
-  const short = () => {
-    const free = freeSlots(pool, keep), need = {};
-    for (const t of foesOf(guard)) need[t] = (need[t] || 0) + 1;
-    const types = Object.entries(need).filter(([t, k]) => (free[t] || 0) < k).map(([t]) => t);
-    const capped = keep.reduce((s, q) => s + foesOf(q).length, 0) + foesOf(guard).length > RULE.cap;
-    return { types, capped };
-  };
-  for (const q of keep.slice().sort((a, b) => dist(b, x, z) - dist(a, x, z))) {
-    if (fits(guard, keep, pool)) break;
-    const s = short();
-    const helps = s.capped || foesOf(q).some(t => s.types.includes(t));
-    if (!helps) continue;
-    keep = keep.filter(k => k !== q);
-    gone.push(q);
-  }
-  return fits(guard, keep, pool) ? { gone, keep } : null;
-}
+   The page's own rule, from public/lab/gloam-downs/foes.js, so the page and this check share it. free(pool, awake): the slots of each
+   type the awake zones leave free. fits(zone, awake, pool): the zone's foes and the awake foes come to 6 or fewer, and there is a free
+   slot of the right type for each of its foes. makeRoom(guard, awake, pool, x, z): the zones that give up their slots (farthest from
+   (x, z) first, only those that help), or null when even all of them do not make room */
+export { freeSlots, fits, makeRoom };
 
 /* ---------------- a walk along a route ----------------
    Points every 0.5 m along the waypoints. At each point a zone not cleared and asleep wakes within 10 m if it fits (a guard zone takes
@@ -105,26 +75,30 @@ export function walkRoute(id, mode) {
 
 /* ---------------- every guard can wake ----------------
    From each reachable grid point within 10 m of a guard's centre (1 m apart): the other zones whose centre is within 16 m of that point
-   are awake there, as many as fit (nearest first). The guard must then fit, or make room by the guard rule. */
+   are awake there, as many as fit (nearest first). The guard must then fit, or make room by the guard rule. A zone farther off can be
+   awake there too while its foes chase or walk home (foes.js: they give up 4 s after the lamplighter leaves their leash plus 8 m, and
+   walk home), so the check is made again with every other zone of the place awake that fits, nearest first */
 export function guardCheck(id, walk, R) {
   const zones = ZONES[id], pool = poolTypes(id), out = [];
   for (const g of zones.filter(q => q.guard && !q.boss)) {
-    let points = 0, room = 0, failed = 0, most = 0;
+    let points = 0, room = 0, failed = 0, chased = 0, most = 0;
     for (let x = g.c[0] - RULE.wake; x <= g.c[0] + RULE.wake; x += 1)
       for (let z = g.c[2] - RULE.wake; z <= g.c[2] + RULE.wake; z += 1) {
         if (Math.hypot(x - g.c[0], z - g.c[2]) >= RULE.wake) continue;
         const y = floorAt(walk, x, z);
         if (y === null || !R.near([x, y + 0.5, z], 0.6)) continue;
         points++;
-        const awake = [];
-        for (const q of zones.filter(q => q !== g && !q.boss && dist(q, x, z) <= RULE.sleep).sort((a, b) => dist(a, x, z) - dist(b, x, z)))
-          if (fits(q, awake, pool)) awake.push(q);
-        if (fits(g, awake, pool)) continue;
-        const r = makeRoom(g, awake, pool, x, z);
-        if (!r) failed++;
-        else { room++; most = Math.max(most, r.gone.length); }
+        for (const chase of [false, true]) {
+          const awake = [];
+          for (const q of zones.filter(q => q !== g && !q.boss && (chase || dist(q, x, z) <= RULE.sleep)).sort((a, b) => dist(a, x, z) - dist(b, x, z)))
+            if (fits(q, awake, pool)) awake.push(q);
+          if (fits(g, awake, pool)) continue;
+          const r = makeRoom(g, awake, pool, x, z);
+          if (!r) { failed++; if (chase) chased++; }
+          else if (!chase) { room++; most = Math.max(most, r.gone.length); }
+        }
       }
-    out.push({ guard: g.id, points, room, failed, most, reach: zones.filter(q => q !== g && !q.boss && dist(q, g.c[0], g.c[2]) <= RULE.guardReach).map(q => q.id) });
+    out.push({ guard: g.id, points, room, failed, chased, most, reach: zones.filter(q => q !== g && !q.boss && dist(q, g.c[0], g.c[2]) <= RULE.guardReach).map(q => q.id) });
   }
   return out;
 }
@@ -195,7 +169,7 @@ export function survey(dir = DIR) {
       if (guard) ok(r.order.includes(guard.id), `${id}: a ${mode} wakes the guard zone ${guard.id}`);
     }
     for (const g of guardCheck(id, walk, R))
-      ok(g.points > 0 && g.failed === 0, `${id} ${g.guard}: wakes from each of ${g.points} points within ${RULE.wake} m (${g.room} by taking slots, at most ${g.most} zone(s) giving up theirs; zones within ${RULE.guardReach} m: ${g.reach.join(' ') || 'none'})`);
+      ok(g.points > 0 && g.failed === 0, `${id} ${g.guard}: wakes from each of ${g.points} points within ${RULE.wake} m, also with every other zone awake that fits while its foes chase (${g.room} by taking slots, at most ${g.most} zone(s) giving up theirs; zones within ${RULE.guardReach} m: ${g.reach.join(' ') || 'none'}${g.chased ? `; ${g.chased} fail only with chasing zones` : ''})`);
     for (const z of zones.filter(q => q.foes.includes('I'))) {
       const w = ironWalls(walk, z);
       ok(w.length > 0, `${id} ${z.id}: a wall face of ${RULE.wallRise} m or more within ${RULE.wallPast} m past the leash of ${z.leash} m (bearings ${w.map(([a, r]) => `${a}°:${r}`).join(' ') || 'none'})`);

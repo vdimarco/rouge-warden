@@ -67,7 +67,8 @@ try {
     assert.equal(p.slots.map(x => x.code).join(''), 'SSSSS', 'the Gaol pool is 5 Snuffer slots');
     assert(p.slots.every(x => !x.awake), 'every slot is parked');
     assert.equal(p.boned, LAMP, 'only the lamplighter rides the bones');
-    assert(p.count > s.count - 1 && p.count - p.slots.reduce((a, x) => a + x.end - x.first, 0) === 240582, `the place and its pool: ${p.count}`);
+    // the place, its pool's slots, and the spark pool's 256 splats after them
+    assert(p.count > s.count - 1 && p.count - p.slots.reduce((a, x) => a + x.end - x.first, 0) - p.extra === 240582 && p.extra === 256, `the place and its pool: ${p.count}`);
     assert.deepEqual(errors, []);
     pass('?run builds the Gaol pool parked: 5 Snuffer slots off the bones', { count: p.count, boned: p.boned });
     await ctx.close();
