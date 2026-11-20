@@ -145,7 +145,7 @@ export default {
     const dark = { r: [wd[0], ramp('ink')[0]] };
     const thatch = { r: [mud[1], st[0], st[1], st[2]], g: [st[0]], mod: straw };
     const iron = { r: ramp('iron'), g: [ramp('iron')[0]] };
-    const glass = { r: [lan[1]], em: true };
+    const glass = { r: [lan[1], lan[2]], em: true }; // a lantern's glass: pale at its heart, green at its rim
     const stone = { r: [sk[0], sk[1], sk[2]], g: [sk[1]], mod: grit(0.9), top: { min: 0.72, r: moss.slice(1, 4) } };
     const cloth = { r: [mud[0], mud[1], st[0]], g: [mud[0]], mod: grit(0.6) };
     const SICK = [st[1], lan[0]];
@@ -724,19 +724,20 @@ export default {
           B.stick(x + Math.cos(a) * 0.1, gy + L * 0.45, z + Math.sin(a) * 0.1, unit([Math.cos(a) * 0.5, 1, Math.sin(a) * 0.5]), L * 0.5, 0.035, B.P[B.pick([moss[1], moss[2], st[0]])], 3);
         }
       }
-      // mist: long flat soft dabs lying low on the water, thicker toward the north shore, drifting
+      // mist: long flat soft dabs lying low on the water, thicker toward the north shore, drifting. Cold teal: the olive of the
+      // moon's haze, laid over dark ground, read as a lit meadow
       for (let i = 0; i < 70; i++) {
         const x = B.rr(-24, 22), z = B.rr(-8, 15);
         if (h(x, z) > W + 0.2) continue;
         const far = smooth(12, -6, z);
-        B.axial(x, W + B.rr(0.2, 0.8), z, [1, 0, B.rr(-0.2, 0.2)], B.rr(2.2, 4.2), B.rr(0.35, 0.6), B.P[far > 0.5 ? sk[3] : B.pick([sk[3], sk[2]])], 0.16 + 0.22 * far, { em: true, nd: true, k: 6, ph: B.rr(0, 6), sp: B.rr(0.12, 0.3), rg: B.rr(0.3, 0.6) });
+        B.axial(x, W + B.rr(0.2, 0.8), z, [1, 0, B.rr(-0.2, 0.2)], B.rr(2.2, 4.2), B.rr(0.35, 0.6), B.P[sk[2]], 0.14 + 0.2 * far, { em: true, nd: true, k: 6, ph: B.rr(0, 6), sp: B.rr(0.12, 0.3), rg: B.rr(0.3, 0.6) });
       }
       // a thicker bank of it along the north shore, so the summit's foot stands in haze, apart from the fen in front of it
       // (in drifts, with gaps between them, not one even sheet)
       for (let i = 0; i < 56; i++) {
         const x = B.rr(-16, 15), z = B.rr(-8, -4.5);
         if (B.n3(x * 0.16 + 4, z * 0.3, 11) < 0.42) continue;
-        B.axial(x, W + B.rr(0.3, 1.2), z, [1, 0, B.rr(-0.15, 0.15)], B.rr(2.0, 3.6), B.rr(0.45, 0.75), B.P[sk[3]], B.rr(0.24, 0.4), { em: true, nd: true, k: 6, ph: B.rr(0, 6), sp: B.rr(0.1, 0.2), rg: B.rr(0.3, 0.6) });
+        B.axial(x, W + B.rr(0.3, 1.2), z, [1, 0, B.rr(-0.15, 0.15)], B.rr(2.0, 3.6), B.rr(0.45, 0.75), B.P[sk[2]], B.rr(0.22, 0.36), { em: true, nd: true, k: 6, ph: B.rr(0, 6), sp: B.rr(0.1, 0.2), rg: B.rr(0.3, 0.6) });
       }
       // marsh lights: a very few sick specks drifting low over the water
       lib.motes(B, 8, [-22, 20, W + 0.3, W + 1.4, -6, 10], [lan[0], lan[1]], 0.03);
