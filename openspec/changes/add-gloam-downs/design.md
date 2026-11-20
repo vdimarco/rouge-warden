@@ -38,7 +38,7 @@ All five places, the lamplighter and the names are original.
 `biomes/<id>.mjs` exports `{ id, name, sub, palette, light, sky, fog, build(ctx) }`. The shared helpers in `lib/common.mjs` give:
 - **Palette slots:** the colors for the lamplighter, the wisps, the fire and the beacon are the same in every palette. Only the place's own colors change.
 - **Hills:** bumps, fBm and a warp, cached on a grid with `K.tab2`.
-- **Terrain:** a near tile at spacing 0.2, then rings at 0.4 and 0.8. Each tile is bounded, so it keeps its own material.
+- **Terrain:** a near tile, then rings whose spacing about doubles. `terrain()` uses 0.24, 0.5 and 1.0 by default, and each place sets its own spacing with `tile()`. Each tile is bounded, so it keeps its own material.
 - **Paths:** a polyline distance gives the dirt color and a slight dip in the ground.
 - **Props:** rocks, trees, torches, braziers, stone blocks and fences.
 - **Points:** the start point, five wisps, and the beacon on the summit.
@@ -67,8 +67,9 @@ All five places, the lamplighter and the names are original.
 - **Changes:** to put out a wisp or light the beacon, the page sets the density of those rows, and the renderer uploads only the changed 512-splat rows.
 
 ## Speed
-- The renderer sorts all splats on the CPU when the view changes. That costs about 3 ms for 100k splats and 7.5 ms for 300k. Each place is kept under 260k splats.
-- The art size is about 64,000 pixels (320×200), scaled up by a whole number. If the median frame time is over 40 ms, the page steps the art size down.
+- The renderer sorts all splats on the CPU when the view changes. That costs about 3 ms for 100k splats and 7.5 ms for 300k. Each place is kept under 250k splats.
+- The art size is about 64,000 pixels (320×200), or 46,000 on a touch screen, scaled up by a whole number. The page keeps the last 40 frame times. If their median is over 45 ms for two seconds, the page steps the art size down to 72% of its pixels. It stops when the art size is 24,000 pixels or less.
+- The game moves in steps of at most 1/30 s, as many as the frame took, up to 0.25 s for each frame. So a slow phone does not play in slow motion, and a long pause does not move the lamplighter far.
 
 ## Not done
 - Sound, enemies and combat.

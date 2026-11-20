@@ -43,12 +43,13 @@ export function build(def) {
     if (Array.isArray(m.r)) { if (depth < 2) fixMat(m.top, depth + 1); }
     else if (depth < 1) for (const v of Object.values(m)) fixMat(v, depth + 1);
   };
-  const S = new Proxy(S0, {
+  const warm = s => new Proxy(s, {
     get(t, k) {
       const v = t[k];
       return typeof v === 'function' ? (...a) => { for (const x of a) fixMat(x); return v.apply(t, a); } : v;
     }
   });
+  const S = warm(S0);
   const L = def.light;
   S.sun = B.norm(L.sun);
   S.amb = L.amb;
@@ -90,13 +91,16 @@ export function build(def) {
   const heavy = [...per].map(([pr, n]) => ({ n, at: (pr.bc || []).map(v => +v.toFixed(1)), br: +(pr.br || 0).toFixed(1), res: pr.res }));
   if (heavy.length) { heavy.sort((a, b) => b.n - a.n); console.log('heaviest solids:'); for (const x of heavy.slice(0, 25)) console.log('  ', x.n, 'at', x.at.join(','), 'r', x.br, 'res', x.res); }
   const t3 = performance.now();
-  // the lamplighter, lit by this place's sky (a little more fill, so it reads against the dark)
-  const tags = K.deform.tags(S);
-  S.amb = L.amb + 0.12;
-  S.sky = L.sky + 0.1;
-  const rig = lamplighter(S, P);
-  shadowDisc(S, P, P.ramp('shade')[0]);
-  S.bake();
+  /* the lamplighter, lit by this place's sky (a little more fill, so it reads against the dark). It has a sculptor of its own: a bake
+     gives S.sdf the field of the solids in that bake, so this way S.sdf in glow() still reads the scenery and the late solids */
+  const SL = warm(K.sculpt(lib.makeSculpt(B)));
+  for (const k of ['sun', 'sunK', 'shK', 'aoK']) SL[k] = S0[k];
+  SL.amb = L.amb + 0.12;
+  SL.sky = L.sky + 0.1;
+  const tags = K.deform.tags(SL);
+  const rig = lamplighter(SL, P);
+  shadowDisc(SL, P, P.ramp('shade')[0]);
+  SL.bake();
   const t4 = performance.now();
   // what glows
   const fires = marks.fires.map(f => fire(B, P, f.p, f.s));

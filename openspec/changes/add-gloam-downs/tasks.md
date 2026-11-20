@@ -19,10 +19,10 @@
 - [x] Explorer page `public/lab/gloam-downs/`: loading bar, help, map, end card, toasts
 - [x] Controller: walk, run, jump with coyote time and a jump buffer, step-up, slopes, walls, ledges, falls; camera that pulls in near walls
 - [x] Keyboard, mouse, touch stick and look, jump button, gamepad
-- [x] Wisps, the beacon, unlocks, the next place, the end card after the Barrows
+- [x] Wisps, the beacon, unlocks, the next place, the end card when all five beacons burn, and Walk again
 - [x] Saved progress, and a bad save is cleaned
 - [x] Art size that adapts to the frame time, `?q=low|mid|high`, and a manual `?test` mode for software WebGL
-- [x] A message when WebGL2 is missing
+- [x] A message when WebGL 2 or DecompressionStream is missing, and Try again when a place does not load
 
 ## Arcade
 
