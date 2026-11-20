@@ -45,7 +45,10 @@ All five places, the lamplighter and the names are original.
 
 ## The walk map
 - After the scenery is baked, `S.sdf` still holds the whole distance field. On a grid of 0.25 units, the bake marches down from above and stores the top surface. Where a gap of at least 1.8 units opens under that surface, it also stores the gap's underside and the floor below. Players can then walk under arches and tree crowns.
-- At run time the controller asks for the highest floor at or below its feet plus a step. A floor more than 0.45 above the feet is a wall. The camera uses the top surface to come closer in front of hills.
+- At run time the lamplighter is a disc of radius 0.3 that stands on the floor under its centre. Each grid corner gives its top, or the floor under its gap when the top is out of reach, and the four are blended after that choice, so an arch's edge reads as flat floor from below and as a clean edge from above.
+- Nothing inside the disc may rise more than a climb above the base: 0.5 plus the slope over the radius, 0.83 in all. The base is the floor where the feet last stood on a slope, a floor no steeper than a climb per radius. On a steeper face the base stays where the face began. So a ledge over 0.83 stops a walk from any heading and at any frame rate, and the jump (1.40) is the way up. In the air the disc may not overlap anything above the feet.
+- The reach search uses the same disc and base, at each grid point and halfway to it. It jumps onto the next grid point only, so a jump across a gap does not count.
+- The camera marches from the lamplighter to the eye and stops short of the first thing in the way, on the top surface or under a gap. When that is too close to frame the figure, the view tilts up until the eye is clear.
 - The map is two `Int16` layers, in centimeters, gzipped.
 
 ## The lamplighter

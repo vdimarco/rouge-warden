@@ -11,7 +11,7 @@ const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 
 /* ---------------- the walk map ----------------
    Two layers of heights in centimetres on a grid: T, the top surface, and G, the floor under a gap (G = T where there is no gap).
-   support(x, z, y) is the highest floor at or below y; null means y is inside something solid (a wall). */
+   floorAt(x, z, y) is the floor that feet at y meet there; above y means a wall. support(x, z, y) is that floor, or null for a wall. */
 export function makeWalk(info, cells) {
   const { x0, z0, step, nx, nz } = info, N = nx * nz;
   if (!(cells instanceof Int16Array) || cells.length < 2 * N) throw new Error('walk map is the wrong size');
@@ -24,14 +24,66 @@ export function makeWalk(info, cells) {
   };
   const top = (x, z) => sample(T, x, z);
   const floor = (x, z) => sample(G, x, z);
-  const support = (x, z, y) => {
-    const t = top(x, z);
+  // one corner for feet at y: its top if that is at or below y, else the floor under its gap if that is, else its top (above the feet)
+  const corner = (k, y) => {
+    const t = T[k] * 0.01;
     if (t <= y + 1e-4) return t;
-    const g = floor(x, z);
-    if (g < t - 0.05 && g <= y + 1e-4) return g;
-    return null;
+    const g = G[k] * 0.01;
+    return g < t - 0.05 && g <= y + 1e-4 ? g : t;
   };
-  return { info, top, floor, support, x0, z0, step, nx, nz, T, G, x1: x0 + (nx - 1) * step, z1: z0 + (nz - 1) * step };
+  // the layer is chosen at each corner and then blended, so an arch's edge is flat floor from below and a clean edge from above
+  const grad = [0, 0]; // the slope of the floor at the last floorAt, per unit across
+  const floorAt = (x, z, y) => {
+    const fx = (x - x0) / step, fz = (z - z0) / step, i = Math.floor(fx), j = Math.floor(fz), u = fx - i, v = fz - j;
+    const i0 = clamp(i, 0, nx - 1), i1 = clamp(i + 1, 0, nx - 1), j0 = clamp(j, 0, nz - 1) * nx, j1 = clamp(j + 1, 0, nz - 1) * nx;
+    const a = corner(j0 + i0, y), b = corner(j0 + i1, y), c = corner(j1 + i0, y), d = corner(j1 + i1, y), e = a - b - c + d;
+    grad[0] = (b - a + e * v) / step;
+    grad[1] = (c - a + e * u) / step;
+    return a + (b - a) * u + (c - a) * v + e * u * v;
+  };
+  const support = (x, z, y) => {
+    const f = floorAt(x, z, y);
+    return f <= y + 1e-4 ? f : null;
+  };
+  return { info, top, floor, floorAt, grad, support, x0, z0, step, nx, nz, T, G, x1: x0 + (nx - 1) * step, z1: z0 + (nz - 1) * step };
+}
+
+/* ---------------- the rules for the feet ----------------
+   The controller and the reach search share these. The body is a disc of P.radius standing on the floor under its centre.
+   climb: a step of stepUp and the slope across the radius. Nothing inside the disc may be more than climb above the base, the floor
+   where the feet last stood on a slope (a floor no steeper than climb per radius). A steeper floor is the face of a wall or a step:
+   on it the base stays where the face began, so the feet rise no more than climb up a face, from any heading and in steps of any size,
+   and a wall more than climb high stops the disc before its centre reaches the face. */
+const climbOf = P => P.stepUp + P.slope * P.radius;
+const steepOf = P => climbOf(P) / P.radius;
+const RAYS = Array.from({ length: 16 }, (_, k) => [Math.cos((k * Math.PI) / 8), Math.sin((k * Math.PI) / 8)]);
+// how near the centre of a disc of radius R at (x, z) a floor above `top` comes: 0 at the centre; the distance of a grid point inside
+// the disc (the map's highest points are at grid points or on the disc's edge); or where one of 16 rays, sampled at a third, two
+// thirds and all of R, first crosses it. Infinity where nothing does. With `any`, the first one found.
+function nearest(walk, x, z, top, R, any = false) {
+  const e0 = walk.floorAt(x, z, top) - top;
+  if (e0 > 1e-4) return 0;
+  let near = Infinity;
+  const { x0, z0, step } = walk, i0 = Math.ceil((x - R - x0) / step), i1 = Math.floor((x + R - x0) / step);
+  const j0 = Math.ceil((z - R - z0) / step), j1 = Math.floor((z + R - z0) / step);
+  for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+    const px = x0 + i * step, pz = z0 + j * step, d = Math.hypot(px - x, pz - z);
+    if (d <= R && d < near && walk.floorAt(px, pz, top) > top + 1e-4) { if (any) return d; near = d; }
+  }
+  for (const [cx, cz] of RAYS) {
+    let ep = e0, rp = 0;
+    for (let k = 1; k <= 3; k++) {
+      const r = (R * k) / 3, e = walk.floorAt(x + cx * r, z + cz * r, top) - top;
+      if (e > 1e-4) {
+        const d = rp + ((r - rp) * Math.max(0, -ep)) / (e - ep);
+        if (any) return d;
+        near = Math.min(near, d);
+        break;
+      }
+      ep = e; rp = r;
+    }
+  }
+  return near;
 }
 
 /* ---------------- the lamplighter ----------------
@@ -40,22 +92,95 @@ export function makeBody(walk, start, bounds, P = PARAMS) {
   const s = {
     x: start.p[0], z: start.p[2], y: walk.support(start.p[0], start.p[2], start.p[1] + 1) ?? start.p[1],
     vx: 0, vy: 0, vz: 0, yaw: start.yaw || 0, ground: true, coy: 0, buf: 0, held: false,
-    phase: 0, moveK: 0, runK: 0, landK: 0, landAge: 9, airTime: 0, floor: 0, events: []
+    phase: 0, moveK: 0, runK: 0, landK: 0, landAge: 9, airTime: 0, floor: 0, base: 0, events: []
   };
-  s.floor = s.y;
-  const lim = bounds - 0.6;
-  // can the body stand at (x, z) coming from height y, moving d? -> floor height, or null for a wall
-  const reach = (x, z, y, d) => walk.support(x, z, y + P.stepUp + P.slope * d);
-  function move(dx, dz) {
-    const d = Math.hypot(dx, dz);
-    if (d < 1e-6) return true;
-    const ux = dx / d, uz = dz / d;
-    const nx = clamp(s.x + dx, -lim, lim), nz = clamp(s.z + dz, -lim, lim);
-    const f = reach(nx, nz, s.y, d), fp = reach(nx + ux * P.radius, nz + uz * P.radius, s.y, d + P.radius);
-    if (f === null || fp === null) return false;
-    if (f < s.y - P.stepDown) { s.x = nx; s.z = nz; s.ground = false; s.coy = P.coyote; s.events.push('fall'); return true; }
-    s.x = nx; s.z = nz; s.y = f;
-    return true;
+  s.floor = s.base = s.y;
+  const lim = bounds - 0.6, climb = climbOf(P), steep = steepOf(P);
+  // can the disc stand at (x, z) with nothing in it above `top`? Where the disc already reaches over something higher (it landed by
+  // a wall, or walked down a slope beside a ledge), it may move along that or away from it, but not nearer: so it never sticks to a
+  // wall and never works its way into one
+  function fits(x, z, top) {
+    const d = nearest(walk, x, z, top, P.radius);
+    return d === Infinity || (d > 0 && d >= nearest(walk, s.x, s.z, top, P.radius) - 1e-6);
+  }
+  const walkTop = () => s.base + climb;
+  const walkFit = (x, z) => fits(x, z, walkTop());
+  function walkTo(x, z) {
+    const f = walk.floorAt(x, z, walkTop()), k = Math.hypot(walk.grad[0], walk.grad[1]);
+    s.x = x; s.z = z;
+    // off an edge: a drop of more than stepDown, or that far down a steep face from its top
+    if (f < s.y - P.stepDown || (k > steep && f < s.base - P.stepDown)) { s.ground = false; s.coy = P.coyote; s.events.push('fall'); return; }
+    s.y = f;
+    if (k <= steep) s.base = f;
+  }
+  // in the air, anything above the feet (top) is a wall
+  const flyTo = (x, z) => { s.x = x; s.z = z; };
+  // the face of the wall in front: the mean direction to the floors above `wall` on two rings (at 1.2 and 2 radii), so a wall that is
+  // a staircase on the grid reads as one face. Taken over the half ahead of the move, then twice more over the half ahead of that
+  // mean, so the face of a wall the move runs along is not tilted towards the move. -> its normal (into the wall), or null
+  const hit = new Uint8Array(16);
+  function face(mx, mz, wall) {
+    RAYS.forEach(([cx, cz], k) => {
+      hit[k] = 0;
+      for (const r of [1.2, 2]) if (walk.floorAt(s.x + cx * r * P.radius, s.z + cz * r * P.radius, wall) > wall + 1e-4) hit[k]++;
+    });
+    let ux = mx, uz = mz;
+    for (let pass = 0; pass < 3; pass++) {
+      let nx = 0, nz = 0;
+      RAYS.forEach(([cx, cz], k) => { if (hit[k] && cx * ux + cz * uz > 1e-9) { nx += cx * hit[k]; nz += cz * hit[k]; } });
+      const l = Math.hypot(nx, nz);
+      if (l < 1e-9) return pass ? [ux, uz] : null;
+      ux = nx / l; uz = nz / l;
+    }
+    return [ux, uz];
+  }
+  // the frame's move in steps of at most 0.1. Where a wall stops it, it slides along the wall's face: the share of the move along the
+  // face, tilted away from the wall as far as it takes to be free. Head on (within about 5° of the face's normal) it stops. Where no
+  // face reads (a thin post, a steep face), the move turned towards the side that is free. -> [blocked, face normal, slide]
+  const TILTS = [0, 10, 20, 30, 45, 60].map(a => a * Math.PI / 180);
+  const TURNS = [10, 20, 30, 40, 50, 60, 70, 80].map(a => a * Math.PI / 180);
+  function move(dx, dz, fit, go, wall) {
+    const d = Math.hypot(dx, dz), n = Math.ceil(d / 0.1), ground = s.ground;
+    let blocked = false, along = null, nrm = null;
+    for (let i = 0; i < n; i++) {
+      if (ground && !s.ground) break; // walked off an edge: the air takes the rest
+      const sx = dx / n, sz = dz / n, x = clamp(s.x + sx, -lim, lim), z = clamp(s.z + sz, -lim, lim);
+      if (fit(x, z)) { go(x, z); continue; }
+      blocked = true;
+      along = null;
+      const free = t => fit(clamp(s.x + t[0], -lim, lim), clamp(s.z + t[1], -lim, lim));
+      nrm = face(sx, sz, wall());
+      if (nrm) {
+        const into = sx * nrm[0] + sz * nrm[1], tx = sx - into * nrm[0], tz = sz - into * nrm[1], tl = Math.hypot(tx, tz);
+        if (tl < 0.09 * Math.hypot(sx, sz)) break; // head on
+        for (const a of TILTS) {
+          const c = Math.cos(a), sn = Math.sin(a), t = [(tx * c - nrm[0] * tl * sn) * c, (tz * c - nrm[1] * tl * sn) * c];
+          if (free(t)) { along = t; break; }
+        }
+      } else {
+        for (const a of TURNS) {
+          const c = Math.cos(a), sn = Math.sin(a), l = [(sx * c - sz * sn) * c, (sx * sn + sz * c) * c], r = [(sx * c + sz * sn) * c, (sz * c - sx * sn) * c];
+          const fl = free(l), fr = free(r);
+          if (fl !== fr) { along = fl ? l : r; break; }
+          if (fl) break; // free both ways: nothing to choose, so it stops
+        }
+      }
+      if (!along) break;
+      go(clamp(s.x + along[0], -lim, lim), clamp(s.z + along[1], -lim, lim));
+    }
+    return [blocked, nrm, along];
+  }
+  // after a slide the speed into the wall's face is lost (only that, so the slide is as fast at any frame rate); stopped dead, most of
+  // the speed is
+  function slid([blocked, nrm, along]) {
+    if (!blocked) return;
+    if (along && nrm) {
+      const v = s.vx * nrm[0] + s.vz * nrm[1];
+      if (v > 0) { s.vx -= v * nrm[0]; s.vz -= v * nrm[1]; }
+    } else if (along) {
+      const l = Math.hypot(along[0], along[1]) || 1, ux = along[0] / l, uz = along[1] / l, v = Math.max(0, s.vx * ux + s.vz * uz);
+      s.vx = ux * v; s.vz = uz * v;
+    } else { s.vx *= 0.2; s.vz *= 0.2; }
   }
   function step(dt, inp, camYaw) {
     s.events.length = 0;
@@ -83,34 +208,19 @@ export function makeBody(walk, start, bounds, P = PARAMS) {
     if (s.buf > 0 && s.coy > 0) { s.vy = P.jumpV; s.ground = false; s.buf = s.coy = 0; s.events.push('jump'); }
     const dx = s.vx * dt, dz = s.vz * dt, x0 = s.x, z0 = s.z;
     if (s.ground) {
-      if (!move(dx, dz)) {
-        // slide along the wall, one axis at a time
-        const okx = Math.abs(dx) > 1e-6 && move(dx, 0);
-        const okz = Math.abs(dz) > 1e-6 && move(0, dz);
-        if (!okx) s.vx *= 0.2;
-        if (!okz) s.vz *= 0.2;
-      }
+      slid(move(dx, dz, walkFit, walkTo, walkTop));
       if (s.ground) { s.vy = 0; s.airTime = 0; }
     } else {
       const g = s.vy < 0 || !s.held ? P.gravity * P.fallMul : P.gravity;
+      // the exact fall over the step, so a jump lifts the feet JUMP at any frame rate
+      const y1 = s.y + s.vy * dt - 0.5 * g * dt * dt;
       s.vy -= g * dt;
       s.airTime += dt;
-      const y1 = s.y + s.vy * dt;
-      // a wall in the air: the floor ahead is above the body
-      const blocked = (x, z) => {
-        const f = walk.support(x, z, Math.max(s.y, y1) + 0.05);
-        return f === null;
-      };
-      let x1 = clamp(s.x + dx, -lim, lim), z1 = clamp(s.z + dz, -lim, lim);
-      if (blocked(x1, z1) || blocked(x1 + Math.sign(dx) * P.radius * 0.7, z1 + Math.sign(dz) * P.radius * 0.7)) {
-        if (!blocked(x1, s.z)) { z1 = s.z; s.vz = 0; }
-        else if (!blocked(s.x, z1)) { x1 = s.x; s.vx = 0; }
-        else { x1 = s.x; z1 = s.z; s.vx = s.vz = 0; }
-      }
-      const f = walk.support(x1, z1, Math.max(s.y, y1) + 0.05);
-      s.x = x1; s.z = z1;
-      if (f !== null && s.vy <= 0 && y1 <= f) {
-        s.landK = Math.min(1, -s.vy / 14); s.landAge = 0; s.y = f; s.vy = 0; s.ground = true; s.events.push('land');
+      const top = Math.max(s.y, y1) + 0.05;
+      slid(move(dx, dz, (x, z) => fits(x, z, top), flyTo, () => top));
+      const f = walk.floorAt(s.x, s.z, top);
+      if (f <= top + 1e-4 && s.vy <= 0 && y1 <= f) {
+        s.landK = Math.min(1, -s.vy / 14); s.landAge = 0; s.y = s.base = f; s.vy = 0; s.ground = true; s.events.push('land');
       } else s.y = y1;
     }
     const moved = Math.hypot(s.x - x0, s.z - z0);
@@ -124,16 +234,31 @@ export function makeBody(walk, start, bounds, P = PARAMS) {
   }
   function place(p, yaw) {
     s.x = p[0]; s.z = p[2]; s.y = walk.support(p[0], p[2], p[1] + 1) ?? p[1];
-    s.vx = s.vy = s.vz = 0; s.yaw = yaw ?? s.yaw; s.ground = true; s.floor = s.y;
+    s.vx = s.vy = s.vz = 0; s.yaw = yaw ?? s.yaw; s.ground = true; s.floor = s.base = s.y;
   }
   return { s, step, place, P };
 }
 
 /* ---------------- the follow camera ----------------
    Behind and above, eased. It swings behind the lamplighter when it runs and nobody is turning the view, and it comes in close when
-   the hills or a wall stand between the eye and the lamplighter. */
+   the hills or a wall stand between the eye and the lamplighter. The eye never goes past the first thing in the way; when that is
+   too close to frame the figure, the view tilts up (lift) until the eye clears it. */
 export function makeCamera(walk, o = {}) {
-  const c = { yaw: o.yaw ?? 0, pitch: o.pitch ?? 0.34, dist: o.dist ?? 8.5, want: o.dist ?? 8.5, target: null, idle: 9, auto: o.auto !== false };
+  const c = { yaw: o.yaw ?? 0, pitch: o.pitch ?? 0.34, dist: o.dist ?? 8.5, want: o.dist ?? 8.5, target: null, idle: 9, auto: o.auto !== false, lift: 0 };
+  const NEAR = 0.5, FRAME = 2.0, TOP = 1.45;
+  // is a point clear of the scenery by 0.35: above the top, or inside the gap under an arch (at least 1.8 high)?
+  const open = (x, y, z) => {
+    const t = walk.top(x, z);
+    if (y >= t + 0.35) return true;
+    const g = walk.floor(x, z);
+    return g < t - 0.05 && y >= g + 0.35 && y <= g + 1.45;
+  };
+  // the farthest the eye can go back at a pitch: two samples short of the first that is in the way
+  const free = pitch => {
+    const cp = Math.cos(pitch), ux = Math.sin(c.yaw) * cp, uy = Math.sin(pitch), uz = Math.cos(c.yaw) * cp, [x, y, z] = c.target;
+    for (let t = 0.3; t <= c.want; t += 0.1) if (!open(x + ux * t, y + uy * t, z + uz * t)) return Math.max(0, t - 0.25);
+    return c.want;
+  };
   function follow(s, dt, inp = {}) {
     const ox = inp.ox || 0, oy = inp.oy || 0;
     if (Math.abs(ox) > 0.01 || Math.abs(oy) > 0.01) c.idle = 0; else c.idle += dt;
@@ -154,18 +279,25 @@ export function makeCamera(walk, o = {}) {
     c.target[0] += (want[0] - c.target[0]) * k;
     c.target[2] += (want[2] - c.target[2]) * k;
     c.target[1] += (want[1] - c.target[1]) * ky;
-    // come in front of whatever blocks the view
-    const cp = Math.cos(c.pitch), dir = [Math.sin(c.yaw) * cp, Math.sin(c.pitch), Math.cos(c.yaw) * cp];
-    let free = c.want;
-    for (let t = 0.6; t <= c.want; t += 0.25) {
-      const px = c.target[0] + dir[0] * t, py = c.target[1] + dir[1] * t, pz = c.target[2] + dir[2] * t;
-      if (py < walk.top(px, pz) + 0.35) { free = Math.max(1.6, t - 0.4); break; }
+    // tilt up only as far as it takes to frame the figure from in front of whatever blocks the view
+    const need = Math.min(c.want, FRAME);
+    let lift = 0, best = -1;
+    for (let l = 0; c.pitch + l <= TOP + 1e-6; l += 0.12) {
+      const f = free(c.pitch + l);
+      if (f > best + 0.05) { best = f; lift = l; }
+      if (f >= need) { lift = l; break; }
     }
-    c.dist += (free - c.dist) * Math.min(1, (free < c.dist ? 14 : 2.5) * dt);
-    return { target: c.target.slice(), dist: c.dist, yaw: c.yaw, pitch: c.pitch };
+    c.lift += (lift - c.lift) * Math.min(1, (lift > c.lift ? 10 : 2) * dt);
+    // so close the eye would be in the figure: tilt at once
+    if (lift > c.lift && free(Math.min(TOP, c.pitch + c.lift)) < 1) c.lift = lift;
+    // tilted, it stays as close as the untilted view would let it (but far enough to frame the figure)
+    const pitch = Math.min(TOP, c.pitch + c.lift), room = Math.max(NEAR, Math.min(free(pitch), c.lift > 1e-3 ? Math.max(need, free(c.pitch)) : c.want));
+    // come in at once (the eye is never in a wall), go back eased
+    c.dist = room < c.dist ? room : c.dist + (room - c.dist) * Math.min(1, 2.5 * dt);
+    return { target: c.target.slice(), dist: c.dist, yaw: c.yaw, pitch };
   }
   function snap(s, yaw) {
-    c.yaw = yaw; c.target = [s.x, s.y + 1.15, s.z]; c.dist = c.want; c.idle = 9;
+    c.yaw = yaw; c.target = [s.x, s.y + 1.15, s.z]; c.dist = c.want; c.idle = 9; c.lift = 0;
   }
   return { c, follow, snap };
 }
@@ -230,35 +362,52 @@ export const touches = (s, p, r = PARAMS.touch) => Math.hypot(p[0] - s.x, p[2] -
 export const atBeacon = (s, b) => Math.hypot(b.p[0] - s.x, b.p[2] - s.z) < b.r && Math.abs(b.p[1] - s.y) < 2.6;
 
 /* ---------------- what can be reached ----------------
-   A search over the walk grid with the controller's own rules: step up to stepUp (+ slope), jump up to a ledge a little under JUMP,
-   drop any height. Returns reached(x, z, y) -> boolean, and the number of cells reached. */
+   A search over the walk grid with the controller's own rules: the disc, the base and climb, a jump up to a ledge a little under
+   JUMP, and any drop. It is never more open than the controller: it tests the controller's own disc at each grid point and half way
+   to it; it moves the base only where every cell round a point is a slope; and a disc that reaches over something too high goes no
+   further. Returns near(p, ...) -> boolean, and the number of cells reached. */
 export function reachable(walk, start, bounds, P = PARAMS) {
-  const { nx, nz, x0, z0, step } = walk, lim = bounds - 0.6;
+  const { nx, nz, x0, z0, step } = walk, lim = bounds - 0.6, climb = climbOf(P), steep = steepOf(P);
+  const open = (x, z, top) => nearest(walk, x, z, top, P.radius, true) === Infinity;
+  // a slope (not a face) in all four cells round a grid point
+  const e = step * 1e-3;
+  const slope = (x, z, top) => [[e, e], [-e, e], [e, -e], [-e, -e]].every(([a, b]) => {
+    walk.floorAt(x + a, z + b, top);
+    return Math.hypot(walk.grad[0], walk.grad[1]) <= steep;
+  });
+  // reached heights by cell and height, each with the highest base it was reached with (a higher base reaches more)
   const seen = new Map(), queue = [];
-  const key = (i, j, y) => `${i},${j},${Math.round(y * 10)}`;
-  const visit = (i, j, y) => {
-    const k = key(i, j, y);
-    if (seen.has(k)) return;
-    seen.set(k, y);
-    queue.push([i, j, y]);
+  const visit = (i, j, y, base) => {
+    const k = `${i},${j},${Math.round(y * 10)}`, had = seen.get(k);
+    if (had && had.base >= base - 1e-6) return;
+    seen.set(k, { y: had ? had.y : y, base });
+    queue.push([i, j, y, base, k]);
   };
   const ci = x => Math.round((x - x0) / step), cj = z => Math.round((z - z0) / step);
   const y0 = walk.support(start.p[0], start.p[2], start.p[1] + 1) ?? start.p[1];
-  visit(ci(start.p[0]), cj(start.p[2]), y0);
-  const jumpUp = JUMP - 0.2;
+  visit(ci(start.p[0]), cj(start.p[2]), y0, y0);
+  const jumpUp = (P.jumpV * P.jumpV) / (2 * P.gravity) - 0.2; // JUMP for PARAMS
   for (let q = 0; q < queue.length; q++) {
-    const [i, j, y] = queue[q];
+    const [i, j, y, base, k] = queue[q];
+    if (seen.get(k).base > base + 1e-6) continue; // reached again since with a higher base
+    const ox = x0 + i * step, oz = z0 + j * step;
     for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-      const i2 = i + di, j2 = j + dj, x = x0 + i2 * step, z = z0 + j2 * step;
+      const i2 = i + di, j2 = j + dj, x = x0 + i2 * step, z = z0 + j2 * step, mx = (ox + x) / 2, mz = (oz + z) / 2;
       if (i2 < 0 || j2 < 0 || i2 >= nx || j2 >= nz || Math.abs(x) > lim || Math.abs(z) > lim) continue;
-      let f = walk.support(x, z, y + P.stepUp + P.slope * step);
-      if (f === null) f = walk.support(x, z, y + jumpUp);
-      if (f === null) continue;
-      visit(i2, j2, f);
+      // a walk: the disc clear within climb of the base, half way and there; on a slope the base comes to the feet
+      let top = base + climb;
+      if (open(mx, mz, top) && open(x, z, top)) {
+        const f = walk.floorAt(x, z, top);
+        visit(i2, j2, f, slope(x, z, top) ? f : Math.min(base, f));
+        continue;
+      }
+      // a jump: the same at the top of the jump, and it lands on the floor there
+      top = y + jumpUp;
+      if (open(mx, mz, top) && open(x, z, top)) { const f = walk.floorAt(x, z, top); visit(i2, j2, f, f); }
     }
   }
   const byCell = new Map();
-  for (const [k, y] of seen) {
+  for (const [k, { y }] of seen) {
     const c = k.slice(0, k.lastIndexOf(','));
     (byCell.get(c) || byCell.set(c, []).get(c)).push(y);
   }

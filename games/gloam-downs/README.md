@@ -78,6 +78,9 @@ export default {
   - Far silhouettes beyond the play area can go to 0.3.
 - **Reach:** the start stands on the ground, and the beacon and every wisp can be reached on foot. The rules are:
   - a step up of 0.5 (plus slope), and a jump that lifts the feet 1.40, so ledges up to about 1.2;
+  - the lamplighter is a disc of radius 0.3, so a way through must be wider than 0.6 on the walk map, where a bar or post takes up at least one 0.25 cell;
+  - a slope steeper than about 2.8 rise per unit is a face, and a face more than 0.83 high needs a jump;
+  - the reach check jumps onto the next grid cell only, so a jump across a gap does not count;
   - any drop is allowed;
   - a wisp is touched from a floor 0.7 below it up to 2.1 under it, within 0.8 across.
 - **Summit:** the beacon stands at least 2 above the start, on a summit that the start's camera can see.

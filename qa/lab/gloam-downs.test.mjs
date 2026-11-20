@@ -66,17 +66,19 @@ if (!skipWorlds && !missing.length) { // five different places: names, palettes 
 }
 
 /* ---------------- the controller, on made-up ground ---------------- */
-// a 40 x 40 map at 0.25: flat ground at 0, a 3-high wall at x 4..5, a 1.0 ledge at z 4..6 (x -4..0), a 2.0 ledge at z 8..10, steps of
-// 0.35 at z -4..-2, a gap at z -10 (a 6 deep pit), and an arch at x -8..-7 with its top at 3 and 2.2 of clearance under it
-function made() {
+// a 40 x 40 map at 0.25: flat ground at 0, a 3-high wall at x 4..5, a 10-high wall at x 12..13, a 1.0 ledge at z 4..6 (x -4..0), a
+// 2.0 ledge at z 8..10 (`ledge2` sets its height, for the reach search's control), steps of 0.35 at z -4..-2, a gap at z -10 (a 6 deep
+// pit), and an arch at x -8..-7 with its top at 3 and the floor at 0 under it
+function made({ ledge2 = 2.0 } = {}) {
   const info = { x0: -20, z0: -20, step: 0.25, nx: 161, nz: 161 };
   const N = info.nx * info.nz, cells = new Int16Array(2 * N);
   for (let j = 0; j < info.nz; j++) for (let i = 0; i < info.nx; i++) {
     const x = info.x0 + i * info.step, z = info.z0 + j * info.step;
     let t = 0, g = null;
     if (x >= 4 && x <= 5 && z > -6 && z < 6) t = 3;
+    if (x >= 12 && x <= 13 && z > -6 && z < 6) t = 10;
     if (x >= -4 && x <= 0 && z >= 4 && z <= 6) t = 1.0;
-    if (x >= -4 && x <= 0 && z >= 8 && z <= 10) t = 2.0;
+    if (x >= -4 && x <= 0 && z >= 8 && z <= 10) t = ledge2;
     if (x >= -4 && x <= 0 && z >= -4 && z <= -2) t = 0.35 * (1 + Math.floor((-2 - z) / 0.7));
     if (z <= -9 && z >= -11 && x > 6) t = -6;
     if (x >= -8 && x <= -7 && z >= -2 && z <= 2) { t = 3; g = 0; }
@@ -87,15 +89,31 @@ function made() {
 }
 const W = made();
 const run = (body, sec, inp, yaw = Math.PI) => { for (let i = 0; i < sec * 60; i++) body.step(1 / 60, inp, yaw); return body.s; };
+// the frame steps the page meets (main.js steps by the frame time, at most 1/30)
+const DTS = [1 / 30, 1 / 60, 1 / 120, 1 / 144];
+const hz = dt => Math.round(1 / dt);
+// hold an input (or a function of time) for sec seconds at a frame step -> the highest the feet stood on the ground
+const hold = (body, sec, inp, dt = 1 / 60, yaw = 0) => {
+  let high = -Infinity;
+  for (let i = 0, k = Math.round(sec / dt); i < k; i++) {
+    body.step(dt, typeof inp === 'function' ? inp(i * dt) : inp, yaw);
+    if (body.s.ground) high = Math.max(high, body.s.y);
+  }
+  return high;
+};
+// the stick for a heading in the world with the camera at yaw 0: right is +x, forward is -z
+const toward = (dx, dz) => { const l = Math.hypot(dx, dz); return { mx: dx / l, mz: -dz / l }; };
 { // walk and run: the camera faces -z (yaw 0 puts the eye at +z), so forward is -z
   const b = makeBody(W, { p: [0, 0, 18], yaw: Math.PI }, 20);
   run(b, 1, { mz: 1, slow: true }, 0);
   const walked = 18 - b.s.z;
   assert(near(walked, PARAMS.walk, 0.4), `walked ${walked}`);
-  const b2 = makeBody(W, { p: [0, 0, 18], yaw: Math.PI }, 20);
+  // it starts facing the camera (yaw 0, +z), so it must turn round to face -z (yaw π)
+  const b2 = makeBody(W, { p: [0, 0, 18], yaw: 0 }, 20);
   run(b2, 1, { mz: 1 }, 0);
   assert(18 - b2.s.z > walked * 1.6, 'running is faster than walking');
-  assert(Math.abs(b2.s.yaw - Math.PI) < 0.05 || Math.abs(Math.abs(b2.s.yaw) - Math.PI) < 0.05, 'it turns to face where it goes');
+  const off = Math.atan2(Math.sin(b2.s.yaw - Math.PI), Math.cos(b2.s.yaw - Math.PI));
+  assert(Math.abs(off) < 0.05, `it turns to face where it goes: yaw ${b2.s.yaw}`);
   pass('walk and run move the lamplighter away from the camera', { walked: +walked.toFixed(2), ran: +(18 - b2.s.z).toFixed(2) });
 }
 { // jump height
@@ -107,15 +125,106 @@ const run = (body, sec, inp, yaw = Math.PI) => { for (let i = 0; i < sec * 60; i
   const tap = makeBody(W, { p: [10, 0, 10], yaw: 0 }, 20);
   let low = 0;
   for (let i = 0; i < 120; i++) { tap.step(1 / 60, { jump: i < 4 }, 0); low = Math.max(low, tap.s.y); }
-  assert(low < top * 0.75, 'a tap jumps lower than a held jump');
-  pass('a held jump lifts the feet about JUMP, and a tap less', { held: +top.toFixed(2), tap: +low.toFixed(2) });
+  assert(low < top * 0.8, 'a tap jumps lower than a held jump');
+  // the same heights at every frame step
+  const tops = DTS.map(dt => {
+    const j = makeBody(W, { p: [10, 0, 10], yaw: 0 }, 20), k = makeBody(W, { p: [10, 0, 10], yaw: 0 }, 20);
+    let t = 0, l = 0;
+    for (let i = 0; i < 2 / dt; i++) {
+      j.step(dt, { jump: true }, 0); t = Math.max(t, j.s.y);
+      k.step(dt, { jump: i * dt < 0.066 }, 0); l = Math.max(l, k.s.y);
+    }
+    assert(near(t, JUMP, 0.03), `${hz(dt)} Hz: jump top ${t}, expected ${JUMP}`);
+    assert(l < t * 0.8, `${hz(dt)} Hz: a tap jumps lower (${l})`);
+    return +t.toFixed(3);
+  });
+  pass('a held jump lifts the feet JUMP at every frame step, and a tap less', { held: +top.toFixed(2), tap: +low.toFixed(2), tops });
 }
 { // a wall stops it; it slides along the wall
   const b = makeBody(W, { p: [2, 0, 0], yaw: 0 }, 20);
   run(b, 2, { mx: 1 }, 0);
   assert(b.s.x < 4 && b.s.x > 3, `stopped at the wall: x ${b.s.x}`);
   assert(near(b.s.y, 0, 1e-6));
-  pass('a wall higher than a jump stops the lamplighter', { x: +b.s.x.toFixed(2) });
+  // from any heading and at any frame step, the 3 and 10 high walls stop it; it slides along them instead of walking up them
+  for (const dt of DTS) for (const [x0, h] of [[3, 3], [11, 10]]) for (let deg = 5; deg <= 85; deg += 5) {
+    const a = deg * Math.PI / 180, w = makeBody(W, { p: [x0, 0, -5], yaw: 0 }, 20);
+    const high = hold(w, 2, toward(Math.sin(a), Math.cos(a)), dt);
+    assert(high < 0.05, `${hz(dt)} Hz, ${deg}° to the ${h} wall: stood at ${high}`);
+    if (deg <= 45) assert(w.s.z > 0, `${hz(dt)} Hz, ${deg}° to the ${h} wall: it slid along (z ${w.s.z})`);
+  }
+  // D+W and D+S from the wall test's start, and both diagonals into the wall's corners
+  for (const dt of DTS) for (const [p, d] of [[[2, 0, 0], [1, -1]], [[2, 0, 0], [1, 1]], [[2, 0, -8], [1, 1]], [[2, 0, 8], [1, -1]]]) {
+    const w = makeBody(W, { p, yaw: 0 }, 20);
+    const high = hold(w, 2, toward(...d), dt);
+    assert(high < 0.05, `${hz(dt)} Hz, from ${p} heading ${d}: stood at ${high}`);
+  }
+  // a jump on a diagonal into the 10 high wall: it slides along the face and lands on the ground, not on the face
+  for (const dt of DTS) for (const d of [[1, 1], [1, -1]]) {
+    const w = makeBody(W, { p: [11, 0, 0], yaw: 0 }, 20);
+    const high = hold(w, 1.5, t => ({ ...toward(...d), jump: t > 0.15 && t < 0.6 }), dt);
+    assert(high < 0.05 && w.s.ground && Math.abs(w.s.z) > 1, `${hz(dt)} Hz: a jump heading ${d} into the 10 wall stood at ${high}, z ${w.s.z}`);
+  }
+  // put down so close that its disc is over the 3 wall's edge: it walks away and along, but not into it or up it
+  for (const dt of DTS) {
+    const at = () => makeBody(W, { p: [3.62, 0, 0], yaw: 0 }, 20);
+    const away = at(), along = at(), into = at();
+    hold(away, 1, toward(-1, 0), dt);
+    const high = Math.max(hold(along, 1, toward(0, 1), dt), hold(into, 1, toward(1, 0.2), dt));
+    assert(away.s.x < 2 && along.s.z > 1.5, `${hz(dt)} Hz: from against the wall it walked away to x ${away.s.x} and along to z ${along.s.z}`);
+    assert(high < 0.05 && into.s.x < 3.7, `${hz(dt)} Hz: against the wall it went in to x ${into.s.x}, up to ${high}`);
+  }
+  pass('a wall higher than a jump stops the lamplighter from every heading', { x: +b.s.x.toFixed(2) });
+}
+{ // faces not lined up with the grid: a square 6 across turned 10°, 26.57°, 37° and 45°, and the inside corner of an L. The grid's
+  // corners leave gentle spots on such faces; the feet still never step up more than climb (0.83), from any heading or frame step
+  const ground = fn => {
+    const info = { x0: -20, z0: -20, step: 0.25, nx: 161, nz: 161 }, N = info.nx * info.nz, cells = new Int16Array(2 * N);
+    for (let j = 0; j < info.nz; j++) for (let i = 0; i < info.nx; i++) cells[j * info.nx + i] = cells[N + j * info.nx + i] = Math.round(fn(info.x0 + i * info.step, info.z0 + j * info.step) * 100);
+    return makeWalk(info, cells);
+  };
+  const square = (h, deg) => {
+    const c = Math.cos(deg * Math.PI / 180), s = Math.sin(deg * Math.PI / 180);
+    return ground((x, z) => (Math.abs(c * x + s * z) <= 3 && Math.abs(-s * x + c * z) <= 3 ? h : 0));
+  };
+  // headings at a face k of the square: aimed at a point `along` it, `off` degrees from straight in, starting `back` out
+  const at = (deg, k, along, off, back) => {
+    const a = (deg + 90 * k) * Math.PI / 180, o = off * Math.PI / 180, n = [Math.cos(a), Math.sin(a)], t = [-n[1], n[0]];
+    const h = [-(n[0] * Math.cos(o) - t[0] * Math.sin(o)), -(n[1] * Math.cos(o) - t[1] * Math.sin(o))];
+    return { p: [n[0] * 3 + t[0] * along - h[0] * back, 0, n[1] * 3 + t[1] * along - h[1] * back], h };
+  };
+  let tries = 0;
+  for (const deg of [10, 26.57, 37, 45]) {
+    const high = square(1.0, deg), low = square(0.8, deg);
+    for (const k of [0, 1]) for (const dt of DTS) for (const slow of [false, true]) {
+      for (const along of [-3, -1, 2.6, 3]) for (const off of [-45, -15, 15, 45]) {
+        const { p, h } = at(deg, k, along, off, 4), w = makeBody(high, { p, yaw: 0 }, 20);
+        const top = hold(w, 2.5, { ...toward(...h), slow }, dt);
+        assert(top < 0.05, `the 1.0 square turned ${deg}°, face ${k}, along ${along}, ${off}° off, ${hz(dt)} Hz${slow ? ' walking' : ''}: stood at ${top}`);
+        tries++;
+      }
+      // a step of 0.8 is walked up
+      for (const along of [-2, 0, 1.7]) for (const off of [-50, 0, 50]) {
+        const { p, h } = at(deg, k, along, off, 3), w = makeBody(low, { p, yaw: 0 }, 20);
+        const top = hold(w, 2.5, { ...toward(...h), slow }, dt);
+        assert(near(top, 0.8, 0.01), `the 0.8 square turned ${deg}°, face ${k}, along ${along}, ${off}° off, ${hz(dt)} Hz${slow ? ' walking' : ''}: got up to ${top}`);
+        tries++;
+      }
+    }
+  }
+  // an L of 1.0 with its inside corner at the origin, walked into from the open quarter
+  const ell = ground((x, z) => (Math.abs(x) <= 3 && Math.abs(z) <= 3 && !(x > 0 && z > 0) ? 1.0 : 0));
+  for (let deg = 185; deg <= 265; deg += 10) for (const dt of DTS) for (const slow of [false, true]) {
+    const d = [Math.cos(deg * Math.PI / 180), Math.sin(deg * Math.PI / 180)], w = makeBody(ell, { p: [-d[0] * 3.5, 0, -d[1] * 3.5], yaw: 0 }, 20);
+    const top = hold(w, 2.5, { ...toward(...d), slow }, dt);
+    assert(top < 0.05, `the L's inside corner at ${deg}°, ${hz(dt)} Hz${slow ? ' walking' : ''}: stood at ${top}`);
+    tries++;
+  }
+  // and the reach search agrees: the turned 1.0 square's top is out of a walk's reach, the 0.8 square's top is in it
+  const R1 = reachable(square(1.0, 26.57), { p: [0, 0, 12] }, 20), R08 = reachable(square(0.8, 26.57), { p: [0, 0, 12] }, 20);
+  assert(R1.near([0, 1.5, 0], 0.4) && R08.near([0, 1.3, 0], 0.4), 'the reach search: the 1.0 square is reached (with a jump), the 0.8 square too');
+  const walkOnly = reachable(square(1.0, 26.57), { p: [0, 0, 12] }, 20, { ...PARAMS, jumpV: 0 });
+  assert(!walkOnly.near([0, 1.5, 0], 0.4), 'the reach search: without a jump the turned 1.0 square is not reached');
+  pass('faces turned to the grid stop a walk at 1.0 and let it up 0.8, from every heading', { tries });
 }
 { // steps of 0.35 are walked up; a 1.0 ledge needs a jump; a 2.0 ledge cannot be climbed
   const b = makeBody(W, { p: [-2, 0, -0.5], yaw: Math.PI }, 20);
@@ -131,7 +240,37 @@ const run = (body, sec, inp, yaw = Math.PI) => { for (let i = 0; i < sec * 60; i
   const d = makeBody(W, { p: [-2, 0, 7], yaw: 0 }, 20);
   for (let i = 0; i < 120; i++) d.step(1 / 60, { mz: -1, jump: true }, 0);
   assert(d.s.y < 1.9 && d.s.z < 8, `a 2.0 ledge is too high: y ${d.s.y}, z ${d.s.z}`);
-  pass('steps are walked, a 1.0 ledge is jumped, a 2.0 ledge is too high');
+  for (const dt of DTS) {
+    // the steps at every frame step, walking and running
+    for (const slow of [true, false]) {
+      const st = makeBody(W, { p: [-2, 0, -0.5], yaw: Math.PI }, 20);
+      const up = hold(st, 1.5, { mz: 1, slow }, dt);
+      assert(up > 0.9, `${hz(dt)} Hz${slow ? ' walking' : ''}: walked up the steps to ${up}`);
+    }
+    // the 1.0 ledge: straight at it and on both diagonals, walking or running, it needs a jump
+    for (const [p, d] of [[[-2, 0, 2.5], [0, 1]], [[-2, 0, 2.5], [1, 1]], [[-1, 0, 2.5], [-1, 1]], [[1, 0, 5], [-1, 0]], [[1, 0, 5], [-1, 1]], [[1, 0, 5], [-1, -1]]]) for (const slow of [true, false]) {
+      const w = makeBody(W, { p, yaw: 0 }, 20);
+      const high = hold(w, 1.5, { ...toward(...d), slow }, dt);
+      assert(high < 0.05, `${hz(dt)} Hz: from ${p} heading ${d}${slow ? ' walking' : ''}, it stood at ${high} without a jump`);
+    }
+    // and a jump gets onto it
+    const c2 = makeBody(W, { p: [-2, 0, 2.5], yaw: 0 }, 20);
+    hold(c2, 1, { mz: -1 }, dt);
+    const onTop = hold(c2, 1.2, t => ({ mz: -1, jump: t < 0.5 }), dt);
+    assert(near(onTop, 1.0, 0.05), `${hz(dt)} Hz: jumped onto the 1.0 ledge: stood at ${onTop}`);
+    // the 2.0 ledge: a jump at either face, straight or on a diagonal, does not stand it on the ledge or its face
+    for (const [p, d] of [[[-2, 0, 7], [0, 1]], [[-2, 0, 7], [1, 1]], [[1.2, 0, 9.5], [-1, -1]], [[1.2, 0, 8.5], [-1, 1]], [[1.2, 0, 9], [-1, 0]]]) {
+      const w = makeBody(W, { p, yaw: 0 }, 20);
+      let high = 0;
+      for (let i = 0; i < 1.5 / dt; i++) {
+        w.step(dt, { ...toward(...d), jump: i * dt > 0.3 && i * dt < 1 }, 0);
+        // near the 2.0 ledge (it may land on the 1.0 ledge further on)
+        if (w.s.ground && w.s.x > -5 && w.s.x < 1 && w.s.z > 7 && w.s.z < 11) high = Math.max(high, w.s.y);
+      }
+      assert(high < 0.05, `${hz(dt)} Hz: jumped from ${p} heading ${d} at the 2.0 ledge, stood at ${high}`);
+    }
+  }
+  pass('steps are walked, a 1.0 ledge is jumped, a 2.0 ledge is too high, at every frame step and heading');
 }
 { // walking off an edge falls, and lands below
   const b = makeBody(W, { p: [8, 0, -7], yaw: Math.PI }, 20);
@@ -144,20 +283,45 @@ const run = (body, sec, inp, yaw = Math.PI) => { for (let i = 0; i < sec * 60; i
   const b = makeBody(W, { p: [-10, 0, 0], yaw: 0 }, 20);
   run(b, 2, { mx: 1 }, 0);
   assert(b.s.x > -6 && near(b.s.y, 0, 1e-6), `walked under the arch: x ${b.s.x}, y ${b.s.y}`);
-  pass('the lamplighter walks under an arch');
+  // at every frame step, running, walking (Shift) and with the stick part way: the feet never leave the floor under it
+  for (const dt of DTS) for (const inp of [{ mx: 1 }, { mx: 1, slow: true }, { mx: 0.3 }, { ...toward(1, 0.2), slow: true }]) {
+    const a = makeBody(W, { p: [-10, 0, 0], yaw: 0 }, 20);
+    let top = 0;
+    for (let i = 0; i < 4 / dt; i++) { a.step(dt, inp, 0); top = Math.max(top, a.s.y); }
+    assert(a.s.x > -6 && top < 0.01, `${hz(dt)} Hz ${JSON.stringify(inp)}: under the arch, x ${a.s.x}, feet up to ${top}`);
+  }
+  pass('the lamplighter walks under an arch at every frame step and speed');
 }
-{ // the camera comes in front of a wall between it and the lamplighter
-  const b = makeBody(W, { p: [3.4, 0, 0], yaw: -Math.PI / 2 }, 20);
-  const cam = makeCamera(W, { yaw: Math.PI / 2, dist: 8.5, auto: false });
-  cam.snap(b.s, Math.PI / 2);
+{ // the camera comes in front of a wall between it and the lamplighter, and its eye stays out of the wall
+  const eyeOf = v => {
+    const cp = Math.cos(v.pitch);
+    return [v.target[0] + v.dist * Math.sin(v.yaw) * cp, v.target[1] + v.dist * Math.sin(v.pitch), v.target[2] + v.dist * Math.cos(v.yaw) * cp];
+  };
+  const clear = v => { const e = eyeOf(v); return e[1] - W.top(e[0], e[2]); };
   let v;
-  for (let i = 0; i < 60; i++) v = cam.follow(b.s, 1 / 60, {});
-  assert(v.dist < 2, `the camera came in: dist ${v.dist}`);
+  for (const x of [3.6, 3.4, 3.0, 2.6, 2.2, 1.8]) {
+    const b = makeBody(W, { p: [x, 0, 0], yaw: -Math.PI / 2 }, 20);
+    const cam = makeCamera(W, { yaw: Math.PI / 2, dist: 8.5, auto: false });
+    cam.snap(b.s, Math.PI / 2);
+    for (let i = 0; i < 120; i++) { v = cam.follow(b.s, 1 / 60, {}); assert(clear(v) > 0.1, `body at x ${x}, frame ${i}: the eye ${eyeOf(v).map(n => n.toFixed(2))} is in the wall`); }
+    assert(v.dist < 2.5, `the camera came in: dist ${v.dist}`);
+  }
+  // backing into the wall with the camera behind
+  const b = makeBody(W, { p: [0, 0, 0], yaw: Math.PI / 2 }, 20);
+  const cam = makeCamera(W, { yaw: Math.PI / 2, dist: 8.5 });
+  cam.snap(b.s, Math.PI / 2);
+  for (let i = 0; i < 300; i++) {
+    b.step(1 / 60, i < 240 ? { mz: -1 } : {}, cam.c.yaw);
+    v = cam.follow(b.s, 1 / 60, {});
+    assert(clear(v) > 0.1, `backing up, frame ${i}: the eye ${eyeOf(v).map(n => n.toFixed(2))} is in the wall`);
+  }
+  assert(b.s.x > 3 && b.s.x < 4, `it backed up to the wall: x ${b.s.x}`);
   const open = makeCamera(W, { yaw: -Math.PI / 2, dist: 8.5, auto: false });
-  open.snap(b.s, -Math.PI / 2);
-  for (let i = 0; i < 60; i++) v = open.follow(b.s, 1 / 60, {});
-  assert(near(v.dist, 8.5, 0.01), 'with nothing in the way it stays back');
-  pass('the camera comes in front of a wall');
+  const ob = makeBody(W, { p: [3.4, 0, 0], yaw: -Math.PI / 2 }, 20);
+  open.snap(ob.s, -Math.PI / 2);
+  for (let i = 0; i < 60; i++) v = open.follow(ob.s, 1 / 60, {});
+  assert(near(v.dist, 8.5, 0.01) && near(v.pitch, 0.34, 1e-6), 'with nothing in the way it stays back');
+  pass('the camera comes in front of a wall and keeps out of it');
 }
 { // touch rules
   const s = { x: 0, y: 0, z: 0 };
@@ -168,7 +332,13 @@ const run = (body, sec, inp, yaw = Math.PI) => { for (let i = 0; i < sec * 60; i
 { // reach search agrees with the controller
   const R = reachable(W, { p: [0, 0, 18], yaw: 0 }, 20);
   assert(R.near([-2, 1.5, 5]), 'the 1.0 ledge is in reach');
-  assert(!R.near([-2, 3.9, 9], 0.6, -0.7, 1.5), 'the top of the 2.0 ledge is not');
+  // 1.0 above the ledge's top: in touch only from the top itself
+  assert(!R.near([-2, 3.0, 9], 0.6), 'the top of the 2.0 ledge is not');
+  // the control: the same ledge at 1.0 is in reach, so the check above can fail
+  assert(reachable(made({ ledge2: 1.0 }), { p: [0, 0, 18], yaw: 0 }, 20).near([-2, 3.0, 9], 0.6), 'a 1.0 ledge there is');
+  // the walls and the arch's top are not; the floor under the arch is
+  assert(!R.near([4.5, 3.5, 0], 0.6) && !R.near([12.5, 10.5, 0], 0.6), 'the tops of the walls are not');
+  assert(!R.near([-7.5, 3.5, 0], 0.4) && R.near([-7.5, 0.5, 0], 0.4), 'under the arch is, its top is not');
   pass('the reach search matches the controller');
 }
 

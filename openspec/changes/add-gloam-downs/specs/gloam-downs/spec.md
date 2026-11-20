@@ -32,6 +32,14 @@ The player SHALL move relative to the camera with WASD, the arrow keys, the left
 - **WHEN** the lamplighter walks into a wall higher than its jump
 - **THEN** it stops at the wall and does not go into it
 
+#### Scenario: Wall at an angle
+- **WHEN** the lamplighter walks or jumps into a wall or a ledge of 1.0 or more at any angle, on a 30, 60, 120 or 144 Hz screen
+- **THEN** it slides along the wall and stays on the ground below it, unless it jumps onto a ledge lower than its jump
+
+#### Scenario: Under an arch
+- **WHEN** the lamplighter walks or runs under an arch or a tree crown with 1.8 of clearance, at any speed or frame rate
+- **THEN** its feet stay on the floor under it
+
 #### Scenario: Jump onto a ledge
 - **WHEN** the lamplighter jumps at a ledge lower than its jump height
 - **THEN** it lands on the ledge
@@ -50,6 +58,10 @@ Q and E, the right stick, a mouse drag or a touch drag on the right half of the 
 #### Scenario: Hill in the way
 - **WHEN** a hill comes between the camera and the lamplighter
 - **THEN** the camera comes closer, so the lamplighter stays in view
+
+#### Scenario: Back to a wall
+- **WHEN** the lamplighter stands with its back to a wall or a cliff
+- **THEN** the camera's eye stays in front of the wall, and the view tilts down from above when the wall is too close to frame the lamplighter
 
 ### Requirement: Wisps and the beacon
 Each place SHALL have five wisps: glowing motes that float above the ground. A wisp SHALL go out and count when the lamplighter touches it. Each place SHALL have one beacon on its summit. When the lamplighter touches the beacon, the beacon SHALL light, a card SHALL say that the way opens, and the next place SHALL load. After Barrow Crown, an end card SHALL show the time and the wisps found, with a button to walk again.
