@@ -1,8 +1,9 @@
 // Gloam Downs in a real browser (public/lab/gloam-downs/), on software WebGL 2:
-//   the page loads and draws; every place is dark with fire in it (read back from the canvas); keys move and jump the lamplighter;
-//   a wisp counts; the map shows the places; the beacon opens the next place; the save comes back after a reload and a bad save is
-//   ignored; on a phone the stick moves and the controls are 44 px and inside the screen; 320 and 1280 wide have no sideways scroll;
-//   without WebGL the page says so.
+//   the page loads and draws; Escape closes the help for good; every place is dark with fire in it (read back from the canvas); keys
+//   move and jump the lamplighter; a wisp counts; the map shows the places and Space presses its buttons; the beacon opens the next
+//   place; the save comes back after a reload and a bad save is ignored; after Walk again one beacon is not the end of the walk;
+//   blocked site data does not stop the page; on a phone the stick moves and the controls are 44 px and inside the screen; 320 and
+//   1280 wide have no sideways scroll; without WebGL or DecompressionStream the page says so.
 // The page runs with ?test: the game is stepped by __gloam.tick() and drawn by __gloam.draw(), because software WebGL takes about a
 // second a frame. Needs the site served: python3 -m http.server 8765 --bind 0.0.0.0 --directory public
 // Run: node qa/lab/gloam-downs.e2e.mjs   (SITE_URL to point elsewhere, SHOTS=<dir> to keep pictures)
@@ -21,9 +22,10 @@ let n = 0;
 const pass = (name, data) => { n++; console.log('PASS ' + name + (data ? ' ' + JSON.stringify(data) : '')); };
 
 const browser = await chromium.launch({ executablePath, args: GL });
-async function open(ctxOpts, query = '?fresh&test') {
+async function open(ctxOpts, query = '?fresh&test', init) {
   const ctx = await browser.newContext(ctxOpts);
   await ctx.route('**/api/**', r => r.fulfill({ status: 204, body: '' }));
+  if (init) await ctx.addInitScript(init);
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
@@ -34,6 +36,16 @@ async function open(ctxOpts, query = '?fresh&test') {
 const state = page => page.evaluate(() => window.__gloam.state());
 const tick = (page, sec, held = {}) => page.evaluate(([s, h]) => window.__gloam.tick(s, h), [sec, held]);
 const shot = async (page, name) => { if (SHOTS) await page.screenshot({ path: `${SHOTS}/${name}.png` }); };
+const KEY = 'gloam-downs.save.v1';
+const saved = page => page.evaluate(k => JSON.parse(localStorage.getItem(k)), KEY);
+// reload with a save set by the test: a string is written as it is, an object is laid over the stored save. The page is left first,
+// for a plain file of the same site, because its pagehide stores the save it holds and would write over this one.
+async function reloadWith(page, edit, query = '?test') {
+  await page.goto(`${SITE}/lab/gloam-downs/worlds/gaol.json`);
+  await page.evaluate(([k, e]) => localStorage.setItem(k, typeof e === 'string' ? e : JSON.stringify({ ...JSON.parse(localStorage.getItem(k) || '{}'), ...e })), [KEY, edit]);
+  await page.goto(`${SITE}/lab/gloam-downs/${query}`);
+  await page.waitForFunction(() => window.__gloam?.ready(), null, { timeout: 120000 });
+}
 
 try {
   /* ---------------- desktop ---------------- */
@@ -41,8 +53,10 @@ try {
   {
     assert(await page.isVisible('#help'), 'the first visit shows how to play');
     assert(await page.isVisible('#helpKeys') && !(await page.isVisible('#helpTouch')), 'a computer is shown the keys');
-    await page.click('#bStart');
+    // Escape closes the help as Walk does, and for good: the places below and the reload check that it stays closed
+    await page.keyboard.press('Escape');
     assert(!(await page.isVisible('#help')));
+    assert.equal((await saved(page)).seen, true, 'Escape counts as read');
     const s = await state(page);
     assert.equal(s.place, 'gaol');
     assert.equal(s.mode, 'play');
@@ -57,6 +71,7 @@ try {
     for (const id of ORDER) {
       await page.evaluate(id => window.__gloam.go(id), id);
       await page.waitForFunction(id => window.__gloam.ready() && window.__gloam.state().place === id, id, { timeout: 120000 });
+      assert(!(await page.isVisible('#help')) && (await state(page)).mode === 'play', `${id}: the help stays closed`);
       await page.evaluate(() => window.__gloam.close());
       const st = await page.evaluate(() => window.__gloam.stats());
       assert(st.mean > 0.05 && st.mean < 0.32, `${id}: mean luminance ${st.mean}`);
@@ -65,8 +80,10 @@ try {
       await shot(page, `place-${id}`);
     }
     pass('every place is dark with bright fire in it', seen);
-    await page.evaluate(() => window.__gloam.go('gaol'));
-    await page.waitForFunction(() => window.__gloam.ready() && window.__gloam.state().place === 'gaol', null, { timeout: 120000 });
+    // __gloam.go marks each place reached; open only the first again, keeping the rest of the save as the page stored it
+    await reloadWith(page, { reached: ['gaol'], at: 'gaol', lit: {} });
+    assert.equal((await state(page)).place, 'gaol');
+    assert(!(await page.isVisible('#help')), 'after a reload too');
   }
   { // keys: W walks away from the camera, Space jumps
     const a = await state(page);
@@ -105,7 +122,12 @@ try {
     await shot(page, 'map');
     await page.keyboard.press('Escape');
     assert(!(await page.isVisible('#map')));
-    pass('the map shows the five places, the first open');
+    // Space presses the focused button in a dialog: here the current place, which closes the map
+    await page.keyboard.press('m');
+    assert.equal(await page.evaluate(() => document.activeElement.getAttribute('aria-current')), 'true');
+    await page.keyboard.press(' ');
+    assert(!(await page.isVisible('#map')) && (await state(page)).mode === 'play', 'Space closed the map');
+    pass('the map shows the five places, the first open, and Space presses its buttons');
   }
   { // the beacon opens the next place
     const pts = await page.evaluate(() => window.__gloam.points());
@@ -123,7 +145,7 @@ try {
     await page.waitForFunction(() => window.__gloam?.ready(), null, { timeout: 120000 });
     const s = await state(page);
     assert.equal(s.place, 'ramparts', 'it opens where you were');
-    assert(!(await page.isVisible('#help')), 'the help is not shown again');
+    assert(!(await page.isVisible('#help')), 'the help closed with Escape is not shown again');
     await page.keyboard.press('m');
     const open = await page.$$eval('#places button', bs => bs.map(b => !b.disabled));
     assert.deepEqual(open, [true, true, false, false, false]);
@@ -132,55 +154,87 @@ try {
     pass('a reload keeps the places reached and the wisps found');
   }
   { // a bad save
-    await page.evaluate(() => localStorage.setItem('gloam-downs.save.v1', JSON.stringify({ reached: 5, at: 'nowhere', wisps: { gaol: 'x' }, lit: [1], time: 'soon' })));
-    await page.goto(`${SITE}/lab/gloam-downs/?test`);
-    await page.waitForFunction(() => window.__gloam?.ready(), null, { timeout: 120000 });
+    await reloadWith(page, JSON.stringify({ reached: 5, at: 'nowhere', wisps: { gaol: 'x' }, lit: [1], time: 'soon' }));
     assert.equal((await state(page)).place, 'gaol');
-    await page.evaluate(() => localStorage.setItem('gloam-downs.save.v1', '{not json'));
-    await page.goto(`${SITE}/lab/gloam-downs/?test`);
-    await page.waitForFunction(() => window.__gloam?.ready(), null, { timeout: 120000 });
+    await reloadWith(page, '{not json');
     assert.equal((await state(page)).place, 'gaol');
     pass('a bad save is ignored');
   }
+  { // Walk again keeps the places open, but lighting only Barrow Crown is not the end of the walk
+    const done = { v: 1, reached: ORDER, at: 'barrows', wisps: {}, lit: { gaol: true, ramparts: true, fen: true, bells: true }, time: 100, best: 300, done: 1, seen: true };
+    await reloadWith(page, JSON.stringify(done));
+    assert.equal((await state(page)).place, 'barrows');
+    await page.evaluate(() => window.__gloam.light());
+    await page.waitForSelector('#end', { state: 'visible', timeout: 6000 });
+    let s = await saved(page);
+    assert(s.done === 2 && s.best === 100, `the fifth beacon ends the walk: done ${s.done}, best ${s.best}`);
+    assert.equal(await page.textContent('#endBest'), '1:40');
+    await page.click('#bAgain');
+    await page.waitForFunction(() => window.__gloam.ready() && window.__gloam.state().place === 'gaol', null, { timeout: 120000 });
+    await page.keyboard.press('m');
+    assert.deepEqual(await page.$$eval('#places button', bs => bs.map(b => !b.disabled)), [true, true, true, true, true]);
+    await page.click('#places button:nth-child(5)');
+    await page.waitForFunction(() => window.__gloam.ready() && window.__gloam.state().place === 'barrows', null, { timeout: 120000 });
+    await tick(page, 0.5, {});
+    await page.evaluate(() => window.__gloam.light());
+    assert.match(await page.textContent('#toast'), /4 beacons are still dark/);
+    await page.waitForTimeout(2600);
+    assert(!(await page.isVisible('#end')), 'no end card while four beacons are dark');
+    s = await saved(page);
+    assert(s.done === 2 && s.best === 100, `the best time stays: done ${s.done}, best ${s.best}`);
+    assert.deepEqual(s.lit, { barrows: true });
+    assert.equal((await state(page)).mode, 'play');
+    pass('after Walk again, one lit beacon shows no end card and keeps the best time', { best: s.best, done: s.done });
+  }
   assert.deepEqual(errors, [], 'no page errors on the desktop');
   await ctx.close();
+
+  { // site data blocked: even reading localStorage throws (Chrome with cookies blocked), and the page still plays
+    const deny = () => Object.defineProperty(window, 'localStorage', { configurable: true, get() { throw new DOMException('Access is denied for this document.', 'SecurityError'); } });
+    const { ctx: bc, page: p, errors: be } = await open({ viewport: { width: 960, height: 540 } }, '?test', deny);
+    assert(await p.isVisible('#help'), 'a fresh walk');
+    await p.keyboard.press('Escape');
+    assert.equal((await state(p)).mode, 'play');
+    await tick(p, 0.5, {});
+    assert.deepEqual(be, []);
+    await bc.close();
+    pass('with site data blocked the page loads and plays');
+  }
 
   /* ---------------- phone ---------------- */
   {
     const { ctx: pc, page: p, errors: pe } = await open({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2 });
     assert(await p.isVisible('#helpTouch') && !(await p.isVisible('#helpKeys')), 'a phone is shown the touch controls');
     await p.click('#bStart');
-    for (const sel of ['#bJump', '#bMap', '#bLook']) {
+    for (const sel of ['#bJump', '#bMap', '#bLook', '.labbar .back', '#menu']) {
       const b = await p.locator(sel).boundingBox();
       assert(b && Math.min(b.width, b.height) >= 44, `${sel} is 44 px: ${JSON.stringify(b)}`);
       assert(b.x >= 0 && b.y >= 0 && b.x + b.width <= 390 && b.y + b.height <= 844, `${sel} is inside the screen`);
     }
     assert(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'no sideways scroll');
     const a = await state(p);
+    // real touches through the DevTools protocol: made-up PointerEvents have no active pointer, so the page cannot capture them
+    const cdp = await pc.newCDPSession(p);
+    const touch = (type, pts = []) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: pts.map(([x, y]) => ({ x, y, id: 1 })) });
     // a thumb on the left half drags up: the stick shows and the lamplighter walks away from the camera
-    await p.evaluate(() => {
-      const c = document.getElementById('view'), o = { pointerId: 7, pointerType: 'touch', bubbles: true, isPrimary: true };
-      c.dispatchEvent(new PointerEvent('pointerdown', { ...o, clientX: 100, clientY: 640 }));
-      c.dispatchEvent(new PointerEvent('pointermove', { ...o, clientX: 100, clientY: 570 }));
-    });
+    await touch('touchStart', [[100, 640]]);
+    await touch('touchMove', [[100, 570]]);
     assert(await p.isVisible('#stick'), 'the stick shows under the thumb');
     const b = await tick(p, 1, 'live');
     assert(Math.hypot(b.x - a.x, b.z - a.z) > 2, 'the stick moves the lamplighter');
-    await p.evaluate(() => document.getElementById('view').dispatchEvent(new PointerEvent('pointerup', { pointerId: 7, pointerType: 'touch', bubbles: true })));
+    await touch('touchEnd');
     assert(!(await p.isVisible('#stick')));
     // the jump button
-    await p.evaluate(() => document.getElementById('bJump').dispatchEvent(new PointerEvent('pointerdown', { pointerId: 8, pointerType: 'touch', bubbles: true })));
+    const jb = await p.locator('#bJump').boundingBox();
+    await touch('touchStart', [[jb.x + jb.width / 2, jb.y + jb.height / 2]]);
     const c = await tick(p, 0.25, 'live');
-    await p.evaluate(() => document.getElementById('bJump').dispatchEvent(new PointerEvent('pointerup', { pointerId: 8, pointerType: 'touch', bubbles: true })));
+    await touch('touchEnd');
     assert(!c.ground, 'JUMP jumps');
     // a drag on the right half turns the view
     const yaw0 = (await state(p)).cam.yaw;
-    await p.evaluate(() => {
-      const c = document.getElementById('view'), o = { pointerId: 9, pointerType: 'touch', bubbles: true };
-      c.dispatchEvent(new PointerEvent('pointerdown', { ...o, clientX: 300, clientY: 400 }));
-      c.dispatchEvent(new PointerEvent('pointermove', { ...o, clientX: 240, clientY: 400 }));
-      c.dispatchEvent(new PointerEvent('pointerup', { ...o, clientX: 240, clientY: 400 }));
-    });
+    await touch('touchStart', [[300, 400]]);
+    await touch('touchMove', [[240, 400]]);
+    await touch('touchEnd');
     await tick(p, 0.05, 'live');
     assert(Math.abs((await state(p)).cam.yaw - yaw0) > 0.2, 'a drag on the right turns the view');
     await p.evaluate(() => window.__gloam.draw());
@@ -199,6 +253,12 @@ try {
     }
     const hud = await p.locator('#hud').boundingBox(), tools = await p.locator('#tools').boundingBox();
     assert(hud.x + hud.width <= tools.x || hud.y + hud.height <= tools.y || tools.y + tools.height <= hud.y, `${w}: the HUD and the buttons do not overlap`);
+    const lab = await p.locator('.labbar').boundingBox();
+    assert(lab.y + lab.height <= Math.min(hud.y, tools.y), `${w}: the Lab bar is above the HUD and the buttons`);
+    for (const sel of ['.labbar .back', '#menu']) {
+      const b = await p.locator(sel).boundingBox();
+      assert(Math.min(b.width, b.height) >= 44, `${w}: ${sel} is 44 px: ${JSON.stringify(b)}`);
+    }
     await p.evaluate(() => window.__gloam.draw());
     await shot(p, `layout-${w}`);
     assert.deepEqual(pe, []);
@@ -212,6 +272,16 @@ try {
     await p.waitForFunction(() => /WebGL 2/.test(document.getElementById('loadLine').textContent), null, { timeout: 30000 });
     await b2.close();
     pass('without WebGL 2 the page says so in words');
+  }
+  { // WebGL 2 but no DecompressionStream (Safari before 16.4): the page says so, and does not offer a retry that cannot work
+    const c = await browser.newContext();
+    await c.addInitScript(() => { delete window.DecompressionStream; });
+    const p = await c.newPage();
+    await p.goto(`${SITE}/lab/gloam-downs/?fresh&test`);
+    await p.waitForFunction(() => /newer browser/.test(document.getElementById('loadLine').textContent), null, { timeout: 30000 });
+    assert(!(await p.isVisible('#bRetry')));
+    await c.close();
+    pass('without DecompressionStream the page says so in words');
   }
 } finally {
   await browser.close();
