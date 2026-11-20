@@ -731,7 +731,7 @@ export default {
         const x = B.rr(-24, 22), z = B.rr(-8, 15);
         if (h(x, z) > W + 0.2) continue;
         const far = smooth(12, -6, z);
-        B.axial(x, W + B.rr(0.2, 0.8), z, [1, 0, B.rr(-0.2, 0.2)], B.rr(2.2, 4.2), B.rr(0.35, 0.6), B.P[sk[2]], 0.14 + 0.2 * far, { em: true, nd: true, k: 6, ph: B.rr(0, 6), sp: B.rr(0.12, 0.3), rg: B.rr(0.3, 0.6) });
+        B.axial(x, W + B.rr(0.2, 0.8), z, [1, 0, B.rr(-0.2, 0.2)], B.rr(2.2, 4.2), B.rr(0.35, 0.6), B.P[sk[2]], 0.1 + 0.18 * far, { em: true, nd: true, k: 6, ph: B.rr(0, 6), sp: B.rr(0.12, 0.3), rg: B.rr(0.3, 0.6) });
       }
       // a thicker bank of it along the north shore, so the summit's foot stands in haze, apart from the fen in front of it
       // (in drifts, with gaps between them, not one even sheet)
