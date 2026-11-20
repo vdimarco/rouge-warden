@@ -1,8 +1,10 @@
 // Gloam Downs, checked in node with no browser (public/lab/gloam-downs/):
-//   the five baked places (budget, palette, bones, wisps, beacon, the start on the ground, everything in reach by the controller's rules),
+//   the five baked places (budget, palette, bones, wisps, beacon, the start on the ground, the walk map's three layers, everything in
+//   reach by the controller's rules),
 //   the controller on made-up ground (walk, run, jump height, walls, steps, ledges, a step on a ledge's lip, falls, walking under an
-//   arch, landing on a sloped roof or crown over a gap and on a sloped floor under one, walking off a ledge into an arch), the reach
-//   search's walks and jumps against the controller,
+//   arch, landing on a sloped roof or crown over a gap and on a sloped floor under one, walking off a ledge into an arch, the corners of
+//   a cell agreeing on the layer, thin roofs, a vault's edge over a grate, a jump under a high roof with the gap's underside, running jumps
+//   up a slope and blocks on one), the reach search's walks and jumps against the controller,
 //   the pose (the bones put the figure where the body is), and the saved game (rubbish in, a clean save out).
 // Run: node qa/lab/gloam-downs.test.mjs
 import assert from 'node:assert/strict';
@@ -49,9 +51,18 @@ for (const id of skipWorlds ? [] : ORDER) {
   const glows = (a, b) => { for (let i = a; i < b; i++) assert(Math.round(data[i * 16 + 11]) & 32 || (Math.round(data[i * 16 + 11]) >> 4) & 2, `${id}: splat ${i} glows`); };
   for (const w of meta.wisps) { assert(w.ids[0] < w.ids[1] && w.ids[1] <= count); glows(...w.ids); }
   for (const r of meta.beacon.fire) { assert(r[0] < r[1] && r[1] <= count); glows(...r); }
-  // the walk map, and the reach of everything from the start
-  const raw = new Uint8Array(zlib.gunzipSync(wgz));
-  const walk = makeWalk(meta.walk, new Int16Array(raw.buffer, raw.byteOffset, raw.byteLength >> 1));
+  /* the walk map: three layers, as the settings name them. The top, the floor under a gap (the top where there is none) and the gap's
+     underside: 0 where there is no gap, over the floor and under the top where there is one */
+  const raw = new Uint8Array(zlib.gunzipSync(wgz)), N = meta.walk.nx * meta.walk.nz;
+  assert.deepEqual(meta.walk.layers, ['T', 'G', 'U'], `${id}: the walk map's layers`);
+  assert.equal(raw.byteLength, 3 * N * 2, `${id}: the walk file holds three layers`);
+  const L = new Int16Array(raw.buffer, raw.byteOffset, raw.byteLength >> 1);
+  for (let k = 0; k < N; k++) {
+    const t = L[k], g = L[N + k], u = L[2 * N + k];
+    assert(g < t - 5 ? u > g && u < t : u === 0, `${id}: walk cell ${k} has top ${t}, floor ${g}, underside ${u}`);
+  }
+  const walk = makeWalk(meta.walk, L);
+  assert(walk.U, `${id}: the controller reads the underside`);
   const floor = walk.support(meta.spawn.p[0], meta.spawn.p[2], meta.spawn.p[1] + 1);
   assert(floor !== null && near(floor, meta.spawn.p[1], 0.6), `${id}: the start stands on the ground`);
   const R = reachable(walk, meta.spawn, meta.bounds);
@@ -274,14 +285,21 @@ const toward = (dx, dz) => { const l = Math.hypot(dx, dz); return { mx: dx / l, 
   }
   pass('steps are walked, a 1.0 ledge is jumped, a 2.0 ledge is too high, at every frame step and heading');
 }
-// made-up ground from a function of (x, z): a height, or [top, floor under its gap]
+/* made-up ground from a function of (x, z): a height, [top, floor under its gap], or [top, floor, the gap's underside]. A map with an
+   underside anywhere has the third layer (0 where none is given), as the bake writes it; else it has two, and the controller takes the
+   underside as the floor + 1.8 */
 const layered = fn => {
-  const info = { x0: -20, z0: -20, step: 0.25, nx: 161, nz: 161 }, N = info.nx * info.nz, cells = new Int16Array(2 * N);
+  const info = { x0: -20, z0: -20, step: 0.25, nx: 161, nz: 161 }, N = info.nx * info.nz, vals = [];
   for (let j = 0; j < info.nz; j++) for (let i = 0; i < info.nx; i++) {
-    const v = fn(info.x0 + i * info.step, info.z0 + j * info.step), [t, g] = Array.isArray(v) ? v : [v, v];
-    cells[j * info.nx + i] = Math.round(t * 100);
-    cells[N + j * info.nx + i] = Math.round((g ?? t) * 100);
+    const v = fn(info.x0 + i * info.step, info.z0 + j * info.step);
+    vals.push(Array.isArray(v) ? v : [v, v]);
   }
+  const three = vals.some(v => v.length > 2), cells = new Int16Array((three ? 3 : 2) * N);
+  vals.forEach(([t, g, u], k) => {
+    cells[k] = Math.round(t * 100);
+    cells[N + k] = Math.round((g ?? t) * 100);
+    if (three) cells[2 * N + k] = u === undefined ? 0 : Math.round(u * 100);
+  });
   return makeWalk(info, cells);
 };
 { /* the base: a ledge of 1.2 with a step of 0.7 on its lip, one cell out. The step's face is steeper than climb per radius, so the base
@@ -383,6 +401,145 @@ const layered = fn => {
   }
   assert(reachable(cave, { p: [-1.5, 1.2, 0] }, 20).near([2, 0.5, 0], 0.4), 'the reach search drops off the ledge into the cave');
   pass('the floor under a gap: landings on a slope under a roof and past an overhang, and a walk off a ledge into a cave', { tries });
+}
+{ /* the gap corners of a cell agree: the feet are in the gap, or on its roof, for all of them at once. Under a roof at 5 over a floor
+     that slopes 0.6 or 1.0 (a map without the underside, so feet 1.8 over a corner's floor are on its roof), a running jump down the
+     slope, with the stick held or let go in the air, lands on the floor, and after a walk across the slope it is still on the floor:
+     never on a shelf in mid-air, made of roof corners and floor corners blended. And a thin roof, 1.85 or 2.0 over a floor that slopes
+     0.6 to 2.0 with it (with its underside at 1.8, or without), holds a jump in place and a fall from 1.5 */
+  let tries = 0;
+  for (const k of [0.6, 1.0]) {
+    const W2 = layered((x, z) => (Math.abs(x) <= 4 && Math.abs(z) <= 4 ? [5 + k * x, k * x] : k * x));
+    for (const dt of DTS) for (let x = -2; x <= 2.01; x += 0.231) for (const z of [-0.41, 0.3]) for (const mx of [-0.6, -1]) for (const dur of [0.3, 0.5, 9]) {
+      const b = makeBody(W2, { p: [x, k * x + 0.1, z], yaw: 0 }, 20), from = `slope ${k}, ${hz(dt)} Hz: a running jump down the slope from ${x.toFixed(3)}, ${z} (stick ${mx} for ${dur} s)`;
+      const under = () => Math.abs(b.s.x) <= 3.9 && Math.abs(b.s.z) <= 3.9;
+      hold(b, 1.4, t => {
+        if (b.s.events.includes('land') && under()) assert(near(b.s.y, k * b.s.x, 0.02), `${from} landed at ${b.s.x.toFixed(2)}, ${b.s.y.toFixed(2)}, ${(b.s.y - k * b.s.x).toFixed(2)} over the floor`);
+        return { mx: t < dur ? mx : 0, jump: t > 0.05 && t < 0.45 };
+      }, dt);
+      if (Math.abs(b.s.x) > 3.7) continue;
+      assert(b.s.ground && near(b.s.y, k * b.s.x, 0.02), `${from} stands at ${b.s.x.toFixed(2)}, ${b.s.y.toFixed(2)}, ${(b.s.y - k * b.s.x).toFixed(2)} over the floor`);
+      hold(b, 1, { ...toward(0, b.s.z < 0 ? 1 : -1), slow: true }, dt);
+      assert(b.s.ground && near(b.s.y, k * b.s.x, 0.02), `${from}, then across the slope, stands at ${b.s.x.toFixed(2)}, ${b.s.y.toFixed(2)}, ${b.s.z.toFixed(2)}, ${(b.s.y - k * b.s.x).toFixed(2)} over the floor`);
+      tries++;
+    }
+  }
+  for (const H of [1.85, 2.0]) for (const k of [0.6, 1.0, 1.5, 2.0]) for (const withUnder of [false, true]) {
+    const W2 = layered((x, z) => (Math.abs(x) <= 6 && Math.abs(z) <= 6 ? (withUnder ? [k * x + H, k * x, k * x + 1.8] : [k * x + H, k * x]) : k * x - 1));
+    const on = `the roof ${H} over a floor sloped ${k}${withUnder ? ' (with its underside)' : ''}`;
+    for (const dt of DTS) for (let x = -2; x <= 2; x += 0.53) for (const z of [-0.41, 0.07]) {
+      const top = k * x + H, b = makeBody(W2, { p: [x, top + 0.3, z], yaw: 0 }, 20);
+      assert(near(b.s.y, top, 0.03), `${on}: put down on the top at ${x.toFixed(2)}, ${z}`);
+      hold(b, 1.3, t => ({ jump: t < 0.4 }), dt);
+      assert(b.s.ground && near(b.s.y, k * b.s.x + H, 0.03), `${on}, ${hz(dt)} Hz: a jump in place at ${x.toFixed(2)}, ${z} came down to ${b.s.y.toFixed(2)}, not the top at ${top.toFixed(2)}`);
+      const c = makeBody(W2, { p: [x, top + 0.3, z], yaw: 0 }, 20);
+      c.s.ground = false; c.s.y = top + 1.5;
+      hold(c, 1.3, {}, dt);
+      assert(c.s.ground && near(c.s.y, k * c.s.x + H, 0.03), `${on}, ${hz(dt)} Hz: a fall from 1.5 onto ${x.toFixed(2)}, ${z} came down to ${c.s.y.toFixed(2)}, not the top at ${top.toFixed(2)}`);
+      tries += 2;
+    }
+  }
+  /* a corner whose top is in reach and whose underside is below the floor of the gap in question belongs to that floor, not to its roof:
+     a grate at 0.5 over a pit (underside -0.3) beside a vault (floor 0.5, underside 4.4), with the underside in the map or without it.
+     Running jumps across the edge, both ways, fly and land as they do on plain ground at 0.5: the vault's edge is not a wall */
+  const plain = layered(() => 0.5);
+  for (const withUnder of [false, true]) {
+    const vault = layered(x => (x < 0 ? (withUnder ? [0.5, -2.2, -0.3] : [0.5, -2.2]) : withUnder ? [4.7, 0.5, 4.4] : [4.7, 0.5]));
+    for (const dt of DTS) for (const dir of [1, -1]) for (const z of [0.07, 0.19]) for (const tj of [0.25, 0.35, 0.45]) {
+      const fly = W2 => {
+        const b = makeBody(W2, { p: [-2.2 * dir, 0.8, z], yaw: 0 }, 20);
+        hold(b, 1.3, t => ({ mx: dir, jump: t > tj && t < tj + 0.4 }), dt);
+        return b.s;
+      };
+      const a = fly(plain), r = fly(vault);
+      assert(r.ground && near(r.x, a.x, 0.01) && near(r.y, 0.5, 0.01), `${withUnder ? 'with' : 'without'} the underside, ${hz(dt)} Hz: a running jump ${dir > 0 ? 'into' : 'out of'} the vault over the grate ended at ${r.x.toFixed(2)}, ${r.y.toFixed(2)} (on plain ground ${a.x.toFixed(2)})`);
+      tries++;
+    }
+  }
+  pass('the gap corners of a cell agree: no shelf in mid-air under a roof, and a thin roof over a sloped floor holds', { tries });
+}
+{ /* the gap's underside. The walk map's layers: two (the underside is then the floor + 1.8) or three, named by the settings or counted
+     from the size; too few cells for the named layers is an error. In a map with the underside, feet are in a gap while they are under
+     it, however far over its floor: a running jump down a slope under a roof 6 high flies as it does on the open slope, and lands where
+     that one lands. Without the underside, that roof is a wall at the top of the jump */
+  const info = { x0: 0, z0: 0, step: 1, nx: 2, nz: 2 };
+  assert.throws(() => makeWalk({ ...info, layers: ['T', 'G', 'U'] }, new Int16Array(8)), /wrong size/, 'three layers named, two given');
+  assert(makeWalk({ ...info, layers: ['T', 'G'] }, new Int16Array(12)).U === null && makeWalk(info, new Int16Array(12)).U !== null, 'the layers by name, else by size');
+  let tries = 0;
+  for (const k of [0.4, 0.6, 1.0]) {
+    const open = layered(x => k * x), box = (x, z) => Math.abs(x) <= 6 && Math.abs(z) <= 6;
+    const high = layered((x, z) => (box(x, z) ? [6 + k * x, k * x, 5.8 + k * x] : k * x)), old = layered((x, z) => (box(x, z) ? [6 + k * x, k * x] : k * x));
+    for (const dt of DTS) for (const z of [-0.37, 0.13]) {
+      const fly = W2 => {
+        const b = makeBody(W2, { p: [3, 3 * k + 0.3, z], yaw: 0 }, 20);
+        let land = null, slow = Infinity;
+        hold(b, 1.6, t => {
+          if (b.s.events.includes('land') && land === null) land = b.s.x;
+          if (!b.s.ground && land === null) slow = Math.min(slow, Math.hypot(b.s.vx, b.s.vz));
+          return { mx: -1, jump: t > 0.45 && t < 0.85 };
+        }, dt);
+        return { land, slow };
+      };
+      const a = fly(open), r = fly(high), o = fly(old);
+      assert(a.land !== null && r.land !== null && near(r.land, a.land, 0.01) && r.slow > 0.85 * PARAMS.run, `slope ${k}, ${hz(dt)} Hz: under the high roof a running jump down the slope landed at ${r.land?.toFixed(2)} (open slope ${a.land?.toFixed(2)}), its speed fell to ${r.slow.toFixed(2)}`);
+      assert(o.slow < 3, `slope ${k}, ${hz(dt)} Hz: without the underside the roof should stop the jump at its top (speed ${o.slow.toFixed(2)})`);
+      tries++;
+    }
+  }
+  pass('in a map with the gap\'s underside, a jump under a high roof does not meet it', { tries });
+}
+{ /* a running jump up a slope keeps its speed through the landing, at every frame step, and goes as far from the take-off at each: in
+     the air the disc may overlap the slope under it, so the slope stops it neither at the take-off nor just before the landing. A
+     slope steeper than the jump rises (1.0 at a run) meets the feet on the way up, and it lands there and runs on. Blocks on a slope
+     still stop it: one 1.6 or 2.0 over the slope at its foot is never stood on, one 1.0 over it is jumped onto */
+  for (const k of [0.3, 0.6, 1.0]) {
+    const W2 = layered(x => k * x), dist = [];
+    for (const dt of DTS) {
+      const b = makeBody(W2, { p: [-2.5, -2.5 * k, 0.13], yaw: 0 }, 20);
+      let off = null, land = null, slow = Infinity, after = 0;
+      for (let i = 0; i < 1.4 / dt; i++) {
+        const x0 = b.s.x;
+        b.step(dt, { mx: 1, jump: i * dt > 0.2 && i * dt < 0.5 }, 0);
+        if (b.s.events.includes('jump')) off = x0;
+        if (off !== null && after < 0.3) slow = Math.min(slow, Math.hypot(b.s.vx, b.s.vz));
+        if (b.s.events.includes('land') && land === null) {
+          land = b.s.x;
+          assert(b.s.landK >= 0 && b.s.landK <= 1, `slope ${k}, ${hz(dt)} Hz: the landing squash is ${b.s.landK}`);
+        }
+        if (land !== null) after += dt;
+      }
+      assert(off !== null && land !== null && slow >= 0.85 * PARAMS.run, `slope ${k}, ${hz(dt)} Hz: a running jump up the slope from ${off?.toFixed(2)} to ${land?.toFixed(2)}: its speed fell to ${slow.toFixed(2)}`);
+      assert(b.s.ground && near(b.s.y, k * b.s.x, 0.01), `slope ${k}, ${hz(dt)} Hz: after the jump it runs on the slope (${b.s.x.toFixed(2)}, ${b.s.y.toFixed(2)})`);
+      dist.push(+(land - off).toFixed(3));
+    }
+    assert(Math.max(...dist) - Math.min(...dist) < 0.22, `slope ${k}: the jump goes ${dist.join(', ')} from the take-off at 30, 60, 120 and 144 Hz`);
+  }
+  let tries = 0;
+  for (const k of [0.3, 0.6, 1.0]) for (const h of [1.0, 1.6, 2.0]) {
+    const W2 = layered((x, z) => (x >= 2 && x <= 4 && Math.abs(z) <= 3 ? k * 2 + h : k * x));
+    let ups = 0;
+    for (const dt of DTS) for (const x0 of [-1.5, 0, 1.2]) for (const deg of [0, 30]) for (const tj of [0.1, 0.3]) {
+      const a = deg * Math.PI / 180, b = makeBody(W2, { p: [x0, k * x0, 0.13], yaw: 0 }, 20);
+      let high = -Infinity;
+      hold(b, 2, t => {
+        if (b.s.ground && b.s.x > 1.9 && b.s.x < 4.1 && Math.abs(b.s.z) < 3.1) high = Math.max(high, b.s.y - k * 2);
+        return { ...toward(Math.cos(a), Math.sin(a)), jump: t >= tj && t < tj + 0.5 };
+      }, dt);
+      if (h > 1.4) assert(high < 0.5, `slope ${k}, ${hz(dt)} Hz: a jump from ${x0} at ${deg}° stood on the block ${h} over the slope (${high.toFixed(2)})`);
+      if (high > h - 0.01) ups++;
+      tries++;
+    }
+    if (h < 1.4) assert(ups > 0, `slope ${k}: no jump got onto the block 1.0 over the slope`);
+  }
+  // only a slope leans: a hillside of 4 per unit (a face, steeper than a climb per radius) is not climbed by jumping at it again and again
+  const face = layered(x => Math.max(0, Math.min(6, 4 * x)));
+  for (const dt of DTS) for (const deg of [0, 25, 50]) for (const per of [0.35, 0.6, 0.9]) {
+    const a = deg * Math.PI / 180, b = makeBody(face, { p: [-1.5, 0, 0.13], yaw: 0 }, 20);
+    const high = hold(b, 5, t => ({ ...toward(Math.cos(a), Math.sin(a)), jump: t % per < per / 2 }), dt);
+    assert(high < 2, `${hz(dt)} Hz, ${deg}°, a jump every ${per} s: it climbed the face of 4 per unit to ${high.toFixed(2)}`);
+    tries++;
+  }
+  pass('a running jump up a slope keeps its speed and its length at every frame step, and blocks on a slope still stop it', { tries });
 }
 { // walking off an edge falls, and lands below
   const b = makeBody(W, { p: [8, 0, -7], yaw: Math.PI }, 20);
@@ -495,6 +652,16 @@ const layered = fn => {
   const row = layered((x, z) => (Math.abs(z - 2) < 0.01 ? 1.2 : 0));
   assert(!reachable(row, { p: [0, 0, 0] }, 20).near([0, 0, 3], 0.3), 'the search does not count a hop over a wall one row thick');
   assert(reachable(layered((x, z) => (Math.abs(z - 2) < 0.01 ? 0.8 : 0)), { p: [0, 0, 0] }, 20).near([0, 0, 3], 0.3), 'a row of 0.8 is walked over');
+  /* on the way the feet are read at the top of the jump, 1.45 over the take-off, as high as the controller reads them. From open ground
+     at 1.0 across one or two rows of a gap (floor 0.6, roof 5) to open ground at 2.2: in a map without the underside, feet at 2.45 are
+     on the gap's roof (1.8 over its floor), so the roof is in the way and the jump does not count; feet read at the take-off (1.0) or
+     0.1 short of the top (2.3) would be in the gap. With the underside in the map at 4.8, the feet are in the gap and the jump counts */
+  for (const w of [1, 2]) {
+    const ground = u => layered((x, z) => (z < -0.01 ? 1.0 : z < w * 0.25 - 0.01 ? (u ? [5, 0.6, u] : [5, 0.6]) : 2.2));
+    const across = W2 => reachable(W2, { p: [0, 1.0, -1] }, 20).near([0, 2.2, w * 0.25 + 0.6], 0.3, -0.05, 0.05);
+    assert(!across(ground()), `the search jumps ${w} row(s) of a gap under a roof 1.8 over its floor`);
+    assert(across(ground(4.8)), `the search does not jump ${w} row(s) of a gap whose underside is at 4.8`);
+  }
   pass('the reach search jumps up to JUMP - 0.1 and 1.0 across, and the controller makes those jumps');
 }
 

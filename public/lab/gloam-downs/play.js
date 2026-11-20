@@ -10,13 +10,16 @@ export const JUMP = (PARAMS.jumpV * PARAMS.jumpV) / (2 * PARAMS.gravity);
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 
 /* ---------------- the walk map ----------------
-   Two layers of heights in centimetres on a grid: T, the top surface, and G, the floor under a gap (G = T where there is no gap).
-   A gap is at least info.clear high (the bake's clear, 1.8). floorAt(x, z, y, feet) is the floor met there by feet at `feet` that reach
-   up to y (feet = y in the air); above y means a wall. support(x, z, y) is that floor for feet at y, or null for a wall. */
+   Layers of heights in centimetres on a grid, one after the other: T, the top surface; G, the floor under a gap (G = T where there is
+   no gap); and, in a map baked with it, U, the gap's underside (0 where there is no gap). info.layers names them (['T', 'G', 'U']); a
+   map without U takes the gap's underside as G + info.clear (the bake's clear, 1.8, the lowest a gap can be). floorAt(x, z, y, feet) is
+   the floor met there by feet at `feet` that reach up to y (feet = y in the air); above y means a wall. support(x, z, y) is that floor
+   for feet at y, or null for a wall. */
 export function makeWalk(info, cells) {
   const { x0, z0, step, nx, nz } = info, N = nx * nz, clear = info.clear ?? 1.8;
-  if (!(cells instanceof Int16Array) || cells.length < 2 * N) throw new Error('walk map is the wrong size');
-  const T = cells.subarray(0, N), G = cells.subarray(N, 2 * N);
+  const layers = info.layers ? info.layers.length : cells?.length >= 3 * N ? 3 : 2;
+  if (!(cells instanceof Int16Array) || layers < 2 || cells.length < layers * N) throw new Error('walk map is the wrong size');
+  const T = cells.subarray(0, N), G = cells.subarray(N, 2 * N), U = layers > 2 ? cells.subarray(2 * N, 3 * N) : null;
   const at = (L, i, j) => L[clamp(j, 0, nz - 1) * nx + clamp(i, 0, nx - 1)] * 0.01;
   const sample = (L, x, z) => {
     const fx = (x - x0) / step, fz = (z - z0) / step, i = Math.floor(fx), j = Math.floor(fz), u = fx - i, v = fz - j;
@@ -25,23 +28,46 @@ export function makeWalk(info, cells) {
   };
   const top = (x, z) => sample(T, x, z);
   const floor = (x, z) => sample(G, x, z);
-  /* one corner for feet at `feet` that reach up to y: its top if that is at or below y; else, where the feet are lower than the gap is
-     high (so they are in the gap, not on its roof), the floor under the gap, even if that floor is above them (then it is a step or a
-     wall at the floor's own height); else its top, above them. The feet decide, not the reach: so from a ledge in an archway the floor
-     under the arch is a drop, on a floor that slopes up under a roof the higher side is floor, and from a roof, a crown or an arch's
-     top a higher part of it is a slope or a wall, never a hole down to the floor under it */
-  const corner = (k, y, feet) => {
-    const t = T[k] * 0.01;
-    if (t <= y + 1e-4) return t;
-    const g = G[k] * 0.01;
-    return g < t - 0.05 && feet < g + clear ? g : t;
+  const gap = k => G[k] < T[k] - 5;
+  const under = k => (U ? U[k] * 0.01 : G[k] * 0.01 + clear);
+  /* are feet at `feet` in the gap of a cell, below its roof? oa..od mark the corners that ask: a gap under a top out of reach. The gap's
+     underside under the point is blended (with the corners' own weights) from those, and from the gap corners whose top is in reach and
+     whose underside is above the floor of every corner that asks: the same roof, sloping down under the feet. A corner whose underside is
+     below that floor belongs to the floor, as a grate or a boardwalk over a pit does, so it does not count. The feet are in the gap when
+     they are lower than the blend. So all the gap corners of a cell agree: a landing never blends a roof corner with a floor corner, and a
+     thin roof over a sloped floor is roof all across */
+  const inGap = (ka, kb, kc, kd, oa, ob, oc, od, u, v, feet) => {
+    const uu = clamp(u, 0, 1), vv = clamp(v, 0, 1), NO = -40000;
+    const ground = Math.max(oa ? G[ka] : NO, ob ? G[kb] : NO, oc ? G[kc] : NO, od ? G[kd] : NO) * 0.01; // the highest floor that asks
+    let s = 0, w = 0, m = 0, n = 0;
+    const add = (k, asks, wk) => {
+      if (!gap(k)) return;
+      const h = under(k);
+      if (asks || h > ground) { s += wk * h; w += wk; m += h; n++; }
+    };
+    add(ka, oa, (1 - uu) * (1 - vv)); add(kb, ob, uu * (1 - vv)); add(kc, oc, (1 - uu) * vv); add(kd, od, uu * vv);
+    return n > 0 && feet < (w > 1e-9 ? s / w : m / n);
   };
-  // the layer is chosen at each corner and then blended, so an arch's edge is flat floor from below and a clean edge from above
+  /* each corner gives its top if that is at or below y. Else, at a corner with a gap, it gives the floor under the gap when the feet are
+     in the gap, even if that floor is above them (then it is a step or a wall at the floor's own height); else its top, above them.
+     The feet decide, not the reach: so from a ledge in an archway the floor under the arch is a drop, on a floor that slopes up under a
+     roof the higher side is floor, a jump under a high roof does not meet the roof, and from a roof, a crown or an arch's top a higher
+     part of it is a slope or a wall, never a hole down to the floor under it. The layer is chosen at the corners and then blended, so an
+     arch's edge is flat floor from below and a clean edge from above */
   const grad = [0, 0]; // the slope of the floor at the last floorAt, per unit across
   const floorAt = (x, z, y, feet = y) => {
     const fx = (x - x0) / step, fz = (z - z0) / step, i = Math.floor(fx), j = Math.floor(fz), u = fx - i, v = fz - j;
     const i0 = clamp(i, 0, nx - 1), i1 = clamp(i + 1, 0, nx - 1), j0 = clamp(j, 0, nz - 1) * nx, j1 = clamp(j + 1, 0, nz - 1) * nx;
-    const a = corner(j0 + i0, y, feet), b = corner(j0 + i1, y, feet), c = corner(j1 + i0, y, feet), d = corner(j1 + i1, y, feet), e = a - b - c + d;
+    const ka = j0 + i0, kb = j0 + i1, kc = j1 + i0, kd = j1 + i1, reach = y + 1e-4;
+    let a = T[ka] * 0.01, b = T[kb] * 0.01, c = T[kc] * 0.01, d = T[kd] * 0.01;
+    const oa = a > reach && gap(ka), ob = b > reach && gap(kb), oc = c > reach && gap(kc), od = d > reach && gap(kd);
+    if ((oa || ob || oc || od) && inGap(ka, kb, kc, kd, oa, ob, oc, od, u, v, feet)) {
+      if (oa) a = G[ka] * 0.01;
+      if (ob) b = G[kb] * 0.01;
+      if (oc) c = G[kc] * 0.01;
+      if (od) d = G[kd] * 0.01;
+    }
+    const e = a - b - c + d;
     grad[0] = (b - a + e * v) / step;
     grad[1] = (c - a + e * u) / step;
     return a + (b - a) * u + (c - a) * v + e * u * v;
@@ -50,7 +76,7 @@ export function makeWalk(info, cells) {
     const f = floorAt(x, z, y);
     return f <= y + 1e-4 ? f : null;
   };
-  return { info, top, floor, floorAt, grad, support, clear, x0, z0, step, nx, nz, T, G, x1: x0 + (nx - 1) * step, z1: z0 + (nz - 1) * step };
+  return { info, top, floor, floorAt, grad, support, clear, x0, z0, step, nx, nz, T, G, U, x1: x0 + (nx - 1) * step, z1: z0 + (nz - 1) * step };
 }
 
 /* ---------------- the rules for the feet ----------------
@@ -58,27 +84,31 @@ export function makeWalk(info, cells) {
    climb: a step of stepUp and the slope across the radius. Nothing inside the disc may be more than climb above the base, the floor
    where the feet last stood on a slope (a floor no steeper than climb per radius). A steeper floor is the face of a wall or a step:
    on it the base stays where the face began, so the feet rise no more than climb up a face, from any heading and in steps of any size,
-   and a wall more than climb high stops the disc before its centre reaches the face. */
+   and a wall more than climb high stops the disc before its centre reaches the face. In the air nothing inside the disc may rise above
+   the feet, except the slope under the centre (no steeper than climb per radius), up to its own plane. */
 const climbOf = P => P.stepUp + P.slope * P.radius;
 const steepOf = P => climbOf(P) / P.radius;
 const RAYS = Array.from({ length: 16 }, (_, k) => [Math.cos((k * Math.PI) / 8), Math.sin((k * Math.PI) / 8)]);
-// how near the centre of a disc of radius R at (x, z) a floor above `top` comes, for feet at `feet`: 0 at the centre; the distance of a
-// grid point inside the disc (the map's highest points are at grid points or on the disc's edge); or where one of 16 rays, sampled at
-// a third, two thirds and all of R, first crosses it. Infinity where nothing does. With `any`, the first one found.
-function nearest(walk, x, z, top, feet, R, any = false) {
-  const e0 = walk.floorAt(x, z, top, feet) - top;
+/* the height a floor at (px, pz) may reach inside the disc: `top`; or, in the air over a slope, also the plane along that slope a
+   little over its floor (lean = [height at the anchor, slope on x, slope on z, anchor x, anchor z]) */
+const limit = (top, lean, px, pz) => (lean ? Math.max(top, lean[0] + lean[1] * (px - lean[3]) + lean[2] * (pz - lean[4])) : top);
+// how near the centre of a disc of radius R at (x, z) a floor above the limit comes, for feet at `feet`: 0 at the centre; the distance
+// of a grid point inside the disc (the map's highest points are at grid points or on the disc's edge); or where one of 16 rays, sampled
+// at a third, two thirds and all of R, first crosses it. Infinity where nothing does. With `any`, the first one found.
+function nearest(walk, x, z, top, feet, R, any = false, lean = null) {
+  const e0 = walk.floorAt(x, z, top, feet) - limit(top, lean, x, z);
   if (e0 > 1e-4) return 0;
   let near = Infinity;
   const { x0, z0, step } = walk, i0 = Math.ceil((x - R - x0) / step), i1 = Math.floor((x + R - x0) / step);
   const j0 = Math.ceil((z - R - z0) / step), j1 = Math.floor((z + R - z0) / step);
   for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
     const px = x0 + i * step, pz = z0 + j * step, d = Math.hypot(px - x, pz - z);
-    if (d <= R && d < near && walk.floorAt(px, pz, top, feet) > top + 1e-4) { if (any) return d; near = d; }
+    if (d <= R && d < near && walk.floorAt(px, pz, top, feet) > limit(top, lean, px, pz) + 1e-4) { if (any) return d; near = d; }
   }
   for (const [cx, cz] of RAYS) {
     let ep = e0, rp = 0;
     for (let k = 1; k <= 3; k++) {
-      const r = (R * k) / 3, e = walk.floorAt(x + cx * r, z + cz * r, top, feet) - top;
+      const r = (R * k) / 3, e = walk.floorAt(x + cx * r, z + cz * r, top, feet) - limit(top, lean, x + cx * r, z + cz * r);
       if (e > 1e-4) {
         const d = rp + ((r - rp) * Math.max(0, -ep)) / (e - ep);
         if (any) return d;
@@ -101,12 +131,12 @@ export function makeBody(walk, start, bounds, P = PARAMS) {
   };
   s.floor = s.base = s.y;
   const lim = bounds - 0.6, climb = climbOf(P), steep = steepOf(P);
-  // can the disc stand at (x, z) with nothing in it above `top`, for feet at `feet`? Where the disc already reaches over something
-  // higher (it landed by a wall, or walked down a slope beside a ledge), it may move along that or away from it, but not nearer: so it
-  // never sticks to a wall and never works its way into one
-  function fits(x, z, top, feet) {
-    const d = nearest(walk, x, z, top, feet, P.radius);
-    return d === Infinity || (d > 0 && d >= nearest(walk, s.x, s.z, top, feet, P.radius) - 1e-6);
+  // can the disc stand at (x, z) with nothing in it above `top` (or the slope's plane, lean), for feet at `feet`? Where the disc already
+  // reaches over something higher (it landed by a wall, or walked down a slope beside a ledge), it may move along that or away from it,
+  // but not nearer: so it never sticks to a wall and never works its way into one
+  function fits(x, z, top, feet, lean = null) {
+    const d = nearest(walk, x, z, top, feet, P.radius, false, lean);
+    return d === Infinity || (d > 0 && d >= nearest(walk, s.x, s.z, top, feet, P.radius, false, lean) - 1e-6);
   }
   // on the ground the disc reaches a climb above the base, and the feet are where they stand
   const walkTop = () => s.base + climb, walkFeet = () => s.y;
@@ -119,16 +149,20 @@ export function makeBody(walk, start, bounds, P = PARAMS) {
     s.y = f;
     if (k <= steep) s.base = f;
   }
-  // in the air, anything above the feet (top) is a wall, and the feet are read at that height
+  // in the air, anything above the feet (top) is a wall, but for the slope under the centre (lean), and the feet are read at that height
   const flyTo = (x, z) => { s.x = x; s.z = z; };
-  // the face of the wall in front: the mean direction to the floors above `wall` on two rings (at 1.2 and 2 radii), so a wall that is
-  // a staircase on the grid reads as one face. Taken over the half ahead of the move, then twice more over the half ahead of that
-  // mean, so the face of a wall the move runs along is not tilted towards the move. -> its normal (into the wall), or null
+  // the face of the wall in front: the mean direction to the floors above `wall` (or the slope's plane, lean) on two rings (at 1.2 and 2
+  // radii), so a wall that is a staircase on the grid reads as one face. Taken over the half ahead of the move, then twice more over the
+  // half ahead of that mean, so the face of a wall the move runs along is not tilted towards the move. -> its normal (into the wall), or
+  // null
   const hit = new Uint8Array(16);
-  function face(mx, mz, wall, feet) {
+  function face(mx, mz, wall, feet, lean) {
     RAYS.forEach(([cx, cz], k) => {
       hit[k] = 0;
-      for (const r of [1.2, 2]) if (walk.floorAt(s.x + cx * r * P.radius, s.z + cz * r * P.radius, wall, feet) > wall + 1e-4) hit[k]++;
+      for (const r of [1.2, 2]) {
+        const px = s.x + cx * r * P.radius, pz = s.z + cz * r * P.radius;
+        if (walk.floorAt(px, pz, wall, feet) > limit(wall, lean, px, pz) + 1e-4) hit[k]++;
+      }
     });
     let ux = mx, uz = mz;
     for (let pass = 0; pass < 3; pass++) {
@@ -145,7 +179,7 @@ export function makeBody(walk, start, bounds, P = PARAMS) {
   // face reads (a thin post, a steep face), the move turned towards the side that is free. -> [blocked, face normal, slide]
   const TILTS = [0, 10, 20, 30, 45, 60].map(a => a * Math.PI / 180);
   const TURNS = [10, 20, 30, 40, 50, 60, 70, 80].map(a => a * Math.PI / 180);
-  function move(dx, dz, fit, go, wall, feet) {
+  function move(dx, dz, fit, go, wall, feet, lean = null) {
     const d = Math.hypot(dx, dz), n = Math.ceil(d / 0.1), ground = s.ground;
     let blocked = false, along = null, nrm = null;
     for (let i = 0; i < n; i++) {
@@ -155,7 +189,7 @@ export function makeBody(walk, start, bounds, P = PARAMS) {
       blocked = true;
       along = null;
       const free = t => fit(clamp(s.x + t[0], -lim, lim), clamp(s.z + t[1], -lim, lim));
-      nrm = face(sx, sz, wall(), feet());
+      nrm = face(sx, sz, wall(), feet(), lean);
       if (nrm) {
         const into = sx * nrm[0] + sz * nrm[1], tx = sx - into * nrm[0], tz = sz - into * nrm[1], tl = Math.hypot(tx, tz);
         if (tl < 0.09 * Math.hypot(sx, sz)) break; // head on
@@ -223,12 +257,21 @@ export function makeBody(walk, start, bounds, P = PARAMS) {
       s.vy -= g * dt;
       s.airTime += dt;
       const top = Math.max(s.y, y1) + 0.05, at = () => top;
-      slid(move(dx, dz, (x, z) => fits(x, z, top, top), flyTo, at, at));
-      /* it lands on the floor under its centre. On a sloped roof or crown the higher side reads as roof, and on a floor that slopes up
-         under a roof the higher side reads as floor, so neither landing is missed */
+      /* over a slope (the floor under the centre in reach and no steeper than a climb per radius), the disc may also overlap that slope:
+         nothing in it may rise over the plane along the slope, 0.05 over its floor. So the uphill side of the disc does not stop a jump
+         up a slope at the take-off or just before the landing, and the centre goes on up the slope over the frame. Anything that rises
+         off the slope's plane, as a wall or a ledge does, is still a wall above the feet */
+      const f0 = walk.floorAt(s.x, s.z, top), gx = walk.grad[0], gz = walk.grad[1];
+      const lean = f0 <= top + 1e-4 && Math.hypot(gx, gz) <= steep ? [f0 + 0.05, gx, gz, s.x, s.z] : null;
+      slid(move(dx, dz, (x, z) => fits(x, z, top, top, lean), flyTo, at, at, lean));
+      /* it lands on the floor under its centre when the feet are at or below it and it is in reach (on the slope's plane it may be a
+         little over the feet). That holds on the way up too: on a run up a slope that rises nearly as fast as the jump, the slope meets
+         the feet before the top of the jump, and it lands there and runs on. On a sloped roof or crown the higher side reads as roof, and
+         on a floor that slopes up under a roof the higher side reads as floor, so neither landing is missed. The squash of the landing
+         follows the speed down, none on the way up */
       const f = walk.floorAt(s.x, s.z, top);
-      if (f <= top + 1e-4 && s.vy <= 0 && y1 <= f) {
-        s.landK = Math.min(1, -s.vy / 14); s.landAge = 0; s.y = s.base = f; s.vy = 0; s.ground = true; s.events.push('land');
+      if (y1 <= f && f <= limit(top, lean, s.x, s.z) + 1e-4) {
+        s.landK = clamp(-s.vy / 14, 0, 1); s.landAge = 0; s.y = s.base = f; s.vy = 0; s.ground = true; s.events.push('land');
       } else s.y = y1;
     }
     const moved = Math.hypot(s.x - x0, s.z - z0);

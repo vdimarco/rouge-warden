@@ -137,12 +137,12 @@ export function terrain(S, h, mat, { near = 26, res = 0.24, rings = [[52, 0.5], 
 }
 
 /* ---------------- the walk map ----------------
-   For each cell of a grid: the top surface (T), and where a gap of at least `clear` opens under it, the floor below the gap (G). A cell
-   with no gap has G = T. Read from the scenery's own distance field (S.sdf, once S.ready() has placed its solids), so what you see is
-   what you stand on. */
+   For each cell of a grid: the top surface (T); and where a gap of at least `clear` opens under it, the floor below the gap (G) and the
+   gap's underside (U), the bottom of what lies over the gap. A cell with no gap has G = T and U = 0. Read from the scenery's own distance
+   field (S.sdf, once S.ready() has placed its solids), so what you see is what you stand on. */
 export function walkMap(S, h, { x0, x1, z0, z1, step = 0.25, above = 10, clear = 1.8 }) {
   const nx = Math.round((x1 - x0) / step) + 1, nz = Math.round((z1 - z0) / step) + 1;
-  const T = new Int16Array(nx * nz), G = new Int16Array(nx * nz);
+  const T = new Int16Array(nx * nz), G = new Int16Array(nx * nz), U = new Int16Array(nx * nz);
   const cm = v => Math.max(-32000, Math.min(32000, Math.round(v * 100)));
   const sdf = S.sdf;
   /* each step down is at least 0.01, so this many always ends on a surface or under the ground. A column just off a wall's face creeps
@@ -162,7 +162,7 @@ export function walkMap(S, h, { x0, x1, z0, z1, step = 0.25, above = 10, clear =
       }
       t = y;
     }
-    let g = t;
+    let g = t, u = 0;
     if (t > hy + clear * 0.5) {
       // walk down through what lies under the top: find its underside, then the next floor
       let yy = t - 0.05, inside = true, under = null;
@@ -171,12 +171,20 @@ export function walkMap(S, h, { x0, x1, z0, z1, step = 0.25, above = 10, clear =
         if (inside && dd > 0.02) { inside = false; under = yy; }
         else if (!inside && dd < 0.006) break;
       }
-      if (under !== null && under - yy >= clear) { g = Math.max(yy, hy - 0.2); gaps++; }
+      if (under !== null && under - yy >= clear) { g = Math.max(yy, hy - 0.2); u = under; gaps++; }
     }
     T[j * nx + i] = cm(t);
     G[j * nx + i] = cm(g);
+    U[j * nx + i] = u ? cm(u) : 0;
   }
-  return { x0, z0, step, nx, nz, T, G, gaps };
+  return { x0, z0, step, nx, nz, T, G, U, gaps };
+}
+// the walk file: the layers one after the other, as the page's makeWalk reads them (the JSON names them in walk.layers)
+export const WALK_LAYERS = ['T', 'G', 'U'];
+export function walkCells(walk) {
+  const N = walk.T.length, cells = new Int16Array(N * WALK_LAYERS.length);
+  WALK_LAYERS.forEach((name, i) => cells.set(walk[name], i * N));
+  return cells;
 }
 
 /* ---------------- the lamplighter ----------------

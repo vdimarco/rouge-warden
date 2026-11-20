@@ -86,9 +86,11 @@ export default {
   - a slope steeper than about 2.8 rise per unit is a face, and a face more than 0.83 high needs a jump;
   - the reach check jumps up to 1.3 and up to 1.0 across, along a row or a column of the grid. It lands only where the lamplighter can stand on a slope, so it does not land on the tip of a post or on the edge of a ledge. A gap of two cells can be jumped. A hop over anything higher than both ends, such as a thin wall, does not count;
   - from the top of a roof, an arch or a crown, a higher part of it is a wall, so a roof built in steps needs steps of 0.5 or less, or a jump;
-  - from a ledge 1.8 or more above the floor under an arch, the arch is a wall. Keep such ledges lower, or give another way in;
+  - feet below a gap's underside are in the gap. So a walk from a ledge drops into an arch whose underside is above the feet, and a jump under a high arch does not meet it;
+  - at a run, a jump up a slope steeper than about 1.2 lands again at once, because the slope rises as fast as the jump. Walk, or stop, to jump from such a slope;
   - any drop is allowed;
   - a wisp is touched from a floor 0.7 below it up to 2.1 under it, within 0.8 across.
 - **Summit:** the beacon stands at least 2 above the start, on a summit that the start's camera can see.
 - **Dark but not black:** in the CPU picture from the start, the mean luminance is between 0.05 and 0.32, and between 0.05% and 12% of pixels are over 0.55 (the fire).
 - **Walk map:** a wall is anything that rises more than a step. Arches and tree crowns with 1.8 of clearance under them can be walked under. Keep the paths wide (2 or more), because the camera follows close.
+  - The walk file is three `Int16` layers in centimetres, gzipped: the top, the floor under a gap (the top where there is none), and the gap's underside (0 where there is no gap). The JSON names them in `walk.layers`. Each walk file is 102 to 132 KB, and it counts in the 1.5 MB.

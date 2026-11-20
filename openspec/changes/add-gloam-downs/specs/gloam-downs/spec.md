@@ -56,6 +56,22 @@ The player SHALL move relative to the camera with WASD, the arrow keys, the left
 - **WHEN** the lamplighter jumps in place, or runs and jumps up or down, on a floor that slopes 0.6 or 1.0 per unit under a roof, on a 30, 60, 120 or 144 Hz screen
 - **THEN** it lands on that floor and does not fall through it
 
+#### Scenario: No shelf in mid-air
+- **WHEN** the lamplighter runs and jumps down a floor that slopes 0.6 or 1.0 per unit under a roof 5 high, with the stick held or let go in the air, on a 30, 60, 120 or 144 Hz screen, and then walks across the slope
+- **THEN** it lands on the floor and stays on it, and never stands in the air between the floor and the roof
+
+#### Scenario: Edge of a vault over a grate
+- **WHEN** the lamplighter runs and jumps from a grate over a pit into a vault whose floor is the grate's height, or out of the vault onto the grate, on a 30, 60, 120 or 144 Hz screen
+- **THEN** it flies and lands as it does on plain ground, and the vault's edge does not stop it
+
+#### Scenario: Thin roof over a sloped floor
+- **WHEN** the lamplighter jumps in place on, or falls from 1.5 above onto, a roof 1.85 to 2.0 over a floor that slopes 0.6 to 2.0 per unit with it, on a 30, 60, 120 or 144 Hz screen
+- **THEN** it lands on the roof and does not fall through it
+
+#### Scenario: Jump under a high roof
+- **WHEN** the lamplighter runs and jumps down a slope of 0.4 to 1.0 under a roof 6 high, in a place whose walk map stores the roof's underside, on a 30, 60, 120 or 144 Hz screen
+- **THEN** the jump flies and lands as it does on the open slope, and the roof does not stop it in the air
+
 #### Scenario: Past the lip of an overhang
 - **WHEN** the lamplighter falls past the lip of an overhang whose floor is higher than the open ground beside it
 - **THEN** it lands on the floor there and does not fall through it
@@ -67,6 +83,14 @@ The player SHALL move relative to the camera with WASD, the arrow keys, the left
 #### Scenario: Jump onto a ledge
 - **WHEN** the lamplighter jumps at a ledge lower than its jump height
 - **THEN** it lands on the ledge
+
+#### Scenario: Running jump up a slope
+- **WHEN** the lamplighter runs up a slope of 0.3 or 0.6 with the stick at full and jumps, on a 30, 60, 120 or 144 Hz screen
+- **THEN** it keeps at least 85% of its run speed in the air and through the landing, runs on up the slope, and the jump goes as far from the take-off at each frame rate, within 0.22
+
+#### Scenario: Block on a slope
+- **WHEN** the lamplighter runs up a slope of 0.3 to 1.0 and jumps at a block that stands 1.6 or 2.0 over the slope at its foot, or jumps again and again at a hillside of 4 per unit
+- **THEN** it does not stand on the block or climb the hillside, and it can jump onto a block 1.0 over the slope
 
 #### Scenario: Low step
 - **WHEN** the lamplighter walks at a step of 0.5 or lower
@@ -144,6 +168,10 @@ Each baked world SHALL have no more than 250,000 splats and no more than 48 pale
 #### Scenario: Budget
 - **WHEN** the Node test reads the baked worlds
 - **THEN** each one is within the splat, palette and size limits above
+
+#### Scenario: Walk map layers
+- **WHEN** the Node test reads a baked walk map
+- **THEN** it holds the three layers that its JSON names: the top, the floor under a gap, and the gap's underside, which is 0 where there is no gap and between the floor and the top where there is one
 
 ### Requirement: Arcade cabinet
 Gloam Downs SHALL have its cabinet at the end of the Lab row on the homepage, its entry in the game switcher (Lab only), its piece in the Corridor after Splat Isle, its card on the Lab page and its dates. Its id SHALL be `gloam-downs`, its title "Gloam Downs" and its route `/lab/gloam-downs/`.

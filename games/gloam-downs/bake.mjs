@@ -11,7 +11,7 @@ import { performance } from 'node:perf_hooks';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { checkPlace } from './lib/check.mjs';
-import { lib, K, palette, hills, terrain, walkMap, lamplighter, shadowDisc, wisp, fire, embers, BONES, INK_VERSION } from './lib/common.mjs';
+import { lib, K, palette, hills, terrain, walkMap, walkCells, WALK_LAYERS, lamplighter, shadowDisc, wisp, fire, embers, BONES, INK_VERSION } from './lib/common.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const OUT = path.resolve(HERE, '../../public/lab/gloam-downs/worlds');
@@ -143,7 +143,7 @@ export function build(def) {
     wisps,
     fires: fires.length,
     bones: { names: BONES, pivots: BONES.map(n => rig.pivots[n]), first: Math.min(...boned), end: Math.max(...boned) + 1, count: boned.length },
-    walk: { x0: walk.x0, z0: walk.z0, step: walk.step, nx: walk.nx, nz: walk.nz, layers: ['T', 'G'], unit: 0.01 },
+    walk: { x0: walk.x0, z0: walk.z0, step: walk.step, nx: walk.nx, nz: walk.nz, layers: WALK_LAYERS, unit: 0.01 },
     bounds: def.walk?.half || 36,
     hint: def.hint || ''
   };
@@ -158,10 +158,7 @@ export function save(id, { world, meta, walk }, out = OUT) {
   fs.mkdirSync(out, { recursive: true });
   const bytes = K.procedural.splatCodec.encode(world.data, world.count);
   const gz = zlib.gzipSync(bytes, { level: 9 });
-  const wbuf = new Int16Array(walk.T.length * 2);
-  wbuf.set(walk.T, 0);
-  wbuf.set(walk.G, walk.T.length);
-  const wgz = zlib.gzipSync(Buffer.from(wbuf.buffer), { level: 9 });
+  const wgz = zlib.gzipSync(Buffer.from(walkCells(walk).buffer), { level: 9 });
   fs.writeFileSync(path.join(out, id + '.bin.gz'), gz);
   fs.writeFileSync(path.join(out, id + '.walk.bin.gz'), wgz);
   fs.writeFileSync(path.join(out, id + '.json'), JSON.stringify(meta));
