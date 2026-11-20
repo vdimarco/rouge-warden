@@ -4,7 +4,7 @@
 Gloam Downs SHALL have five places, in this order: The Sunken Gaol, The Crow Wall, Lantern Fen, The Bell Knoll and Barrow Crown. Each place SHALL be a world of Ink Studio splats on rolling hills, sculpted and baked offline, with its own palette, sky, fog and landmark. The landmark with the beacon SHALL stand on a summit that the player can see from the start point.
 
 #### Scenario: Open the piece
-- **WHEN** a visitor opens `/lab/gloam-downs/`
+- **WHEN** a first-time visitor opens `/lab/gloam-downs/?wander`
 - **THEN** a progress bar shows while the world loads. Then The Sunken Gaol shows with the lamplighter at the start point and the summit beacon in view. Check: e2e `gloam-downs.e2e.mjs` through `?wander`: the picture has more than 6 colours.
 
 #### Scenario: Each place is different
