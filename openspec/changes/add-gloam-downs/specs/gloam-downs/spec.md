@@ -137,19 +137,39 @@ The player SHALL move relative to the camera with WASD, the arrow keys, the left
 - **THEN** it walks up the step without a jump. Check: Node test `gloam-downs.test.mjs`: it walks up steps of 0.35 to more than 0.9 high.
 
 ### Requirement: Look
-Q and E, the right stick, a mouse drag or a touch drag on the right half of the screen SHALL turn the camera. The camera SHALL follow behind the lamplighter and come closer when a hill or a wall is between it and the lamplighter. In a run, the combat camera and the boss camera of gloam-downs-run SHALL apply.
+Q and E, the right stick, a mouse drag or a touch drag on the right half of the screen SHALL turn the camera. The camera SHALL follow behind the lamplighter with a framing for the window (see "The camera's framing"), and keep the scenery out of the way (see "The camera and the scenery"). In a run, the combat camera and the boss camera of gloam-downs-run SHALL apply.
 
 #### Scenario: Turn the camera
 - **WHEN** the player holds E or drags on the right half of a touch screen
-- **THEN** the camera turns around the lamplighter. Check: Node test `gloam-downs.test.mjs`: E held for 1 s turns the yaw by 2.6 rad, ±0.1. The e2e checks that a drag on the right half turns the yaw by more than 0.2 rad.
+- **THEN** the camera turns around the lamplighter. Check: Node test `gloam-downs-camera.test.mjs`: E held for 1 s turns the yaw by 2.6 rad, ±0.1 (2.60). The e2e `gloam-downs.e2e.mjs` checks that a drag on the right half turns the yaw by more than 0.2 rad.
+
+### Requirement: The camera's framing
+The camera SHALL frame each window so:
+- landscape: a 48° vertical field of view, 8.5 m back, the aim 0.75 m over the feet, the horizon 12.8% from the top;
+- a narrower window: a horizontal field of view of at least 2·atan(0.30), max(8.5, 4.6 / tan of the horizontal half-angle) back (15.33 m on a phone held upright), the aim 1.8 m over the feet, the horizon 24% from the top.
+
+#### Scenario: The ground round the lamplighter
+- **WHEN** the lamplighter stands on flat ground in any window from 320 by 568 to 2560 by 1080
+- **THEN** a 4 m ring round its feet is inside the screen within 3% of each side. It is between 12% and 95% of the height in landscape, and between 22% and 76% (80% on a tablet) in a tall window, above the touch buttons. A foe 3.5 m to each side is in view. The horizon is under the HUD. The ground is seen at 20° or more. The figure is 7% to 25% of the height. Check: Node test `gloam-downs-camera.test.mjs` at 14 windows, and e2e `gloam-downs-camera.e2e.mjs` at the five layouts. At 3 spots of each place's route the camera stands at its full distance, and a foe 3.5 m to each side is in view at 0.75 (landscape) or 0.9 (phones) of the spots. The mean number of ring points on screen is at least 12 (landscape) or 14 (phones). Measured: full distance at every spot, side foes in view at every spot, ring points 14.7 and 16.
+
+### Requirement: The camera and the scenery
+When a hill or a wall comes between the eye and the lamplighter's head or chest, the camera SHALL rise over it, at no more than 4 rad/s, before it comes closer. It SHALL come closer only when no rise up to 1.35 rad clears it. A thin thing SHALL not move it: one with open space 0.55 m to both sides of the line, and no more than 0.6 m along it. The foes SHALL not move it either. Its eye SHALL never be inside the scenery. Past the walk map's bounds, the camera SHALL read the map's edge cells.
 
 #### Scenario: Hill in the way
 - **WHEN** a hill comes between the camera and the lamplighter
-- **THEN** the camera comes closer, so the lamplighter stays in view. Check: Node test `gloam-downs.test.mjs`: with a wall behind the lamplighter, the camera comes in to less than 2 m.
+- **THEN** the camera rises over it and stays back. It comes closer only when no rise clears it. The eye stays out of the wall and sees the head. Check: Node test `gloam-downs.test.mjs`. With a 3 m wall 0.6 to 2.2 m behind the lamplighter, the camera stays 8.5 m back with its pitch over 0.5 (measured 0.82 to 1.30). With the wall 0.4 m behind, it comes in to less than 2.5 m (0.65).
 
 #### Scenario: Back to a wall
 - **WHEN** the lamplighter stands with its back to a wall or a cliff
-- **THEN** the camera's eye stays in front of the wall, and the view tilts down from above when the wall is too close to frame the lamplighter
+- **THEN** the camera's eye stays in front of the wall, and the view tilts down from above when the wall is too close to frame the lamplighter. Check: Node test `gloam-downs.test.mjs`: backing into the wall for 4 s, the eye stays 0.1 m or more above the wall's top at every step.
+
+#### Scenario: Through the five places
+- **WHEN** the lamplighter runs each route at 6.4 m/s with no look input, at the five layouts
+- **THEN** the camera stands at 0.6 of its distance or more on 95% of steps (measured 98% to 99%). The figure fills more than 45% of the height on 3% of steps or fewer (0.4% to 1.4%). The lamplighter is hidden on 3% or fewer (1.8% to 2.2%). The eye is inside the scenery on 1% or fewer (0.5%). The view turns at most 4.5° in one step (4.2°). The whole 4 m ring is on screen on 90% of steps in a tall window (93%) and 55% in landscape (62% to 66%). A foe 3.5 m to each side is on screen on 95% of steps in a tall window (98%) and 80% in landscape (89% to 90%). Check: Node test `gloam-downs-camera.test.mjs`.
+
+#### Scenario: Posts and walls
+- **WHEN** a post 0.3 m wide stands between the eye and the lamplighter, or the lamplighter runs past a row of posts, or a wall comes between, or the lamplighter walks under a long roof
+- **THEN** the posts do not move the camera. A wall that comes between turns the view by no more than 4 rad/s, and the eye stays out of it. Under a long roof the camera follows inside the passage. Check: Node test `gloam-downs-camera.test.mjs`.
 
 ### Requirement: Wisps and the beacon
 Each place SHALL have five wisps, glowing motes that float above the ground, and one beacon on its summit. In Wander, a wisp SHALL go out and count when the lamplighter touches it, and the beacon SHALL light when the lamplighter touches it. While another beacon is still dark and the place has a next place, a card SHALL say that the way opens. Then the next place SHALL load. Otherwise the walk SHALL follow The end of the walk. In a run, the run's rules apply instead.
@@ -208,6 +228,10 @@ Each baked world SHALL have no more than 250,000 splats and no more than 48 pale
 #### Scenario: Budget
 - **WHEN** the Node test reads the baked worlds
 - **THEN** each one is within the splat, palette and size limits above. Check: Node test `gloam-downs.test.mjs`.
+
+#### Scenario: The camera's draw time
+- **WHEN** the page draws the Gaol's start at 1280 by 720 and 390 by 844 at the same art size, with the camera's framing and with stage 1's framing (a 38° field of view, 8.5 or 12.75 m back, pitch 0.34, aim 1.15), drawn in turn in one page
+- **THEN** the new framing draws in no more than 1.15 times the time of stage 1's framing (measured 0.72 and 0.85 in the build, and 0.82 and 1.02 at the merge, on a machine shared with other agents). Check: e2e `gloam-downs-camera.e2e.mjs`.
 
 #### Scenario: Walk map layers
 - **WHEN** the Node test reads a baked walk map

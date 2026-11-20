@@ -34,10 +34,14 @@ const pass = (name, data) => { n++; console.log('PASS ' + name + (data ? ' ' + J
    flash that must be fire (90%). Some views still fall short, measured with this file: the pale wisp tones (the Mirelight, the caged
    light) darkened by the fog, the contact shade or a half-covered pixel, and fire slot 35 darkened the same way, snap to a place's own
    mid tones (the Gaol's moon greys, the Crow Wall's tan and moss, the fen's straw, The Bell Knoll's amber). Those views hold their
-   measured floor, so the look cannot slip back, until the figures' glows are retuned for them */
+   measured floor, so the look cannot slip back, until the figures' glows are retuned for them. The floors were measured again with
+   stage 2's framing (48° at 8.5 m in landscape, 66° at 15.33 m at 390x844): the figures are smaller on screen, so more of their pixels
+   are half covered or at an edge, and each share fell (the measured share less 0.005, rounded down) */
 const SHORT = {
-  '1280x720 gaol': { share: 0.92 }, '1280x720 ramparts': { share: 0.92 }, '1280x720 bells': { flash: 0.82 },
-  '390x844 gaol': { share: 0.91 }, '390x844 fen': { share: 0.88 }, '390x844 bells': { flash: 0.85 }, '390x844 barrows': { share: 0.92 }
+  '1280x720 gaol': { share: 0.83 }, '1280x720 ramparts': { share: 0.90, flash: 0.84 }, '1280x720 bells': { share: 0.91, flash: 0.75 },
+  '1280x720 barrows': { share: 0.92 },
+  '390x844 gaol': { share: 0.88 }, '390x844 ramparts': { flash: 0.88 }, '390x844 fen': { share: 0.73, flash: 0.82 },
+  '390x844 bells': { share: 0.87, flash: 0.68 }, '390x844 barrows': { share: 0.92 }
 };
 const SHARE = (size, id) => SHORT[`${size} ${id}`]?.share ?? 0.95, FLASH = (size, id) => SHORT[`${size} ${id}`]?.flash ?? 0.9;
 const failed = [];

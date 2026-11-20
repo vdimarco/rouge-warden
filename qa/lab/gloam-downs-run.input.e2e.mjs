@@ -143,11 +143,12 @@ try {
       const b = await state(page), d = [b.x - a.x, b.z - a.z], l = Math.hypot(...d);
       return { l, left: (d[0] * -Math.cos(a.cam.yaw) + d[1] * Math.sin(a.cam.yaw)) / l };
     };
-    await G(page, () => { const s = window.__gloam.state(); window.__gloam.teleport(-5.5, 4.5, s.yaw); });
+    // open ground more than 10 m from every zone (the yard by the cells wakes two Snuffers that would hook the lamplighter)
+    await G(page, () => { const s = window.__gloam.state(); window.__gloam.teleport(-24.5, -21, s.yaw); });
     await tick(page, 1.0, {});
     const rl = await rollDir(['a'], 'k');
     assert(rl.l > 2.5 && rl.left > 0.9, `A and K rolled to the camera's left: ${JSON.stringify(rl)}`);
-    await G(page, () => { const s = window.__gloam.state(); window.__gloam.teleport(-5.5, 4.5, s.yaw); window.__gloam.set({ hp: 60 }); });
+    await G(page, () => { const s = window.__gloam.state(); window.__gloam.teleport(-24.5, -21, s.yaw); window.__gloam.set({ hp: 60 }); });
     await tick(page, 1.0, {});
     const cues0 = (await G(page, () => window.__gloam.sounds())).length;
     const rr = await rollDir(['ArrowRight'], 'x');
@@ -169,7 +170,7 @@ try {
 
     // W held through the pause: P twice, and the lamplighter walks on without letting go of W
     await G(page, () => window.__gloam.set({ flasks: 2, hp: 100 }));
-    await G(page, () => { const s = window.__gloam.state(); window.__gloam.teleport(-5.5, 4.5, s.yaw); });
+    await G(page, () => { const s = window.__gloam.state(); window.__gloam.teleport(-24.5, -21, s.yaw); });
     await tick(page, 0.5, {});
     await page.keyboard.down('w');
     await tick(page, 0.5, 'live');
@@ -349,7 +350,8 @@ try {
     assert.equal(await active(page), 'bResume', 'a stick held into the pause panel does not move its focus');
     await stick(0, 0); await tick(page, 0.05, 'live');
     await stick(0, 1); await tick(page, 0.05, 'live'); await stick(0, 0); await tick(page, 0.05, 'live');
-    assert.equal(await active(page), 'bEnd', 'back to centre, a new tilt moves it');
+    // the pause panel's buttons are Resume, Sound, Back to the start and End the run: one tilt down from Resume is Sound
+    assert.equal(await active(page), 'bSound', 'back to centre, a new tilt moves it');
     await G(page, () => window.__press(1, true)); await tick(page, 0.1, 'live'); await G(page, () => window.__press(1, false)); await tick(page, 0.1, 'live');
     assert.equal((await run(page)).mode, 'play');
     // RB faces a post 6 m behind
@@ -383,8 +385,8 @@ try {
     await G(page, () => window.__gloam.set({ hp: 50 }));
     const fl = (await run(page)).flasks;
     assert((await btn(3)).includes('drink') && (await run(page)).flasks === fl - 1, 'Y drinks a flask');
-    // the beacon card that opens with the stick held: the focus on the first wick
-    await G(page, () => window.__gloam.set({ carried: 3 }));
+    // the beacon card that opens with the stick held: the focus on the first wick (the keep's Snuffers put out first: the guard rule)
+    await G(page, () => { window.__gloam.set({ carried: 3 }); window.__gloam.out('G5'); });
     await stick(0, -1);
     await G(page, () => window.__gloam.light());
     await tick(page, 2.2, 'live');

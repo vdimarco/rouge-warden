@@ -296,7 +296,8 @@ The page SHALL read the gamepad while the loading screen shows. When the loading
 In a run, B on a gamepad and Escape SHALL go back where a card has a back action. The back actions SHALL be these:
 - Resume in the pause panel;
 - Back to the beacon in the Lamp-room, when the Lamp-room opened from a beacon card;
-- No, when End the run asks again;
+- No, when End the run or Back to the start asks again;
+- Back to Wander, in the Lamp-room when it opened from Wander's Map;
 - Step back, on the loading screen when the boss files did not load.
 
 #### Scenario: Back to the beacon on a gamepad
@@ -339,57 +340,75 @@ Wander's cards SHALL follow Focus in cards. The d-pad, the left stick and Tab SH
 - **THEN** the help card closes for good, as in the explorer. Check: e2e `gloam-downs.e2e.mjs` through `?wander`.
 
 ### Requirement: Combat camera
-In a run, while any foe is awake, the camera SHALL turn toward its foe. The turn SHALL start after 0.8 s with no look input. It SHALL turn at no more than 0.9 rad/s, and stop when the yaw difference to that foe is 20° or less. The yaw difference SHALL be the angle, seen from the lamplighter, between the view's forward direction and the direction to the foe. While any foe is awake, this turn SHALL take the place of the explorer's swing behind a running lamplighter.
+In a run, while the combat camera has a foe (see "The combat camera's foe"), the camera SHALL turn toward that foe. The turn SHALL start after 0.8 s with no look input. It SHALL turn at no more than 0.9 rad/s, and stop when the yaw difference to that foe is 20° or less (see "The yaw difference"). While the combat camera has a foe, this turn SHALL take the place of the explorer's swing behind a running lamplighter.
 
 #### Scenario: The camera turns to a foe
 - **WHEN** an awake Snuffer stands 5 m away, 60° to the right of the view's forward direction. The player gives no look input for 0.8 s.
-- **THEN** the view turns right, no faster than 0.9 rad/s, and stops when the yaw difference is 20° or less. Check: Node test `gloam-downs-run.test.mjs`.
+- **THEN** the view turns right, no faster than 0.9 rad/s, and stops when the yaw difference is 20° or less. It starts 0.8 s after the last look input, and stops at a yaw difference of 19.5° to 20° (measured: 0.80 s, 0.90 rad/s, 20.0°). Check: Node test `gloam-downs-camera.test.mjs`. The e2e `gloam-downs-camera.e2e.mjs` also checks it at 390 by 844 with a training post 5 m away, 60° to the right.
 
 #### Scenario: No foe awake
 - **WHEN** the last awake foe goes out, or its zone goes to sleep
-- **THEN** the camera stops turning toward foes, and it swings behind a running lamplighter as in the explorer. Check: Node test `gloam-downs-run.test.mjs`.
+- **THEN** the camera stops turning toward foes, and it swings behind a running lamplighter as in the explorer. With no foe, the yaw moves exactly as with the explorer's swing. Check: Node test `gloam-downs-camera.test.mjs`.
+
+### Requirement: The yaw difference
+The yaw difference SHALL be the angle, seen from the lamplighter, between the view's forward direction and the direction to the foe or the boss. The combat camera and the boss camera SHALL both use it.
+
+#### Scenario: Seen from the lamplighter
+- **WHEN** a foe stands 5 m from the lamplighter, 60° to the right of the view's forward direction
+- **THEN** the yaw difference is 60° to the right, though the angle seen from the eye is smaller. Check: Node test `gloam-downs-camera.test.mjs`.
 
 ### Requirement: The combat camera's foe
-The combat camera's foe SHALL be the nearest awake foe when the turn starts. The camera SHALL keep that foe until another awake foe is 1.5 m nearer to the lamplighter. It SHALL also choose again when its foe goes out or goes home.
+The combat camera's foe SHALL be the nearest awake foe within 10 m that is not home and not walking home, when the turn starts. A foe that sinks to go home SHALL count as walking home. The camera SHALL keep that foe until another such foe is 1.5 m nearer to the lamplighter. It SHALL choose again when its foe goes out, goes home, starts to walk home or is more than 10 m away. With no such foe, the explorer's swing SHALL apply.
 
 #### Scenario: Two foes at about the same distance
 - **WHEN** a test moves two Snuffers round the lamplighter on opposite sides. Every 0.5 s, their distances swap between 4.0 and 4.3 m. The player gives no look input for 3 s.
-- **THEN** the camera's foe does not change in the 3 s. Check: Node test `gloam-downs-run.test.mjs`.
+- **THEN** the camera's foe does not change in the 3 s, and a foe 1.5 m nearer takes over. Check: Node test `gloam-downs-camera.test.mjs`.
+
+#### Scenario: A foe at home
+- **WHEN** a Snuffer is awake but home 13 m away, or home 6 m away, or not home 11 m away, and the player gives no look input for 3 s
+- **THEN** the view does not turn. At 9 m, not home, it turns. Check: Node test `gloam-downs-camera.test.mjs`.
 
 ### Requirement: Moves while the camera turns
-While the combat camera or the boss camera turns by itself, a held move input SHALL keep its world direction from the turn's start. This SHALL stop when the input turns by more than 20°, or when it is let go.
+While the combat camera or the boss camera turns by itself, a held move input SHALL keep its world direction from the turn's start. This SHALL stop when the input turns by more than 20°, when it is let go, or when the player turns the view. It SHALL not stop when the turn stops.
 
 #### Scenario: Run away from a foe
 - **WHEN** a Snuffer, held still by a test, is awake 4 m behind the lamplighter. The player holds W and Shift, away from it, with no look input for 3 s.
-- **THEN** the lamplighter walks 9 m, ±1 m, to 13 m from the Snuffer. The view turns toward the Snuffer, and the lamplighter's heading changes by 10° or less. Check: Node test `gloam-downs-run.test.mjs`.
+- **THEN** the lamplighter walks 9 m, ±1 m, to 13 m from the Snuffer. The view turns toward the Snuffer while it is within 10 m, and the lamplighter's heading changes by 10° or less (measured: 8.9 m walked, 12.9 m away, a heading change of 0°, the view turned 1.13 rad). Check: Node test `gloam-downs-camera.test.mjs`.
 
 ### Requirement: Look input wins
 Look input SHALL take control back from the combat camera and the boss camera on the same step. Both cameras SHALL still come closer in front of a hill or a wall, as the explorer's camera does.
 
 #### Scenario: Look input wins
 - **WHEN** the camera turns by itself, and the player presses Q, drags the look or moves the right stick
-- **THEN** the turn stops on that step, and the view follows only the player's input. The camera turns by itself again only after 0.8 s with no look input, or 0.6 s in the boss fight. Check: Node test `gloam-downs-run.test.mjs`.
+- **THEN** the turn stops on that step, and the view follows only the player's input: on the step of the look input the yaw changes by the input alone (−0.3 × 2.6 / 60). The camera turns by itself again only after 0.8 s with no look input, or 0.6 s in the boss fight. Check: Node test `gloam-downs-camera.test.mjs`.
 
 ### Requirement: Boss camera
-In the boss fight, the boss camera SHALL take the place of the combat camera. It SHALL be on while the fight has started, the boss is up, and the lamplighter is within 7.0 m of the arena's centre. So it SHALL start when the lamplighter first comes within 7.0 m after the intro, and again each time it comes back. Outside the arena and within 16 m of its centre, the combat camera SHALL count the boss as an awake foe.
+In the boss fight, the boss camera SHALL take the place of the combat camera. It SHALL be on while the fight has started, the boss is up, and the lamplighter is within 7.0 m of the arena's centre. So it SHALL start when the lamplighter first comes within 7.0 m after the intro, and again each time it comes back.
 
 #### Scenario: The boss camera starts
 - **WHEN** the intro has ended, and the lamplighter walks from 9 m to 6 m from the arena's centre
-- **THEN** at 9 m, the combat camera has the boss as its foe. At 6 m, the boss camera is on. Check: Node test `gloam-downs-run.test.mjs`.
+- **THEN** at 9 m, the combat camera has the boss as its foe. At 6 m, the boss camera is on. Check: Node test `gloam-downs-camera.test.mjs` (with a stand-in boss until stage 3).
+
+### Requirement: The boss as the combat camera's foe
+While the fight has started and the boss is up, outside the arena and within 16 m of its centre, the combat camera SHALL count the boss as an awake foe, at any distance from the lamplighter. Before the intro and after the fall, it SHALL not.
+
+#### Scenario: Outside the arena
+- **WHEN** the fight has started, and the lamplighter stands 12 m from the arena's centre with the boss up inside it
+- **THEN** the combat camera has the boss as its foe. Before the intro, and after the fall, it does not. Check: Node test `gloam-downs-camera.test.mjs` (with a stand-in boss until stage 3).
 
 ### Requirement: Boss camera aim and distance
-The boss camera SHALL aim at a point on the line from the lamplighter to the boss, 1.15 m up. Its distance SHALL be at least 1.25 times the layout's follow distance, at least 12 m and at most 24 m. The follow distance SHALL be the explorer's: 8.5 m in landscape, and up to 12.75 m in a tall portrait window. The boss camera's own ease SHALL reach its aim and distance in 60 steps (1 s).
+The boss camera SHALL aim at a point on the line from the lamplighter to the boss, 1.15 m up. Its distance SHALL be at least the layout's follow distance, at least 12 m and at most 24 m. The follow distance SHALL be the explorer's (the explorer's "Look"): 8.5 m in landscape, and 15.33 m on a phone held upright. The boss camera's own ease SHALL reach its aim and distance in 60 steps (1 s).
 
 #### Scenario: Boss camera distance
-- **WHEN**, in the boss fight at 390 by 844, the lamplighter comes 4 m from the arena's centre. The boss is 4 m from it.
-- **THEN** within 1 s of the boss camera's start, the camera's distance is at least 15.93 m. That is 1.25 × 12.75 = 15.9375 m, less 0.01. Its aim point lies between the lamplighter and the boss. Check: Node test `gloam-downs-run.test.mjs`.
+- **WHEN**, on flat ground at 390 by 844, the lamplighter is 4 m from the arena's centre and the boss 4 m in front of it
+- **THEN** within 1 s of the boss camera's start, the distance is at least 15.32 m (the follow distance 15.33 m, less 0.01), and its aim lies between the lamplighter and the boss. Check: Node test `gloam-downs-camera.test.mjs`.
 
 ### Requirement: Boss camera hand-back
 The lamplighter SHALL leave the arena when it is more than 7.0 m from the arena's centre, (18, 0.68, −22). When the boss falls or the lamplighter leaves the arena, the camera SHALL ease back to the follow camera over 1 s.
 
 #### Scenario: Leave the arena
 - **WHEN** the lamplighter walks more than 7.0 m from the arena's centre
-- **THEN** within 1 s the camera is back at the follow camera's distance and aim. Check: Node test `gloam-downs-run.test.mjs`.
+- **THEN** within 1 s the camera is back at the follow camera's distance and aim. Check: Node test `gloam-downs-camera.test.mjs`.
 
 ### Requirement: Boss camera frame
 Within its limits, the boss camera SHALL choose the aim point and the smallest distance that keep the frame clear. The follow camera's ease SHALL not apply to it. The frame SHALL be clear when each of these is inside the screen and under no touch button, the HUD or the tools:
@@ -398,25 +417,25 @@ Within its limits, the boss camera SHALL choose the aim point and the smallest d
 
 #### Scenario: Boss in view
 - **WHEN** the Node test puts the boss 2 to 13 m from the lamplighter on flat ground, at yaw differences of 0° and ±15°. It steps the boss camera for 3 s with no look input. It does this at 320 by 640, 390 by 844, 360 by 640, 800 by 600 and 1280 by 720. The HUD and the tools are the rects of "The HUD in the boss fight". The touch buttons are the rects in design.md.
-- **THEN** the frame is clear each time, and the camera's distance is 21 m or less. Check: Node test `gloam-downs-run.test.mjs`.
+- **THEN** the frame is clear each time, and the camera's distance is 21 m or less (measured: 12.0 m in landscape and 15.33 m on the phones). Check: Node test `gloam-downs-camera.test.mjs`.
 
 ### Requirement: Boss camera on a slope
-When a hill or a wall brings the boss camera closer than it chose, its pitch SHALL ease up from 0.34 to 0.55.
+When a hill or a wall brings the boss camera closer than it chose, its pitch SHALL ease up from the layout's pitch (0.27 to 0.33) to 0.55. Past the walk map's bounds, the boss camera SHALL read the map's edge cells, so scenery outside the map never brings it in.
 
 #### Scenario: Boss in the arena
 - **WHEN** the Node test puts the lamplighter and the boss at 481 pairs of points in the arena, 3 to 9 m apart. It uses Barrow Crown's walk map. It steps the boss camera for 3 s at each of the five layouts.
-- **THEN** at each layout, in at least 95% of the pairs, both chests are inside 80% of the screen's half-width and inside its height. Check: Node test `gloam-downs-run.test.mjs`.
+- **THEN** at each layout, in at least 95% of the pairs, both chests are inside 80% of the screen's half-width and inside its height (measured: 481 of 481 at each layout). Check: Node test `gloam-downs-camera.test.mjs`.
 
 ### Requirement: Boss camera turn
 After 0.6 s with no look input, the boss camera SHALL turn toward the boss at no more than 1.5 rad/s. It SHALL stop when the yaw difference to the boss is 15° or less. The yaw difference SHALL be measured as in the combat camera, from the lamplighter.
 
 #### Scenario: Turn to the boss
 - **WHEN** the boss stands 8 m from the lamplighter, behind the view, and the player gives no look input for 3 s
-- **THEN** the view starts to turn after 0.6 s, no faster than 1.5 rad/s, and the yaw difference is 15° or less by 3 s. Check: Node test `gloam-downs-run.test.mjs`.
+- **THEN** the view starts to turn after 0.6 s, no faster than 1.5 rad/s, and the yaw difference is 15° or less by 3 s. Check: Node test `gloam-downs-camera.test.mjs`.
 
 #### Scenario: Run round the boss
 - **WHEN** the lamplighter runs round a boss for 10 s at 390 by 844, 5 m from it, with no look input. A test holds the boss still.
-- **THEN** the chests of the boss and the lamplighter stay inside the screen. Check: Node test `gloam-downs-run.test.mjs`.
+- **THEN** the chests of the boss and the lamplighter stay inside the screen. Check: Node test `gloam-downs-camera.test.mjs`.
 
 ### Requirement: Health and hits
 With no Mantle level and no wick, the lamplighter SHALL have 100 health at the start of a run. A hit SHALL take its damage and push the lamplighter away from the source: 1.2 m, or 3 m for the Ironback's charge. The lamplighter SHALL have no control for 0.25 s after a hit. For 0.9 s after a hit, no damage SHALL hurt it, and the figure SHALL blink. Foes SHALL not hurt the lamplighter by touch alone. An attack SHALL test its hit on each of its active steps, until it hits once.
@@ -455,14 +474,14 @@ Every foe attack SHALL start with a wind-up of at least 0.55 s, and every boss a
 - **THEN** a fire ring grows on the ground to 3.0 m over 0.75 s, and the slam hits only inside it. Check: Node test `gloam-downs-run.test.mjs`.
 
 ### Requirement: Markers on the ground
-A ring marker SHALL be six slices of 60°. A lane marker SHALL be pieces of 1.5 m or less. Each slice or piece SHALL tilt to the plane that best fits the ground under its rim, and lie 0.05 m above that plane. Over water, the ground SHALL be the water's surface. A crook sweep SHALL show the front three slices of the boss's ring, at 4.0 m.
+A ring marker SHALL be six slices of 60°. A lane marker SHALL be pieces of 1.5 m or less. Each slice or piece SHALL tilt to the plane that best fits the ground under its rim, and lie 0.16 m above that plane. The places' ground splats stand up to about 0.1 m over the walk map's floor, and a marker lower than that breaks into specks. Over water, the ground SHALL be the water's surface. A crook sweep SHALL show the front three slices of the boss's ring, at 4.0 m.
 
 #### Scenario: A marker on rolling ground
 - **WHEN** the Node test lays markers at points across each leash on the baked walk maps. These are the Ironback's ring and lane in B1 and W2, and the boss's rings and lane in the arena. They are also the Mirelight's ring in F1 and F2.
-- **THEN** for each marker, at least 90% of its rim points are within 0.15 m of the ground. Check: Node test `gloam-downs-run.test.mjs`.
+- **THEN** for each marker, at least 90% of its rim points are within 0.15 m of the ground (measured: 90.5% for F2's ring to 99.1% for the shard ring). Check: Node test `gloam-downs-foes-ai.test.mjs`.
 
 ### Requirement: Markers stand still
-A ring or a lane SHALL stay in one place from at least 0.3 s before its hit. The Pitchrook's ring SHALL stay where it was laid at the start of the wind-up. The Ironback's lane SHALL be 1.6 m wide. The boss's lane SHALL be 1.6 m wide and 9 m long. A lane attack SHALL hit only a lamplighter whose centre is inside the lane.
+A ring or a lane SHALL stay in one place from at least 0.3 s before its hit. The Pitchrook's ring SHALL stay where it was laid at the start of the wind-up. The Ironback's lane SHALL be 1.6 m wide. The boss's lane SHALL be 1.6 m wide and 9 m long. A lane attack SHALL hit only a lamplighter whose centre is inside the lane. A ring or slice attack SHALL hit only a lamplighter whose centre is inside the ring or its slices, within 1.6 m of height (1.8 m for the pulse and the slam).
 
 #### Scenario: Step out of the warning
 - **WHEN** a lane or the three shard rings stop moving. At once, the lamplighter walks 1.5 m to the side of the lane, or 1.5 m away from the boss.
@@ -476,7 +495,7 @@ In a sweep's wind-up, the boss SHALL turn toward the lamplighter at no more than
 - **THEN** the sweep does no damage. Check: Node test `gloam-downs-run.test.mjs`.
 
 ### Requirement: Hits on foes
-A plain hit SHALL not stop a foe's wind-up. The finisher and the plunge SHALL stop the wind-up of a light foe. Outside its wind-up, a light foe SHALL flinch for 0.4 s when hit, no more than once every 1.5 s. Heavy foes and the boss SHALL not flinch.
+A plain hit SHALL not stop a foe's wind-up. The finisher and the plunge SHALL stop the wind-up of a light foe. Outside its wind-up, a light foe SHALL flinch for 0.4 s when hit, no more than once every 1.5 s. Heavy foes and the boss SHALL not flinch. Light foes SHALL take the push of a hit, but not from a plain hit in their wind-up or active time. The Ironback SHALL take no push.
 
 #### Scenario: Finisher stops a hook
 - **WHEN** the finisher lands on a Snuffer during its hook's wind-up
@@ -587,40 +606,51 @@ A foe SHALL be off its ground when it is outside its leash, or more than 2 m bel
 - **THEN** it goes out, and its 3 glim drop on the ledge where it last stood. Check: Node test `gloam-downs-run.test.mjs`.
 
 #### Scenario: Pushed off the terrace
-- **WHEN** a finisher pushes a Snuffer of The Bell Knoll's terrace guard (B4) off the terrace, 4.5 m down to the ground below
-- **THEN** the Snuffer is home again on the terrace within 7 s, with the health it had after the hit. Check: Node test `gloam-downs-run.test.mjs`.
+- **WHEN** a finisher knocks a Snuffer of The Bell Knoll's terrace guard (B4) off the terrace to the ground 2.2 m below, outside its leash
+- **THEN** within 7 s it is back on its ground (inside its leash, less than 2 m under its centre), with the health it had after the hit (measured: 2.58 s). Check: Node test `gloam-downs-foes-ai.test.mjs`.
 
 ### Requirement: Fair crowds
-At most two melee attacks SHALL be under way at once, and at most one thrown coal SHALL be in the air. Foes that wait SHALL hold about 3.5 m away and spread round the lamplighter.
+At most two melee attacks SHALL be under way at once, and at most one thrown coal SHALL be in the air. Foes that wait for an attack token SHALL hold 3.2 to 3.8 m away and spread round the lamplighter. A foe whose chest is outside the view SHALL wait 0.4 s longer before it takes an attack token.
 
 #### Scenario: A group
 - **WHEN** three Snuffers and a Pitchrook fight the lamplighter
-- **THEN** no more than two hooks wind up or land at the same time, and only one coal is in the air. Check: Node test `gloam-downs-run.test.mjs`.
+- **THEN** no more than two hooks wind up or land at the same time, and only one coal is in the air. Check: Node test `gloam-downs-foes-ai.test.mjs`.
+
+#### Scenario: Wait for a token off screen
+- **WHEN** a Snuffer waits for a token while its chest is outside the view, and another does the same in view
+- **THEN** the foe off screen takes its token 24 steps (0.4 s) later. The foes that wait stand 3.2 to 3.8 m away. Check: Node test `gloam-downs-foes-ai.test.mjs`. The scenario of 20 bot fights at 390 by 844 and 320 by 640 (70% of wind-ups with the chest on screen) is stage 3's, with the bot.
 
 ### Requirement: Off-screen warnings
-When a foe starts a wind-up outside the view, an ember notch SHALL show at the screen's edge toward the foe. The notch SHALL show for the length of the wind-up. It SHALL fill from empty to full over the wind-up, so its fill shows the time left. A foe to the side SHALL give a notch at the left or right edge. A foe behind the camera's eye SHALL give a notch at the bottom edge. No more than 3 notches SHALL show at once.
+When a foe starts a wind-up outside the view, an ember notch SHALL show at the screen's edge toward the foe. The notch SHALL show for the length of the wind-up. It SHALL fill from empty to full over the wind-up, so its fill shows the time left. A foe SHALL be outside the view when its chest point projects outside the screen. The chest point is the foe's feet plus its chest height: Snuffer 0.9 m, Pitchrook 1.1 m, Mirelight 1.3 m and Ironback 1.0 m. No more than 3 notches SHALL show at once.
 
 #### Scenario: A foe beside the lamplighter
-- **WHEN** a test at 390 by 844 spawns a Snuffer 2.5 m to the right of the lamplighter. It holds the Snuffer at 0.1 s of its hook.
-- **THEN** the Snuffer is outside the view, and a notch shows at the right edge of the screen. The notch overlaps no control. Check: e2e `gloam-downs-run.look.e2e.mjs`.
+- **WHEN** a test at 390 by 844 spawns a Snuffer 6.0 m to the right of the lamplighter. It holds the Snuffer at 0.1 s of its hook. A phone held upright sees ±4.6 m to each side of the lamplighter, so a foe 3 m to the side is in view.
+- **THEN** the Snuffer is outside the view, and a notch shows at the right edge of the screen. The notch overlaps no control. Check: e2e `gloam-downs-run.fight.e2e.mjs`.
 
 #### Scenario: The notch fills
 - **WHEN** a test at 390 by 844 holds a Snuffer beside the lamplighter at 0.1 s of its hook, and then at 0.5 s
-- **THEN** the notch is 18% full, ±10%, and then 91% full, ±10%. The hook's wind-up is 0.55 s. Check: e2e `gloam-downs-run.look.e2e.mjs`.
+- **THEN** the notch is 18% full, ±10%, and then 91% full, ±10%. The hook's wind-up is 0.55 s. Check: e2e `gloam-downs-run.fight.e2e.mjs`.
+
+### Requirement: Where a notch points
+A notch SHALL sit where the line from the screen's middle toward the foe meets the edge. So a foe to the side SHALL give a notch at the left or right edge, and a foe behind the camera's eye a notch at the bottom edge. A foe above the view SHALL give a notch at the top edge, 8 px or more below the Lab bar row, and clear of the HUD and the tools.
+
+#### Scenario: A foe above the view
+- **WHEN** at 1280 by 720 a Pitchrook stands 6 m up and 5 m ahead, held at 0.1 s of its lob. The top ray is 5.7° above level there, so the Pitchrook is above the view. (On a phone the top ray is 12.6° to 14.3° above level, and it is in view.)
+- **THEN** a notch shows at the top edge, 8 px or more under the Lab bar row, and it overlaps no control. Check: e2e `gloam-downs-run.look.e2e.mjs` (stage 3).
 
 ### Requirement: Where notches sit
-A notch SHALL not overlap a touch button, the HUD, the tools, the toast or the boss bar. On a touch screen, a notch at the bottom edge SHALL sit 8 px or more above the top of the touch buttons. At 390 by 844, its lowest point SHALL be at y 656 or less.
+A notch SHALL not overlap ◀ Lab, Games, a touch button, the HUD, the tools, the toast or the boss bar. On a touch screen, a notch at the bottom edge SHALL sit 8 px or more above the top of the touch buttons. At 390 by 844, its lowest point SHALL be at y 656 or less.
 
 #### Scenario: A foe behind the camera
 - **WHEN** a test on a touch screen at 390 by 844 spawns a Snuffer 2 m behind the camera's eye, 1 m to the right. It holds the Snuffer at 0.1 s of its hook.
 - **THEN** a notch shows at the bottom edge of the screen, with its lowest point at y 656 or less. It overlaps no touch button. Check: e2e `gloam-downs-run.look.e2e.mjs`.
 
 ### Requirement: Beacons in a run
-In each place before Barrow Crown, one guard zone SHALL keep the beacon dark until all its foes are put out. Other zones MAY be passed. When one of those four beacons lights, it SHALL bank the glim carried and fill every flask. It SHALL then save the run at the start of the next place, and show the beacon card.
+In each place before Barrow Crown, one guard zone SHALL keep the beacon dark until all its foes are put out. Other zones MAY be passed. When one of those four beacons lights, it SHALL bank the glim carried and fill every flask. Every glim mote that has dropped in the place and has not been taken SHALL count as carried before the bank, so a lit beacon never loses glim. It SHALL then save the run at the start of the next place, and show the beacon card.
 
 #### Scenario: Guards still stand
 - **WHEN** the lamplighter touches the Gaol's beacon while the keep's Snuffers stand
-- **THEN** the beacon stays dark. A toast says that it will not catch while its keepers stand in the keep. Check: e2e `gloam-downs-run.screens.e2e.mjs`.
+- **THEN** the beacon stays dark. A toast says "The beacon will not catch while its keepers stand in the keep." Check: e2e `gloam-downs-run.fight.e2e.mjs`.
 
 #### Scenario: Run past a zone
 - **WHEN** the lamplighter runs past the first two zones of The Crow Wall. It puts out the guards by the broken wall and touches the beacon.
@@ -684,22 +714,22 @@ Foes and wisps SHALL drop glim: motes in the lamp colours that fly to the lampli
 
 #### Scenario: Pick up glim
 - **WHEN** the lamplighter puts out a Snuffer and stands 3 m away
-- **THEN** three motes fly to it, and the glim carried goes up by 3. Check: Node test `gloam-downs-run.test.mjs`.
+- **THEN** three motes fly to it, and the glim carried goes up by 3. Check: Node test `gloam-downs-foes-ai.test.mjs`, and e2e `gloam-downs-run.fight.e2e.mjs`.
 
 #### Scenario: Take a wisp
 - **WHEN** the lamplighter touches its fifth wisp of The Sunken Gaol in a run, with 1 of 2 flasks
 - **THEN** the wisp goes out, the glim carried goes up by 4, and the flasks show 2 of 2. The explorer's save does not change. Check: e2e `gloam-downs-run.screens.e2e.mjs`.
 
 ### Requirement: Death and the run summary
-At 0 health the run SHALL end, and the page SHALL store the ended run at once. The picture SHALL fade to ink over 1.2 s. Then the run summary SHALL show the place reached, the time, the foes put out, the glim lost and the glim banked. The glim carried SHALL be lost, except as "Ash pocket at death" says. The summary's button SHALL open the Lamp-room. The next run SHALL start in The Sunken Gaol with every foe back.
+At 0 health the run SHALL end, and the page SHALL store the ended run at once. The picture SHALL fade to ink over 1.2 s. Then the run summary SHALL show the place reached, the time, the foes put out, the glim lost and the glim banked. The glim carried SHALL be lost, except as "Ash pocket at death" says. The summary's button SHALL read "To the Lamp-room". It SHALL clear the ended run and open the Lamp-room over The Sunken Gaol. The next run SHALL start in The Sunken Gaol with every foe back.
 
 #### Scenario: Die on The Crow Wall
 - **WHEN** the lamplighter dies in The Crow Wall carrying 20 glim, with 44 banked from the Gaol
-- **THEN** the summary shows "II · The Crow Wall", 20 glim lost and 44 banked. The next run starts in the Gaol. Check: e2e `gloam-downs-run.screens.e2e.mjs`.
+- **THEN** the summary shows "II · The Crow Wall", 20 glim lost and 44 banked. The next run starts in the Gaol. Check: Node test `gloam-downs-run.test.mjs` (the summary) and e2e `gloam-downs-run.cards.e2e.mjs` (the loop).
 
 #### Scenario: Reload in the fade
 - **WHEN** the player reloads the page 0.5 s into the fade to ink
-- **THEN** the run summary shows with the same figures, and the ended run does not go on. Check: e2e `gloam-downs-run.screens.e2e.mjs`.
+- **THEN** the run summary shows with the same figures, and the ended run does not go on. Check: e2e `gloam-downs-run.cards.e2e.mjs`.
 
 ### Requirement: Ash pocket at death
 With Ash pocket, a death SHALL bank 30% of the glim carried, rounded down. The summary SHALL show the rest as lost, and its glim banked SHALL include that 30%.
@@ -717,7 +747,36 @@ The Lamp-room SHALL show the glim banked and five lasting upgrades. Each upgrade
 
 #### Scenario: Not enough glim
 - **WHEN** the bank holds 30 glim
-- **THEN** the Flask upgrade's Buy button is off, and it says that 30 more glim is needed. Check: e2e `gloam-downs-run.screens.e2e.mjs`.
+- **THEN** the Flask upgrade's Buy button is off, and it says that 30 more glim is needed. Check: Node test `gloam-downs-run.test.mjs` and e2e `gloam-downs-run.cards.e2e.mjs`.
+
+### Requirement: Back to Wander in the Lamp-room
+When the Lamp-room opens from Wander's Map, it SHALL show Back to Wander beside Begin the run or Go on with the run, in place of Wander.
+
+#### Scenario: Back to Wander
+- **WHEN** the Lamp-room opens from Wander's Map
+- **THEN** it shows Back to Wander, and no Wander button. Check: Node test `gloam-downs-run.test.mjs` (the Lamp-room's buttons; stage 3 builds Wander's Map).
+
+### Requirement: The upgrade rows
+Each upgrade row SHALL read "<name> <next level> · <what it gives> · <cost> glim", as "Mantle 1 · +15 health · 40 glim". An upgrade of one level SHALL have no level number. Each row SHALL show its level as filled pips.
+
+| Upgrade | What the next level gives |
+|---|---|
+| Mantle | +15 health |
+| Flask | +1 flask |
+| Edge | +12% blade damage |
+| Draught | heal 45%, then heal 55% |
+| Ash pocket | keep 30% of glim |
+
+#### Scenario: The rows of a new bank
+- **WHEN** the Lamp-room shows with no upgrade bought
+- **THEN** the rows read "Mantle 1 · +15 health · 40 glim", "Flask 1 · +1 flask · 60 glim", "Edge 1 · +12% blade damage · 50 glim", "Draught 1 · heal 45% · 45 glim" and "Ash pocket · keep 30% of glim · 120 glim". Check: Node test `gloam-downs-run.test.mjs`.
+
+### Requirement: An upgrade at its top level
+At its top level, a row SHALL read "<name> <level> · all bought" ("Ash pocket · all bought"), with no Buy button. A Buy button with too little glim SHALL read "<n> more glim". When a buy takes its row to the top level, the focus SHALL go to the next Buy button, or to the main button.
+
+#### Scenario: All bought
+- **WHEN** Mantle is at level 3
+- **THEN** its row reads "Mantle 3 · all bought" and shows no Buy button. Check: Node test `gloam-downs-run.test.mjs`.
 
 ### Requirement: A run in progress in the Lamp-room
 While a run is in progress, the Lamp-room SHALL show Go on with the run in place of Begin the run. Go on with the run SHALL go on as a reload does, at the start of the run's place.
@@ -879,6 +938,8 @@ At the fall, the bars SHALL come in over the 9 steps of hit stop. Then they SHAL
 - **THEN** from 0.7 s after the fall until the beacon lights, `__gloam.run().fx.bars` is 0. In the 0.5 s after the beacon lights, it rises to 0.12. Check: e2e `gloam-downs-run.screens.e2e.mjs`.
 
 ### Requirement: The win card
+At the boss's fall, the place's colours, slots 1 to 31, SHALL pull toward fire slot 37 (fff4cc) by up to 50% for 6 steps, fading. Slots 32 to 47 SHALL not change, so fire stays the brightest colour. With reduced motion there SHALL be no such pull.
+
 The win card SHALL show the time, the best winning time, the glim banked in this run, the runs and the deaths. The win card SHALL open the Lamp-room or Wander. The first win SHALL open Wander.
 
 #### Scenario: First win opens Wander
@@ -904,17 +965,25 @@ The light at the lantern after the boss's fall SHALL be drawn from the carried l
 - **THEN** the carried light has 63 splats on its one bone, in wisp slots 38 and 39, and the pool holds its slot. Check: Node test `gloam-downs-foes.test.mjs`.
 
 ### Requirement: Pause
-The pause panel SHALL stop the game. It SHALL show the five places of the run with the current one marked, the run time, Resume, a sound switch, and End the run. End the run SHALL ask again, and then end the run as a death does. M, P, Escape and Resume SHALL close the panel, and so SHALL Start, the pad's Back button and B.
-
-While End the run asks again, Escape and B SHALL choose No and keep the panel. M, P, Start and the pad's Back button SHALL do nothing until the player answers.
+The pause panel SHALL stop the game. It SHALL show the five places of the run with the current one marked, the run time, Resume, a sound switch (Sound on or Sound off), Back to the start and End the run, in that focus order. End the run SHALL ask again, and then end the run as a death does. M, P, Escape and Resume SHALL close the panel, and so SHALL Start, the pad's Back button and B.
 
 #### Scenario: Pause and resume
 - **WHEN** the player presses P in a fight and then Escape
 - **THEN** no foe moves while the panel shows. After Escape, the fight goes on from where it stopped. Check: e2e `gloam-downs-run.input.e2e.mjs`.
 
+### Requirement: The second question
+While End the run or Back to the start asks again, Escape and B SHALL choose No and keep the panel. M, P, Start and the pad's Back button SHALL do nothing until the player answers.
+
 #### Scenario: Keys on the second question
 - **WHEN** End the run asks again, and the player presses Start and then Escape
 - **THEN** after Start, the question still shows. After Escape, the question closes, the pause panel stays with the focus on Resume, and the run is not ended. Check: e2e `gloam-downs-run.input.e2e.mjs`.
+
+### Requirement: Back to the start
+Back to the start in the pause panel SHALL ask again ("Back to the start of <place>? The glim you found here is lost."). Then it SHALL restart the place as a reload does: health and flasks the lower of the entry values and the current values, and the glim carried and the foes put out back to their entry values. So a player stuck in a place has a way out that keeps the run.
+
+#### Scenario: Back to the start
+- **WHEN** the lamplighter has 90 health in The Crow Wall, entered with 40, and carries 20 glim. The player chooses Back to the start, and then Yes.
+- **THEN** The Crow Wall starts again with 40 health and 0 glim carried. Check: e2e `gloam-downs-run.cards.e2e.mjs`.
 
 ### Requirement: Saved run
 The run SHALL save under its own key, `gloam-downs.run.v1`. The save SHALL hold the bank, the upgrade levels, runs, wins, deaths, the furthest place, the best winning time and the sound setting. The page SHALL check each saved field. A run SHALL not change the explorer's save. When the page cannot use `localStorage`, the run SHALL keep its save in the page only, and no store SHALL throw.
@@ -975,11 +1044,11 @@ The HUD SHALL show the place, a health bar with its number, a pip for each flask
 
 #### Scenario: Health line
 - **WHEN** the lamplighter has 74 of 100 health and 1 of 2 flasks
-- **THEN** the HUD shows "74/100" beside a bar filled 74%, with one full pip and one empty pip. Check: e2e `gloam-downs-run.layout.e2e.mjs`.
+- **THEN** the HUD shows "74/100" beside a bar filled 74%, with one full pip and one empty pip. Check: Node test `gloam-downs-run.test.mjs` and e2e `gloam-downs-run.cards.e2e.mjs`.
 
 #### Scenario: Toast in each layout
-- **WHEN** a toast of 60 characters shows at 320 by 640, 390 by 844, 360 by 640, 800 by 600 and 1280 by 720
-- **THEN** in each layout it is inside the screen, and it does not overlap the HUD, the Lab bar, the tools or a touch button. Check: e2e `gloam-downs-run.layout.e2e.mjs`.
+- **WHEN** the longest toast in the run's data (86 characters: "The beacon will not catch while its keepers stand by the broken wall below the tower."), and a toast of 96 characters, show at 320 by 640, 390 by 844, 360 by 640, 800 by 600 and 1280 by 720
+- **THEN** in each layout it is inside the screen, and it does not overlap the HUD, the Lab bar, the tools or a touch button. Check: e2e `gloam-downs-run.cards.e2e.mjs` (the layout part).
 
 ### Requirement: The HUD in the boss fight
 In the boss fight, the hint line SHALL hide. The HUD and the tools SHALL then fit inside these rects, given as x,y and w × h in px. The boss camera's frame test SHALL use the same rects.
@@ -1008,7 +1077,7 @@ At 320 by 640 and 390 by 844 on a touch screen, every run control SHALL be insid
 - **THEN** Attack is 76 px, Jump 64 px, Roll 60 px and Heal 48 px. The boss bar fits between ◀ Lab and Games, and the overlap check finds nothing. Check: e2e `gloam-downs-run.layout.e2e.mjs`.
 
 ### Requirement: The overlap check
-The overlap check SHALL run with the widest HUD and the most on screen. That is 165/165 health, 5 of 5 flasks, 5/5 wisps and 254 glim, with a boss bar and a toast of 60 characters. Mantle at level 3 and Long wick give 165 health. Flask at level 2 and Spare oil give 5 flasks.
+The overlap check SHALL run with the widest HUD and the most on screen. That is 165/165 health, 5 of 5 flasks, 5/5 wisps and 254 glim, with a boss bar and a toast of 96 characters. Mantle at level 3 and Long wick give 165 health. Flask at level 2 and Spare oil give 5 flasks.
 
 #### Scenario: The widest HUD at 320 by 640
 - **WHEN** the run shows all of that at 320 by 640 on a touch screen
@@ -1056,10 +1125,17 @@ Every effect SHALL be timed in whole steps of the game clock, and these steps SH
 
 #### Scenario: Flash at two frame rates
 - **WHEN** the Node test lands the same cut on a Snuffer, and takes the same hook, at 30 and at 144 frames a second
-- **THEN** the hit flash and the hurt tint each last 3 steps (0.05 s) at both rates. Check: Node test `gloam-downs-run.test.mjs`.
+- **THEN** the hit flash and the hurt tint each last 3 steps (0.05 s) at both rates. Check: Node test `gloam-downs-foes-ai.test.mjs`.
+
+### Requirement: Cards and toasts on game time
+In a run, toasts, the arrival card, the fade to ink at death, the wait of 90 steps before the beacon card, the wait of 72 steps before the run summary and the wait before the win card SHALL count steps of the game clock. So SHALL the keeper notch, the off-screen notches and the intro stop. They SHALL wait while a card or the pause panel shows, so `__gloam.tick` moves them and the wall clock does not.
+
+#### Scenario: Cards and toasts on game time
+- **WHEN** a toast of 1.8 s shows and 2.2 s of wall time pass with no tick
+- **THEN** it still shows, and it hides on the 108th step of `__gloam.tick`. When the lamplighter dies, the run summary opens on the 72nd step of the fade, whatever the wall clock. Check: e2e `gloam-downs-run.cards.e2e.mjs`.
 
 ### Requirement: Reduced motion
-When the system asks for reduced motion, the camera SHALL not kick, zoom or turn by itself. The hurt blink SHALL change every 8 steps (0.133 s). The white flash at the boss's fall SHALL not show. A hit foe SHALL not shake.
+When the system asks for reduced motion, the camera SHALL not kick, zoom or turn by itself. The hurt blink SHALL change every 8 steps (0.133 s). The flash at the boss's fall SHALL not show. A hit foe SHALL not shake.
 
 With reduced motion, the low health tint SHALL stay at 15% with no pulse. The health bar SHALL show a steady fire edge, and SHALL not pulse.
 
@@ -1079,6 +1155,8 @@ A bright pixel that foes add SHALL be a pixel that the foes change and that is b
   - Lantern Fen with 6 foes and a ground marker;
   - The Bell Knoll with its 6 slots awake and the Ironback's slam ring;
   - Barrow Crown with 6 foes and a ground marker.
+
+  Both views use the same game time (`__gloam.draw({ time })`), and the view with no foe parks every slot for that draw (`pool: false`). Before each draw, `teleport` puts the lamplighter at the same point and yaw.
 - **THEN** each view with foes has a mean luminance from 0.05 to 0.32, and 0.05% to 12% of its pixels are brighter than 0.55. At least 95% of the bright pixels that the foes add are within 12 of a fire, lamp or wisp colour. No pixel that the foes add is within 12 of wisp slot 40. Check: e2e `gloam-downs-run.look.e2e.mjs`.
 
 ### Requirement: Colour distance
@@ -1096,15 +1174,15 @@ Foes and the boss SHALL use no colour brighter than fire slot 37 (fff4cc). The M
 - **THEN** each one lands on a colour under 0.42 luminance, or on slots 32 to 39 or 44 to 47. None lands on slot 40, and none on slots 41 to 43. Check: a rule in `lib/check.mjs`, run by `node games/gloam-downs/bake.mjs foes boss --check` and by the Node test `gloam-downs-foes.test.mjs`.
 
 ### Requirement: Warning moves read
-A warning move SHALL add clear fire to the picture, in fire slots 34 to 37. The check SHALL draw a foe 4 m in front of the lamplighter at the default camera. `__gloam.spawn` SHALL put the foe there, and `__gloam.hold` SHALL keep it in its move.
+A warning move SHALL add clear fire to the picture, in fire slots 34 to 37. The check SHALL draw a foe 4 m in front of the lamplighter at the default camera. `__gloam.spawn` SHALL put the foe there, and `__gloam.hold` SHALL keep it in its move. On a small screen the tell's glow SHALL grow about its pivot, so that a metre covers no fewer art pixels than at 1280 by 720 (180 art px high, 8.5 m back, 48°). It SHALL grow no more than 2 times.
 
 #### Scenario: Measure a tell
-- **WHEN** the e2e draws a Snuffer at rest, and held at 0.54 s of its hook, the end of the wind-up
-- **THEN** inside the Snuffer's box on screen, the art pixels within 12 of fire slots 34 to 37 are counted. "Colour distance" gives the measure. At the end there are at least 3 times as many as at rest, and at least 8 more. Check: e2e `gloam-downs-run.look.e2e.mjs`.
+- **WHEN** the e2e draws a Snuffer at rest, and held at 0.54 s of its hook, the end of the wind-up. It does this at 1280 by 720 (art 320 by 180; the camera 8.5 m back, 48° vertical field of view) and at 390 by 844 on a touch screen (art 147 by 317 at device scale 3, about 46,000 px; 15.33 m back, 66°).
+- **THEN** inside the Snuffer's box on screen, the art pixels within 12 of fire slots 34 to 37 are counted. "Colour distance" gives the measure. At the end there are at least 3 times as many as at rest, and at least 8 more, at each layout (measured: 7 and 37 at 1280 by 720; 11 and 39 at 390 by 844, where the tell grows 1.49 times, and 12 and 27 without that growth). Check: e2e `gloam-downs-run.fight.e2e.mjs`.
 
 #### Scenario: Measure a ground marker
 - **WHEN** the e2e draws an Ironback in The Bell Knoll at the start and at the end of its slam's wind-up
-- **THEN** the ring adds at least 20 art pixels within 12 of fire slots 34 to 37 on the ground round it. Check: e2e `gloam-downs-run.look.e2e.mjs`.
+- **THEN** the ring adds at least 20 art pixels within 12 of fire slots 34 to 37 on the ground round it, at 1280 by 720 and at 390 by 844. Check: e2e `gloam-downs-run.fight.e2e.mjs`.
 
 ### Requirement: Foe budget
 The foes SHALL come from two files: `foes.bin.gz` with the splats, and `foes.json.gz` with the types, splat ranges, bones, pivots and pose keyframes. The two foe files SHALL be at most 200 KB together. The boss SHALL come from `boss.bin.gz` and `boss.json.gz`, at most 140 KB together. Each place, with its pool of foes, SHALL have no more than 275,000 splats. At most 6 foes SHALL be awake at once.
@@ -1204,11 +1282,18 @@ With `?test`, `__gloam.run().fx` SHALL hold `kick`, `zoom`, `bars` and `grade`. 
 - **THEN** `fx.kick` is [0, 0, 0], `fx.zoom` is 1 and `fx.bars` is 0. Check: e2e `gloam-downs-run.screens.e2e.mjs`.
 
 ### Requirement: The foes in a test
-With `?test`, `__gloam.foes()` SHALL return each awake foe and the boss with `id`, `type`, `zone`, `x`, `y`, `z`, `hp`, `move`, `t` and `flash`. Here `t` is the time in the move, and `flash` the steps of hit flash left.
+With `?test`, `__gloam.foes()` SHALL return each awake foe and the boss with `id`, `type`, `zone`, `x`, `y`, `z`, `hp`, `move`, `t`, `flash` and `shake`. Here `t` is the time in the move, `flash` the steps of hit flash left, and `shake` the picture's shake of a hit foe as [x, y, z] in metres: ±0.04 m every 2 game steps, and [0, 0, 0] with reduced motion or the shake turned off.
 
 #### Scenario: Read the foes
 - **WHEN** a test spawns a Snuffer 2 m in front of the lamplighter, holds it at 0.2 s of its hook, and ticks one step
 - **THEN** `__gloam.foes()` shows the Snuffer with 50 `hp`, its hook as `move`, and `t` 0.2. Check: e2e `gloam-downs-run.screens.e2e.mjs`.
+
+### Requirement: Low health and tells in a test
+With `?test`, `__gloam.run().fx` SHALL also hold `low`, true below 30% health, `beats`, the count of heartbeats, and `tell`, how much the tells grow on this screen (see "Warning moves read").
+
+#### Scenario: Read the tells' growth
+- **WHEN** a run draws at 1280 by 720, and at 390 by 844 on a touch screen at device scale 3
+- **THEN** `fx.tell` is 1 at 1280 by 720, and between 1.4 and 1.6 at 390 by 844. Check: e2e `gloam-downs-run.fight.e2e.mjs`; the Node test `gloam-downs-foes-ai.test.mjs` checks `low` and `beats` in `feel.js`.
 
 ### Requirement: Test hooks for foes
 With `?test`, the page SHALL give these hooks for foes:
@@ -1216,6 +1301,7 @@ With `?test`, the page SHALL give these hooks for foes:
 - `__gloam.spawn(type, x, z, yaw)` SHALL wake one foe at once at a point in a free slot.
 - `__gloam.hold(foe, move, t)` SHALL keep a foe's pose and place at time t of a move. A held foe SHALL not hit.
 - `__gloam.out(foe)` SHALL put out one foe as a death does, and drop its glim. `__gloam.out(zone)` SHALL do this to each foe of a zone.
+
 
 #### Scenario: Hold a wind-up
 - **WHEN** a test spawns a Snuffer 4 m in front of the lamplighter. It holds it at 0.54 s of its hook, the last step of the wind-up. It draws, ticks 1 s and draws again.
@@ -1227,7 +1313,23 @@ With `?test`, the page SHALL give these hooks for foes:
 
 #### Scenario: Clear a guard zone
 - **WHEN** a test calls `__gloam.out('G5')` and then `__gloam.light()` in the Gaol
-- **THEN** the keep's three Snuffers go out and drop 9 glim, and the beacon lights. Check: e2e `gloam-downs-run.screens.e2e.mjs`.
+- **THEN** the keep's three Snuffers go out and drop 9 glim, and the beacon lights. The bank goes up by 9 when no other mote is on the ground. Check: Node test `gloam-downs-foes-ai.test.mjs`, and e2e `gloam-downs-run.fight.e2e.mjs`.
+
+### Requirement: Test hooks for notches, cameras and draws
+With `?test`, the page SHALL also give these hooks:
+- `__gloam.notches()` SHALL list the ember notches on screen as `{ kind, foe, edge, x, y, fill, bearing, rect }`. `kind` is `'foe'` or `'keepers'`.
+- `__gloam.combat()` SHALL give what the cameras read: the awake foes, with `home`, `homing` and `rising`, and the blade's target.
+
+#### Scenario: Read the notches
+- **WHEN** at 390 by 844 a test spawns a Snuffer 6 m to the right of the lamplighter, and holds it at 0.1 s of its hook
+- **THEN** `__gloam.notches()` lists one notch of kind `'foe'` at the right edge, 18% full, ±10%. Check: e2e `gloam-downs-run.fight.e2e.mjs`.
+
+### Requirement: Test hooks for draws and framing
+With `?test`, `__gloam.draw({ time, pool })` SHALL draw at game time `time` (the clips and the flicker). With `pool: false` it SHALL park every foe slot and the spark pool for that one draw. `__gloam.layout(o)` SHALL frame the camera as a window `{ w, h }` would, or with `{ fov, dist, pitch, aim }` given. `null` SHALL put this window's framing back.
+
+#### Scenario: A fixed draw
+- **WHEN** a test draws twice with the same `time`, once with `pool: false`
+- **THEN** the place's flicker is the same in both pictures, and the second has no foe. Check: e2e `gloam-downs-run.lineup.e2e.mjs`, which draws each place at one game time with every slot parked and then posed.
 
 ### Requirement: The spawn hook
 A foe from `__gloam.spawn` SHALL be already risen, with no ember cracks and no cooldown. It SHALL count as an awake zone of its own for the combat camera, the tokens and the cap of 6. Its home SHALL be its spawn point, with a leash of 4 m.
@@ -1246,6 +1348,13 @@ With `?test`, the page SHALL give these hooks for the run's state:
 #### Scenario: Set health
 - **WHEN** a test sets 40 health and 1 flask with `__gloam.set`
 - **THEN** the HUD shows "40/100" and one full pip. Check: e2e `gloam-downs-run.screens.e2e.mjs`.
+
+### Requirement: Test hooks for the run's screens
+With `?test`, `__gloam.kill()` SHALL end the run as a death does. `__gloam.toast(text, ms)` SHALL show a toast and give its rect. `__gloam.lamp(from)` SHALL open the Lamp-room as from a beacon card (`'beacon'`), from Wander's Map (`'wander'`) or on its own.
+
+#### Scenario: A test death
+- **WHEN** a test calls `__gloam.kill()` in the Gaol
+- **THEN** the picture fades to ink, and the run summary opens on the 72nd step of the fade. Check: e2e `gloam-downs-run.cards.e2e.mjs`.
 
 ### Requirement: Test hooks for targets and hits
 With `?test`, the page SHALL give these hooks, which need no foe:

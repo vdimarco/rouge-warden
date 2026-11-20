@@ -96,13 +96,13 @@ export default {
   - a wisp is touched from a floor 0.7 below it up to 2.1 under it, within 0.8 across.
 - **Summit:** the beacon stands at least 2 above the start, on a summit that the start's camera can see.
 - **Dark but not black:** in the CPU picture from the start, the mean luminance is between 0.05 and 0.32, and between 0.05% and 12% of pixels are over 0.55 (the fire).
-- **Walk map:** a wall is anything that rises more than a step. Arches and tree crowns with 1.8 of clearance under them can be walked under. Keep the paths wide (2 or more), because the camera follows close.
+- **Walk map:** a wall is anything that rises more than a step. Arches and tree crowns with 1.8 of clearance under them can be walked under. Keep the paths wide (2 or more). The camera rises over a wall before it comes closer, so a narrow lane costs a steep view, not a close one.
   - The bake closes cracks one cell wide, such as the seams between planks or between a porch and a wall. The lamplighter is 0.6 across and cannot go into them, but it stands on the floor under its centre, so it would drop through them. A seam at the edge of a floor, with a drop on its other side, stays open. The bake prints the number closed as `cracks`.
   - The walk file is three `Int16` layers in centimetres, gzipped: the top, the floor under a gap (the top where there is none), and the gap's underside (0 where there is no gap). The JSON names them in `walk.layers`. Each walk file is 102 to 132 KB, and it counts in the 1.5 MB.
 
 ## The combat run: zones, foes and the boss
 
-The page plays the combat run with `?run`. Without it, the page is the explorer. Stage 1 of the run bakes these files and data. `openspec/changes/add-gloam-downs/design.md` ("The combat run") has the numbers.
+The page plays the combat run with `?run`. Without it, the page is the explorer. Stage 1 of the run baked these files and data, and stage 2 made the foes fight back, fixed the camera and built the run's HUD and cards. `openspec/changes/add-gloam-downs/design.md` ("The combat run") has the numbers.
 
 - **`lib/zones.mjs`** is the one home of the zone table. `ZONES` gives each place's zones: the centre `c` [x, y, z] (y is the floor there), the leash, the foes by type (`S` Snuffer, `P` Pitchrook, `M` Mirelight, `I` Ironback, `B` the Barrow Reeve), the guard flag, and for a guard the keeper, the landmark that a toast names. `POOLS` gives each place's pool of slots. `ROUTES` gives each place's route: waypoints a few metres apart on the floor, from the start past the guard zone to the beacon. The biomes place the zones with `ctx.zone(id)`, and the bake writes them into `<id>.json` as `zones`. The zones change no splat file and no walk file.
 - **The foe files.** `node bake.mjs foes` writes `worlds/foes.bin.gz` and `worlds/foes.json.gz`: the four foe types and the light carried after the boss's fall (`L`), from `lib/foes.mjs`. `node bake.mjs boss` writes `worlds/boss.bin.gz` and `worlds/boss.json.gz`: the Barrow Reeve (`B`) on 46 bones and its 12 grave candles (`C`), from `lib/boss.mjs`. `lib/figures.mjs` bakes both.
@@ -115,16 +115,31 @@ The page plays the combat run with `?run`. Without it, the page is the explorer.
 
 ## The pool in the page
 
-`public/lab/gloam-downs/pool.js` has no DOM, so the bake's previews, the Node tests and the page pose the figures with the same code. `makePool(world, meta, slots)` adds a place's slots after its splats, with bone ids after the lamplighter's. Every slot starts parked: at density 0 and out of `world.anim.boned`, so the sorter does not pay for it. `wake` puts a slot on the bones first and then brings its density back, and `park` does the reverse. `pose`, `marker`, `place`, `flash` and `placeGroups` pose a slot, lay a marker piece, place one bone, flash a hit and place the candles. `figures.js` loads the figure files once and lists a place's slots, and `world.js` has `loadFigures()`. With `?run&test&lineup`, `__gloam.lineup()` stands one of each figure in front of the lamplighter. With `?run&lineup` and no `?test`, they stand there and play each of their clips in turn.
+`public/lab/gloam-downs/pool.js` has no DOM, so the bake's previews, the Node tests and the page pose the figures with the same code. `makePool(world, meta, slots, { extra })` adds a place's slots after its splats, with bone ids after the lamplighter's, and `extra` splats after the slots for the spark pool. Every slot starts parked: at density 0 and out of `world.anim.boned`, so the sorter does not pay for it. `wake` puts a slot on the bones first and then brings its density back, and `park` does the reverse. `pose`, `marker`, `place`, `flash` and `placeGroups` pose a slot, lay a marker piece, place one bone, flash a hit and place the candles. `figures.js` loads the figure files once and lists a place's slots, and `world.js` has `loadFigures()`. With `?run&test&lineup`, `__gloam.lineup()` stands one of each figure in front of the lamplighter. With `?run&lineup` and no `?test`, they stand there and play each of their clips in turn. `poseFigure`'s `grow` option scales named bones about their pivots, so the tells can grow on a small screen.
+
+## The run in the page
+
+These modules have no DOM unless the list says so, so the Node tests use them as they are.
+
+- **`foes.js`**: the foes' minds. Bodies on the walk map with a ledge probe, noticing, the leash and the way home, attack tokens (two melee, one coal), the wind-up rule, the flinch, the knock-down, the rise and the sink, foes off their ground, the off-edge rule, glim motes, and zones that wake and sleep under the cap of six with free slots. Guard zones keep each beacon dark, always wake, and take slots from other zones. `fits()` and `makeRoom()` are the rules that the zone check shares.
+- **`fight.js`** (the page's glue; DOM only for the notches): it builds the foes with each place, wakes, parks and flashes the pool's slots, poses each foe with its tell, lays the markers, flies the coal, breaks foes put out into their bone parts, and shows the ember notches. On a small screen it grows the tells (`tellGrow`).
+- **`markers.js`**: fits each ring slice and lane piece to the ground, or to the Fen's water (`fitRing`, `fitLane`).
+- **`sparks.js`**: a port of Ink Studio's `K.play.fx`: sparks, flashes, rings, ember cracks and glim motes.
+- **`feel.js`**: the camera kick, the zoom, the hurt tint, the low-health grade with its heartbeat, the fade to ink, the boss's fall (`fall()`) and its shocks (`shock()`), and reduced motion.
+- **`cameras.js`**: the combat camera, the move lock, and the boss camera (stage 3 wires it to the boss), on top of `play.js`'s follow camera. `camLayout(w, h)` in `play.js` gives each window's framing.
+- **`screens.js`**: what each screen shows, as pure functions: the HUD's health line, the wick buttons, the Lamp-room's rows and buttons, the summary, the pause panel's places and questions, the game-time waits, and the card that a load opens.
+- **`main.js`** wires them: `newRunner()` builds the fight with each place, `fightView()` hands the awake foes to the combat camera, and the `?test` hooks (`foes`, `wake`, `spawn`, `hold`, `out`, `notches`, `combat`, `draw({ time, pool })`, `layout`, `kill`, `toast`, `lamp`) let the checks set up each picture.
 
 ## Checks
 
 - `node qa/lab/gloam-downs.test.mjs`: the explorer's controller, walk map, saves and loader (`GLOAM_WORLDS=0` skips the baked places).
-- `node qa/lab/gloam-downs-run.test.mjs`: the run's step and clocks, the lamplighter's moves, the rules, the saves and the pads.
+- `node qa/lab/gloam-downs-run.test.mjs`: the run's step and clocks, the lamplighter's moves, the rules, the saves, the pads and the screens.
+- `node qa/lab/gloam-downs-foes-ai.test.mjs`: the foes' moves, tokens, leash, zones and guards on the baked walk maps, glim, the marker fit and the feel (`GLOAM_WORLDS=0` leaves out the baked places).
+- `node qa/lab/gloam-downs-camera.test.mjs`: the follow camera's framing at 14 windows and on the five routes, the combat camera and the boss camera.
 - `node qa/lab/gloam-downs-foes.test.mjs`: the figures, their clips and poses, the pool, the colours, the budgets, the zones on the baked walk maps, and the bake of the Gaol with and without its zones (`GLOAM_BAKE=0` skips that bake).
 - `node qa/lab/gloam-downs-zones.mjs`: the zones on the walk maps: the wake rule, the guard rule, the cap of 6, the pool slots, the routes, the Ironback walls and the beacon distances.
 - `node qa/lab/gloam-downs-bake-zones.mjs [place ...]`: each place baked with and without its zones into the system's temp folder, one bake at a time (about 1.5 minutes for all five).
-- With the site served: `node qa/lab/gloam-downs.e2e.mjs` (the explorer), `node qa/lab/gloam-downs-run.input.e2e.mjs` (the run's inputs and first cards) and `node qa/lab/gloam-downs-run.lineup.e2e.mjs` (the pool and the figures).
+- With the site served: `node qa/lab/gloam-downs.e2e.mjs` (the explorer), `node qa/lab/gloam-downs-run.input.e2e.mjs` (the run's inputs and first cards), `node qa/lab/gloam-downs-run.lineup.e2e.mjs` (the pool and the figures), `node qa/lab/gloam-downs-run.fight.e2e.mjs` (a fight in four places and on a phone), `node qa/lab/gloam-downs-run.cards.e2e.mjs` (the HUD and every card at five layouts; `ONLY=keys|pad|layout`) and `node qa/lab/gloam-downs-camera.e2e.mjs` (the cameras at five layouts). Each takes 1 to 7 minutes in software WebGL.
 
 ## Design tools
 

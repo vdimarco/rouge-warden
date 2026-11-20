@@ -3,7 +3,7 @@
 //   adds fire pixels in its box), hooks the lamplighter and takes 16 health; the lamplighter rolls through a hook unhurt; the string
 //   puts a Snuffer out, and its 3 glim fly in; the beacon will not catch while the keep's Snuffers stand (the toast names the keep, and
 //   a notch points to them), and lights once they are out, banking their glim;
-//   a Snuffer winding up 3 m beside the lamplighter on a phone gives a notch at the right edge that fills over the wind-up;
+//   a Snuffer winding up 6 m beside the lamplighter on a phone gives a notch at the right edge that fills over the wind-up;
 //   and one fight each in their places: a Pitchrook's lob onto its ring on The Crow Wall, a Mirelight's pulse over the water of Lantern
 //   Fen, and an Ironback's charge lane and slam ring at The Bell Knoll, each marker adding fire pixels on the ground.
 // Takes pictures at 1280x720 and 390x844 (SHOTS=<dir> keeps them). Software WebGL draws about one frame a second, so the game steps
@@ -24,7 +24,8 @@ let n = 0;
 const pass = (name, data) => { n++; console.log('PASS ' + name + (data ? ' ' + JSON.stringify(data) : '')); };
 const browser = await chromium.launch({ executablePath, args: GL });
 async function open(viewport, touch = false) {
-  const ctx = await browser.newContext({ viewport, hasTouch: touch, isMobile: touch, deviceScaleFactor: 1 });
+  // a phone at device scale 3, as most phones held upright: art 147x317, about 46,000 px
+  const ctx = await browser.newContext({ viewport, hasTouch: touch, isMobile: touch, deviceScaleFactor: touch ? 3 : 1 });
   await ctx.route('**/api/**', r => r.fulfill({ status: 204, body: '' }));
   const page = await ctx.newPage();
   const errors = [];
@@ -104,6 +105,7 @@ const nearArc = (x, y, z, r, yaw) => Array.from({ length: 9 }, (_, k) => { const
     const tell = await firePixels(page, foeBox(c), 4);
     await shot(page, 'desk-gaol-hook-tell');
     assert(tell.fire >= 3 * rest.fire && tell.fire >= rest.fire + 8, `the tell's fire: ${rest.fire} at rest, ${tell.fire} at the end of the wind-up`);
+    assert.equal(await G(page, () => window.__gloam.run().fx.tell), 1, 'at 1280x720 the tells keep their size');
     const d = await G(page, id => { const g = window.__gloam; g.hold(id, null); g.tick(0.3, {}); return { hp: g.run().hp, sounds: g.sounds().filter(s => ['scrape', 'hurt'].includes(s.cue)) }; }, c.id);
     assert.equal(d.hp, 84, `the hook took ${100 - d.hp}`);
     assert(d.sounds.some(s => s.cue === 'hurt'));
@@ -275,12 +277,16 @@ const nearArc = (x, y, z, r, yaw) => Array.from({ length: 9 }, (_, k) => { const
   await G(page, id => { window.__gloam.hold(id, 'hook', 0); window.__gloam.tick(1 / 60, {}); }, r.f.id);
   const rest = await firePixels(page, foeBox(r.f), 4);
   assert(tell.fire >= 3 * rest.fire && tell.fire >= rest.fire + 8, `on a phone: ${rest.fire} at rest, ${tell.fire} at the end of the wind-up`);
-  // a Snuffer 3 m to the right, held at 0.1 s and then 0.5 s of its hook: a notch at the right edge, 18% and then 91% full
+  // the figures are smaller on a phone held upright, so the tells grow (fight.js tellGrow)
+  const grow = await G(page, () => window.__gloam.run().fx.tell);
+  assert(grow > 1.4 && grow < 1.6, `on a phone the tells grow ${grow} times`);
+  /* a Snuffer 6 m to the right, held at 0.1 s and then 0.5 s of its hook: a notch at the right edge, 18% and then 91% full. A phone
+     held upright sees ±4.6 m to each side of the lamplighter, so a foe 3 m to the side is in view */
   const q = await G(page, id => {
     const g = window.__gloam;
     g.out(id);
     g.tick(1.2, {});
-    const s = g.state(), sp = g.spawn('S', s.x, s.z - 3.0, 0);
+    const s = g.state(), sp = g.spawn('S', s.x, s.z - 6.0, 0);
     g.tick(1 / 60, {});
     g.hold(sp.id, 'hook', 0.1);
     g.tick(1 / 60, {});
@@ -291,9 +297,10 @@ const nearArc = (x, y, z, r, yaw) => Array.from({ length: 9 }, (_, k) => { const
     const b = g.notches();
     const ctl = ['#bAttack', '#bRoll', '#bHeal', '#bJump', '#hud', '#tools', '.labbar .back', '#menu'].map(sel => document.querySelector(sel)).filter(e => e && !e.hidden).map(e => e.getBoundingClientRect());
     const over = b.some(n => ctl.some(c => n.rect.left < c.right && n.rect.right > c.left && n.rect.top < c.bottom && n.rect.bottom > c.top));
-    return { a, b, over, offScreen: (() => { const p = g.project([s.x, s.y + 0.9, s.z - 3.0]); return !p || p[0] > innerWidth || p[0] < 0; })() };
+    return { a, b, over, sp, offScreen: (() => { const p = g.project([s.x, s.y + 0.9, s.z - 6.0]); return !p || p[0] > innerWidth || p[0] < 0; })() };
   }, r.f.id);
   await shot(page, 'phone-gaol-notch');
+  assert(q.sp?.ok !== false, `the spawn: ${JSON.stringify(q.sp)}`);
   assert(q.offScreen, 'the Snuffer is outside the view');
   assert(q.a.length === 1 && q.a[0].edge === 'right', JSON.stringify(q.a));
   assert(Math.abs(q.a[0].fill - 0.18) <= 0.1 && Math.abs(q.b[0].fill - 0.91) <= 0.1, `${q.a[0].fill} then ${q.b[0].fill}`);
@@ -318,7 +325,7 @@ const nearArc = (x, y, z, r, yaw) => Array.from({ length: 9 }, (_, k) => { const
   const after = await firePixels(page, pts, 6);
   await shot(page, 'phone-bells-slam-ring');
   assert(after.fire >= before.fire + 20, `on a phone the slam ring adds ${after.fire - before.fire} fire pixels`);
-  pass('on a phone: the tell reads, a Snuffer beside the lamplighter gives a notch at the right edge that fills, and the slam ring reads', { tell: [rest.fire, tell.fire], fill: [q.a[0].fill, q.b[0].fill], ring: after.fire - before.fire });
+  pass('on a phone: the tell reads, a Snuffer beside the lamplighter gives a notch at the right edge that fills, and the slam ring reads', { tell: [rest.fire, tell.fire], grow: +grow.toFixed(3), fill: [q.a[0].fill, q.b[0].fill], ring: after.fire - before.fire });
   assert.deepEqual(errors, [], errors.join('\n'));
   await ctx.close();
 }

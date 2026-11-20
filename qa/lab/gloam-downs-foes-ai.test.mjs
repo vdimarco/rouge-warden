@@ -18,12 +18,12 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
-import { makeWalk, makeBody, PARAMS, reachable } from '../../public/lab/gloam-downs/play.js';
+import { makeWalk, makeBody, PARAMS, reachable, camLayout } from '../../public/lab/gloam-downs/play.js';
 import { STEP, stepCount, startRun, makeRunner, maxOf } from '../../public/lab/gloam-downs/run.js';
 import { HITS, MOVES } from '../../public/lab/gloam-downs/moves.js';
 import * as RS from '../../public/lab/gloam-downs/run-save.js';
 import { makeFoes, TYPES, RULES, phaseOf, ringAt, laneAt, keeperLine, fits, makeRoom } from '../../public/lab/gloam-downs/foes.js';
-import { makeFight } from '../../public/lab/gloam-downs/fight.js';
+import { makeFight, tellGrow, TELL } from '../../public/lab/gloam-downs/fight.js';
 import { makeFeel, FEEL } from '../../public/lab/gloam-downs/feel.js';
 import { WATER, ringResiduals, laneResiduals } from '../../public/lab/gloam-downs/markers.js';
 import { readFigures, makePool } from '../../public/lab/gloam-downs/pool.js';
@@ -539,6 +539,29 @@ function pageFight(walk, { codes = 'SSSPMI', still = false, fx = {}, x = 0, z = 
   for (let i = 0; i < RULES.dying; i++) P.step({});
   assert(!slot.awake && P.world.anim.boned.length < boned0, 'its slot parks');
   pass('a foe put out breaks into its bone parts for 0.6 s, then its slot parks and leaves the bones', { boned: [boned0, P.world.anim.boned.length] });
+}
+{ /* a tell on a small screen: the tell bones grow so that a metre covers no fewer art pixels than at 1280x720, up to 2 times. At
+     1280x720 and 800x600 they keep their size; at 390x844 (art 147x317, about 46,000 px at device scale 3) the Snuffer's cup grows
+     about 1.5 times, and the bone's scale in the pool follows */
+  const view = (w, h) => { const L = camLayout(w, h); return { dist: L.dist, fov: L.fov }; };
+  const desk = tellGrow(view(1280, 720), 180), wide = tellGrow(view(800, 600), 219), phone = tellGrow(view(390, 844), 317), small = tellGrow(view(320, 640), 120);
+  assert(near(TELL.px, 23.8, 0.1), `the reference: ${TELL.px} art px a metre`);
+  assert.equal(desk, 1);
+  assert.equal(wide, 1);
+  assert(phone > 1.4 && phone < 1.6, `390x844: ${phone}`);
+  assert(small <= TELL.max && small > phone, `320x640 at a low art size: ${small}`);
+  assert.equal(tellGrow({}, 317), 1, 'no view, no growth');
+  const P = pageFight(FLAT, { codes: 'S' });
+  const r = P.G.hooks.spawn('S', 0, -2.2, 0), S = P.G.foes.find(r.id), slot = P.pool.slots[S.slot], b = slot.base + slot.type.index.tell;
+  P.G.hooks.hold(r.id, 'hook', 0.54);
+  P.step({});
+  const scale = () => Math.hypot(P.pool.bones[12 * b], P.pool.bones[12 * b + 1], P.pool.bones[12 * b + 2]);
+  P.G.draw({ yaw: 0, pitch: 0.3, ...view(1280, 720) }, { art: 180 });
+  const s1 = scale();
+  P.G.draw({ yaw: 0, pitch: 0.3, ...view(390, 844) }, { art: 317 });
+  const s2 = scale();
+  assert(s1 > 0.5 && near(s2 / s1, phone, 0.01), `the cup's scale: ${s1} at 1280x720, ${s2} at 390x844`);
+  pass('on a small screen the tells grow to keep the art pixels a metre of 1280x720, up to 2 times', { phone: +phone.toFixed(3), small: +small.toFixed(3), cup: +(s2 / s1).toFixed(3) });
 }
 { // the kick, the zoom and the grade: slots 32 to 47 never change; with reduced motion there is no kick and no zoom
   // as on the page: the step runs (and ticks), its hit is felt, and the picture is drawn

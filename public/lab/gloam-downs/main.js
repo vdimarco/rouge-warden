@@ -747,7 +747,7 @@ function draw(o = {}) {
   const t = Number.isFinite(o.time) ? o.time : time;
   pose(world.anim.bones, meta.bones, body.s, t, still);
   if (fight) {
-    fight.draw(view, { time: Number.isFinite(o.time) ? o.time : undefined, pool: o.pool });
+    fight.draw(view, { time: Number.isFinite(o.time) ? o.time : undefined, pool: o.pool, art: art.h });
     fxNow.kick = fight.kick; fxNow.zoom = fight.zoom;
     fight.showNotches(view, mode === 'play');
   } else if (RUN) { fxNow.kick = [0, 0, 0]; fxNow.zoom = 1; world.anim.grade = null; }
@@ -820,7 +820,7 @@ const runState = () => {
     move: f?.move ?? null, hit: f?.move === 'hit' ? HITS[f.hit].id : null, t: f ? f.t / 60 : 0, safe: runner?.fighter.safe() ?? null, combo: runner?.fighter.nextHit() ?? 0,
     fx: {
       kick: fxNow.kick.slice(), zoom: fxNow.zoom, bars: fxNow.bars, grade: (fight?.cols || meta?.pal || []).slice(), blink: !!body?.s.hide,
-      low: !!fight?.feel.low, beats: fight?.feel.beats ?? 0
+      low: !!fight?.feel.low, beats: fight?.feel.beats ?? 0, tell: fight?.grow ?? 1
     }
   };
 };

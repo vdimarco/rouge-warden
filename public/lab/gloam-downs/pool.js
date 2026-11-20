@@ -61,9 +61,10 @@ export function sampleKey(out, clip, bone, t) {
 }
 
 /* Pose one figure: out is the whole bone array, base its first bone. at = { x, y, z, yaw } (the feet, and the way it faces: yaw 0
-   faces +z, as the figure was sculpted). Bones placed by the page ('ground') are left as they are. size scales the whole figure. */
-const keyTmp = new Float32Array(9);
-export function poseFigure(out, base, type, at, clipName, t = 0, { size = 1, keys } = {}) {
+   faces +z, as the figure was sculpted). Bones placed by the page ('ground') are left as they are. size scales the whole figure, and
+   grow ({ bone: k }) scales those bones about their pivots on top of their keys (a tell on a small screen). */
+const keyTmp = new Float32Array(9), growTmp = new Float32Array(9);
+export function poseFigure(out, base, type, at, clipName, t = 0, { size = 1, keys, grow } = {}) {
   const clip = clipName ? type.clips[clipName] : null;
   if (clipName && !clip) throw new Error(`${type.name} has no clip ${clipName}`);
   const feet = type.feet, s = size;
@@ -74,6 +75,8 @@ export function poseFigure(out, base, type, at, clipName, t = 0, { size = 1, key
     const bone = type.bones[b];
     let k = keys?.[bone.name] || (clip && sampleKey(keyTmp, clip, bone.name, t));
     if (!k) k = bone.hidden ? HIDDEN_KEY : REST_KEY;
+    const g = grow?.[bone.name];
+    if (g && g !== 1) { growTmp.set(k); growTmp[3] *= g; growTmp[4] *= g; growTmp[5] *= g; k = growTmp; }
     const par = bone.parent ? world[type.index[bone.parent]] : root;
     if (!par || par.hidden || Math.min(Math.abs(k[3]), Math.abs(k[4]), Math.abs(k[5])) < HIDE) {
       world[b] = { hidden: true };

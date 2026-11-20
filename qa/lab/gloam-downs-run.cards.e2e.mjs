@@ -44,6 +44,9 @@ const ready = (page, mode) => page.waitForFunction(m => window.__gloam?.ready() 
 const G = (page, fn, arg) => page.evaluate(fn, arg);
 const run = page => G(page, () => window.__gloam.run());
 const tick = (page, sec, held = {}) => G(page, ([s, h]) => window.__gloam.tick(s, h), [sec, held]);
+/* the Gaol's beacon lights only once its keepers are out: put out the keep's three Snuffers (G5). Their 9 glim lie as motes far from the
+   lamplighter, and the beacon banks them with the glim carried, so the carried glim is set 9 lower to bank `carried` in all */
+const keepOut = (page, carried) => G(page, c => { const g = window.__gloam; g.out('G5'); g.tick(1.2, {}); g.set({ carried: c - 9 }); }, carried);
 const active = page => G(page, () => document.activeElement?.id || document.activeElement?.textContent);
 const text = (page, sel) => page.textContent(sel).then(t => t.trim());
 const stored = page => G(page, () => JSON.parse(localStorage.getItem('gloam-downs.run.v1')));
@@ -163,7 +166,7 @@ try {
     pass('a toast sits 8 px under the HUD and lasts 108 steps of game time, not 2.2 s of wall time', h);
 
     // the beacon: its glim banked, two wicks offered as "name · text"; Escape, M and P cannot pass them
-    await G(page, () => window.__gloam.set({ carried: 44 }));
+    await keepOut(page, 44);
     await G(page, () => window.__gloam.light());
     await tick(page, 1.6, {});
     assert(await page.isVisible('#beaconCard'));
@@ -248,11 +251,21 @@ try {
     await page.keyboard.press('Enter');
     r = await run(page);
     assert.equal(r.mode, 'dying');
-    assert.deepEqual(r.ended, { won: false, place: 'ramparts', time: r.ended.time, foes: 0, lost: 20, banked: 44 });
+    // the foes put out are the keep's three Snuffers, put out before the Gaol's beacon
+    assert.deepEqual(r.ended, { won: false, place: 'ramparts', time: r.ended.time, foes: 3, lost: 20, banked: 44 });
     await tick(page, 0.5, {});
     await G(page, () => window.__gloam.draw());
     await shot(page, 'keys-fade-1280x720');
-    const ink = await G(page, () => +getComputedStyle(document.getElementById('ink')).opacity);
+    /* how far the picture has faded to ink: the fight's grade pulls every slot toward slot 0 (feel.js); with no grade, the #ink
+       overlay in slot 0 does the same */
+    const ink = await G(page, () => {
+      const over = +getComputedStyle(document.getElementById('ink')).opacity;
+      if (over > 0) return over;
+      const pal = window.__gloam.palette(), g = window.__gloam.run().fx.grade, ch = (c, s) => (c >> s) & 255;
+      let num = 0, den = 0;
+      for (const k of [20, 25, 31]) for (const s of [16, 8, 0]) { num += ch(pal[k], s) - ch(g[k], s); den += ch(pal[k], s) - ch(pal[0], s); }
+      return num / den;
+    });
     assert(ink > 0.35 && ink < 0.6, `0.5 s into the fade the ink is ${ink}`);
     const ended = r.ended;
     // a reload: the same page with no ?fresh, so the run's save is read back
@@ -322,7 +335,7 @@ try {
     const { ctx, page, errors } = await open({ viewport: { width: 1280, height: 720 } }, '?run&test&fresh&seed=2&nodraw', mock);
     await tap(page, PAD.A);
     assert.equal((await run(page)).mode, 'play', 'A begins the run');
-    await G(page, () => window.__gloam.set({ carried: 60 }));
+    await keepOut(page, 60);
     await G(page, () => window.__gloam.light());
     await tick(page, 1.6, 'live');
     assert.equal((await run(page)).mode, 'beacon');
@@ -412,7 +425,8 @@ try {
       await G(page, () => window.__gloam.toast('', 1));
       await tick(page, 0.05, {});
       // the beacon card before and after the choice, and the Lamp-room from it with a bank that buys some rows and not others
-      await G(page, () => window.__gloam.set({ carried: 75, hp: 120 }));
+      await keepOut(page, 75);
+      await G(page, () => window.__gloam.set({ hp: 120 }));
       await G(page, () => window.__gloam.light());
       await tick(page, 1.6, {});
       await each(page, list, `${label}-beacon`, 'beaconCard');

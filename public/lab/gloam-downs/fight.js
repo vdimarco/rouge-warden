@@ -15,6 +15,15 @@ export const SPARKS = 256;
 /* how far over its fitted plane a marker lies: the places' ground splats stand up to about 0.1 m over the walk map's floor (cobbles,
    tufts, ripples on the water), and at 0.05 m the Ironback's and the Mirelight's rings broke up into specks under them */
 export const MARK_LIFT = 0.16;
+/* On a small screen a tell glows larger: its bones (the Snuffer's cup, the Pitchrook's coal glow, the Mirelight's core, the Ironback's
+   crack) grow about their pivots so that a metre covers no fewer art pixels than at 1280x720 (180 art px high, 8.5 m back, 48°), up to
+   max. A phone held upright sees ±4.6 m to each side, so its figures are smaller (qa/lab/gloam-downs-run.fight.e2e.mjs measures it) */
+export const TELL = { px: 180 / (2 * 8.5 * Math.tan((24 * Math.PI) / 180)), max: 2 };
+export const tellGrow = (view, artH) => {
+  if (!artH || !view?.dist || !view.fov) return 1;
+  const px = artH / (2 * view.dist * Math.tan(view.fov / 2));
+  return Math.max(1, Math.min(TELL.max, TELL.px / px));
+};
 const NOTCH = { size: 30, gap: 8, most: 3, keepers: 180 };
 const mul = (a, b) => [
   a[0] * b[0] + a[1] * b[3] + a[2] * b[6], a[0] * b[1] + a[1] * b[4] + a[2] * b[7], a[0] * b[2] + a[1] * b[5] + a[2] * b[8],
@@ -150,9 +159,10 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
     });
   }
   /* pose every foe that shows, lay its marker and its coal, write the sparks and the motes, and set the effects. view is the camera
-     of this draw ({ yaw, pitch }); o.time is the game time for the clips; o.pool false parks every slot for this one draw */
+     of this draw ({ yaw, pitch, dist, fov }); o.time is the game time for the clips; o.pool false parks every slot for this one draw;
+     o.art is the art's height in px, for the tells' growth on a small screen */
   G.draw = (view = {}, o = {}) => {
-    const time = o.time ?? G.game / 60;
+    const time = o.time ?? G.game / 60, grow = (G.grow = tellGrow(view, o.art));
     pool.slots.forEach((s, i) => {
       const f = foes.holders[i];
       if (!f || !s.awake || !'SPMI'.includes(s.code)) return;
@@ -160,7 +170,7 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
       if (f.state === 'dying') { parts(f, s); return; }
       f.partsFrom = null;
       const p = poseOf(f, time), clip = s.type.clips[p.clip] ? p.clip : 'rest';
-      pool.pose(s, atOf(f), clip, p.t);
+      pool.pose(s, atOf(f), clip, p.t, grow > 1 ? { grow: { tell: grow, core: grow } } : undefined);
       markers(f, s);
     });
     if (o.pool !== false) for (const c of foes.coals) {
