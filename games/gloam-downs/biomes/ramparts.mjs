@@ -1,23 +1,32 @@
 // Crow Ramparts: a broken curtain wall that rides the ridges of rolling downs at the last light of a storm. Squat round towers stand at
-// its bends, rubble heaps and a breach let you climb onto the wall-walk, braziers burn along it, blood-red rags hang from poles and
-// battlements, and the siege's leavings lie in the vale below. The highest tower holds the summit; steps wind up round it to the beacon.
-// Storm-violet sky over a thin sick yellow-green band, pale stone in violet shadow, dark olive grass, red rags, orange fire.
-import { torch, shrubs, deadTree, yawAx } from '../lib/props.mjs';
+// its bends, rubble heaps and a breach let you climb onto the wall-walk, braziers burn along it, blood-red rags stream from poles and
+// hang from the battlements, and the siege's leavings lie in the vale below. The highest tower holds the summit: a fat drum with a
+// slimmer tower on it, steps winding up round both to the beacon. Storm-violet sky over a thin sick yellow-green glow, pale stone in
+// violet shadow, dark olive grass, red rags, orange fire.
+//
+// The follow camera looks down at a low pitch: the top of the page's first picture is a little under eye level, and the beacon may
+// stand only about 2 over the start. So the summit cannot rise far into that picture; it reads instead as two tiers of dark teeth
+// against the glow, which is hung in the low notch of the far skyline behind it, as the start's eye sees it.
+import { shrubs, deadTree, yawAx } from '../lib/props.mjs';
 import { polyDist, lib, tile } from '../lib/common.mjs';
 
 const SPAWN = [0, 27];
-const C = [-6, -21]; // the summit tower
-const TR = 3.4; // its radius
+const C = [-6, -21]; // the summit
+const TR = 4.4; // its drum's radius
+const TU = 2.4; // the tower's radius, on the drum
 const T1 = [8, 17], T2 = [13, -1], T3 = [4, -12];
-// the curtain wall, south to north; towers stand at T1, T2 and T3, and it ends at the foot of the summit steps
-const WALL = [[19, 33.5], T1, [12, 7], T2, [10, -7], T3, [C[0] + TR + 2.4, C[1] + 0.5]];
-// the wall goes on west from the summit tower, broken, down the far slope and away over the far downs
+// the curtain wall, south to north; towers stand at T1, T2 and T3, and it ends against the summit's drum, at its terrace
+const WALL = [[19, 33.5], T1, [12, 7], T2, [10, -7], T3, [C[0] + TR - 0.3, C[1] + 0.4]];
+// the wall goes on west from the summit's drum, broken, down the far slope and away over the far downs
 const WEST = [[-9.4, -23.4], [-19, -27.5], [-31, -29.5]];
 const FAR_W = [[-31, -29.5], [-46, -33], [-62, -27], [-80, -31]];
 const FAR_E = [[19, 33.5], [30, 44], [44, 50]];
-// the chalk path from the start down through the vale to the foot of the summit steps, and a spur to the rubble below T1
-const PATH = [[0, 27], [-1.2, 21], [-2.6, 14], [-1.8, 7], [-3.6, 0], [-3, -7], [-5.5, -12.5], [-9.2, -16.6]];
-const SPUR = [[0.4, 24.6], [3.2, 19.5], [3.4, 14.5]];
+// the old road: up the back of the start's down, through the gate, down through the vale to the foot of the summit's steps
+const PATH = [[0.8, 37], [0.2, 31], [0, 27], [-1.2, 21], [-2.6, 14], [-1.8, 7], [-3.6, 0], [-3, -7], [-5.5, -12.5], [-9.2, -16.6]];
+const SPUR = [[0.4, 24.6], [3.2, 19.5], [3.4, 14.5]]; // a spur to the rubble below T1
+// the eye of the page's first picture (play.js: 8.5 behind, pitch 0.34, aimed 1.15 over the feet; the start faces north)
+const EYE_UP = 1.15 + 8.5 * Math.sin(0.34), EYE_BACK = 8.5 * Math.cos(0.34);
+const WIND = [0.96, 0, -0.26]; // the storm wind blows from the west: rags stream east, a little away from the start
 
 // the ridge the wall rides: a chain of bumps along it, each its own height, so the ridge rolls
 const RIDGE = [[17, 30, 7, 1.3], [12.5, 22.5, 7, 1.4], [9, 16.5, 7, 1.5], [10.8, 11, 7, 1.6], [12.4, 5, 7, 1.7], [13.4, -0.5, 7, 1.75],
@@ -32,15 +41,15 @@ export default {
   palette: [
     ['sky', [0x050408]],
     ['skyband', [0x0e0b16, 0x18142a, 0x262036]],
-    ['sick', [0x2c301e, 0x48502a, 0x6c7834]],
-    ['fog', [0x29253c]],
+    ['sick', [0x2c301e, 0x4a5229, 0x737c36]],
+    ['fog', [0x201c30]],
     ['ink', [0x030205]],
     ['shade', [0x050407]],
-    ['grass', [0x0a0c07, 0x12170b, 0x1c2311, 0x293018, 0x3b4222]],
-    ['chalk', [0x17141d, 0x29242f, 0x3e3846]],
-    ['stone', [0x0f0d17, 0x1d192a, 0x302a40, 0x48405c, 0x6a6280]],
+    ['grass', [0x090a06, 0x12150a, 0x1c200f, 0x282c16, 0x383b1f]],
+    ['chalk', [0x17141d, 0x2b2631, 0x433c4a]],
+    ['stone', [0x0d0b14, 0x1b1727, 0x2d2740, 0x463e5a, 0x675e7e]],
     ['sunstone', [0x3c2c30, 0x6a4e46, 0x987456]],
-    ['wood', [0x120b08, 0x261911, 0x3f2c1d]],
+    ['wood', [0x120b08, 0x281a10, 0x43301c]],
     ['rag', [0x2a0507, 0x560d0d, 0x8a1814]]
   ],
   // the sun is all but down in the north-west: weak, warm, low; it rims the faces turned to it and leaves the rest in violet shadow
@@ -58,47 +67,65 @@ export default {
       [-17, 3, 11, 2.8], [-17, 21, 9, 1.8], // the west downs
       [-24, -14, 9, 1.6], [24, 16, 9, 1.4], [27, -16, 10, 2.0]
     ],
-    pits: [[-3, 3, 13, 1.4], [-6, -84, 46, 10], [-54, -52, 32, 9]], // the vale, the far lowland behind the summit, and the low ground under the sunset
+    // the vale; a valley behind the summit and the far lowland beyond it, so the start sees the summit stand in a deep notch of the
+    // skyline, against the glow; and the low ground under the sunset
+    pits: [[-3, 3, 13, 1.4], [-8, -62, 30, 8], [-6, -84, 46, 10], [-54, -52, 32, 9]],
     fbm: { amp: 0.45, freq: 1 / 11, oct: 3 },
     warp: { amp: 1.5, freq: 1 / 24 },
     far: { amp: 12, start: 38, end: 70 },
     flats: [{ at: SPAWN, r: 2.2, blend: 2.5 }, { at: C, r: 6.8, blend: 3 }],
-    paths: [{ pts: PATH, w: 2.2, depth: 0.14 }, { pts: SPUR, w: 1.8, depth: 0.1 }],
+    paths: [{ pts: PATH, w: 2.4, depth: 0.14 }, { pts: SPUR, w: 1.8, depth: 0.1 }],
     box: [-110, 110, -110, 110]
   },
   build(ctx) {
     const { S, B, h, ramp } = ctx;
     const grit = (k = 1) => (x, y, z) => k * (0.16 * (B.n3(x * 0.45, z * 0.45, y * 0.3 + 3) - 0.5) + 0.14 * (B.n3(x * 2.6, y * 2.6, z * 2.6) - 0.5));
-    const grass = ramp('grass'), chalk = ramp('chalk'), st = ramp('stone');
-    // the ground: dark olive grass, and pale chalk where the paths wear through it
+    // laid stone: grit, each block its own tone, and dark mortar between courses and between blocks
+    const laid = (k = 0.8, ch = 0.66) => {
+      const g = grit(k);
+      return (x, y, z) => {
+        const c = y / ch, row = Math.floor(c), f = c - row, u0 = (x * 0.72 + z * 0.69) / 1.2 + row * 0.5, col = Math.floor(u0), u = u0 - col;
+        return g(x, y, z) + 0.13 * (B.n3(col * 3.7, row * 1.9, 5.5) - 0.5) + (f < 0.16 || u < 0.07 ? -0.13 : 0);
+      };
+    };
+    const grass = ramp('grass'), chalk = ramp('chalk'), st = ramp('stone'), wd = ramp('wood');
+    // the ground: dark olive grass, rust-dark bracken in patches, and pale chalk where the road wears through
     const ground = {
-      r: grass, g: [grass[1]], mod: grit(1),
-      rf: (x, y, z) => (Math.min(polyDist(x, z, PATH) - 0.6, polyDist(x, z, SPUR) - 0.4) + 0.5 * (B.n3(x * 1.3, z * 1.3, 4) - 0.5) < 0.4 ? chalk : grass)
+      r: grass, g: [grass[1]], mod: grit(1.1),
+      rf: (x, y, z) => {
+        const n = 0.5 * (B.n3(x * 1.3, z * 1.3, 4) - 0.5);
+        if (Math.min(polyDist(x, z, PATH) - 0.7, polyDist(x, z, SPUR) - 0.4) + n < 0.4) return chalk;
+        return B.n3(x * 0.16, z * 0.16, 11) + 0.25 * B.n3(x * 0.9, z * 0.9, 12) > 0.86 ? wd : grass;
+      }
     };
     groundTiles(ctx, ground, [{ r: grass, g: [grass[1]], mod: grit(1.2), fat: 0.64 }, { r: grass, mod: grit(1.4), fat: 0.88 }]);
 
-    const stone = { r: st, s: ramp('sunstone'), g: [st[1]], b: 0.07, mod: grit(0.8), top: { min: 0.99, r: grass.slice(1, 4) } };
-    const cap = { r: st, s: ramp('sunstone'), g: [st[1]], b: 0.07, mod: grit(0.7) };
+    // stone: shaded on the violet ramp, warm on the faces the low sun still reaches
+    const stone = { r: st, s: ramp('sunstone'), g: [st[1]], mod: laid(0.8), top: { min: 0.99, r: grass.slice(0, 3) } };
+    const cap = { r: st, s: ramp('sunstone'), g: [st[1]], mod: grit(0.9) };
     // fallen stone: darker, gone green on top
-    const rubble = { r: st.slice(0, 4), s: ramp('sunstone'), g: [st[1]], mod: grit(1.1), top: { min: 0.82, r: grass.slice(1, 4) } };
+    const rubble = { r: st.slice(0, 4), s: ramp('sunstone'), g: [st[1]], mod: grit(1.1), top: { min: 0.82, r: grass.slice(0, 3) } };
     const dark = { r: st.slice(0, 3), mod: grit(0.6) };
-    const wood = { r: ramp('wood'), g: [ramp('wood')[1]], mod: grit(0.5) };
+    const wood = { r: wd, g: [wd[1]], mod: grit(0.5) };
     const iron = { r: ramp('iron') };
     const cloth = { r: ramp('rag'), g: [ramp('rag')[1]], mod: grit(0.6) };
     const black = { r: [st[0], ramp('sky')[0]] };
-    const rock = { r: st.slice(0, 4), g: [st[1]], mod: grit(0.9), top: { min: 0.8, r: grass.slice(1, 4) } };
+    const rock = { r: st.slice(0, 4), g: [st[1]], mod: grit(0.9), top: { min: 0.8, r: grass.slice(0, 3) } };
 
     /* ---- the curtain wall ---- */
     const spawnY = h(SPAWN[0], SPAWN[1]);
+    const G0 = h(C[0], C[1]), roof1 = G0 + 1.8, roof2 = spawnY + 1.72; // the drum's terrace, the tower's roof
     const W = curtain(ctx, WALL, {
       mat: stone, cap, height: 2.7, thick: 2.6, side: 1, res: 0.17,
       breaks: [[sAt(WALL, [10, -7]) - 2.4, sAt(WALL, [10, -7]) + 2.2]],
-      open: [[sAt(WALL, [9.6, 13.6]) - 1.5, sAt(WALL, [9.6, 13.6]) + 1.5], [sAt(WALL, [12.6, 2.2]) - 1.3, sAt(WALL, [12.6, 2.2]) + 0.7]],
-      towers: [T1, T2, T3], pillars: true
+      open: [[sAt(WALL, [9.6, 13.6]) - 1.5, sAt(WALL, [9.6, 13.6]) + 1.5], [sAt(WALL, [12.6, 2.2]) - 1.3, sAt(WALL, [12.6, 2.2]) + 0.7],
+        [measure(WALL).len - 4.5, measure(WALL).len + 1]], // and none on the last stretch, so the drum's crown stands clear of the wall
+      towers: [T1, T2, T3], pillars: true,
+      endY: roof1 + 0.15, endRun: 7 // the walk comes down to the summit's terrace
     });
     // squat round towers at the bends; their roofs a step above the walk
     const towerAt = (p, o) => {
-      const s = sAt(WALL, p), roof = W.walkAt(s) + 0.35;
+      const s = sAt(WALL, p), roof = W.walkAt(s) + (o.lift ?? 0.35);
       const ins = WALL.indexOf(p), a = WALL[ins - 1], b = WALL[ins + 1];
       const gaps = [Math.atan2(a[1] - p[1], a[0] - p[0]), Math.atan2(b[1] - p[1], b[0] - p[0])];
       squatTower(ctx, p[0], p[1], { mat: stone, cap, r: 2.6, roof, gaps, ...o });
@@ -106,7 +133,7 @@ export default {
     };
     const r1 = towerAt(T1, { broken: 1.6 });
     const r2 = towerAt(T2, {});
-    const r3 = towerAt(T3, { broken: 1.1 });
+    const r3 = towerAt(T3, { broken: 1.4, r: 2.3, lift: 0.15 }); // the last tower before the summit sits low, so the summit stands over it
     basket(ctx, T1[0] - 1.0, T1[1] + 0.9, { iron, y: r1 - 0.05 });
     basket(ctx, T2[0] - 0.6, T2[1] + 1.2, { iron, y: r2 - 0.05 });
     basket(ctx, T3[0] + 0.4, T3[1] + 1.3, { iron, y: r3 - 0.05 });
@@ -116,7 +143,7 @@ export default {
       const s = sAt(WALL, [9.6, 13.6]), p = W.M.at(s), side = W.sideAt(s);
       const top = [p.x + side[0] * 1.2, p.z + side[1] * 1.2], foot = [p.x + side[0] * 8.5, p.z + side[1] * 8.5];
       rubbleStair(ctx, foot, top, W.walkAt(s) - 0.02, { mat: rubble, loose: rock, width: 2.6, seed: 3 });
-      torch(ctx, foot[0] + 1.6, foot[1] + 0.6, { wood, iron, h: 1.8 });
+      post(ctx, foot[0] + 1.6, foot[1] + 0.6, { wood, iron, h: 1.8 });
     }
     // a flight of stone steps up the inner face of the wall, south of T2, arriving at the walk through a gap in the merlons
     wallStair(ctx, W, sAt(WALL, [12.15, 5.8]), sAt(WALL, [12.6, 2.2]), { mat: stone });
@@ -126,93 +153,113 @@ export default {
       breach(ctx, W, s0, s1, { mat: rubble, loose: rock });
     }
 
-    /* ---- the summit tower: a fat drum with steps winding up round it, and on its crown a turret that holds the beacon ---- */
-    // the beacon stands about 2.4 over the start: any higher and the start's low camera would lose it off the top of the picture
-    const G0 = h(C[0], C[1]), roof = spawnY + 0.85, roof2 = roof + 1.02;
-    const aT = -2.25, TT = [C[0] + Math.cos(aT) * 1.2, C[1] + Math.sin(aT) * 1.2], TRr = 1.55; // the turret, toward the back
+    /* ---- the summit: a fat battered drum, and on it a slimmer round tower. Steps climb across the drum's face toward the start, then
+       back the other way round the tower, so the way up zig-zags where the start can see it. The beacon's cradle is on the tower. ---- */
+    const aArr = Math.atan2(WALL[WALL.length - 1][1] - C[1], WALL[WALL.length - 1][0] - C[0]); // where the wall-walk comes in
     {
-      S.lathe([C[0], G0 - 1, C[1]], roof - G0 + 1, t => TR * (1.16 - 0.16 * smooth(0, 0.32, t)), stone, { res: 0.15, maxRadius: TR * 1.16 });
-      S.lathe([C[0], roof - 0.95, C[1]], 0.55, TR + 0.28, cap, { res: 0.13 }); // a fat corbel ring under the crown
-      // the steps: the walk's end drops onto them a little under its own height
-      const rise = 0.36, n = Math.ceil((roof - G0) / rise), rr = (roof - G0) / n, da = 0.3;
-      const last = WALL[WALL.length - 1], aArr = Math.atan2(last[1] - C[1], last[0] - C[0]);
-      const kArr = Math.max(2, Math.round((W.walkAt(W.M.len) - 0.25 - G0) / rr) - 1);
-      const a0 = aArr + kArr * da;
+      S.lathe([C[0], G0 - 1, C[1]], roof1 - G0 + 1, t => TR * (1.17 - 0.17 * smooth(0, 0.45, t)), stone, { res: 0.15, maxRadius: TR * 1.17 });
+      S.lathe([C[0], roof1 - 0.55, C[1]], 0.5, TR + 0.26, cap, { res: 0.14 }); // a fat corbel ring under the drum's crown
+      S.lathe([C[0], roof1 - 0.3, C[1]], roof2 - roof1 + 0.3, t => TU * (1.1 - 0.1 * t), stone, { res: 0.14, maxRadius: TU * 1.1 });
+      S.lathe([C[0], roof2 - 0.48, C[1]], 0.44, TU + 0.24, cap, { res: 0.12 }); // and one under the tower's
+      // the lower flight: from the road's end, up across the drum's face, west to east
+      const n = Math.ceil((roof1 - G0) / 0.36), rr = (roof1 - G0) / n, da = 0.3, a0 = 2.6;
       for (let i = 0; i < n; i++) {
         const a = a0 - i * da, cx = C[0] + Math.cos(a) * (TR + 0.95), cz = C[1] + Math.sin(a) * (TR + 0.95), tread = G0 + (i + 1) * rr;
         let lo = 1e9;
         for (const [u, v] of [[-1, -1], [-1, 1], [1, -1], [1, 1]]) lo = Math.min(lo, h(cx + Math.cos(a) * u + Math.sin(a) * v * 0.6, cz + Math.sin(a) * u - Math.cos(a) * v * 0.6));
         const y0 = Math.min(lo, tread) - 0.6, hy = (tread - y0) / 2;
-        S.box([cx, y0 + hy, cz], [0.64, hy, 1.05], stone, { ax: yawAx(Math.atan2(-Math.cos(a), -Math.sin(a))), rd: 0.06, res: 0.14 });
+        S.box([cx, y0 + hy, cz], [0.64, hy, 0.75], stone, { ax: yawAx(Math.atan2(-Math.cos(a), -Math.sin(a))), rd: 0.06, res: 0.14 });
       }
       const aTop = a0 - (n - 1) * da;
-      // merlons round the drum's crown, open where the steps arrive
-      for (let i = 0; i < 13; i++) {
-        const a = (i / 13) * Math.PI * 2;
-        if (Math.cos(a - aTop) > 0.86) continue;
-        S.box([C[0] + Math.cos(a) * (TR - 0.05), roof + 0.38, C[1] + Math.sin(a) * (TR - 0.05)], [0.42, 0.42, 0.34], cap, { ax: yawAx(-a), rd: 0.07, res: 0.11 });
+      // the upper flight: on round the tower the other way, from the terrace to the roof
+      const n2 = Math.ceil((roof2 - roof1) / 0.36), rr2 = (roof2 - roof1) / n2, da2 = 0.34, b0 = aTop + 0.36;
+      for (let k = 0; k < n2; k++) {
+        const a = b0 + k * da2, cx = C[0] + Math.cos(a) * (TU + 0.62), cz = C[1] + Math.sin(a) * (TU + 0.62), tread = roof1 + (k + 1) * rr2;
+        const hy = (tread - roof1 + 0.25) / 2;
+        S.box([cx, roof1 - 0.25 + hy, cz], [0.52, hy, 0.5], stone, { ax: yawAx(Math.atan2(-Math.cos(a), -Math.sin(a))), rd: 0.05, res: 0.12 });
       }
-      // the turret, its own small corbel and merlons, and three steps up its side from the drum's roof
-      S.lathe([TT[0], roof - 0.3, TT[1]], roof2 - roof + 0.3, TRr, stone, { res: 0.12 });
-      S.lathe([TT[0], roof2 - 0.62, TT[1]], 0.32, TRr + 0.17, cap, { res: 0.11 });
-      const aS = Math.atan2(C[1] - TT[1], C[0] - TT[0]) - 0.5;
-      for (let k = 0; k < 3; k++) {
-        const a = aS + k * 0.5, cx = TT[0] + Math.cos(a) * (TRr + 0.5), cz = TT[1] + Math.sin(a) * (TRr + 0.5), tread = roof + (k + 1) * (roof2 - roof) / 3;
-        const hy = (tread - roof + 0.2) / 2;
-        S.box([cx, roof - 0.2 + hy, cz], [0.48, hy, 0.55], stone, { ax: yawAx(Math.atan2(-Math.cos(a), -Math.sin(a))), rd: 0.06, res: 0.11 });
+      const bTop = b0 + (n2 - 1) * da2;
+      // merlons round the drum's crown, open where the steps and the wall-walk arrive
+      for (let i = 0; i < 15; i++) {
+        const a = (i / 15) * Math.PI * 2;
+        if (Math.cos(a - aTop) > 0.9 || Math.cos(a - aArr) > 0.86) continue;
+        const tall = i % 4 === 1 ? 0.26 : 0.42; // a few worn down
+        S.box([C[0] + Math.cos(a) * (TR - 0.08), roof1 + tall, C[1] + Math.sin(a) * (TR - 0.08)], [0.46, tall, 0.3], cap, { ax: yawAx(-a), rd: 0.07, res: 0.12 });
       }
-      for (let i = 0; i < 6; i++) {
-        const a = (i / 6) * Math.PI * 2 + 0.3;
-        if (Math.cos(a - (aS + 1.0)) > 0.75) continue;
-        S.box([TT[0] + Math.cos(a) * (TRr - 0.05), roof2 + 0.3, TT[1] + Math.sin(a) * (TRr - 0.05)], [0.3, 0.32, 0.26], cap, { ax: yawAx(-a), rd: 0.06, res: 0.1 });
+      // and round the tower's roof, open where the upper flight arrives
+      for (let i = 0; i < 9; i++) {
+        const a = (i / 9) * Math.PI * 2 + 0.2;
+        if (Math.cos(a - bTop) > 0.8) continue;
+        S.box([C[0] + Math.cos(a) * (TU - 0.02), roof2 + 0.4, C[1] + Math.sin(a) * (TU - 0.02)], [0.36, 0.4, 0.28], cap, { ax: yawAx(-a), rd: 0.06, res: 0.11 });
       }
-      // the beacon's cradle on the turret: a stone drum with an iron rim
-      S.lathe([TT[0], roof2 - 0.1, TT[1]], 0.5, t => 0.66 - 0.1 * t, cap, { res: 0.08, maxRadius: 0.66 });
-      S.torus([TT[0], roof2 + 0.42, TT[1]], 0.55, 0.08, iron, { res: 0.07 });
-      ctx.beacon([TT[0], roof2 + 0.5, TT[1]], 1.6);
-      // the place's flag, on the drum's crown to the east
-      ragPole(ctx, C[0] + Math.cos(0.35) * 2.3, C[1] + Math.sin(0.35) * 2.3, { wood, cloth, iron, y: roof, h: 2.8, len: 1.6, yaw: 0.5, n: 6 });
-      // fire-baskets at the foot of the steps
-      for (const af of [a0 + 0.3, a0 + 0.95]) basket(ctx, C[0] + Math.cos(af) * (TR + 2.5), C[1] + Math.sin(af) * (TR + 2.5), { iron });
+      // the beacon's cradle: a stone drum with an iron rim, in the middle of the roof
+      S.lathe([C[0], roof2 - 0.1, C[1]], 0.5, t => 0.66 - 0.1 * t, cap, { res: 0.08, maxRadius: 0.66 });
+      S.torus([C[0], roof2 + 0.42, C[1]], 0.55, 0.08, iron, { res: 0.07 });
+      ctx.beacon([C[0], roof2 + 0.5, C[1]], 1.6);
+      // the place's flag: a long rag streaming from a pole at the back of the tower's roof
+      const fp = [C[0] + Math.cos(-1.15) * 1.25, C[1] + Math.sin(-1.15) * 1.25];
+      S.tube([[fp[0], roof2 - 0.2, fp[1]], [fp[0] + 0.05, roof2 + 1.75, fp[1]]], 0.08, 0.06, wood, { res: 0.06 });
+      ctx.later(() => pennant(ctx, [fp[0] + 0.1, roof2 + 1.68, fp[1]], { mat: cloth, len: 2.3, wide: 0.75, tails: 3 }));
+      // fire: baskets at the foot of the steps, and a bowl on the drum's crown over the steps
+      for (const af of [a0 + 0.3, a0 + 0.85]) basket(ctx, C[0] + Math.cos(af) * (TR + 2.6), C[1] + Math.sin(af) * (TR + 2.6), { iron, k: 0.6 });
+      {
+        const a = 0.95, x = C[0] + Math.cos(a) * (TR - 0.08), z = C[1] + Math.sin(a) * (TR - 0.08);
+        S.box([x, roof1 + 0.3, z], [0.42, 0.3, 0.42], cap, { ax: yawAx(-a), rd: 0.06, res: 0.11 });
+        S.lathe([x, roof1 + 0.6, z], 0.3, t => 0.2 + 0.22 * t, iron, { res: 0.07, maxRadius: 0.42 });
+        ctx.fire([x, roof1 + 0.92, z], 0.85, { k: 0.45, r: 3.0 });
+      }
     }
-    // the wall west of the summit tower, broken, falling away down the far slope
-    curtain(ctx, WEST, { mat: stone, cap, height: 2.0, thick: 2.2, side: -1, breaks: [[6, 9.5], [16, 19]], res: 0.22 });
+    // the wall west of the summit's drum, broken, falling away down the far slope
+    curtain(ctx, WEST, { mat: stone, cap, height: 1.8, thick: 2.2, side: -1, breaks: [[0, 3.2], [7, 10], [16, 19]], res: 0.22 });
 
     /* ---- the west downs: a tower stump on the rise, with fallen stone heaped up to its top ---- */
     {
       const sx = -16, sz = 3, top = h(sx, sz) + 2.1;
       squatTower(ctx, sx, sz, { mat: stone, cap, r: 2.2, roof: top, broken: 1.4, gaps: [0.2] });
       rubbleStair(ctx, [sx + 6.0, sz + 1.5], [sx + 1.8, sz + 0.6], top - 0.02, { mat: rubble, loose: rock, width: 2.2, seed: 9, nLoose: 3 });
-      ragPole(ctx, sx - 0.4, sz - 0.6, { wood, cloth, iron, y: top, h: 2.8, len: 1.2, yaw: 1.2 });
+      ragPole(ctx, sx - 0.4, sz - 0.6, { wood, cloth, y: top, h: 2.6, len: 1.5 });
       deadTree(ctx, -11, 9, { bark: wood, h: 3.6, seed: 2 });
     }
 
-    /* ---- a ruined gate at the brow of the start's down: two fat posts, one broken short, the lintel fallen in the grass ---- */
+    /* ---- a ruined gate on the brow of the start's down: two fat posts, one broken short, the lintel fallen in the grass. The old road
+       runs up through it, its flags mostly gone, and a fire burns in a basket at its side. ---- */
     {
       const gz = 22.6, L = [-3.5, gz], R = [1.9, gz + 0.3], yl = h(L[0], L[1]), yr = h(R[0], R[1]);
-      S.box([L[0], yl + 1.3, L[1]], [0.62, 2.0, 0.62], stone, { rd: 0.1, res: 0.12 });
-      S.box([L[0], yl + 3.45, L[1]], [0.8, 0.2, 0.8], cap, { rd: 0.06, res: 0.11 });
-      // a stub of the lintel still on it, reaching in over the path, and a rag hung from it
-      S.box([L[0] + 1.1, yl + 3.15, L[1]], [0.9, 0.3, 0.5], cap, { ax: frameAlong([1, -0.12, 0]), rd: 0.08, res: 0.11 });
-      ctx.later(() => rag(ctx, [L[0] + 0.7, L[1] + 0.1], [L[0] + 1.8, L[1] + 0.1], yl + 2.88, { mat: cloth, len: 1.3, n: 4 }));
+      S.box([L[0], yl + 1.3, L[1]], [0.68, 2.0, 0.68], stone, { rd: 0.12, res: 0.12 });
+      S.box([L[0], yl + 3.42, L[1]], [0.84, 0.22, 0.84], cap, { rd: 0.08, res: 0.11 });
+      // a stub of the lintel still on it, reaching in over the road, and a rag hung from it
+      S.box([L[0] + 1.15, yl + 3.12, L[1]], [0.9, 0.3, 0.52], cap, { ax: frameAlong([1, -0.12, 0]), rd: 0.08, res: 0.11 });
+      ctx.later(() => rag(ctx, [L[0] + 0.75, L[1] + 0.05], [L[0] + 1.75, L[1] + 0.05], yl + 2.86, { mat: cloth, len: 1.5, n: 4 }));
       // the right post broken short, a block slid half off its top
-      S.box([R[0], yr + 0.7, R[1]], [0.62, 1.4, 0.62], stone, { rd: 0.1, res: 0.12 });
-      S.box([R[0] + 0.2, yr + 2.35, R[1] - 0.1], [0.5, 0.28, 0.55], stone, { ax: frameAlong([1, 0.3, 0.1]), rd: 0.08, res: 0.11 });
+      S.box([R[0], yr + 0.7, R[1]], [0.68, 1.4, 0.68], stone, { rd: 0.12, res: 0.12 });
+      S.box([R[0] + 0.2, yr + 2.35, R[1] - 0.1], [0.52, 0.28, 0.56], stone, { ax: frameAlong([1, 0.3, 0.1]), rd: 0.08, res: 0.11 });
       // the lintel, fallen across the grass
       const fx = R[0] + 1.8, fz = gz - 1.6;
       S.box([fx, h(fx, fz) + 0.18, fz], [1.75, 0.32, 0.48], cap, { ax: frameAlong([0.8, 0.07, -0.6], 0.15), rd: 0.08, res: 0.11 });
+      basket(ctx, L[0] + 1.25, gz + 1.7, { iron, s: 0.85, k: 0.35, r: 3.0 });
+      // what is left of the road's flags: a few big worn slabs, sunk and tilted
+      const flag = { r: [st[0], chalk[0], chalk[1], st[2]], g: [chalk[1]], mod: grit(1.1) };
+      for (const [x, z, a, w, d, tl] of [[0.3, 33.2, 0.1, 0.75, 0.55, 0.05], [-0.6, 31.4, -0.15, 0.6, 0.5, 0], [0.9, 30.2, 0.2, 0.55, 0.45, -0.08],
+        [-0.8, 28.9, 0.05, 0.5, 0.5, 0], [-0.9, 25.6, -0.1, 0.6, 0.45, 0.06], [0.6, 24.8, 0.15, 0.5, 0.5, 0], [-1.0, 23.4, 0, 0.62, 0.42, -0.05],
+        [-1.3, 19.6, 0.2, 0.55, 0.5, 0.08], [-0.2, 18.4, -0.1, 0.5, 0.45, 0]]) {
+        const gy = h(x, z);
+        S.box([x, gy - 0.02, z], [w, 0.12, d], flag, { ax: tl ? frameAlong([Math.cos(a), tl, -Math.sin(a)]) : yawAx(a), rd: 0.08, res: 0.15 });
+      }
+      // tussocks of dead grass along the road's sides, where the camera looks over them
+      tussocks(ctx, [[-3.2, 31.8, 0.5], [3.4, 32.4, 0.55], [-2.6, 29.2, 0.4], [2.9, 28.6, 0.45], [-4.4, 26.6, 0.55], [4.6, 25.4, 0.5],
+        [-5.6, 30.4, 0.6], [5.8, 29.8, 0.55], [-2.4, 19.5, 0.45], [2.6, 17.8, 0.4]], { mat: { r: [wd[0], grass[2], wd[1], grass[3]], mod: grit(1.2) } });
     }
 
     /* ---- the vale: what the siege left ---- */
     cart(ctx, 2.2, 2.5, 0.5, { wood, iron });
-    torch(ctx, -0.6, 4.6, { wood, iron, h: 1.9 });
+    post(ctx, -0.6, 4.6, { wood, iron, h: 1.9 });
     spikes(ctx, [5, -2], [6.5, 6], { wood, n: 9, h: 1.5, lean: [-0.45, 0.1] });
     spikes(ctx, [3, -9], [6, -4.5], { wood, n: 7, h: 1.4, lean: [-0.4, 0.2] });
     spikes(ctx, [-8, -6], [-9.5, 1], { wood, n: 7, h: 1.3, lean: [0.4, 0] });
     ladder(ctx, [5.8, -7.6], [9.8, -3.6], { wood, broken: true }); // fallen by the breach
-    ragPole(ctx, -11.5, 6.5, { wood, cloth, iron, h: 3.6, len: 1.2, yaw: 0.3 });
-    ragPole(ctx, -9.5, 16, { wood, cloth, iron, h: 3.4, len: 1.1, yaw: -0.4 });
-    ragPole(ctx, 8.6, -5.4, { wood, cloth, iron, h: 3.2, len: 1.1, yaw: 0.9 });
+    ragPole(ctx, -11.5, 6.5, { wood, cloth, h: 3.6, len: 1.9 });
+    ragPole(ctx, -9.5, 16, { wood, cloth, h: 3.3, len: 1.7 });
+    ragPole(ctx, 8.6, -5.4, { wood, cloth, h: 3.2, len: 1.7 });
     deadTree(ctx, 6.5, 22.5, { bark: wood, h: 3.0, seed: 5 });
     deadTree(ctx, -12, -10, { bark: wood, h: 3.4, seed: 7 });
     boulders(ctx, [[-6, 17, 0.8], [4.5, 9, 0.6], [-9, -3, 0.9], [-13, 14, 1.0], [5.5, 24, 0.6], [-20, -6, 1.1], [20, -6, 1.0], [-26, 8, 1.2]], rock, 4);
@@ -230,8 +277,8 @@ export default {
     const beak = { r: [ramp('iron')[0]] };
     crow(ctx, T2[0] + 2.2, r2 + 0.78, T2[1] + 0.8, -2.2, black, beak);
     crow(ctx, T3[0] - 1.9, r3 + 0.78, T3[1] + 1.5, 2.8, black, beak);
-    crow(ctx, C[0] + Math.cos(1.2) * 2.95, roof + 0.8, C[1] + Math.sin(1.2) * 2.95, 2.4, black, beak);
-    crow(ctx, -3.3, h(-3.5, 22.6) + 3.65, 22.75, 2.6, black, beak); // on the gate post, the first thing that watches you
+    crow(ctx, C[0] + Math.cos(1.45) * (TR - 0.08), roof1 + 0.84, C[1] + Math.sin(1.45) * (TR - 0.08), 2.4, black, beak);
+    crow(ctx, -3.3, h(-3.5, 22.6) + 3.64, 22.75, 2.6, black, beak); // on the gate post, the first thing that watches you
     crow(ctx, 5.3, h(6.5, 22.5) + 2.05, 22.0, -1.2, black, beak, 1.4); // in the dead tree by the gate
 
     /* ---- rags on the battlements: hung after the walk map, so they never block the feet ---- */
@@ -239,7 +286,7 @@ export default {
       for (const p of [[15.5, 27.5], [11.2, 9.5], [6.6, -10.4], [0.8, -16.5]]) {
         const s = sAt(WALL, p), q = W.M.at(s), sd = W.sideAt(s), y = W.walkAt(s) + 0.55;
         const bx = q.x + sd[0] * 1.36, bz = q.z + sd[1] * 1.36;
-        rag(ctx, [bx - q.dx * 0.7, bz - q.dz * 0.7], [bx + q.dx * 0.7, bz + q.dz * 0.7], y, { mat: cloth, len: 2.2, n: 4 });
+        rag(ctx, [bx - q.dx * 0.6, bz - q.dz * 0.6], [bx + q.dx * 0.6, bz + q.dz * 0.6], y, { mat: cloth, len: 2.2, n: 4 });
       }
     });
 
@@ -251,46 +298,73 @@ export default {
     ctx.wisp([20, h(20, -2) + 1.0, -2]); // outside the wall, under T2
     ctx.wisp([-24.5, h(-24.5, -27) + 1.0, -27]); // behind the summit, by the broken west wall
 
-    /* ---- sky: storm violet overhead, the sick band at the horizon, the sun going down red in the north-west ---- */
+    /* ---- sky: storm violet overhead; a sick yellow-green glow lying along the far skyline, brightest toward the sun and deepest in
+       the notch behind the summit; storm cloud across it; the sun going down red behind the far downs in the north-west ---- */
     ctx.glow(({ B }) => {
-      const sk = ramp('skyband'), sick = ramp('sick'), f = ramp('fire'), sun = ramp('sunstone'), fogc = ramp('fog')[0];
-      // the dome: fog-coloured below the horizon, so the far lowland melts into it; storm grey above, near-black overhead
-      dome(B, d => (d[1] < 0.03 ? fogc : d[1] < 0.1 ? sk[2] : d[1] < 0.22 ? sk[1] : d[1] < 0.4 ? sk[0] : ramp('sky')[0]), 150);
-      // the band: rings of long low splats round the horizon, brightest in one thin line (seen from the start, a little under eye level)
-      const aSun = -0.88; // the sun's bearing (0 is north, negative is west)
-      for (let i = 0; i < 110; i++) {
-        const a = (i / 110) * Math.PI * 2, r = 140, w = Math.cos(a - aSun) + B.rr(-0.15, 0.15);
-        const layers = w > 0.35 ? [[0.022, 1.3, sick[0], 0.8], [0.034, 0.9, sick[1], 0.85], [0.042, 0.45, sick[2], 0.9], [0.058, 1.6, sk[2], 0.7]]
-          : w > -0.2 ? [[0.024, 1.2, sk[2], 0.75], [0.036, 0.7, sick[0], 0.85], [0.058, 1.6, sk[2], 0.7]]
-          : [[0.03, 1.6, sk[2], 0.7]];
-        for (const [el, sz, c, al] of layers) {
-          if (c === sick[2] && B.rr(0, 1) < 0.25) continue; // the bright line breaks
-          const e = el + B.rr(-0.003, 0.003), ce = Math.cos(e);
-          B.axial(Math.sin(a) * ce * r, Math.sin(e) * r, -Math.cos(a) * ce * r, [Math.cos(a), 0, Math.sin(a)], 4.6, sz, B.P[c], al, { em: true, nd: true });
+      const sk = ramp('skyband'), sick = ramp('sick'), f = ramp('fire'), sun = ramp('sunstone'), deg = Math.PI / 180;
+      const E = [SPAWN[0], spawnY + EYE_UP, SPAWN[1] + EYE_BACK];
+      const at = (b, e, r) => [E[0] + Math.sin(b) * Math.cos(e) * r, E[1] + Math.sin(e) * r, E[2] - Math.cos(b) * Math.cos(e) * r];
+      const along = b => [Math.cos(b), 0, Math.sin(b)];
+      // the far skyline as this eye sees it: the highest ground at each bearing, as an angle
+      const skyline = b => {
+        let best = -0.2;
+        for (let d = 6; d <= 125; d += 1) {
+          const x = E[0] + Math.sin(b) * d, z = E[2] - Math.cos(b) * d;
+          if (Math.abs(x) > 84 || Math.abs(z) > 84) break;
+          best = Math.max(best, Math.atan2(h(x, z) - E[1], d));
+        }
+        return best;
+      };
+      dome(B, d => (d[1] < 0.05 ? sk[1] : d[1] < 0.18 ? sk[0] : ramp('sky')[0]), 150);
+      // the glow: rows of long low splats from a little under the skyline up into the storm, the bright line on the skyline itself
+      // it is thin and dim round most of the sky, brighter toward the sun, and brightest in the notch behind the summit. There its
+      // brightest line is lifted off the skyline to stand behind the tower's crown (the drum hides the skyline itself)
+      const bSun = -44 * deg, bSum = Math.atan2(C[0] - E[0], E[2] - C[1]), R = 165;
+      const notch = b => 1 - smooth(7 * deg, 20 * deg, Math.abs(b - bSum));
+      for (let b = -100 * deg; b <= 56 * deg; b += 1.5 * deg) {
+        const sw = 0.5 + 0.5 * Math.cos(b - bSun), nw = notch(b), w = Math.max(0.25 + 0.6 * sw, nw);
+        const e0 = skyline(b), eb = e0 + nw * Math.max(0, -3.1 * deg - e0), top = (0.9 + 0.9 * sw + 1.5 * nw) * deg;
+        for (let e = e0 - 1.6 * deg; e < eb + top; e += 0.5 * deg) {
+          const up = e > eb ? (e - eb) / top : -0.45 * (eb - e) / (eb - e0 + 1.6 * deg);
+          const k = w * (1 - Math.abs(up)) + B.rr(-0.08, 0.08);
+          const c = k > 0.7 ? sick[2] : k > 0.5 ? sick[1] : k > 0.3 ? sick[0] : k > 0.12 ? sk[2] : -1;
+          if (c < 0) continue;
+          const p = at(b + B.rr(-0.4, 0.4) * deg, e, R);
+          B.axial(p[0], p[1], p[2], along(b), R * 1.05 * deg, R * 0.32 * deg, B.P[c], 0.9, { em: true, nd: true });
         }
       }
-      // storm cloud: dark bars over the band and above it, a few lit red-brown from below near the sun
-      // (the low ones break the band, but leave it open behind the summit as the start sees it, bearing about -0.1)
-      const low = [-2.6, -2.1, -1.55, -1.05, -0.62, 0.5, 0.95, 1.6, 2.3, 2.9];
-      for (let i = 0; i < 46 + low.length; i++) {
-        const a = i < low.length ? low[i] + B.rr(-0.08, 0.08) : B.rr(0, Math.PI * 2), el = i < low.length ? B.rr(0.05, 0.07) : B.rr(0.08, 0.3), r = 132, ce = Math.cos(el);
-        const lit = Math.cos(a - aSun) > 0.75 && el > 0.06 && el < 0.14;
-        B.axial(Math.sin(a) * ce * r, Math.sin(el) * r, -Math.cos(a) * ce * r, [Math.cos(a), 0, Math.sin(a)], i < low.length ? B.rr(7, 13) : B.rr(10, 22), i < low.length ? B.rr(0.8, 1.4) : B.rr(1.4, 3.2),
-          B.P[lit ? sun[0] : sk[B.pick([0, 0, 1])]], 0.85, { em: true, nd: true });
+      // storm cloud: long dark bars across the glow and above it; near the sun their undersides are lit red-brown
+      for (let i = 0; i < 40; i++) {
+        let b = B.rr(-95, 50) * deg;
+        const low = i < 9;
+        if (low && notch(b) > 0) b += (b < bSum ? -1 : 1) * 22 * deg; // the low bars keep out of the notch
+        const e = skyline(b) + (low ? B.rr(1.0, 2.2) : B.rr(4, 14)) * deg, p = at(b, e, R - 4);
+        const lit = low && Math.cos(b - bSun) > 0.8;
+        B.axial(p[0], p[1], p[2], along(b), B.rr(8, 16), low ? B.rr(0.5, 0.9) : B.rr(1.3, 3), B.P[lit ? sun[0] : sk[B.pick([0, 0, 1])]], 0.85, { em: true, nd: true });
       }
-      // the sun, low in the north-west, sinking into the band
-      const sd = B.norm([-0.77, 0.05, -0.64]), sr = 138;
-      B.iso(sd[0] * sr, sd[1] * sr, sd[2] * sr, 3.2, B.P[f[2]], 3, { em: true, nd: true });
-      B.iso(sd[0] * sr, sd[1] * sr, sd[2] * sr, 11, B.P[sun[0]], 0.45, { em: true, nd: true });
+      // one long low bar over the summit, so the notch it stands in is framed above as well as below
+      {
+        const p = at(-4 * deg, skyline(-4 * deg) + 4.9 * deg, R - 4);
+        B.axial(p[0], p[1], p[2], along(-4 * deg), 26, 0.9, B.P[sk[0]], 0.9, { em: true, nd: true });
+      }
+      // the sun, its lower half already behind the far downs, a dark bar of cloud across it
+      {
+        const e0 = skyline(bSun), s0 = at(bSun, e0 + 0.15 * deg, 170);
+        B.iso(s0[0], s0[1], s0[2], 2.3, B.P[f[1]], 3, { em: true, nd: true });
+        B.iso(s0[0], s0[1] + 0.3, s0[2], 1.4, B.P[f[2]], 3, { em: true, nd: true });
+        B.iso(s0[0], s0[1], s0[2], 9, B.P[sun[0]], 0.35, { em: true, nd: true });
+        const c = at(bSun + 0.6 * deg, e0 + 0.55 * deg, 166);
+        B.axial(c[0], c[1], c[2], along(bSun), 7, 0.35, B.P[sk[0]], 1.2, { em: true, nd: true });
+      }
       // ash on the wind
-      lib.motes(B, 110, [-30, 30, 0.3, 8, -30, 30], [sk[2], st[3]], 0.03);
+      lib.motes(B, 70, [-30, 30, 0.3, 8, -30, 30], [sk[2], st[3]], 0.03);
     });
   }
 };
 
 /* ---------------- helpers: the sky, lines, frames ---------------- */
 // a dome of big soft splats, as B.sky, but drawn behind everything (bk): the camera stands well off the dome's centre, and the dome's
-// upper splats would otherwise sort in front of the horizon band and paint over it
+// upper splats would otherwise sort in front of the glow and paint over it
 function dome(B, fn, rad = 150, n = 300) {
   const ga = Math.PI * (3 - Math.sqrt(5));
   for (let k = 0; k < n; k++) {
@@ -337,13 +411,22 @@ function groundTiles(ctx, near, [mid, far]) {
   const { S, h } = ctx, N = [-21, 19, -29, 31], R = 48;
   tile(S, h, near, { x0: N[0], x1: N[1], z0: N[2], z1: N[3], res: 0.26 });
   for (const [x0, x1, z0, z1] of [[-R, R, -R, N[2]], [-R, R, N[3], R], [-R, N[0], N[2], N[3]], [N[1], R, N[2], N[3]]])
-    tile(S, h, mid, { x0, x1, z0, z1, res: 0.55 });
+    tile(S, h, mid, { x0, x1, z0, z1, res: 0.6 });
   tile(S, h, far, { x0: -84, x1: 84, z0: -84, z1: 84, hole: R, res: 1.45 });
 }
 // big rocks lying in the grass, dark, their tops gone to grass
 function boulders(ctx, list, mat, seed) {
   const { K, S, h } = ctx;
   list.forEach(([x, z, r], i) => K.grow.rock(S, [x, h(x, z) + r * 0.25, z], r, mat, { facets: 7, chip: 0.35, worn: 0.06, seed: seed + i, res: 0.13 }));
+}
+// tussocks: low chunky clumps of dead grass, a fat one and a smaller one leaning off it
+function tussocks(ctx, list, { mat }) {
+  const { S, B, h } = ctx;
+  for (const [x, z, r] of list) {
+    const y = h(x, z) - r * 0.35, a = B.rr(0, Math.PI * 2);
+    S.ball([x, y + r * 0.45, z], [r, r * 0.62, r * 0.9], mat, { ax: yawAx(a), res: 0.11 });
+    S.ball([x + Math.cos(a) * r * 0.7, y + r * 0.3, z + Math.sin(a) * r * 0.7], [r * 0.55, r * 0.45, r * 0.55], mat, { res: 0.11 });
+  }
 }
 // a row of sharpened stakes driven in at a slant (lean: which way their points go), some missing
 function spikes(ctx, a, b, { wood, n = 8, h = 1.3, lean = [0, 0] }) {
@@ -358,11 +441,12 @@ function spikes(ctx, a, b, { wood, n = 8, h = 1.3, lean = [0, 0] }) {
 
 /* ---------------- the curtain wall ----------------
    Blocks along a polyline. The walk on top follows the ground smoothed along the line plus `height`, so it rolls with the ridge in steps
-   a foot can take. Merlons stand along one edge only (side +1: the left of the line's direction), so the walk stays wide. `open` lists
-   stretches [s0, s1] with no merlons (where rubble comes up), `breaks` stretches with no wall. Round pillars fill the bends. */
+   a foot can take; endY brings it to a set height over the last endRun units. Merlons stand along one edge only (side +1: the left of
+   the line's direction), so the walk stays wide. `open` lists stretches [s0, s1] with no merlons (where rubble comes up), `breaks`
+   stretches with no wall. Round pillars fill the bends. */
 function curtain(ctx, pts, o) {
   const { S, h, B } = ctx;
-  const { mat, cap, height = 2.7, thick = 2.6, seg = 1.6, breaks = [], open = [], side = 1, res = 0.16, merlon = true, towers = [], pillars = false } = o;
+  const { mat, cap, height = 2.7, thick = 2.6, seg = 1.6, breaks = [], open = [], side = 1, res = 0.16, merlon = true, towers = [], pillars = false, endY, endRun = 6 } = o;
   const M = measure(pts), n = Math.max(2, Math.ceil(M.len / 0.5)), ds = M.len / n;
   let sm = [];
   for (let i = 0; i <= n; i++) { const p = M.at(i * ds); sm.push(h(p.x, p.z)); }
@@ -371,7 +455,10 @@ function curtain(ctx, pts, o) {
     for (let i = 0; i <= n; i++) { let a = 0, c = 0; for (let j = Math.max(0, i - k); j <= Math.min(n, i + k); j++) { a += sm[j]; c++; } out.push(a / c); }
     sm = out;
   }
-  const walkAt = s => { const f = Math.max(0, Math.min(n, s / ds)), i = Math.min(n - 1, Math.floor(f)), t = f - i; return sm[i] + (sm[i + 1] - sm[i]) * t + height; };
+  const walkAt = s => {
+    const f = Math.max(0, Math.min(n, s / ds)), i = Math.min(n - 1, Math.floor(f)), t = f - i, y = sm[i] + (sm[i + 1] - sm[i]) * t + height;
+    return endY === undefined ? y : y + (endY - y) * smooth(M.len - endRun, M.len - 0.8, s);
+  };
   const sideAt = s => { const q = M.at(s); return [q.dz * side, -q.dx * side]; };
   const inR = (s, L) => L.some(([a, b]) => s > a && s < b);
   const nearTower = (x, z, pad) => towers.some(t => Math.hypot(x - t[0], z - t[1]) < 2.6 + pad);
@@ -468,28 +555,56 @@ function breach(ctx, W, s0, s1, { mat, loose }) {
 }
 
 /* ---------------- cloth, poles, the siege's leavings, crows ---------------- */
-// a tattered rag hung from a bar from a to b at height y: whole for the top part of its length, torn below into strips of their own
-// lengths, a few gone, each swung a little by the wind
+// a tattered rag hung from a bar from a to b at height y: a narrow whole strip at the top, torn below into tails of their own lengths and
+// widths, a few gone, each swung a little by the wind
 function rag(ctx, a, b, y, { mat, len = 1.6, n = 5 }) {
-  const { S, B } = ctx, dx = b[0] - a[0], dz = b[1] - a[1], L = Math.hypot(dx, dz), whole = len * 0.42;
-  const F0 = frameAlong([dx, 0, dz], B.rr(-0.08, 0.08)), V0 = F0[1];
-  S.box([(a[0] + b[0]) / 2 - V0[0] * whole / 2, y - V0[1] * whole / 2, (a[1] + b[1]) / 2 - V0[2] * whole / 2], [L / 2, whole / 2, 0.03], mat, { ax: F0, res: 0.1 });
+  const { S, B } = ctx, dx = b[0] - a[0], dz = b[1] - a[1], L = Math.hypot(dx, dz), whole = Math.min(0.32, len * 0.2);
+  const F0 = frameAlong([dx, 0, dz], B.rr(-0.06, 0.06)), V0 = F0[1];
+  S.box([(a[0] + b[0]) / 2 - V0[0] * whole / 2, y - V0[1] * whole / 2, (a[1] + b[1]) / 2 - V0[2] * whole / 2], [L / 2, whole / 2, 0.03], mat, { ax: F0, res: 0.09 });
   for (let i = 0; i < n; i++) {
-    if (B.rr(0, 1) < 0.15) continue;
-    const t = (i + 0.5) / n, l = (len - whole) * B.rr(0.3, 1.25), w = (L / n / 2) * B.rr(0.6, 0.9);
+    if (i > 0 && B.rr(0, 1) < 0.2) continue;
+    const t = (i + 0.5) / n, l = (len - whole) * B.rr(0.35, 1.1), w = (L / n / 2) * B.rr(0.55, 0.85);
     const x = a[0] + dx * t - V0[0] * whole, yy = y - V0[1] * whole + 0.04, z = a[1] + dz * t - V0[2] * whole;
-    const F = frameAlong([dx, 0, dz], B.rr(-0.25, 0.25)), V = F[1];
-    S.box([x - V[0] * l / 2, yy - V[1] * l / 2, z - V[2] * l / 2], [w, l / 2, 0.03], mat, { ax: F, res: 0.1 });
+    // a tail is two pieces: the upper one hangs, the lower one is narrower and swung further
+    const sw = B.rr(-0.22, 0.22), F = frameAlong([dx, 0, dz], sw), V = F[1], l1 = l * 0.55;
+    S.box([x - V[0] * l1 / 2, yy - V[1] * l1 / 2, z - V[2] * l1 / 2], [w, l1 / 2, 0.03], mat, { ax: F, res: 0.09 });
+    const F2 = frameAlong([dx, 0, dz], sw * 1.8 + B.rr(-0.1, 0.1)), V2 = F2[1], l2 = l - l1, x2 = x - V[0] * l1, y2 = yy - V[1] * l1, z2 = z - V[2] * l1;
+    S.box([x2 - V2[0] * l2 / 2, y2 - V2[1] * l2 / 2, z2 - V2[2] * l2 / 2], [w * 0.6, l2 / 2, 0.03], mat, { ax: F2, res: 0.09 });
   }
 }
-// a pole with a crossbar and a rag on it; the rag is hung after the walk map
-function ragPole(ctx, x, z, { wood, cloth, iron, y, h = 3, len = 1.6, yaw = 0, n = 4 }) {
+// a pennant: a long narrow rag streaming down-wind from p (a pole's top), sagging as it goes, torn at its end into tails
+function pennant(ctx, p, { mat, len = 1.8, wide = 0.6, tails = 3 }) {
+  const { S, B } = ctx, wx = WIND[0], wz = WIND[2];
+  const nW = 3, whole = len * 0.45;
+  let x = p[0], y = p[1] - wide / 2, z = p[2];
+  const piece = (x0, y0, z0, l, w, dip, ph) => {
+    // one flat piece l long and w deep, running down-wind and dipping by `dip`, rippled by ph
+    const u = norm3([wx, -dip / l, wz + 0.25 * Math.sin(ph)]);
+    S.box([x0 + u[0] * l / 2, y0 + u[1] * l / 2, z0 + u[2] * l / 2], [l / 2 + 0.03, w / 2, 0.03], mat, { ax: frameAlong(u, 0.25 * Math.sin(ph * 1.7)), res: 0.09 });
+    return [x0 + u[0] * l, y0 + u[1] * l, z0 + u[2] * l];
+  };
+  for (let i = 0; i < nW; i++) [x, y, z] = piece(x, y, z, whole / nW, wide * (1 - 0.15 * i), 0.06 + 0.05 * i, i * 1.3);
+  const w0 = wide * 0.55;
+  for (let k = 0; k < tails; k++) {
+    const off = (k - (tails - 1) / 2) * w0 / tails, l = (len - whole) * B.rr(0.45, 1.0);
+    let q = [x, y + off, z];
+    q = piece(q[0], q[1], q[2], l * 0.55, w0 / tails * 0.95, 0.12 + 0.1 * k, 2 + k * 1.9);
+    piece(q[0], q[1], q[2], l * 0.45, w0 / tails * 0.6, 0.22 + 0.12 * k, 3 + k * 2.3);
+  }
+}
+// a pole with a rag streaming from its top; the rag is hung after the walk map
+function ragPole(ctx, x, z, { wood, cloth, y, h = 3, len = 1.6 }) {
   const { S } = ctx, y0 = (y ?? ctx.h(x, z)) - 0.3, top = y0 + h;
-  const ca = Math.cos(yaw), sa = Math.sin(yaw);
   S.tube([[x, y0, z], [x + 0.08, top, z + 0.05]], 0.1, 0.07, wood, { res: 0.07 });
-  S.tube([[x - ca * 0.75, top - 0.25, z + sa * 0.75], [x + ca * 0.75, top - 0.2, z - sa * 0.75]], 0.055, 0.055, wood, { res: 0.06 });
-  S.ball([x + 0.08, top + 0.05, z + 0.05], 0.11, iron, { res: 0.06 });
-  ctx.later(() => rag(ctx, [x - ca * 0.72, z + sa * 0.72], [x + ca * 0.72, z - sa * 0.72], top - 0.25, { mat: cloth, len, n }));
+  S.ball([x + 0.08, top + 0.04, z + 0.05], 0.12, wood, { res: 0.06 });
+  ctx.later(() => pennant(ctx, [x + 0.12, top - 0.08, z + 0.05], { mat: cloth, len, wide: 0.55 + len * 0.1, tails: len > 1.7 ? 3 : 2 }));
+}
+// a wooden post with an iron cup and a fire on top (lighter than the shared torch)
+function post(ctx, x, z, { wood, iron, h = 1.9, s = 0.85 }) {
+  const { S } = ctx, y0 = ctx.h(x, z) - 0.1;
+  S.tube([[x, y0, z], [x, y0 + h, z]], 0.12, 0.09, wood, { res: 0.07 });
+  S.ball([x, y0 + h + 0.02, z], [0.2, 0.11, 0.2], iron, { res: 0.06 });
+  ctx.fire([x, y0 + h + 0.1, z], s);
 }
 // a broken cart: its bed slumped to the side whose wheel came off, that wheel lying in the grass, the shafts on the ground
 function cart(ctx, x, z, yaw, { wood, iron }) {
@@ -550,14 +665,14 @@ function wallStair(ctx, W, sA, sB, { mat }) {
   }
 }
 // an iron fire-basket on three short legs, its fire, and its lamp (lighter than the shared brazier)
-function basket(ctx, x, z, { iron, y, s = 1.0 }) {
+function basket(ctx, x, z, { iron, y, s = 1.0, k = 0.7, r }) {
   const { S } = ctx, y0 = y ?? ctx.h(x, z) - 0.05;
   for (let i = 0; i < 3; i++) {
     const a = (i / 3) * Math.PI * 2 + 0.4;
     S.tube([[x + Math.cos(a) * 0.42, y0, z + Math.sin(a) * 0.42], [x + Math.cos(a) * 0.2, y0 + 0.72, z + Math.sin(a) * 0.2]], 0.06, 0.05, iron, { res: 0.07 });
   }
   S.lathe([x, y0 + 0.6, z], 0.38, t => 0.24 + 0.26 * t, iron, { res: 0.07, maxRadius: 0.5 });
-  ctx.fire([x, y0 + 1.02, z], s);
+  ctx.fire([x, y0 + 1.02, z], s, { k, r });
   return [x, y0 + 1.0, z];
 }
 // a crow: a round body, a round head, a pointed beak and a flat tail (yaw 0 faces +z)
