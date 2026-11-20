@@ -80,12 +80,13 @@ export default {
   build(ctx) {
     const { S, B, h, ramp } = ctx;
     const grit = (k = 1) => (x, y, z) => k * (0.16 * (B.n3(x * 0.45, z * 0.45, y * 0.3 + 3) - 0.5) + 0.14 * (B.n3(x * 2.6, y * 2.6, z * 2.6) - 0.5));
-    // laid stone: grit, each block its own tone, and dark mortar between courses and between blocks
+    // laid stone: grit, each block its own tone, and on the upright faces dark mortar between courses and between blocks
     const laid = (k = 0.8, ch = 0.66) => {
       const g = grit(k);
-      return (x, y, z) => {
-        const c = y / ch, row = Math.floor(c), f = c - row, u0 = (x * 0.72 + z * 0.69) / 1.2 + row * 0.5, col = Math.floor(u0), u = u0 - col;
-        return g(x, y, z) + 0.17 * (B.n3(col * 3.7, row * 1.9, 5.5) - 0.5) + (f < 0.16 || u < 0.07 ? -0.18 : 0);
+      return (x, y, z, ny) => {
+        const c = y / ch + 0.15 * B.n3(x * 0.3, z * 0.3, 8), row = Math.floor(c), f = c - row, u0 = (x * 0.72 + z * 0.69) / 1.2 + row * 0.5, col = Math.floor(u0), u = u0 - col;
+        const tone = g(x, y, z) + 0.17 * (B.n3(col * 3.7, row * 1.9, 5.5) - 0.5);
+        return Math.abs(ny) > 0.6 ? tone : tone + (f < 0.16 || u < 0.07 ? -0.18 : 0);
       };
     };
     const grass = ramp('grass'), chalk = ramp('chalk'), st = ramp('stone'), wd = ramp('wood');
@@ -100,11 +101,13 @@ export default {
     };
     groundTiles(ctx, ground, [{ r: grass, g: [grass[1]], mod: grit(1.2), fat: 0.7 }, { r: grass, mod: grit(1.4), fat: 1.15 }]);
 
-    // stone: shaded on the violet ramp, warm on the faces the low sun still reaches
-    const stone = { r: st, s: ramp('sunstone'), g: [st[1]], mod: laid(0.8), top: { min: 0.99, r: grass.slice(0, 3) } };
-    const cap = { r: st, s: ramp('sunstone'), g: [st[1]], mod: grit(0.9) };
+    // stone: shaded on the violet ramp; where the low sun still reaches, a ramp from violet up to warm, so a face it grazes is mottled
+    // violet and rose and only a face turned full to it goes warm
+    const sunR = [st[2], ...ramp('sunstone')];
+    const stone = { r: st, s: sunR, g: [st[1]], mod: laid(0.8), top: { min: 0.99, r: grass.slice(0, 3) } };
+    const cap = { r: st, s: sunR, g: [st[1]], mod: grit(0.9) };
     // fallen stone: darker, gone green on top
-    const rubble = { r: st.slice(0, 4), s: ramp('sunstone'), g: [st[1]], mod: grit(1.1), top: { min: 0.82, r: grass.slice(0, 3) } };
+    const rubble = { r: st.slice(0, 4), s: sunR, g: [st[1]], mod: grit(1.1), top: { min: 0.82, r: grass.slice(0, 3) } };
     const dark = { r: st.slice(0, 3), mod: grit(0.6) };
     const wood = { r: wd, g: [wd[1]], mod: grit(0.5) };
     const iron = { r: ramp('iron') };
