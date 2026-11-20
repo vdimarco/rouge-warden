@@ -185,7 +185,9 @@ try {
     pass('a direction held through the pause panel walks on after Resume');
 
     // the roll: no direction held, straight back from the facing
-    await G(page, () => { const s = window.__gloam.state(); window.__gloam.teleport(-5.5, 4.5, s.yaw); });
+    // open ground more than 10 m from every zone, so no foe wakes and hooks the lamplighter in these checks (the yard by the cells, used
+    // before the foes fought back, wakes two Snuffers now)
+    await G(page, () => { const s = window.__gloam.state(); window.__gloam.teleport(-24.5, -21, s.yaw); });
     await tick(page, 1.0, {}); // the swing drawn above ends first
     let a = await state(page);
     await tick(page, 0.1, { roll: true });
@@ -247,15 +249,17 @@ try {
     await page.click('#bResume');
     pass('the pause panel: focus, Tab, End the run asks again, Escape and M behave, the tool opens it');
 
-    // the beacon: light() acts as a touch; the card offers two wicks; Escape cannot leave it; a reload shows the same two
+    // the beacon: light() acts as a touch; the card offers two wicks; Escape cannot leave it; a reload shows the same two. Its keepers
+    // in the keep are put out first (the guard rule), and their 9 glim are banked with the 9 carried
     await G(page, () => window.__gloam.set({ carried: 9 }));
+    await G(page, () => window.__gloam.out('G5'));
     await G(page, () => window.__gloam.light());
     await tick(page, 1.6, {});
     assert(await page.isVisible('#beaconCard'), 'the beacon card shows');
     const offer = await page.$$eval('#wicks button', bs => bs.map(b => b.textContent));
     assert(offer.length === 2 && offer.every(t => / · /.test(t)), JSON.stringify(offer));
     r = await run(page);
-    assert.deepEqual([r.bank, r.carried, r.place, r.flasks], [9, 0, 'ramparts', 2]);
+    assert.deepEqual([r.bank, r.carried, r.place, r.flasks], [18, 0, 'ramparts', 2]);
     await page.keyboard.press('Escape');
     assert(await page.isVisible('#beaconCard'), 'Escape does not close the card before a wick is chosen');
     await page.goto(`${SITE}/lab/gloam-downs/worlds/gaol.json`);
@@ -269,7 +273,7 @@ try {
     assert(r.wicks.length === 1 && r.offer === null);
     await page.keyboard.press('Enter');
     await page.waitForFunction(() => window.__gloam.ready() && window.__gloam.run().mode === 'play', null, { timeout: 120000 });
-    pass('the beacon banks 9, fills the flasks and offers two wicks; Escape cannot pass them; a reload shows the same two', { offer, wick: r.wicks });
+    pass('the beacon, its keepers out, banks the 9 carried and their 9, fills the flasks and offers two wicks; Escape cannot pass them; a reload shows the same two', { offer, wick: r.wicks });
     assert.deepEqual(errors, []);
     await ctx.close();
   }

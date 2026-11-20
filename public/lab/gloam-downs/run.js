@@ -169,8 +169,9 @@ export function die(rs) {
    - lightable(): { ok, why } when a touch on the beacon may light it (stage 2's guard zones, stage 3's boss);
    - drop(n, at): glim that drops (default: straight into the glim carried; stage 2 drops motes that fly in);
    - think(ev, play): runs after the lamplighter on every game step (stage 2's foes; play is false in hit stop). A foe's hit calls
-     runner.hurt(dmg, from, { push }). */
-export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable = () => ({ ok: true }), drop = null, think = null, still = false, log = [], fx = {}, clock = makeClock() }) {
+     runner.hurt(dmg, from, { push });
+   - onLight(): runs when a beacon lights, before it banks (the foes' glim motes not yet taken count as carried). */
+export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable = () => ({ ok: true }), drop = null, think = null, onLight = null, still = false, log = [], fx = {}, clock = makeClock() }) {
   // fx.stop false turns hit stop off (__gloam.fx), so the game must still play with it off
   const stop = n => (fx.stop === false ? 0 : hitStop(clock, n));
   const stats = () => {
@@ -203,6 +204,7 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
     const may = R.lightable();
     if (!may.ok) { ev.push({ type: 'dark', why: may.why, at: may.at }); return ev; }
     R.lit = true;
+    onLight?.();
     const out = lightBeacon(rs);
     ev.push(out.won ? { type: 'win' } : { type: 'beacon', next: out.next, offer: out.offer }, { type: 'store' });
     cue(ev, 'beacon');

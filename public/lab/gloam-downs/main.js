@@ -16,6 +16,7 @@ import * as cards from './cards.js';
 import { makePool } from './pool.js';
 import { figures, poolFor, lineup, LINEUP } from './figures.js';
 import { findVeils, makeVeils } from './veil.js';
+import { makeFight, SPARKS } from './fight.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('view'), loading = $('loading'), loadLine = $('loadLine'), barFill = $('barFill'), bar = $('bar');
@@ -46,11 +47,13 @@ let artTarget = TARGET[q.get('q')] || (coarse ? 46000 : TARGET.mid), adapt = !q.
 let art = { w: 320, h: 200, s: 1 };
 let pendingRows = new Set(), fogNear = 10, beaconLit = false, arriveTimer = 0, toastTimer = 0, slowFor = 0, pool = null, slots = null, veils = null;
 const intervals = [];
-// the run: the sound cues logged across places, the effects that stage 2 drives, training posts (?test) and the foes' targets
+// the run: the sound cues logged across places, the effects' flags (each can be turned off with __gloam.fx), what the effects give
+// this frame, training posts (?test), the fight in this place (fight.js) and the foes' targets
 const cues = [];
-const fx = { kick: [0, 0, 0], zoom: 1, bars: 0, grade: null, stop: true, flash: true, shake: true };
+const fx = { stop: true, flash: true, kick: true, zoom: true, grade: true, shake: true };
+const fxNow = { kick: [0, 0, 0], zoom: 1, bars: 0 };
 const posts = [];
-let foeTargets = () => [];
+let foeTargets = () => [], fight = null;
 let sinceStore = 0, endAt = 0;
 // ?run&lineup without ?test: one of each foe and the Barrow Reeve stand in a row and play each of their moves in turn, to look at
 let gallery = null;
@@ -66,6 +69,8 @@ function stepGallery() {
   }
 }
 const targets = () => [...posts.filter(p => p.alive), ...foeTargets()];
+// what the cameras need from a fight: the awake foes (home: standing at home; homing: walking home; rising) and the blade's target
+const combat = () => (fight ? { foes: fight.foes.awake(), target: fight.foes.target() } : { foes: [], target: null });
 
 /* ---------------- the art size: a small picture scaled up by a whole number ---------------- */
 function sizeArt() {
@@ -415,11 +420,19 @@ function lightBeacon() {
 
 /* ---------------- a run in a place ---------------- */
 function newRunner() {
-  runner = makeRunner({ walk, meta, body, rs, targets, still, log: cues, fx });
+  // the foes of this place, with the place: every foe back, and the foes put out kept for this place only
+  fight = pool && !LOOK && rs.run ? makeFight({ walk, meta, world, pool, rs, max: () => maxOf(rs), still, fx, project, doc: document }) : null;
+  foeTargets = fight ? () => fight.foes.targets() : () => [];
+  runner = makeRunner({
+    walk, meta, body, rs, targets, still, log: cues, fx,
+    ...(fight ? { lightable: fight.foes.lightable, drop: fight.foes.drop, think: fight.think, onLight: fight.foes.bank } : {})
+  });
+  fight?.bind(runner);
   return runner;
 }
 // what the runner's step did, on the page
 function runEvent(e) {
+  fight?.event(e);
   switch (e.type) {
     case 'wisp':
       setLit([meta.wisps[e.i].ids], false);
@@ -446,7 +459,7 @@ function runEvent(e) {
     case 'dead': endAt = steps + 72; mode = 'dying'; break;
     case 'store': storeRun(); break;
   }
-  if (['wisp', 'drink', 'hurt', 'fall', 'beacon', 'win', 'store'].includes(e.type)) updateHud();
+  if (['wisp', 'drink', 'hurt', 'fall', 'beacon', 'win', 'store', 'glim', 'foeOut'].includes(e.type)) updateHud();
 }
 
 /* ---------------- loading a place ---------------- */
@@ -506,7 +519,8 @@ async function go(id) {
   const n = meta.bones.names.length;
   world.anim = { bones: new Float32Array(12 * n), boned: Int32Array.from({ length: meta.bones.end - meta.bones.first }, (_, i) => meta.bones.first + i) };
   const placeCount = world.count;
-  pool = RUN ? makePool(world, meta, slots) : null; // its slots parked: at density 0 and off the bones
+  // its slots parked (at density 0 and off the bones), and the spark pool's splats after them
+  pool = RUN ? makePool(world, meta, slots, { extra: LOOK ? 0 : SPARKS }) : null;
   // in a run, the mist and haze sheets that lie in front of an awake figure fade out (veil.js); the beacon and the wisps are left alone
   const pack = c => ((c >> 16) & 255) + ((c >> 8) & 255) * 256 + (c & 255) * 65536;
   veils = RUN ? makeVeils(world, findVeils(world, { count: placeCount, skip: [...meta.beacon.fire, ...meta.wisps.map(w => w.ids)], shared: meta.pal.slice(32).map(pack) })) : null;
@@ -600,15 +614,22 @@ function unveil() {
   for (const r of veils.step(c.view, art.h / 2 / c.tangent, figs)) pendingRows.add(r);
 }
 let view = null;
-function draw() {
+// o.time draws at that game time (the clips and the flicker); o.pool false parks every foe for this one draw (?test)
+function draw(o = {}) {
   if (!view) view = cam.follow(body.s, 0, input);
-  pose(world.anim.bones, meta.bones, body.s, time, still);
-  if (RUN) { world.anim.kick = fx.kick; world.anim.zoom = fx.zoom; world.anim.bars = fx.bars; }
+  const t = Number.isFinite(o.time) ? o.time : time;
+  pose(world.anim.bones, meta.bones, body.s, t, still);
+  if (fight) {
+    fight.draw(view, { time: Number.isFinite(o.time) ? o.time : undefined, pool: o.pool });
+    fxNow.kick = fight.kick; fxNow.zoom = fight.zoom;
+    fight.showNotches(view, mode === 'play');
+  } else if (RUN) { fxNow.kick = [0, 0, 0]; fxNow.zoom = 1; world.anim.grade = null; }
+  if (RUN) { world.anim.kick = fxNow.kick; world.anim.zoom = fxNow.zoom; world.anim.bars = fxNow.bars; }
   // the fog stays at fogNear..fogFar whatever the camera's distance (the renderer spreads it over dist ± radius)
   world.radius = Math.max(6, meta.fogFar - view.dist);
   world.fog.start = Math.max(0, Math.min(0.97, (fogNear - 2 * view.dist + meta.fogFar) / (2 * world.radius)));
   try {
-    renderer.render(world, { width: art.w, height: art.h, time, camera: view, changedRows: pool ? [...pendingRows, ...pool.rows] : [...pendingRows], colored: true });
+    renderer.render(world, { width: art.w, height: art.h, time: t, camera: view, changedRows: pool ? [...pendingRows, ...pool.rows] : [...pendingRows], colored: true });
     pendingRows.clear();
     pool?.rows.clear();
   } catch (err) {
@@ -669,7 +690,10 @@ const runState = () => {
     foes: run?.foes ?? 0, banked: run?.banked ?? 0, bossDown: !!run?.bossDown, time: run?.time ?? 0, entry: run ? { ...run.entry } : null,
     step: k?.step ?? 0, playStep: k?.play ?? 0, stop: k?.stop ?? 0, ended: rs?.ended ? { ...rs.ended } : null,
     move: f?.move ?? null, hit: f?.move === 'hit' ? HITS[f.hit].id : null, t: f ? f.t / 60 : 0, safe: runner?.fighter.safe() ?? null, combo: runner?.fighter.nextHit() ?? 0,
-    fx: { kick: fx.kick.slice(), zoom: fx.zoom, bars: fx.bars, grade: (fx.grade || meta?.pal || []).slice(), blink: !!body?.s.hide }
+    fx: {
+      kick: fxNow.kick.slice(), zoom: fxNow.zoom, bars: fxNow.bars, grade: (fight?.cols || meta?.pal || []).slice(), blink: !!body?.s.hide,
+      low: !!fight?.feel.low, beats: fight?.feel.beats ?? 0
+    }
   };
 };
 let lookWas = false;
@@ -704,7 +728,8 @@ window.__gloam = {
     if (drawAfter) draw();
     return window.__gloam.state();
   },
-  draw: () => { draw(); return frames; },
+  // draw({ time, pool }): at game time `time` (the same picture each time), with every foe parked for this draw when pool is false
+  draw: (o = {}) => { draw(o || {}); return frames; },
   // draw, then read the picture back before the browser shows it: mean luminance (0..1), the share over 0.55, and how many colours
   stats: () => {
     draw();
@@ -760,8 +785,19 @@ window.__gloam = {
   project,
   // stage 2 hands the page its foes as targets
   setTargets: fn => { foeTargets = fn; },
+  /* the foes (?run): foes() lists each awake foe (id, type, zone, x, y, z, hp, move, t, flash, shake); wake(zone) wakes a zone in free
+     slots; spawn(type, x, z, yaw) wakes one foe at once in a free slot; hold(foe, move, t) keeps a foe at t s of a move, and
+     hold(foe, null) lets it go; out(foe | zone) puts foes out as a death does; notches() lists the ember notches on screen;
+     combat() is what the cameras read: the awake foes and the blade's target */
+  foes: () => (fight ? fight.list() : []),
+  wake: id => (fight ? fight.hooks.wake(id) : { ok: false, why: 'no fight' }),
+  spawn: (type, x, z, yaw = 0) => (fight ? fight.hooks.spawn(type, x, z, yaw) : { ok: false, why: 'no fight' }),
+  hold: (foe, move, t = 0) => fight?.hooks.hold(foe, move, t) ?? null,
+  out: q => { if (!fight) return { ok: false }; const r = fight.hooks.out(q); updateHud(); return r; },
+  notches: () => (fight ? fight.showNotches(view || cam.follow(body.s, 0, input), mode === 'play').map(n => ({ kind: n.kind, foe: n.foe, edge: n.edge, x: n.x, y: n.y, fill: n.fill, bearing: n.bearing, rect: { ...n.rect } })) : []),
+  combat,
   // ?run: the pool's slots, and (with ?test&lineup) one of each figure stood in a row in front of the lamplighter
-  pool: () => pool && { count: world.count, boned: world.anim.boned.length, slots: pool.slots.map(s => ({ i: s.i, code: s.code, awake: s.awake, first: s.first, end: s.end, base: s.base, at: s.at })) },
+  pool: () => pool && { count: world.count, boned: world.anim.boned.length, extra: pool.extra.end - pool.extra.first, slots: pool.slots.map(s => ({ i: s.i, code: s.code, awake: s.awake, first: s.first, end: s.end, base: s.base, at: s.at })) },
   lineup: (o = {}) => { const r = lineup(pool, walk, { x: body.s.x, z: body.s.z, yaw: body.s.yaw }, o); if (o.draw) draw(); return r; },
   // one slot: { clip, t } poses it where it stands, { flash: true | false } and { park: true } as the run will
   slot: (i, o = {}) => {

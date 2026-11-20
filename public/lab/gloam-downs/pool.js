@@ -139,7 +139,8 @@ export function readFigures(json) {
    are replaced with ones that hold the slots. Every slot starts parked; a reserved slot's rows are empty (density 0) and its bones put
    away until fill() copies its figure in. A place's pool is built once: the beacon, the wisps and the awake slots keep their state.
    pool.rows holds the 512-splat rows changed since the page last drew; the page passes them to the renderer as changedRows and clears
-   the set. */
+   the set. extra splats after the slots are a reserve on no bone, parked at density 0 (the spark pool of sparks.js): pool.extra is
+   their range { first, end }. */
 // the hit flash: fire slot 35 (ff9a32). Steps 4 and 5, darkened by the outlines and the contact shade, snap to each place's pale greys
 // and tans; slot 35 stays fire (qa/lab/gloam-downs-run.lineup.e2e.mjs measures it in the page)
 export const FLASH = 0xff + 0x9a * 256 + 0x32 * 65536;
@@ -154,7 +155,7 @@ function copyIn(data, s) {
     if (data[o + 14] > 0) data[o + 13] += s.base;
   }
 }
-export function makePool(world, meta, slots) {
+export function makePool(world, meta, slots, { extra = 0 } = {}) {
   const base0 = meta.bones.names.length, lampFirst = meta.bones.first, lampEnd = meta.bones.end, placeCount = world.count;
   let count = placeCount, nb = base0;
   const list = slots.map(({ code, type, src, reserve }, i) => {
@@ -164,8 +165,11 @@ export function makePool(world, meta, slots) {
     nb += nbones;
     return s;
   });
+  const reserve = { first: count, end: count + extra };
+  count += extra;
   const data = new Float32Array(count * 16);
   data.set(world.data.subarray(0, placeCount * 16));
+  for (let i = reserve.first; i < reserve.end; i++) { data[i * 16 + 1] = -50; data[i * 16 + 11] = 48; data[i * 16 + 15] = -100; }
   for (const s of list) if (s.type) copyIn(data, s);
   const bones = new Float32Array(12 * nb);
   bones.set(world.anim.bones.subarray(0, 12 * base0));
@@ -195,7 +199,7 @@ export function makePool(world, meta, slots) {
   };
   const slotOf = q => (typeof q === 'number' ? list[q] : q);
   const pool = {
-    slots: list, rows, bones, placeCount,
+    slots: list, rows, bones, placeCount, extra: reserve,
     // a free slot of this type (code 'S', 'P', 'M', 'I', 'B' or 'L') whose figure is in, or null
     free: code => list.find(s => s.code === code && !s.awake && s.type) || null,
     /* the figure file of a reserved slot has come in: copy its rows into each slot of that code that waits for it, parked. src is the
