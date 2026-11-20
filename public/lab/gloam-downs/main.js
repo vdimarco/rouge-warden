@@ -24,7 +24,7 @@ const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const NUMERAL = ['I', 'II', 'III', 'IV', 'V'];
 const TARGET = { low: 30000, mid: 64000, high: 110000 };
 // the combat run is behind ?run until it is finished; ?run&test&lineup gives a pool of one of each figure, to look at them
-const RUN = q.has('run'), LOOK = RUN && q.has('test') && q.has('lineup');
+const RUN = q.has('run'), LOOK = RUN && q.has('lineup');
 if (RUN) {
   document.body.classList.add('run');
   // in a run the Map tool is the pause
@@ -51,6 +51,19 @@ const fx = { kick: [0, 0, 0], zoom: 1, bars: 0, grade: null, stop: true, flash: 
 const posts = [];
 let foeTargets = () => [];
 let sinceStore = 0, endAt = 0;
+// ?run&lineup without ?test: one of each foe and the Barrow Reeve stand in a row and play each of their moves in turn, to look at
+let gallery = null;
+function startGallery() {
+  const spots = lineup(pool, walk, { x: body.s.x, z: body.s.z, yaw: body.s.yaw }).filter(p => p.clip);
+  gallery = { t: 0, spots: spots.map(p => ({ at: p, slot: pool.slots.find(s => s.i === p.i) })).filter(g => g.slot) };
+}
+function stepGallery() {
+  gallery.t += STEP;
+  for (const { at, slot } of gallery.spots) {
+    const names = Object.keys(slot.type.clips), k = Math.floor(gallery.t / 1.8) % names.length, clip = slot.type.clips[names[k]];
+    pool.pose(slot, at, names[k], Math.min(gallery.t % 1.8, clip.dur || 1.8));
+  }
+}
 const targets = () => [...posts.filter(p => p.alive), ...foeTargets()];
 
 /* ---------------- the art size: a small picture scaled up by a whole number ---------------- */
@@ -494,6 +507,8 @@ async function go(id) {
     setLit(meta.beacon.fire, false);
     posts.length = 0;
     newRunner();
+    gallery = null;
+    if (LOOK && !manual) startGallery();
     rs.furthest = Math.max(rs.furthest, ORDER.indexOf(id));
   } else {
     for (const i of save.wisps[id] || []) setLit([meta.wisps[i].ids], false);
@@ -542,6 +557,7 @@ function update() {
       for (const e of runner.step(play ? input : {}, cam.c.yaw)) runEvent(e);
       if (rs.run && ++sinceStore >= 120) storeRun();
     }
+    if (gallery) stepGallery();
     if (endAt && steps >= endAt && ['dying', 'won', 'lit'].includes(mode)) {
       const was = mode;
       endAt = 0;
