@@ -301,6 +301,8 @@ export default {
 
     /* ---- the start, the wisps ---- */
     ctx.spawn([SPAWN[0], spawnY, SPAWN[1]], Math.PI);
+    // the combat run's foe zones (lib/zones.mjs): they add nothing to the scenery, only to the JSON
+    ctx.zone('R1'); ctx.zone('R2'); ctx.zone('R3'); ctx.zone('R4');
     ctx.wisp([T2[0] + 0.6, r2 + 1.0, T2[1] - 0.6]); // on T2's roof
     ctx.wisp([-16, h(-16, 3) + 2.1 + 1.0, 3]); // on the west stump
     ctx.wisp([10.2, h(10.2, -7) + 1.1, -7]); // down in the breach

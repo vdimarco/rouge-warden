@@ -5,6 +5,8 @@ import { createRenderer } from './ink/webgl/renderer.mjs';
 import { loadPlace } from './world.js';
 import { makeWalk, makeBody, makeCamera, pose, touches, atBeacon } from './play.js';
 import { ORDER, load, store, wispCount, fresh } from './save.js';
+import { makePool } from './pool.js';
+import { figures, poolFor, lineup, LINEUP } from './figures.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('view'), loading = $('loading'), loadLine = $('loadLine'), barFill = $('barFill'), bar = $('bar');
@@ -13,6 +15,8 @@ const coarse = matchMedia('(pointer: coarse)').matches;
 const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const NUMERAL = ['I', 'II', 'III', 'IV', 'V'];
 const TARGET = { low: 30000, mid: 64000, high: 110000 };
+// the combat run is behind ?run until it is finished; ?run&test&lineup gives a pool of one of each figure, to look at them
+const RUN = q.has('run'), LOOK = RUN && q.has('test') && q.has('lineup');
 
 /* ---------------- state ---------------- */
 // with site data blocked, even reading localStorage throws; then the save lives in this page only (load and store take null)
@@ -22,7 +26,7 @@ let renderer = null, place = null, walk = null, body = null, cam = null, world =
 let mode = 'loading', paused = false, lost = false, last = 0, time = 0, frames = 0;
 let artTarget = TARGET[q.get('q')] || (coarse ? 46000 : TARGET.mid), adapt = !q.has('q');
 let art = { w: 320, h: 200, s: 1 };
-let pendingRows = new Set(), fogNear = 10, beaconLit = false, arriveTimer = 0, toastTimer = 0, slowFor = 0;
+let pendingRows = new Set(), fogNear = 10, beaconLit = false, arriveTimer = 0, toastTimer = 0, slowFor = 0, pool = null, slots = null;
 const intervals = [];
 
 /* ---------------- the art size: a small picture scaled up by a whole number ---------------- */
@@ -271,6 +275,20 @@ async function go(id) {
     r.focus(); // so Space or Enter tries again without a Tab
     return;
   }
+  // in a run, the foe files load with the first place (and stay), and each place gets its pool of foes
+  if (RUN) {
+    try {
+      const foes = await figures('./worlds/', 'foes'), boss = LOOK ? await figures('./worlds/', 'boss') : null;
+      slots = poolFor(id, foes, boss, LOOK ? LINEUP : undefined);
+    } catch (err) {
+      loadLine.textContent = `The foes did not load (${err.message}).`;
+      const r = $('bRetry');
+      r.hidden = false;
+      r.onclick = () => go(id);
+      r.focus();
+      return;
+    }
+  }
   ({ meta, world } = place);
   walk = makeWalk(meta.walk, place.walk);
   body = makeBody(walk, meta.spawn, meta.bounds);
@@ -281,6 +299,7 @@ async function go(id) {
   // the lamplighter's splats ride bones that the page writes every frame
   const n = meta.bones.names.length;
   world.anim = { bones: new Float32Array(12 * n), boned: Int32Array.from({ length: meta.bones.end - meta.bones.first }, (_, i) => meta.bones.first + i) };
+  pool = RUN ? makePool(world, meta, slots) : null; // its slots parked: at density 0 and off the bones
   saved.clear();
   pendingRows = new Set();
   for (const i of save.wisps[id] || []) setLit([meta.wisps[i].ids], false);
@@ -332,8 +351,9 @@ function draw() {
   world.radius = Math.max(6, meta.fogFar - view.dist);
   world.fog.start = Math.max(0, Math.min(0.97, (fogNear - 2 * view.dist + meta.fogFar) / (2 * world.radius)));
   try {
-    renderer.render(world, { width: art.w, height: art.h, time, camera: view, changedRows: [...pendingRows], colored: true });
+    renderer.render(world, { width: art.w, height: art.h, time, camera: view, changedRows: pool ? [...pendingRows, ...pool.rows] : [...pendingRows], colored: true });
     pendingRows.clear();
+    pool?.rows.clear();
   } catch (err) {
     // a lost context can throw before its webglcontextlost event arrives: wait for webglcontextrestored, do not stop
     if (lost || canvas.getContext('webgl2')?.isContextLost()) { lost = true; return; }
@@ -404,7 +424,21 @@ window.__gloam = {
     }
     return { w, h, mean: sum / (w * h), bright: bright / (w * h), colours: colours.size };
   },
-  ready: () => mode !== 'loading' && !!place
+  ready: () => mode !== 'loading' && !!place,
+  // ?run: the pool's slots, and (with ?test&lineup) one of each figure stood in a row in front of the lamplighter
+  pool: () => pool && { count: world.count, boned: world.anim.boned.length, slots: pool.slots.map(s => ({ i: s.i, code: s.code, awake: s.awake, first: s.first, end: s.end, base: s.base, at: s.at })) },
+  lineup: (o = {}) => { const r = lineup(pool, walk, { x: body.s.x, z: body.s.z, yaw: body.s.yaw }, o); if (o.draw) draw(); return r; },
+  // one slot: { clip, t } poses it where it stands, { flash: true | false } and { park: true } as the run will
+  slot: (i, o = {}) => {
+    const s = pool.slots[i];
+    if (o.park) pool.park(s);
+    else {
+      if (o.clip) pool.pose(s, s.at, o.clip, o.t || 0);
+      if (o.flash !== undefined) pool.flash(s, o.flash);
+    }
+    if (o.draw) draw();
+    return { i, awake: s.awake, flash: s.flash };
+  }
 };
 
 (async () => {

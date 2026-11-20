@@ -627,6 +627,8 @@ export default {
       ctx.wisp([wx, PORCH + 1.0, wz]);
     }
     ctx.spawn([START[0], h(START[0], START[1]), START[1]], Math.PI);
+    // the combat run's foe zones (lib/zones.mjs): they add nothing to the scenery, only to the JSON
+    ctx.zone('F1'); ctx.zone('F2'); ctx.zone('F3'); ctx.zone('F4');
 
     /* ---- the water: a flat dark teal sheet, laid after the walk map so it never blocks the feet ---- */
     const sy = h(START[0], START[1]), eye = [START[0], sy + EYE_UP, START[1] + EYE_BACK];
