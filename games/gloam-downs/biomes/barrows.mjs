@@ -1,31 +1,33 @@
 // Barrow Crown: the last place. A down of grassy burial mounds under a big low moon. The mounds are the rolling hills: each has a dark
 // stone door-mouth in its side, some carry rings of leaning stones, and teal ghost fog lies in the hollows between them. You stand on
-// the long barrow in the south, between two leaning stones, and look north across the hollow at the crown hill. A broken curtain wall
-// girds it. Inside, the ruined keep stands on the left with one lit window, and on the right the greatest barrow rises in a dome. A
-// stair of slabs winds up across its face, torches along it, to a ring of tall stones that lean outward like the points of a crown.
-// The beacon waits in the middle of that ring. The moon hangs low between the keep and the crown, in a deep violet band that goes
-// magenta round it. Moonlit blue stone, deep teal grass, ghost-green glows, brazier embers.
+// the long barrow in the south, on an old way of worn slabs with a watch-fire burning beside it, and look north across the hollow at
+// the crown hill rising out of the fog. A broken curtain wall girds it. Inside, the ruined keep stands on the left, snapped off in one
+// long slant, with one tall lit window; on the right the greatest barrow rises in a dome. A stair of slabs winds up across its face,
+// torches along it, to six tall stones that lean outward like the points of a crown. The beacon waits in the middle of that ring. The
+// moon hangs low behind the keep's broken edge, in a deep violet band that goes magenta round it. Moonlit blue stone, deep teal grass,
+// ghost-green glows, firelight.
 //
 // The follow camera looks down at a low pitch: the top of its picture is at about eye level (a little under it on the page). So the
 // start stands high on its barrow, the bailey lies low, and the keep and the crown reach up to just under eye height: the keep is tall
-// in the picture without being cut off. The land behind the crown hill falls away, so the keep, the stones and the moon stand against
-// the sky and the far fog.
+// in the picture without being cut off. The land behind the crown hill falls away and the far downs either side stay low, so the keep,
+// the stones and the moon stand against the sky and the far fog.
 import { rocks, deadTree, yawAx } from '../lib/props.mjs';
 import { lib, polyDist, tile } from '../lib/common.mjs';
 
-// heights
-const Y = { start: 9.0, bailey: 3.4, summit: 9.8 };
+// heights. The page's camera looks out at about eye height (the start plus 4), so the summit sits a little over 2 above the start and
+// the crown hill stands near enough that the beacon and the crown stones come inside the top of the first picture
+const Y = { start: 9.0, bailey: 3.4, summit: 9.62 };
 const START = [2, 27];
-const SUMMIT = [4, -22]; // the greatest barrow's top: the crown of stones and the beacon
+const SUMMIT = [4, -17]; // the greatest barrow's top: the crown of stones and the beacon
 const TOP = 2.2, DOME = 6.6; // the flat top's radius, and how far the greatest barrow's slope runs out from it
-const KEEP = [-11, -19.5]; // the keep, on the bailey west of the greatest barrow
-const KW = 2.6; // the keep's half width
+const KEEP = [-10, -14.5]; // the keep, on the bailey west of the greatest barrow
+const KW = 2.15; // the keep's half width: slim, so it reads tall
 const KTOP = 10.6, TURRET = 11.9; // the keep's broken top and its stair turret, the highest thing in the place
-const BAILEY = [-4, -19.5], BOX = [11.5, 6.5]; // the flat top of the crown hill, a rounded box
+const BAILEY = [-4, -14.5], BOX = [11.5, 6.5]; // the flat top of the crown hill, a rounded box
 const SOUTH = BAILEY[1] + BOX[1] - 0.6; // the line of the south curtain wall
 const GATE = [0, SOUTH];
 // the walked line: down off the start barrow, through the hollow between the mounds, up the crown hill's stair to the gate
-const PATH = [[2.6, 36], [2, 27], [1.4, 22.5], [-0.6, 18], [-2.2, 13.5], [-1.6, 9], [0.4, 4.6], [1.4, 0.4], [1.0, -3.6], [0.4, -7.4], [0, -10.5], [0, SOUTH - 1.4]];
+const PATH = [[2.6, 36], [2, 27], [1.4, 22.5], [-0.6, 18], [-2.2, 13.5], [-1.6, 9], [0.4, 4.6], [1.4, 0.4], [0.8, -3.0], [0.2, -6.0], [0, SOUTH - 1.4]];
 // the stair that winds up the greatest barrow: from its foot on the south-west, east across the face the start sees, round to the top
 const SPIRAL = [];
 for (let i = 0; i <= 26; i++) {
@@ -33,12 +35,12 @@ for (let i = 0; i <= 26; i++) {
   SPIRAL.push([SUMMIT[0] + Math.cos(a) * r, SUMMIT[1] + Math.sin(a) * r]);
 }
 const AVENUE = [[0, SOUTH - 1.4], SPIRAL[0]];
-const HALL = [[0, SOUTH - 1.4], [-5.8, -17.6]];
+const HALL = [[0, SOUTH - 1.4], [KEEP[0] + KW + 2.6, KEEP[1] + 1.9]];
 // the barrows that are hills of their own: [x, z, radius, height]
 const MOUNDS = {
   start: [2, 29, 12, 8.2], startW: [-7, 32, 9, 4.5],
   west: [-13, 11, 9, 5.0], east: [14, 7, 9.5, 5.4],
-  midW: [-10, -4, 7, 3.4], midE: [11, -6, 6.5, 3.0],
+  midW: [-10.5, -1.5, 6.2, 3.2], midE: [11.5, -2.5, 5.8, 2.8],
   nw: [-24, 21, 7, 3.6], ne: [23, 22, 8, 4.4], fw: [-26, -8, 8, 4.6], fe: [25, -12, 8, 5.0],
   bw: [-24, -32, 8, 3.4], be: [22, -33, 9, 4.0]
 };
@@ -90,14 +92,14 @@ export default {
     base: 1.0,
     bumps: [
       ...Object.values(MOUNDS),
-      [-3, -20, 18, 2.4], // the crown hill under its bailey
-      [-52, -30, 22, 8], [52, -28, 22, 9], // far downs either side
+      [-3, -15, 18, 2.4], // the crown hill under its bailey
+      [-56, -22, 22, 6], [56, -20, 22, 6.5], // far downs either side, low, so the skyline steps down toward the crown
       [-46, 30, 20, 6], [44, 34, 20, 6],
-      [0, -122, 96, -32] // the land falls away north into a deep vale, so the keep, the crown and the moon stand against the sky
+      [0, -128, 118, -36] // the land falls away north into a deep, wide vale, so the keep, the crown and the moon stand against the sky
     ],
     fbm: { amp: 0.45, freq: 1 / 11, oct: 3 },
     warp: { amp: 2.2, freq: 1 / 22 },
-    far: { amp: 8, start: 40, end: 66, cz: -24 }, // taller downs far out, but not behind the crown hill
+    far: { amp: 8, start: 40, end: 66, cz: -19 }, // taller downs far out, but not behind the crown hill
     pits: [[-1, 6, 10, 0.8]], // the hollow
     flats: [
       { at: START, r: 2.6, blend: 4.5, y: Y.start }, // the top of the start barrow
@@ -141,7 +143,10 @@ export default {
     /* ---- the ground: a fine rectangle over the play area, then strips coarser each time out ---- */
     {
       const onPath = (x, z) => Math.min(polyDist(x, z, PATH) - 0.1, polyDist(x, z, AVENUE) - 0.15, polyDist(x, z, HALL) - 0.3) + 0.7 * (B.n3(x * 1.1, z * 1.1, 4) - 0.5) < 1.0;
-      const near = { r: grass, g: [grass[1], grass[2], earth[2], fire[1], fire[2], fire[3]], mod: grit(1), rf: (x, y, z) => (onPath(x, z) ? earth : null) };
+      // the near turf: grit, and tussocks a step lighter and bare scuffs a step darker, so it reads rough. Firelight on it goes from dark
+      // teal through ember red to orange, never through mud brown
+      const g1 = grit(1.1), tuft = (x, y, z) => g1(x, y, z) + (B.n3(x * 1.3, z * 1.3, 13) > 0.63 ? 0.09 : 0) - (B.n3(x * 0.8 + 5, z * 0.8, 17) < 0.3 ? 0.06 : 0);
+      const near = { r: grass, g: [grass[1], grass[2], fire[0], fire[1], fire[2], fire[3]], mod: tuft, rf: (x, y, z) => (y < 8.3 && onPath(x, z) ? earth : null) }; // (turf, not bare earth, between the slabs on the start barrow)
       const mid = { r: grass, mod: grit(1.2), fat: 0.62 }, out = { r: grass.slice(0, 4), mod: grit(1.4), fat: 0.8 };
       const N = [-25, 25, -31, 33], M = [-56, 56, -56, 56], F = [-108, 108, -108, 108];
       tile(S, h, near, { x0: N[0], x1: N[1], z0: N[2], z1: N[3], res: 0.32 });
@@ -184,11 +189,12 @@ export default {
       return tops;
     };
     // a post with a fire on top
-    const post = (x, z, { hgt = 1.8, y, s = 0.8, k = 0.6, r = 3.4 } = {}) => {
+    // (few embers: from across the downs a torch should read as one warm point, not a spray of specks)
+    const post = (x, z, { hgt = 1.8, y, s = 0.8, k = 0.6, r = 3.4, n = 3 } = {}) => {
       const y0 = y ?? h(x, z) - 0.1;
       S.tube([[x, y0, z], [x, y0 + hgt, z]], 0.14, 0.1, wood, { res: 0.08 });
       S.ball([x, y0 + hgt + 0.02, z], [0.21, 0.12, 0.21], iron, { res: 0.07 });
-      ctx.fire([x, y0 + hgt + 0.1, z], s, { k, r });
+      ctx.fire([x, y0 + hgt + 0.1, z], s, { k, r, n });
     };
     // an iron fire bowl on three fat legs; returns the top of the bowl
     const bowl = (x, z, { y, s = 0.9, lit = true, k = 0.6, r } = {}) => {
@@ -261,24 +267,66 @@ export default {
       S.ball([x - 0.1 * s, y0 + 3.5 * s, z + 0.1 * s], [0.55 * s, 0.6 * s, 0.55 * s], leaf, { res: 0.12 });
     };
 
-    /* ---- the start barrow: a leaning stone on the left and a fallen one on the right frame the first view; a fire on its brow, the
-       kerb round its north foot, and low stones down the path ---- */
+    /* ---- the start barrow: a leaning stone on the left and a fallen one on the right frame the first view; the kerb round its north
+       foot, the old way of slabs across its top, and a watch-fire beside the start ---- */
     menhir(START[0] - 4.6, START[1] - 1.4, { hgt: 2.7, w: 0.6, d: 0.42, yaw: -0.5, tilt: -0.2, roll: -0.16 });
     fallen(START[0] + 4.2, START[1] - 2.2, { len: 2.4, w: 0.55, d: 0.4, yaw: 0.9, roll: 0.3 });
     menhir(START[0] + 5.6, START[1] - 0.4, { hgt: 1.3, w: 0.45, d: 0.34, yaw: 0.4, tilt: 0.2 });
-    kerb(MOUNDS.start, { from: Math.PI * 0.95, to: Math.PI * 2.05, n: 12, r: 0.4 });
-    bowl(5.0, 25.0, { s: 0.8, k: 0.5, r: 3.2 }); // on the brow of the start barrow, right of the path
-    // low stones lining the path down off the barrow
-    for (const [x, z, hh, tl] of [[3.9, 23.4, 1.0, 0.2], [0.2, 20.6, 0.8, -0.25], [3.7, 19.8, 1.2, 0.15], [-1.4, 17.0, 0.9, 0.3]])
-      menhir(x, z, { hgt: hh, w: 0.42, d: 0.32, yaw: 0.3 + x * 0.1, tilt: tl, roll: tl * 0.5, sink: 0.45, res: 0.11 });
+    kerb(MOUNDS.start, { from: Math.PI * 0.95, to: Math.PI * 2.05, n: 7, r: 0.5 });
+    // the old way across the barrow's top: big worn slabs laid in the turf in staggered rows, some gone, some sunk or tipped, to the brink
+    {
+      const fg = grit(1.1), flag = { r: st.slice(0, 4), g: warmStone, mod: (x, y, z) => fg(x, y, z) - 0.06 + (B.n3(x * 2.4, z * 2.4, 5) > 0.68 ? -0.12 : 0) };
+      const wayX = z => (z > 27 ? 2 + (z - 27) / 9 * 0.6 : 1.4 + (z - 22.5) / 4.5 * 0.6);
+      let row = 0;
+      for (let z = 31.4; z > 24.2; z -= 1.02 + B.rr(-0.05, 0.08), row++) {
+        const cx = wayX(z), wide = 1.25 + B.rr(0, 0.35);
+        for (let x = cx - wide + (row % 2) * 0.5; x < cx + wide - 0.3;) {
+          const w = B.rr(0.5, 0.7);
+          if (B.rr(0, 1) > 0.16 && Math.hypot(x + w - START[0], z - START[1]) > 0.9) {
+            const px = x + w + B.rr(-0.04, 0.04), pz = z + B.rr(-0.08, 0.08), gy = h(px, pz);
+            const tilt = B.rr(0, 1) < 0.3 ? B.rr(-0.12, 0.12) : 0, sunk = B.rr(0, 1) < 0.25 ? -0.08 : 0;
+            S.box([px, gy + sunk, pz], [w - 0.06, 0.14, 0.44 + B.rr(-0.06, 0.04)], flag, { ax: tilt ? rollAx(tilt) : yawAx(B.rr(-0.1, 0.1)), rd: 0.1, res: 0.15 });
+          }
+          x += 2 * w + 0.08;
+        }
+      }
+      // the slab you start on, set square
+      S.box([START[0], h(START[0], START[1]), START[1]], [0.66, 0.14, 0.52], flag, { rd: 0.1, res: 0.15 });
+      // two squat stones at the brink, where the way drops off the barrow
+      menhir(-0.4, 23.8, { hgt: 1.25, w: 0.5, d: 0.4, yaw: 0.2, tilt: 0.18, roll: -0.1, sink: 0.5, res: 0.12 });
+      menhir(3.6, 23.6, { hgt: 1.05, w: 0.48, d: 0.38, yaw: -0.3, tilt: 0.12, roll: 0.12, sink: 0.5, res: 0.12 });
+    }
+    // a watch-fire in a ring of fat stones, just behind the start on the right: firelight on the near turf and the lamplighter
+    {
+      const [fx, fz] = [4.9, 28.6], gy = h(fx, fz);
+      for (let i = 0; i < 7; i++) {
+        const a = (i / 7) * Math.PI * 2 + 0.3, x = fx + Math.cos(a) * 0.72, z = fz + Math.sin(a) * 0.72;
+        S.box([x, gy + 0.08, z], [0.26 + 0.05 * (i % 2), 0.2, 0.2], rough, { ax: yawAx(-a), rd: 0.1, res: 0.1 });
+      }
+      S.ball([fx, gy - 0.05, fz], [0.55, 0.12, 0.55], { r: [earth[0], earth[1]], g: [earth[1], fire[0], fire[1], fire[2]] }, { res: 0.1 });
+      // its flame is drawn here rather than with ctx.fire: the shared flame's wide soft halo, this close to the eye, blends with the teal
+      // turf into a brown smear. This one has the same tongue and a tight red corona, and a small hot light pool
+      const fy = gy + 0.12, fs = 0.66;
+      ctx.lamp([fx, fy + 0.35, fz], 1.6, 0.75);
+      ctx.glow(() => {
+        const an = { em: true, nd: true, k: 6, ph: 1.3, sp: 9, rg: 0.02 * fs };
+        B.iso(fx, fy, fz, 0.17 * fs, B.P[fire[2]], 3, an);
+        B.iso(fx, fy + 0.24 * fs, fz, 0.12 * fs, B.P[fire[3]], 3, an);
+        B.iso(fx, fy + 0.46 * fs, fz, 0.07 * fs, B.P[fire[3]], 3, an);
+        B.iso(fx, fy, fz, 0.09 * fs, B.P[fire[5]], 3, an);
+        B.iso(fx, fy + 0.12 * fs, fz, 0.4 * fs, B.P[fire[1]], 0.5, { em: true, nd: true, k: 7, ph: 0, sp: 7 });
+        for (let i = 0; i < 3; i++)
+          B.iso(fx + B.rr(-0.3, 0.3), fy + B.rr(0, 0.3), fz + B.rr(-0.3, 0.3), 0.03, B.P[B.pick([fire[3], fire[4]])], 2.5, { em: true, nd: true, k: 3, ph: B.rr(0, 1), sp: B.rr(0.4, 0.9), rg: 1.6, ex: 0.4 });
+      });
+    }
 
     /* ---- the hollow: the west barrow's door looks at the path; the east barrow wears a stone ring and a ghost-lit door ---- */
     {
       const [wx, wz, wr] = MOUNDS.west, face = Math.atan2(1, 0.35); // looking east, a little south
       const dx = Math.sin(face), dz = Math.cos(face), dr = wr * 0.5;
       mouth(wx + dx * dr, wz + dz * dr, face, { torch: 1 });
-      kerb(MOUNDS.west, { from: -0.6, to: 1.0, n: 6 });
-      kerb(MOUNDS.west, { from: 1.9, to: 5.2, n: 10 });
+      kerb(MOUNDS.west, { from: -0.6, to: 1.0, n: 4, r: 0.46 });
+      kerb(MOUNDS.west, { from: 1.9, to: 5.2, n: 6, r: 0.46 });
       ctx.wisp([wx + dx * (dr + 0.9), h(wx + dx * (dr + 0.9), wz + dz * (dr + 0.9)) + 1.0, wz + dz * (dr + 0.9)]); // at the west door
       stoneRing(wx - 0.8, wz - 0.4, 2.6, 6, { gone: [1, 4], down: [3], hgt: 1.9, lean: 0.1 });
     }
@@ -286,7 +334,7 @@ export default {
       const [ex, ez, er] = MOUNDS.east;
       stoneRing(ex, ez, 3.1, 8, { gone: [2, 6], down: [5], hgt: 2.6, lean: 0.14, a0: 0.3 });
       ctx.wisp([ex, h(ex, ez) + 1.1, ez]); // in the ring on the east barrow
-      kerb(MOUNDS.east, { n: 12 });
+      kerb(MOUNDS.east, { n: 8, r: 0.46 });
       // its door looks west at the hollow, a ghost light in it
       const face = -Math.PI / 2 - 0.35, dx = Math.sin(face), dz = Math.cos(face), dr = er * 0.52;
       mouth(ex + dx * dr, ez + dz * dr, face, { glow: true, wide: 0.8, tall: 1.7 });
@@ -312,10 +360,9 @@ export default {
         menhir(x, z, { hgt: B.rr(0.9, 1.4), w: 0.42, d: 0.16, yaw: a + Math.PI / 2, tilt: B.rr(-0.3, 0.3), roll: B.rr(-0.2, 0.2), res: 0.1 });
       }
     }
-    // a fallen giant across the hollow, one still standing by it, and a fire on the path between the mounds
+    // a fallen giant across the hollow, and one still standing by it
     fallen(-5.8, 6.4, { len: 4.6, w: 0.7, d: 0.5, yaw: 1.1, roll: 0.25 });
     menhir(-5.0, 9.6, { hgt: 3.6, w: 0.7, d: 0.46, yaw: 0.9, tilt: 0.28 });
-    bowl(-1.6, 2.6, { s: 0.85 });
 
     /* ---- the far mounds round the edge: rings, lone stones, a dead tree or a yew on some ---- */
     stoneRing(MOUNDS.nw[0], MOUNDS.nw[1], 2.4, 6, { gone: [0, 3], hgt: 2.0, lean: 0.12 });
@@ -326,14 +373,15 @@ export default {
       const [ex, ez, er] = MOUNDS.fe, face = -Math.PI / 2 + 0.6, dx = Math.sin(face), dz = Math.cos(face);
       mouth(ex + dx * er * 0.5, ez + dz * er * 0.5, face, { wide: 0.8, tall: 1.7, torch: 1 });
     }
-    for (const [x, z, s] of [[-17, 16, 1.0], [18, 14, 0.9], [-19, -15, 1.1], [17, -19, 1.0], [-15, 27, 0.9]]) yew(x, z, { s });
-    for (const [x, z, hh, s] of [[7, 11, 3.2, 3], [-7, -9, 3.4, 5], [13, -15, 3.0, 7], [-28, 10, 3.6, 2], [28, 4, 3.4, 8]])
+    for (const [x, z, s] of [[-17, 16, 1.0], [18, 14, 0.9], [-19, -10, 1.1], [17, -13.5, 1.0], [-15, 27, 0.9]]) yew(x, z, { s });
+    for (const [x, z, hh, s] of [[-6.5, -4.8, 3.4, 5], [14, -10.5, 3.0, 7], [-28, 10, 3.6, 2], [28, 4, 3.4, 8]])
       deadTree(ctx, x, z, { bark: wood, h: hh, seed: s });
-    rocks(ctx, [[4.6, 9, 0.6], [-4.4, 0, 0.7], [5, -5, 0.8], [-13, 4, 0.9], [16, -2, 1.0], [-18, 8, 0.8]], { mat: rough, seed: 9 });
+    rocks(ctx, [[4.6, 9, 0.6], [-4.4, 0, 0.7], [5.6, -1.2, 0.8], [-13, 4, 0.9], [16, -2, 1.0], [-18, 8, 0.8]], { mat: rough, seed: 9 });
 
     /* ---- the crown hill: a fire either side of the way up to the gate ---- */
-    bowl(-2.4, -6.6, { s: 0.85 });
-    bowl(2.6, -6.8, { s: 0.85 });
+    // (wide apart, so from the start neither flame sits on the lamplighter's hood)
+    bowl(-3.5, -2.4, { s: 0.85 });
+    bowl(3.7, -2.6, { s: 0.85 });
 
     /* ---- the curtain wall: the south run with the gate, the west run behind the keep, a stub on the north. It is low and broken in
        front of the keep, so the keep stands clear of it ---- */
@@ -380,56 +428,61 @@ export default {
       ctx.wisp([-4.4, wy + 1.0, SOUTH]); // on the wall-walk west of the gate
     }
 
-    /* ---- the keep: a tall square tower, its top broken in steps, a round stair turret on its north-east corner standing highest,
-       a bartizan on the south-east corner, one lit window. A roofless hall leans on its east side ---- */
+    /* ---- the keep: a slim square tower snapped off in one long slant down its west side, a round stair turret on its north-east corner
+       standing highest (from the start it crosses the edge of the moon), a bartizan on the south-east corner, and one tall lit window.
+       A roofless hall leans on its east side ---- */
     {
       const [kx, kz] = KEEP, gy = Y.bailey, y0 = gy - 1.2, top = KTOP, hw = KW;
       // a battered foot, wider than the tower
       S.box([kx, gy + 0.2, kz], [hw + 0.45, 1.4, hw + 0.45], rough, { rd: 0.2, res: 0.14 });
       const body = S.box([kx, (y0 + top) / 2, kz], [hw, (top - y0) / 2, hw], stone, { hold: true, rd: 0.12 });
-      // the broken top: the west half stepped down, a crack down the front
-      const bite1 = S.box([kx - hw, top + 0.2, kz], [hw * 0.9, 1.9, hw + 0.5], stone, { hold: true, ax: rollAx(0.5) });
-      const bite2 = S.box([kx - hw * 0.15, top + 0.4, kz + hw], [0.7, 1.2, 0.9], stone, { hold: true, ax: rollAx(-0.3) });
-      const crack = S.box([kx + 0.6, top - 2.4, kz + hw], [0.14, 1.8, 0.6], stone, { hold: true, ax: rollAx(-0.15) });
+      // the break: one long slant, low on the west face and rising to the top near the east face
+      const bite = S.box([kx - hw * 1.05, top + 0.6, kz], [hw, 2.6, hw + 0.5], stone, { hold: true, ax: rollAx(0.62) });
       const door = S.box([kx - 0.4, gy + 1.0, kz + hw], [0.8, 1.3, 0.8], stone, { hold: true });
       const doorTop = S.tube([[kx - 0.4, gy + 2.3, kz + hw + 0.5], [kx - 0.4, gy + 2.3, kz + hw - 0.8]], 0.8, 0.8, stone, { hold: true });
-      const win = S.box([kx + 1.15, top - 2.6, kz + hw], [0.3, 0.75, 0.6], stone, { hold: true });
-      const slits = [[-1.6, gy + 4.4], [1.4, gy + 3.2], [-0.4, gy + 5.6]].map(([ox, sy]) => S.box([kx + ox, sy, kz + hw], [0.12, 0.45, 0.5], stone, { hold: true }));
-      S.join('cut', body, [bite1, bite2, crack, door, doorTop, win, ...slits], { res: 0.15, inner: st.slice(0, 2) });
+      // the lit window: tall and round-headed, under the break, so it reads from across the downs
+      const WX = kx - 0.45, WY = top - 3.3;
+      const win = S.box([WX, WY - 0.2, kz + hw], [0.42, 0.75, 0.6], stone, { hold: true });
+      const winTop = S.tube([[WX, WY + 0.55, kz + hw + 0.6], [WX, WY + 0.55, kz + hw - 0.6]], 0.42, 0.42, stone, { hold: true });
+      const slits = [[1.2, gy + 3.4], [-1.3, gy + 4.6]].map(([ox, sy]) => S.box([kx + ox, sy, kz + hw], [0.12, 0.45, 0.5], stone, { hold: true }));
+      S.join('cut', body, [bite, door, doorTop, win, winTop, ...slits], { res: 0.15, inner: st.slice(0, 2) });
       // the doorway is black inside
       S.box([kx - 0.4, gy + 1.1, kz + hw - 0.75], [0.78, 1.4, 0.06], hollow, { res: 0.1 });
-      // crenels on the east half, still standing
-      for (const [x, z] of [[kx + hw - 0.35, kz + hw - 0.35], [kx + 1.0, kz + hw - 0.35], [kx + hw - 0.35, kz + 0.4], [kx + hw - 0.35, kz - 1.4], [kx + 0.6, kz - hw + 0.35]])
+      // crenels on the east edge, still standing
+      for (const [x, z] of [[kx + hw - 0.35, kz + hw - 0.35], [kx + hw - 0.35, kz + 0.2]])
         S.box([x, top + 0.35, z], [0.4, 0.36, 0.4], rough, { rd: 0.06, res: 0.12 });
       // the stair turret on the north-east corner: it stands highest
       {
         const tx = kx + hw - 0.1, tz = kz - hw + 0.1, tt = TURRET - 0.6;
-        S.lathe([tx, y0, tz], tt - y0, [1.3, 1.15], stone, { res: 0.13 });
-        for (let i = 0; i < 7; i++) {
-          const a = (i / 7) * Math.PI * 2;
+        S.lathe([tx, y0, tz], tt - y0, [1.15, 1.0], stone, { res: 0.13 });
+        for (let i = 0; i < 6; i++) {
+          const a = (i / 6) * Math.PI * 2 + 0.3;
           if (i === 3) continue;
-          S.box([tx + Math.cos(a) * 1.0, tt + 0.3, tz + Math.sin(a) * 1.0], [0.26, 0.3 + (i % 2) * 0.1, 0.26], rough, { ax: yawAx(-a), rd: 0.05, res: 0.1 });
+          S.box([tx + Math.cos(a) * 0.86, tt + 0.3, tz + Math.sin(a) * 0.86], [0.26, 0.3 + (i % 2) * 0.1, 0.26], rough, { ax: yawAx(-a), rd: 0.05, res: 0.1 });
         }
       }
       // a bartizan out on the south-east corner: a round box on a cone of corbels
       {
         const bx = kx + hw + 0.2, bz = kz + hw + 0.2, by = top - 1.6;
-        S.lathe([bx, by - 1.0, bz], 1.0, [0.2, 0.85], rough, { res: 0.11 });
-        S.lathe([bx, by, bz], 1.5, [0.85, 0.85], stone, { res: 0.11 });
+        S.lathe([bx, by - 1.0, bz], 1.0, [0.2, 0.8], rough, { res: 0.11 });
+        S.lathe([bx, by, bz], 1.5, [0.8, 0.8], stone, { res: 0.11 });
         for (let i = 0; i < 5; i++) {
           const a = (i / 5) * Math.PI * 2 + 0.3;
-          S.box([bx + Math.cos(a) * 0.65, by + 1.75, bz + Math.sin(a) * 0.65], [0.2, 0.25, 0.2], rough, { ax: yawAx(-a), rd: 0.04, res: 0.1 });
+          S.box([bx + Math.cos(a) * 0.6, by + 1.75, bz + Math.sin(a) * 0.6], [0.2, 0.25, 0.2], rough, { ax: yawAx(-a), rd: 0.04, res: 0.1 });
         }
       }
       // buttresses at the front corners
       for (const s of [-1, 1]) S.box([kx + s * (hw + 0.3), gy + 1.0, kz + hw - 0.5], [0.45, 2.0, 0.55], rough, { ax: rollAx(s * 0.12), rd: 0.08, res: 0.13 });
-      // the one lit window: warm light baked round it, a glow in it after the bakes
-      ctx.lamp([kx + 1.15, top - 2.6, kz + hw + 0.6], 2.2, 0.8);
+      // the one lit window: warm light baked on the stone round it, and the opening filled with firelight after the bakes
+      ctx.lamp([WX, WY - 0.3, kz + hw + 0.8], 2.8, 0.9);
       ctx.glow(() => {
-        const [x, y, z] = [kx + 1.15, top - 2.6, kz + hw + 0.08];
-        B.iso(x, y + 0.2, z, 0.2, B.P[fire[4]], 3, { em: true, nd: true, k: 7, ph: 1, sp: 2 });
-        B.iso(x, y - 0.25, z, 0.2, B.P[fire[3]], 3, { em: true, nd: true });
-        B.iso(x, y, z + 0.1, 0.7, B.P[fire[2]], 0.25, { em: true, nd: true, k: 7, ph: 2, sp: 1.6 });
+        const z = kz + hw + 0.06;
+        for (let j = 0; j < 7; j++) for (let i = -1; i <= 1; i++) {
+          const x = WX + i * 0.25, y = WY - 0.8 + j * 0.27;
+          if (j === 6 && i) continue; // the round head
+          B.iso(x, y, z, 0.16, B.P[!i && j > 1 && j < 5 ? fire[4] : fire[3]], 3, { em: true, nd: true, k: 7, ph: 1 + j * 0.2, sp: 1.4 });
+        }
+        B.iso(WX, WY - 0.1, z + 0.2, 1.0, B.P[fire[2]], 0.22, { em: true, nd: true, k: 7, ph: 2, sp: 1.6 });
       });
       // a torn banner from a pole on the turret, against the sky
       ctx.later(() => {
@@ -466,22 +519,33 @@ export default {
         if (i === 2 || i === 7 || i === 12) post(x + ox * 1.25, z + oz * 1.25, { y: top - 0.1, hgt: 1.4, s: 0.7, k: 0.6, r: 3.4 });
       });
       // the kerb round the dome's foot
-      for (let i = 0; i < 13; i++) {
-        const a = (i / 13) * Math.PI * 2, x = sx + Math.cos(a) * (TOP + DOME - 0.4), z = sz + Math.sin(a) * (TOP + DOME - 0.4);
+      for (let i = 0; i < 9; i++) {
+        const a = (i / 9) * Math.PI * 2, x = sx + Math.cos(a) * (TOP + DOME - 0.4), z = sz + Math.sin(a) * (TOP + DOME - 0.4);
         if (polyDist(x, z, SPIRAL) < 1.8 || polyDist(x, z, AVENUE) < 1.6 || B.rr(0, 1) < 0.2 || Math.hypot(x - KEEP[0], z - KEEP[1]) < KW + 4) continue;
-        menhir(x, z, { hgt: B.rr(0.6, 0.9), w: 0.45, d: 0.34, yaw: Math.atan2(Math.cos(a), Math.sin(a)), tilt: 0.1, sink: 0.4, res: 0.12 });
+        menhir(x, z, { hgt: B.rr(0.7, 1.0), w: 0.56, d: 0.4, yaw: Math.atan2(Math.cos(a), Math.sin(a)), tilt: 0.1, sink: 0.4, res: 0.12 });
       }
-      // the crown: tall stones leaning out like points, a gap where the stair comes in
+      // the crown: six tall stones leaning out like the points of a crown, each a fat slab stepped in twice to a blunt tip, with sky
+      // between them; a gap where the stair comes in
       const arrive = Math.atan2(SPIRAL[SPIRAL.length - 1][1] - sz, SPIRAL[SPIRAL.length - 1][0] - sx);
-      const crown = stoneRing(sx, sz, 3.1, 7, { gone: [0], down: [4], hgt: 2.25, lean: 0.27, a0: arrive, w: 0.72, d: 0.44 });
+      const crown = [];
+      for (let i = 1; i < 7; i++) {
+        const a = arrive + (i / 7) * Math.PI * 2, ox = Math.cos(a), oz = Math.sin(a), x = sx + ox * 3.2, z = sz + oz * 3.2;
+        const ax = tipAx(Math.atan2(ox, oz), 0.34 + 0.04 * Math.cos(i * 1.7), 0.06 * Math.sin(i * 3.1)), up = ax[1];
+        const gy = lowest(x, z, 0.6) - 0.6;
+        const at = (k, out = 0) => [x + up[0] * k + ox * out, gy + up[1] * k, z + up[2] * k + oz * out];
+        S.box(at(1.05), [0.6, 1.05 + 0.06, 0.4], slab, { ax, rd: 0.14, res: 0.12 });
+        S.box(at(2.35), [0.42, 0.3, 0.32], slab, { ax, rd: 0.1, res: 0.11 });
+        S.box(at(2.9), [0.24, 0.3, 0.24], slab, { ax, rd: 0.08, res: 0.1 });
+        crown.push({ a, at });
+      }
       // the dais and the beacon
       S.lathe([sx, Y.summit - 0.5, sz], 1.05, [1.35, 1.2], rough, { res: 0.11 });
       ctx.beacon(bowl(sx, sz, { y: Y.summit + 0.52, lit: false }), 1.7);
       // ghost-green signs cut in the outer faces of the stones that look toward the start: the crown glows faintly from afar
       ctx.glow(() => {
-        crown.forEach(({ a, top }, j) => {
+        crown.forEach(({ a, at }, j) => {
           if (Math.sin(a) < 0.2) return;
-          const ox = Math.cos(a), oz = Math.sin(a), cx = top[0] + ox * 0.62, cz = top[2] + oz * 0.62, cy = top[1] - 1.05;
+          const ox = Math.cos(a), oz = Math.sin(a), [cx, cy, cz] = at(1.45, 0.46);
           // a ring and a bar through it
           for (let k = 0; k < 8; k++) {
             const t = (k / 8) * Math.PI * 2;
@@ -503,7 +567,7 @@ export default {
     }
 
     /* ---- the start ---- */
-    ctx.spawn([START[0], h(START[0], START[1]), START[1]], Math.PI);
+    ctx.spawn([START[0], h(START[0], START[1]) + 0.14, START[1]], Math.PI); // on top of the slab you start on
 
     /* ---- what glows: ghost lights in the doors, ghost-green motes over the mounds, fog lying in the hollows; the sky and the moon ---- */
     ctx.glow(({ B }) => {
@@ -514,27 +578,34 @@ export default {
         B.iso(x, y - 0.2, z, 0.25, B.P[gh[1]], 0.6, { em: true, nd: true, k: 7, ph: i + 1, sp: 1.6 });
         lib.motes(B, 5, [x - 0.8, x + 0.8, y - 0.6, y + 1.2, z - 0.8, z + 0.8], [gh[1], gh[2]], 0.03);
       });
-      // ghost-green motes drifting over some of the mounds
-      for (const key of ['west', 'east', 'midW', 'midE', 'nw', 'fe']) {
-        const [mx, mz, mr] = MOUNDS[key];
+      // ghost-green motes drifting over some of the mounds, in small loose swarms rather than a scatter
+      for (const key of ['west', 'east', 'midW', 'midE', 'nw']) {
+        const [mx, mz, mr] = MOUNDS[key], c = B.rr(0, Math.PI * 2), sx = mx + Math.cos(c) * mr * 0.25, sz = mz + Math.sin(c) * mr * 0.25;
         for (let i = 0; i < 6; i++) {
-          const a = B.rr(0, Math.PI * 2), d = Math.sqrt(B.rr(0, 1)) * mr * 0.6, x = mx + Math.cos(a) * d, z = mz + Math.sin(a) * d;
-          B.iso(x, h(x, z) + B.rr(0.6, 2.4), z, B.rr(0.03, 0.045), B.P[B.pick([gh[1], gh[1], gh[2]])], 2.5, { em: true, nd: true, k: 6, ph: B.rr(0, 6), sp: B.rr(0.3, 0.8), rg: B.rr(0.15, 0.5) });
+          const a = B.rr(0, Math.PI * 2), d = Math.sqrt(B.rr(0, 1)) * 1.6, x = sx + Math.cos(a) * d, z = sz + Math.sin(a) * d;
+          B.iso(x, h(x, z) + B.rr(0.9, 2.0), z, B.rr(0.035, 0.05), B.P[B.pick([gh[1], gh[1], gh[2]])], 2.5, { em: true, nd: true, k: 6, ph: B.rr(0, 6), sp: B.rr(0.3, 0.8), rg: B.rr(0.2, 0.5) });
         }
       }
-      // ghost fog: long flat soft dabs lying low in the hollows, in drifts
-      for (let i = 0; i < 260; i++) {
+      // ghost fog: thin flat sheets lying low in the hollows, overlapping into drifts. Each is a wide oval pancake (not a long streak), so
+      // from the start it reads as a pale layer between the mounds and from above as soft pools
+      for (let i = 0; i < 300; i++) {
         const x = B.rr(-32, 32), z = B.rr(-32, 22), gy = h(x, z);
-        if (gy > 2.8 || B.n3(x * 0.12 + 3, z * 0.12, 7) < 0.36 || doors.some(([dx, dz]) => Math.hypot(x - dx, z - dz) < 4.2)) continue;
-        const da = 0.35 + 0.9 * (B.n3(x * 0.05, z * 0.05, 2) - 0.5) + B.rr(-0.2, 0.2); // drifts lie along a slow wind, not all one way
-        B.axial(x, gy + B.rr(0.3, 1.1), z, [Math.cos(da), 0, Math.sin(da)], B.rr(2.6, 5.0), B.rr(0.45, 0.8), B.P[B.pick([fg[1], fg[2], fg[2]])], B.rr(0.3, 0.55), { em: true, nd: true, k: 6, ph: B.rr(0, 6), sp: B.rr(0.1, 0.25), rg: B.rr(0.3, 0.6) });
+        if (gy > 2.5 || B.n3(x * 0.1 + 3, z * 0.1, 7) < 0.4 || doors.some(([dx, dz]) => Math.hypot(x - dx, z - dz) < 4.2)) continue;
+        const da = 0.35 + 1.6 * (B.n3(x * 0.05, z * 0.05, 2) - 0.5) + B.rr(-0.4, 0.4); // drifts lie along a slow wind, not all one way
+        B.dab(x, gy + B.rr(0.25, 0.75), z, B.UP, [Math.cos(da), 0, Math.sin(da)], B.rr(1.7, 2.8), B.rr(1.0, 1.5), 0.2, B.P[B.pick([fg[1], fg[1], fg[2]])], B.rr(0.2, 0.34), { em: true, nd: true, k: 6, ph: B.rr(0, 6), sp: B.rr(0.1, 0.25), rg: B.rr(0.3, 0.6) });
+      }
+      // the thickest drift lies along the foot of the crown hill, where the start looks across the hollow: the hill rises out of it
+      for (let i = 0; i < 70; i++) {
+        const x = B.rr(-16, 16), z = B.rr(-5.5, 2.5) + 0.12 * x, gy = h(x, z);
+        if (gy > 3.0 || Math.abs(x - GATE[0]) < 1.2 || doors.some(([dx, dz]) => Math.hypot(x - dx, z - dz) < 4.2)) continue;
+        B.dab(x, gy + B.rr(0.3, 0.9), z, B.UP, [1, 0, 0.12 * B.rr(-1, 1)], B.rr(2.0, 3.2), B.rr(1.0, 1.4), 0.24, B.P[B.pick([fg[1], fg[2]])], B.rr(0.24, 0.4), { em: true, nd: true, k: 6, ph: B.rr(0, 6), sp: B.rr(0.1, 0.2), rg: B.rr(0.3, 0.6) });
       }
 
-      // the moon: big and low between the keep and the crown, the keep's turret just across its left edge
+      // the moon: big and low between the keep and the crown. As the start eye sees them, its left edge sits just behind the keep's
+      // east edge (the bartizan and the turret), and the rest of it fills the gap before the dome's shoulder
       const dir = (a, e) => [Math.sin(a) * Math.cos(e), Math.sin(e), -Math.cos(a) * Math.cos(e)];
-      // (its middle sits in the gap between the keep's turret and the dome's shoulder, as the start eye sees them)
       const toKeep = Math.atan2(KEEP[0] - EYE[0], -(KEEP[1] - EYE[2])), dKeep = Math.hypot(KEEP[0] - EYE[0], KEEP[1] - EYE[2]);
-      const mr = 3.0 * Math.PI / 180, az = toKeep + (KW + 1.0) / dKeep + mr * 1.15, el = -0.078, D = 175, rm = D * Math.tan(mr);
+      const mr = 3.0 * Math.PI / 180, az = toKeep + (KW + 0.3) / dKeep + mr * 0.9, el = -0.078, D = 175, rm = D * Math.tan(mr);
       const u = dir(az, el), M = [EYE[0] + u[0] * D, EYE[1] + u[1] * D, EYE[2] + u[2] * D];
       // the dome: near-black overhead, violet low down, fog colour under the horizon
       B.sky(d => (d[1] < -0.07 ? fg[0] : d[1] < 0.03 ? sk[1] : d[1] < 0.16 ? sk[0] : dk), 230);
@@ -563,10 +634,11 @@ export default {
         const a = (k / 18) * Math.PI * 2, p = [M[0] + rt[0] * Math.cos(a) * rm * 1.5 + up[0] * Math.sin(a) * rm * 1.3, M[1] + up[1] * Math.sin(a) * rm * 1.3, M[2] + rt[2] * Math.cos(a) * rm * 1.5 + up[2] * Math.sin(a) * rm * 1.3];
         B.iso(p[0] + u[0] * 6, p[1] + u[1] * 6, p[2] + u[2] * 6, rm * 0.7, B.P[sk[3]], 0.3, { em: true, nd: true });
       }
-      // thin dark cloud across its lower half
-      for (const [off, len, th] of [[-0.45, 1.8, 0.06], [-0.7, 2.4, 0.05]]) {
-        const c = [M[0] + up[0] * off * rm - u[0] * 8, M[1] + up[1] * off * rm - u[1] * 8, M[2] + up[2] * off * rm - u[2] * 8];
-        for (let k = -2; k <= 2; k++) B.axial(c[0] + rt[0] * k * rm * len * 0.4, c[1], c[2] + rt[2] * k * rm * len * 0.4, rt, rm * len * 0.32, rm * th, B.P[sk[1]], 1, { em: true, nd: true });
+      // one ragged dark cloud across its lower part: lumps of different sizes along a slight slant, not ruled lines
+      for (let k = -3; k <= 3; k++) {
+        const off = -0.5 + 0.07 * k + 0.06 * Math.sin(k * 2.1), th = rm * (0.1 + 0.05 * Math.cos(k * 1.7)), sx = k * rm * 0.42;
+        const c = [M[0] + rt[0] * sx + up[0] * off * rm - u[0] * 8, M[1] + up[1] * off * rm - u[1] * 8, M[2] + rt[2] * sx + up[2] * off * rm - u[2] * 8];
+        B.axial(c[0], c[1], c[2], rt, rm * 0.34, th, B.P[sk[1]], 1, { em: true, nd: true });
       }
       // long torn cloud higher up, and dim stars
       for (let i = 0; i < 22; i++) {
