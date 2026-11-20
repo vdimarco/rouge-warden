@@ -53,3 +53,20 @@ export async function loadPlace(base, id, onProgress = () => {}) {
   };
   return { meta, world, walk };
 }
+
+/* The combat run's figures: which is 'foes' (foes.bin.gz and foes.json.gz: the four foe types, the light carried after the fall, and
+   each place's pool) or 'boss' (the Barrow Reeve and its grave candles). Returns { json, data, count }; pool.js readFigures() makes
+   the JSON ready to pose. */
+export async function loadFigures(base, which, onProgress = () => {}) {
+  const [rows, js] = await Promise.all([
+    fetchBytes(`${base}${which}.bin.gz`, (got, total) => onProgress(total ? Math.min(0.95, got / total) : 0.5)),
+    fetchBytes(`${base}${which}.json.gz`)
+  ]);
+  const [rowsRaw, jsRaw] = await Promise.all([unzip(rows), unzip(js)]);
+  const json = JSON.parse(new TextDecoder().decode(jsRaw));
+  if (!/^gloam-downs-(foes|boss)\/1$/.test(json.format)) throw new Error(`${which}.json.gz is not a Gloam Downs figure file`);
+  const { data, count } = SplatCodec.decode(rowsRaw, { maxRows: 100_000 });
+  if (count !== json.count) throw new Error(`${which}: ${count} splats, expected ${json.count}`);
+  onProgress(1);
+  return { json, data, count };
+}

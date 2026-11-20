@@ -511,6 +511,8 @@ export default {
 
     /* ---- the start, the other wisps ---- */
     ctx.spawn([START[0], h(START[0], START[1]) + 0.13, START[1]], Math.PI); // on the top of the start slab
+    // the combat run's foe zones (lib/zones.mjs): they add nothing to the scenery, only to the JSON
+    ctx.zone('G1'); ctx.zone('G2'); ctx.zone('G3'); ctx.zone('G5');
     ctx.wisp([1.6, h(1.6, -1.6) + 1.0, -1.6]); // inside the torn cell
     ctx.wisp([7.6, Y.t1 + 1.3, -2.2]); // on the ledge above the cells
     ctx.wisp([GRAVES[0] + 1.2, h(GRAVES[0] + 1.2, GRAVES[1]) + 2.4, GRAVES[1]]); // over the tomb

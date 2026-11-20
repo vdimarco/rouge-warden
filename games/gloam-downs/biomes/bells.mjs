@@ -599,6 +599,8 @@ export default {
 
     /* ---- the start, the wisps ---- */
     ctx.spawn([START[0], h(START[0], START[1]), START[1]], Math.PI);
+    // the combat run's foe zones (lib/zones.mjs): they add nothing to the scenery, only to the JSON
+    ctx.zone('B1'); ctx.zone('B2'); ctx.zone('B3'); ctx.zone('B4');
     ctx.wisp([CLOCK[0], h(CLOCK[0], CLOCK[1]) + 1.6, CLOCK[1]]); // over the clock's hub
     ctx.wisp([EAST[0] + 1.6, h(EAST[0] + 1.6, EAST[1] + 1.6) + 1.1, EAST[1] + 1.6]); // at the lookout on the east hill
     ctx.wisp([WHEEL[0] + 1.5, h(WHEEL[0] + 1.5, WHEEL[1] - 1.5) + 1.1, WHEEL[1] - 1.5]); // behind the great wheel

@@ -3,6 +3,8 @@
 //   node bake.mjs gaol fen        only these
 //   node bake.mjs gaol --preview  also draw CPU previews (from the start point and from above) into --out (default ./preview)
 //   --out DIR  --w 640 --h 360
+//   node bake.mjs foes boss       the foe files and the boss files (see lib/foes.mjs and lib/boss.mjs)
+//   --worlds DIR  write there instead of public/lab/gloam-downs/worlds/;  --no-zones  leave the zones out of <id>.json
 // For each place it writes <id>.bin.gz (SplatCodec rows, gzipped), <id>.walk.bin.gz (the walk map) and <id>.json.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -13,6 +15,7 @@ import { createRequire } from 'node:module';
 import { checkPlace } from './lib/check.mjs';
 import { closeTraps } from './lib/traps.mjs';
 import { lib, K, palette, hills, terrain, walkMap, walkCells, WALK_LAYERS, lamplighter, shadowDisc, wisp, fire, embers, BONES, INK_VERSION } from './lib/common.mjs';
+import { zonesOf, zoneOf, zoneJson } from './lib/zones.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const OUT = path.resolve(HERE, '../../public/lab/gloam-downs/worlds');
@@ -22,8 +25,8 @@ export async function loadPlace(id) {
   return (await import(`./biomes/${id}.mjs`)).default;
 }
 
-// build one place; returns { world, meta, walk, stats }
-export function build(def) {
+// build one place; returns { world, meta, walk, stats }. zones: false leaves the zones out of the JSON (and only out of it)
+export function build(def, { zones = true } = {}) {
   const t0 = performance.now();
   const P = palette(def.palette);
   const B = lib.makeBuilder(def.seed || 7, P.pal, { renderMetadata: false });
@@ -59,7 +62,7 @@ export function build(def) {
   if (L.shK !== undefined) S.shK = L.shK;
   if (L.aoK !== undefined) S.aoK = L.aoK;
   const h = hills(B, def.hills);
-  const marks = { wisps: [], beacon: null, spawn: null, fires: [], embers: [], late: [], glow: [], lamps: [] };
+  const marks = { wisps: [], beacon: null, spawn: null, fires: [], embers: [], late: [], glow: [], lamps: [], zones: [] };
   const ctx = {
     B, S, K, P, h, lib,
     ramp: P.ramp,
@@ -70,6 +73,8 @@ export function build(def) {
     wisp: (p) => marks.wisps.push(p),
     beacon: (p, r = 1.6) => { marks.beacon = { p, r }; },
     spawn: (p, yaw = 0) => { marks.spawn = { p, yaw }; },
+    // a zone of the combat run, from lib/zones.mjs: it adds nothing to the scenery, only to <id>.json
+    zone: zid => { const z = zoneOf(def.id, zid); if (!marks.zones.includes(z)) marks.zones.push(z); return z; },
     later: (fn) => marks.late.push(fn), // solids that must not block the feet: added after the walk map, baked with the scenery
     glow: (fn) => marks.glow.push(fn) // emissive extras (motes, sky, moon): added after every bake
   };
@@ -78,6 +83,8 @@ export function build(def) {
   if (process.env.GLOAM_COUNT) { const prev = S.emit; S.emit = (pr, n0, n1) => { if (prev) prev(pr, n0, n1); if (pr) per.set(pr, (per.get(pr) || 0) + n1 - n0); }; }
   def.build(ctx);
   if (!marks.spawn || !marks.beacon || marks.wisps.length !== 5) throw new Error(`${def.id}: needs a spawn, a beacon and five wisps`);
+  const missing = zonesOf(def.id).filter(z => !marks.zones.includes(z)).map(z => z.id);
+  if (missing.length) throw new Error(`${def.id}: lib/zones.mjs has zones the place does not place: ${missing.join(' ')}`);
   const t1 = performance.now();
   // the walk map, read from the scenery's distance field (S.ready() tells the field where the solids are, before the bake)
   S.ready();
@@ -155,6 +162,8 @@ export function build(def) {
     bounds: def.walk?.half || 36,
     hint: def.hint || ''
   };
+  // in the module's order, so the JSON's zones equal the module's
+  if (zones) meta.zones = zonesOf(def.id).map(zoneJson);
   const stats = {
     splats: world.count, build: Math.round(t1 - t0), walk: Math.round(t2 - t1), reach: Math.round(t2r - t2), bake: Math.round(t3 - t2r),
     avatar: Math.round(t4 - t3), finish: Math.round(t5 - t4), gaps: walk.gaps, cracks: walk.cracks, traps: walk.traps.length, boned: boned.length,
@@ -170,8 +179,9 @@ export function save(id, { world, meta, walk }, out = OUT) {
   const wgz = zlib.gzipSync(Buffer.from(walkCells(walk).buffer), { level: 9 });
   fs.writeFileSync(path.join(out, id + '.bin.gz'), gz);
   fs.writeFileSync(path.join(out, id + '.walk.bin.gz'), wgz);
-  fs.writeFileSync(path.join(out, id + '.json'), JSON.stringify(meta));
-  return { splatsGz: gz.length, walkGz: wgz.length };
+  const json = JSON.stringify(meta);
+  fs.writeFileSync(path.join(out, id + '.json'), json);
+  return { splatsGz: gz.length, walkGz: wgz.length, jsonBytes: Buffer.byteLength(json) };
 }
 
 // a CPU picture of a place: the lamplighter stood at the start point, seen from the follow camera, from the beacon, or from above
@@ -217,14 +227,25 @@ export function preview(built, { w = 640, h = 360, px = 2, view = 'start', file,
 async function main() {
   const args = process.argv.slice(2);
   const opt = k => { const i = args.indexOf('--' + k); return i >= 0 ? args[i + 1] : undefined; };
-  const VAL = new Set(['--out', '--w', '--h']); // the options that take a value; --check and --preview do not
+  const VAL = new Set(['--out', '--w', '--h', '--worlds']); // the options that take a value; --check, --preview and --no-zones do not
   const ids = args.filter((a, i) => !a.startsWith('--') && !(i > 0 && VAL.has(args[i - 1])));
   const list = ids.length ? ids : ORDER;
   const prev = args.includes('--preview'), out = opt('out') || path.join(HERE, 'preview');
+  const worlds = opt('worlds') ? path.resolve(opt('worlds')) : OUT;
   for (const id of list) {
+    if (id === 'foes' || id === 'boss') {
+      const { bakeFigures } = await import('./lib/figures.mjs');
+      const res = await bakeFigures(id, { worlds, preview: prev ? out : null });
+      for (const line of res.lines) console.log(line);
+      if (args.includes('--check')) {
+        for (const r of res.checks) console.log(`  ${r.ok ? 'ok  ' : 'FAIL'} ${r.what}`);
+        if (res.checks.some(r => !r.ok)) process.exitCode = 1;
+      }
+      continue;
+    }
     const def = await loadPlace(id);
-    const built = build(def);
-    const sizes = save(id, built);
+    const built = build(def, { zones: !args.includes('--no-zones') });
+    const sizes = save(id, built, worlds);
     console.log(`${id}: ${JSON.stringify(built.stats)} gz ${(sizes.splatsGz / 1e6).toFixed(2)} MB, walk ${(sizes.walkGz / 1e3).toFixed(0)} KB`);
     for (const c of built.walk.traps) console.log(`  trap filled at (${c.x}, ${c.z}): top/floor/underside ${c.before.join('/')} -> ${c.after.join('/')} cm`);
     let frame;
@@ -236,7 +257,8 @@ async function main() {
       if (prev) console.log(`  previews in ${out}`);
     }
     if (args.includes('--check')) {
-      const res = checkPlace(built, { gzBytes: sizes.splatsGz + sizes.walkGz, frame });
+      // a place's 1.5 MB counts its three files: the splats, the walk map and its JSON
+      const res = checkPlace(built, { gzBytes: sizes.splatsGz + sizes.walkGz + sizes.jsonBytes, frame, worlds });
       for (const r of res) console.log(`  ${r.ok ? 'ok  ' : 'FAIL'} ${r.what}`);
       if (res.some(r => !r.ok)) process.exitCode = 1;
     }

@@ -587,6 +587,8 @@ export default {
 
     /* ---- the start ---- */
     ctx.spawn([START[0], h(START[0], START[1]) + 0.14, START[1]], Math.PI); // on top of the slab you start on
+    // the combat run's foe zones (lib/zones.mjs): they add nothing to the scenery, only to the JSON
+    ctx.zone('W1'); ctx.zone('W2'); ctx.zone('W4'); ctx.zone('arena');
 
     /* ---- what glows: ghost lights in the doors, ghost-green motes over the mounds, fog lying in the hollows; the sky and the moon ---- */
     ctx.glow(({ B }) => {
