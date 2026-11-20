@@ -21,7 +21,7 @@ const DECK = 0.5; // the boardwalks' top
 const PORCH = 1.7; // the huts' floors: high enough to wade under
 const Y = { start: 5.0, top: 3.4, deck: 4.9, fire: 7.05 };
 const START = [2, 19.4];
-const SUMMIT = [-2, -17]; // the middle of the summit's flat top
+const SUMMIT = [-2.4, -15.6]; // the middle of the summit's flat top: the mill stands near its back edge, so the land falls away behind it
 const MILL = [-4.4, -17.6]; // the windmill
 // the fen's bed: round flats that overlap, so the shore wanders [x, z, r, blend]
 const FEN = [[-9, 7, 7.5, 4], [6, 6, 7.5, 4], [-1, 1.5, 6.5, 3.5], [15, 1, 5, 3.5], [-18, 3, 4.5, 3.5], [8, -1, 5, 3]];
@@ -102,7 +102,7 @@ export default {
       [2, 24, 8, 3.4], [2, 31, 12, 2.6], // the south brow, where you start
       [-15, 22, 10, 2.6], [19, 21, 10, 2.9], // its shoulders
       [-28, 6, 11, 3.2], [28, 4, 11, 3.4], // the west and east hills
-      [-2, -17, 15, 2.2], // the summit hill
+      [-2, -14, 11, 2.2], // the summit hill
       [-21, -19, 9, 2.0], [17, -20, 10, 2.4], // its shoulders
       [-46, -34, 20, 5], [44, -36, 20, 5.5], // far hills either side, out of the first picture
       [0, -84, 58, -20] // the land falls away north into a dark low country, so the summit stands against the sky
@@ -112,13 +112,13 @@ export default {
     far: { amp: 8, start: 38, end: 64 },
     flats: [
       ...FEN.map(([x, z, r, blend]) => ({ at: [x, z], r, blend, y: BED })),
-      { at: SUMMIT, r: 4.8, blend: 3.5, y: Y.top }, // the summit's top
+      { at: SUMMIT, r: 4.4, blend: 2.6, y: Y.top }, // the summit's top
       { at: T1, r: 1.8, blend: 2, y: 2.2 }, // the terrace at the switchback
       // the brow: flat behind the start, and falling steeply just in front of the feet, so its lip hides as little water as it can
       { at: [START[0] + 0.6, START[1] + 3.2], box: [4.6, 3.2], blend: 1.3, y: Y.start }
     ],
     // the far north sinks away: the edge of the land there would stand in front of the low moon
-    pits: [[-14, -102, 46, 12]],
+    pits: [[-14, -102, 46, 12], [-3, -29, 10, 3]],
     paths: [{ pts: DOWN, w: 2.2, depth: 0.1 }, { pts: CLIMB, w: 2.2, depth: 0.12 }],
     box: [-112, 112, -112, 112]
   },
@@ -145,8 +145,8 @@ export default {
     const dark = { r: [wd[0], ramp('ink')[0]] };
     const thatch = { r: [mud[1], st[0], st[1], st[2]], g: [st[0]], mod: straw };
     const iron = { r: ramp('iron'), g: [ramp('iron')[0]] };
-    const glass = { r: [lan[1]], em: true };
-    const stone = { r: [sk[0], sk[1], sk[2]], g: [sk[1]], mod: grit(0.9), top: { min: 0.72, r: moss.slice(1, 4) } };
+    const glass = { r: [lan[1], lan[2]], em: true }; // a lantern's glass: pale at its heart, green at its rim
+    const stone = { r: [moss[0], sk[0], sk[1], sk[2]], g: [sk[1]], mod: grit(0.9), top: { min: 0.72, r: moss.slice(1, 4) } };
     const cloth = { r: [mud[0], mud[1], st[0]], g: [mud[0]], mod: grit(0.6) };
     const SICK = [st[1], lan[0]];
     const lamps = []; // lanterns, drawn after the bakes
@@ -521,36 +521,36 @@ export default {
        The page's first picture cuts off anything much higher than the beacon, so the mill is fat rather than tall: its cap and its
        top sails stop under the fire cage, and the cage on its mast is the highest thing on the hill. */
     {
-      const [mx, mz] = MILL, gy = Y.top, bodyTop = gy + 2.75, rAt = y => 1.95 - 0.75 * Math.max(0, Math.min(1, (y - gy - 0.2) / (bodyTop - gy - 0.2)));
-      // a footing of fat stones, then the body: a fat barrel of boards that narrows hard toward the cap, banded with iron, so the
-      // sails reach well past it on both sides and read as a cross against the haze
-      S.lathe([mx, gy - 0.7, mz], 1.1, t => 2.3 - 0.2 * t, stone, { res: 0.13, maxRadius: 2.35 });
-      S.lathe([mx, gy + 0.2, mz], bodyTop - gy - 0.2, t => 1.95 - 0.75 * t, { ...wood, mod: boards(mx, mz, 0.7) }, { res: 0.13, maxRadius: 2.0 });
+      const [mx, mz] = MILL, gy = Y.top, bodyTop = gy + 2.2, rAt = y => 1.5 - 0.35 * Math.max(0, Math.min(1, (y - gy - 0.2) / (bodyTop - gy - 0.2)));
+      // a footing of fat stones, then the body: a stubby barrel of boards banded with iron, and the sails' hub level with its cap, as
+      // on a real tower mill. So the two upper sails rise clear of the cap into the haze and the cross reads from across the fen
+      S.lathe([mx, gy - 0.7, mz], 1.1, t => 1.85 - 0.2 * t, stone, { res: 0.13, maxRadius: 1.9 });
+      S.lathe([mx, gy + 0.2, mz], bodyTop - gy - 0.2, t => 1.5 - 0.35 * t, { ...wood, mod: boards(mx, mz, 0.7) }, { res: 0.12, maxRadius: 1.55 });
       for (const y of [gy + 0.9, bodyTop - 0.4]) S.torus([mx, y, mz], rAt(y) + 0.04, 0.11, iron, { res: 0.08 });
       // the door at the foot, wide and dark, under a fat lintel
       S.box([mx + 0.2, gy + 0.85, mz + rAt(gy + 0.85) - 0.08], [0.55, 0.75, 0.14], dark, { res: 0.08 });
       S.box([mx + 0.2, gy + 1.7, mz + rAt(gy + 1.7) - 0.02], [0.8, 0.14, 0.16], wood, { rd: 0.04, res: 0.08 });
       // the cap: a fat thatch dome, sagging a little to one side, and a short topknot
-      S.lathe([mx, bodyTop - 0.15, mz], 0.95, t => 1.6 * Math.sqrt(Math.max(0, 1 - t * t)) + 0.06, thatch, { res: 0.12, maxRadius: 1.7, ax: tipAx(0.4, 0.07, 0.03) });
-      S.ball([mx + 0.05, bodyTop + 0.82, mz - 0.05], [0.2, 0.18, 0.2], thatch, { res: 0.08 });
-      // the windshaft out of the south face, past the cap's rim, and a fat iron hub
-      const hub = [mx, gy + 2.2, mz + 1.8];
+      S.lathe([mx, bodyTop - 0.15, mz], 0.75, t => 1.35 * Math.sqrt(Math.max(0, 1 - t * t)) + 0.06, thatch, { res: 0.11, maxRadius: 1.45, ax: tipAx(0.4, 0.07, 0.03) });
+      S.ball([mx + 0.05, bodyTop + 0.64, mz - 0.05], [0.18, 0.15, 0.18], thatch, { res: 0.08 });
+      // the windshaft out of the cap's south face, past its rim, and a fat iron hub
+      const hub = [mx, gy + 2.45, mz + 1.6];
       S.tube([[mx, hub[1], mz + 0.6], hub], 0.2, 0.18, wood, { res: 0.08 });
       S.ball(hub, 0.32, iron, { res: 0.07 });
       // four sails in a cross at forty-five degrees (the lowest a cross can stand), few and fat members: a stock, two rails and two
-      // bars of dark wood, which read against the haze. Three carry pale sacking, which reads against the dark body (one is torn
-      // short); the fourth is a bare rack with fish hung to dry
-      const L = 2.3, sack = { r: [st[0], st[1], st[2]], g: [st[1]], mod: grit(0.7) };
+      // bars. Three carry dark sacking (one torn short), the fourth is a bare rack with fish hung to dry; all dark, so the cross
+      // reads black against the lit haze
+      const L = 2.05, sack = { r: [mud[0], mud[1], st[0]], g: [mud[1]], mod: grit(0.7) };
       for (let k = 0; k < 4; k++) {
         const a = Math.PI / 4 + 0.03 + k * Math.PI / 2, ux = Math.cos(a), uy = Math.sin(a), ax = [[uy, -ux, 0], [ux, uy, 0], [0, 0, 1]];
         const at = (s, o, dz = 0) => [hub[0] + ux * s + uy * o, hub[1] + uy * s - ux * o, hub[2] + 0.14 + dz];
         S.box(at(L / 2, 0), [0.14, L / 2 + 0.1, 0.14], wood, { ax, rd: 0.04, res: 0.08 });
-        for (const o of [-0.36, 0.36]) S.box(at(0.45 + (L - 0.45) / 2, o, 0.05), [0.09, (L - 0.45) / 2, 0.09], wood, { ax, rd: 0.03, res: 0.08 });
-        for (const s of [0.9, L - 0.1]) S.box(at(s, 0, 0.05), [0.45, 0.09, 0.09], wood, { ax, rd: 0.03, res: 0.08 });
+        for (const o of [-0.3, 0.3]) S.box(at(0.55 + (L - 0.55) / 2, o, 0.05), [0.08, (L - 0.55) / 2, 0.08], wood, { ax, rd: 0.03, res: 0.08 });
+        for (const s of [0.95, L - 0.1]) S.box(at(s, 0, 0.05), [0.38, 0.08, 0.08], wood, { ax, rd: 0.03, res: 0.08 });
         if (k !== 2) {
-          const len = k === 3 ? 1.0 : L - 0.5;
-          S.box(at(0.5 + len / 2, 0, 0.1), [0.33, len / 2, 0.035], sack, { ax, res: 0.08 });
-        } else for (let b = 0; b < 2; b++) { const p = at(1.0 + b * 0.7, (b - 0.5) * 0.36, 0.14); S.ball([p[0], p[1] - 0.2, p[2]], [0.1, 0.24, 0.06], cloth, { res: 0.06 }); }
+          const len = k === 3 ? 0.9 : L - 0.65;
+          S.box(at(0.6 + len / 2, 0, 0.1), [0.27, len / 2, 0.035], sack, { ax, res: 0.08 });
+        } else for (let b = 0; b < 2; b++) { const p = at(1.0 + b * 0.6, (b - 0.5) * 0.3, 0.14); S.ball([p[0], p[1] - 0.2, p[2]], [0.09, 0.22, 0.06], cloth, { res: 0.06 }); }
       }
       // one warm window low on the south face, in the gap between the two lower sails: the mill's only fire until the beacon burns
       {
@@ -565,7 +565,7 @@ export default {
       }
       // the deck: planks east of the body on four fat stilts with braces, a railing on its north and east sides, a stair up from the
       // south where the climb comes in
-      const dx0 = mx + 1.8, dx1 = mx + 5.2, dz0 = mz - 1.8, dz1 = mz + 1.6, dcx = (dx0 + dx1) / 2, dcz = (dz0 + dz1) / 2, dy = Y.deck;
+      const dx0 = mx + 1.5, dx1 = mx + 4.9, dz0 = mz - 1.8, dz1 = mz + 1.6, dcx = (dx0 + dx1) / 2, dcz = (dz0 + dz1) / 2, dy = Y.deck;
       for (let k = 0; k < 6; k++) {
         const z = dz0 + (k + 0.5) * (dz1 - dz0) / 6;
         slab([dcx, dy - 0.13 + B.rr(-0.02, 0.02), z], [(dx1 - dx0) / 2 + B.rr(-0.05, 0.12), 0.13, (dz1 - dz0) / 12 - 0.02], plank, { ax: yawAx(B.rr(-0.02, 0.02)), rd: 0.03, res: 0.12 });
@@ -643,12 +643,13 @@ export default {
       // by; and now and then a ripple
       const tex = (x, y, z) => {
         if (h(x, z) > W - 0.13 - 0.08 * B.n3(x * 1.3, z * 1.3, 7)) return wt[3];
-        const far = smooth(12, 34, Math.hypot(x - eye[0], z - eye[2])), band = Math.sin(z * 2.6 + 1.3 * Math.sin(x * 0.35) + 2 * B.n3(x * 0.25, z * 0.6, 3));
-        if (band > 0.93 - 0.35 * far && B.n3(x * 0.5, z * 1.8, 8) > 0.45) return far > 0.5 ? wt[3] : wt[2];
-        return Math.sin(z * 5.2 + 1.7 * Math.sin(x * 0.8)) > 0.975 && B.n3(x * 0.7, z * 0.7, 5) > 0.58 ? wt[2] : undefined;
+        // a few long level streaks, longer and more of them far off; between them the water is even (still water has no grain)
+        const far = smooth(12, 36, Math.hypot(x - eye[0], z - eye[2])), band = Math.sin(z * 1.9 + 0.9 * Math.sin(x * 0.17) + 0.8 * B.n3(x * 0.1, z * 0.4, 3));
+        if (band > 0.955 - 0.1 * far && B.n3(x * 0.16, z * 1.4, 8) > 0.5) return far > 0.6 ? wt[3] : wt[2];
+        return undefined;
       };
       // the far water holds a little of the sky's haze, the near water is black
-      const mod = (x, y, z) => 0.2 * (B.fbm(x * 0.3 + 3, z * 0.3, 0.5, 2) - 0.5) + 0.45 * smooth(14, 34, Math.hypot(x - eye[0], z - eye[2])) - 0.15;
+      const mod = (x, y, z) => 0.06 * (B.fbm(x * 0.12 + 3, z * 0.12, 0.5, 2) - 0.5) + 0.3 * smooth(14, 36, Math.hypot(x - eye[0], z - eye[2])) - 0.15;
       const water = { r: wt, mod, tex, fat: 0.62 };
       S.add({
         bc: [(px0 + px1) / 2, W - 0.3, (pz0 + pz1) / 2],
@@ -663,7 +664,7 @@ export default {
       const dk = ramp('sky')[0], mn = ramp('moon');
       // as the page's first picture sees it: the moon just left of the mill, the tip of its upper-left sail over the moon's edge, and
       // its top well under the picture's top edge (half a degree below level)
-      const tip = [MILL[0] - 1.65, Y.top + 2.2 + 1.65, MILL[1] + 1.94]; // where the summit block puts that sail's tip
+      const tip = [MILL[0] - 1.57, Y.top + 2.45 + 1.47, MILL[1] + 1.74]; // where the summit block puts that sail's tip
       const toTip = Math.atan2(tip[0] - eye[0], -(tip[2] - eye[2])), dTip = Math.hypot(tip[0] - eye[0], tip[2] - eye[2]);
       const deg = Math.PI / 180, mr = 1.75 * deg, az = toTip - 0.7 * mr, el = -3.15 * deg, D = 175, rm = D * Math.tan(mr);
       const toMill = Math.atan2(MILL[0] + 1.6 - eye[0], -(MILL[1] - eye[2])); // the middle of the mill and its deck
@@ -724,19 +725,20 @@ export default {
           B.stick(x + Math.cos(a) * 0.1, gy + L * 0.45, z + Math.sin(a) * 0.1, unit([Math.cos(a) * 0.5, 1, Math.sin(a) * 0.5]), L * 0.5, 0.035, B.P[B.pick([moss[1], moss[2], st[0]])], 3);
         }
       }
-      // mist: long flat soft dabs lying low on the water, thicker toward the north shore, drifting
+      // mist: long flat soft dabs lying low on the water, thicker toward the north shore, drifting. Cold teal: the olive of the
+      // moon's haze, laid over dark ground, read as a lit meadow
       for (let i = 0; i < 70; i++) {
         const x = B.rr(-24, 22), z = B.rr(-8, 15);
         if (h(x, z) > W + 0.2) continue;
         const far = smooth(12, -6, z);
-        B.axial(x, W + B.rr(0.2, 0.8), z, [1, 0, B.rr(-0.2, 0.2)], B.rr(2.2, 4.2), B.rr(0.35, 0.6), B.P[far > 0.5 ? sk[3] : B.pick([sk[3], sk[2]])], 0.16 + 0.22 * far, { em: true, nd: true, k: 6, ph: B.rr(0, 6), sp: B.rr(0.12, 0.3), rg: B.rr(0.3, 0.6) });
+        B.axial(x, W + B.rr(0.2, 0.8), z, [1, 0, B.rr(-0.2, 0.2)], B.rr(2.2, 4.2), B.rr(0.35, 0.6), B.P[sk[2]], 0.1 + 0.18 * far, { em: true, nd: true, k: 6, ph: B.rr(0, 6), sp: B.rr(0.12, 0.3), rg: B.rr(0.3, 0.6) });
       }
       // a thicker bank of it along the north shore, so the summit's foot stands in haze, apart from the fen in front of it
       // (in drifts, with gaps between them, not one even sheet)
       for (let i = 0; i < 56; i++) {
         const x = B.rr(-16, 15), z = B.rr(-8, -4.5);
         if (B.n3(x * 0.16 + 4, z * 0.3, 11) < 0.42) continue;
-        B.axial(x, W + B.rr(0.3, 1.2), z, [1, 0, B.rr(-0.15, 0.15)], B.rr(2.0, 3.6), B.rr(0.45, 0.75), B.P[sk[3]], B.rr(0.24, 0.4), { em: true, nd: true, k: 6, ph: B.rr(0, 6), sp: B.rr(0.1, 0.2), rg: B.rr(0.3, 0.6) });
+        B.axial(x, W + B.rr(0.3, 1.2), z, [1, 0, B.rr(-0.15, 0.15)], B.rr(2.0, 3.6), B.rr(0.45, 0.75), B.P[sk[2]], B.rr(0.22, 0.36), { em: true, nd: true, k: 6, ph: B.rr(0, 6), sp: B.rr(0.1, 0.2), rg: B.rr(0.3, 0.6) });
       }
       // marsh lights: a very few sick specks drifting low over the water
       lib.motes(B, 8, [-22, 20, W + 0.3, W + 1.4, -6, 10], [lan[0], lan[1]], 0.03);
@@ -752,8 +754,8 @@ export default {
         for (let i = -26; i <= 26; i++) {
           const a = toMill + (i + (j % 2) * 0.5) * 0.024 + B.rr(-0.006, 0.006);
           const dm = Math.hypot((a - az) * 0.6, e - el) / mr + B.rr(-0.9, 0.9);
-          const dh = Math.hypot((a - toMill) * 0.7, (e + 0.065) * 1.5) / mr + B.rr(-0.9, 0.9);
-          const c = dm < 2.5 ? sk[3] : dm < 4.4 || dh < 4.6 ? sk[2] : null;
+          const dh = Math.hypot((a - toMill) * 0.7, (e + 0.058) * 1.5) / mr + B.rr(-0.9, 0.9);
+          const c = dm < 2.5 || dh < 1.9 ? sk[3] : dm < 4.4 || dh < 4.6 ? sk[2] : null;
           if (c === null || e > -0.014 + B.rr(-0.01, 0.006)) continue;
           const p = dir(a, e), R = 185;
           B.axial(eye[0] + p[0] * R, eye[1] + p[1] * R, eye[2] + p[2] * R, [Math.cos(a), 0, Math.sin(a)], R * 0.02, R * 0.0042, B.P[c], 1.6, { em: true, nd: true });

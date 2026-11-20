@@ -374,5 +374,14 @@ const toward = (dx, dz) => { const l = Math.hypot(dx, dz); return { mx: dx / l, 
   assert.equal(wispCount(s), 3);
   pass('a bad save is cleaned field by field');
 }
+{ // a beacon lit while the place after it is shut would lock the player in, so it goes dark; no storage at all is an empty save
+  assert.deepEqual(clean({ reached: ['gaol'], lit: { gaol: true } }).lit, {});
+  assert.deepEqual(clean({ reached: ['gaol', 'fen'], lit: { gaol: true, fen: true } }).lit, {}, 'the gap cuts the places, then the beacon');
+  assert.deepEqual(clean({ reached: ORDER, lit: { gaol: true, bells: true, barrows: true } }).lit, { gaol: true, bells: true, barrows: true });
+  const { load, store } = await import('../../public/lab/gloam-downs/save.js');
+  assert.deepEqual(load(null), fresh());
+  assert.equal(store(null, fresh()), false);
+  pass('a lit beacon always has its next place open, and blocked storage gives a fresh save');
+}
 if (missing.length) { console.log(`FAIL not baked: ${missing.join(', ')} (node games/gloam-downs/bake.mjs)`); process.exitCode = 1; }
 console.log(`${n} checks passed`);

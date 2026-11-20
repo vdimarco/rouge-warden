@@ -19,8 +19,10 @@ export function clean(raw) {
       const w = raw.wisps[id];
       if (Array.isArray(w)) s.wisps[id] = [...new Set(w.filter(i => Number.isInteger(i) && i >= 0 && i < 5))].sort();
     }
+  // a lit beacon has opened the place after it; one that has not would shut the player in, so it is dark again
+  // (the places reached have no gap, so the next one reached means this one was too)
   if (raw.lit && typeof raw.lit === 'object' && !Array.isArray(raw.lit))
-    for (const id of ORDER) if (raw.lit[id] === true && s.reached.includes(id)) s.lit[id] = true;
+    ORDER.forEach((id, i) => { if (raw.lit[id] === true && s.reached.includes(ORDER[i + 1] ?? id)) s.lit[id] = true; });
   const num = (v, max) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= max ? v : 0);
   s.time = num(raw.time, 360000);
   s.best = num(raw.best, 360000);
@@ -28,6 +30,7 @@ export function clean(raw) {
   s.seen = raw.seen === true;
   return s;
 }
+// storage is null when the browser blocks site data; the try blocks cover that as well
 export function load(storage) {
   try { return clean(JSON.parse(storage.getItem(KEY) || 'null')); } catch { return fresh(); }
 }

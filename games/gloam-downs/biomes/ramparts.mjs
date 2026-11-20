@@ -80,13 +80,20 @@ export default {
   build(ctx) {
     const { S, B, h, ramp } = ctx;
     const grit = (k = 1) => (x, y, z) => k * (0.16 * (B.n3(x * 0.45, z * 0.45, y * 0.3 + 3) - 0.5) + 0.14 * (B.n3(x * 2.6, y * 2.6, z * 2.6) - 0.5));
-    // laid stone: grit, each block its own tone, and dark mortar between courses and between blocks
-    const laid = (k = 0.8, ch = 0.66) => {
+    // laid stone: courses of blocks, each block its own tone (mod), and dark mortar between them on the upright faces (tex: a fixed
+    // dark colour, so the joints show in sun and in shade alike)
+    const course = (x, y, z, ch = 0.66) => {
+      const c = y / ch + 0.15 * B.n3(x * 0.3, z * 0.3, 8), row = Math.floor(c), u0 = (x * 0.72 + z * 0.69) / 1.2 + row * 0.5, col = Math.floor(u0);
+      return { row, col, f: c - row, u: u0 - col };
+    };
+    const laid = (k = 0.8) => {
       const g = grit(k);
-      return (x, y, z) => {
-        const c = y / ch, row = Math.floor(c), f = c - row, u0 = (x * 0.72 + z * 0.69) / 1.2 + row * 0.5, col = Math.floor(u0), u = u0 - col;
-        return g(x, y, z) + 0.13 * (B.n3(col * 3.7, row * 1.9, 5.5) - 0.5) + (f < 0.16 || u < 0.07 ? -0.13 : 0);
-      };
+      return (x, y, z) => { const q = course(x, y, z); return g(x, y, z) + 0.17 * (B.n3(q.col * 3.7, q.row * 1.9, 5.5) - 0.5); };
+    };
+    const mortar = (x, y, z, ny) => {
+      if (Math.abs(ny) > 0.55) return undefined;
+      const q = course(x, y, z);
+      return q.f < 0.15 || q.u < 0.07 ? st[1] : undefined;
     };
     const grass = ramp('grass'), chalk = ramp('chalk'), st = ramp('stone'), wd = ramp('wood');
     // the ground: dark olive grass, rust-dark bracken in patches, and pale chalk where the road wears through
@@ -95,16 +102,18 @@ export default {
       rf: (x, y, z) => {
         const n = 0.5 * (B.n3(x * 1.3, z * 1.3, 4) - 0.5);
         if (Math.min(polyDist(x, z, PATH) - 0.7, polyDist(x, z, SPUR) - 0.4) + n < 0.4) return chalk;
-        return B.n3(x * 0.16, z * 0.16, 11) + 0.25 * B.n3(x * 0.9, z * 0.9, 12) > 0.86 ? wd : grass;
+        return B.n3(x * 0.16, z * 0.16, 11) + 0.3 * B.n3(x * 0.9, z * 0.9, 12) > 0.93 ? wd : grass;
       }
     };
     groundTiles(ctx, ground, [{ r: grass, g: [grass[1]], mod: grit(1.2), fat: 0.7 }, { r: grass, mod: grit(1.4), fat: 1.15 }]);
 
-    // stone: shaded on the violet ramp, warm on the faces the low sun still reaches
-    const stone = { r: st, s: ramp('sunstone'), g: [st[1]], mod: laid(0.8), top: { min: 0.99, r: grass.slice(0, 3) } };
-    const cap = { r: st, s: ramp('sunstone'), g: [st[1]], mod: grit(0.9) };
+    // stone: shaded on the violet ramp; where the low sun still reaches, a ramp from violet up to warm, so a face it grazes is mottled
+    // violet and rose and only a face turned full to it goes warm
+    const sunR = [st[2], ...ramp('sunstone')];
+    const stone = { r: st, s: sunR, g: [st[1]], mod: laid(0.8), tex: mortar, top: { min: 0.8, r: grass.slice(0, 3) } }; // the walks go to grass
+    const cap = { r: st, s: sunR, g: [st[1]], mod: grit(0.9) };
     // fallen stone: darker, gone green on top
-    const rubble = { r: st.slice(0, 4), s: ramp('sunstone'), g: [st[1]], mod: grit(1.1), top: { min: 0.82, r: grass.slice(0, 3) } };
+    const rubble = { r: st.slice(0, 4), s: sunR, g: [st[1]], mod: grit(1.1), top: { min: 0.82, r: grass.slice(0, 3) } };
     const dark = { r: st.slice(0, 3), mod: grit(0.6) };
     const wood = { r: wd, g: [wd[1]], mod: grit(0.5) };
     const iron = { r: ramp('iron') };
@@ -168,7 +177,7 @@ export default {
         let lo = 1e9;
         for (const [u, v] of [[-1, -1], [-1, 1], [1, -1], [1, 1]]) lo = Math.min(lo, h(cx + Math.cos(a) * u + Math.sin(a) * v * 0.6, cz + Math.sin(a) * u - Math.cos(a) * v * 0.6));
         const y0 = Math.min(lo, tread) - 0.6, hy = (tread - y0) / 2;
-        S.box([cx, y0 + hy, cz], [0.64, hy, 0.75], stone, { ax: yawAx(Math.atan2(-Math.cos(a), -Math.sin(a))), rd: 0.06, res: 0.14 });
+        S.box([cx, y0 + hy, cz], [0.86, hy, 0.8], stone, { ax: yawAx(Math.atan2(-Math.cos(a), -Math.sin(a))), rd: 0.06, res: 0.14 }); // [along, up, out]
       }
       const aTop = a0 - (n - 1) * da;
       // the upper flight: on round the tower the other way, from the terrace to the roof
@@ -176,7 +185,7 @@ export default {
       for (let k = 0; k < n2; k++) {
         const a = b0 + k * da2, cx = C[0] + Math.cos(a) * (TU + 0.62), cz = C[1] + Math.sin(a) * (TU + 0.62), tread = roof1 + (k + 1) * rr2;
         const hy = (tread - roof1 + 0.25) / 2;
-        S.box([cx, roof1 - 0.25 + hy, cz], [0.52, hy, 0.5], stone, { ax: yawAx(Math.atan2(-Math.cos(a), -Math.sin(a))), rd: 0.05, res: 0.12 });
+        S.box([cx, roof1 - 0.25 + hy, cz], [0.56, hy, 0.55], stone, { ax: yawAx(Math.atan2(-Math.cos(a), -Math.sin(a))), rd: 0.05, res: 0.12 });
       }
       const bTop = b0 + (n2 - 1) * da2;
       // merlons round the drum's crown, open where the steps and the wall-walk arrive
@@ -277,7 +286,7 @@ export default {
     const beak = { r: [ramp('iron')[0]] };
     crow(ctx, T2[0] + 2.2, r2 + 0.78, T2[1] + 0.8, -2.2, black, beak);
     crow(ctx, T3[0] - 1.9, r3 + 0.78, T3[1] + 1.5, 2.8, black, beak);
-    crow(ctx, C[0] + Math.cos(1.45) * (TR - 0.08), roof1 + 0.84, C[1] + Math.sin(1.45) * (TR - 0.08), 2.4, black, beak);
+    { const a = (6 / 15) * Math.PI * 2; crow(ctx, C[0] + Math.cos(a) * (TR - 0.08), roof1 + 0.84, C[1] + Math.sin(a) * (TR - 0.08), 1.9, black, beak); } // on a merlon of the summit's drum
     crow(ctx, -3.3, h(-3.5, 22.6) + 3.64, 22.75, 2.6, black, beak); // on the gate post, the first thing that watches you
     crow(ctx, 5.3, h(6.5, 22.5) + 2.05, 22.0, -1.2, black, beak, 1.4); // in the dead tree by the gate
 
@@ -349,7 +358,7 @@ export default {
       }
       // the sun, sinking into the far downs in a gap of the far broken wall, a thin bar of cloud across its top
       {
-        const e0 = skyline(bSun), s0 = at(bSun, e0 + 0.45 * deg, 170);
+        const e0 = skyline(bSun), s0 = at(bSun, e0 + 0.3 * deg, 170);
         B.iso(s0[0], s0[1], s0[2], 3.0, B.P[f[1]], 3, { em: true, nd: true });
         B.iso(s0[0], s0[1] + 0.4, s0[2], 1.8, B.P[f[2]], 3, { em: true, nd: true });
         B.iso(s0[0], s0[1], s0[2], 10, B.P[sun[0]], 0.35, { em: true, nd: true });

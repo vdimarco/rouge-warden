@@ -10,8 +10,8 @@
 - [x] The Ramparts
 - [x] The Fen
 - [x] The Bells
-- [ ] The Barrows
-- [ ] A polish pass on each place
+- [x] The Barrows
+- [x] A polish pass on each place
 - [ ] Bake all five places with the final kit, every rule `ok`, and commit the baked files
 
 ## Page

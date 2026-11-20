@@ -68,7 +68,7 @@ export function build(def) {
     wisp: (p) => marks.wisps.push(p),
     beacon: (p, r = 1.6) => { marks.beacon = { p, r }; },
     spawn: (p, yaw = 0) => { marks.spawn = { p, yaw }; },
-    later: (fn) => marks.late.push(fn), // solids that must not block the feet: baked after the walk map
+    later: (fn) => marks.late.push(fn), // solids that must not block the feet: added after the walk map, baked with the scenery
     glow: (fn) => marks.glow.push(fn) // emissive extras (motes, sky, moon): added after every bake
   };
   // GLOAM_COUNT=1: list the heaviest solids (where, size, spacing, splats), to keep a place inside its budget
@@ -77,16 +77,19 @@ export function build(def) {
   def.build(ctx);
   if (!marks.spawn || !marks.beacon || marks.wisps.length !== 5) throw new Error(`${def.id}: needs a spawn, a beacon and five wisps`);
   const t1 = performance.now();
+  // the walk map, read from the scenery's distance field (S.ready() tells the field where the solids are, before the bake)
+  S.ready();
+  const W = def.walk || {};
+  const walk = walkMap(S, h, { x0: -W.half || -36, x1: W.half || 36, z0: -W.half || -36, z1: W.half || 36, step: 0.25, ...W.opts });
+  const t2 = performance.now();
+  /* then what must not block the feet (water, hanging cloth, chains), and one bake of it all, so the scenery shadows the late solids and
+     hides what of them is buried in it. Baked alone, they would be lit in a field that holds nothing else */
+  for (const fn of marks.late) fn(ctx);
   S.bake();
   const nScenery = B.count();
   const heavy = [...per].map(([pr, n]) => ({ n, at: (pr.bc || []).map(v => +v.toFixed(1)), br: +(pr.br || 0).toFixed(1), res: pr.res }));
   if (heavy.length) { heavy.sort((a, b) => b.n - a.n); console.log('heaviest solids:'); for (const x of heavy.slice(0, 25)) console.log('  ', x.n, 'at', x.at.join(','), 'r', x.br, 'res', x.res); }
-  const t2 = performance.now();
-  const W = def.walk || {};
-  const walk = walkMap(S, h, { x0: -W.half || -36, x1: W.half || 36, z0: -W.half || -36, z1: W.half || 36, step: 0.25, ...W.opts });
   const t3 = performance.now();
-  for (const fn of marks.late) fn(ctx);
-  if (marks.late.length) S.bake();
   // the lamplighter, lit by this place's sky (a little more fill, so it reads against the dark)
   const tags = K.deform.tags(S);
   S.amb = L.amb + 0.12;
@@ -141,7 +144,7 @@ export function build(def) {
     hint: def.hint || ''
   };
   const stats = {
-    splats: world.count, build: Math.round(t1 - t0), bake: Math.round(t2 - t1), walk: Math.round(t3 - t2), avatar: Math.round(t4 - t3),
+    splats: world.count, build: Math.round(t1 - t0), walk: Math.round(t2 - t1), bake: Math.round(t3 - t2), avatar: Math.round(t4 - t3),
     finish: Math.round(t5 - t4), gaps: walk.gaps, boned: boned.length, scenery: nScenery, glow: world.count - nScenery - boned.length
   };
   return { world, meta, walk, stats, P };

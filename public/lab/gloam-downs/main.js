@@ -15,7 +15,9 @@ const NUMERAL = ['I', 'II', 'III', 'IV', 'V'];
 const TARGET = { low: 30000, mid: 64000, high: 110000 };
 
 /* ---------------- state ---------------- */
-let save = q.has('fresh') ? fresh() : load(localStorage);
+// with site data blocked, even reading localStorage throws; then the save lives in this page only (load and store take null)
+const disk = (() => { try { return window.localStorage; } catch { return null; } })();
+let save = q.has('fresh') ? fresh() : load(disk);
 let renderer = null, place = null, walk = null, body = null, cam = null, world = null, meta = null;
 let mode = 'loading', paused = false, lost = false, last = 0, time = 0, frames = 0;
 let artTarget = TARGET[q.get('q')] || (coarse ? 46000 : TARGET.mid), adapt = !q.has('q');
@@ -48,6 +50,8 @@ addEventListener('keydown', e => {
   if (mode === 'play' && k === 'm') { openMap(); e.preventDefault(); return; }
   if (mode === 'map' && k === 'm') { closePanels(); return; }
   if (mode === 'play' && k === 'r') { lookAhead(); return; }
+  // in an open dialog, Space presses the focused button and the arrows scroll the box
+  if (e.target.closest?.('.panel:not([hidden])')) return;
   if ([' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) e.preventDefault();
   keys.add(k);
 });
@@ -90,7 +94,7 @@ function readInput() {
   const k = n => keys.has(n);
   let mx = (k('d') || k('arrowright') ? 1 : 0) - (k('a') || k('arrowleft') ? 1 : 0);
   let mz = (k('w') || k('arrowup') ? 1 : 0) - (k('s') || k('arrowdown') ? 1 : 0);
-  let ox = (k('e') ? 1 : 0) - (k('q') ? 1 : 0), oy = 0, jump = k(' '), slow = k('shift');
+  let ox = (k('e') ? 1 : 0) - (k('q') ? 1 : 0), oy = 0, jump = k(' '), slow = k('shift'), start = false;
   if (stick) {
     const dx = stick.x - stick.x0, dy = stick.y - stick.y0, l = Math.hypot(dx, dy);
     if (l > 6) { const m = Math.min(1, (l - 6) / 46); mx = (dx / l) * m; mz = (-dy / l) * m; }
@@ -102,10 +106,12 @@ function readInput() {
     if (ax(2) || ax(3)) { ox = ax(2); oy = ax(3); }
     if (pad.buttons[0]?.pressed) jump = true;
     if (pad.buttons[2]?.pressed) slow = true;
-    if (pad.buttons[9]?.pressed && !padStart) { padStart = true; mode === 'play' ? openMap() : closePanels(); }
-    if (!pad.buttons[9]?.pressed) padStart = false;
+    if (pad.buttons[9]?.pressed) start = true;
     if (pad.buttons[5]?.pressed && mode === 'play') lookAhead();
   }
+  // Start counts once for all the pads together, so a second pad cannot make a held Start press again
+  if (start && !padStart) mode === 'play' ? openMap() : closePanels();
+  padStart = start;
   input.mx = mx; input.mz = mz; input.ox = ox; input.oy = oy; input.jump = jump || jumpTouch; input.slow = slow;
 }
 let padStart = false;
@@ -120,7 +126,8 @@ function updateHud() {
   const got = save.wisps[meta.id]?.length || 0;
   $('where').textContent = meta.name;
   $('count').innerHTML = `<b>◆ ${got}/5</b> wisps · <i>${beaconLit ? 'beacon lit' : 'beacon dark'}</i>`;
-  $('hint').textContent = beaconLit ? 'The way is open. Use the map, or walk on.' : meta.hint || 'Light the beacon on the summit.';
+  const others = meta.id === ORDER.at(-1) && ORDER.some(id => !save.lit[id]); // the last place lit before the rest
+  $('hint').textContent = !beaconLit ? meta.hint || 'Light the beacon on the summit.' : others ? 'Other beacons are still dark. Use the map.' : 'The way is open. Use the map, or walk on.';
 }
 function toast(html, ms = 1800) {
   const t = $('toast');
@@ -143,6 +150,8 @@ function arrive() {
 /* ---------------- dialogs ---------------- */
 const panels = ['help', 'map', 'end'];
 function closePanels() {
+  // closing the help any way (Walk, Escape, a gamepad's Start) means it has been read
+  if (!$('help').hidden) { save.seen = true; store(disk, save); }
   let was = false;
   for (const p of panels) if (!$(p).hidden) { $(p).hidden = true; was = true; }
   if (was && mode !== 'loading') { mode = 'play'; canvas.focus?.(); }
@@ -173,9 +182,9 @@ const NAMES = { gaol: 'The Sunken Gaol', ramparts: 'Crow Ramparts', fen: 'Lanter
 $('bMap').addEventListener('click', () => (mode === 'map' ? closePanels() : openMap()));
 $('bMapClose').addEventListener('click', closePanels);
 $('bLook').addEventListener('click', lookAhead);
-$('bStart').addEventListener('click', () => { closePanels(); save.seen = true; });
+$('bStart').addEventListener('click', closePanels);
 $('bEndStay').addEventListener('click', closePanels);
-$('bAgain').addEventListener('click', () => { closePanels(); save.lit = {}; save.time = 0; save.at = 'gaol'; store(localStorage, save); go('gaol'); });
+$('bAgain').addEventListener('click', () => { closePanels(); save.lit = {}; save.time = 0; save.at = 'gaol'; store(disk, save); go('gaol'); });
 for (const p of panels) $(p).addEventListener('pointerdown', e => { if (e.target === $(p) && p !== 'help') closePanels(); });
 function lookAhead() { if (cam && body) { cam.c.yaw = body.s.yaw + Math.PI; cam.c.pitch = 0.34; cam.c.idle = 0; } }
 const fmt = t => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
@@ -198,35 +207,42 @@ function takeWisp(i) {
   list.push(i);
   list.sort();
   setLit([meta.wisps[i].ids], false);
-  store(localStorage, save);
+  store(disk, save);
   updateHud();
   toast(`<b>◆</b> Wisp ${list.length} of 5`);
 }
+let beaconTimer = 0;
 function lightBeacon() {
   if (beaconLit) return;
   beaconLit = true;
   setLit(meta.beacon.fire, true);
-  save.lit[meta.id] = true;
-  const i = ORDER.indexOf(meta.id), next = ORDER[i + 1];
+  const id = meta.id, next = ORDER[ORDER.indexOf(id) + 1];
+  save.lit[id] = true;
   if (next && !save.reached.includes(next)) save.reached.push(next);
-  store(localStorage, save);
-  updateHud();
-  if (!next) {
+  // the walk ends when all five burn, whatever the order: after Walk again the map still opens every place reached
+  const dark = ORDER.filter(p => !save.lit[p]).length;
+  if (!dark) {
     save.done += 1;
     if (!save.best || save.time < save.best) save.best = save.time;
-    store(localStorage, save);
+  }
+  store(disk, save);
+  updateHud();
+  clearTimeout(beaconTimer);
+  if (!dark) {
     toast('The last beacon burns', 2400);
-    setTimeout(() => {
+    beaconTimer = setTimeout(() => {
+      if (meta.id !== id || mode === 'loading') return;
+      closePanels();
       $('endTime').textContent = fmt(save.time);
       $('endWisps').textContent = `${wispCount(save)}/25`;
       $('endBest').textContent = save.best ? fmt(save.best) : '–';
       $('end').hidden = false;
       mode = 'end';
     }, 1800);
-  } else {
+  } else if (next) {
     toast(`The way opens to <b>${NAMES[next]}</b>`, 2600);
-    setTimeout(() => { if (meta.id === ORDER[i] && mode === 'play') go(next); }, 2800);
-  }
+    beaconTimer = setTimeout(() => { if (meta.id === id && mode === 'play') go(next); }, 2800);
+  } else toast(`${dark} ${dark === 1 ? 'beacon is' : 'beacons are'} still dark`, 2600);
 }
 
 /* ---------------- loading a place ---------------- */
@@ -235,6 +251,7 @@ function progress(f) {
   bar.setAttribute('aria-valuenow', String(Math.round(f * 100)));
 }
 async function go(id) {
+  clearTimeout(beaconTimer);
   mode = 'loading';
   showHud(false);
   $('veil').classList.add('on');
@@ -270,7 +287,7 @@ async function go(id) {
   pendingRows = new Set(); // the whole world is uploaded on its first frame anyway
   save.at = id;
   if (!save.reached.includes(id)) save.reached.push(id);
-  store(localStorage, save);
+  store(disk, save);
   updateHud();
   progress(1);
   loading.classList.add('done');
@@ -316,7 +333,9 @@ function draw() {
     renderer.render(world, { width: art.w, height: art.h, time, camera: view, changedRows: [...pendingRows], colored: true });
     pendingRows.clear();
   } catch (err) {
-    if (!lost) { console.warn(err); paused = true; loadLine.textContent = `The picture stopped: ${err.message}`; loading.classList.remove('done'); }
+    // a lost context can throw before its webglcontextlost event arrives: wait for webglcontextrestored, do not stop
+    if (lost || canvas.getContext('webgl2')?.isContextLost()) { lost = true; return; }
+    console.warn(err); paused = true; loadLine.textContent = `The picture stopped: ${err.message}`; loading.classList.remove('done');
   }
   frames++;
 }
@@ -326,9 +345,10 @@ function frame(now) {
   last = now;
   if (manual || paused || lost || !place || mode === 'loading' || document.hidden || window.GameSwitch?.isOpen) return;
   readInput();
-  update(Math.min(1 / 30, dtRaw));
+  // steps of at most 1/30 s, as many as the frame took (up to a quarter second), so a slow phone does not play in slow motion
+  for (let rest = Math.min(0.25, dtRaw); rest > 1e-4; rest -= 1 / 30) update(Math.min(1 / 30, rest));
   draw();
-  if (frames % 120 === 0) store(localStorage, save);
+  if (frames % 120 === 0) store(disk, save);
   // slow machine: if frames come slower than 45 ms for two seconds, draw a smaller picture
   if (adapt && dtRaw > 0) {
     intervals.push(dtRaw);
@@ -342,8 +362,8 @@ function frame(now) {
 /* ---------------- start ---------------- */
 canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); lost = true; });
 canvas.addEventListener('webglcontextrestored', () => { lost = false; });
-document.addEventListener('visibilitychange', () => { last = 0; if (document.hidden && place) store(localStorage, save); });
-addEventListener('pagehide', () => { if (place) store(localStorage, save); });
+document.addEventListener('visibilitychange', () => { last = 0; if (document.hidden && place) store(disk, save); });
+addEventListener('pagehide', () => { if (place) store(disk, save); });
 
 window.__gloam = {
   state: () => ({
@@ -391,6 +411,11 @@ window.__gloam = {
     renderer = createRenderer(canvas, { toolkit: { PixelLook } });
   } catch (err) {
     loadLine.textContent = 'Gloam Downs needs WebGL 2, and this browser does not have it. Try a recent Chrome, Firefox or Safari.';
+    return;
+  }
+  // the places are gzipped, and world.js unzips them with DecompressionStream
+  if (typeof DecompressionStream !== 'function') {
+    loadLine.textContent = 'Gloam Downs needs a newer browser to unpack its places. Try Safari 16.4, Firefox 113, Chrome 80 or later.';
     return;
   }
   requestAnimationFrame(frame);
