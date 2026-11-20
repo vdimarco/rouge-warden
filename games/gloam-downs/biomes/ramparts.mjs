@@ -177,7 +177,7 @@ export default {
         let lo = 1e9;
         for (const [u, v] of [[-1, -1], [-1, 1], [1, -1], [1, 1]]) lo = Math.min(lo, h(cx + Math.cos(a) * u + Math.sin(a) * v * 0.6, cz + Math.sin(a) * u - Math.cos(a) * v * 0.6));
         const y0 = Math.min(lo, tread) - 0.6, hy = (tread - y0) / 2;
-        S.box([cx, y0 + hy, cz], [0.64, hy, 0.88], stone, { ax: yawAx(Math.atan2(-Math.cos(a), -Math.sin(a))), rd: 0.06, res: 0.14 });
+        S.box([cx, y0 + hy, cz], [0.86, hy, 0.8], stone, { ax: yawAx(Math.atan2(-Math.cos(a), -Math.sin(a))), rd: 0.06, res: 0.14 }); // [along, up, out]
       }
       const aTop = a0 - (n - 1) * da;
       // the upper flight: on round the tower the other way, from the terrace to the roof
@@ -185,7 +185,7 @@ export default {
       for (let k = 0; k < n2; k++) {
         const a = b0 + k * da2, cx = C[0] + Math.cos(a) * (TU + 0.62), cz = C[1] + Math.sin(a) * (TU + 0.62), tread = roof1 + (k + 1) * rr2;
         const hy = (tread - roof1 + 0.25) / 2;
-        S.box([cx, roof1 - 0.25 + hy, cz], [0.52, hy, 0.58], stone, { ax: yawAx(Math.atan2(-Math.cos(a), -Math.sin(a))), rd: 0.05, res: 0.12 });
+        S.box([cx, roof1 - 0.25 + hy, cz], [0.56, hy, 0.55], stone, { ax: yawAx(Math.atan2(-Math.cos(a), -Math.sin(a))), rd: 0.05, res: 0.12 });
       }
       const bTop = b0 + (n2 - 1) * da2;
       // merlons round the drum's crown, open where the steps and the wall-walk arrive
