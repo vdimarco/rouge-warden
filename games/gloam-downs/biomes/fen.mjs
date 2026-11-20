@@ -117,6 +117,8 @@ export default {
       // the brow: flat behind the start, and falling steeply just in front of the feet, so its lip hides as little water as it can
       { at: [START[0] + 0.6, START[1] + 3.2], box: [4.6, 3.2], blend: 1.3, y: Y.start }
     ],
+    // the far north sinks away: the edge of the land there would stand in front of the low moon
+    pits: [[-14, -102, 46, 12]],
     paths: [{ pts: DOWN, w: 2.2, depth: 0.1 }, { pts: CLIMB, w: 2.2, depth: 0.12 }],
     box: [-112, 112, -112, 112]
   },
@@ -519,34 +521,36 @@ export default {
        The page's first picture cuts off anything much higher than the beacon, so the mill is fat rather than tall: its cap and its
        top sails stop under the fire cage, and the cage on its mast is the highest thing on the hill. */
     {
-      const [mx, mz] = MILL, gy = Y.top, bodyTop = gy + 2.6, rAt = y => 2.15 - 0.4 * Math.max(0, Math.min(1, (y - gy - 0.2) / (bodyTop - gy - 0.2)));
-      // a footing of fat stones, then the body: a fat barrel of boards that narrows a little, banded with iron
-      S.lathe([mx, gy - 0.7, mz], 1.1, t => 2.5 - 0.2 * t, stone, { res: 0.13, maxRadius: 2.55 });
-      S.lathe([mx, gy + 0.2, mz], bodyTop - gy - 0.2, t => 2.15 - 0.4 * t, { ...wood, mod: boards(mx, mz, 0.7) }, { res: 0.13, maxRadius: 2.2 });
-      for (const y of [gy + 0.9, bodyTop - 0.35]) S.torus([mx, y, mz], rAt(y) + 0.04, 0.11, iron, { res: 0.08 });
+      const [mx, mz] = MILL, gy = Y.top, bodyTop = gy + 2.75, rAt = y => 1.95 - 0.75 * Math.max(0, Math.min(1, (y - gy - 0.2) / (bodyTop - gy - 0.2)));
+      // a footing of fat stones, then the body: a fat barrel of boards that narrows hard toward the cap, banded with iron, so the
+      // sails reach well past it on both sides and read as a cross against the haze
+      S.lathe([mx, gy - 0.7, mz], 1.1, t => 2.3 - 0.2 * t, stone, { res: 0.13, maxRadius: 2.35 });
+      S.lathe([mx, gy + 0.2, mz], bodyTop - gy - 0.2, t => 1.95 - 0.75 * t, { ...wood, mod: boards(mx, mz, 0.7) }, { res: 0.13, maxRadius: 2.0 });
+      for (const y of [gy + 0.9, bodyTop - 0.4]) S.torus([mx, y, mz], rAt(y) + 0.04, 0.11, iron, { res: 0.08 });
       // the door at the foot, wide and dark, under a fat lintel
-      S.box([mx + 0.2, gy + 0.85, mz + rAt(gy + 0.85) - 0.05], [0.55, 0.75, 0.14], dark, { res: 0.08 });
-      S.box([mx + 0.2, gy + 1.7, mz + rAt(gy + 1.7) + 0.02], [0.8, 0.14, 0.16], wood, { rd: 0.04, res: 0.08 });
+      S.box([mx + 0.2, gy + 0.85, mz + rAt(gy + 0.85) - 0.08], [0.55, 0.75, 0.14], dark, { res: 0.08 });
+      S.box([mx + 0.2, gy + 1.7, mz + rAt(gy + 1.7) - 0.02], [0.8, 0.14, 0.16], wood, { rd: 0.04, res: 0.08 });
       // the cap: a fat thatch dome, sagging a little to one side, and a short topknot
-      S.lathe([mx, bodyTop - 0.15, mz], 1.05, t => 2.15 * Math.sqrt(Math.max(0, 1 - t * t)) + 0.06, thatch, { res: 0.13, maxRadius: 2.25, ax: tipAx(0.4, 0.07, 0.03) });
-      S.ball([mx + 0.05, bodyTop + 0.92, mz - 0.05], [0.24, 0.2, 0.24], thatch, { res: 0.08 });
+      S.lathe([mx, bodyTop - 0.15, mz], 0.95, t => 1.6 * Math.sqrt(Math.max(0, 1 - t * t)) + 0.06, thatch, { res: 0.12, maxRadius: 1.7, ax: tipAx(0.4, 0.07, 0.03) });
+      S.ball([mx + 0.05, bodyTop + 0.82, mz - 0.05], [0.2, 0.18, 0.2], thatch, { res: 0.08 });
       // the windshaft out of the south face, past the cap's rim, and a fat iron hub
-      const hub = [mx, gy + 2.05, mz + 2.5];
-      S.tube([[mx, hub[1], mz + 1.2], hub], 0.21, 0.19, wood, { res: 0.08 });
-      S.ball(hub, 0.34, iron, { res: 0.07 });
-      // four sails in a cross turned a little off square, few and fat members so they read from across the fen: a stock, two rails
-      // and two bars. Two carry a sheet of dark sacking (one torn short); the other two are bare racks with fish hung to dry
-      const L = 1.9;
+      const hub = [mx, gy + 2.2, mz + 1.8];
+      S.tube([[mx, hub[1], mz + 0.6], hub], 0.2, 0.18, wood, { res: 0.08 });
+      S.ball(hub, 0.32, iron, { res: 0.07 });
+      // four sails in a cross at forty-five degrees (the lowest a cross can stand), few and fat members: a stock, two rails and two
+      // bars of dark wood, which read against the haze. Three carry pale sacking, which reads against the dark body (one is torn
+      // short); the fourth is a bare rack with fish hung to dry
+      const L = 2.3, sack = { r: [st[0], st[1], st[2]], g: [st[1]], mod: grit(0.7) };
       for (let k = 0; k < 4; k++) {
-        const a = Math.PI / 4 + 0.07 + k * Math.PI / 2, ux = Math.cos(a), uy = Math.sin(a), ax = [[uy, -ux, 0], [ux, uy, 0], [0, 0, 1]];
+        const a = Math.PI / 4 + 0.03 + k * Math.PI / 2, ux = Math.cos(a), uy = Math.sin(a), ax = [[uy, -ux, 0], [ux, uy, 0], [0, 0, 1]];
         const at = (s, o, dz = 0) => [hub[0] + ux * s + uy * o, hub[1] + uy * s - ux * o, hub[2] + 0.14 + dz];
         S.box(at(L / 2, 0), [0.14, L / 2 + 0.1, 0.14], wood, { ax, rd: 0.04, res: 0.08 });
-        for (const o of [-0.4, 0.4]) S.box(at(0.42 + (L - 0.42) / 2, o, 0.05), [0.1, (L - 0.42) / 2, 0.1], wood, { ax, rd: 0.03, res: 0.08 });
-        for (const s of [0.75, L - 0.12]) S.box(at(s, 0, 0.05), [0.5, 0.09, 0.09], wood, { ax, rd: 0.03, res: 0.08 });
-        if (k === 1 || k === 3) {
-          const len = k === 1 ? L - 0.45 : 0.95;
-          S.box(at(0.45 + len / 2, 0, 0.11), [0.38, len / 2, 0.035], cloth, { ax, res: 0.08 });
-        } else for (let b = 0; b < 2; b++) { const p = at(0.95 + b * 0.6, (b - 0.5) * 0.4, 0.14); S.ball([p[0], p[1] - 0.2, p[2]], [0.1, 0.24, 0.06], cloth, { res: 0.06 }); }
+        for (const o of [-0.36, 0.36]) S.box(at(0.45 + (L - 0.45) / 2, o, 0.05), [0.09, (L - 0.45) / 2, 0.09], wood, { ax, rd: 0.03, res: 0.08 });
+        for (const s of [0.9, L - 0.1]) S.box(at(s, 0, 0.05), [0.45, 0.09, 0.09], wood, { ax, rd: 0.03, res: 0.08 });
+        if (k !== 2) {
+          const len = k === 3 ? 1.0 : L - 0.5;
+          S.box(at(0.5 + len / 2, 0, 0.1), [0.33, len / 2, 0.035], sack, { ax, res: 0.08 });
+        } else for (let b = 0; b < 2; b++) { const p = at(1.0 + b * 0.7, (b - 0.5) * 0.36, 0.14); S.ball([p[0], p[1] - 0.2, p[2]], [0.1, 0.24, 0.06], cloth, { res: 0.06 }); }
       }
       // one warm window low on the south face, in the gap between the two lower sails: the mill's only fire until the beacon burns
       {
@@ -659,7 +663,7 @@ export default {
       const dk = ramp('sky')[0], mn = ramp('moon');
       // as the page's first picture sees it: the moon just left of the mill, the tip of its upper-left sail over the moon's edge, and
       // its top well under the picture's top edge (half a degree below level)
-      const tip = [MILL[0] - 1.45, Y.top + 2.05 + 1.3, MILL[1] + 2.64]; // where the summit block puts that sail's tip
+      const tip = [MILL[0] - 1.65, Y.top + 2.2 + 1.65, MILL[1] + 1.94]; // where the summit block puts that sail's tip
       const toTip = Math.atan2(tip[0] - eye[0], -(tip[2] - eye[2])), dTip = Math.hypot(tip[0] - eye[0], tip[2] - eye[2]);
       const deg = Math.PI / 180, mr = 1.75 * deg, az = toTip - 0.7 * mr, el = -3.15 * deg, D = 175, rm = D * Math.tan(mr);
       const toMill = Math.atan2(MILL[0] + 1.6 - eye[0], -(MILL[1] - eye[2])); // the middle of the mill and its deck
