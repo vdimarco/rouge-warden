@@ -15,16 +15,17 @@
   .view { position: fixed; left: 0; top: 0; display: block; touch-action: none; cursor: grab; image-rendering: pixelated; background: var(--night); }
   .view.drag { cursor: grabbing; }
   .labbar { z-index: 30; }
-  .labbar > * { background: var(--panel2); border-color: var(--edge); }
+  /* the Lab bar: 44 px tall, so its bottom is at --sat + 52px */
+  .labbar > * { background: var(--panel2); border-color: var(--edge); min-height: 44px; display: inline-flex; align-items: center; }
   /* where you are: top left, under the bar */
-  .hud { position: fixed; left: 10px; top: calc(var(--sat) + 48px); transform: none; display: grid; gap: 4px; justify-items: start; z-index: 6; pointer-events: none; max-width: calc(100vw - 140px); }
+  .hud { position: fixed; left: 10px; top: calc(var(--sat) + 60px); transform: none; display: grid; gap: 4px; justify-items: start; z-index: 6; pointer-events: none; max-width: calc(100vw - 140px); }
   .hud p { margin: 0; padding: 5px 10px; border-radius: 8px; background: var(--panel2); color: var(--bone); font: 600 13px/1.25 var(--body); border: 1px solid var(--edge); }
   .hud .where { font: 700 13px/1.1 var(--title); letter-spacing: 0.12em; text-transform: uppercase; color: #f2d7a6; }
   .hud .count b { color: var(--wisp); }
   .hud .count i { font-style: normal; color: var(--ember); }
   .hud .hint { color: var(--ash); font-weight: 500; }
   /* Map and Look, top right; Jump bottom right on touch screens */
-  .tools { position: fixed; right: 10px; top: calc(var(--sat) + 48px); display: flex; gap: 6px; z-index: 8; }
+  .tools { position: fixed; right: 10px; top: calc(var(--sat) + 60px); display: flex; gap: 6px; z-index: 8; }
   .tools button, .jump, .panel button, .places button { min-width: 44px; min-height: 44px; box-sizing: border-box; border-radius: 10px; border: 1px solid var(--edge); background: var(--panel2); color: var(--bone); font: 700 14px/1 var(--body); padding: 0 12px; cursor: pointer; }
   .tools button:focus-visible, .panel button:focus-visible, .places button:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
   .jump { position: fixed; right: calc(14px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 18px); width: 80px; height: 80px; border-radius: 50%; z-index: 8; font: 800 15px/1 var(--body); letter-spacing: 0.06em; background: rgba(60, 20, 12, 0.72); border: 2px solid var(--emberd); color: #ffd9a8; touch-action: none; }
@@ -39,7 +40,7 @@
   .arrive small { display: block; font: 700 12px/1 var(--body); letter-spacing: 0.32em; color: var(--ember); text-transform: uppercase; margin-bottom: 10px; }
   .arrive h1 { margin: 0; font: 700 clamp(30px, 8vw, 58px)/1.05 var(--title); color: var(--bone); letter-spacing: 0.04em; text-shadow: 0 3px 0 #000, 0 0 24px rgba(0, 0, 0, 0.9); }
   .arrive p { margin: 10px 0 0; font: 500 clamp(14px, 3.6vw, 18px)/1.35 var(--body); color: #c9c2ae; text-shadow: 0 2px 0 #000; }
-  .toast { top: calc(var(--sat) + 104px); background: var(--panel2); border-color: var(--edge); color: var(--bone); font-size: 16px; }
+  .toast { top: calc(var(--sat) + 116px); background: var(--panel2); border-color: var(--edge); color: var(--bone); font-size: 16px; }
   .toast b { color: var(--wisp); }
   /* dialogs: map, help, beacon, end */
   .panel { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; background: rgba(2, 2, 6, 0.6); }
