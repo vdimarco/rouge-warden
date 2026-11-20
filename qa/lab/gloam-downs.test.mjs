@@ -1,7 +1,8 @@
 // Gloam Downs, checked in node with no browser (public/lab/gloam-downs/):
 //   the five baked places (budget, palette, bones, wisps, beacon, the start on the ground, everything in reach by the controller's rules),
 //   the controller on made-up ground (walk, run, jump height, walls, steps, ledges, a step on a ledge's lip, falls, walking under an
-//   arch, landing on a sloped roof or crown over a gap), the reach search's walks and jumps against the controller,
+//   arch, landing on a sloped roof or crown over a gap and on a sloped floor under one, walking off a ledge into an arch), the reach
+//   search's walks and jumps against the controller,
 //   the pose (the bones put the figure where the body is), and the saved game (rubbish in, a clean save out).
 // Run: node qa/lab/gloam-downs.test.mjs
 import assert from 'node:assert/strict';
@@ -334,6 +335,55 @@ const layered = fn => {
   }
   pass('jumps and falls land on a sloped roof or crown over a gap, and a higher roof is a wall or a step', { tries });
 }
+{ /* the floor under a gap: the feet decide whether they are in the gap or on its roof, not the reach above them. Under a roof at 5
+     over a floor that slopes 0.6 or 1.0 per unit, jumps in place and running jumps up and down the slope land on the floor (the
+     uphill corners are floor, not roof). A fall past the lip of an overhang, whose floor is 1.0 above the open ground, lands
+     between the two. A walk off a 1.2 ledge into a cave 4.5 high drops to the floor in it, and the reach search goes there too.
+     And from that ledge a low roof 0.6 higher (1.8 over its floor) is a step up, with the shadow at the feet all the way */
+  let tries = 0;
+  for (const k of [0.6, 1.0]) {
+    const W2 = layered((x, z) => (Math.abs(x) <= 4 && Math.abs(z) <= 4 ? [5 + k * x, k * x] : k * x));
+    for (const dt of DTS) {
+      for (let x = -2; x <= 2; x += 0.37) for (const z of [-0.47, 0.13]) {
+        const b = makeBody(W2, { p: [x, k * x + 0.3, z], yaw: 0 }, 20);
+        let low = Infinity;
+        for (let i = 0; i < 1.3 / dt; i++) { b.step(dt, { jump: i * dt < 0.4 }, 0); low = Math.min(low, b.s.y - k * b.s.x); }
+        assert(low > -0.02 && b.s.ground && near(b.s.y, k * b.s.x, 0.02), `slope ${k}, ${hz(dt)} Hz: a jump in place at ${x.toFixed(2)}, ${z} under the roof came down to ${b.s.y}, ${low} under the floor`);
+        tries++;
+      }
+      for (const dir of [1, -1]) for (const mag of [0.6, 1]) {
+        const b = makeBody(W2, { p: [-2.5 * dir, -2.5 * dir * k + 0.3, 0.13], yaw: 0 }, 20);
+        let low = Infinity;
+        for (let i = 0; i < 1.4 / dt; i++) { b.step(dt, { mx: dir * mag, jump: i * dt > 0.2 && i * dt < 0.5 }, 0); low = Math.min(low, b.s.y - k * b.s.x); }
+        assert(low > -0.02 && b.s.ground && near(b.s.y, k * b.s.x, 0.02), `slope ${k}, ${hz(dt)} Hz: a running jump ${dir > 0 ? 'up' : 'down'} the slope under the roof ended at ${b.s.x}, ${b.s.y}, ${low} under the floor`);
+        tries++;
+      }
+    }
+  }
+  const lip = layered((x, z) => (z < -0.01 ? 0 : z < 1.01 ? [8, 1] : 8));
+  for (const dt of DTS) for (const x of [-1, 0.13, 0.6]) for (const z of [-0.2, -0.14, -0.06, 0.1, 0.4]) for (const up of [1.5, 3]) {
+    const b = makeBody(lip, { p: [x, 0, z], yaw: 0 }, 20), f = lip.floor(x, z);
+    b.s.ground = false; b.s.y = f + up;
+    for (let i = 0; i < 1.5 / dt; i++) b.step(dt, {}, 0);
+    assert(b.s.ground && near(b.s.y, f, 0.02), `${hz(dt)} Hz: a fall from ${up} up past the lip at ${x}, ${z} came down to ${b.s.y}, not the floor at ${f}`);
+    tries++;
+  }
+  const cave = layered(x => (x < 0 ? 1.2 : [4.5, 0])), low = layered(x => (x < 0 ? 1.2 : [1.8, 0]));
+  for (const dt of DTS) for (const slow of [false, true]) for (const z of [0, 0.4]) {
+    const b = makeBody(cave, { p: [-1.5, 1.2, z], yaw: 0 }, 20);
+    hold(b, 2, { ...toward(1, 0), slow }, dt);
+    assert(b.s.ground && b.s.x > 1 && near(b.s.y, 0, 0.01), `${hz(dt)} Hz${slow ? ' walking' : ''}: off the 1.2 ledge into the cave it got to ${b.s.x}, ${b.s.y}`);
+    const c = makeBody(low, { p: [-1.5, 1.2, z], yaw: 0 }, 20);
+    hold(c, 1.5, () => {
+      if (c.s.ground) assert(c.s.floor === c.s.y, `${hz(dt)} Hz: stepping onto the low roof at ${c.s.x}, the shadow is at ${c.s.floor}, the feet at ${c.s.y}`);
+      return { ...toward(1, 0), slow };
+    }, dt);
+    assert(c.s.ground && c.s.x > 1 && near(c.s.y, 1.8, 0.01), `${hz(dt)} Hz${slow ? ' walking' : ''}: from the 1.2 ledge onto the low roof it got to ${c.s.x}, ${c.s.y}`);
+    tries++;
+  }
+  assert(reachable(cave, { p: [-1.5, 1.2, 0] }, 20).near([2, 0.5, 0], 0.4), 'the reach search drops off the ledge into the cave');
+  pass('the floor under a gap: landings on a slope under a roof and past an overhang, and a walk off a ledge into a cave', { tries });
+}
 { // walking off an edge falls, and lands below
   const b = makeBody(W, { p: [8, 0, -7], yaw: Math.PI }, 20);
   run(b, 1.5, { mz: 1 }, 0);
@@ -437,6 +487,14 @@ const layered = fn => {
       assert(d.s.ground && d.s.z > 3 && near(d.s.y, 0, 0.01), `${hz(dt)} Hz${slow ? ' walking' : ''}: over the north trench to z ${d.s.z}, y ${d.s.y}`);
     }
   }
+  /* where it lands, every cell round the point must be a slope: so not on the tip of a lone stake 1.2 high (one grid point), which
+     the controller stands on only by luck. And no floor on the way may be higher than both ends: so a hop over a wall one row thick
+     and 1.2 high is not counted, though the controller often makes it */
+  const stake = layered((x, z) => (Math.abs(x - 2) < 0.01 && Math.abs(z) < 0.01 ? 1.2 : 0));
+  assert(!reachable(stake, { p: [0, 0, 0] }, 20).near([2, 1.2, 0], 0.05, -0.05, 0.05), 'the search does not land on the tip of a stake');
+  const row = layered((x, z) => (Math.abs(z - 2) < 0.01 ? 1.2 : 0));
+  assert(!reachable(row, { p: [0, 0, 0] }, 20).near([0, 0, 3], 0.3), 'the search does not count a hop over a wall one row thick');
+  assert(reachable(layered((x, z) => (Math.abs(z - 2) < 0.01 ? 0.8 : 0)), { p: [0, 0, 0] }, 20).near([0, 0, 3], 0.3), 'a row of 0.8 is walked over');
   pass('the reach search jumps up to JUMP - 0.1 and 1.0 across, and the controller makes those jumps');
 }
 

@@ -52,6 +52,18 @@ The player SHALL move relative to the camera with WASD, the arrow keys, the left
 - **WHEN** the lamplighter walks on a roof into a higher roof
 - **THEN** it stops at the higher roof, or walks up it when the step is 0.5 or lower, and does not fall through
 
+#### Scenario: Sloped floor under a roof
+- **WHEN** the lamplighter jumps in place, or runs and jumps up or down, on a floor that slopes 0.6 or 1.0 per unit under a roof, on a 30, 60, 120 or 144 Hz screen
+- **THEN** it lands on that floor and does not fall through it
+
+#### Scenario: Past the lip of an overhang
+- **WHEN** the lamplighter falls past the lip of an overhang whose floor is higher than the open ground beside it
+- **THEN** it lands on the floor there and does not fall through it
+
+#### Scenario: Off a ledge into an arch
+- **WHEN** the lamplighter walks off a ledge of 1.2 into an archway or a cave, at any speed or frame rate
+- **THEN** it drops to the floor under the arch and is not stopped at the ledge's lip
+
 #### Scenario: Jump onto a ledge
 - **WHEN** the lamplighter jumps at a ledge lower than its jump height
 - **THEN** it lands on the ledge

@@ -11,8 +11,8 @@ const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 
 /* ---------------- the walk map ----------------
    Two layers of heights in centimetres on a grid: T, the top surface, and G, the floor under a gap (G = T where there is no gap).
-   A gap is at least info.clear high (the bake's clear, 1.8). floorAt(x, z, y) is the floor that feet at y meet there; above y means a
-   wall. support(x, z, y) is that floor, or null for a wall. */
+   A gap is at least info.clear high (the bake's clear, 1.8). floorAt(x, z, y, feet) is the floor met there by feet at `feet` that reach
+   up to y (feet = y in the air); above y means a wall. support(x, z, y) is that floor for feet at y, or null for a wall. */
 export function makeWalk(info, cells) {
   const { x0, z0, step, nx, nz } = info, N = nx * nz, clear = info.clear ?? 1.8;
   if (!(cells instanceof Int16Array) || cells.length < 2 * N) throw new Error('walk map is the wrong size');
@@ -25,21 +25,23 @@ export function makeWalk(info, cells) {
   };
   const top = (x, z) => sample(T, x, z);
   const floor = (x, z) => sample(G, x, z);
-  /* one corner for feet at y: its top if that is at or below y; else the floor under its gap, if that is at or below y and y is lower
-     than the gap is high (feet that low are in the gap, not on its roof); else its top, above the feet. So from a roof, a crown or an
-     arch's top, a higher part of it is a slope or a wall, never a hole down to the floor under it */
-  const corner = (k, y) => {
+  /* one corner for feet at `feet` that reach up to y: its top if that is at or below y; else, where the feet are lower than the gap is
+     high (so they are in the gap, not on its roof), the floor under the gap, even if that floor is above them (then it is a step or a
+     wall at the floor's own height); else its top, above them. The feet decide, not the reach: so from a ledge in an archway the floor
+     under the arch is a drop, on a floor that slopes up under a roof the higher side is floor, and from a roof, a crown or an arch's
+     top a higher part of it is a slope or a wall, never a hole down to the floor under it */
+  const corner = (k, y, feet) => {
     const t = T[k] * 0.01;
     if (t <= y + 1e-4) return t;
     const g = G[k] * 0.01;
-    return g < t - 0.05 && g <= y + 1e-4 && y < g + clear ? g : t;
+    return g < t - 0.05 && feet < g + clear ? g : t;
   };
   // the layer is chosen at each corner and then blended, so an arch's edge is flat floor from below and a clean edge from above
   const grad = [0, 0]; // the slope of the floor at the last floorAt, per unit across
-  const floorAt = (x, z, y) => {
+  const floorAt = (x, z, y, feet = y) => {
     const fx = (x - x0) / step, fz = (z - z0) / step, i = Math.floor(fx), j = Math.floor(fz), u = fx - i, v = fz - j;
     const i0 = clamp(i, 0, nx - 1), i1 = clamp(i + 1, 0, nx - 1), j0 = clamp(j, 0, nz - 1) * nx, j1 = clamp(j + 1, 0, nz - 1) * nx;
-    const a = corner(j0 + i0, y), b = corner(j0 + i1, y), c = corner(j1 + i0, y), d = corner(j1 + i1, y), e = a - b - c + d;
+    const a = corner(j0 + i0, y, feet), b = corner(j0 + i1, y, feet), c = corner(j1 + i0, y, feet), d = corner(j1 + i1, y, feet), e = a - b - c + d;
     grad[0] = (b - a + e * v) / step;
     grad[1] = (c - a + e * u) / step;
     return a + (b - a) * u + (c - a) * v + e * u * v;
@@ -60,23 +62,23 @@ export function makeWalk(info, cells) {
 const climbOf = P => P.stepUp + P.slope * P.radius;
 const steepOf = P => climbOf(P) / P.radius;
 const RAYS = Array.from({ length: 16 }, (_, k) => [Math.cos((k * Math.PI) / 8), Math.sin((k * Math.PI) / 8)]);
-// how near the centre of a disc of radius R at (x, z) a floor above `top` comes: 0 at the centre; the distance of a grid point inside
-// the disc (the map's highest points are at grid points or on the disc's edge); or where one of 16 rays, sampled at a third, two
-// thirds and all of R, first crosses it. Infinity where nothing does. With `any`, the first one found.
-function nearest(walk, x, z, top, R, any = false) {
-  const e0 = walk.floorAt(x, z, top) - top;
+// how near the centre of a disc of radius R at (x, z) a floor above `top` comes, for feet at `feet`: 0 at the centre; the distance of a
+// grid point inside the disc (the map's highest points are at grid points or on the disc's edge); or where one of 16 rays, sampled at
+// a third, two thirds and all of R, first crosses it. Infinity where nothing does. With `any`, the first one found.
+function nearest(walk, x, z, top, feet, R, any = false) {
+  const e0 = walk.floorAt(x, z, top, feet) - top;
   if (e0 > 1e-4) return 0;
   let near = Infinity;
   const { x0, z0, step } = walk, i0 = Math.ceil((x - R - x0) / step), i1 = Math.floor((x + R - x0) / step);
   const j0 = Math.ceil((z - R - z0) / step), j1 = Math.floor((z + R - z0) / step);
   for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
     const px = x0 + i * step, pz = z0 + j * step, d = Math.hypot(px - x, pz - z);
-    if (d <= R && d < near && walk.floorAt(px, pz, top) > top + 1e-4) { if (any) return d; near = d; }
+    if (d <= R && d < near && walk.floorAt(px, pz, top, feet) > top + 1e-4) { if (any) return d; near = d; }
   }
   for (const [cx, cz] of RAYS) {
     let ep = e0, rp = 0;
     for (let k = 1; k <= 3; k++) {
-      const r = (R * k) / 3, e = walk.floorAt(x + cx * r, z + cz * r, top) - top;
+      const r = (R * k) / 3, e = walk.floorAt(x + cx * r, z + cz * r, top, feet) - top;
       if (e > 1e-4) {
         const d = rp + ((r - rp) * Math.max(0, -ep)) / (e - ep);
         if (any) return d;
@@ -99,33 +101,34 @@ export function makeBody(walk, start, bounds, P = PARAMS) {
   };
   s.floor = s.base = s.y;
   const lim = bounds - 0.6, climb = climbOf(P), steep = steepOf(P);
-  // can the disc stand at (x, z) with nothing in it above `top`? Where the disc already reaches over something higher (it landed by
-  // a wall, or walked down a slope beside a ledge), it may move along that or away from it, but not nearer: so it never sticks to a
-  // wall and never works its way into one
-  function fits(x, z, top) {
-    const d = nearest(walk, x, z, top, P.radius);
-    return d === Infinity || (d > 0 && d >= nearest(walk, s.x, s.z, top, P.radius) - 1e-6);
+  // can the disc stand at (x, z) with nothing in it above `top`, for feet at `feet`? Where the disc already reaches over something
+  // higher (it landed by a wall, or walked down a slope beside a ledge), it may move along that or away from it, but not nearer: so it
+  // never sticks to a wall and never works its way into one
+  function fits(x, z, top, feet) {
+    const d = nearest(walk, x, z, top, feet, P.radius);
+    return d === Infinity || (d > 0 && d >= nearest(walk, s.x, s.z, top, feet, P.radius) - 1e-6);
   }
-  const walkTop = () => s.base + climb;
-  const walkFit = (x, z) => fits(x, z, walkTop());
+  // on the ground the disc reaches a climb above the base, and the feet are where they stand
+  const walkTop = () => s.base + climb, walkFeet = () => s.y;
+  const walkFit = (x, z) => fits(x, z, walkTop(), s.y);
   function walkTo(x, z) {
-    const f = walk.floorAt(x, z, walkTop()), k = Math.hypot(walk.grad[0], walk.grad[1]);
+    const f = walk.floorAt(x, z, walkTop(), s.y), k = Math.hypot(walk.grad[0], walk.grad[1]);
     s.x = x; s.z = z;
     // off an edge: a drop of more than stepDown, or that far down a steep face from its top
     if (f < s.y - P.stepDown || (k > steep && f < s.base - P.stepDown)) { s.ground = false; s.coy = P.coyote; s.events.push('fall'); return; }
     s.y = f;
     if (k <= steep) s.base = f;
   }
-  // in the air, anything above the feet (top) is a wall
+  // in the air, anything above the feet (top) is a wall, and the feet are read at that height
   const flyTo = (x, z) => { s.x = x; s.z = z; };
   // the face of the wall in front: the mean direction to the floors above `wall` on two rings (at 1.2 and 2 radii), so a wall that is
   // a staircase on the grid reads as one face. Taken over the half ahead of the move, then twice more over the half ahead of that
   // mean, so the face of a wall the move runs along is not tilted towards the move. -> its normal (into the wall), or null
   const hit = new Uint8Array(16);
-  function face(mx, mz, wall) {
+  function face(mx, mz, wall, feet) {
     RAYS.forEach(([cx, cz], k) => {
       hit[k] = 0;
-      for (const r of [1.2, 2]) if (walk.floorAt(s.x + cx * r * P.radius, s.z + cz * r * P.radius, wall) > wall + 1e-4) hit[k]++;
+      for (const r of [1.2, 2]) if (walk.floorAt(s.x + cx * r * P.radius, s.z + cz * r * P.radius, wall, feet) > wall + 1e-4) hit[k]++;
     });
     let ux = mx, uz = mz;
     for (let pass = 0; pass < 3; pass++) {
@@ -142,7 +145,7 @@ export function makeBody(walk, start, bounds, P = PARAMS) {
   // face reads (a thin post, a steep face), the move turned towards the side that is free. -> [blocked, face normal, slide]
   const TILTS = [0, 10, 20, 30, 45, 60].map(a => a * Math.PI / 180);
   const TURNS = [10, 20, 30, 40, 50, 60, 70, 80].map(a => a * Math.PI / 180);
-  function move(dx, dz, fit, go, wall) {
+  function move(dx, dz, fit, go, wall, feet) {
     const d = Math.hypot(dx, dz), n = Math.ceil(d / 0.1), ground = s.ground;
     let blocked = false, along = null, nrm = null;
     for (let i = 0; i < n; i++) {
@@ -152,7 +155,7 @@ export function makeBody(walk, start, bounds, P = PARAMS) {
       blocked = true;
       along = null;
       const free = t => fit(clamp(s.x + t[0], -lim, lim), clamp(s.z + t[1], -lim, lim));
-      nrm = face(sx, sz, wall());
+      nrm = face(sx, sz, wall(), feet());
       if (nrm) {
         const into = sx * nrm[0] + sz * nrm[1], tx = sx - into * nrm[0], tz = sz - into * nrm[1], tl = Math.hypot(tx, tz);
         if (tl < 0.09 * Math.hypot(sx, sz)) break; // head on
@@ -211,7 +214,7 @@ export function makeBody(walk, start, bounds, P = PARAMS) {
     if (s.buf > 0 && s.coy > 0) { s.vy = P.jumpV; s.ground = false; s.buf = s.coy = 0; s.events.push('jump'); }
     const dx = s.vx * dt, dz = s.vz * dt, x0 = s.x, z0 = s.z;
     if (s.ground) {
-      slid(move(dx, dz, walkFit, walkTo, walkTop));
+      slid(move(dx, dz, walkFit, walkTo, walkTop, walkFeet));
       if (s.ground) { s.vy = 0; s.airTime = 0; }
     } else {
       const g = s.vy < 0 || !s.held ? P.gravity * P.fallMul : P.gravity;
@@ -219,9 +222,10 @@ export function makeBody(walk, start, bounds, P = PARAMS) {
       const y1 = s.y + s.vy * dt - 0.5 * g * dt * dt;
       s.vy -= g * dt;
       s.airTime += dt;
-      const top = Math.max(s.y, y1) + 0.05;
-      slid(move(dx, dz, (x, z) => fits(x, z, top), flyTo, () => top));
-      // it lands on the floor under its centre; on a sloped roof or crown, the higher side reads as roof, so the landing is not missed
+      const top = Math.max(s.y, y1) + 0.05, at = () => top;
+      slid(move(dx, dz, (x, z) => fits(x, z, top, top), flyTo, at, at));
+      /* it lands on the floor under its centre. On a sloped roof or crown the higher side reads as roof, and on a floor that slopes up
+         under a roof the higher side reads as floor, so neither landing is missed */
       const f = walk.floorAt(s.x, s.z, top);
       if (f <= top + 1e-4 && s.vy <= 0 && y1 <= f) {
         s.landK = Math.min(1, -s.vy / 14); s.landAge = 0; s.y = s.base = f; s.vy = 0; s.ground = true; s.events.push('land');
@@ -374,11 +378,11 @@ export const atBeacon = (s, b) => Math.hypot(b.p[0] - s.x, b.p[2] - s.z) < b.r &
    higher than both ends. Returns near(p, ...) -> boolean, and the number of cells reached. */
 export function reachable(walk, start, bounds, P = PARAMS) {
   const { nx, nz, x0, z0, step } = walk, lim = bounds - 0.6, climb = climbOf(P), steep = steepOf(P);
-  const open = (x, z, top) => nearest(walk, x, z, top, P.radius, true) === Infinity;
+  const open = (x, z, top, feet) => nearest(walk, x, z, top, feet, P.radius, true) === Infinity;
   // a slope (not a face) in all four cells round a grid point
   const e = step * 1e-3;
-  const slope = (x, z, top) => [[e, e], [-e, e], [e, -e], [-e, -e]].every(([a, b]) => {
-    walk.floorAt(x + a, z + b, top);
+  const slope = (x, z, top, feet) => [[e, e], [-e, e], [e, -e], [-e, -e]].every(([a, b]) => {
+    walk.floorAt(x + a, z + b, top, feet);
     return Math.hypot(walk.grad[0], walk.grad[1]) <= steep;
   });
   // reached heights by cell and height, each with the highest base it was reached with (a higher base reaches more)
@@ -392,8 +396,10 @@ export function reachable(walk, start, bounds, P = PARAMS) {
   const ci = x => Math.round((x - x0) / step), cj = z => Math.round((z - z0) / step);
   const y0 = walk.support(start.p[0], start.p[2], start.p[1] + 1) ?? start.p[1];
   visit(ci(start.p[0]), cj(start.p[2]), y0, y0);
-  // a jump rises up to 0.1 short of its top (JUMP for PARAMS) and lands up to 1.0 away along a row or a column of the grid
-  const jumpUp = (P.jumpV * P.jumpV) / (2 * P.gravity) - 0.1, far = P.jumpV > 0 ? Math.max(1, Math.floor(1.0 / step + 1e-6)) : 0;
+  /* a jump rises up to 0.1 short of its top (lift, JUMP for PARAMS) and lands up to 1.0 away along a row or a column of the grid. On
+     the way the feet are read at the top of the jump, the highest the controller reads them: a gap whose floor is that far below
+     them is a roof there */
+  const lift = (P.jumpV * P.jumpV) / (2 * P.gravity), jumpUp = lift - 0.1, far = P.jumpV > 0 ? Math.max(1, Math.floor(1.0 / step + 1e-6)) : 0;
   for (let q = 0; q < queue.length; q++) {
     const [i, j, y, base, k] = queue[q];
     if (seen.get(k).base > base + 1e-6) continue; // reached again since with a higher base
@@ -405,24 +411,27 @@ export function reachable(walk, start, bounds, P = PARAMS) {
       };
       if (!inside(1)) continue;
       const x = ox + di * step, z = oz + dj * step, mx = ox + di * step / 2, mz = oz + dj * step / 2;
-      // a walk: the disc clear within climb of the base, half way and there; on a slope the base comes to the feet
+      // a walk: the disc clear within climb of the base, half way and there, for the feet where they stand; on a slope the base comes
+      // to the feet
       let top = base + climb;
-      if (open(mx, mz, top) && open(x, z, top)) {
-        const f = walk.floorAt(x, z, top);
-        visit(i + di, j + dj, f, slope(x, z, top) ? f : Math.min(base, f));
+      if (open(mx, mz, top, y) && open(x, z, top, y)) {
+        const f = walk.floorAt(x, z, top, y);
+        visit(i + di, j + dj, f, slope(x, z, top, y) ? f : Math.min(base, f));
         if (f > y - 0.1) continue; // level or up: a jump this way starts from there instead
       }
       /* a jump: the disc clear at the top of the jump at every grid point and half way along the line. It lands at a grid point where
          the disc can stand and every cell round it is a slope (so a landing near it is a landing on it, not on the tip of a stake or
          the edge of a ledge). No floor on the way stands higher than both ends, so nothing between stops it or is landed on first */
       top = y + jumpUp;
+      const fly = y + lift + 0.05;
       let high = -Infinity;
       for (let d = 1; d <= far && inside(d); d++) {
         const hx = ox + di * (d - 0.5) * step, hz = oz + dj * (d - 0.5) * step, px = ox + di * d * step, pz = oz + dj * d * step;
-        if (!open(hx, hz, top) || !open(px, pz, top)) break;
-        high = Math.max(high, walk.floorAt(hx, hz, top));
-        const f = walk.floorAt(px, pz, top), ft = f + climb;
-        if (high <= Math.max(y, f) + 1e-4 && Math.abs(walk.floorAt(px, pz, ft) - f) < 1e-3 && open(px, pz, ft) && slope(px, pz, ft)) visit(i + di * d, j + dj * d, f, f);
+        if (!open(hx, hz, top, fly) || !open(px, pz, top, fly)) break;
+        high = Math.max(high, walk.floorAt(hx, hz, top, fly));
+        // and where it lands, the walk from there: the same floor, the disc clear within a climb, every cell round it a slope
+        const f = walk.floorAt(px, pz, top, fly), ft = f + climb;
+        if (high <= Math.max(y, f) + 1e-4 && Math.abs(walk.floorAt(px, pz, ft, f) - f) < 1e-3 && open(px, pz, ft, f) && slope(px, pz, ft, f)) visit(i + di * d, j + dj * d, f, f);
         high = Math.max(high, f);
       }
     }
