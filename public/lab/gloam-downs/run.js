@@ -263,14 +263,16 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
     if (R.think) R.think(ev, play);
     for (const e of ev.slice()) {
       if (e.type === 'stop') stop(e.n);
-      else if (e.type === 'drink' && rs.run) {
+      // a drink that ends after the flasks went to 0 (a test hook, a later stage's cost) heals nothing and takes nothing
+      else if (e.type === 'drink' && rs.run && rs.run.flasks > 0) {
         rs.run.flasks -= 1;
         rs.run.hp = Math.min(maxOf(rs), rs.run.hp + healOf(rs.up, maxOf(rs)));
         ev.push({ type: 'store' });
       } else if (e.type === 'cue' && !e.logged) R.log.push({ cue: e.cue, step: clock.step, play: clock.play, ...(e.hit ? { hit: e.hit } : {}) });
     }
-    // the hurt blink: the figure hides and shows every 4 game steps (8 with reduced motion) while the hit's safe time lasts
-    body.s.hide = fighter.f.safe > 0 && R.hurtAt >= 0 && Math.floor((clock.step - R.hurtAt) / R.blink) % 2 === 0;
+    // the hurt blink: the figure hides and shows every 4 game steps (8 with reduced motion) while the hit's safe time lasts. The
+    // fighter stops stepping at 0 health, so its safe time stops counting: the figure stays shown through the death fade
+    body.s.hide = !R.dead && fighter.f.safe > 0 && R.hurtAt >= 0 && Math.floor((clock.step - R.hurtAt) / R.blink) % 2 === 0;
     return ev;
   }
   R.step = step; R.hurt = hurt; R.light = light; R.take = take; R.kill = (ev = R.out) => { if (rs.run && !R.dead) kill(ev); return ev; };

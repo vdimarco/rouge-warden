@@ -1,27 +1,34 @@
 // Gloam Downs: the inputs. Keys, the mouse, touch and gamepads become one object of held inputs that the page reads before each
 // frame's steps: { mx, mz, slow, jump, ox, oy, dyaw, dpitch, attack, roll, heal }. Press edges and their 0.15 s buffer are taken from
-// it on the play steps (moves.js). A press that comes and goes between two reads is kept by a latch until a step has run. A key or a
-// pad button that was down when a card's button was pressed is swallowed: it does nothing in play until it is let go.
-// readPads and navStep are pure, so Node tests use them.
+// it on the play steps (moves.js). A press that comes and goes between two reads is kept by a latch until a step has run. An action key
+// or a pad button that was down when a card's button was pressed is swallowed: it does nothing in play until it is let go. The keys
+// that move and look stay live through a card, so a held W walks on after Resume.
+// readPads, navStep, heldNav and pickMove are pure, so Node tests use them.
 
 export const PAD = { A: 0, B: 1, X: 2, Y: 3, LB: 4, RB: 5, LT: 6, RT: 7, BACK: 8, START: 9, UP: 12, DOWN: 13, LEFT: 14, RIGHT: 15 };
 // the keys of a run's moves; M, P, Escape and R are the page's own (main.js)
 export const KEYS = { attack: ['j', 'z'], roll: ['k', 'x'], heal: ['l', 'c'] };
+// the keys that move, walk and look: never swallowed, so what is held through a card goes on after it
+export const MOVE_KEYS = new Set(['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'shift', 'q', 'e']);
+// the left stick moves only past this size (moves.js heldDir reads the same): under it the keys or the touch stick win
+export const WALK_MIN = 0.2;
 
 /* what the pads hold, all pads together: a button counts when any pad presses it, so two pads holding Start make one press. The
    left stick moves (a light tilt walks, as step reads its size), the right stick looks, A jumps. In a run X and RT attack, B and LT
    roll, Y heals, RB faces the foe, and Start and Back pause. In Wander X walks, as in the explorer, Start opens the Map, and RT, B,
-   LT and Y do nothing. skip(i) is true for a button that is swallowed. nav is what the cards read: the d-pad or the left stick past
+   LT and Y do nothing. skip(i) is true for a button that is swallowed. Each stick is the one tilted furthest across the pads, so a
+   second pad whose stick drifts past the deadzone does not take over. nav is what the cards read: the d-pad or the left stick past
    half, A, B, Start and Back */
 export function readPads(pads, run, skip = () => false) {
   const out = { any: false, mx: 0, mz: 0, ox: 0, oy: 0, jump: false, slow: false, attack: false, roll: false, heal: false, face: false, pause: false, down: new Set(), nav: null };
-  let lx = 0, ly = 0;
+  let lx = 0, ly = 0, lm = 0, rm = 0;
   for (const pad of pads || []) {
     if (!pad || !pad.connected) continue;
     out.any = true;
     const ax = (i, dz = 0.18) => (Math.abs(pad.axes?.[i] || 0) > dz ? pad.axes[i] : 0);
-    if (ax(0) || ax(1)) { out.mx = ax(0); out.mz = -ax(1); lx = ax(0); ly = ax(1); }
-    if (ax(2) || ax(3)) { out.ox = ax(2); out.oy = ax(3); }
+    const l = Math.hypot(ax(0), ax(1)), r = Math.hypot(ax(2), ax(3));
+    if (l > lm) { lm = l; out.mx = ax(0); out.mz = -ax(1); lx = ax(0); ly = ax(1); }
+    if (r > rm) { rm = r; out.ox = ax(2); out.oy = ax(3); }
     (pad.buttons || []).forEach((b, i) => { if (b && (b.pressed || b.value > 0.5)) out.down.add(i); });
   }
   const on = i => out.down.has(i) && !skip(i);
@@ -46,6 +53,19 @@ export function navStep(st, nav, dt, every = 0.3) {
   st.t += every;
   return dir;
 }
+// a card or the loading screen takes over: the way the d-pad or the stick holds now moves nothing, at once or held, until it comes
+// back to centre (navStep then counts a new press)
+export function heldNav(st, nav) {
+  st.dir = nav.next ? 1 : nav.prev ? -1 : 0;
+  st.t = Infinity;
+  return st;
+}
+// the move this frame: the keys or the touch stick ({ mx, mz }), unless the pad's left stick is tilted past the walk threshold, or
+// they hold nothing
+export function pickMove(own, pad) {
+  if (Math.hypot(pad.mx, pad.mz) >= WALK_MIN || (!own.mx && !own.mz && (pad.mx || pad.mz))) return { mx: pad.mx, mz: pad.mz };
+  return { mx: own.mx, mz: own.mz };
+}
 
 /* the page's inputs. els: { canvas, stick (the ring that shows under the thumb), jump, attack, roll, heal (the touch buttons) }.
    run() and play() say what the page is doing now. onFace() runs on a press of RB (the page's own R and Look call it too) */
@@ -62,7 +82,12 @@ export function makeInput(els, { run = () => false, play = () => false } = {}) {
     const k = e.key.toLowerCase();
     // keys steer the lamplighter only in play. In a card, on the end card and on the loading screen they are the page's (Space and
     // Enter press the focused button), and a key pressed there stays out of play until it is let go
-    if (!play() || e.target.closest?.('.panel:not([hidden])')) { swallowed.add(k); return; }
+    if (!play() || e.target.closest?.('.panel:not([hidden])')) {
+      // the keys that move stay live, so a direction held into a card (or pressed in one) walks on after it
+      if (MOVE_KEYS.has(k)) keys.add(k);
+      else swallowed.add(k);
+      return;
+    }
     if ([' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) e.preventDefault();
     if (swallowed.has(k) || (e.repeat && keys.has(k))) return;
     keys.add(k);
@@ -146,7 +171,7 @@ export function makeInput(els, { run = () => false, play = () => false } = {}) {
       if (l > 6) { const m = Math.min(1, (l - 6) / 46); mx = (dx / l) * m; mz = (-dy / l) * m; }
     }
     const p = pads || readPad();
-    if (p.mx || p.mz) { mx = p.mx; mz = p.mz; }
+    ({ mx, mz } = pickMove({ mx, mz }, p));
     if (p.ox || p.oy) { ox = p.ox; oy = p.oy; }
     const r = run();
     input.mx = mx; input.mz = mz; input.ox = ox; input.oy = oy;
@@ -162,9 +187,10 @@ export function makeInput(els, { run = () => false, play = () => false } = {}) {
     input, read, readPad, clear,
     // a step has run on what was read: the latches are spent
     consumed() { for (const k in latch) latch[k] = false; },
-    // a card's button was pressed: what is held now does nothing in play until it is let go
+    // a card's button was pressed: the action keys and pad buttons held now do nothing in play until they are let go (the keys that
+    // move stay live)
     swallowAll() {
-      for (const k of keys) swallowed.add(k);
+      for (const k of keys) if (!MOVE_KEYS.has(k)) swallowed.add(k);
       const raw = readPads(navigator.getGamepads?.() || [], run());
       for (const i of raw.down) padSwallowed.add(i);
       // the pads read before this are stale now: the next read leaves the swallowed buttons out

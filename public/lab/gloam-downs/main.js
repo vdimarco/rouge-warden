@@ -10,11 +10,12 @@ import { makeWalk, makeBody, makeCamera, pose, touches, atBeacon, PARAMS } from 
 import { ORDER, load, store, wispCount, fresh } from './save.js';
 import * as RS from './run-save.js';
 import { STEP, stepCount, startRun, reload, goTo, chooseWick, maxOf, flasksOf, makeRunner, newSeed, WICKS } from './run.js';
-import { nearest, faceYaw, makePost } from './moves.js';
-import { makeInput, navStep } from './input.js';
+import { nearest, faceYaw, makePost, HITS } from './moves.js';
+import { makeInput, navStep, readPads, heldNav } from './input.js';
 import * as cards from './cards.js';
 import { makePool } from './pool.js';
 import { figures, poolFor, lineup, LINEUP } from './figures.js';
+import { findVeils, makeVeils } from './veil.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('view'), loading = $('loading'), loadLine = $('loadLine'), barFill = $('barFill'), bar = $('bar');
@@ -43,7 +44,7 @@ let renderer = null, place = null, walk = null, body = null, cam = null, world =
 let mode = 'loading', paused = false, lost = false, last = 0, time = 0, frames = 0, acc = 0, steps = 0;
 let artTarget = TARGET[q.get('q')] || (coarse ? 46000 : TARGET.mid), adapt = !q.has('q');
 let art = { w: 320, h: 200, s: 1 };
-let pendingRows = new Set(), fogNear = 10, beaconLit = false, arriveTimer = 0, toastTimer = 0, slowFor = 0, pool = null, slots = null;
+let pendingRows = new Set(), fogNear = 10, beaconLit = false, arriveTimer = 0, toastTimer = 0, slowFor = 0, pool = null, slots = null, veils = null;
 const intervals = [];
 // the run: the sound cues logged across places, the effects that stage 2 drives, training posts (?test) and the foes' targets
 const cues = [];
@@ -100,6 +101,9 @@ addEventListener('keydown', e => {
    press presses nothing */
 const nav = { dir: 0, t: 0 };
 let padWas = { a: false, b: false, start: false, back: false, face: false, pause: false }, padSeen = false;
+// a card or the loading screen takes over: a way the d-pad or the stick already holds moves nothing until it comes back to centre
+const holdNav = () => heldNav(nav, readPads(navigator.getGamepads?.() || [], RUN).nav);
+function showCard(card) { holdNav(); return cards.show(card); }
 function padCheck() {
   const any = [...(navigator.getGamepads?.() || [])].some(p => p && p.connected);
   if (any && !padSeen) { padSeen = true; showControls(); return true; }
@@ -118,8 +122,10 @@ function pollPad(dt) {
     else if (edge('b')) back();
     else if (edge('start')) startButton();
     else if (edge('back') && RUN && mode === 'pause' && !asking) resume();
-  } else if (mode === 'play') {
-    nav.dir = 0;
+  } else {
+    // out of the cards the way held is kept, so the first poll in a card that opens takes no move from it
+    heldNav(nav, n);
+    if (mode !== 'play') return;
     if (p.face && !was.face) face();
     if (p.pause && !was.pause) RUN ? openPause() : openMap();
   }
@@ -232,7 +238,7 @@ function openMap() {
   $('mapLine').textContent = `Wisps found: ${wispCount(save)} of 25.`;
   $('map').hidden = false;
   mode = 'map';
-  cards.show({ el: $('map'), main: () => box.querySelector('[aria-current="true"]') });
+  showCard({ el: $('map'), main: () => box.querySelector('[aria-current="true"]') });
 }
 const NAMES = { gaol: 'The Sunken Gaol', ramparts: 'The Crow Wall', fen: 'Lantern Fen', bells: 'The Bell Knoll', barrows: 'Barrow Crown' };
 $('bMap').addEventListener('click', () => {
@@ -258,7 +264,7 @@ function openCard(id, m, main, backFn = null) {
   mode = m;
   padCheck();
   showControls();
-  cards.show({ el: $(id), main, back: backFn });
+  showCard({ el: $(id), main, back: backFn });
 }
 function closeCard(id) {
   $(id).hidden = true;
@@ -399,7 +405,7 @@ function lightBeacon() {
       $('endBest').textContent = save.best ? fmt(save.best) : '–';
       $('end').hidden = false;
       mode = 'end';
-      cards.show({ el: $('end'), main: () => $('bAgain') });
+      showCard({ el: $('end'), main: () => $('bAgain') });
     }, 1800);
   } else if (next) {
     toast(`The way opens to <b>${NAMES[next]}</b>`, 2600);
@@ -452,6 +458,7 @@ const nodraw = q.has('nodraw');
 async function go(id) {
   clearTimeout(beaconTimer);
   mode = 'loading';
+  holdNav();
   showHud(false);
   $('veil').classList.add('on');
   await new Promise(r => setTimeout(r, still ? 0 : 450));
@@ -467,7 +474,7 @@ async function go(id) {
     r.hidden = false;
     r.onclick = () => go(id);
     // so Space, Enter or A on a pad tries again without a Tab
-    cards.show({ el: loading, main: () => r });
+    showCard({ el: loading, main: () => r });
     padCheck();
     return;
   }
@@ -481,7 +488,7 @@ async function go(id) {
       const r = $('bRetry');
       r.hidden = false;
       r.onclick = () => go(id);
-      cards.show({ el: loading, main: () => r });
+      showCard({ el: loading, main: () => r });
       padCheck();
       return;
     }
@@ -498,7 +505,11 @@ async function go(id) {
   // the lamplighter's splats ride bones that the page writes every frame
   const n = meta.bones.names.length;
   world.anim = { bones: new Float32Array(12 * n), boned: Int32Array.from({ length: meta.bones.end - meta.bones.first }, (_, i) => meta.bones.first + i) };
+  const placeCount = world.count;
   pool = RUN ? makePool(world, meta, slots) : null; // its slots parked: at density 0 and off the bones
+  // in a run, the mist and haze sheets that lie in front of an awake figure fade out (veil.js); the beacon and the wisps are left alone
+  const pack = c => ((c >> 16) & 255) + ((c >> 8) & 255) * 256 + (c & 255) * 65536;
+  veils = RUN ? makeVeils(world, findVeils(world, { count: placeCount, skip: [...meta.beacon.fire, ...meta.wisps.map(w => w.ids)], shared: meta.pal.slice(32).map(pack) })) : null;
   saved.clear();
   pendingRows = new Set();
   if (RUN) {
@@ -539,7 +550,7 @@ async function go(id) {
     $('helpTouch').hidden = !coarse;
     $('help').hidden = false;
     mode = 'help';
-    cards.show({ el: $('help'), main: () => $('bStart') });
+    showCard({ el: $('help'), main: () => $('bStart') });
   }
 }
 
@@ -575,6 +586,18 @@ function update() {
   }
   view = cam.follow(body.s, STEP, input);
   input.dyaw = input.dpitch = 0;
+  if (veils) unveil();
+}
+// the veils over the awake figures fade out, seen from where the eye is now: nine points on each figure, at its feet, middle and head,
+// in the middle and at its two sides as the eye sees them
+function unveil() {
+  const c = viewCamera(world, { camera: view }, art.w, art.h), figs = [], rx = Math.cos(view.yaw), rz = -Math.sin(view.yaw);
+  for (const s of pool.slots) {
+    if (!s.awake || !s.at || !s.nbones) continue;
+    const h = s.type.height || 1.5, r = s.type.radius || 0.4;
+    for (const k of [0.15, 0.55, 0.95]) for (const side of [-r, 0, r]) figs.push([s.at.x + rx * side, s.at.y + h * k, s.at.z + rz * side]);
+  }
+  for (const r of veils.step(c.view, art.h / 2 / c.tangent, figs)) pendingRows.add(r);
 }
 let view = null;
 function draw() {
@@ -645,7 +668,7 @@ const runState = () => {
     carried: run?.carried ?? 0, bank: rs?.bank ?? 0, wisps: runner?.wisps.size ?? 0, wicks: run?.wicks.slice() ?? [], offer: run?.offer?.slice() ?? null,
     foes: run?.foes ?? 0, banked: run?.banked ?? 0, bossDown: !!run?.bossDown, time: run?.time ?? 0, entry: run ? { ...run.entry } : null,
     step: k?.step ?? 0, playStep: k?.play ?? 0, stop: k?.stop ?? 0, ended: rs?.ended ? { ...rs.ended } : null,
-    move: f?.move ?? null, t: f ? f.t / 60 : 0, safe: runner?.fighter.safe() ?? null, combo: f?.next ?? 0,
+    move: f?.move ?? null, hit: f?.move === 'hit' ? HITS[f.hit].id : null, t: f ? f.t / 60 : 0, safe: runner?.fighter.safe() ?? null, combo: runner?.fighter.nextHit() ?? 0,
     fx: { kick: fx.kick.slice(), zoom: fx.zoom, bars: fx.bars, grade: (fx.grade || meta?.pal || []).slice(), blink: !!body?.s.hide }
   };
 };
@@ -700,8 +723,8 @@ window.__gloam = {
   },
   ready: () => mode !== 'loading' && !!place,
   /* the run's hooks (?run): run() reads the run, set() changes the values now and never the entry snapshot, fx() turns effects
-     on and off, sounds() is the log of cues with their game and play steps, post() stands a training post, project() maps a world
-     point to the screen */
+     on and off, sounds() is the log of cues with their game and play steps, post() stands a training post (clearPosts() takes them
+     all away), project() maps a world point to the screen */
   run: () => (RUN ? runState() : null),
   set: (o = {}) => {
     if (!RUN) return null;
@@ -721,8 +744,13 @@ window.__gloam = {
   },
   fx: (flags = {}) => { for (const k of ['stop', 'flash', 'kick', 'zoom', 'grade', 'shake']) if (k in flags) fx[k] = !!flags[k]; return { ...fx }; },
   sounds: () => cues.map(c => ({ ...c })),
-  post: (x, z, o = {}) => { const p = makePost(walk, x, z, { id: `post${posts.length + 1}`, ...o }); posts.push(p); return p.id; },
+  // the post stands on the floor met from the lamplighter's height (under an arch or a roof that is the floor under it, not its top)
+  post: (x, z, o = {}) => { const p = makePost(walk, x, z, { id: `post${posts.length + 1}`, y: body.s.y, ...o }); posts.push(p); return p.id; },
   posts: () => posts.map(p => ({ id: p.id, x: p.x, y: p.y, z: p.z, r: p.r, alive: p.alive, taken: p.taken, hits: p.hits.map(h => ({ dmg: h.dmg, kind: h.kind })) })),
+  // the place's 48 colours, as 0xRRGGBB
+  palette: () => (meta ? meta.pal.slice() : null),
+  // take every training post away (a test that needs one post alone)
+  clearPosts: () => { const n = posts.length; posts.length = 0; return n; },
   // a hit on the lamplighter, as a foe's would land (stage 2's foes call runner.hurt the same way)
   hurt: (dmg, from, o = {}) => {
     const ev = [], r = runner.hurt(dmg, from ?? [body.s.x + Math.sin(body.s.yaw), body.s.z + Math.cos(body.s.yaw)], o, ev);

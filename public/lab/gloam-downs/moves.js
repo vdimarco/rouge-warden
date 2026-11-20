@@ -340,11 +340,17 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
     if (f.move === 'roll' && f.t >= a && f.t <= b) return 'roll';
     return f.safe > 0 ? 'hurt' : null;
   }
+  // the hit of the string that a press of Attack starts next (0 cut1, 1 cut2, 2 the finisher): the one after the hit that plays, or
+  // after the last one while the string holds (0.35 s on the ground), else the first
+  function nextHit() {
+    if (f.move === 'hit') return (f.hit + 1) % 3;
+    return s.ground && f.since <= MOVES.reset ? f.next : 0;
+  }
   // back on the last firm ground after a fall
   function toFirm() {
     body.place(f.firm, f.firmYaw);
     f.move = null; f.t = 0;
     s.act = null;
   }
-  return { f, step, knock, safe, toFirm, nearMiss: () => { f.shave = MOVES.shave.steps; }, body, walk };
+  return { f, step, knock, safe, nextHit, toFirm, nearMiss: () => { f.shave = MOVES.shave.steps; }, body, walk };
 }

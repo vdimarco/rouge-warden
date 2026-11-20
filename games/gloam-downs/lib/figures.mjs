@@ -31,12 +31,15 @@ export const MAT = {
   soot: { r: ramp('soot') }, rag: { r: ramp('rag') }, feather: { r: ramp('feather') }, bone: { r: ramp('bone') },
   bronze: { r: ramp('bronze') }, earth: { r: ramp('earth') }, root: { r: ramp('root') }, iron: { r: ramp('iron') },
   ink: { r: [ramp('ink')[0]] },
-  // what glows. Fire only on eyes and tells; the wisp colours only on the Mirelight and the caged light; never slot 40
+  // what glows. Fire only on eyes and tells; the wisp colours only on the Mirelight and the caged light; never slot 40. A glow a few
+  // art pixels across is mostly edge, where the resolve sees it mixed with the dark round it: slots 36 and 37 mixed that way are pale
+  // tans and greys that snap to each place's own straw, moss or moon colours, while slots 34 and 35 mixed that way stay fire or turn
+  // dark. So the figures' glows keep to slots 34 and 35 (measured in the page: qa/lab/gloam-downs-run.lineup.e2e.mjs)
   eye: { r: [ramp('fire')[3]], em: true },
   ember: { r: [ramp('fire')[1]], em: true },                 // a dull ember (slot 33): coals and pitch at rest
-  tell: { r: ramp('fire').slice(2, 5), em: true },           // a tell: slots 34..36
-  hot: { r: [ramp('fire')[4]], em: true },                   // the heart of a tell (slot 36)
-  white: { r: [ramp('fire')[4], ramp('fire')[5]], em: true }, // white-hot (slots 36, 37): the Ironback's crack
+  tell: { r: ramp('fire').slice(2, 4), em: true },           // a tell: slots 34 and 35
+  hot: { r: [ramp('fire')[3]], em: true },                   // the heart of a tell (slot 35)
+  white: { r: [ramp('fire')[3]], em: true },                 // the Ironback's blazing crack (slot 35)
   wisp: { r: [ramp('wisp')[0], ramp('wisp')[1]], em: true }, // slots 38, 39
   wispDim: { r: [ramp('wisp')[0]], em: true }, wispPale: { r: [ramp('wisp')[1]], em: true }
 };
@@ -313,14 +316,37 @@ export function sheet(built, json, { file, codes, poses, w = 320, h = 180, pal, 
 
 /* ---------------- node bake.mjs foes | boss ---------------- */
 const PUBLIC = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../../../public/lab/gloam-downs/worlds');
+/* The boss's rows and bones are reserved in Barrow Crown's pool from the start, parked, so the pool is never built twice in a place
+   (pool.js fill()). foes.json.gz holds their counts as reserve: { B: { count, bones }, C: { count, bones } }: the foes bake reads them
+   from the boss files, and the boss bake writes them into foes.json.gz, so either may be baked first */
+const reserveOf = types => Object.fromEntries(['B', 'C'].filter(c => types[c]).map(c => [c, { count: types[c].end - types[c].first, bones: types[c].bones.length }]));
+const gunzipJson = f => JSON.parse(zlib.gunzipSync(fs.readFileSync(f)).toString());
+function writeReserve(worlds, reserve) {
+  const f = path.join(worlds, 'foes.json.gz');
+  if (!fs.existsSync(f)) return false;
+  const json = gunzipJson(f);
+  if (JSON.stringify(json.reserve) === JSON.stringify(reserve)) return false;
+  json.reserve = reserve;
+  fs.writeFileSync(f, zlib.gzipSync(Buffer.from(JSON.stringify(json)), { level: 9 }));
+  return true;
+}
+// the boss files' counts against the reserve in foes.json.gz
+export function reserveChecks(worlds) {
+  const ff = path.join(worlds, 'foes.json.gz'), bf = path.join(worlds, 'boss.json.gz');
+  if (!fs.existsSync(ff) || !fs.existsSync(bf)) return [{ ok: true, what: `the boss reserve: not checked (no ${fs.existsSync(ff) ? 'boss' : 'foe'} files in ${worlds})` }];
+  const want = reserveOf(gunzipJson(bf).types), got = gunzipJson(ff).reserve;
+  return [{ ok: JSON.stringify(want) === JSON.stringify(got), what: `foes.json.gz reserves the boss files' rows and bones in Barrow Crown's pool: ${JSON.stringify(got)}${JSON.stringify(want) === JSON.stringify(got) ? '' : `, the boss files hold ${JSON.stringify(want)}`}` }];
+}
 export async function bakeFigures(which, { worlds, preview }) {
   const mod = await import(which === 'foes' ? './foes.mjs' : './boss.mjs');
   // the places' palettes and files: from the folder written to, or the committed ones when it has none
   const places = fs.existsSync(path.join(worlds, 'gaol.json')) ? worlds : PUBLIC;
   const t0 = Date.now();
   const built = bakeSet(mod.FIGURES);
-  const json = figureJson(which, built, which === 'foes' ? { pools: POOLS } : mod.extra(built));
+  const bossJson = [worlds, PUBLIC].map(w => path.join(w, 'boss.json.gz')).find(f => fs.existsSync(f));
+  const json = figureJson(which, built, which === 'foes' ? { pools: POOLS, reserve: bossJson ? reserveOf(gunzipJson(bossJson).types) : {} } : mod.extra(built));
   const sizes = writeFigures(which, built, json, worlds);
+  if (which === 'boss') writeReserve(worlds, reserveOf(built.types));
   const lines = [`${which}: ${built.world.count} splats in ${Date.now() - t0} ms; files ${(sizes.bin / 1024).toFixed(1)} + ${(sizes.json / 1024).toFixed(1)} KB`];
   for (const T of Object.values(built.types)) {
     const per = {};
@@ -333,7 +359,8 @@ export async function bakeFigures(which, { worlds, preview }) {
     const n = T.end - T.first, want = mod.TARGETS[T.code];
     checks.push({ ok: n <= want * 1.1, what: `${T.title}: ${n} splats, no more than 10% over its target of ${want}` });
   }
-  checks.push(...placeChecks(worlds));
+  checks.push(...reserveChecks(worlds));
+  checks.push(...placeChecks(worlds, places));
   if (preview) {
     fs.mkdirSync(preview, { recursive: true });
     await mod.previews({ built, json, worlds, places, out: preview, sheet, lineup, readFigureFiles });

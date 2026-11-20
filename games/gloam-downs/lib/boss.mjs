@@ -104,7 +104,7 @@ const reeve = {
     tube(S, [at(...HOOK[3]), at(-0.55, 3.42, 1.04), at(-0.55, 3.3, 0.98)], 0.018, 0.005, iron, 'crook', 0.016);
     // the hook's glow, grown over a wind-up
     tube(S, HOOK.map(p => at(...p)), 0.06, 0.04, { r: [FIRE[2], FIRE[3]], em: true }, 'crookTip', 0.03);
-    S.ball(at(...HOOK[3]), 0.07, { r: [FIRE[4]], em: true }, tag('crookTip', { res: 0.025 }));
+    S.ball(at(...HOOK[3]), 0.07, { r: [FIRE[3]], em: true }, tag('crookTip', { res: 0.025 }));
   },
   // the lamp-shards: three green glass splinters, at the cage at rest (the page flies them)
   lay(B, o) {
@@ -132,14 +132,15 @@ const reeve = {
       const a = u * TAU, sw = Math.sin(a);
       return { body: { ty: 0.05 * Math.abs(sw), rz: 0.03 * sw, rx: 0.06 }, legL: { rx: -0.4 * sw }, legR: { rx: 0.4 * sw }, cloak: { rx: -0.06 - 0.03 * Math.abs(sw), rz: -0.03 * sw }, armL: { rx: 0.25 * sw }, armR: { rx: -0.08 * sw }, head: { rx: 0.05 } };
     }, true),
-    // the crook sweep: back over the right shoulder with the hook glowing, then a flat sweep through ±90° in front
+    // the crook sweep: raised out to the right side with the hook glowing beside the head, where it shows from the front, then a flat
+    // sweep through ±90° in front
     'sweep.windup': clip(0.8, [0, 0.3, 0.6, 1], u => {
       const e = ease(u);
-      return { body: { ry: -0.5 * e, rx: -0.05 * e }, armR: { rx: -0.9 * e, rz: 0.5 * e }, crook: { rx: -0.9 * e }, armL: { rz: 0.4 * e }, cloak: { ry: 0.2 * e }, crookTip: { s: Math.min(1, u * 1.1) } };
+      return { body: { ry: -0.3 * e, rx: -0.05 * e }, armR: { rx: -0.3 * e, rz: -1.0 * e }, crook: { rx: -0.3 * e, rz: 0.75 * e }, armL: { rz: 0.4 * e }, cloak: { ry: 0.15 * e }, crookTip: { s: Math.min(1, u * 1.1) } };
     }),
     'sweep.attack': clip(0.2, [0, 0.35, 0.7, 1], u => {
       const e = ease(u);
-      return { body: { ry: lerp(-0.5, 0.9, e), rx: lerp(-0.05, 0.12, e) }, armR: { rx: lerp(-0.9, -1.45, e), rz: lerp(0.5, -0.2, e), ry: lerp(0, 1.2, e) }, crook: { rx: lerp(-0.9, 0.6, e) }, armL: { rz: lerp(0.4, 0.1, e) }, cloak: { ry: lerp(0.2, -0.3, e) }, crookTip: { s: 1 } };
+      return { body: { ry: lerp(-0.3, 0.9, e), rx: lerp(-0.05, 0.12, e) }, armR: { rx: lerp(-0.3, -1.45, e), rz: lerp(-1.0, -0.2, e), ry: lerp(0, 1.2, e) }, crook: { rx: lerp(-0.3, 0.6, e), rz: lerp(0.75, 0, e) }, armL: { rz: lerp(0.4, 0.1, e) }, cloak: { ry: lerp(0.15, -0.3, e) }, crookTip: { s: 1 } };
     }),
     'sweep.recover': clip(1.0, [0, 0.4, 1], u => {
       const e = ease(u);

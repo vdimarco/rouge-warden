@@ -11,13 +11,15 @@ export function figures(base, which, onProgress) {
 }
 export const loaded = which => !!cache[which];
 
-// the slots of a place's pool, in its order (foes.json.gz pools): the Barrow Reeve and its candles come from the boss file, and are
-// left out until it has loaded
+/* the slots of a place's pool, in its order (foes.json.gz pools): the Barrow Reeve and its candles come from the boss file. Until it
+   has loaded their slots are reserved, with the counts foes.json.gz keeps for them (reserve), and pool.fill(code, boss) copies them in
+   when it comes; so a place's pool is built once */
 export function poolFor(id, foes, boss, codes = foes.json.pools[id] || '') {
   const slots = [];
   for (const code of codes) {
-    const src = code === 'B' || code === 'C' ? boss : foes;
+    const inBoss = code === 'B' || code === 'C', src = inBoss ? boss : foes;
     if (src?.json.types[code]) slots.push({ code, type: src.json.types[code], src });
+    else if (inBoss && foes.json.reserve?.[code]) slots.push({ code, reserve: foes.json.reserve[code] });
   }
   return slots;
 }

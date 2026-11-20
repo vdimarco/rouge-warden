@@ -48,8 +48,9 @@ const snuffer = {
     tatters(S, at, rag, { n: 11, r: 0.25, y: 0.24, len: 0.2, w: 0.05, splay: 0.3 });
     S.torus(at(0, 0.5, 0.0), 0.27, 0.025, rag, tag('body', { res: 0.03 }));
     S.box(at(0.2, 0.46, 0.14), [0.06, 0.08, 0.05], rag, tag('body', { res: 0.03, rd: 0.03 })); // a pouch at the belt
-    // a deep hood bent forward, its tip flopped back; a black face with two ember eyes
-    S.ball(at(0, 1.0, 0.11), [0.2, 0.19, 0.22], soot, tag('head', { res: 0.04 }));
+    // a deep hood bent forward, its tip flopped back; a black face with two ember eyes. One sculptor makes one surface of its solids, so
+    // the hood's front (z 0.24) stays behind the face's (0.30) and the eyes' (0.31), or it swallows them
+    S.ball(at(0, 1.0, 0.06), [0.2, 0.19, 0.18], soot, tag('head', { res: 0.04 }));
     tube(S, [at(0, 1.1, 0.0), at(0, 1.32, -0.07), at(0.04, 1.52, -0.2)], 0.12, 0.012, soot, 'head', 0.035);
     S.ball(at(0, 0.97, 0.25), [0.12, 0.11, 0.05], ink, tag('head', { res: 0.025 }));
     for (const s of [-1, 1]) S.ball(at(0.045 * s, 0.99, 0.29), 0.024, eye, tag('head', { res: 0.015 }));
@@ -232,8 +233,8 @@ const pitchrook = {
 };
 
 /* ---------------- the Mirelight ----------------
-   A pale flame the size of a head, 1.3 m up, with a dark face, a fire-red heart and three soot tails. Its tell is the core: it turns
-   white-hot as the flame swells to 1.6 times its size. */
+   A pale flame the size of a head, 1.3 m up, with a fire-red heart and three soot tails. Its tell is the core: it blazes in a soot
+   rim as the flame swells to 1.6 times its size. */
 const M_C = [0, 1.3, 0];
 const mirelight = {
   apart: ['core'], code: 'M', name: 'mirelight', title: 'Mirelight', height: 1.6, radius: 0.35, shadow: 0.24, res: 1.4,
@@ -245,14 +246,19 @@ const mirelight = {
     ...ringBones
   ],
   sculpt(S, at, o) {
-    const { wisp, wispPale, wispDim, ink, soot, hot } = MAT;
+    const { wisp, wispPale, wispDim, soot, hot, ink } = MAT;
     S.ball(at(0, 1.28, 0), [0.15, 0.14, 0.15], wispPale, tag('body', { res: 0.03 }));
     tube(S, [at(0, 1.33, -0.01), at(0, 1.47, -0.03), at(0.02, 1.62, -0.08)], 0.12, 0.012, wisp, 'body', 0.028);
     for (const s of [-1, 1]) tube(S, [at(0.07 * s, 1.36, 0), at(0.12 * s, 1.47, -0.03)], 0.04, 0.008, wispDim, 'body', 0.02);
-    S.ball(at(0, 1.25, 0.11), [0.055, 0.05, 0.04], { r: [FIRE[2]], em: true }, tag('body', { res: 0.015 }));
-    for (const s of [-1, 1]) S.ball(at(0.055 * s, 1.33, 0.125), [0.022, 0.035, 0.012], ink, tag('body', { res: 0.01 }));
-    // the core: white-hot, over the red heart
-    S.ball(at(0, 1.27, 0.09), 0.1, { r: [FIRE[3]], em: true }, tag('core', { res: 0.026 }));
+    // the red heart in a soot rim (red mixed with the pale flame is a tan), standing just out of the flame's front; no face (two dark
+    // eyes over it read as a cartoon face, softer than the house look)
+    S.ball(at(0, 1.25, 0.13), [0.075, 0.07, 0.03], ink, tag('body', { res: 0.02 }));
+    S.ball(at(0, 1.25, 0.13), [0.055, 0.05, 0.04], { r: [FIRE[2]], em: true }, tag('body', { res: 0.015 }));
+    // the core: blazing, over the red heart, in a soot rim so that its edge meets dark and not the pale flame (the two mixed are a
+    // tan that no palette keeps as fire); the rim lies behind the core, or the one surface of the sculptor swallows it
+    S.ball(at(0, 1.27, 0.07), [0.135, 0.135, 0.04], ink, tag('core', { res: 0.034 }));
+    // its edge in slot 34 and its heart in 35: the contact shade darkens a round glow's edge, and 34 darkened turns dark, not tan
+    S.ball(at(0, 1.27, 0.09), 0.1, { r: [FIRE[2]], em: true }, tag('core', { res: 0.026 }));
     S.ball(at(0, 1.27, 0.15), 0.06, hot, tag('core', { res: 0.024 }));
     // three soot tails curling down and back
     for (const s of [-1, 0, 1])
@@ -267,7 +273,7 @@ const mirelight = {
     walk: clip(0.8, [0, 0.25, 0.5, 0.75, 1], u => ({
       body: { ty: 0.05 * Math.sin(u * TAU), rx: 0.25 }, tails: { rx: -0.45 + 0.15 * Math.sin(u * TAU), rz: 0.15 * Math.sin(u * TAU) }
     }), true),
-    // the pulse: it swells to 1.6 times its size and the core turns white-hot; then it snaps and the ring fires
+    // the pulse: it swells to 1.6 times its size and the core blazes; then it snaps and the ring fires
     'pulse.windup': clip(0.7, [0, 0.3, 0.6, 0.85, 1], u => {
       const e = ease(u);
       return { body: { s: lerp(1, 1.6, e), ty: 0.04 * Math.sin(u * TAU * 3) }, core: { s: Math.min(1, u * 1.1) }, tails: { rx: lerp(0, 0.6, e), s: lerp(1, 1.2, e) } };
@@ -324,7 +330,9 @@ const ironback = {
     const pts = CRACK.map(([t, a]) => at(...bellPoint(t, a, 0.005)));
     S.tube(pts, 0.03, 0.02, ink, tag('body', { res: 0.018 }));
     S.tube(CRACK.map(([t, a]) => at(...bellPoint(t, a, 0.02))), 0.013, 0.01, ember, tag('body', { res: 0.012 }));
-    S.tube(CRACK.map(([t, a]) => at(...bellPoint(t, a, 0.03))), 0.05, 0.035, white, tag('tell', { res: 0.025 }));
+    // the blaze: slot 34 along the crack's edges, 35 down its middle, standing out of it (one sculptor, one surface)
+    S.tube(CRACK.map(([t, a]) => at(...bellPoint(t, a, 0.03))), 0.05, 0.035, { r: [FIRE[2]], em: true }, tag('tell', { res: 0.025 }));
+    S.tube(CRACK.map(([t, a]) => at(...bellPoint(t, a, 0.06))), 0.03, 0.022, white, tag('tell', { res: 0.034 }));
     // a small head low under the lip, two ember eyes
     S.ball(at(0, 0.94, 0.47), [0.13, 0.11, 0.13], feather, tag('head', { res: 0.03 }));
     S.ball(at(0, 0.88, 0.55), [0.09, 0.05, 0.06], ink, tag('head', { res: 0.02 }));

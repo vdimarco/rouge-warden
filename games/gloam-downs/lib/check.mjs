@@ -96,17 +96,19 @@ export function fileChecks(worlds, which = ['foes', 'boss']) {
   }
   return out;
 }
-// a place's three files, the foe files and its pool, against the budgets
-export function placeChecks(worlds) {
+/* a place's three files, the foe files and its pool, against the budgets. The figure files come from worlds, the place files from
+   places (a bake of the figures into a folder of its own checks them against the committed places); a place whose files are not
+   there says so */
+export function placeChecks(worlds, places = worlds) {
   const out = [], foes = path.join(worlds, 'foes.json.gz');
-  if (!fs.existsSync(foes)) return out;
+  if (!fs.existsSync(foes)) return [{ ok: true, what: `the places with their pools: not checked (no foe files in ${worlds})` }];
   const F = readFigures(JSON.parse(zlib.gunzipSync(fs.readFileSync(foes)).toString()));
   const bf = path.join(worlds, 'boss.json.gz'), boss = fs.existsSync(bf) ? JSON.parse(zlib.gunzipSync(fs.readFileSync(bf)).toString()) : null;
   const foeBytes = fsize(path.join(worlds, 'foes.bin.gz')) + fsize(foes);
   for (const id of PLACES) {
-    const files = ['.bin.gz', '.walk.bin.gz', '.json'].map(e => fsize(path.join(worlds, id + e)));
-    if (files.includes(null)) continue;
-    const bytes = files.reduce((a, b) => a + b, 0), meta = JSON.parse(fs.readFileSync(path.join(worlds, `${id}.json`), 'utf8'));
+    const files = ['.bin.gz', '.walk.bin.gz', '.json'].map(e => fsize(path.join(places, id + e)));
+    if (files.includes(null)) { out.push({ ok: true, what: `${id}: with its pool: not checked (no place files in ${places})` }); continue; }
+    const bytes = files.reduce((a, b) => a + b, 0), meta = JSON.parse(fs.readFileSync(path.join(places, `${id}.json`), 'utf8'));
     let pool = 0;
     for (const code of F.pools[id]) {
       const inBoss = code === 'B' || code === 'C', T = inBoss ? boss?.types[code] : F.types[code];

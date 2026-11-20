@@ -2,14 +2,19 @@
 //   the step: the step count at 30, 60, 120 and 144 Hz, 600 steps from 1,440 frames of 1/144 s, and a press read by the frame that
 //     starts at k/6 s counting on step 10k + 1, with the same string and roll on the same play steps at every rate;
 //   the two clocks and hit stop with its cap; the base values;
-//   the lamplighter's moves against a training post held still: the string's timings, damage and lunges, the hold, the string that
-//     starts again, a hit tested on each active step until it hits once, soft aim (to the side, not through a wall, under an arch,
-//     the kept target, the stop short) and the clear line; the roll (distance, safe time, cooldown, Quick heels, the ledge guard, walls,
-//     what it cancels); the plunge (straight down, its damage, its ring, Heavy fall); the flask; a hit on the lamplighter (push, safe
-//     time, blink); falls back to the last firm ground;
-//   the run's rules: wicks and buys that raise the entry, a reload, how the bonuses add, every upgrade, Ash pocket, the seed's wick
-//     offers, death and the win, and when the run asks to be stored;
-//   the run's save with bad data, an old explorer page and blocked site data; the pads and the cards' focus; the pose of each move;
+//   the lamplighter's moves against a training post held still: the string's timings, damage and lunges, the hold, the next hit of
+//     the string, the string that starts again, a hit tested on each active step until it hits once, each hit's reach and arc, soft
+//     aim (its range, windows, turn and weight; to the side, not through a wall or a wall 0.2 m thin, under an arch, the kept target,
+//     the stop short) and the clear line; the roll (distance, safe time, cooldown, Quick heels, the ledge guard that the roll itself
+//     passes with the stick, walls, what it cancels); the plunge (straight down, its hang, fall, cap and recovery, its ring, Heavy
+//     fall); a move that holds the jump; a press kept through hit stop; the flask, and a drink that ends with no flask; a hit on the
+//     lamplighter (push, a safe time of 54 play steps, blink, and no blink after death); falls back to the last firm ground;
+//   the run's rules: wicks and buys that raise the entry (Long wick after a reload), a reload, how the bonuses add, every upgrade, Ash
+//     pocket rounding down, the seed's wick offers (never one wick twice), death and the win, a beacon that fills the flasks, and when
+//     the run asks to be stored;
+//   the run's save with bad data (an offer of one wick twice), an old explorer page and blocked site data; the pads (two pads: the
+//     stick tilted furthest; the keys win over a drifting stick) and the cards' focus (a way held when a card opens moves nothing);
+//     the pose of each move;
 //   and on the five baked places (skipped with GLOAM_WORLDS=0): the roll on real ground, the sight test's cost, a run through the
 //     Gaol's wisps and beacon, and each place's three files within 1.5 MB.
 // Run: node qa/lab/gloam-downs-run.test.mjs   (GLOAM_WORLDS=0 to leave out the baked places)
@@ -25,7 +30,7 @@ import {
 } from '../../public/lab/gloam-downs/run.js';
 import { HITS, MOVES, clearLine, sees, makePost, makeFighter, nearest, faceYaw, dealt, yawFor } from '../../public/lab/gloam-downs/moves.js';
 import * as RS from '../../public/lab/gloam-downs/run-save.js';
-import { readPads, navStep, PAD } from '../../public/lab/gloam-downs/input.js';
+import { readPads, navStep, heldNav, pickMove, PAD, WALK_MIN } from '../../public/lab/gloam-downs/input.js';
 
 const DIR = fileURLToPath(new URL('../../public/lab/gloam-downs/', import.meta.url));
 let n = 0;
@@ -179,6 +184,19 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   pass('a cut in a wind-up: the hook lands 33 play steps after its wind-up starts, 36 game steps');
 }
 
+{ // a press that comes and goes only inside hit stop is kept, and swings on the next play step
+  const { R } = runnerAt(FLAT, 0, 0);
+  R.hurt(16, [0, 1], {}, []);
+  runFor(R, 40);
+  hitStop(R.clock, 4);
+  const play0 = R.clock.play;
+  const ev = runFor(R, 8, i => ({ attack: i === 1 }));
+  const sw = ev.filter(e => e.type === 'cue' && e.cue === 'swing');
+  assert.equal(sw.length, 1, 'the press in hit stop swings');
+  assert.equal(R.log.filter(c => c.cue === 'swing').at(-1).play, play0 + 1, 'on the first play step after the stop');
+  pass('a press inside hit stop waits for the next play step');
+}
+
 /* ---------------- base values ---------------- */
 {
   const rs = RS.fresh();
@@ -229,6 +247,29 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   assert.deepEqual(hits(ev).slice(0, 4).map(h => h.i), [6, 23, 46, 64], 'the hits land at 0.10, 0.38, 0.77 and 1.07 s of play');
   pass('holding Attack: full strings, each hit 0.10 s into the recovery before', { starts: sw.slice(0, 7).map(e => e.i), lands: hits(ev).slice(0, 4).map(h => h.i) });
 }
+{ // the next hit of the string (run().combo): 1, 2 and 0 while cut1, cut2 and the finisher play with Attack held, the next one while
+  // the string holds after a recovery, and 0 once it has reset (0.35 s) or in the air
+  const { F, s } = fighterAt(FLAT, 0, 0, Math.PI);
+  const post = makePost(FLAT, 0, -1.2, { r: 0.4 });
+  const seen = new Map();
+  for (let i = 0; i < 60; i++) {
+    F.step({ attack: true }, 0, [post], []);
+    if (F.f.move === 'hit' && !seen.has(F.f.hit)) seen.set(F.f.hit, F.nextHit());
+  }
+  assert.deepEqual([...seen.entries()].sort(), [[0, 1], [1, 2], [2, 0]], `the next hit during cut1, cut2 and fin: ${JSON.stringify([...seen])}`);
+  const b = fighterAt(FLAT, 0, 0, Math.PI);
+  play(b.F, 1, { attack: true }, [post]);
+  while (b.F.f.move) play(b.F, 1, {}, [post]);
+  assert.equal(b.F.nextHit(), 1, 'after cut1 ends, the next is cut2');
+  play(b.F, MOVES.reset, {}, [post]);
+  assert.equal(b.F.nextHit(), 1, 'still cut2 at 0.35 s');
+  play(b.F, 1, {}, [post]);
+  assert.equal(b.F.nextHit(), 0, 'then the string resets');
+  b.s.y = 2; b.s.ground = false; b.F.f.since = 0; b.F.f.next = 2;
+  assert.equal(b.F.nextHit(), 0, 'in the air the first cut (or a plunge) comes next');
+  assert(s.ground);
+  pass('the next hit of the string: 1, 2 and 0 during the three hits, the next after a recovery until 0.35 s, then 0');
+}
 { // the string starts again 0.35 s after the recovery of the last hit ends
   const two = delay => {
     const { F } = fighterAt(FLAT, 0, 0, Math.PI);
@@ -256,6 +297,74 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   pass('an attack tests each active step until it hits once');
 }
 
+{ /* the reach and the arc of each hit, with the lunge out of the way: the post stands out of reach and out of the aim while the hit
+     winds up, and comes to its place on the first active step */
+  const at = (i, d, deg) => {
+    const { F, s } = fighterAt(FLAT, 0, 0, Math.PI);
+    const post = makePost(FLAT, 0, -9, { r: 0.4 });
+    let n = 0;
+    const ev = play(F, 70, k => {
+      if (F.f.move === 'hit' && F.f.hit === i && F.f.t === HITS[i].wind && n++ === 0) {
+        const a = s.yaw + deg * DEG, c = d + post.r;
+        post.x = s.x + Math.sin(a) * c; post.z = s.z + Math.cos(a) * c;
+      }
+      // cut1 at once; cut2 at its chain point; the finisher after both
+      return { attack: k === 0 || (i >= 1 && k === 17) || (i === 2 && k === 34) };
+    }, [post]);
+    return hits(ev).some(h => h.target === post && h.kind === HITS[i].id);
+  };
+  assert(at(0, 1.75, 0) && !at(0, 1.85, 0), 'cut1 reaches 1.8 m');
+  assert(at(2, 2.05, 0) && !at(2, 2.15, 0), 'the finisher reaches 2.1 m, past a cut and short of 2.5');
+  assert(at(0, 1.2, 43) && !at(0, 1.2, 47), 'cut1 sweeps ±45°');
+  assert(at(1, 1.2, 48) && !at(1, 1.2, 52), 'cut2 sweeps ±50°');
+  assert(at(2, 1.2, 68) && !at(2, 1.2, 72), 'the finisher sweeps ±70°');
+  pass('each hit\'s reach and arc: 1.8 m for the cuts and 2.1 m for the finisher; ±45°, ±50° and ±70°');
+}
+{ // soft aim's numbers: 4.5 m to the edge, ±70° of a held direction or ±100° of the facing, a turn of at most 75°, 2 per radian of turn
+  const aimAt = (d, deg, dir = null) => {
+    const { F, s } = fighterAt(FLAT, 0, 0, Math.PI);
+    const a = Math.PI + deg * DEG, post = makePost(FLAT, Math.sin(a) * (d + 0.4), Math.cos(a) * (d + 0.4), { r: 0.4 });
+    // camera yaw 0: mz 1 is -z, the facing; mx -1 turns the held direction to -x
+    play(F, 1, { attack: true, ...(dir || {}) }, [post]);
+    return { got: F.f.target === post, yaw: s.yaw };
+  };
+  assert(aimAt(4.4, 0).got && !aimAt(4.6, 0).got, 'a candidate is within 4.5 m of its edge');
+  assert(aimAt(2, 98).got && !aimAt(2, 102).got, '±100° of the facing with no direction held');
+  const held = { mz: 1 };
+  assert(aimAt(2, 68, held).got && !aimAt(2, 72, held).got, '±70° of a held direction');
+  const turned = aimAt(2, 95);
+  assert(near(wrap(turned.yaw - Math.PI), 75 * DEG, 1e-6), `the lamplighter turns at most 75° toward it (${(wrap(turned.yaw - Math.PI) / DEG).toFixed(1)}°)`);
+  const pick = (dA, degA) => {
+    const { F } = fighterAt(FLAT, 0, 0, Math.PI);
+    const a = Math.PI + degA * DEG, A = makePost(FLAT, Math.sin(a) * (dA + 0.4), Math.cos(a) * (dA + 0.4), { r: 0.4 });
+    const B = makePost(FLAT, 0, -(3 + 0.4), { r: 0.4 });
+    play(F, 1, { attack: true }, [A, B]);
+    return F.f.target === A ? 'A' : F.f.target === B ? 'B' : null;
+  };
+  // A at 2.0 m and 30° scores 2 + 2 × 0.524 = 3.05 against B at 3.0 m straight ahead; at 25° it scores 2.87
+  assert.equal(pick(2, 30), 'B', 'the score adds 2 per radian of turn: B is nearer the facing');
+  assert.equal(pick(2, 25), 'A', 'and A wins when it is close enough to the facing');
+  pass('soft aim: 4.5 m, ±70° held or ±100° free, a turn of 75°, 2 per radian of turn');
+}
+{ // a wall 0.2 m thin: the sight test steps 0.25 m, so a post behind it is neither aimed at nor hit, even when it comes into the
+  // blade's reach after the aim (the blade tests the sight line itself)
+  const THIN = layered((x, z) => (x >= 3 && x < 3.2 ? 3 : 0));
+  const a = fighterAt(THIN, 1.2, 0, Math.PI / 2);
+  const behind = makePost(THIN, 4.2, 0, { r: 0.4 });
+  assert(!sees(THIN, a.s, behind), 'the thin wall hides the post');
+  const ev = play(a.F, 30, i => ({ attack: i === 0 }), [behind]);
+  assert(a.F.f.target !== behind && hits(ev).length === 0, 'not aimed at and not hit');
+  const b = fighterAt(THIN, 1.6, 0, Math.PI / 2);
+  const post = makePost(THIN, 1.6, -9, { r: 0.4 });
+  const ev2 = play(b.F, 30, i => {
+    if (b.F.f.move === 'hit' && b.F.f.t === HITS[0].wind) { post.x = 3.6; post.z = b.s.z; }
+    return { attack: i === 0 };
+  }, [post]);
+  assert(Math.hypot(post.x - b.s.x, post.z - b.s.z) - post.r < HITS[0].reach, 'the post is in reach');
+  assert.equal(hits(ev2).length, 0, 'the blade does not cut through the wall');
+  pass('the sight test finds a wall 0.2 m thin: no aim and no hit through it');
+}
+
 /* ---------------- soft aim and the clear line ---------------- */
 { // a post 2 m to its edge at 60° right of the facing, no direction held: the lamplighter turns to it and the cut hits it
   const yaw = Math.PI, { s, F } = fighterAt(FLAT, 0, 0, yaw);
@@ -278,7 +387,10 @@ function runFor(R, count, inp = {}, camYaw = 0) {
 }
 { // under an arch with 2.2 m of clearance: the line from the eye to the chest is clear, and the cut turns to the post
   const { s, F } = fighterAt(ARCH, -0.5, 0.8, Math.PI / 2);
-  const post = makePost(ARCH, 2.5, 0, { r: 0.4 });
+  // the post stands on the floor under the arch, not on its roof (y 3): the line runs under the underside
+  const post = makePost(ARCH, 2.5, 0, { r: 0.4, y: 0 });
+  assert(post.y < 2.2, `the post stands on the floor under the arch (y ${post.y})`);
+  assert(makePost(ARCH, 2.5, 0).y === 3, 'with no height given, makePost stands a post on the top');
   assert(Math.hypot(post.x - s.x, post.z - s.z) > 2.9, 'the post stands 3 m away');
   assert(clearLine(ARCH, s.x, s.y + 1.2, s.z, post.x, post.y + 0.9, post.z), 'the line under the arch is clear');
   assert(!clearLine(ARCH, -1, 2.6, 0, 3, 2.6, 0), 'a line through the arch between its underside and its top is not');
@@ -358,14 +470,20 @@ function runFor(R, count, inp = {}, camYaw = 0) {
 }
 { // the ledge guard: a 6 m drop 1 m away, no direction held: it stops at the edge; with the stick toward the drop it rolls off
   const guard = stickDown => {
-    // facing +z (yaw 0) at z -8, so a roll back goes toward -z, where the drop is past z -9
+    // facing +z (yaw 0) at z -8, so a roll back goes toward -z, where the drop is past z -9. The stick is held only during the roll's
+    // 22 steps: the roll itself must go over the edge, not a walk after it
     const { F, s } = fighterAt(FLAT, 8, -8, 0);
-    play(F, 90, i => ({ roll: i === 0, mz: stickDown ? -1 : 0 }), [], Math.PI);
-    return { y: s.y, z: s.z, ground: s.ground };
+    let left = null;
+    for (let i = 0; i < 90; i++) {
+      F.step({ roll: i === 0, mz: stickDown && i < MOVES.roll.steps ? -1 : 0 }, Math.PI, [], []);
+      if (left === null && !s.ground) left = { i, move: F.f.move };
+    }
+    return { y: s.y, z: s.z, ground: s.ground, left };
   };
   const a = guard(false), b = guard(true);
-  assert(a.ground && a.y === 0 && a.z > -9.05 && a.z < -8.5, `it stopped at the edge: ${JSON.stringify(a)}`);
-  assert(b.y < -5, `with the stick toward it, it rolled off: ${JSON.stringify(b)}`);
+  assert(a.ground && a.y === 0 && a.z > -9.05 && a.z < -8.5 && a.left === null, `it stopped at the edge: ${JSON.stringify(a)}`);
+  assert(b.left && b.left.move === 'roll', `with the stick toward it, the roll itself left the ground: ${JSON.stringify(b.left)}`);
+  assert(b.y < -5, `and it fell: ${JSON.stringify(b)}`);
   // into a wall 1.5 m away it stops at the wall; at 30° it slides along it
   const { F, s } = fighterAt(FLAT, 2.2, 0, 0);
   play(F, 40, i => ({ roll: i === 0, mx: i < 2 ? 1 : 0 }));
@@ -424,6 +542,32 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   pass('Heavy fall reaches 2.0 m; under 0.8 m Attack does the first cut with no lunge');
 }
 
+{ // the plunge's numbers: it hangs 5 steps, falls 16 m/s (16/60 m a step), deals at most 28, and recovers 0.30 s after it lands
+  const { F, s } = fighterAt(FLAT, 0, 0, 0);
+  s.y = 2; s.ground = false; s.floor = 0; s.vy = 0;
+  const ys = [], moves = [];
+  for (let i = 0; i < 40; i++) { F.step({ attack: i === 0 }, 0, [], []); ys.push(s.y); moves.push(F.f.move); }
+  // the press starts the hang and is its first step: 5 steps at 2 m, the last of which turns it into the plunge
+  assert.equal(ys.findIndex(y => y < 2 - 1e-9), 5, `it hangs 5 steps: ${ys.slice(0, 7).map(y => y.toFixed(3))}`);
+  assert.deepEqual([moves[0], moves[3], moves[4]], ['hang', 'hang', 'plunge']);
+  assert(near(ys[5] - ys[6], 16 / 60, 1e-6) && near(ys[6] - ys[7], 16 / 60, 1e-6), `then 16/60 m a step: ${ys[5] - ys[6]}`);
+  const landed = moves.indexOf('land');
+  assert.equal(moves.slice(landed).filter(m => m === 'land').length, MOVES.plunge.rec, 'the landing recovers 18 steps');
+  const deep = fighterAt(FLAT, 0, 0, 0);
+  deep.s.y = 6; deep.s.ground = false; deep.s.floor = 0;
+  const post = makePost(FLAT, 0.5, 0, { r: 0.4 });
+  play(deep.F, 60, i => ({ attack: i === 0 }), [post]);
+  assert.equal(post.taken, 28, `a plunge of 6 m deals the cap of 28 (${post.taken})`);
+  pass('the plunge hangs 5 steps, falls at 16 m/s, deals at most 28 and recovers 0.30 s');
+}
+{ // a move holds the jump: a jump held through a roll does not fire when the roll ends
+  const { F, s } = fighterAt(FLAT, 0, 0, 0);
+  let jumped = false;
+  for (let i = 0; i < 50; i++) { F.step({ roll: i === 0, jump: i >= 5 }, 0, [], []); if (!s.ground) jumped = true; }
+  assert(!jumped, 'the jump held through the roll does not fire after it');
+  pass('a move holds the jump');
+}
+
 /* ---------------- the flask ---------------- */
 {
   const { R, rs } = runnerAt(FLAT, 0, 0);
@@ -457,6 +601,17 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   assert(Math.hypot(d.s.x, d.s.z) <= 1.5 * 0.8 + 0.02, `walked ${Math.hypot(d.s.x, d.s.z)} while drinking`);
   pass('the flask: 0.8 s heals 35, a hit stops it and keeps the flask, full health and no flask keep it');
 }
+{ // a drink that ends after the flasks went to 0 (a test hook during the drink) heals nothing and takes nothing
+  const { R, rs } = runnerAt(FLAT, 0, 0);
+  rs.run.hp = 40;
+  runFor(R, 20, i => ({ heal: i === 0 }));
+  assert.equal(R.fighter.f.move, 'drink');
+  rs.run.flasks = 0;
+  const ev = runFor(R, 40);
+  assert.deepEqual([rs.run.flasks, rs.run.hp], [0, 40], `no flask below 0 and no heal: ${rs.run.flasks}, ${rs.run.hp}`);
+  assert(!ev.some(e => e.type === 'store'), 'nothing to store');
+  pass('a drink that ends with no flask left takes none and heals nothing');
+}
 { // the fifth wisp of a place fills one flask, and each wisp gives 4 glim
   const meta = { wisps: [0, 1, 2, 3, 4].map(i => ({ p: [i * 3 - 6, 0.8, 5], ids: [0, 0] })), beacon: { p: [90, 0, 90], r: 1.2 } };
   const { R, rs, body } = runnerAt(FLAT, 0, 0, 0, { meta });
@@ -484,6 +639,12 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   assert.equal(R.hurt(16, [0, -1], {}, []), 'safe', 'within 0.9 s');
   runFor(R, 60);
   assert.equal(R.hurt(16, [0, -1], {}, []), 'hit', 'after it');
+  // the safe time is 54 play steps: a hit 53 play steps after the last one passes, one 55 steps after lands
+  const p0 = R.clock.play;
+  while (R.clock.play - p0 < 53) R.step({}, 0);
+  assert.equal(R.hurt(16, [0, -1], {}, []), 'safe', '53 play steps after a hit: still safe');
+  while (R.clock.play - p0 < 55) R.step({}, 0);
+  assert.equal(R.hurt(16, [0, -1], {}, []), 'hit', '55 play steps after: the hit lands');
   // the Ironback's charge pushes 3 m
   const b = runnerAt(FLAT, -10, 10);
   b.R.hurt(24, [-10, 9], { push: 3 }, []);
@@ -496,6 +657,16 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   for (let i = 0; i < 20; i++) { c.R.step({}, 0); bl.push(c.s.hide ? 1 : 0); }
   assert.deepEqual(bl.slice(0, 17), [1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1]);
   pass('a hit: its damage, a push of 1.2 m (3 m from a charge), 0.25 s without control, 0.9 s safe, the blink every 4 steps (8 with reduced motion)');
+}
+{ // after a lethal hit the blink stops: the figure shows through the whole death fade (72 steps) and after it
+  const { R, rs, s } = runnerAt(FLAT, 0, 0);
+  rs.run.hp = 10;
+  runFor(R, 5);
+  assert.equal(R.hurt(16, [0, -1], {}, []), 'dead');
+  const hidden = [];
+  for (let i = 0; i < 80; i++) { R.step({}, 0); hidden.push(s.hide ? 1 : 0); }
+  assert.equal(hidden.reduce((a, b) => a + b, 0), 0, `the figure shows after death: ${hidden.join('')}`);
+  pass('the hurt blink stops at death');
 }
 { // a fall below y -25: back on the ground it left, at least 1 m from the edge, with 10 health less
   const { R, rs, s } = runnerAt(HOLE, 0, 0);
@@ -536,6 +707,9 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   assert(chooseWick(rs, 'long'));
   assert.deepEqual([rs.run.hp, maxOf(rs)], [80, 120]);
   assert(!chooseWick(rs, 'keen'), 'one wick a beacon');
+  const lw = RS.clean(JSON.parse(JSON.stringify(rs)));
+  reload(lw.run);
+  assert.deepEqual([lw.run.hp, maxOf(lw)], [80, 120], 'Long wick after a reload: 80 of 120');
   const b = RS.fresh();
   b.bank = 50;
   startRun(b, 3);
@@ -608,10 +782,10 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   startRun(rs, 9);
   assert.deepEqual([rs.run.hp, rs.run.flasks, healOf(rs.up, maxOf(rs))], [145, 4, 80]);
   assert(near(bladeBonus(rs.up, []), 0.36, 1e-9));
-  rs.run.carried = 20;
+  rs.run.carried = 25;
   const e = die(rs);
-  assert.deepEqual([e.lost, e.banked, rs.bank, rs.deaths, rs.runs, rs.run], [14, 6, 6, 1, 1, null], 'Ash pocket banks 6 of 20 and 14 are lost');
-  pass('every upgrade: 145 health, 4 flasks, 55% heals, +36% blade, Ash pocket keeps 30%');
+  assert.deepEqual([e.lost, e.banked, rs.bank, rs.deaths, rs.runs, rs.run], [18, 7, 7, 1, 1, null], 'Ash pocket banks 7 of 25 (30% rounded down) and 18 are lost');
+  pass('every upgrade: 145 health, 4 flasks, 55% heals, +36% blade, Ash pocket keeps 30% rounded down');
 }
 { // the wick offers: the seed and the wicks chosen decide them; a wick chosen never comes back
   const runTo = (seed, picks) => {
@@ -635,6 +809,7 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   assert.deepEqual(drawOffer(7, 0, []), a.offers[0]);
   // the third beacon (The Bell Knoll's card) offers two of the four not yet chosen; the fourth two of the three left
   assert(a.offers[3].every(w => !a.wicks.slice(0, 3).includes(w)));
+  for (let sd = 1; sd <= 500; sd++) for (let k = 0; k < 4; k++) { const o = drawOffer(sd, k, []); assert(o.length === 2 && o[0] !== o[1], `seed ${sd}, beacon ${k}: two different wicks (${o})`); }
   const seeds = new Set();
   for (let sd = 1; sd < 60; sd++) seeds.add(drawOffer(sd, 0, []).join());
   assert(seeds.size >= 10, `the seeds give different offers: ${seeds.size}`);
@@ -669,10 +844,12 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   const meta = { wisps: [], beacon: { p: [3, 0, 0], r: 1.2 } };
   const { R, rs, body } = runnerAt(FLAT, 0, 0, 0, { meta });
   rs.run.carried = 9;
+  rs.run.flasks = 1;
   body.place([3, 0, 0], 0);
   const ev = runFor(R, 2);
   assert(ev.some(e => e.type === 'beacon') && ev.some(e => e.type === 'store'));
   assert.deepEqual([rs.bank, rs.run.carried, rs.run.place, rs.run.offer.length, rs.run.entry.hp], [9, 0, 'ramparts', 2, 100]);
+  assert.deepEqual([rs.run.flasks, rs.run.entry.flasks], [2, 2], 'the beacon fills the flasks: 1 of 2 becomes 2');
   // a beacon whose keepers stand stays dark (the guard rule comes with the foes)
   const g = runnerAt(FLAT, 0, 0, 0, { meta });
   g.R.lightable = () => ({ ok: false, why: 'The beacon will not catch while its keepers stand in the keep' });
@@ -735,6 +912,7 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   assert.equal(s.run.offer, null, 'an offer that holds a wick already chosen is dropped');
   assert.equal(RS.clean(bad[5]).up.mantle, 3, 'a level is clamped');
   assert.equal(RS.clean(bad[7]).ended, null);
+  assert.equal(RS.clean({ run: { place: 'ramparts', offer: ['oil', 'oil'] } }).run.offer, null, 'an offer of one wick twice is dropped');
   // a run in Lantern Fen that banked 30 and put out 7 comes back with its entry
   const rs = RS.fresh();
   startRun(rs, 11);
@@ -791,6 +969,23 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   assert(!sw.jump && sw.nav.a, 'a swallowed A does not jump, but the cards still see it');
   const tilt = readPads([pad([], [0.3, -0.25, 0, 0])], true);
   assert(near(Math.hypot(tilt.mx, tilt.mz), Math.hypot(0.3, 0.25), 1e-9), 'a light tilt is passed as it is, so step walks');
+  // two pads: each stick is the one tilted furthest, whatever the order, so a pad whose stick drifts does not take over
+  for (const order of [0, 1]) {
+    const list = [pad([], [0.25, 0, 0.3, 0]), pad([], [0, -0.9, 0, 0.8])];
+    const two2 = readPads(order ? list.reverse() : list, true);
+    assert(near(two2.mz, 0.9, 1e-9) && two2.mx === 0 && near(two2.oy, 0.8, 1e-9), `the furthest stick wins (order ${order}): ${two2.mx}, ${two2.mz}`);
+  }
+  // the keys or the touch stick win while the pad's left stick is under the walk threshold; a pad tilted past it wins
+  assert.deepEqual(pickMove({ mx: 0, mz: 1 }, { mx: 0.19, mz: 0 }), { mx: 0, mz: 1 }, 'a drifting stick does not take over the keys');
+  assert.deepEqual(pickMove({ mx: 0, mz: 1 }, { mx: -0.6, mz: 0 }), { mx: -0.6, mz: 0 }, 'a real tilt wins');
+  assert.deepEqual(pickMove({ mx: 0, mz: 0 }, { mx: 0.19, mz: 0 }), { mx: 0.19, mz: 0 }, 'with no key held a light tilt is passed on');
+  assert.equal(WALK_MIN, 0.2);
+  // a card that opens with the stick held: no move, at once or held, until it comes back to centre
+  const held = heldNav({ dir: 0, t: 0 }, { next: false, prev: true }), got = [];
+  for (let i = 0; i < 60; i++) got.push(navStep(held, { next: false, prev: true }, 1 / 60));
+  assert(got.every(m => m === 0), 'a way held when the card opens moves nothing');
+  assert.equal(navStep(held, { next: false, prev: false }, 1 / 60), 0);
+  assert.equal(navStep(held, { next: false, prev: true }, 1 / 60), -1, 'back to centre, then a new press moves');
   // the focus: a tilt past half moves one button, and again every 0.3 s while held
   const st = { dir: 0, t: 0 }, moves = [];
   for (let i = 0; i < 60; i++) moves.push(navStep(st, { next: true, prev: false }, 1 / 60));

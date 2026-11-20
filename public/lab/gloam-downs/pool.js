@@ -134,38 +134,44 @@ export function readFigures(json) {
 
 /* ---------------- the pool ----------------
    makePool(world, meta, slots): world is the place as world.js loads it (its anim holds the lamplighter's bones); slots is a list of
-   { code, type, src } with src the figure file's decoded { data } (foes or boss). The world's data, count and anim are replaced with
-   ones that hold the slots. Every slot starts parked. pool.rows holds the 512-splat rows changed since the page last drew; the page
-   passes them to the renderer as changedRows and clears the set. */
-const FLASH = 0xff + 0xf4 * 256 + 0xcc * 65536; // fire step 5, fff4cc: the hit flash
+   { code, type, src } with src the figure file's decoded { data } (foes or boss), or { code, reserve: { count, bones } } for a figure
+   whose file has not come in yet (the Barrow Reeve and its candles: foes.json.gz holds their counts). The world's data, count and anim
+   are replaced with ones that hold the slots. Every slot starts parked; a reserved slot's rows are empty (density 0) and its bones put
+   away until fill() copies its figure in. A place's pool is built once: the beacon, the wisps and the awake slots keep their state.
+   pool.rows holds the 512-splat rows changed since the page last drew; the page passes them to the renderer as changedRows and clears
+   the set. */
+// the hit flash: fire slot 35 (ff9a32). Steps 4 and 5, darkened by the outlines and the contact shade, snap to each place's pale greys
+// and tans; slot 35 stays fire (qa/lab/gloam-downs-run.lineup.e2e.mjs measures it in the page)
+export const FLASH = 0xff + 0x9a * 256 + 0x32 * 65536;
+// a figure's rows copied into its slot, parked, with its bone ids moved after the bones before it
+function copyIn(data, s) {
+  data.set(s.src.data.subarray(s.type.first * 16, s.type.end * 16), s.first * 16);
+  for (let i = s.first; i < s.end; i++) {
+    const o = i * 16, kind = data[o + 11] % 16;
+    data[o + 3] = 0; // parked
+    if (kind !== 12 && kind !== 13) continue; // a plain splat (a grave candle) rides no bone: its numbers there are its flicker
+    data[o + 12] += s.base;
+    if (data[o + 14] > 0) data[o + 13] += s.base;
+  }
+}
 export function makePool(world, meta, slots) {
-  const base0 = meta.bones.names.length, lampFirst = meta.bones.first, lampEnd = meta.bones.end;
-  // the place's own rows, kept so that a later call (when the boss files come in) builds the pool again from them
-  world.place ||= { data: world.data.subarray(0, world.count * 16), count: world.count };
-  let count = world.place.count, nb = base0;
-  const list = slots.map(({ code, type, src }, i) => {
-    const n = type.end - type.first, s = { i, code, type, src, first: count, end: count + n, base: nb, awake: false, flash: false };
+  const base0 = meta.bones.names.length, lampFirst = meta.bones.first, lampEnd = meta.bones.end, placeCount = world.count;
+  let count = placeCount, nb = base0;
+  const list = slots.map(({ code, type, src, reserve }, i) => {
+    const n = type ? type.end - type.first : reserve.count, nbones = type ? type.bones.length : reserve.bones;
+    const s = { i, code, type: type || null, src: src || null, first: count, end: count + n, base: nb, nbones, awake: false, flash: false };
     count += n;
-    nb += type.bones.length;
+    nb += nbones;
     return s;
   });
   const data = new Float32Array(count * 16);
-  data.set(world.place.data);
-  for (const s of list) {
-    data.set(s.src.data.subarray(s.type.first * 16, s.type.end * 16), s.first * 16);
-    for (let i = s.first; i < s.end; i++) {
-      const o = i * 16, kind = data[o + 11] % 16;
-      data[o + 3] = 0; // parked
-      if (kind !== 12 && kind !== 13) continue; // a plain splat (a grave candle) rides no bone: its numbers there are its flicker
-      data[o + 12] += s.base;
-      if (data[o + 14] > 0) data[o + 13] += s.base;
-    }
-  }
+  data.set(world.data.subarray(0, placeCount * 16));
+  for (const s of list) if (s.type) copyIn(data, s);
   const bones = new Float32Array(12 * nb);
   bones.set(world.anim.bones.subarray(0, 12 * base0));
   for (const s of list) {
-    s.bones = bones.subarray(12 * s.base, 12 * (s.base + s.type.bones.length));
-    for (let b = 0; b < s.type.bones.length; b++) writeBone(bones, s.base + b, PUT_AWAY);
+    s.bones = bones.subarray(12 * s.base, 12 * (s.base + s.nbones));
+    for (let b = 0; b < s.nbones; b++) writeBone(bones, s.base + b, PUT_AWAY);
   }
   world.data = data;
   world.count = count;
@@ -174,7 +180,7 @@ export function makePool(world, meta, slots) {
   const touch = s => { for (let r = s.first >> 9; r <= (s.end - 1) >> 9; r++) rows.add(r); };
   // the lamplighter and the awake slots ride the bones; a parked slot is at density 0, so its order does not matter
   const rebuild = () => {
-    const on = list.filter(s => s.awake && s.type.bones.length);
+    const on = list.filter(s => s.awake && s.nbones);
     const out = new Int32Array(on.reduce((n, s) => n + s.end - s.first, lampEnd - lampFirst));
     let k = 0;
     for (let i = lampFirst; i < lampEnd; i++) out[k++] = i;
@@ -189,12 +195,28 @@ export function makePool(world, meta, slots) {
   };
   const slotOf = q => (typeof q === 'number' ? list[q] : q);
   const pool = {
-    slots: list, rows, bones,
-    // a free slot of this type (code 'S', 'P', 'M', 'I', 'B' or 'L'), or null
-    free: code => list.find(s => s.code === code && !s.awake) || null,
+    slots: list, rows, bones, placeCount,
+    // a free slot of this type (code 'S', 'P', 'M', 'I', 'B' or 'L') whose figure is in, or null
+    free: code => list.find(s => s.code === code && !s.awake && s.type) || null,
+    /* the figure file of a reserved slot has come in: copy its rows into each slot of that code that waits for it, parked. src is the
+       file ({ json, data } as figures.js loads it). Nothing else in the place changes */
+    fill(code, src) {
+      const type = src.json.types[code];
+      for (const s of list) {
+        if (s.code !== code || s.type) continue;
+        if (!type || type.end - type.first !== s.end - s.first || type.bones.length !== s.nbones)
+          throw new Error(`the ${code} slot holds ${s.end - s.first} splats on ${s.nbones} bones, the file ${type ? `${type.end - type.first} on ${type.bones.length}` : 'none'}`);
+        s.type = type;
+        s.src = src;
+        type.groundBones ||= groundOf(type);
+        copyIn(data, s);
+        touch(s);
+      }
+    },
     // wake a slot at a point: on the bones first, then its density back; it stands at rest until posed again
     wake(q, at, clip = 'rest', t = 0) {
       const s = slotOf(q);
+      if (!s.type) throw new Error(`the ${s.code} slot waits for its figure file`);
       s.awake = true;
       rebuild();
       pool.pose(s, at, clip, t);
@@ -207,7 +229,7 @@ export function makePool(world, meta, slots) {
       if (s.flash) pool.flash(s, false);
       density(s, false);
       s.awake = false;
-      for (let b = 0; b < s.type.bones.length; b++) writeBone(bones, s.base + b, PUT_AWAY);
+      for (let b = 0; b < s.nbones; b++) writeBone(bones, s.base + b, PUT_AWAY);
       rebuild();
     },
     /* pose a slot from its clip at time t (seconds) at { x, y, z, yaw, floor? }; the shadow lies on floor (default: the feet). The
@@ -236,7 +258,7 @@ export function makePool(world, meta, slots) {
     },
     place: (q, name, p, yaw, size) => { const s = slotOf(q); placeBone(bones, s.base, s.type, name, p, yaw, size); },
     hide: (q, name) => { const s = slotOf(q); hideBone(bones, s.base, s.type, name); },
-    // the hit flash: the figure's packed colour turns fire step 5, then its own colour comes back (one upload of its rows each way).
+    // the hit flash: the figure's packed colour turns fire slot 35, then its own colour comes back (one upload of its rows each way).
     // The shadow and the markers keep their colour.
     flash(q, on) {
       const s = slotOf(q);
@@ -251,6 +273,7 @@ export function makePool(world, meta, slots) {
       touch(s);
     }
   };
-  for (const s of list) s.type.groundBones ||= new Set(s.type.bones.map((b, i) => (b.parent === 'ground' ? i : -1)).filter(i => i >= 0));
+  for (const s of list) if (s.type) s.type.groundBones ||= groundOf(s.type);
   return pool;
 }
+const groundOf = type => new Set(type.bones.map((b, i) => (b.parent === 'ground' ? i : -1)).filter(i => i >= 0));

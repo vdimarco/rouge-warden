@@ -8,7 +8,8 @@
 //   - every route walked twice (lib/zones.mjs ROUTES): by a runner, who clears only the guard zone, and by a fighter, who clears each
 //     zone it wakes; never more than 6 awake, never more of a type than the pool holds; each waypoint on the floor and in reach;
 //   - every point that can be reached: never more than 6 awake;
-//   - the Ironback walls: a rise of 2 m or more within 0.5 m, within 3 m past the leash of each zone with an Ironback;
+//   - the Ironback walls: a floor (the one under any gap, so not the top of an overhang) 2 m or more higher 0.5 m on, within 3 m past
+//     the leash of each zone with an Ironback;
 //   - the distances: each guard zone to its beacon, and no other zone within 25 m of the arena.
 // Run alone: node qa/lab/gloam-downs-zones.mjs   (prints a report; exits with 1 on a failure)
 import fs from 'node:fs';
@@ -72,8 +73,10 @@ export function makeRoom(guard, awake, pool, x, z) {
    Points every 0.5 m along the waypoints. At each point a zone not cleared and asleep wakes within 10 m if it fits (a guard zone takes
    the room it needs), and an awake zone sleeps beyond 16 m. A runner clears only the guard zone (it fights the keepers), a fighter
    each zone it wakes. Returns the most foes awake at once, the most of each type, the order zones woke in and the zones that waited. */
-export function walkRoute(id, mode) {
-  const zones = ZONES[id].filter(z => !z.boss), pool = poolTypes(id), wp = ROUTES[id], pts = [];
+export const walkRoute = (id, mode) => walkPath(id, ROUTES[id], mode);
+// the same walk along any waypoints [x, y, z] (a test walks out of a zone's reach and back)
+export function walkPath(id, wp, mode) {
+  const zones = ZONES[id].filter(z => !z.boss), pool = poolTypes(id), pts = [];
   for (let k = 0; k < wp.length - 1; k++) {
     const a = wp[k], b = wp[k + 1], n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[2] - a[2]) / 0.5));
     for (let i = 0; i < n; i++) pts.push([a[0] + ((b[0] - a[0]) * i) / n, a[2] + ((b[2] - a[2]) * i) / n]);
@@ -151,14 +154,15 @@ export function everyPoint(id, walk, R, meta) {
 }
 
 /* ---------------- the walls round an Ironback ----------------
-   On bearings 3° apart from the zone's centre: the first point out to 3 m past the leash where the top 0.5 m further on is 2 m or more
-   over the floor here. Returns the bearings (degrees) and their distances. */
+   On bearings 3° apart from the zone's centre: the first point out to 3 m past the leash where the floor 0.5 m further on is 2 m or
+   more over the floor here. The floor is the one under any gap, so the top of an overhang (a tree's crown, a roof over open floor),
+   which a charging body runs under, is no wall. Returns the bearings (degrees) and their distances. */
 export function ironWalls(walk, zone) {
   const [cx, , cz] = zone.c, L = zone.leash, found = [];
   for (let a = 0; a < 360; a += 3) {
     const s = Math.sin((a * Math.PI) / 180), c = Math.cos((a * Math.PI) / 180);
     for (let r = 0; r + RULE.wallWithin <= L + RULE.wallPast; r += 0.1) {
-      const rise = walk.top(cx + (r + RULE.wallWithin) * s, cz + (r + RULE.wallWithin) * c) - walk.floor(cx + r * s, cz + r * c);
+      const rise = walk.floor(cx + (r + RULE.wallWithin) * s, cz + (r + RULE.wallWithin) * c) - walk.floor(cx + r * s, cz + r * c);
       if (rise >= RULE.wallRise) { found.push([a, +(r + RULE.wallWithin).toFixed(1)]); break; }
     }
   }
@@ -176,7 +180,7 @@ export function survey(dir = DIR) {
       const y = floorAt(walk, z.c[0], z.c[2]);
       ok(y !== null && Math.abs(y - z.c[1]) <= 0.3, `${id} ${z.id}: its centre's height ${z.c[1]} is the floor there (${y?.toFixed(2)})`);
       ok(R.near([z.c[0], y + 0.5, z.c[2]], 0.8), `${id} ${z.id}: its centre can be reached from the start`);
-      ok(foesOf(z).length <= RULE.cap, `${id} ${z.id}: ${foesOf(z).length} foes, no more than ${RULE.cap}`);
+      ok(foesOf(z).length <= 6, `${id} ${z.id}: ${foesOf(z).length} foes, no more than 6`);
     }
     // the pool holds a slot of every type the zones use, and enough of each for every zone alone
     for (const z of zones) for (const [t, k] of Object.entries(foesOf(z).reduce((n, t) => ((n[t] = (n[t] || 0) + 1), n), {})))
@@ -186,10 +190,10 @@ export function survey(dir = DIR) {
     const off = ROUTES[id].filter(([x, y, z]) => { const f = walk.support(x, z, y + 0.5); return f === null || Math.abs(f - y) > 0.6 || !R.near([x, f + 0.5, z], 0.8); });
     ok(!off.length, `${id}: the ${ROUTES[id].length} waypoints of its route are on the floor and can be reached${off.length ? ` (not: ${off.map(p => p.join(',')).join(' ')})` : ''}`);
     const every = everyPoint(id, walk, R, meta);
-    ok(every.most <= RULE.cap, `${id}: at every point that can be reached, at most ${RULE.cap} foes awake (${every.most}; the most in range is ${every.inRange}, at ${every.at})`);
+    ok(every.most <= 6, `${id}: at every point that can be reached, at most 6 foes awake (${every.most}; the most in range is ${every.inRange}, at ${every.at})`);
     for (const mode of ['runner', 'fighter']) {
       const r = walkRoute(id, mode);
-      ok(r.most <= RULE.cap, `${id}: a ${mode} on the route has at most ${RULE.cap} foes awake (${r.most}; woke ${r.order.join(' ')}${r.waited.length ? `; waited ${r.waited.join(' ')}` : ''}${r.gaveUp.length ? `; gave up slots ${r.gaveUp.join(' ')}` : ''})`);
+      ok(r.most <= 6, `${id}: a ${mode} on the route has at most 6 foes awake (${r.most}; woke ${r.order.join(' ')}${r.waited.length ? `; waited ${r.waited.join(' ')}` : ''}${r.gaveUp.length ? `; gave up slots ${r.gaveUp.join(' ')}` : ''})`);
       ok(Object.entries(r.mostType).every(([t, k]) => k <= (pool[t] || 0)), `${id}: a ${mode} never has more of a type awake than the pool holds (${JSON.stringify(r.mostType)})`);
       const guard = zones.find(z => z.guard && !z.boss);
       if (guard) ok(r.order.includes(guard.id), `${id}: a ${mode} wakes the guard zone ${guard.id}`);
