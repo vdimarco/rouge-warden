@@ -129,6 +129,25 @@ On a touch screen in a run, the page SHALL show Attack, Jump, Roll and Heal butt
 - **WHEN** one finger drags the look on the right half while another holds Attack
 - **THEN** the view turns and the string goes on
 
+### Requirement: The Map and Look tools in a run
+In a run, the Map tool SHALL open the pause panel, and the Look tool SHALL face the nearest awake foe within 10 m, or look ahead when there is none. A tap and a mouse click on a tool SHALL do the same thing. A press on a tool SHALL not swing the blade, and SHALL not start the stick or the look drag.
+
+#### Scenario: Map on a phone
+- **WHEN** the player taps Map in a fight on a touch screen
+- **THEN** the pause panel opens, no foe moves while it shows, and Resume goes back to the fight
+
+#### Scenario: Look on a phone
+- **WHEN** an awake Snuffer stands 6 m behind the lamplighter and the player taps Look
+- **THEN** the view turns until the Snuffer is in front of the camera
+
+#### Scenario: Look with no foe near
+- **WHEN** no foe is awake within 10 m and the player taps Look
+- **THEN** the view turns to look ahead of the lamplighter, as in the explorer
+
+#### Scenario: Tools with a mouse
+- **WHEN** an awake foe stands 6 m to the side and the player clicks Look and then Map with the left button
+- **THEN** the view turns to the foe, then the pause panel opens, and the lamplighter does not swing
+
 ### Requirement: Gamepad in a run
 In a run, the left stick SHALL move and a light tilt SHALL walk. The right stick SHALL turn the view. A SHALL jump, X or RT SHALL attack, B or LT SHALL roll, Y SHALL heal, RB SHALL face the nearest awake foe, and Start or Back SHALL open and close the pause panel. A held button SHALL count once across all pads.
 
@@ -139,6 +158,32 @@ In a run, the left stick SHALL move and a light tilt SHALL walk. The right stick
 #### Scenario: Two pads
 - **WHEN** two pads hold Start at the same time
 - **THEN** the pause panel opens once and does not close again
+
+### Requirement: Combat camera
+In a run, while a zone is awake and the view has had no look input for 0.8 s, the camera SHALL turn at no more than 0.9 rad/s toward the nearest awake foe, until that foe is within 20° of the view's centre. Look input SHALL take control back on the same step. While a zone is awake, this SHALL take the place of the explorer's swing behind a running lamplighter. The camera SHALL still come closer in front of a hill or a wall.
+
+#### Scenario: The camera turns to a foe
+- **WHEN** an awake Snuffer stands 5 m away at 60° to the right of the view's centre and the player gives no look input for 0.8 s
+- **THEN** the view starts to turn right, turns no faster than 0.9 rad/s, and stops when the Snuffer is within 20° of the centre
+
+#### Scenario: Look input wins
+- **WHEN** the camera turns by itself and the player presses Q, drags the look or moves the right stick
+- **THEN** the turn stops on that step, the view follows only the player's input, and the camera turns by itself again only after 0.8 s with no look input
+
+#### Scenario: No zone awake
+- **WHEN** the last awake zone goes to sleep or its last foe goes out
+- **THEN** the camera stops turning toward foes, and it swings behind a running lamplighter as in the explorer
+
+### Requirement: Boss camera
+In the boss fight, the camera SHALL aim at a point 0.35 of the way from the lamplighter to the boss and SHALL pull back to 10.5 m, eased over 1 s. After 0.6 s with no look input, it SHALL turn at no more than 1.5 rad/s until the boss is within 20° of the view's centre. Look input SHALL take control back on the same step. When the boss falls or the lamplighter leaves the arena, the camera SHALL ease back to the follow camera over 1 s.
+
+#### Scenario: Boss in view
+- **WHEN** the boss fight goes on, the lamplighter runs round the boss, and the player gives no look input
+- **THEN** after 0.6 s the view turns no faster than 1.5 rad/s, and the boss and the lamplighter both stay on screen
+
+#### Scenario: Leave the arena
+- **WHEN** the lamplighter walks out of the arena
+- **THEN** within 1 s the camera is back at the follow camera's distance and aim
 
 ### Requirement: Health and hits
 The lamplighter SHALL have 100 health at the start of a run. A hit SHALL take its damage, push the lamplighter about 1.2 m away from the source, take its control for 0.25 s, and keep it from more damage for 0.9 s while the figure blinks. Foes SHALL not hurt the lamplighter by touch alone.
@@ -166,7 +211,7 @@ Below 30% health, the health bar SHALL pulse, a heartbeat SHALL sound, and the p
 - **THEN** the bar pulses, and the grade changes palette slots 1 to 31 at each beat while slots 32 to 47 stay as they are
 
 ### Requirement: Warning moves
-Every foe attack SHALL start with a wind-up of at least 0.55 s, and every boss attack with at least 0.60 s. Each wind-up SHALL show a pose, a fire glow on the foe and a sound. Each ring or lane attack SHALL also grow a marker on the ground over its wind-up. No foe hit SHALL take more than 24 health.
+Every foe attack SHALL start with a wind-up of at least 0.55 s, and every boss attack with at least 0.60 s. Each wind-up SHALL show a pose, a fire glow on the foe and a sound. Each ring or lane attack SHALL also grow a marker on the ground over its wind-up, in fire slots 34 to 37. No foe hit SHALL take more than 24 health.
 
 #### Scenario: A Snuffer winds up
 - **WHEN** a Snuffer starts its hook
@@ -216,15 +261,26 @@ The Ironback SHALL be a heavy brute under a cracked bell, from The Bell Knoll on
 - **THEN** the Ironback hits the wall, stands stunned for 2 s, and each hit on it deals 50% more
 
 ### Requirement: Zones and waking
-Foes SHALL stand in zones. A zone SHALL wake when the lamplighter comes within 10 m of its centre, if fewer than 6 foes are awake. Its foes SHALL rise from the ground: 0.6 s of ember cracks, then 0.9 s in which they cannot hurt or be hurt. A zone SHALL sleep when the lamplighter is more than 16 m away and its foes are home. A foe put out SHALL stay out for the rest of the run.
+Foes SHALL stand in zones. A zone SHALL wake when the lamplighter comes within 10 m of its centre, if its foes and the awake foes together are no more than 6 and the place's pool has a free slot for each of its foes. Its foes SHALL rise from the ground: 0.6 s of ember cracks, then 0.9 s in which they cannot hurt or be hurt. A zone SHALL sleep when the lamplighter is more than 16 m away and its foes are home.
 
 #### Scenario: A zone wakes
 - **WHEN** the lamplighter walks into the south yard of The Sunken Gaol
-- **THEN** ember cracks show, a Snuffer rises over 0.9 s, and a cut during the rise does no damage
+- **THEN** ember cracks show on the ground where the Snuffer will rise, the Snuffer rises over 0.9 s, and a cut during the rise does no damage
 
 #### Scenario: Never more than six
 - **WHEN** the lamplighter walks anywhere in any place
 - **THEN** no more than 6 foes are awake at once
+
+#### Scenario: Wait for a free slot
+- **WHEN** 3 Snuffers of the Gaol are awake and the lamplighter comes within 10 m of the keep, whose zone has 3 Snuffers
+- **THEN** the keep's zone stays asleep until one of the 3 is put out or goes to sleep, because the Gaol's pool has 5 slots
+
+### Requirement: Foes stay out
+A foe put out SHALL stay out until the run ends or a reload restarts the place. A zone that sleeps SHALL keep the health of its living foes.
+
+#### Scenario: Come back to a cleared zone
+- **WHEN** the lamplighter puts out the Snuffer of the Gaol's south yard, walks 20 m away and comes back in the same run
+- **THEN** the yard stays empty and no ember cracks show
 
 ### Requirement: Foes keep their ground
 A foe SHALL stay inside its zone's leash. A foe SHALL not walk off a ledge. A foe SHALL chase the lamplighter while it is within the leash plus 8 m, and SHALL walk home after 4 s farther away. A foe SHALL not heal at home. A foe knocked more than 6 m below its zone SHALL be put out and SHALL drop its glim.
@@ -263,15 +319,19 @@ In each place before Barrow Crown, one guard zone SHALL keep the beacon dark unt
 - **THEN** the beacon lights, the glim carried is banked, and the flasks are full
 
 ### Requirement: The beacon card
-The beacon card SHALL offer two wicks, drawn by the run's seed, and the player SHALL choose one. A wick SHALL last until the run ends. A run SHALL not offer the same wick twice. After the choice, the card SHALL offer Spend glim, which opens the Lamp-room, and Walk on, which loads the next place.
+The beacon card SHALL offer two wicks, drawn by the run's seed from the wicks that the run has not chosen, and the player SHALL choose one. A wick SHALL last until the run ends. A run SHALL not offer a wick that it has already chosen. After the choice, the card SHALL offer Spend glim, which opens the Lamp-room, and Walk on, which loads the next place.
 
 #### Scenario: Choose a wick
 - **WHEN** the beacon card shows Keen edge and Quick heels and the player chooses Keen edge
 - **THEN** every hit deals 15% more for the rest of the run, and Walk on loads the next place
 
 #### Scenario: Same seed
-- **WHEN** two runs with the same seed light the Gaol's beacon
-- **THEN** both beacon cards offer the same two wicks
+- **WHEN** two runs with the same seed light the Gaol's beacon, choose the same wick there, and light the beacon of Crow Ramparts
+- **THEN** both Gaol cards offer the same two wicks, and both Ramparts cards offer the same two wicks
+
+#### Scenario: No wick twice
+- **WHEN** the player chooses Keen edge at the Gaol's beacon
+- **THEN** no later beacon card in that run offers Keen edge, and the card at The Bell Knoll offers two of the three wicks not yet chosen
 
 ### Requirement: Glim
 Foes and wisps SHALL drop glim, motes in the lamp colours that fly to the lamplighter from within 6 m after 0.4 s. A Snuffer SHALL drop 3, a Pitchrook 4, a Mirelight 2, an Ironback 8, a wisp 4 and the boss 30. In a run, a wisp SHALL go out when the lamplighter touches it, and SHALL count for that run only. The HUD SHALL show the glim carried.
@@ -285,11 +345,15 @@ Foes and wisps SHALL drop glim, motes in the lamp colours that fly to the lampli
 - **THEN** the wisp goes out, the glim carried goes up by 4, the flasks show 2 of 2, and the explorer's save does not change
 
 ### Requirement: Death and the run summary
-At 0 health the run SHALL end. The picture SHALL fade to ink over 1.2 s, and the run summary SHALL show the place reached, the time, the foes put out, the glim lost and the glim banked. The glim carried SHALL be lost. Its button SHALL open the Lamp-room. The next run SHALL start in The Sunken Gaol with every foe back.
+At 0 health the run SHALL end, and the page SHALL store the ended run at once. The picture SHALL fade to ink over 1.2 s, and the run summary SHALL show the place reached, the time, the foes put out, the glim lost and the glim banked. The glim carried SHALL be lost. Its button SHALL open the Lamp-room. The next run SHALL start in The Sunken Gaol with every foe back.
 
 #### Scenario: Die on the Ramparts
 - **WHEN** the lamplighter dies in Crow Ramparts carrying 20 glim, with 44 banked from the Gaol
 - **THEN** the summary shows "II · Crow Ramparts", 20 glim lost and 44 banked, and the next run starts in the Gaol
+
+#### Scenario: Reload in the fade
+- **WHEN** the player reloads the page 0.5 s into the fade to ink
+- **THEN** the run summary shows with the same figures, and the ended run does not go on
 
 ### Requirement: The Lamp-room
 The Lamp-room SHALL show the glim banked and five lasting upgrades, each with its level and the cost of the next level. A Buy button SHALL spend the cost and raise the level. A Buy button SHALL be off when the bank holds less than the cost, and SHALL say how much more is needed. Begin the run SHALL start a new run. Wander SHALL show once it is open.
@@ -365,11 +429,7 @@ The pause panel SHALL stop the game. It SHALL show the five places of the run, w
 - **THEN** no foe moves while the panel shows, and the fight goes on after Escape from where it stopped
 
 ### Requirement: Saved run
-The run SHALL save under its own key, `gloam-downs.run.v1`: the bank, the upgrade levels, runs, wins, deaths, the furthest place, the best winning time, the sound setting and the run in progress. The page SHALL check each saved field. A run SHALL not change the explorer's save.
-
-#### Scenario: Reload in a place
-- **WHEN** the player reloads in Lantern Fen, after entering it with 80 health and 12 glim and then dropping to 50 health and gaining 10 glim
-- **THEN** the run goes on at the start of Lantern Fen with 50 health and 12 glim carried
+The run SHALL save under its own key, `gloam-downs.run.v1`: the bank, the upgrade levels, runs, wins, deaths, the furthest place, the best winning time, the sound setting, the run in progress, and the summary of an ended run until its card closes. The page SHALL check each saved field. A run SHALL not change the explorer's save.
 
 #### Scenario: Bad run save
 - **WHEN** the run save holds wrong types, unknown upgrades or levels out of range
@@ -379,6 +439,17 @@ The run SHALL save under its own key, `gloam-downs.run.v1`: the bank, the upgrad
 - **WHEN** a cached explorer page loads and stores its own save while a run save exists
 - **THEN** the bank and the upgrades stay as they were
 
+### Requirement: When the run is stored
+The page SHALL store the run at once on each hit taken, on each drink, at each lit beacon and at 0 health, and at least every 2 s of play. A reload SHALL restart the current place. Health and flasks SHALL be the lower of the entry values and the stored values. The glim carried SHALL go back to its entry value. Every foe and wisp of the place SHALL be back.
+
+#### Scenario: Reload in a place
+- **WHEN** the player reloads in Lantern Fen, after entering it with 80 health and 12 glim and then dropping to 50 health and gaining 10 glim
+- **THEN** the run goes on at the start of Lantern Fen with 50 health and 12 glim carried, and every foe and wisp of Lantern Fen is back
+
+#### Scenario: Reload just after a hit
+- **WHEN** a hook takes the lamplighter from 60 to 44 health and the player reloads on the next frame
+- **THEN** the run goes on with 44 health
+
 ### Requirement: Wander
 Wander SHALL be the explorer as it was before the run: no foes, no health, no glim, Map travel, the end card and Walk again, with the explorer's save. Wander SHALL open from the Lamp-room after the first win, or when the explorer's save shows a finished walk. `?wander` SHALL open it. A reload in Wander SHALL open Wander again. Wander's Map SHALL have a way back to the Lamp-room.
 
@@ -387,15 +458,15 @@ Wander SHALL be the explorer as it was before the run: no foes, no health, no gl
 - **THEN** the Lamp-room shows with Wander, and Wander opens with the places that the visitor reached before
 
 ### Requirement: The HUD in a run
-The HUD SHALL show the place, a health bar with its number, a pip for each flask, and the wisps and glim carried. At 520 px wide or less, the toast SHALL move down under the taller HUD. In a boss fight, a boss bar SHALL show: on a touch screen in the Lab bar row between ◀ Lab and Games, and with a fine pointer at the bottom centre.
+The HUD SHALL show the place, a health bar with its number, a pip for each flask, and the wisps and glim carried. The toast SHALL show 8 px under the HUD's measured bottom. In a boss fight, a boss bar SHALL show: on a touch screen in the Lab bar row between ◀ Lab and Games, and with a fine pointer at the bottom centre.
 
 #### Scenario: Health line
 - **WHEN** the lamplighter has 74 of 100 health and 1 of 2 flasks
 - **THEN** the HUD shows "74/100" beside a bar filled 74%, one full pip and one empty pip
 
-#### Scenario: Toast on a phone
-- **WHEN** a toast shows at 390 by 844
-- **THEN** it does not overlap the HUD, the Lab bar or the tools
+#### Scenario: Toast in each layout
+- **WHEN** a toast of 60 characters shows at 320 by 640, 390 by 844, 360 by 640, 800 by 600 and 1280 by 720
+- **THEN** in each layout it is inside the screen and does not overlap the HUD, the Lab bar, the tools or a touch button
 
 ### Requirement: Phone layouts
 At 320 by 640 and 390 by 844 on a touch screen, every run control SHALL be at least 44 px on its shorter side, inside the screen, and clear of the Lab bar, the HUD, the tools, the toast and each other. The stick SHALL have the left half of the screen below the HUD. The page SHALL not scroll sideways.
@@ -420,65 +491,94 @@ In windows 660 px tall or less, the touch buttons SHALL use their small sizes. A
 - **THEN** no touch button shows, the HUD and tools are where the explorer has them, and the boss bar is 520 by 44 px, 24 px above the bottom
 
 ### Requirement: Cards fit the screen
-The help card, the Lamp-room, the beacon card, the pause panel, the run summary and the win card SHALL fit each of the five layouts. Each card's main button SHALL be inside the screen without a scroll of the page. Every button SHALL be at least 44 px. Space and Enter SHALL press the focused button.
+The help card, the Lamp-room, the beacon card, the pause panel, the run summary, the win card, Wander's Map and Wander's end card SHALL fit each of the five layouts. Each card's main button SHALL be inside the screen without a scroll of the page. Every button SHALL be at least 44 px. Space and Enter SHALL press the focused button.
 
 #### Scenario: Lamp-room in a short window
 - **WHEN** the Lamp-room shows at 360 by 640
 - **THEN** Begin the run is inside the screen with no scroll, and every Buy button is at least 44 px
 
+#### Scenario: Wander in short windows
+- **WHEN** Wander's Map and then Wander's end card show at 360 by 640 and at 800 by 600
+- **THEN** the Lamp-room button, every place button and Walk again are inside the screen with no scroll, and each is at least 44 px
+
 ### Requirement: Hit feel
-The game SHALL stop for a short hit stop on each hit while the picture goes on: 0.05 s for a cut, 0.08 s for the finisher, the plunge and a hurt lamplighter, 0.10 s for the boss slam, and 0.15 s for a boss phase change and for death. Hit stop SHALL not exceed 0.15 s in any 0.5 s. A hit foe SHALL flash and shake in the picture only. The camera SHALL kick on heavy hits.
+The game SHALL stop for a short hit stop on each hit while the picture goes on: 0.05 s for a cut, 0.08 s for the finisher, the plunge and a hurt lamplighter, 0.10 s for the boss slam, and 0.15 s for a boss phase change and for death. Hit stop SHALL not exceed 0.15 s in any 0.5 s. A hit foe SHALL flash for 0.05 s and shake in the picture only. The camera SHALL kick on heavy hits.
 
 #### Scenario: A cut lands
-- **WHEN** the first cut hits a Snuffer
-- **THEN** the game holds for 3 steps, the Snuffer flashes fire-bright for 2 to 4 frames, and the shape that hits test against does not move
+- **WHEN** a test ticks one step at a time, and draws after each step, while the first cut hits a Snuffer
+- **THEN** the game holds for 3 steps, the Snuffer is fire-bright on the 3 steps from the hit and not on the 4th, and the shape that hits test against does not move
 
 #### Scenario: Effects off
-- **WHEN** the test turns off every feel effect
+- **WHEN** the test turns off every feel effect with `__gloam.fx`
 - **THEN** the run still plays, and the Node tests of moves and foes pass
 
+### Requirement: Effects on game time
+Every effect SHALL be timed in steps of the game clock, and these steps SHALL go on during hit stop. So a flash, a blink, a tint or a kick SHALL last the same at every frame rate and in `?test`.
+
+#### Scenario: Flash at two frame rates
+- **WHEN** the Node test lands the same cut on a Snuffer, and takes the same hook, at 30 and at 144 frames a second
+- **THEN** the hit flash and the hurt tint each last 3 steps, 0.05 s, at both rates
+
 ### Requirement: Reduced motion
-When the system asks for reduced motion, the camera SHALL not kick or zoom, the hurt blink SHALL be slower, the white flash at the boss's fall SHALL not show, and the low health tint SHALL not pulse.
+When the system asks for reduced motion, the camera SHALL not kick, zoom or turn by itself, the hurt blink SHALL be slower, the white flash at the boss's fall SHALL not show, and the low health tint SHALL not pulse.
 
 #### Scenario: Reduced motion
-- **WHEN** the e2e runs a hit and a boss slam with reduced motion on
-- **THEN** the camera kick and the zoom stay at zero, and the blink changes every 0.125 s
+- **WHEN** the e2e runs a hit, a boss slam, and 3 s with an awake foe at 60° to the side and no look input, with reduced motion on
+- **THEN** the camera kick and the zoom stay at zero, the view does not turn by itself, and the blink changes every 0.125 s
 
 ### Requirement: The look in a fight
-With foes on screen, every place SHALL keep the dark look and fire SHALL stay the brightest colour. Foes SHALL be baked with Ink Studio as splats, so they take each place's palette, dither and outlines.
+With foes on screen, every place SHALL keep the dark look. Foes SHALL add no bright colour other than fire, lamp and wisp. Foes SHALL be baked with Ink Studio as splats, so they take each place's palette, dither and outlines.
 
 #### Scenario: Measure a fight
-- **WHEN** the e2e draws The Sunken Gaol, Lantern Fen and Barrow Crown with 6 foes awake and one ground marker at full size, at the phone and desktop art sizes
-- **THEN** the mean luminance is between 0.05 and 0.32, between 0.05% and 12% of the pixels are brighter than 0.55, and at least 90% of the brightest 1% of pixels are within 12 of a fire, lamp, wisp or moon colour in 8-bit RGB
+- **WHEN** the e2e draws The Sunken Gaol with 5 foes awake, and Lantern Fen and Barrow Crown each with 6 foes awake and one ground marker at full size, at the phone and desktop art sizes, and draws the same views with no foe awake
+- **THEN** each view with foes has a mean luminance between 0.05 and 0.32 and between 0.05% and 12% of its pixels brighter than 0.55, and of the pixels that the foes change and that are at least as bright as the dimmest of the brightest 1% with no foes, at least 95% are within 12 of a fire, lamp or wisp colour in 8-bit RGB
 
 ### Requirement: Warning moves read
-A warning move SHALL add clear fire to the picture. The check SHALL draw a foe 4 m in front of the lamplighter at the default camera.
+A warning move SHALL add clear fire to the picture, in fire slots 34 to 37. The check SHALL draw a foe 4 m in front of the lamplighter at the default camera, put there with `__gloam.spawn` and kept in its move with `__gloam.hold`.
 
 #### Scenario: Measure a tell
 - **WHEN** the e2e draws a Snuffer at rest and at the end of its hook's wind-up
-- **THEN** inside the Snuffer's box on screen, the art pixels of fire colours at the end are at least 3 times and at least 8 more than at rest
+- **THEN** inside the Snuffer's box on screen, the art pixels within 12 of fire slots 34 to 37 at the end are at least 3 times and at least 8 more than at rest
 
 #### Scenario: Measure a ground marker
-- **WHEN** the e2e draws an Ironback at the start and at the end of its slam's wind-up
-- **THEN** the ring adds at least 20 art pixels of fire colours on the ground round it
+- **WHEN** the e2e draws an Ironback in The Bell Knoll at the start and at the end of its slam's wind-up
+- **THEN** the ring adds at least 20 art pixels within 12 of fire slots 34 to 37 on the ground round it
 
 ### Requirement: Foe budget
-The five place files SHALL not change. The foes SHALL come from one file of at most 200 KB gzipped, and the boss from one of at most 100 KB gzipped. Each place, with its pool of foes, SHALL have no more than 275,000 splats. At most 6 foes SHALL be awake at once.
+The foes SHALL come from one file of at most 200 KB gzipped, and the boss from one of at most 100 KB gzipped. Each place, with its pool of foes, SHALL have no more than 275,000 splats. At most 6 foes SHALL be awake at once.
 
 #### Scenario: Budget check
 - **WHEN** the Node test reads the baked worlds, the foe file, the boss file and each place's pool
-- **THEN** each place file has the hash it had before the run, each file is within its size, and each place with its pool has 275,000 splats or fewer
+- **THEN** each file is within its size, and each place with its pool has 275,000 splats or fewer
+
+### Requirement: Place files and zones
+The run SHALL not change `<id>.bin.gz` or `<id>.walk.bin.gz` of any place. The zones SHALL go into `<id>.json` only.
+
+#### Scenario: Bake with and without zones
+- **WHEN** the bake runs for a place with its zones, and again with its zones taken out
+- **THEN** the two `.bin.gz` files are the same, the two `.walk.bin.gz` files are the same, and the two `<id>.json` files differ only in `zones`
+
+### Requirement: Download in a run
+The foe file and the boss file SHALL not count toward a place's 1.5 MB. Before play starts in a place, the page SHALL download only the place's own files and, when the cache does not have it, the foe file: no more than 1.7 MB in all. The boss file SHALL load after play starts, and the arena SHALL stay asleep until it has loaded.
+
+#### Scenario: Sizes
+- **WHEN** the Node test adds the sizes of each place's `.bin.gz`, `.walk.bin.gz` and `.json` to the size of the foe file
+- **THEN** each sum is 1.7 MB or less
+
+#### Scenario: Boss file after a reload
+- **WHEN** a run reloads in Barrow Crown with an empty cache
+- **THEN** play starts before the boss file has loaded, and the arena wakes only after it has loaded
 
 ### Requirement: Frame cost in a fight
-A fight SHALL cost little more than the place alone. The checks run on this machine's Node and software WebGL, so they compare ratios.
+A fight SHALL cost little more than the place alone. The place alone SHALL mean the place with the lamplighter's bones and no pool. The checks run on this machine's Node and software WebGL, so they compare ratios.
 
 #### Scenario: Picture cost
-- **WHEN** the e2e draws the same view at the phone art size three times with 6 foes awake on screen and three times with none
-- **THEN** the median frame with foes takes no more than 1.30 times the median without
+- **WHEN** the e2e draws the same view of The Bell Knoll at the phone art size three times with all 6 pool slots awake on screen, and three times in Wander, which loads no pool
+- **THEN** the median frame with foes takes no more than 1.30 times the median in Wander
 
 #### Scenario: Sort cost
-- **WHEN** the Node bench sorts The Bell Knoll with its full pool of foes, best median of 3 rounds of 60 frames
-- **THEN** it takes no more than 1.40 times the sort of the place alone
+- **WHEN** the Node bench sorts each place with its pool, with its largest awake set on bones and the other slots parked at density 0 and off the bones, best median of 3 rounds of 60 frames, and sorts Barrow Crown in the boss fight with the boss alone on bones
+- **THEN** each sort takes no more than 1.45 times the sort of the same place alone
 
 #### Scenario: Foe cost
 - **WHEN** the Node bench steps 6 awake foes with their sight tests and bodies for 600 steps
@@ -491,12 +591,23 @@ With `?test`, the page SHALL not run its loop. A test SHALL step the run with `_
 - **WHEN** a test plays 30 s of the Gaol twice with `?test&seed=7&fresh` and the same held inputs
 - **THEN** the run state and the foes are the same both times
 
+### Requirement: Test hooks for the run
+With `?test`, `__gloam.wake(zone)` SHALL wake a zone and `__gloam.spawn(type, x, z, yaw)` SHALL wake one foe at a point, each in free slots of the pool. `__gloam.hold(foe, move, t)` SHALL keep a foe at time t of a move. `__gloam.fx(flags)` SHALL turn the stop, flash, kick, zoom, grade and shake effects on or off. `__gloam.set(fields)` SHALL set health, flasks, glim carried, the bank and the upgrades. `__gloam.go(id)` SHALL move the run to the start of a place.
+
+#### Scenario: Hold a wind-up
+- **WHEN** a test spawns a Snuffer 4 m in front of the lamplighter, holds it at 0.55 s of its hook, draws, ticks 1 s and draws again
+- **THEN** both pictures show the same pose of the Snuffer, and the hook does not land
+
+#### Scenario: Spawn with no free slot
+- **WHEN** a test spawns a Snuffer in the Gaol while its 5 pool slots are awake
+- **THEN** nothing new wakes, and the call says that no slot is free
+
 ### Requirement: Pacing
-A winning run SHALL take about 8 to 15 minutes for a person. A player new to the genre SHALL win in about 3 to 6 runs, and a skilled player in 1 or 2. A bot SHALL check the numbers on the real walk maps with the page's own rules.
+A bot SHALL check the run's numbers with the page's own rules on the real walk maps. At skill 0.3 the median first win SHALL come in run 3 to 6, and at skill 0.9 in run 1 or 2. At skill 0.5, three of four bots SHALL need 3 boss tries or fewer, the median boss fight SHALL last 50 to 110 s, and the median winning run that takes every wisp SHALL last 6 to 12 minutes of game time.
 
 #### Scenario: Bot runs
 - **WHEN** `node qa/lab/gloam-downs-bot.mjs 200 0.3 1` and the same at skill 0.5 and 0.9 run 12 runs for each bot
-- **THEN** the median first win is in run 3 to 6 at skill 0.3 and in run 1 or 2 at skill 0.9, at skill 0.5 three of four bots need 3 boss tries or fewer, and the median boss fight lasts 50 to 110 s
+- **THEN** the median first win is in run 3 to 6 at skill 0.3 and in run 1 or 2 at skill 0.9, and at skill 0.5 three of four bots need 3 boss tries or fewer, the median boss fight lasts 50 to 110 s, and the median winning run that takes every wisp lasts 6 to 12 minutes of game time
 
 ### Requirement: Sound in a run
 The run SHALL make its sound in code with WebAudio, with no sound files: a cue for each warning move, hits, hurt, glim, the beacon and the boss. Sound SHALL start only after a press on the page. The pause panel's switch SHALL turn it off and on, and the choice SHALL be saved. Sound SHALL stop while the page is hidden.
@@ -506,8 +617,8 @@ The run SHALL make its sound in code with WebAudio, with no sound files: a cue f
 - **THEN** the run's sound plays after Begin the run, stops while the page is hidden, and comes back when it shows
 
 ### Requirement: Original names
-Every name in the run SHALL be original: the Snuffer, the Pitchrook, the Mirelight, the Ironback, the Barrow Reeve, glim, the Lamp-room, Wander, the wicks Long wick, Keen edge, Quick heels, Heavy fall, Spare oil and Close shave, and the upgrades Mantle, Flask, Edge, Draught and Ash pocket.
+Every name in the run SHALL be original: the places The Sunken Gaol, Crow Ramparts, Lantern Fen, The Bell Knoll and Barrow Crown, the Snuffer, the Pitchrook, the Mirelight, the Ironback, the Barrow Reeve, glim, the Lamp-room, Wander, the wicks Long wick, Keen edge, Quick heels, Heavy fall, Spare oil and Close shave, and the upgrades Mantle, Flask, Edge, Draught and Ash pocket.
 
 #### Scenario: Names on screen
-- **WHEN** the Node test reads every foe, wick, upgrade and card title in the run's data
+- **WHEN** the Node test reads every place, foe, wick, upgrade and card title in the run's data
 - **THEN** each one is a name in this list

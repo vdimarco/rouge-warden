@@ -104,7 +104,7 @@ Two designs were made: A (player feel first) and B (ship-safe first). Both texts
 7. Foes rise from the ground when their zone wakes. This hides a pool slot that comes on in view.
 8. A ring of grave candles marks the edge of the boss arena.
 9. The push of a hit on the lamplighter is a scripted move. A measured that a plain velocity brakes at once: 5 m/s slides 0.31 m.
-10. An optional combat camera: when a zone is awake and the view has had no input for 0.8 s, the yaw turns at 0.9 rad/s until the target is within 20° of ahead. It is the first thing to cut.
+10. A combat camera: while a zone is awake and the view has had no look input for 0.8 s, the yaw turns at no more than 0.9 rad/s until the nearest awake foe is within 20° of ahead. Look input takes control back on the same step. It is the spec's "Combat camera", and the first thing to cut.
 
 We do not take A's poise meter, because B's wind-up rule is simpler and its sim showed the stun-lock that the rule stops. We do not take A's six types, its bell foe with its wave, its burning ground or its tier multipliers, because of the budgets and the jump windows on touch. A's beacon heal stays a tuning lever, off at first.
 
@@ -117,15 +117,46 @@ We ran the design scripts again at commit 6c66c210 (scratch folder `design/`) an
 - `run/pacing.mjs`, A's model with its own roster (a design aid, not used for numbers): without a beacon heal, the Ramparts ends 60% and 42% of a new player's first two runs. With a heal of 25% it ends 41% and 21%. A's brief said 62 to 73%; the rerun does not give that.
 - The code: `main.js` steps the game by at most 1/30 s and `?test` steps it by 1/60 s. The toast sits at `sat + 116px` and the hint hides at 520 px wide or less. Gamepad button 0 jumps, 2 walks, 5 looks ahead and 9 opens the Map. The walk files and place files add up to 1.320 MB (Gaol) to 1.480 MB (Barrows) of the 1.5 MB budget.
 
+After review, we measured two more things (scratch folder `run-rev/`).
+
+**The sort with each place's pool** (`sortmix.mjs`, the review's `sortpool.mjs` with parked slots added). The base is the place with the lamplighter's bones and no pool. Each figure is the best median of 3 rounds of 60 frames, and each row is 3 runs.
+
+| Place | On bones | Parked | Ratio |
+|---|---|---|---|
+| Gaol | 16,500 (5 S) | 0 | 1.27 to 1.31 |
+| Ramparts | 16,900 | 0 | 1.28 to 1.36 |
+| Fen, every slot on bones | 20,800 | 0 | 1.38 to 1.54 |
+| Fen, the largest awake set (6 of 8 slots) | 18,200 | 2,600 | 1.33 to 1.38 |
+| Bells | 19,500 | 0 | 1.31 to 1.38 (6 runs) |
+| Barrows, every slot and the boss on bones | 31,500 | 0 | 1.56 to 1.65 |
+| Barrows before the boss, the boss parked | 19,500 | 12,000 | 1.37 to 1.39 |
+| Barrows in the boss fight, the boss alone on bones | 12,000 | 19,500 | 1.32 |
+
+With every slot on bones, Barrow Crown fails a pass of 1.40, and the Fen's worst run does too. So a parked slot leaves the bones (see Rendering). Then the worst place is 1.39, and the spec's pass is 1.45 in each place. The review measured 1.302 for the Bells and 1.528 for the Barrows with every slot on bones. Our runs are a little higher, which shows the spread on this machine.
+
+**The brightest 1% today, with no foes** (`bright2.mjs`, the review's `bright.mjs` at two sizes). This is the share of the brightest 1% of art pixels that is within 12 of a fire, wisp, lamp or moon colour. It is the baseline for the look in a fight.
+
+| Place | Desktop, 320×180 | Phone, 130×282 | Pixels that miss |
+|---|---|---|---|
+| Gaol | 72% | 100% | the Gaol's moonlit stone 4f5c8a |
+| Ramparts | 40% | 38% | 737c36 and 987456 |
+| Fen | 79% | 33% | the sick green lanterns e2ec86 and 9cae34; on the phone, 48502f and 5a4f2a |
+| Bells | 48% | 94% | the dusk ramp 9e6224, 9c3b29 and cc9238 |
+| Barrows | 99% | 100% | a6f27e |
+
+The pixels that miss are each place's own colours in slots 1 to 31: lit stone, lanterns and the dusk ramp. Foes cannot change that, and the explorer's rule already lets lanterns and the moon be bright. So a fixed share of 90% fails before any foe is added. The share also swings with the art size (Fen 79% and 33%). A rule that compares the share with foes to the share without them can fail when a foe hides a torch: at the phone size the Gaol and the Barrows are already at 100%. The spec's check therefore looks only at the pixels that the foes change. Of those that are at least as bright as the dimmest of the brightest 1% without foes, at least 95% must be fire, lamp or wisp. The 5% allows for outline and dither pixels at a foe's edge (an estimate, to be checked in the first build).
+
 ### The run
 - **Order.** Gaol, Ramparts, Fen, Bells, Barrow Crown (`ORDER` in `save.js`). No Map travel in a run.
 - **Start.** First visit: the help card, then run 1 in the Gaol. A player with a finished explorer walk goes from the help card to the Lamp-room, where Wander is open. Later visits: the Lamp-room over the Gaol's start view. Each run has a seed, `hash(runs, Date.now())`, or `?seed=N`. The seed draws the wick offers and the foes' choices of move and cooldown.
 - **Guards.** The beacon lights only when its guard zone is clear: G5, R4, F4 and B4. At Barrow Crown the boss holds the light. All other zones can be passed.
 - **A lit beacon** before Barrow Crown banks the glim carried, fills the flasks, saves the run at the start of the next place, and shows the beacon card: choose a wick, then Spend glim or Walk on.
-- **Reload.** The run goes on at the start of the current place. Health and flasks are the lower of the entry values and the last saved values. Glim carried goes back to its entry value. So a reload cannot heal or farm glim.
-- **Death.** Hit stop 0.15 s, a fade to ink over 1.2 s, then the run summary. Glim carried is lost (Ash pocket keeps 30%). The Lamp-room follows, and the next run starts in the Gaol with every foe back.
+- **Reload.** The run goes on at the start of the current place. The place restarts, so its foes, its guard foes and its wisps are all back. Health and flasks are the lower of the entry values and the last stored values. Glim carried goes back to its entry value. So a reload cannot heal or farm glim, and the foes that come back give no glim that the reload did not take away.
+- **When the run is stored.** At once on each hit taken, each drink, each lit beacon and at 0 health, and otherwise every 120 steps (2 s), when the tab is hidden and on pagehide. Today's page stores every 120 frames only, so a reload in the death fade could keep a run alive. A store is one small `localStorage` write.
+- **Death.** Hit stop 0.15 s, a fade to ink over 1.2 s, then the run summary. At 0 health the page stores the ended run at once: runs and deaths go up, the glim carried is lost (Ash pocket keeps 30%), `run` becomes null, and `ended` holds the summary. A reload in the fade therefore shows the summary. Closing the summary clears `ended`. The Lamp-room follows, and the next run starts in the Gaol with every foe back.
 - **Run time.** It runs in play and stops in cards, in the pause panel and at the win.
-- **Length.** A winning run should take 8 to 15 minutes for a person (an estimate). The bots on flat ground take 5.7 minutes.
+- **Test hooks.** Software WebGL draws about one frame a second, so the e2e sets up each picture with hooks under `?test`: `wake(zone)`; `spawn(type, x, z, yaw)`, which uses a free pool slot and reports when there is none; `hold(foe, move, t)`, which keeps a foe at time t of a move while the rest of the game steps; `fx({ stop, flash, kick, zoom, grade, shake })`; `set({ hp, flasks, carried, bank, up })`; and `go(id)`, which moves the run to the start of a place. The explorer's `teleport`, `draw` and `stats` stay.
+- **Length.** A winning run should take 8 to 15 minutes for a person. That is an estimate only, and no test checks it. The spec checks a bot measure instead: at skill 0.5, the median winning run that takes every wisp lasts 6 to 12 minutes of game time. B's flat-ground sim takes 5.7 minutes. It walks each route at 55% of run speed and takes only the wisps less than 15 m off the route. The nine wisps that it leaves are 177 m off the route in all, so going there and back at the same speed adds about 1.7 minutes, and a run that takes every wisp comes to about 7.4 minutes. That is inside 6 to 12.
 
 ### The step
 The page steps the game at a fixed 1/60 s, as many steps as the frame took, up to 15 steps (0.25 s) a frame, like `public/lab/kit/loop.js`. A safe time of 0.28 s cannot be kept with steps of up to 1/30 s. The step count comes from a pure function in `run.js`, so Node tests it at 30, 60, 120 and 144 Hz. This replaces the step rule in "Speed" above, for the run and for Wander.
@@ -168,7 +199,9 @@ Each foe is `makeBody(walk, …, {...PARAMS, radius, walk, run, accel: 18, jumpV
 - **The wind-up rule.** A plain hit never stops a wind-up. The finisher and the plunge stop the wind-up of a light foe. Outside a wind-up a light foe flinches for 0.4 s, at most once every 1.5 s. Heavy foes and the boss never flinch. When every hit stopped a wind-up, B's sim showed a pack of Snuffers that never landed a hit, even on a bot that never rolled.
 - **Tokens.** At most 2 melee attacks at once and 1 coal in the air. A foe without a token holds at 3.5 m and spreads round the lamplighter.
 - **Off the edge.** A foe knocked more than 6 m below its zone, or under y −25, is put out and drops its glim.
-- **Zones.** A zone wakes within 10 m of its centre when the pool has its slots and fewer than 6 foes are awake. Its foes rise: 0.6 s of ember cracks (the ring bone in dark fire), then a rise of 0.9 s in which they cannot hurt or be hurt. It sleeps beyond 16 m when its foes are home, which frees its slots; a living foe keeps its health. Home spots are 1.2 m apart within 1.5 m of the centre.
+- **Zones.** A zone wakes within 10 m of its centre when its foes and the awake foes together are no more than 6, and the pool has a free slot for each of its foes. "Fewer than 6 awake" alone would let a zone of 3 bring the count to 8 in the Fen, whose pool has 8 slots. Its foes rise: 0.6 s of ember cracks, then a rise of 0.9 s in which they cannot hurt or be hurt. It sleeps beyond 16 m when its foes are home, which frees its slots; a living foe keeps its health. Home spots are 1.2 m apart within 1.5 m of the centre.
+- **Ember cracks.** The spark pool draws them: 24 splats for each foe, in short lines on the ground in fire slots 34 and 35 that flicker and fade. The Snuffer has no ring bone, so the cracks cannot be a bone of the foe. A zone of 3 uses 72 of the pool's 256 splats for 0.6 s.
+- **Put out.** A foe put out stays out until the run ends or a reload restarts the place. The run keeps a set of foes put out for the current place only, and the save does not hold it, because a reload restarts the place.
 
 | Place | Zones (S Snuffer, P Pitchrook, M Mirelight, I Ironback), centre and leash L | Ground in the leash | Pool |
 |---|---|---|---|
@@ -178,7 +211,7 @@ Each foe is `makeBody(walk, …, {...PARAMS, radius, walk, run, accel: 18, jumpV
 | Bells | B1 vale (−0.5, −0.04, 12) L 4.5 I · B2 side path (9.5, 0.56, 9.5) L 3.5 SSM · B3 under the clock hill (−11.3, 0.59, 12) L 3.3 PM · B4 terrace, guard (3, 4.5, −12) L 3 SP | 63 · 38 · 34 · 17 | 3 S, 1 M, 1 P, 1 I |
 | Barrows | W1 (0, 1.06, 14.3) L 5 SS · W2 hollow (1, 0.18, 3.5) L 5.5 IS · W4 before the gate (−0.5, 1.52, −4.8) L 3 PM · the arena (18, 0.68, −22) L 6.5, the boss | 78 · 95 · 28 · 133 | 3 S, 1 I, 1 P, 1 M, the boss |
 
-The zones come from the page survey's `check-zones.mjs`. Every zone is reached from the start. The worst point in a place has 6 to 8 foes in range, but all such points are off the route, and there the cap of 6 keeps a zone asleep. The bake writes zones into `<id>.json` through a new `ctx.zone()`. The bake is deterministic, so the place's `.bin.gz` and walk map stay byte-identical, and a test checks their hashes.
+The zones come from the page survey's `check-zones.mjs`. Every zone is reached from the start. The worst point in a place has 6 to 8 foes in range, but all such points are off the route, and there the cap of 6 keeps a zone asleep. The bake writes zones into `<id>.json` through a new `ctx.zone()`. So of each place's three files, `<id>.bin.gz` and `<id>.walk.bin.gz` do not change, and `<id>.json` gains `zones`. The bake is deterministic, so a test bakes a place with its zones and again without them, and checks that the two `.bin.gz` files and the two walk files are the same and that the two `<id>.json` files differ only in `zones`. This test does not depend on old hashes, so the controller fixes may still rebake the walk maps.
 
 ### The boss: the Barrow Reeve
 - **Look.** 3.4 m, gaunt, a long cloak of barrow earth and roots in the place's own darks, a crown of six iron spikes that echoes the summit's six stones, a rib-cage lantern in its chest that holds a pale-green caged light (wisp slots), and a long iron crook whose hook glows fire in a wind-up. It is never brighter than the beacon fire. 12,000 splats on 17 bones: body, cloak (second-bone weights), head and crown, cage, armL, handL, armR, crook, crook tip, legL, legR, shadow, ring, lane and three shards.
@@ -201,7 +234,7 @@ The zones come from the page survey's `check-zones.mjs`. Every zone is reached f
 
 ### Glim, wicks and upgrades
 - **Glim** drops as motes in the lamp colours, from the spark pool. They fly to the lamplighter from within 6 m after 0.4 s. A run holds 254: Snuffer 3, Pitchrook 4, Mirelight 2, Ironback 8, wisp 4, boss 30.
-- **Wicks.** At each of the first four beacons, the seed draws two from six, with no repeat in a run:
+- **Wicks.** At each of the first four beacons, the seed draws two from the wicks that the run has not chosen: from 6, 5, 4 and then 3. A wick offered but not chosen can come back. So the Gaol's offer depends on the seed alone, and each later offer on the seed and the wicks chosen before it. The draw uses its own stream of the seed, so the foes' choices do not move it.
 
 | Wick | Effect for the rest of the run |
 |---|---|
@@ -225,7 +258,7 @@ The zones come from the page survey's `check-zones.mjs`. Every zone is reached f
 All of them cost 1,065 glim, about 4.2 full runs. The first levers to tune, in this order: Snuffer damage (14 to 17), the flask heal (35% to 50%), boss health (960 to 1,300), and a beacon heal (0% to 25%). The real-map bot decides, against the pacing targets in the spec.
 
 ### Saves and modes
-- **The run's save** is its own key, `gloam-downs.run.v1`, with its own `clean()` in `run-save.js`: `{ v, bank, up: {mantle, flask, edge, draught, ash}, runs, wins, deaths, furthest, bestWin, sound, seen, wander, run }`. `run` is null, or `{ seed, place, time, hp, flasks, carried, wicks, entry: {hp, flasks, carried, wicks} }`. Unknown upgrades are dropped, and levels are clamped.
+- **The run's save** is its own key, `gloam-downs.run.v1`, with its own `clean()` in `run-save.js`: `{ v, bank, up: {mantle, flask, edge, draught, ash}, runs, wins, deaths, furthest, bestWin, sound, seen, wander, run, ended }`. `run` is null, or `{ seed, place, time, hp, flasks, carried, wicks, entry: {hp, flasks, carried, wicks} }`. `ended` is null, or the summary of a run that ended and whose card has not closed: `{ place, time, foes, lost, banked }`. Unknown upgrades are dropped, and levels are clamped. The save holds no foe state: a reload restarts the place, with every foe back.
 - **The explorer's save**, `gloam-downs.save.v1`, and its `clean()` stay as they are. The page survey suggested we add the run to that key, but its `clean()` drops unknown fields, so a cached old page would wipe the bank and the upgrades. Two keys stop that.
 - **Wander** is the explorer of today with no foes. It opens from the Lamp-room after the first win, or when the explorer's save has `done ≥ 1`, and with `?wander`. `wander: true` in the run's save opens it again after a reload. Its Map has a Lamp-room button.
 
@@ -245,9 +278,18 @@ All of them cost 1,065 glim, about 4.2 full runs. The first levers to tune, in t
 - Shift still walks and gamepad button 2 now attacks. A light tilt walks, because `step` reads the stick's size.
 - The mouse attacks on the press. A short-click rule (under 250 ms and 6 px) would add up to 250 ms before each swing. A left drag still turns the view, so the explorer's "a mouse drag turns the camera" holds. A left drag in a run starts with one swing; the right button looks with no swing.
 - R, Look and RB face the nearest awake foe within 10 m, or look ahead as today when there is none.
+- The Map and Look tools act on a tap and on a mouse click the same way: Map opens the pause panel, and Look faces the foe. A press on a tool stops there, so it does not swing the blade or start the stick or the look drag.
+
+### Cameras in a run
+- **The explorer's camera** (`makeCamera` in `play.js`) swings behind a running lamplighter after 0.8 s with no look input. Its Look requirement stays as it is. The run adds two cameras that turn the view by themselves, and in both the player's look input wins on the same step.
+- **The combat camera.** While a zone is awake, the swing behind the lamplighter is replaced: after 0.8 s with no look input, the yaw turns at no more than 0.9 rad/s toward the nearest awake foe, and stops when that foe is within 20° of the view's centre. With no zone awake, the explorer's swing comes back.
+- **The boss camera.** In the boss fight, the aim point is 0.35 of the way from the lamplighter to the boss, and the distance eases to 10.5 m over 1 s. After 0.6 s with no look input, the yaw turns at no more than 1.5 rad/s until the boss is within 20° of the centre. When the boss falls or the lamplighter leaves the arena, the camera eases back over 1 s.
+- **Walls and hills.** Both cameras still come closer in front of a hill or a wall, as the explorer's does.
+- **Reduced motion.** Neither camera turns by itself. The boss camera still aims and pulls back over 1 s, because that does not turn the view.
+- Both cameras are pure functions of the camera state in `play.js`, so the Node test checks the turn rates, the 20° stop and the hand-back to look input.
 
 ### HUD and layouts
-- The HUD gets a line under the place: a health bar of 120 × 10 px in ember with its number ("74/100"), and a CSS pip for each flask. The count line reads "◆ 2/5 wisps · ● 18 glim". On phones the HUD grows from 57 to 88 px tall, so at 520 px wide or less the toast moves from `sat + 116px` to `sat + 150px`. The page survey measured the overlap without this move.
+- The HUD gets a line under the place: a health bar of 120 × 10 px in ember with its number ("74/100"), and a CSS pip for each flask. The count line reads "◆ 2/5 wisps · ● 18 glim". On phones the HUD grows from 57 to 88 px tall. Above 520 px wide the hint line stays, so the HUD is taller still, and a long centred toast at `sat + 116px` would overlap it at 800×600. So the page places the toast 8 px under the HUD's measured bottom (`getBoundingClientRect`) at every width, and again when the HUD changes size. The HUD's bottom is lower than the tools' bottom in every layout, so the toast also clears the tools. The page survey measured the overlap without this move.
 - The boss bar is a name and a bar. On touch it is in the Lab bar row, from x 85 to 8 px left of Games, at most 360 px wide, 44 px tall; at 320 that is about 144 px. With a fine pointer it is at the bottom centre, 520 × 44 px (at most 100vw − 32), 24 px up.
 - No third button joins the tools row: at 320 it would meet the HUD, whose right edge is at 188 px. The sound switch is in the pause panel.
 - Off-screen notches are small HTML shapes of our own at the screen edge, placed with the camera maths of `view.mjs` (38° field of view). At most 3.
@@ -266,21 +308,23 @@ The stick keeps the left half below the HUD: 160 × 492 px at 320×640. The over
 ### Rendering
 The run changes no renderer file and no place file. It uses the paths that the lamplighter already uses.
 - **A foe file and a boss file.** A new `foes` target in `bake.mjs` sculpts each foe type once, with its own sculptor and a neutral moonlight, on its own bones. It writes `worlds/foes.bin.gz` (about 90 KB at 6.98 B a splat, an estimate) and `foes.json`: the types, splat ranges, bone names, pivots, and pose keyframes sampled from `K.acts.frames('windup' | 'attack' | 'hurt' | 'dodge')`. The boss goes in `worlds/boss.bin.gz` (about 84 KB), loaded for Barrow Crown and fetched while The Bell Knoll plays.
-- **A pool in each place.** When a place loads, `world.js` adds the place's pool to `world.data`, moves the pool's bone ids after the lamplighter's 7, adds every pool splat to `world.anim.boned`, and parks each slot at density 0. A kind-12 splat that is not in `boned` sorts by its rest position, so this list must be complete. Adding 8 copies took 10.5 ms in Node.
+- **Download.** The explorer gives each place 1.5 MB, and the foe and boss files do not count toward it. Before play starts in a place, the page loads only the place's three files and, when the cache does not have it, the foe file. Today's places are 1.324 MB (Gaol) to 1.485 MB (Barrows) with their JSON, so with a foe file at its 200 KB limit no load before play is more than 1.69 MB, and the spec's limit is 1.7 MB. With the estimated 90 KB foe file, the first load of a run is about 1.41 MB. The boss file always loads after play starts: during The Bell Knoll, or after a reload in Barrow Crown while the lamplighter walks to the arena, about 51 m from the start in a straight line. The arena stays asleep until the file is in.
+- **A pool in each place.** When a place loads, `world.js` adds the place's pool to `world.data`, moves the pool's bone ids after the lamplighter's 7, and parks each slot at density 0. Adding 8 copies took 10.5 ms in Node.
+- **Only awake slots ride bones in the sort.** The sorter projects every splat, at density 0 too, and a boned splat costs about four times a plain one. So `world.anim.boned` holds the lamplighter and the awake slots only. A kind-12 splat that is not in `boned` sorts by its rest position. That order is wrong for a splat that draws, but a parked slot is at density 0, and the shader culls it before the bone fetch, so its order does not matter. A slot joins `boned` before its density comes back, and leaves it after its density goes to 0. Rebuilding the list is a short `Int32Array` copy. The boss slot is parked like the others until the intro, and in the boss fight the other slots are parked. Measured in "Numbers we checked": 1.39 at worst, against 1.65 with every slot on bones.
 - **Colour.** Foe bodies use dark tones that are in no palette, so the resolve snaps them to each place's own darks. The renderer survey checked this in the Gaol and in Barrow Crown. Eyes and tells use the fire slots, blades the iron slots, and the Mirelight and the cage light the wisp slots. Nothing uses the cloak slots, which are the lamplighter's. The run adds no palette colour: all five places use 48 of 48. The foes pass through the same resolve, so they get the same dither, pixel snap and outlines as the places.
-- **Tells and ground markers.** A tell bone carries emissive boned splats in the fire steps inside the weapon, and grows from nothing over the wind-up. Two tell bones give a flicker, because flames cannot ride bones. A ground marker is a flat boned ring or lane in the dark fire steps, scaled from 0 to 1 over the wind-up. Both are poses, with no upload.
+- **Tells and ground markers.** A tell bone carries emissive boned splats in the fire steps inside the weapon, and grows from nothing over the wind-up. Two tell bones give a flicker, because flames cannot ride bones. A ground marker is a flat boned ring or lane in fire slot 34, with its rim in slot 35, scaled from 0 to 1 over the wind-up. Slots 32 and 33 (0x3a0f0c, 0x8a2814) are not used for markers, because they are close to the dark ground. Slot 35 is brighter than 0.55, so a rim adds to the bright share. We estimate a full Ironback rim 4 m away at a few hundred art pixels, well under the 12% cap (6,900 art pixels at 320×180); the fight check measures it. Both are poses, with no upload.
 - **Waking and death.** Waking sets the slot's density back: one upload of about 7 to 10 rows of 32 KB. Death breaks the foe into its bone parts, which tumble with gravity and shrink, then the slot goes to density 0. A hidden bone is scaled to 0 and moved to y −500, because a bone at scale 0 still draws a dot (`u_dilate`).
-- **Hit flash.** For 2 to 4 frames the foe's packed colour is fire step 5, then the saved colour comes back: two uploads of its rows. The timing follows `K.acts.hitFlash`, and the flinch is a squash and spring on its bones after the hit recipe in Ink Studio's `k1-stage.js`.
-- **Hit stop.** The simulation stops and the picture goes on. The hit foe's picture shakes ±0.04 m at 30 Hz, but its hit shape does not move. All of it runs on game time, so `?test` plays it the same.
+- **Hit flash.** For 0.05 s of game time (3 steps) the foe's packed colour is fire step 5, then the saved colour comes back: two uploads of its rows. A flash timed in frames would last 14 ms at 144 Hz and up to 133 ms at 30 Hz. The timing follows `K.acts.hitFlash`, and the flinch is a squash and spring on its bones after the hit recipe in Ink Studio's `k1-stage.js`.
+- **Hit stop.** The simulation stops and the picture goes on. The hit foe's picture shakes ±0.04 m at 30 Hz, but its hit shape does not move. All of it runs on game time, so `?test` plays it the same. The game clock counts steps during hit stop too, and every effect (flash, tint, blink, kick, zoom, bars, grade) counts those steps.
 - **Camera kick.** `world.anim.kick` along the camera's right and up vectors. Hits add trauma that falls over time, and the kick is trauma² times smooth noise: 0.03 to 0.05 on a hit landed, 0.1 when hurt, 0.2 to 0.3 for a boss slam. The renderer moves the camera, not its angle, so the kick stays small to keep the eye out of the scenery.
 - **Zoom and bars.** `world.anim.zoom` 1.05 for 0.12 s on a heavy hit, 1.15 for the boss intro. `world.anim.bars` 0 to 0.12 for the intro and the last beacon.
-- **Grade.** `world.anim.grade`, ported from the blends of `K.anim.show`. Low health: slots 1 to 31 pulled up to 25% toward dark red at each beat of 1.1 Hz, slots 32 to 47 untouched. Hurt: 2 to 3 frames of red on the slots that are not fire. Death: a fade to ink. The grade output is not snapped back to the palette, so its colours stay near palette colours.
+- **Grade.** `world.anim.grade`, ported from the blends of `K.anim.show`. Low health: slots 1 to 31 pulled up to 25% toward dark red at each beat of 1.1 Hz, slots 32 to 47 untouched. Hurt: 0.05 s of game time (3 steps) of red on the slots that are not fire. The review suggested 0.04 s; that is not a whole step at 1/60 s, so we use 3 steps. Death: a fade to ink. The grade output is not snapped back to the palette, so its colours stay near palette colours.
 - **Sparks and glim.** A port of `K.play.fx` (sparks, flash, ring, drops) keeps about 256 splats at the end of the data and uploads one row of 32 KB a frame.
 - **Candles.** The boss file holds 12 flames of 5 splats. The page writes their base positions at the arena once and sets their density at the intro, as `setLit` does for the beacon.
 - **Effects in layers.** Each effect has its own flag. The game must play with all of them off.
 - **In reserve.** A draw order made by the page (`fast-sort.mjs`: 2.23 ms against 3.77 ms with no foes, 3.00 ms against 5.74 ms with 40k foe splats), if phones turn out short of CPU. A `frame.uniforms` hook proposed upstream for flashes, moving lights and burnt ground with no upload. Neither is in the first version.
 
-**Cost.** The renderer survey measured, in SwiftShader at the phone art size (147×317): 6.9 s a frame today, 8.8 s (+27%) with 6 untrimmed foes on screen (32.6k boned splats), +10% with them hidden by bones, +15% at density 0, and +25% with a boss at 3 times its size. Our largest awake set is about 19.5k splats, so the spec's pass is 1.30. In Node the sort takes 3.07 ms today and 4.14 ms with 20k more boned splats (1.35 times); the Bells' pool is 19.5k, so the pass is 1.40. A phone runs JavaScript perhaps 3 to 5 times slower (an estimate). A phone already near 45 ms a frame would likely drop one art size step in a fight.
+**Cost.** The renderer survey measured, in SwiftShader at the phone art size (147×317): 6.9 s a frame today, 8.8 s (+27%) with 6 untrimmed foes on screen (32.6k boned splats), +10% with them hidden by bones, +15% at density 0, and +25% with a boss at 3 times its size. Our largest awake set is The Bell Knoll's 6 slots, 19.5k splats, so the picture check uses that place with all 6 slots awake on screen, and its pass is 1.30. Its base is the same view in Wander, which loads no pool, so the ratio also pays for the parked slots. In Node the sort of each place's largest awake set, with the other slots parked off the bones, is 1.27 to 1.39 times the place alone (the table in "Numbers we checked"), so the pass is 1.45 in each place. "The place alone" is the place with the lamplighter's bones and no pool, in both checks. A phone runs JavaScript perhaps 3 to 5 times slower (an estimate). A phone already near 45 ms a frame would likely drop one art size step in a fight.
 
 ### Sources
 Most pages below were read through search extracts, because gamedeveloper.com, 80.lv and deepnight.net did not resolve in this session.
@@ -298,24 +342,34 @@ Most pages below were read through search extracts, because gamedeveloper.com, 8
 - **Time to kill:** "Designing each of the 50 weapons in Dead Cells to feel distinctive", Game Developer, interview with Sébastien Bénard, https://www.gamedeveloper.com/design/designing-each-of-the-50-weapons-in-i-dead-cells-i-to-feel-distinctive.
 - **One verb for each foe:** Garret Bright, "Build a Bad Guy Workshop", https://www.gamedeveloper.com/design/build-a-bad-guy-workshop-designing-enemies-for-retro-games.
 - **The boss:** Mike Birkhead, "Tips from a combat designer: The art of boss design", https://www.gamedeveloper.com/design/tips-from-a-combat-designer-the-art-of-boss-design; Tom Allins, "Rule of 3 deaths in a boss fight", https://gamedeveloper.com/design/rule-of-3-deaths-in-a-boss-fight; Team Cherry on how the Silksong bosses pick attacks, GamesRadar, https://www.gamesradar.com/games/platformer/compared-to-hollow-knight-silksong-reworked-how-the-bosses-pick-their-attacks-and-suddenly-i-realize-why-i-got-crushed-so-often.
-- **A camera for the arena (optional):** Yoshiaki Koizumi, MIGS 2007, https://www.gamedeveloper.com/game-platforms/migs-2007-nintendo-s-koizumi-on-the-path-from-garden-to-i-galaxy-i-. We take only the idea of a camera that suits the arena: aim at the lamplighter plus 0.35 of the way to the boss, pulled back to 10.5 m, and turn at 1.5 rad/s after 0.6 s with no look input.
-- **Round shadows and the ground marker shape:** none fit. We keep our own boned shadow disc.
+- **The boss camera:** Yoshiaki Koizumi, MIGS 2007, https://www.gamedeveloper.com/game-platforms/migs-2007-nintendo-s-koizumi-on-the-path-from-garden-to-i-galaxy-i-. We take only the idea of a camera that suits the arena: aim at the lamplighter plus 0.35 of the way to the boss, pulled back to 10.5 m, and turn at no more than 1.5 rad/s after 0.6 s with no look input.
+- **The combat camera:** none fit. It is the explorer's own swing behind the lamplighter (`makeCamera` in `play.js`: after 0.8 s with no look input), pointed at the nearest awake foe.
+- **Ember cracks when a zone wakes:** none fit. They are sparks from the ported `K.play.fx` pool, laid in lines on the ground.
+- **Round shadows and the ground marker shape:** none fit. We keep our own boned shadow disc. The marker colours (fire slots 34 and 35) come from the review's measure of what reads on the dark ground.
 - **Death into bone parts:** none fit beyond Nijman's marks that stay. It is our own.
 - **A page-made draw order:** none fit. It is our own test.
 - **Sound:** none fit. A few oscillator and noise envelopes in WebAudio, made in code.
 
+### The names and the order of the places
+The user asked that no name be copied from Dead Cells. The review found two things that come close, and we record them here.
+- **"Crow Ramparts".** Dead Cells has a biome named Ramparts. Our name has the same word, and our run puts it second, after a prison.
+- **The order.** Our first four places are a prison, a wall on the ridges, a stilt hamlet over water and a bell tower. The review compares this to a Dead Cells route through Prisoners' Quarters, Ramparts, Stilt Village and Clock Tower. The forms and the looks of our places are our own, but the chain is similar.
+
+The five places, their names and the order are the user's decisions, so we do not change them here. We ask the user whether to keep "Crow Ramparts". A new display name only, such as "Crow Wall", keeps the id `ramparts`, the bake, the place and the look. It changes the `name` in `biomes/ramparts.mjs` and in `<id>.json`, the explorer's spec, the run's "Original names" list, and the text in the arcade. The spec's "Original names" now lists the five place names too, and its test reads them from the run's data.
+
 ### Checks
-- `node qa/lab/gloam-downs-run.test.mjs`: the step at 30, 60, 120 and 144 Hz; the string, the roll (3.3 to 3.7 m), the plunge, the drink; foe tells, tokens, leash and ledge; glim, banking, death, wicks and upgrades; the run's save with bad data and with an old explorer page; the names list; the budget (place hashes, file sizes, 275,000 splats); the sort bench (1.40) and the foe step bench (0.5 ms).
-- `node qa/lab/gloam-downs-bot.mjs <bots> <skill> <seed>`: the page's own rules on the real walk maps, 12 runs for each bot, against the pacing targets.
-- `node qa/lab/gloam-downs-run.e2e.mjs`, with `?test`, in SwiftShader: every control on keys, mouse, touch and gamepad; each state (play, hit, death, run summary, Lamp-room, beacon card, pause, boss, win, Wander); the five layouts with the overlap check and screenshots; the look in a fight (luminance, bright share, the brightest 1%); the tell and marker counts; reduced motion; the frame ratio (1.30).
+- `node qa/lab/gloam-downs-run.test.mjs`: the step at 30, 60, 120 and 144 Hz; effects in steps at 30 and 144 Hz; the string, the roll (3.3 to 3.7 m), the plunge, the drink; foe tells, tokens, leash and ledge; the wake rule with the cap and the free slots; the combat camera and the boss camera; glim, banking, death, wicks that never come back once chosen, and upgrades; the run's save with bad data, with an old explorer page, at once on a hit and at 0 health; the names list with the places; the budget (file sizes, 275,000 splats, 1.7 MB before play); the sort bench in all five places (1.45) and the foe step bench (0.5 ms).
+- `node games/gloam-downs/bake.mjs <place>` with and without the zones: the `.bin.gz` and walk files are the same, and `<id>.json` differs only in `zones`.
+- `node qa/lab/gloam-downs-bot.mjs <bots> <skill> <seed>`: the page's own rules on the real walk maps, 12 runs for each bot, against the pacing targets, with the run length at skill 0.5.
+- `node qa/lab/gloam-downs-run.e2e.mjs`, with `?test` and the hooks `wake`, `spawn`, `hold`, `fx`, `set` and `go`, in SwiftShader: every control on keys, mouse, touch and gamepad, and the Map and Look tools; each state (play, hit, death, a reload in the death fade, run summary, Lamp-room, beacon card, pause, boss, win, Wander); the five layouts with the overlap check, the toast and screenshots; the look in a fight (luminance, bright share, the colours of the bright pixels that the foes change); the tell and marker counts in fire slots 34 to 37; reduced motion; the frame ratio in The Bell Knoll against Wander (1.30); the boss file after a reload in Barrow Crown.
 - `node qa/lab/gloam-downs.e2e.mjs` checks the explorer through `?wander`.
 - `node qa/arcade/quiet.mjs --only=lab/gloam-downs`: the sound starts on Begin the run and stops while hidden.
 
 ### Cut order
 If time runs short, cut from the top, and change the spec to match:
-1. The idle combat camera.
-2. The boss camera.
-3. Close shave and Heavy fall (four wicks stay).
+1. The combat camera (remove the spec's "Combat camera" and its part of "Reduced motion").
+2. The boss camera (remove "Boss camera").
+3. One wick, Close shave. Five wicks stay, so the fourth beacon offers the last two. Cut no second wick. If a build ever keeps only four, the fourth beacon offers the last wick and a fixed second choice: heal to full health. A full flask refill is no choice there, because every lit beacon fills the flasks.
 4. The grave candles.
 5. The wicks.
 6. Sound (the scrape, whistle and hum cues go; the visual tells stay).
@@ -324,6 +378,7 @@ If time runs short, cut from the top, and change the spec to match:
 - "Speed" above: the step is now a fixed 1/60 s (see The step).
 - "Not done" above: enemies, combat and sound are now in scope. Runtime point lights are still not done.
 - `save.js` stays the explorer's save. The run's state is in `run-save.js`.
+- The toast at `sat + 116px`: in a run and in Wander it sits 8 px under the HUD's measured bottom.
 
 ### Not checked
 Nothing ran on a real phone, a real graphics card or real speakers. The frame costs are ratios in SwiftShader and Node on this machine. The pacing comes from bots, not from players. The first build must check the frame time on a real phone at 46k art pixels with 6 foes awake.

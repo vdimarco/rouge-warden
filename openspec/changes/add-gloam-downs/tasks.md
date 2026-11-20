@@ -46,10 +46,12 @@
 ### Base
 - [ ] Fixed 1/60 s step in `main.js`, up to 15 steps a frame, with the step count from a pure function in `run.js`
 - [ ] Node test: the same string, roll and hook land on the same step at 30, 60, 120 and 144 Hz
-- [ ] `run-save.js`: `fresh`, `clean`, `load` and `store` under `gloam-downs.run.v1`; Node tests with bad data, and with an old explorer page that stores its own save
-- [ ] `run.js` with no DOM: run states, health, flasks, glim carried and banked, death, the entry snapshot for a reload
-- [ ] `?seed=N`, and the seed draws the wicks and the foes' choices
-- [ ] `?test` API: `tick` takes attack, roll, heal and look; `__gloam.run()` and `__gloam.foes()`; flags that turn each feel effect off
+- [ ] `run-save.js`: `fresh`, `clean`, `load` and `store` under `gloam-downs.run.v1`, with `run` and `ended`; Node tests with bad data, and with an old explorer page that stores its own save
+- [ ] Store the run at once on each hit taken, each drink, each lit beacon and at 0 health, and every 120 steps otherwise; Node tests for a reload just after a hit and in the death fade
+- [ ] `run.js` with no DOM: run states, health, flasks, glim carried and banked, death and `ended`, the entry snapshot, and a reload that restarts the place with its foes and wisps back
+- [ ] `?seed=N`; the seed draws the wicks from their own stream, and the foes' choices from another
+- [ ] `?test` API: `tick` takes attack, roll, heal and look; `__gloam.run()` and `__gloam.foes()`
+- [ ] `?test` hooks: `wake(zone)`, `spawn(type, x, z, yaw)` in a free slot, `hold(foe, move, t)`, `fx({ stop, flash, kick, zoom, grade, shake })`, `set({ hp, flasks, carried, bank, up })` and `go(id)` in a run
 
 ### Inputs
 - [ ] Press edges with a 0.15 s buffer for attack, roll and heal; a latch for a mouse press
@@ -57,6 +59,7 @@
 - [ ] Mouse: left press attacks at once, hold goes on until 6 px of movement, drag with either button looks
 - [ ] Gamepad: X or RT attack, B or LT roll, Y heal, RB face the foe, Start or Back pause, one press across all pads
 - [ ] Touch: Attack, Roll and Heal buttons beside Jump, at the sizes in design.md, small sizes at 660 px tall or less; the Heal flask count
+- [ ] The Map tool opens the pause panel and the Look tool faces the nearest awake foe within 10 m, on a tap and on a mouse click; a press on a tool does not swing, and does not start the stick or the look drag
 
 ### The lamplighter's moves
 - [ ] The blade string: timings, damage, reach, arcs, lunge through the per-body `PARAMS` copy, the hold
@@ -70,58 +73,68 @@
 
 ### Foes
 - [ ] `foes` bake target: the Snuffer first, on 8 bones, with `foes.json` (ranges, bones, pivots, pose keyframes)
-- [ ] Budget rules in `lib/check.mjs`: the foe file at most 200 KB, the boss file at most 100 KB, place and pool at most 275,000 splats
-- [ ] `world.js` adds the pool: bone ids after the lamplighter's, every pool splat in `boned`, each slot at density 0
+- [ ] Budget rules in `lib/check.mjs`: the foe file at most 200 KB, the boss file at most 100 KB, place and pool at most 275,000 splats, and each place's three files plus the foe file at most 1.7 MB
+- [ ] `world.js` adds the pool: bone ids after the lamplighter's, each slot at density 0 and out of `boned`
+- [ ] A slot joins `boned` before its density comes back and leaves it after its density goes to 0
 - [ ] `foes.js` with no DOM: bodies, the ledge probe, noticing, leash, going home, tokens, the wind-up rule, the rise
 - [ ] The Snuffer's hook, tell bone, sound cue and glim
-- [ ] Tell and ground marker poses from the keyframes; the hit flash rows, the flinch, the death into bone parts
-- [ ] `ctx.zone()` in the biomes and zones in each `<id>.json`; a test that the `.bin.gz` and walk files keep their hashes
-- [ ] Zone waking and sleep, the cap of 6, and the guard zones that keep each beacon dark
+- [ ] Tell and ground marker poses from the keyframes, the markers in fire slots 34 and 35; the hit flash rows, the flinch, the death into bone parts
+- [ ] `ctx.zone()` in the biomes and zones in each `<id>.json`; a test that bakes a place with and without its zones and finds the same `.bin.gz` and walk files, and JSON that differs only in `zones`
+- [ ] Zone waking and sleep: the zone's foes and the awake foes together at most 6, a free pool slot for each foe; the guard zones that keep each beacon dark
+- [ ] Ember cracks from the spark pool, 24 splats a foe, for 0.6 s before the rise
+- [ ] Foes put out stay out until the run ends or a reload restarts the place
 - [ ] The Pitchrook: bake, lob, ring, the one coal in the air
 - [ ] The Mirelight: bake, flight over water and pits, pulse
 - [ ] The Ironback: bake, charge that stops dead, the wall stun, slam
 - [ ] Off-screen notches
 
 ### Feel
-- [ ] Hit stop on game time with the 0.15 s cap in any 0.5 s, and the picture shake
+- [ ] Every effect counts steps of the game clock, which go on during hit stop
+- [ ] Hit stop with the 0.15 s cap in any 0.5 s, and the picture shake
+- [ ] The hit flash and the hurt tint, 3 steps (0.05 s) each; a Node test at 30 and 144 Hz
 - [ ] Camera kick with trauma² and smooth noise; zoom
 - [ ] The spark pool, ported from `K.play.fx`; glim motes in the lamp colours
 - [ ] Grade: hurt, low health with the heartbeat, the fade to ink
-- [ ] Reduced motion: no kick, no zoom, the slow blink, no flash, no pulse
+- [ ] Reduced motion: no kick, no zoom, no turn of the camera by itself, the slow blink, no flash, no pulse
+
+### Cameras
+- [ ] The combat camera (spec "Combat camera", cut order 1): 0.9 rad/s after 0.8 s with no look input, the 20° stop, look input wins on the same step; Node tests
+- [ ] The boss camera (spec "Boss camera", cut order 2): the aim point at 0.35, 10.5 m, 1.5 rad/s after 0.6 s, the ease back over 1 s; Node tests
 
 ### The run's screens
-- [ ] HUD: health bar, flask pips, glim; the toast at `sat + 150px` at 520 px wide or less
+- [ ] HUD: health bar, flask pips, glim; the toast 8 px under the HUD's measured bottom at every width
 - [ ] The help card with the run's controls and Begin the run
 - [ ] The beacon card: the wick choice, Spend glim, Walk on
-- [ ] The six wicks
+- [ ] The six wicks, drawn from the wicks not yet chosen
 - [ ] The Lamp-room: bank, the five upgrades, Buy, Begin the run, Wander when open
-- [ ] Death, the fade and the run summary; Ash pocket
+- [ ] Death, the fade and the run summary, also after a reload in the fade; Ash pocket
 - [ ] The pause panel: the run's places, time, Resume, the sound switch, End the run
 - [ ] Wander: the explorer with no foes, `?wander`, the open rule, a reload back into Wander, the Lamp-room button in its Map
+- [ ] Wander's Map and end card fit 360×640 and 800×600 with no scroll
 
 ### The boss
-- [ ] `boss.bin.gz`: the Barrow Reeve on 17 bones, its 12 candles; fetched during The Bell Knoll
+- [ ] `boss.bin.gz`: the Barrow Reeve on 17 bones, its 12 candles; fetched during The Bell Knoll, or after play starts in Barrow Crown; the arena asleep until it has loaded
+- [ ] The boss slot parked out of `boned` until the intro, and the other slots parked in the boss fight
 - [ ] The intro: the stop, the bars, the zoom, the card, the boss bar on touch and with a fine pointer
 - [ ] The phases and the stumble; leaving and coming back
 - [ ] The attacks: sweep, cage slam, lamp-shards, stalking lunge, double sweep, and the choice by position
 - [ ] The fall, the light that rides at the lantern, the beacon, the win card, the first win opening Wander
-- [ ] The boss camera (cut order 2)
-- [ ] The idle combat camera (cut order 1)
 
 ### Sound
 - [ ] WebAudio cues made in code: tells, hits, hurt, glim, beacon, boss, heartbeat; start on the first press
 - [ ] `/arcade/quiet.js` as the page's first script, and a `lab/gloam-downs` entry in `PAGES` of `qa/arcade/quiet.mjs`
 
 ### Checks
-- [ ] `qa/lab/gloam-downs-run.test.mjs`: moves, foes, rules, saves, names, budget, the sort bench (1.40) and the foe step bench (0.5 ms)
-- [ ] `qa/lab/gloam-downs-bot.mjs` on the real walk maps; tune against the pacing targets and write the results in design.md
-- [ ] `qa/lab/gloam-downs-run.e2e.mjs`: every control, every state, the five layouts with the overlap check and screenshots
-- [ ] The same e2e: the look in a fight, the tell and marker counts, reduced motion, the frame ratio (1.30)
+- [ ] `qa/lab/gloam-downs-run.test.mjs`: moves, foes, rules, saves, names with the places, budget and download sizes, the cameras, the sort bench in all five places (1.45) and the foe step bench (0.5 ms)
+- [ ] `qa/lab/gloam-downs-bot.mjs` on the real walk maps, with the run length at skill 0.5; tune against the pacing targets and write the results in design.md
+- [ ] `qa/lab/gloam-downs-run.e2e.mjs`: every control and both tools, every state with a reload in the death fade, the five layouts with the overlap check, the toast and screenshots
+- [ ] The same e2e: the look in a fight in the Gaol (5 foes), the Fen and Barrow Crown (6 foes and a marker); the tell and marker counts in fire slots 34 to 37; reduced motion; the frame ratio in The Bell Knoll against Wander (1.30); the boss file after a reload
 - [ ] `qa/lab/gloam-downs.e2e.mjs` through `?wander`
 - [ ] `node qa/arcade/quiet.mjs --only=lab/gloam-downs` with the site served
 - [ ] `node qa/arcade/machines.mjs` with the site served
 
 ### Text and art
+- [ ] Ask the user whether to keep the name "Crow Ramparts" (design.md, "The names and the order of the places"); on a new name, change the display name only
 - [ ] The switcher subtitle, the cabinet's aria label, the Lab card, the Corridor caption and the page's meta description say it is a combat run
 - [ ] Cabinet and Corridor art with a foe in view, from the final bake
 - [ ] `games/gloam-downs/README.md` and the Gloam Downs line in `AGENTS.md`: the foe bake, the bot and the new checks
