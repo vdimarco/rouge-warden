@@ -1,4 +1,4 @@
-// Crow Ramparts: a broken curtain wall that rides the ridges of rolling downs at the last light of a storm. Squat round towers stand at
+// The Crow Wall: a broken curtain wall that rides the ridges of rolling downs at the last light of a storm. Squat round towers stand at
 // its bends, rubble heaps and a breach let you climb onto the wall-walk, braziers burn along it, blood-red rags stream from poles and
 // hang from the battlements, and the siege's leavings lie in the vale below. The highest tower holds the summit: a fat drum with a
 // slimmer tower on it, steps winding up round both to the beacon. Storm-violet sky over a thin sick yellow-green glow, pale stone in
@@ -34,7 +34,7 @@ const RIDGE = [[17, 30, 7, 1.3], [12.5, 22.5, 7, 1.4], [9, 16.5, 7, 1.5], [10.8,
 
 export default {
   id: 'ramparts',
-  name: 'Crow Ramparts',
+  name: 'The Crow Wall',
   sub: 'A broken wall rides the downs as the storm light dies',
   hint: 'Walk the wall to the high tower. Light the beacon.',
   seed: 23,

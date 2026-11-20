@@ -138,7 +138,7 @@ try {
     await page.waitForFunction(() => window.__gloam.ready() && window.__gloam.state().place === 'ramparts', null, { timeout: 120000 });
     const r = await state(page);
     assert.deepEqual(r.reached, ['gaol', 'ramparts']);
-    pass('the beacon lights and Crow Ramparts loads');
+    pass('the beacon lights and The Crow Wall loads');
   }
   { // reload: the save comes back
     await page.goto(`${SITE}/lab/gloam-downs/?test`);

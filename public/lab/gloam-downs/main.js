@@ -179,7 +179,7 @@ function openMap() {
   mode = 'map';
   box.querySelector('[aria-current="true"]')?.focus();
 }
-const NAMES = { gaol: 'The Sunken Gaol', ramparts: 'Crow Ramparts', fen: 'Lantern Fen', bells: 'The Bell Knoll', barrows: 'Barrow Crown' };
+const NAMES = { gaol: 'The Sunken Gaol', ramparts: 'The Crow Wall', fen: 'Lantern Fen', bells: 'The Bell Knoll', barrows: 'Barrow Crown' };
 $('bMap').addEventListener('click', () => (mode === 'map' ? closePanels() : openMap()));
 $('bMapClose').addEventListener('click', closePanels);
 $('bLook').addEventListener('click', lookAhead);
