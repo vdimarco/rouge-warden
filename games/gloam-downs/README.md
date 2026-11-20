@@ -76,7 +76,7 @@ export default {
 
 ## The rules `--check` holds a place to
 
-- **Budget:** 250,000 splats or fewer in total, including about 4,000 for the lamplighter, and 1.5 MB or less gzipped.
+- **Budget:** 250,000 splats or fewer in total, including about 5,400 for the lamplighter, and 1.5 MB or less gzipped.
   - Terrain is the biggest cost. The default is a near square of ±26 at spacing 0.24, then rings to ±52 at 0.5 and to ±104 at 1.0.
   - Keep prop spacing (`res`) at 0.08–0.14. Big flat walls can go to 0.12–0.16.
   - Far silhouettes beyond the play area can go to 0.3.

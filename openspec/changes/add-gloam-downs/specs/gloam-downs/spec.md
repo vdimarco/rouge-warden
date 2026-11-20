@@ -52,7 +52,7 @@ Q and E, the right stick, a mouse drag or a touch drag on the right half of the 
 - **THEN** the camera comes closer, so the lamplighter stays in view
 
 ### Requirement: Wisps and the beacon
-Each place SHALL have five wisps: glowing motes that float above the ground. A wisp SHALL go out and count when the lamplighter touches it. Each place SHALL have one beacon on its summit. When the lamplighter touches the beacon, the beacon SHALL light, a card SHALL say that the way opens, and the next place SHALL load.
+Each place SHALL have five wisps: glowing motes that float above the ground. A wisp SHALL go out and count when the lamplighter touches it. Each place SHALL have one beacon on its summit. When the lamplighter touches the beacon, the beacon SHALL light. While another beacon is still dark and the place has a next place, a card SHALL say that the way opens, and the next place SHALL load. Otherwise the walk SHALL follow The end of the walk.
 
 #### Scenario: Wisp
 - **WHEN** the lamplighter touches a wisp
@@ -103,7 +103,7 @@ When a place does not load, the loading screen SHALL say so and show Try again. 
 - **THEN** the page says in words what the browser does not have, and does not show Try again
 
 ### Requirement: Size and speed
-Each baked world SHALL have no more than 260,000 splats and no more than 48 palette colors, and its download SHALL be no more than 1.5 MB. The page SHALL draw at a small art size that scales up by a whole number. If frames take too long, the page SHALL draw at a smaller art size.
+Each baked world SHALL have no more than 250,000 splats and no more than 48 palette colors, and its download SHALL be no more than 1.5 MB. The page SHALL draw at a small art size that scales up by a whole number. If frames take too long, the page SHALL draw at a smaller art size.
 
 #### Scenario: Budget
 - **WHEN** the Node test reads the baked worlds

@@ -213,7 +213,7 @@ try {
     assert.match(await p.textContent('#loadLine'), /Could not load The Sunken Gaol/);
     assert.equal(asked, 1);
     const askedFor = async n => { for (let i = 0; i < 100 && asked < n; i++) await p.waitForTimeout(100); return asked; };
-    await p.focus('#bRetry');
+    assert.equal(await p.evaluate(() => document.activeElement.id), 'bRetry', 'a failed load puts the focus on Try again');
     await p.keyboard.press(' ');
     assert.equal(await askedFor(2), 2, 'Space on Try again asks for the place again');
     await p.waitForSelector('#bRetry', { state: 'visible', timeout: 60000 });
