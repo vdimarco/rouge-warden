@@ -146,7 +146,7 @@ export default {
     const thatch = { r: [mud[1], st[0], st[1], st[2]], g: [st[0]], mod: straw };
     const iron = { r: ramp('iron'), g: [ramp('iron')[0]] };
     const glass = { r: [lan[1], lan[2]], em: true }; // a lantern's glass: pale at its heart, green at its rim
-    const stone = { r: [sk[0], sk[1], sk[2]], g: [sk[1]], mod: grit(0.9), top: { min: 0.72, r: moss.slice(1, 4) } };
+    const stone = { r: [moss[0], sk[0], sk[1], sk[2]], g: [sk[1]], mod: grit(0.9), top: { min: 0.72, r: moss.slice(1, 4) } };
     const cloth = { r: [mud[0], mud[1], st[0]], g: [mud[0]], mod: grit(0.6) };
     const SICK = [st[1], lan[0]];
     const lamps = []; // lanterns, drawn after the bakes
@@ -643,12 +643,13 @@ export default {
       // by; and now and then a ripple
       const tex = (x, y, z) => {
         if (h(x, z) > W - 0.13 - 0.08 * B.n3(x * 1.3, z * 1.3, 7)) return wt[3];
-        const far = smooth(12, 34, Math.hypot(x - eye[0], z - eye[2])), band = Math.sin(z * 2.6 + 1.3 * Math.sin(x * 0.35) + 2 * B.n3(x * 0.25, z * 0.6, 3));
-        if (band > 0.93 - 0.35 * far && B.n3(x * 0.5, z * 1.8, 8) > 0.45) return far > 0.5 ? wt[3] : wt[2];
-        return Math.sin(z * 5.2 + 1.7 * Math.sin(x * 0.8)) > 0.975 && B.n3(x * 0.7, z * 0.7, 5) > 0.58 ? wt[2] : undefined;
+        // a few long level streaks, longer and more of them far off; between them the water is even (still water has no grain)
+        const far = smooth(12, 36, Math.hypot(x - eye[0], z - eye[2])), band = Math.sin(z * 1.9 + 0.9 * Math.sin(x * 0.17) + 0.8 * B.n3(x * 0.1, z * 0.4, 3));
+        if (band > 0.955 - 0.1 * far && B.n3(x * 0.16, z * 1.4, 8) > 0.5) return far > 0.6 ? wt[3] : wt[2];
+        return undefined;
       };
       // the far water holds a little of the sky's haze, the near water is black
-      const mod = (x, y, z) => 0.2 * (B.fbm(x * 0.3 + 3, z * 0.3, 0.5, 2) - 0.5) + 0.45 * smooth(14, 34, Math.hypot(x - eye[0], z - eye[2])) - 0.15;
+      const mod = (x, y, z) => 0.06 * (B.fbm(x * 0.12 + 3, z * 0.12, 0.5, 2) - 0.5) + 0.3 * smooth(14, 36, Math.hypot(x - eye[0], z - eye[2])) - 0.15;
       const water = { r: wt, mod, tex, fat: 0.62 };
       S.add({
         bc: [(px0 + px1) / 2, W - 0.3, (pz0 + pz1) / 2],
