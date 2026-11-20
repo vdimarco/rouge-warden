@@ -72,6 +72,14 @@ The player SHALL move relative to the camera with WASD, the arrow keys, the left
 - **WHEN** the lamplighter walks along or across a boardwalk where a seam between its planks is one cell of the walk map wide
 - **THEN** it walks over the seam and does not drop through it into the water
 
+#### Scenario: Slot between two floors
+- **WHEN** the lamplighter walks across a slot one cell wide between floors at 0 and 0.5 over a drop of 2, or across a notch two cells wide and 1.5 deep in a platform, on a 30, 60, 120 or 144 Hz screen
+- **THEN** it walks over the slot or the notch and never stands in it
+
+#### Scenario: No trap
+- **WHEN** the lamplighter walks, runs, jumps or falls anywhere in a place, on a 30, 60, 120 or 144 Hz screen
+- **THEN** from wherever it stands, it can walk or jump back to the start or on to the beacon. It never ends in a slot, a notch, a pit or a nook under a roof that it cannot leave. Check: the bake's `--check` line "no trap", and the Node test `gloam-downs.test.mjs`
+
 #### Scenario: Lean-to against a hall
 - **WHEN** the lamplighter runs and jumps, or walks off, from a low roof (a lean-to, top 2.3) into a hall under a higher roof (underside 5), on a 30, 60, 120 or 144 Hz screen
 - **THEN** it flies as in the open and lands on the hall's floor, and the hall's roof does not stop it in the air
@@ -211,7 +219,7 @@ Each baked world SHALL have no more than 250,000 splats and no more than 48 pale
 
 #### Scenario: Walk map layers
 - **WHEN** the Node test reads a baked walk map
-- **THEN** it holds the three layers that its JSON names: the top, the floor under a gap, and the gap's underside, which is 0 where there is no gap and between the floor and the top where there is one; and it has no crack one cell wide left to close
+- **THEN** it holds the three layers that its JSON names: the top, the floor under a gap, and the gap's underside, which is 0 where there is no gap and between the floor and the top where there is one; and it has no crack left to close and no trap in reach
 
 #### Scenario: Walk file that does not match its settings
 - **WHEN** the page loads a place whose walk file does not hold the layers that the place's JSON names

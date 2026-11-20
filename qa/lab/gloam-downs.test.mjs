@@ -1,11 +1,12 @@
 // Gloam Downs, checked in node with no browser (public/lab/gloam-downs/):
-//   the five baked places (budget, palette, bones, wisps, beacon, the start on the ground, the walk map's three layers and no crack one
-//   cell wide left in it, everything in reach by the controller's rules),
+//   the five baked places (budget, palette, bones, wisps, beacon, the start on the ground, the walk map's three layers and no crack
+//   left in it to close, everything in reach by the controller's rules, and no trap in reach),
 //   the controller on made-up ground (walk, run, jump height, walls, steps, ledges, a step on a ledge's lip, falls, walking under an
 //   arch, landing on a sloped roof or crown over a gap and on a sloped floor under one, walking off a ledge into an arch, the corners of
 //   one roof agreeing on the layer, thin roofs, a vault's edge over a grate, a jump under a high roof with the gap's underside, the bake's
-//   crack pass and a hut over its crawl space, a lean-to against a hall, a jump up through a roof, running jumps up gentle and steep
-//   slopes, a curb and blocks on a slope), the reach search's walks and jumps against the controller,
+//   crack pass and a hut over its crawl space, the crack pass rule by rule, the bake's trap rule on a pit, a slot, a notch and a nook,
+//   a lean-to against a hall, a dome, a jump up through a thin roof, running jumps up gentle and steep slopes on any heading, curbs and
+//   blocks on a slope), the reach search's walks and jumps against the controller,
 //   the pose (the bones put the figure where the body is), the saved game (rubbish in, a clean save out), and the loader's check of
 //   the walk file's layers.
 // Run: node qa/lab/gloam-downs.test.mjs
@@ -16,6 +17,7 @@ import { fileURLToPath } from 'node:url';
 import { makeWalk, makeBody, makeCamera, pose, reachable, touches, atBeacon, JUMP, PARAMS } from '../../public/lab/gloam-downs/play.js';
 import { clean, fresh, ORDER, wispCount } from '../../public/lab/gloam-downs/save.js';
 import { closeCracks } from '../../games/gloam-downs/lib/cracks.mjs';
+import { byBeacon, closeTraps, findTraps } from '../../games/gloam-downs/lib/traps.mjs';
 
 const DIR = fileURLToPath(new URL('../../public/lab/gloam-downs/', import.meta.url));
 // load the codec in this realm: in a vm context it rejects this realm's Uint8Array
@@ -71,7 +73,9 @@ for (const id of skipWorlds ? [] : ORDER) {
   assert(walk.U, `${id}: the controller reads the underside`);
   const floor = walk.support(meta.spawn.p[0], meta.spawn.p[2], meta.spawn.p[1] + 1);
   assert(floor !== null && near(floor, meta.spawn.p[1], 0.6), `${id}: the start stands on the ground`);
-  const R = reachable(walk, meta.spawn, meta.bounds);
+  // no trap in reach: every state the search reaches leads back to the start or the beacon, by the search or the controller
+  const { R, traps } = findTraps(walk, meta);
+  assert.equal(traps.length, 0, `${id}: ${traps.length} trap(s) in reach, as at (${traps[0]?.x}, ${traps[0]?.z}) (bake it again)`);
   assert(R.near(meta.beacon.p, meta.beacon.r * 0.9, -2.6, 2.6), `${id}: the beacon can be reached`);
   meta.wisps.forEach((w, i) => assert(R.near(w.p), `${id}: wisp ${i + 1} can be reached`));
   assert(meta.beacon.p[1] > meta.spawn.p[1] + 2, `${id}: the beacon stands on a rise above the start`);
@@ -497,7 +501,8 @@ const layered = fn => {
 { /* cracks, and a hut over its crawl space, as in the fen: water at -0.5; a porch at 1.7 under a roof (top 4, underside 3.8) for
      |x|, |z| <= 4; the hut's body in the middle (|x|, |z| <= 1.25), a solid from its top (4.5) down to 1.4 over the crawl space, water
      under it; and cracks one cell wide in the porch, as the bake reads the seams between planks: one alone at (2.5, 0), a seam of nine
-     along z at x -2.5, and one between the porch and the body at (1.5, 0.5). And a boardwalk at 0.5 over the water (|x| <= 3, z 5 to 7)
+     along z at x -2.5, and one beside the body at (1.5, 0.5) (the porch on both sides of it along z closes it). And a boardwalk at 0.5
+     over the water (|x| <= 3, z 5 to 7)
      with a seam of three cells across it at z 6. The bake's crack pass closes those 14 cells and leaves the body, the edges and the water
      as they are. Then walks at the body from every side, walks along its walls and wanders with jumps on the porch, and walks along and
      across the boardwalk, at every frame step: the feet never go under the porch or the boardwalk. The body is not the porch's roof (their
@@ -567,6 +572,152 @@ const layered = fn => {
   assert(drops > 0, 'without the crack pass a walk should drop through a crack');
   pass('the bake closes cracks one cell wide, and from a hut\'s porch the feet never drop into the crawl space under it', { tries, dropsWithoutThePass: drops });
 }
+// a made-up walk map as the bake writes it: fn(x, z) -> h, or [top, floor under the gap, underside], on a 40 x 40 grid at 0.25
+const mapOf = fn => {
+  const info = { x0: -20, z0: -20, step: 0.25, nx: 161, nz: 161, layers: ['T', 'G', 'U'] }, N = info.nx * info.nz, cells = new Int16Array(3 * N);
+  const ki = (x, z) => Math.round((z - info.z0) / info.step) * info.nx + Math.round((x - info.x0) / info.step);
+  for (let j = 0; j < info.nz; j++) for (let i = 0; i < info.nx; i++) {
+    const v = fn(info.x0 + i * info.step, info.z0 + j * info.step), [t, g = t, u = 0] = Array.isArray(v) ? v : [v], k = j * info.nx + i;
+    cells[k] = Math.round(t * 100); cells[N + k] = Math.round(g * 100); cells[2 * N + k] = Math.round(u * 100);
+  }
+  const L = { T: cells.subarray(0, N), G: cells.subarray(N, 2 * N), U: cells.subarray(2 * N), nx: info.nx, nz: info.nz };
+  return { info, cells, N, L, ki, at: (x, z) => [L.T[ki(x, z)], L.G[ki(x, z)], L.U[ki(x, z)]], walk: () => makeWalk(info, cells) };
+};
+const on = (a, b) => Math.abs(a - b) < 0.01;
+// walks over a spot at every frame step, straight across it on 8 headings at two speeds, and wanders with jumps round it -> the lowest
+// the feet stood on the ground within r of it
+const lowestNear = (W2, [cx, cy, cz], r, from = 1.6) => {
+  let low = Infinity;
+  const watch = b => { if (b.s.ground && Math.hypot(b.s.x - cx, b.s.z - cz) < r) low = Math.min(low, b.s.y); };
+  for (const dt of DTS) {
+    for (let a = 0; a < 360; a += 45) for (const mag of [0.35, 1]) for (const off of [-0.12, 0.05]) {
+      const rad = a * Math.PI / 180, ux = Math.cos(rad), uz = Math.sin(rad), b = makeBody(W2, { p: [cx - ux * from - uz * off, cy + 0.3, cz - uz * from + ux * off], yaw: 0 }, 20);
+      for (let i = 0, k = Math.round(1.4 / dt); i < k; i++) { b.step(dt, { mx: ux * mag, mz: -uz * mag }, 0); watch(b); }
+    }
+    let seed = 11 + hz(dt);
+    const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
+    for (let q = 0; q < 6; q++) {
+      const b = makeBody(W2, { p: [cx + (rnd() - 0.5) * 2.4, cy + 0.3, cz + (rnd() - 0.5) * 2.4], yaw: 0 }, 20);
+      let a = 0, m = 0;
+      for (let i = 0, k = Math.round(6 / dt); i < k; i++) {
+        if (i % Math.round(0.5 / dt) === 0) { a = rnd() * 6.283; m = [0.3, 0.6, 1][Math.floor(rnd() * 3)]; }
+        b.step(dt, { mx: Math.cos(a) * m, mz: Math.sin(a) * m, jump: rnd() < 0.03 }, 0);
+        watch(b);
+      }
+    }
+  }
+  return low;
+};
+{ /* the crack pass, rule by rule. A seam one cell wide between floors at 0 and 0.5, over a drop of 2 (as in the gaol): it comes up
+     half way, to 0.25. A notch two cells by two in a platform at 4.9, 1.5 deep (as in the fen): it comes up to 4.9. Seams between
+     floors 0.08 apart come up to one of the two floors; 0.15 apart, half way. A seam between a floor and a wall comes up to the floor,
+     the only pair that closes it. A crack in an open porch over the water keeps the porch's gap under it. A crack whose only pair is a
+     crack that the first pass closes is closed by the second. A post over a culvert between two floors whose feet are over its
+     underside is a wall, not a crack, and stays. A slot by a wall under a bracket 0.6 over the floor beside it is closed solid, for
+     less than 1.8 would be left under the bracket. A crack that is the low top of a gap (a grate 1 under the floor, over a pit) stays.
+     Walks and wanders over the seam and the notch, at every frame step, never stand in them */
+  const run1 = fn => { const m = mapOf(fn); m.closed = closeCracks(m.L); return m; };
+  const seam = run1((x, z) => (on(x, 0) && Math.abs(z) <= 4 ? -2 : x < 0 ? 0 : 0.5));
+  assert.equal(seam.closed, 33, `the seam: ${seam.closed} cells closed, not 33`);
+  for (let z = -4; z <= 4; z += 0.25) assert.deepEqual(seam.at(0, z), [25, 25, 0], `the seam at z ${z}: ${seam.at(0, z)}`);
+  const sLow = lowestNear(seam.walk(), [0, 0.25, 0], 0.15);
+  assert(sLow > -0.05, `walks across the seam between 0 and 0.5 stood in it at ${sLow.toFixed(2)}`);
+  const notch = run1((x, z) => (Math.abs(x) > 4 || Math.abs(z) > 4 ? 0 : (on(x, 0) || on(x, 0.25)) && (on(z, 0) || on(z, 0.25)) ? 3.4 : 4.9));
+  assert.equal(notch.closed, 4, `the notch: ${notch.closed} cells closed, not 4`);
+  for (const [x, z] of [[0, 0], [0.25, 0], [0, 0.25], [0.25, 0.25]]) assert.deepEqual(notch.at(x, z), [490, 490, 0], `the notch at ${x}, ${z}: ${notch.at(x, z)}`);
+  const nLow = lowestNear(notch.walk(), [0.125, 4.9, 0.125], 0.3);
+  assert(nLow > 4.85, `walks across the notch stood in it at ${nLow.toFixed(2)}`);
+  // the tolerance: 0.08 apart is one floor, 0.15 apart two (on z < 0, and on z > 2)
+  const tol = run1((x, z) => (on(x, 0) && ((z >= -3 && z <= -1) || (z >= 3 && z <= 5)) ? -2 : x < 0 ? 0 : z < 1 ? 0.08 : 0.15));
+  for (let z = -3; z <= -1; z += 0.25) assert([0, 8].includes(tol.at(0, z)[0]), `floors 0.08 apart: the seam at z ${z} came up to ${tol.at(0, z)[0]}, not to a floor`);
+  for (let z = 3; z <= 5; z += 0.25) assert(Math.abs(tol.at(0, z)[0] - 7.5) <= 1, `floors 0.15 apart: the seam at z ${z} came up to ${tol.at(0, z)[0]}, not half way`);
+  // a floor and a wall: the seam runs along z, so its cells along z are cracks too and only the floor and the wall close it
+  const wall = run1((x, z) => (on(x, 0) && Math.abs(z) <= 2 ? -2 : x < 0 ? 0 : 3));
+  for (let z = -2; z <= 2; z += 0.25) assert.deepEqual(wall.at(0, z), [0, 0, 0], `a seam between a floor and a wall at z ${z}: ${wall.at(0, z)}`);
+  // an open porch over the water: top 1.7, the water at -0.5, the porch's underside 1.4
+  const porch = run1((x, z) => (on(x, 0) && on(z, 0) ? -0.5 : Math.abs(x) <= 3 && Math.abs(z) <= 3 ? [1.7, -0.5, 1.4] : -0.5));
+  assert.deepEqual(porch.at(0, 0), [170, -50, 140], `a crack in an open porch over the water came up to ${porch.at(0, 0)}, not the porch over the water`);
+  // planks at 0.5 over the water: one along x up to x 0, and one along z at x 0.5 with a crack at z 0. The crack at (0.25, 0) is
+  // closed only once the one at (0.5, 0) is
+  const late = run1((x, z) => ((x >= -1 && x <= 0.01 && on(z, 0)) || (on(x, 0.5) && Math.abs(z) <= 1 && !on(z, 0)) ? 0.5 : -0.5));
+  assert(late.closed === 2 && late.at(0.25, 0)[0] === 50 && late.at(0.5, 0)[0] === 50, `planks: ${late.closed} closed, (0.25, 0) at ${late.at(0.25, 0)}, (0.5, 0) at ${late.at(0.5, 0)}`);
+  // a post (top 4) over a culvert (floor 0, underside 1.5) in a floor at 2: feet at 2 are over the underside, so the post is a wall
+  const post = run1((x, z) => (on(x, 0) && on(z, 0) ? [4, 0, 1.5] : Math.abs(x) <= 3 && Math.abs(z) <= 3 ? 2 : 0));
+  assert(post.closed === 0 && post.at(0, 0).join() === '400,0,150', `a post over a culvert: ${post.closed} closed, the post is ${post.at(0, 0)}`);
+  // a floor at 2 (x < 0), a slot at x 0 (floor 0) under a bracket (top 2.9, underside 2.6), and a wall (3.5) east of it
+  const bracket = run1(x => (on(x, 0) ? [2.9, 0, 2.6] : x < 0 ? 2 : 3.5));
+  assert.deepEqual(bracket.at(0, 0), [290, 290, 0], `a slot under a bracket 0.6 over the floor came up to ${bracket.at(0, 0)}, not solid`);
+  // a grate (top 0, a pit to -3 under it, underside -0.2) one cell wide in a floor at 1
+  const grate = run1((x, z) => (on(x, 0) && on(z, 0) ? [0, -3, -0.2] : 1));
+  assert(grate.closed === 0 && grate.at(0, 0).join() === '0,-300,-20', `a grate 1 under the floor: ${grate.closed} closed, it is ${grate.at(0, 0)}`);
+  pass('the crack pass: a seam between two floors, a notch two cells wide, floors 0.08 and 0.15 apart, a floor and a wall, an open porch, two passes, and a post that is no crack', { seamLow: +sLow.toFixed(2), notchLow: +nLow.toFixed(2) });
+}
+{ /* no trap in reach (lib/traps.mjs). Flat ground at 0 with the start at the middle and the beacon at (-8, 0, -8), and four traps that
+     no walk or jump leaves: a pit a metre across and 2 deep at x, z 3 to 3.75; a slot one cell wide and 2 deep at x 6, z -1 to 1,
+     between the ground and a floor at 0.5 east of it; a notch three cells by three in a platform at 1.0 (x 9 to 12), 1.45 deep, which
+     a jump from a few of its cells leaves on one or two headings of 16 (too few to find); and
+     a nook under a roof (top 3, underside 2.2) over the ground, x -7 to -4, where one cell reads the crawl space 2 under the floor; and a
+     trench 2 deep and a metre wide between walls 3 high (x 0 to 3, z 8 to 9), open only at its west end, so its far end is reached only
+     along it. The search and the controller find each of them. closeTraps() fills them, each to the floor of its way in, and changes nothing else;
+     then none is left, in one round, and walks and wanders at every frame step never stand in them. Without the rule, walks end in them */
+  const at = (x, z, x0, x1, z0, z1) => x >= x0 - 0.01 && x <= x1 + 0.01 && z >= z0 - 0.01 && z <= z1 + 0.01;
+  const fn = (x, z) => {
+    if (at(x, z, 3, 3.75, 3, 3.75)) return -2;
+    if (on(x, 6) && Math.abs(z) <= 1) return -2;
+    if (x > 6 && x < 8.5) return 0.5;
+    if (at(x, z, 10, 10.5, 0, 0.5)) return -0.45;
+    if (at(x, z, 9, 12, -2, 2)) return 1.0;
+    if (on(x, -5.5) && on(z, 0)) return [3, -2, 2.2];
+    if (at(x, z, -7, -4, -1.5, 1.5)) return [3, 0, 2.2];
+    if (at(x, z, 0, 3, 8, 9)) return -2;
+    if (at(x, z, 0, 3.25, 7.75, 9.25)) return 3;
+    return 0;
+  };
+  const place = { spawn: { p: [0, 0, 0] }, beacon: { p: [-8, 0, -8], r: 1.6 }, bounds: 20 };
+  const where = t => (at(t.x, t.z, 3, 3.75, 3, 3.75) ? 'pit' : on(t.x, 6) ? 'slot' : at(t.x, t.z, 10, 10.5, 0, 0.5) ? 'notch' : on(t.x, -5.5) && on(t.z, 0) ? 'nook' : at(t.x, t.z, 0, 3, 8, 9) ? 'trench' : `(${t.x}, ${t.z})`);
+  const raw = mapOf(fn), found = findTraps(raw.walk(), place).traps.map(where);
+  assert.deepEqual([...new Set(found)].sort(), ['nook', 'notch', 'pit', 'slot', 'trench'], `the traps found: ${[...new Set(found)].join(', ')}`);
+  // the hook: a trap that out() says leads back is none
+  assert.equal(reachable(raw.walk(), place.spawn, 20).trapped(() => false, () => true).traps.length, 0, 'a trap that the controller leaves is no trap');
+  const m = mapOf(fn), before = m.cells.slice(), w = { ...m.info, T: m.L.T, G: m.L.G, U: m.L.U }, res = closeTraps(w, place);
+  assert.equal(findTraps(m.walk(), place).traps.length, 0, 'traps left after closeTraps()');
+  const want = { pit: 16, slot: 9, notch: 9, nook: 1 }, got = { pit: 0, slot: 0, notch: 0, nook: 0, trench: 0 };
+  for (const c of res.changed) { const k = where(c); assert(k in got, `closeTraps() changed (${c.x}, ${c.z}) too`); got[k]++; }
+  assert.deepEqual({ ...got, trench: undefined }, { ...want, trench: undefined }, `the cells filled: ${JSON.stringify(got)}`);
+  // the trench: every cell along its middle (the cells by its walls, where the disc does not fit, are not reached, so they stay)
+  for (let x = 0; x <= 2.75; x += 0.25) assert.deepEqual(m.at(x, 8.5), [0, 0, 0], `the trench at x ${x} was filled to ${m.at(x, 8.5)}`);
+  assert.equal(res.rounds, 1, `closeTraps() took ${res.rounds} rounds: a trap reached from another comes up to that one's new floor in the same round`);
+  for (let k = 0; k < m.N; k++) if (m.cells[k] !== before[k] || m.cells[m.N + k] !== before[m.N + k] || m.cells[2 * m.N + k] !== before[2 * m.N + k]) {
+    const x = m.info.x0 + (k % m.info.nx) * 0.25, z = m.info.z0 + Math.floor(k / m.info.nx) * 0.25, kind = where({ x, z });
+    const t = m.cells[k], g = m.cells[m.N + k], u = m.cells[2 * m.N + k];
+    const fill = { pit: [0, 0, 0], notch: [100, 100, 0], nook: [300, 0, 220], trench: [0, 0, 0] }[kind];
+    if (fill) assert.deepEqual([t, g, u], fill, `the ${kind} at (${x}, ${z}) was filled to ${[t, g, u]}`);
+    else assert(kind === 'slot' && t === g && u === 0 && (t === 0 || t === 50), `the slot at (${x}, ${z}) was filled to ${[t, g, u]}`);
+  }
+  const W2 = m.walk(), Wraw = raw.walk();
+  const spots = [['pit', [3.375, 0, 3.375], 0.4, -0.05], ['slot', [6, 0, 0], 0.15, -0.05], ['notch', [10.25, 1, 0.25], 0.4, 0.95], ['nook', [-5.5, 0, 0], 0.15, -0.05], ['trench', [0.75, 0, 8.5], 0.6, -0.05]];
+  const lows = {};
+  for (const [kind, p, r, least] of spots) {
+    const low = lowestNear(W2, p, r);
+    assert(low > least, `after closeTraps() the feet stood in the ${kind} at ${low.toFixed(2)}`);
+    lows[kind] = +low.toFixed(2);
+    assert(lowestNear(Wraw, p, r) < least - 0.4, `without the rule the walks should stand in the ${kind}`);
+  }
+  /* the foot of a wall, dropped onto from above: a platform at 2 (|x|, z <= 2) with a wall 2.5 high east of it (x 2.25 to 4, z 0.25 to
+     1), the ground at 0 round them and the beacon on it. A drop off the platform's edge at (2.25, 0), or off the wall's top, lands
+     with the disc over the wall's foot. The search walks away from the wall there, as the controller does, so with no help from the
+     controller nothing in reach is a trap, and the controller walks away from that spot too */
+  const foot = mapOf((x, z) => (x >= 2.24 && x <= 4.01 && z >= 0.24 && z <= 1.01 ? 2.5 : Math.abs(x) <= 2.01 && Math.abs(z) <= 2.01 ? 2 : 0));
+  const fr = reachable(foot.walk(), { p: [0, 2, 0] }, 20), fb = { p: [8, 0, -6], r: 1.6 };
+  assert(fr.near([2.25, 0, 0], 0.05, -0.05, 0.05), 'the search drops to the wall\'s foot');
+  assert.equal(fr.trapped(byBeacon(fb)).traps.length, 0, 'the search should walk away from the wall\'s foot');
+  for (const dt of DTS) {
+    const b = makeBody(foot.walk(), { p: [2.25, 0, 0], yaw: 0 }, 20);
+    hold(b, 1, toward(0, -1), dt);
+    assert(b.s.z < -1 && near(b.s.y, 0, 1e-6), `${hz(dt)} Hz: from the wall's foot the controller walked to ${b.s.x.toFixed(2)}, ${b.s.z.toFixed(2)}`);
+  }
+  pass('no trap in reach: a pit, a slot, a notch, a nook under a roof and a dead-end trench are found and filled, walks never stand in them, and the foot of a wall is no trap', { filled: res.changed.length, rounds: res.rounds, lows });
+}
 { /* roofs of different solids. A lean-to against a hall, both over a floor at 0. The lean-to's roof (top 2.3, underside 1.9) and the hall's (top 6, underside 5)
      are two roofs, so the lean-to's corners have no say on the hall's. From the lean-to's top, running jumps and walk-offs into the hall
      fly as in the open and land on the hall's floor: the hall's roof is not a wall in the air. A higher lean-to, 1.5 under the hall's
@@ -590,19 +741,24 @@ const layered = fn => {
       tries++;
     }
   }
-  /* a ledge at 1.0 beside a thin canopy (top 1.9, underside 1.8, floor 0 under it): a walk off the ledge drops under the canopy, and a
-     jump in the coyote time does not take the feet up through the canopy's underside, at any speed or frame step */
-  const canopy = layered((x, z) => (Math.abs(z) > 6 || x > 6 ? 0 : x < -0.01 ? 1.0 : [1.9, 0, 1.8]));
-  for (const dt of DTS) for (const x0 of [-2, -1.3, -0.7]) for (const z of [0.07, 0.19]) for (const mag of [0.4, 0.7, 1]) for (const lag of [0, 0.03, 0.06, 0.1]) {
-    const b = makeBody(canopy, { p: [x0, 1.2, z], yaw: 0 }, 20);
-    let fell = -1, y0 = b.s.y;
-    hold(b, 1.5, t => {
-      assert(!(!b.s.ground && y0 < 1.8 && b.s.y >= 1.8 && b.s.x >= 0), `${hz(dt)} Hz, off the ledge from ${x0}, stick ${mag}, jump ${lag} s after the edge: the feet rose up through the canopy at ${b.s.x.toFixed(2)}, ${b.s.y.toFixed(2)}`);
-      if (fell < 0 && b.s.events.includes('fall')) fell = t;
-      y0 = b.s.y;
-      return { mx: mag, jump: fell >= 0 && t - fell >= lag && t - fell < lag + 0.4 };
-    }, dt);
-    tries++;
+  /* a ledge beside a thin canopy (floor 0 under it): a walk off the ledge drops under the canopy, and a jump in the coyote time does not
+     take the feet up through the canopy's underside, at any speed or frame step. The ledge at 1.0 under a canopy 1.8 to 1.9; a ledge at
+     0.95 or 0.9 under one 0.02 or 0.05 thick at 1.8, and at 1.95 under one 0.04 thick at 2.8, whose top the feet would reach in one step
+     at 30 or 60 Hz. After a bump the feet no longer rise */
+  for (const [L, C, th] of [[1.0, 1.8, 0.1], [0.95, 1.8, 0.02], [0.9, 1.8, 0.05], [1.95, 2.8, 0.04]]) {
+    const canopy = layered((x, z) => (Math.abs(z) > 6 || x > 6 ? 0 : x < -0.01 ? L : [C + th, 0, C]));
+    for (const dt of th < 0.1 ? DTS.slice(0, 2) : DTS) for (const x0 of [-2, -1.3, -0.7]) for (const z of [0.07, 0.19]) for (const mag of [0.4, 0.7, 1]) for (const lag of [0, 0.03, 0.06, 0.1]) {
+      const b = makeBody(canopy, { p: [x0, L + 0.2, z], yaw: 0 }, 20);
+      let fell = -1, y0 = b.s.y, x1 = b.s.x;
+      hold(b, 1.5, t => {
+        assert(!(y0 < C - 1e-6 && b.s.y >= C - 1e-6 && x1 > 0.02 && b.s.x > 0.02), `${hz(dt)} Hz, off the ledge ${L} from ${x0} under the canopy ${C} (${th} thick), stick ${mag}, jump ${lag} s after the edge: the feet rose up through the canopy at ${b.s.x.toFixed(2)}, ${b.s.y.toFixed(2)}`);
+        assert(!b.s.events.includes('bump') || b.s.vy <= 0, `${hz(dt)} Hz, under the canopy ${C}: after a bump the feet still rise at ${b.s.vy.toFixed(2)}`);
+        if (fell < 0 && b.s.events.includes('fall')) fell = t;
+        y0 = b.s.y; x1 = b.s.x;
+        return { mx: mag, jump: fell >= 0 && t - fell >= lag && t - fell < lag + 0.4 };
+      }, dt);
+      tries++;
+    }
   }
   /* the face of a rampart, as the ramparts bake it: ground at 0.85 before it; on the face, a parapet's lip (top 4.45, underside 3.9) and,
      beside it, a merlon's overhang (top 5.59, underside 4.79), with solid wall behind. The two are one wall: their undersides are 0.89
@@ -617,7 +773,37 @@ const layered = fn => {
     assert(b.s.ground && (near(b.s.y, tp, 0.1) || near(b.s.y, fl, 0.1)), `${hz(dt)} Hz: a fall past the rampart's face at ${x.toFixed(3)}, ${z.toFixed(3)} landed at ${b.s.y.toFixed(2)}, between the top ${tp.toFixed(2)} and the floor ${fl.toFixed(2)}`);
     tries++;
   }
-  pass('roofs of other solids have no say (a lean-to and a hall), one wall\'s corners agree (a rampart\'s face), the hall\'s edge is not climbed, and a jump does not rise up through a roof', { tries });
+  /* a dome (radius 5, its spring 0.8 over a floor that slopes 0.5, walls 0.5 thick) as the bake reads it: a gap under it where there is
+     1.8 or more, else solid. Near its rim the undersides of a cell's corners step more than 1.0 across it (up to 1.22, 1.63, 1.89 and
+     2.22), so its corners are one roof only through each other. Feet dropped in those cells from between their lowest and highest
+     underside, still or moving out, at 30 and 120 Hz, land on the floor or on the dome's top, never on a shelf in mid-air */
+  const R5 = 5, spring = 0.8, kd = 0.5, under5 = (x, z) => kd * x + spring + Math.sqrt(Math.max(0, R5 * R5 - x * x - z * z));
+  const dome = layered((x, z) => {
+    const r = Math.hypot(x, z), f = kd * x;
+    if (r > R5 + 0.5) return f;
+    if (r > R5 - 1e-6) return f + spring + R5 + 0.5;
+    return under5(x, z) - f >= 1.8 ? [f + spring + R5 + 0.5, f, under5(x, z)] : f + spring + R5 + 0.5;
+  });
+  let split = 0;
+  for (let j = 0; j < dome.nz - 1; j++) for (let i = 0; i < dome.nx - 1; i++) {
+    const ks = [j * dome.nx + i, j * dome.nx + i + 1, (j + 1) * dome.nx + i, (j + 1) * dome.nx + i + 1];
+    if (!ks.every(q => dome.G[q] < dome.T[q])) continue;
+    const us = ks.map(q => dome.U[q] * 0.01), lo = Math.min(...us), hi = Math.max(...us);
+    if (hi - lo <= 1.0) continue;
+    split++;
+    for (const dt of [DTS[0], DTS[2]]) for (const fu of [0.25, 0.5, 0.75]) for (const fv of [0.25, 0.5, 0.75]) for (const fh of [0.1, 0.4, 0.7, 0.95]) for (const vel of [0, 1.5]) {
+      const x = dome.x0 + (i + fu) * dome.step, z = dome.z0 + (j + fv) * dome.step, y = lo + (hi - lo) * fh;
+      if (y >= under5(x, z) - 0.02) continue;
+      const b = makeBody(dome, { p: [x, kd * x, z], yaw: 0 }, 20);
+      b.s.ground = false; b.s.y = y; b.s.vx = vel * Math.sign(x);
+      for (let q = 0; q < 1.5 / dt && !b.s.ground; q++) b.step(dt, {}, 0);
+      const fl = dome.floor(b.s.x, b.s.z), tp = dome.top(b.s.x, b.s.z);
+      assert(!b.s.ground || near(b.s.y, fl, 0.05) || near(b.s.y, tp, 0.05) || R5 - Math.hypot(b.s.x, b.s.z) < 0.3, `${hz(dt)} Hz: feet dropped under the dome at ${x.toFixed(2)}, ${y.toFixed(2)}, ${z.toFixed(2)} (undersides ${us.map(u => u.toFixed(2)).join('/')}) landed at ${b.s.y.toFixed(2)}, between the floor ${fl.toFixed(2)} and the top ${tp.toFixed(2)}`);
+      tries++;
+    }
+  }
+  assert(split >= 8, `the dome has ${split} cells whose undersides step more than 1.0`);
+  pass('roofs of other solids have no say (a lean-to and a hall), one wall\'s corners agree (a rampart\'s face), a dome\'s corners are one roof, the hall\'s edge is not climbed, and a jump does not rise up through a roof', { tries });
 }
 { /* a running jump up a slope, the stick at full, at every frame step. In the air the disc may overlap the slope under it, so the slope
      stops it neither at the take-off nor just before the landing. Up a slope of 0.3 or 0.6 it keeps at least 85% of the run speed
@@ -672,12 +858,30 @@ const layered = fn => {
       assert(k > 1.5 ? Math.max(...least) - Math.min(...least) < 0.1 : least.every(v => v >= 0.95 * PARAMS.run), `slope ${k}: a running jump off a terrace 0.8 over the slope was held back to ${least.join(', ')} at 30, 60, 120 and 144 Hz`);
     }
   }
+  // the same up a slope of 1.0 that rises along z, and along a line 45° off the grid: the hold works on any heading
+  for (const deg of [90, 45]) {
+    const a = deg * Math.PI / 180, cx = Math.cos(a), cz = Math.sin(a), k = 1.0, up = (x, z) => k * (x * cx + z * cz), W2 = layered(up), lift = [];
+    for (const dt of DTS) {
+      const b = makeBody(W2, { p: [-2.5 * cx - 0.13 * cz, -2.5 * k, -2.5 * cz + 0.13 * cx], yaw: 0 }, 20);
+      let off = false, land = false, high = 0;
+      for (let i = 0; i < 1.4 / dt; i++) {
+        b.step(dt, { ...toward(cx, cz), jump: i * dt > 0.2 && i * dt < 0.5 }, 0);
+        if (b.s.events.includes('jump')) off = true;
+        if (off && !land) high = Math.max(high, b.s.y - up(b.s.x, b.s.z));
+        if (off && b.s.events.includes('land')) land = true;
+      }
+      assert(off && land && high >= LIFT - 0.02, `slope ${k} rising ${deg}° off the x axis, ${hz(dt)} Hz: a running jump lifted the feet ${high.toFixed(2)} over it`);
+      lift.push(+high.toFixed(3));
+    }
+    assert(Math.max(...lift) - Math.min(...lift) < 0.03, `slope 1.0 rising ${deg}° off the x axis: the jump lifts the feet ${lift.join(', ')} over it at 30, 60, 120 and 144 Hz`);
+    lifts[`1 at ${deg}°`] = lift[1];
+  }
   /* a curb 0.2 high across a slope (the grid points from x = 0 on stand 0.2 over it): a running jump that takes off with the disc's front
      at the curb's foot. In the air the curb rises off the slope's plane, so it is a wall until the feet are over it: the run into it stops
-     there, straight at it or 30° off, and does not pass through it */
+     there, straight at it or 30° off, and does not pass through it. So does a curb 0.12 high, which rises 0.07 over the slope's plane */
   let tries = 0;
-  for (const k of [0.6, 1.0]) for (const deg of [0, 30]) {
-    const W2 = layered(x => (x < -0.01 ? k * x : k * x + 0.2));
+  for (const ch of [0.2, 0.12]) for (const k of [0.6, 1.0]) for (const deg of [0, 30]) {
+    const W2 = layered(x => (x < -0.01 ? k * x : k * x + ch));
     for (const dt of DTS) for (const z of [0.13, 0.4]) for (const x0 of [-3, -2.93, -2.87]) {
       const a = deg * Math.PI / 180, b = makeBody(W2, { p: [x0, x0 * k, z], yaw: 0 }, 20);
       let jumped = false, into = Infinity;
@@ -686,7 +890,7 @@ const layered = fn => {
         if (b.s.events.includes('jump')) jumped = true;
         if (jumped && !b.s.ground) into = Math.min(into, b.s.vx);
       }
-      assert(jumped && into < 1.7, `slope ${k}, ${hz(dt)} Hz, ${deg}°: a running jump at a curb 0.2 high kept ${into.toFixed(2)} of its speed into it`);
+      assert(jumped && into < 1.7, `slope ${k}, ${hz(dt)} Hz, ${deg}°: a running jump at a curb ${ch} high kept ${into.toFixed(2)} of its speed into it`);
       tries++;
     }
   }

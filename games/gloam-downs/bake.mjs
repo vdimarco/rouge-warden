@@ -11,6 +11,7 @@ import { performance } from 'node:perf_hooks';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { checkPlace } from './lib/check.mjs';
+import { closeTraps } from './lib/traps.mjs';
 import { lib, K, palette, hills, terrain, walkMap, walkCells, WALK_LAYERS, lamplighter, shadowDisc, wisp, fire, embers, BONES, INK_VERSION } from './lib/common.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -83,6 +84,13 @@ export function build(def) {
   const W = def.walk || {};
   const walk = walkMap(S, h, { x0: -W.half || -36, x1: W.half || 36, z0: -W.half || -36, z1: W.half || 36, step: 0.25, ...W.opts });
   const t2 = performance.now();
+  /* no trap in reach (lib/traps.mjs): what the start reaches but cannot get back from is filled. The last reach search of it is on the
+     final walk map, so the check uses it */
+  let traps;
+  try { traps = closeTraps(walk, { spawn: marks.spawn, beacon: marks.beacon, bounds: W.half || 36 }); } catch (e) { throw new Error(`${def.id}: ${e.message}`); }
+  walk.traps = traps.changed;
+  if (walk.traps.length) walk.gaps = walk.T.reduce((n, t, k) => n + (walk.G[k] < t ? 1 : 0), 0);
+  const t2r = performance.now();
   /* then what must not block the feet (water, hanging cloth, chains), and one bake of it all, so the scenery shadows the late solids and
      hides what of them is buried in it. Baked alone, they would be lit in a field that holds nothing else */
   for (const fn of marks.late) fn(ctx);
@@ -148,10 +156,11 @@ export function build(def) {
     hint: def.hint || ''
   };
   const stats = {
-    splats: world.count, build: Math.round(t1 - t0), walk: Math.round(t2 - t1), bake: Math.round(t3 - t2), avatar: Math.round(t4 - t3),
-    finish: Math.round(t5 - t4), gaps: walk.gaps, cracks: walk.cracks, boned: boned.length, scenery: nScenery, glow: world.count - nScenery - boned.length
+    splats: world.count, build: Math.round(t1 - t0), walk: Math.round(t2 - t1), reach: Math.round(t2r - t2), bake: Math.round(t3 - t2r),
+    avatar: Math.round(t4 - t3), finish: Math.round(t5 - t4), gaps: walk.gaps, cracks: walk.cracks, traps: walk.traps.length, boned: boned.length,
+    scenery: nScenery, glow: world.count - nScenery - boned.length
   };
-  return { world, meta, walk, stats, P };
+  return { world, meta, walk, stats, P, reach: traps.R };
 }
 
 export function save(id, { world, meta, walk }, out = OUT) {
@@ -217,6 +226,7 @@ async function main() {
     const built = build(def);
     const sizes = save(id, built);
     console.log(`${id}: ${JSON.stringify(built.stats)} gz ${(sizes.splatsGz / 1e6).toFixed(2)} MB, walk ${(sizes.walkGz / 1e3).toFixed(0)} KB`);
+    for (const c of built.walk.traps) console.log(`  trap filled at (${c.x}, ${c.z}): top/floor/underside ${c.before.join('/')} -> ${c.after.join('/')} cm`);
     let frame;
     if (prev || args.includes('--check')) {
       fs.mkdirSync(out, { recursive: true });
