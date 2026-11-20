@@ -85,7 +85,7 @@ export default {
       const g = grit(k);
       return (x, y, z) => {
         const c = y / ch, row = Math.floor(c), f = c - row, u0 = (x * 0.72 + z * 0.69) / 1.2 + row * 0.5, col = Math.floor(u0), u = u0 - col;
-        return g(x, y, z) + 0.13 * (B.n3(col * 3.7, row * 1.9, 5.5) - 0.5) + (f < 0.16 || u < 0.07 ? -0.13 : 0);
+        return g(x, y, z) + 0.17 * (B.n3(col * 3.7, row * 1.9, 5.5) - 0.5) + (f < 0.16 || u < 0.07 ? -0.18 : 0);
       };
     };
     const grass = ramp('grass'), chalk = ramp('chalk'), st = ramp('stone'), wd = ramp('wood');
