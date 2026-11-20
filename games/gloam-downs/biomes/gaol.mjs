@@ -277,9 +277,12 @@ export default {
           for (const d of bx) S.tube([[c.x + d, fy - 0.2, zb2], [c.x + d, sp + Math.sqrt(half * half - d * d) + 0.05, zb2]], 0.05, 0.05, bars, { res: 0.07 });
           S.tube([[c.x - half, fy + 1.15, zb2], [c.x + half, fy + 1.15, zb2]], 0.055, 0.055, bars, { res: 0.08 });
         } else {
+          /* one bar stands; two are torn from the vault and bent down against the sides, their feet kicked out over the floor. Each runs
+             in the vault and then down between the walk map's grid points, so the way in stays wider than the lamplighter */
+          const arc = d => sp + Math.sqrt(half * half - d * d) - 0.04;
           S.tube([[c.x - 0.62, fy - 0.2, zb2], [c.x - 0.62, sp + 0.6, zb2]], 0.06, 0.06, bars, { res: 0.08 });
-          S.tube([[c.x + 0.31, sp + 0.8, zb2], [c.x + 0.5, fy + 0.9, zb2 + 0.7], [c.x + 0.9, fy + 0.05, zb2 + 1.3]], 0.06, 0.06, bars, { res: 0.08 });
-          S.tube([[c.x, sp + 0.85, zb2], [c.x - 0.2, fy + 1.3, zb2 + 0.5], [c.x - 0.4, fy + 0.1, zb2 + 1.5]], 0.06, 0.06, bars, { res: 0.08 });
+          S.tube([[c.x + 0.1, arc(0.1), zb2], [c.x + 0.4, arc(0.4), zb2], [c.x + 0.8, sp + 0.68, zb2], [c.x + 0.8, fy + 0.4, zb2 + 0.05], [c.x + 1.15, fy + 0.06, zb2 + 0.8]], 0.06, 0.06, bars, { res: 0.08 });
+          S.tube([[c.x - 0.05, arc(-0.05), zb2], [c.x - 0.36, arc(-0.36), zb2], [c.x - 0.48, sp + 0.68, zb2], [c.x - 0.48, fy + 0.35, zb2 + 0.05], [c.x - 0.85, fy + 0.06, zb2 + 0.85]], 0.06, 0.06, bars, { res: 0.08 });
         }
         // inside: a chain from the vault, and in some a skull on the floor
         S.tube([[c.x + 0.25, sp + 0.7, zf - deep + 0.3], [c.x + 0.3, sp - 0.3, zf - deep + 0.35]], 0.04, 0.04, bars, { res: 0.06 });

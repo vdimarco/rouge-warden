@@ -1,6 +1,7 @@
 // Checks a baked place against the spec: budget, palette, the start on the ground, the beacon and every wisp in reach by the
 // controller's own rules, and (from a CPU picture at the start) that the place is dark with bright fire in it.
 import { makeWalk, reachable, JUMP, PARAMS } from '../../../public/lab/gloam-downs/play.js';
+import { walkCells } from './common.mjs';
 
 export const BUDGET = { splats: 250000, gzBytes: 1.5e6, colors: 48, meanLuma: 0.32, meanMin: 0.05, brightLuma: 0.55, brightMin: 0.0005, brightMax: 0.12 };
 
@@ -22,10 +23,7 @@ export function checkPlace({ meta, walk, world }, { gzBytes, frame } = {}) {
   ok(meta.count <= BUDGET.splats, `splats ${meta.count} <= ${BUDGET.splats}`);
   if (gzBytes !== undefined) ok(gzBytes <= BUDGET.gzBytes, `download ${(gzBytes / 1e6).toFixed(2)} MB <= 1.5 MB`);
   ok(meta.pal.length <= BUDGET.colors, `palette ${meta.pal.length} <= 48`);
-  const cells = new Int16Array(walk.T.length * 2);
-  cells.set(walk.T, 0);
-  cells.set(walk.G, walk.T.length);
-  const W = makeWalk(meta.walk, cells);
+  const W = makeWalk(meta.walk, walkCells(walk));
   const sy = W.support(meta.spawn.p[0], meta.spawn.p[2], meta.spawn.p[1] + 1);
   ok(sy !== null && Math.abs(sy - meta.spawn.p[1]) < 0.6, `start stands on the ground (floor ${sy?.toFixed(2)}, start ${meta.spawn.p[1].toFixed(2)})`);
   const R = reachable(W, meta.spawn, meta.bounds);

@@ -32,9 +32,105 @@ The player SHALL move relative to the camera with WASD, the arrow keys, the left
 - **WHEN** the lamplighter walks into a wall higher than its jump
 - **THEN** it stops at the wall and does not go into it. Check: Node test `gloam-downs.test.mjs`: a wall 3 high stops it 0 to 1 m short of the face.
 
+#### Scenario: Wall at an angle
+- **WHEN** the lamplighter walks or jumps into a wall or a ledge of 1.0 or more at any angle, on a 30, 60, 120 or 144 Hz screen
+- **THEN** it slides along the wall and stays on the ground below it, unless it jumps onto a ledge lower than its jump
+
+#### Scenario: Step on a ledge's lip
+- **WHEN** the lamplighter walks at a ledge of 1.2 that has a step of 0.7 on its lip, at any angle and frame rate
+- **THEN** it stops below the step, and a jump gets it onto the ledge
+
+#### Scenario: Under an arch
+- **WHEN** the lamplighter walks or runs under an arch or a tree crown with 1.8 of clearance, at any speed or frame rate
+- **THEN** its feet stay on the floor under it
+
+#### Scenario: On a roof
+- **WHEN** the lamplighter jumps on, or falls onto, a sloped roof, an arch's top or a tree crown with a gap under it, on a 30, 60, 120 or 144 Hz screen
+- **THEN** it lands on the top and does not fall through to the floor under it, and its shadow lies under its feet
+
+#### Scenario: Higher roof
+- **WHEN** the lamplighter walks on a roof into a higher roof
+- **THEN** it stops at the higher roof, or walks up it when the step is 0.5 or lower, and does not fall through
+
+#### Scenario: Sloped floor under a roof
+- **WHEN** the lamplighter jumps in place, or runs and jumps up or down, on a floor that slopes 0.6 or 1.0 per unit under a roof, on a 30, 60, 120 or 144 Hz screen
+- **THEN** it lands on that floor and does not fall through it
+
+#### Scenario: No shelf in mid-air
+- **WHEN** the lamplighter runs and jumps down a floor that slopes 0.6 or 1.0 per unit under a roof 5 high, with the stick held or let go in the air, on a 30, 60, 120 or 144 Hz screen, and then walks across the slope
+- **THEN** it lands on the floor and stays on it, and never stands in the air between the floor and the roof
+
+#### Scenario: Edge of a vault over a grate
+- **WHEN** the lamplighter runs and jumps from a grate over a pit into a vault whose floor is the grate's height, or out of the vault onto the grate, on a 30, 60, 120 or 144 Hz screen
+- **THEN** it flies and lands as it does on plain ground, and the vault's edge does not stop it
+
+#### Scenario: Hut over a crawl space
+- **WHEN** the lamplighter walks, runs or jumps on a hut's porch under its eave, along the hut's wall or across the seams between the planks, on a 30, 60, 120 or 144 Hz screen
+- **THEN** its feet stay on the porch, and it never drops through a seam or past the hut's wall into the crawl space under the hut
+
+#### Scenario: Seam in a boardwalk
+- **WHEN** the lamplighter walks along or across a boardwalk where a seam between its planks is one cell of the walk map wide
+- **THEN** it walks over the seam and does not drop through it into the water
+
+#### Scenario: Lean-to against a hall
+- **WHEN** the lamplighter runs and jumps, or walks off, from a low roof (a lean-to, top 2.3) into a hall under a higher roof (underside 5), on a 30, 60, 120 or 144 Hz screen
+- **THEN** it flies as in the open and lands on the hall's floor, and the hall's roof does not stop it in the air
+
+#### Scenario: Face of a rampart
+- **WHEN** the lamplighter falls past the face of a wall where a parapet's lip and a merlon's overhang stand over the ground, on a 30, 60, 120 or 144 Hz screen
+- **THEN** it lands on the wall's top or on the ground, and never stands on a shelf between them
+
+#### Scenario: Roof edge above a lean-to
+- **WHEN** the lamplighter stands on a lean-to 1.5 under the top of a hall's roof, and runs, jumps or walks off toward the hall, on a 30, 60, 120 or 144 Hz screen
+- **THEN** it does not get onto the hall's roof
+
+#### Scenario: Jump into a roof from under its edge
+- **WHEN** the lamplighter walks off a ledge to under a roof whose underside is over the ledge, and jumps in the moment after the edge, on a 30, 60, 120 or 144 Hz screen
+- **THEN** its feet stop under the roof's underside and it falls, however thin the roof is
+
+#### Scenario: Thin roof over a sloped floor
+- **WHEN** the lamplighter jumps in place on, or falls from 1.5 above onto, a roof 1.85 to 2.0 over a floor that slopes 0.6 to 2.0 per unit with it, on a 30, 60, 120 or 144 Hz screen
+- **THEN** it lands on the roof and does not fall through it
+
+#### Scenario: Jump under a high roof
+- **WHEN** the lamplighter runs and jumps down a slope of 0.4 to 1.0 under a roof 6 high, in a place whose walk map stores the roof's underside, on a 30, 60, 120 or 144 Hz screen
+- **THEN** the jump flies and lands as it does on the open slope, and the roof does not stop it in the air
+
+#### Scenario: Past the lip of an overhang
+- **WHEN** the lamplighter falls past the lip of an overhang whose floor is higher than the open ground beside it
+- **THEN** it lands on the floor there and does not fall through it
+
+#### Scenario: Off a ledge into an arch
+- **WHEN** the lamplighter walks off a ledge of 1.2 into an archway or a cave, at any speed or frame rate
+- **THEN** it drops to the floor under the arch and is not stopped at the ledge's lip
+
 #### Scenario: Jump onto a ledge
 - **WHEN** the lamplighter jumps at a ledge lower than its jump height
 - **THEN** it lands on the ledge. Check: Node test `gloam-downs.test.mjs`: it lands on a ledge of 1.0, ±0.05.
+
+#### Scenario: Running jump up a slope
+- **WHEN** the lamplighter runs up a slope of 0.3 or 0.6 with the stick at full and jumps, on a 30, 60, 120 or 144 Hz screen
+- **THEN** it keeps at least 85% of its run speed in the air and through the landing, runs on up the slope, and the jump goes as far from the take-off at each frame rate, within 0.22
+
+#### Scenario: Running jump up a steep slope
+- **WHEN** the lamplighter runs up a slope of 0.8 to 2.0 with the stick at full and jumps, on a 30, 60, 120 or 144 Hz screen
+- **THEN** its feet rise at least 0.4 over the slope, the same at each frame rate within 0.03; while they rise, its run up the slope slows so that the slope rises under it at 3.8 per second; the run picks up again before it lands, and it runs on up the slope
+
+#### Scenario: Jump off a terrace over a slope
+- **WHEN** the lamplighter runs off the edge of a terrace 0.8 above a slope of 0.8 to 1.5 and jumps there, on a 30, 60, 120 or 144 Hz screen
+- **THEN** it keeps at least 95% of its run speed over the slope
+
+#### Scenario: Curb on a slope
+- **WHEN** the lamplighter runs up a slope of 0.6 or 1.0 and jumps with its front at the foot of a curb 0.2 high, straight at it or 30° off, on a 30, 60, 120 or 144 Hz screen
+- **THEN** the curb stops its run into it until the feet are over it, and it does not pass through the curb
+
+#### Scenario: Block on a slope
+- **WHEN** the lamplighter runs up a slope of 0.3 to 1.0 and jumps at a block that stands 1.6 or 2.0 over the slope at its foot, or jumps again and again at a hillside of 4 per unit
+- **THEN** it does not stand on the block or climb the hillside
+
+#### Scenario: Block on a slope from a stop
+- **WHEN** the lamplighter stands against a block 1.0 over a slope of 0.3 to 1.0 at its foot and jumps toward it, on a 30, 60, 120 or 144 Hz screen
+- **THEN** it lands on the block
 
 #### Scenario: Low step
 - **WHEN** the lamplighter walks at a step of 0.5 or lower
@@ -50,6 +146,10 @@ Q and E, the right stick, a mouse drag or a touch drag on the right half of the 
 #### Scenario: Hill in the way
 - **WHEN** a hill comes between the camera and the lamplighter
 - **THEN** the camera comes closer, so the lamplighter stays in view. Check: Node test `gloam-downs.test.mjs`: with a wall behind the lamplighter, the camera comes in to less than 2 m.
+
+#### Scenario: Back to a wall
+- **WHEN** the lamplighter stands with its back to a wall or a cliff
+- **THEN** the camera's eye stays in front of the wall, and the view tilts down from above when the wall is too close to frame the lamplighter
 
 ### Requirement: Wisps and the beacon
 Each place SHALL have five wisps, glowing motes that float above the ground, and one beacon on its summit. In Wander, a wisp SHALL go out and count when the lamplighter touches it, and the beacon SHALL light when the lamplighter touches it. While another beacon is still dark and the place has a next place, a card SHALL say that the way opens. Then the next place SHALL load. Otherwise the walk SHALL follow The end of the walk. In a run, the run's rules apply instead.
@@ -108,6 +208,14 @@ Each baked world SHALL have no more than 250,000 splats and no more than 48 pale
 #### Scenario: Budget
 - **WHEN** the Node test reads the baked worlds
 - **THEN** each one is within the splat, palette and size limits above. Check: Node test `gloam-downs.test.mjs`.
+
+#### Scenario: Walk map layers
+- **WHEN** the Node test reads a baked walk map
+- **THEN** it holds the three layers that its JSON names: the top, the floor under a gap, and the gap's underside, which is 0 where there is no gap and between the floor and the top where there is one; and it has no crack one cell wide left to close
+
+#### Scenario: Walk file that does not match its settings
+- **WHEN** the page loads a place whose walk file does not hold the layers that the place's JSON names
+- **THEN** the place does not load, and the loading screen shows Try again
 
 ### Requirement: Arcade cabinet
 Gloam Downs SHALL have its cabinet at the end of the Lab row on the homepage, and its entry in the game switcher (Lab only). It SHALL have its piece in the Corridor after Splat Isle, its card on the Lab page and its dates. Its id SHALL be `gloam-downs`, its title "Gloam Downs" and its route `/lab/gloam-downs/`.

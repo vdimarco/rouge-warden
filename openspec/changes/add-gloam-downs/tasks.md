@@ -18,6 +18,7 @@
 
 - [x] Explorer page `public/lab/gloam-downs/`: loading bar, help, map, end card, toasts
 - [x] Controller: walk, run, jump with coyote time and a jump buffer, step-up, slopes, walls, ledges, falls; camera that pulls in near walls
+- [x] Walk map and controller fixes: the gap's underside layer, cracks one cell wide closed in the bake, the corners of one roof agree, a jump stops under a roof it rises into, and a running jump up a steep slope still lifts the feet 0.4
 - [x] Keyboard, mouse, touch stick and look, jump button, gamepad
 - [x] Wisps, the beacon, unlocks, the next place, the end card when all five beacons burn, and Walk again
 - [x] Saved progress, and a bad save is cleaned
