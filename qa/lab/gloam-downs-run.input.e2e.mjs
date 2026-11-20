@@ -109,13 +109,17 @@ try {
 
     // the roll: no direction held, straight back from the facing
     await G(page, () => { const s = window.__gloam.state(); window.__gloam.teleport(-5.5, 4.5, s.yaw); });
+    await tick(page, 1.0, {}); // the swing drawn above ends first
     let a = await state(page);
     await tick(page, 0.1, { roll: true });
+    r = await run(page);
+    assert.deepEqual([r.move, r.safe], ['roll', 'roll'], `run() reads the roll: ${r.move} ${r.safe}`);
     await tick(page, 1.0, {});
+    assert.equal((await run(page)).move, null, 'and the roll has ended');
     let b = await state(page);
     const rolled = Math.hypot(b.x - a.x, b.z - a.z);
     assert(rolled >= 3.3 && rolled <= 3.7, `rolled ${rolled}`);
-    pass('K or a held roll rolls 3.3 to 3.7 m', { rolled: +rolled.toFixed(2) });
+    pass('K or a held roll rolls 3.3 to 3.7 m, and run() reads the roll and its safe time', { rolled: +rolled.toFixed(2) });
 
     // the drink: 40 of 100 and 2 flasks, then 75 and 1; at full health a toast and the flask kept
     await G(page, () => window.__gloam.set({ hp: 40 }));

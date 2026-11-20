@@ -200,6 +200,8 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
   }
   // the last firm ground: where the feet stand at least 1 m from a ledge (a drop of more than stepDown; a wall is no ledge)
   function firm() {
+    // feet placed below the fall line (place() calls them on the ground) are a fall, never firm ground
+    if (s.y < MOVES.fall.below) return false;
     const R = MOVES.fall.firm;
     for (let k = 0; k < 8; k++) {
       const a = (k * Math.PI) / 4;

@@ -505,11 +505,25 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   assert(fell, 'it fell');
   assert.equal(rs.run.hp, 40);
   assert(fell.y === 0 && fell.x <= 3 - 1 + 1e-6, `back on firm ground: ${JSON.stringify(fell)}`);
+  // then safe for 0.9 s, as after a hit
+  assert.equal(R.hurt(16, [s.x + 1, s.z], {}, []), 'safe', 'a hit just after the fall does nothing');
+  assert.equal(rs.run.hp, 40);
   // never below 1
   rs.run.hp = 5;
   for (let i = 0; i < 400; i++) R.step({ mx: 1 }, 0);
   assert.equal(rs.run.hp, 1);
-  pass('a fall below y -25: back on the last firm ground, 1 m from the edge, 10 health lost, never below 1', fell);
+  pass('a fall below y -25: back on the last firm ground, 1 m from the edge, 10 health lost, never below 1, then safe', fell);
+}
+{ // feet put below y -25 (a test's teleport, or a body placed there) are never taken as firm ground, at any step of the firm check
+  for (let lead = 0; lead < 4; lead++) {
+    const { R, rs, body, s } = runnerAt(FLAT, 0, 0);
+    runFor(R, 8 + lead);
+    body.place([0, -30, 0], s.yaw);
+    const ev = runFor(R, 12);
+    assert.equal(ev.filter(e => e.type === 'fall').length, 1, `one fall (lead ${lead})`);
+    assert(s.y > -1 && rs.run.hp === 90, `back on the ground with 90: y ${s.y}, ${rs.run.hp}`);
+  }
+  pass('feet below y -25 are never firm ground: one fall, back on the ground');
 }
 
 /* ---------------- the run's rules ---------------- */
