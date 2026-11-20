@@ -1,3 +1,0 @@
-# Baked places are kept out of git while the places are still being built; the final bake removes this file and adds them.
-*
-!.gitignore
