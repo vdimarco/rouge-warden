@@ -6,13 +6,13 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import zlib from 'node:zlib';
-import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 import { makeWalk, makeBody, makeCamera, pose, reachable, touches, atBeacon, JUMP, PARAMS } from '../../public/lab/gloam-downs/play.js';
 import { clean, fresh, ORDER, wispCount } from '../../public/lab/gloam-downs/save.js';
 
 const DIR = fileURLToPath(new URL('../../public/lab/gloam-downs/', import.meta.url));
-const SplatCodec = vm.runInNewContext(fs.readFileSync(DIR + 'ink/splat-codec.js', 'utf8') + '\nSplatCodec;', {});
+// load the codec in this realm: in a vm context it rejects this realm's Uint8Array
+const SplatCodec = new Function(fs.readFileSync(DIR + 'ink/splat-codec.js', 'utf8') + '\nreturn SplatCodec;')();
 let n = 0;
 const pass = (name, data) => { n++; console.log('PASS ' + name + (data ? ' ' + JSON.stringify(data) : '')); };
 const near = (a, b, e) => Math.abs(a - b) <= e;

@@ -204,7 +204,8 @@ export function preview(built, { w = 640, h = 360, px = 2, view = 'start', file,
 async function main() {
   const args = process.argv.slice(2);
   const opt = k => { const i = args.indexOf('--' + k); return i >= 0 ? args[i + 1] : undefined; };
-  const ids = args.filter((a, i) => !a.startsWith('--') && !(i > 0 && args[i - 1].startsWith('--') && !['--preview'].includes(args[i - 1])));
+  const VAL = new Set(['--out', '--w', '--h']); // the options that take a value; --check and --preview do not
+  const ids = args.filter((a, i) => !a.startsWith('--') && !(i > 0 && VAL.has(args[i - 1])));
   const list = ids.length ? ids : ORDER;
   const prev = args.includes('--preview'), out = opt('out') || path.join(HERE, 'preview');
   for (const id of list) {
