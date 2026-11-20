@@ -98,7 +98,7 @@ export default {
         return B.n3(x * 0.16, z * 0.16, 11) + 0.25 * B.n3(x * 0.9, z * 0.9, 12) > 0.86 ? wd : grass;
       }
     };
-    groundTiles(ctx, ground, [{ r: grass, g: [grass[1]], mod: grit(1.2), fat: 0.64 }, { r: grass, mod: grit(1.4), fat: 0.88 }]);
+    groundTiles(ctx, ground, [{ r: grass, g: [grass[1]], mod: grit(1.2), fat: 0.7 }, { r: grass, mod: grit(1.4), fat: 1.15 }]);
 
     // stone: shaded on the violet ramp, warm on the faces the low sun still reaches
     const stone = { r: st, s: ramp('sunstone'), g: [st[1]], mod: laid(0.8), top: { min: 0.99, r: grass.slice(0, 3) } };
@@ -319,7 +319,7 @@ export default {
       // the glow: rows of long low splats from a little under the skyline up into the storm, the bright line on the skyline itself
       // it is thin and dim round most of the sky, brighter toward the sun, and brightest in the notch behind the summit. There its
       // brightest line is lifted off the skyline to stand behind the tower's crown (the drum hides the skyline itself)
-      const bSun = -44 * deg, bSum = Math.atan2(C[0] - E[0], E[2] - C[1]), R = 165;
+      const bSun = -40 * deg, bSum = Math.atan2(C[0] - E[0], E[2] - C[1]), R = 165;
       const notch = b => 1 - smooth(7 * deg, 20 * deg, Math.abs(b - bSum));
       for (let b = -100 * deg; b <= 56 * deg; b += 1.5 * deg) {
         const sw = 0.5 + 0.5 * Math.cos(b - bSun), nw = notch(b), w = Math.max(0.25 + 0.6 * sw, nw);
@@ -347,14 +347,14 @@ export default {
         const p = at(-4 * deg, skyline(-4 * deg) + 4.9 * deg, R - 4);
         B.axial(p[0], p[1], p[2], along(-4 * deg), 26, 0.9, B.P[sk[0]], 0.9, { em: true, nd: true });
       }
-      // the sun, its lower half already behind the far downs, a dark bar of cloud across it
+      // the sun, sinking into the far downs in a gap of the far broken wall, a thin bar of cloud across its top
       {
-        const e0 = skyline(bSun), s0 = at(bSun, e0 + 0.15 * deg, 170);
-        B.iso(s0[0], s0[1], s0[2], 2.3, B.P[f[1]], 3, { em: true, nd: true });
-        B.iso(s0[0], s0[1] + 0.3, s0[2], 1.4, B.P[f[2]], 3, { em: true, nd: true });
-        B.iso(s0[0], s0[1], s0[2], 9, B.P[sun[0]], 0.35, { em: true, nd: true });
-        const c = at(bSun + 0.6 * deg, e0 + 0.55 * deg, 166);
-        B.axial(c[0], c[1], c[2], along(bSun), 7, 0.35, B.P[sk[0]], 1.2, { em: true, nd: true });
+        const e0 = skyline(bSun), s0 = at(bSun, e0 + 0.45 * deg, 170);
+        B.iso(s0[0], s0[1], s0[2], 3.0, B.P[f[1]], 3, { em: true, nd: true });
+        B.iso(s0[0], s0[1] + 0.4, s0[2], 1.8, B.P[f[2]], 3, { em: true, nd: true });
+        B.iso(s0[0], s0[1], s0[2], 10, B.P[sun[0]], 0.35, { em: true, nd: true });
+        const c = at(bSun + 0.9 * deg, e0 + 1.25 * deg, 166);
+        B.axial(c[0], c[1], c[2], along(bSun), 6, 0.3, B.P[sk[0]], 1.2, { em: true, nd: true });
       }
       // ash on the wind
       lib.motes(B, 70, [-30, 30, 0.3, 8, -30, 30], [sk[2], st[3]], 0.03);

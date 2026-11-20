@@ -305,8 +305,8 @@ export default {
         S.tube([[x0, h(x0, z0) + r * 0.25, z0], [x1, h(x1, z1) + r * 0.25, z1]], r, r * 0.92, logs, { res: 0.11 });
       }
       // two torches at the lip, either side of the stair's head: they frame the fen, and are the warmest thing in the first picture
-      torch(sx - 2.7, sz + 0.5, { tall: 1.3, s: 0.7 });
-      torch(sx + 3.5, sz + 0.6, { tall: 1.3, s: 0.7 });
+      torch(sx - 2.7, sz + 0.5, { tall: 1.3, s: 0.6 });
+      torch(sx + 3.5, sz + 0.6, { tall: 1.3, s: 0.6 });
       // mooring posts and stones along the lip, so its edge is broken, not one hard line across the picture
       for (const [x, z, t] of [[sx - 4.6, sz + 0.2, 1.1], [sx + 5.4, sz + 0.4, 0.8], [sx - 1.6, sz - 0.1, 0.55]])
         S.tube([[x, h(x, z) - 0.3, z], [x + B.rr(-0.1, 0.1), h(x, z) + t, z + B.rr(-0.1, 0.1)]], 0.2, 0.15, wood, { res: 0.1 });
@@ -743,17 +743,18 @@ export default {
 
       // the sky
       B.sky(d => (d[1] < 0.03 ? sk[1] : d[1] < 0.14 ? sk[0] : dk), 230);
-      // the haze: level strokes in staggered rows (round dabs stacked in columns read as searchlights), sick olive round the moon and
-      // spread wide behind the mill and its deck so the summit stands black against it, teal further out, nothing past that (the dome
-      // is already the teal of the low sky)
-      for (let j = 0; j < 20; j++) {
-        const e = -0.135 + j * 0.0072;
+      // the haze: level strokes in staggered rows (round dabs stacked in columns read as searchlights). Sick olive round the moon; a
+      // lighter teal spread wide behind the mill and its deck, so the summit stands black against it and the pale sails read too;
+      // nothing past that (the dome is already the teal of the low sky). Its edges are ragged, not a ruled band
+      for (let j = 0; j < 22; j++) {
+        const e = -0.15 + j * 0.0072;
+        if (smooth(-0.155, -0.1, e) < B.rr(0, 1)) continue;
         for (let i = -26; i <= 26; i++) {
           const a = toMill + (i + (j % 2) * 0.5) * 0.024 + B.rr(-0.006, 0.006);
-          const dm = Math.hypot((a - az) * 0.6, e - el) / mr + B.rr(-0.6, 0.6);
-          const dh = Math.hypot((a - toMill) * 0.75, (e + 0.06) * 1.6) / mr + B.rr(-0.6, 0.6);
-          const c = dm < 2.6 || dh < 2.2 ? sk[3] : dm < 4.6 || dh < 4.4 ? sk[2] : null;
-          if (c === null || e > -0.012 + B.rr(-0.006, 0.006)) continue;
+          const dm = Math.hypot((a - az) * 0.6, e - el) / mr + B.rr(-0.9, 0.9);
+          const dh = Math.hypot((a - toMill) * 0.7, (e + 0.065) * 1.5) / mr + B.rr(-0.9, 0.9);
+          const c = dm < 2.5 ? sk[3] : dm < 4.4 || dh < 4.6 ? sk[2] : null;
+          if (c === null || e > -0.014 + B.rr(-0.01, 0.006)) continue;
           const p = dir(a, e), R = 185;
           B.axial(eye[0] + p[0] * R, eye[1] + p[1] * R, eye[2] + p[2] * R, [Math.cos(a), 0, Math.sin(a)], R * 0.02, R * 0.0042, B.P[c], 1.6, { em: true, nd: true });
         }
