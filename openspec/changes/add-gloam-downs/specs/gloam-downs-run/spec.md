@@ -32,7 +32,7 @@ A browser shows a pad to the page only after its first press. When a pad first s
 The page SHALL step the game at a fixed 1/60 s, as many steps as the frame took. It SHALL take no more than 15 steps for each frame. A time that is not a whole number of steps SHALL round to the nearest step. Timings of moves, warning moves and safe time SHALL be the same at every frame rate.
 
 #### Scenario: Frame rates
-- **WHEN** the Node test plays the same string, roll and Snuffer hook at 30, 60, 120 and 144 frames a second. Each press is read by the frame that starts at a multiple k of 1/6 s. That is a whole number of frames at each rate.
+- **WHEN** the Node test plays the same string, roll and Snuffer hook at 30, 60, 120 and 144 frames a second. At f frames a second, frame i covers the time from (i − 1)/f to i/f, and adds 1/f to `acc`. Each press is read by frame k·f/6 + 1, the first frame after k/6 s. k/6 s is a whole number of frames at each rate.
 - **THEN** each press counts on step 10k + 1 at each rate. At each rate, the hook lands on the same play step, and the roll's safe time starts and ends on the same play steps. Check: Node test `gloam-downs-run.test.mjs`.
 
 ### Requirement: The step count
@@ -40,7 +40,7 @@ The page SHALL add each frame's time in seconds to an accumulator, `acc`. The fr
 
 #### Scenario: Steps at 144 Hz
 - **WHEN** the Node test feeds 1,440 frames of 1/144 s to the step count
-- **THEN** it takes exactly 600 steps. At 30, 60, 120 and 144 frames a second, the step total after the frame at k/6 s is exactly 10k, for each k. Check: Node test `gloam-downs-run.test.mjs`.
+- **THEN** it takes exactly 600 steps. At 30, 60, 120 and 144 frames a second, the step total after the frame that ends at k/6 s is exactly 10k, for each k. Check: Node test `gloam-downs-run.test.mjs`.
 
 ### Requirement: Two clocks
 The game clock SHALL count every step. The play clock SHALL count the steps outside hit stop. Moves, wind-ups, recoveries, safe time and cooldowns SHALL run on the play clock. Effects SHALL run on the game clock.
@@ -168,7 +168,7 @@ In a run, each key press SHALL count once, and the keys SHALL do these things:
 - K or X SHALL roll.
 - L or C SHALL heal.
 - Q and E SHALL turn the view.
-- R SHALL face the nearest awake foe or the boss within 10 m, or look ahead when there is none.
+- R SHALL face the nearest awake foe within 10 m, or the boss within 10 m while the fight has started and the boss is up. With neither, R SHALL look ahead.
 - M, P or Escape SHALL open the pause panel.
 
 #### Scenario: Keys with WASD
@@ -210,7 +210,7 @@ On a touch screen in a run, the page SHALL show Attack, Jump, Roll and Heal butt
 - **THEN** the view turns and the string goes on. Check: e2e `gloam-downs-run.input.e2e.mjs`.
 
 ### Requirement: The Map and Look tools in a run
-In a run, the Map tool SHALL open the pause panel. The Look tool SHALL face the nearest awake foe or the boss within 10 m, or look ahead when there is none. A tap and a mouse click on a tool SHALL do the same thing. A press on a tool SHALL not swing the blade, and SHALL not start the stick or the look drag.
+In a run, the Map tool SHALL read "Pause", and it SHALL open the pause panel. The touch help SHALL say "Pause stops the run". The Look tool SHALL face the nearest awake foe within 10 m, or the boss within 10 m while the fight has started and the boss is up. With neither, it SHALL look ahead. A tap and a mouse click on a tool SHALL do the same thing. A press on a tool SHALL not swing the blade, and SHALL not start the stick or the look drag.
 
 #### Scenario: Map on a phone
 - **WHEN** the player taps Map in a fight on a touch screen
@@ -236,7 +236,7 @@ In a run, a held pad button SHALL count once across all pads, and the pad SHALL 
 - X (2) or RT (7) SHALL attack.
 - B (1) or LT (6) SHALL roll.
 - Y (3) SHALL heal.
-- RB (5) SHALL face the nearest awake foe or the boss within 10 m, or look ahead when there is none.
+- RB (5) SHALL face a foe or the boss, as R does in "Keyboard in a run".
 - Start (9) or the pad's Back button (8) SHALL open and close the pause panel.
 
 #### Scenario: Pad buttons
@@ -309,6 +309,17 @@ In a run, B and Escape SHALL do nothing in other cards. In a run, Start and the 
 #### Scenario: No way past the wick
 - **WHEN** the beacon card offers two wicks, and the player presses Escape, Start, the pad's Back button or B
 - **THEN** the card stays, and play does not go on. Check: e2e `gloam-downs-run.input.e2e.mjs`.
+
+### Requirement: Presses outside a card
+In a run, and on the run's help card, a press outside a card's box SHALL do nothing. On the pause panel, it SHALL act as Resume. On the run's help card, Escape, B and Start SHALL do nothing, and only its button SHALL close it.
+
+#### Scenario: A tap beside a card
+- **WHEN** at 390 by 844 on a touch screen, the player taps the backdrop of the Lamp-room, the run summary, the win card, and the beacon card after the wick is chosen
+- **THEN** each card stays, and `__gloam.run().mode` does not change. Check: e2e `gloam-downs-run.input.e2e.mjs`.
+
+#### Scenario: Escape on the run's help card
+- **WHEN** the run's help card shows on a first visit, and the player presses Escape
+- **THEN** the help card stays, and the run does not start. Check: e2e `gloam-downs-run.input.e2e.mjs`.
 
 ### Requirement: Cards in Wander
 In Wander, Escape, B and Start SHALL close the help card, the Map and the end card, as in the explorer. In Wander's play, M and Start SHALL open the Map, and M SHALL close it again.
@@ -419,11 +430,11 @@ With no Mantle level and no wick, the lamplighter SHALL have 100 health at the s
 - **THEN** it takes no damage, and the two push apart. Check: Node test `gloam-downs-run.test.mjs`.
 
 ### Requirement: Falls
-A fall below y −25 SHALL not end the run. The lamplighter SHALL come back on the last firm ground it stood on, at least 1 m from a ledge. It SHALL lose 10 health, but not below 1.
+A fall below y −25 SHALL not end the run. The lamplighter SHALL come back on the last firm ground it stood on, at least 1 m from a ledge. It SHALL lose 10 health, but not below 1. Then it SHALL be safe from hits for 0.9 s, and it SHALL blink, as after a hit.
 
 #### Scenario: Fall through a hole
 - **WHEN** the Node test walks the lamplighter with 50 health into a hole in a test walk map, and it falls below y −25
-- **THEN** it stands again on the ground it left, at least 1 m from the edge, with 40 health. Check: Node test `gloam-downs-run.test.mjs`.
+- **THEN** it stands again on the ground it left, at least 1 m from the edge, with 40 health. A hit at once after that does nothing. Check: Node test `gloam-downs-run.test.mjs`.
 
 ### Requirement: Low health warning
 Below 30% health, the health bar SHALL pulse, and a heartbeat SHALL sound every 55 steps (0.92 s). At each beat, the place's own colours SHALL pull up to 25% toward dark red. Fire, lamp and wisp colours SHALL not change, so fire stays the brightest colour.
@@ -680,7 +691,7 @@ Foes and wisps SHALL drop glim: motes in the lamp colours that fly to the lampli
 - **THEN** the wisp goes out, the glim carried goes up by 4, and the flasks show 2 of 2. The explorer's save does not change. Check: e2e `gloam-downs-run.screens.e2e.mjs`.
 
 ### Requirement: Death and the run summary
-At 0 health the run SHALL end, and the page SHALL store the ended run at once. The picture SHALL fade to ink over 1.2 s. Then the run summary SHALL show the place reached, the time, the foes put out, the glim lost and the glim banked. The glim carried SHALL be lost. The summary's button SHALL open the Lamp-room. The next run SHALL start in The Sunken Gaol with every foe back.
+At 0 health the run SHALL end, and the page SHALL store the ended run at once. The picture SHALL fade to ink over 1.2 s. Then the run summary SHALL show the place reached, the time, the foes put out, the glim lost and the glim banked. The glim carried SHALL be lost, except as "Ash pocket at death" says. The summary's button SHALL open the Lamp-room. The next run SHALL start in The Sunken Gaol with every foe back.
 
 #### Scenario: Die on The Crow Wall
 - **WHEN** the lamplighter dies in The Crow Wall carrying 20 glim, with 44 banked from the Gaol
@@ -690,8 +701,15 @@ At 0 health the run SHALL end, and the page SHALL store the ended run at once. T
 - **WHEN** the player reloads the page 0.5 s into the fade to ink
 - **THEN** the run summary shows with the same figures, and the ended run does not go on. Check: e2e `gloam-downs-run.screens.e2e.mjs`.
 
+### Requirement: Ash pocket at death
+With Ash pocket, a death SHALL bank 30% of the glim carried, rounded down. The summary SHALL show the rest as lost, and its glim banked SHALL include that 30%.
+
+#### Scenario: Ash pocket keeps 30%
+- **WHEN** the lamplighter dies in the Gaol with Ash pocket and 20 glim carried, and no glim banked before in this run
+- **THEN** the summary shows 6 glim banked and 14 lost, and the bank goes up by 6. Check: Node test `gloam-downs-run.test.mjs`.
+
 ### Requirement: The Lamp-room
-The Lamp-room SHALL show the glim banked and five lasting upgrades. Each upgrade SHALL show its level and the cost of the next level. A Buy button SHALL spend the cost and raise the level. A Buy button SHALL be off when the bank holds less than the cost, and SHALL say how much more is needed. Begin the run SHALL start a new run. Wander SHALL show once it is open.
+The Lamp-room SHALL show the glim banked and five lasting upgrades. Each upgrade SHALL show its level and the cost of the next level. A Buy button SHALL spend the cost and raise the level. A Buy button SHALL be off when the bank holds less than the cost, and SHALL say how much more is needed. A Buy button that is off SHALL stay focusable (`aria-disabled="true"`), so the focus stays on it after a buy. Begin the run SHALL start a new run. Wander SHALL show once it is open.
 
 #### Scenario: Buy an upgrade
 - **WHEN** the bank holds 50 glim and the player buys Mantle
@@ -878,6 +896,13 @@ The page SHALL store the run at once when the boss falls. A reload after the fal
 - **WHEN** the last beacon lights, and the player reloads 1.0 s later, before the win card shows
 - **THEN** the win card shows with the same figures, and the wins count went up by one only. Check: e2e `gloam-downs-run.screens.e2e.mjs`.
 
+### Requirement: The light after the fall
+The light at the lantern after the boss's fall SHALL be drawn from the carried light in `foes.bin.gz`: 63 emissive splats on one bone, in wisp slots 38 and 39. Barrow Crown's pool SHALL hold a slot for it, so the light needs no boss file.
+
+#### Scenario: The carried light in the foe files
+- **WHEN** the Node test reads `foes.json.gz` and Barrow Crown's pool
+- **THEN** the carried light has 63 splats on its one bone, in wisp slots 38 and 39, and the pool holds its slot. Check: Node test `gloam-downs-foes.test.mjs`.
+
 ### Requirement: Pause
 The pause panel SHALL stop the game. It SHALL show the five places of the run with the current one marked, the run time, Resume, a sound switch, and End the run. End the run SHALL ask again, and then end the run as a death does. M, P, Escape and Resume SHALL close the panel, and so SHALL Start, the pad's Back button and B.
 
@@ -961,11 +986,11 @@ In the boss fight, the hint line SHALL hide. The HUD and the tools SHALL then fi
 
 | Layout | HUD | Tools |
 |---|---|---|
-| 320×640 | 10,60 180×88 | 212,60 98×44 |
-| 360×640 | 10,60 220×88 | 252,60 98×44 |
-| 390×844 | 10,60 250×88 | 282,60 98×44 |
-| 800×600 | 10,60 262×91 | 692,60 98×44 |
-| 1280×720 | 10,60 262×91 | 1172,60 98×44 |
+| 320×640 | 10,60 180×88 | 198,60 112×44 |
+| 360×640 | 10,60 220×88 | 238,60 112×44 |
+| 390×844 | 10,60 250×88 | 268,60 112×44 |
+| 800×600 | 10,60 262×91 | 656,60 134×44 |
+| 1280×720 | 10,60 262×91 | 1136,60 134×44 |
 
 #### Scenario: The widest HUD in the boss fight
 - **WHEN** the boss fight shows the widest HUD of "The overlap check" at each of the five layouts
@@ -1064,11 +1089,11 @@ A pixel SHALL be within 12 of a colour when each of R, G and B differs by 12 or 
 - **THEN** the first is within 12 of slot 34, and the second is not. Check: Node test `gloam-downs-run.test.mjs`.
 
 ### Requirement: Foe colours
-Foes and the boss SHALL use no colour brighter than fire slot 37 (fff4cc). The Mirelight and the boss's cage light SHALL use wisp slots 38 and 39, and not slot 40. In each of the five palettes, every foe and boss colour SHALL snap to a colour under 0.42 luminance. Otherwise it SHALL snap to slots 32 to 39 or 44 to 47.
+Foes and the boss SHALL use no colour brighter than fire slot 37 (fff4cc). The Mirelight and the boss's cage light SHALL use wisp slots 38 and 39, and not slot 40. In each of the five palettes, every foe and boss colour SHALL snap to a colour under 0.42 luminance. Otherwise it SHALL snap to slots 32 to 39 or 44 to 47. No foe or boss colour SHALL snap to the lamplighter's cloak slots 41 to 43.
 
 #### Scenario: Foe colours in every palette
 - **WHEN** the bake's check snaps each foe and boss colour to each of the five palettes
-- **THEN** each one lands on a colour under 0.42 luminance, or on slots 32 to 39 or 44 to 47. None lands on slot 40. Check: a rule in `lib/check.mjs`, run by `node games/gloam-downs/bake.mjs foes --check` and by the boss's bake.
+- **THEN** each one lands on a colour under 0.42 luminance, or on slots 32 to 39 or 44 to 47. None lands on slot 40, and none on slots 41 to 43. Check: a rule in `lib/check.mjs`, run by `node games/gloam-downs/bake.mjs foes boss --check` and by the Node test `gloam-downs-foes.test.mjs`.
 
 ### Requirement: Warning moves read
 A warning move SHALL add clear fire to the picture, in fire slots 34 to 37. The check SHALL draw a foe 4 m in front of the lamplighter at the default camera. `__gloam.spawn` SHALL put the foe there, and `__gloam.hold` SHALL keep it in its move.
@@ -1086,21 +1111,21 @@ The foes SHALL come from two files: `foes.bin.gz` with the splats, and `foes.jso
 
 #### Scenario: Budget check
 - **WHEN** the Node test reads the baked worlds, the foe files, the boss files and each place's pool
-- **THEN** the foe files are 200 KB or less together, and the boss files 140 KB or less. Each place with its pool has 275,000 splats or fewer. Check: Node test `gloam-downs-run.test.mjs`.
+- **THEN** the foe files are 200 KB or less together, and the boss files 140 KB or less. Each place with its pool has 275,000 splats or fewer. Check: Node test `gloam-downs-foes.test.mjs`.
 
 ### Requirement: Place files and zones
 The run SHALL not change `<id>.bin.gz` or `<id>.walk.bin.gz` of any place. The zones SHALL go into `<id>.json` only. The bake SHALL take `--no-zones`, which leaves the zones out, and `--worlds <dir>`, which names the folder that it writes.
 
 #### Scenario: Bake with and without zones
 - **WHEN** a check bakes a place into a temporary folder with its zones, and again into another with `--no-zones`
-- **THEN** the two `.bin.gz` files are the same, and the two `.walk.bin.gz` files are the same. The two `<id>.json` files differ only in `zones`. The committed files in `public/lab/gloam-downs/worlds/` do not change. Check: Node test `gloam-downs-run.test.mjs` for The Sunken Gaol, and `node qa/lab/gloam-downs-bake-zones.mjs` for all five places.
+- **THEN** the two `.bin.gz` files are the same, and the two `.walk.bin.gz` files are the same. The two `<id>.json` files differ only in `zones`. The committed files in `public/lab/gloam-downs/worlds/` do not change. Check: Node test `gloam-downs-foes.test.mjs` for The Sunken Gaol, and `node qa/lab/gloam-downs-bake-zones.mjs` for all five places.
 
 ### Requirement: Download in a run
 A place's 1.5 MB SHALL count its three files: `<id>.bin.gz`, `<id>.walk.bin.gz` and `<id>.json`. The foe files and the boss files SHALL not count toward it. Before play starts in a place, the page SHALL download only the place's three files and the two foe files. It SHALL not download the foe files when the cache has them. That SHALL be no more than 1.7 MB in all. The boss files SHALL load after play starts, and the arena SHALL stay asleep until they have loaded.
 
 #### Scenario: Sizes
 - **WHEN** the Node test adds the sizes of each place's three files, and then adds the sizes of the two foe files
-- **THEN** each place's three files come to 1.5 MB or less, and each sum with the foe files to 1.7 MB or less. Check: Node test `gloam-downs-run.test.mjs`.
+- **THEN** each place's three files come to 1.5 MB or less, and each sum with the foe files to 1.7 MB or less. Check: Node tests `gloam-downs-run.test.mjs` (the three files) and `gloam-downs-foes.test.mjs` (with the foe files).
 
 #### Scenario: Boss files after a reload
 - **WHEN** a run reloads in Barrow Crown with an empty cache
@@ -1111,7 +1136,7 @@ When the foe files do not load, the loading screen SHALL say so and show Try aga
 
 #### Scenario: The foe files fail
 - **WHEN** the e2e makes the foe files fail once, and the player presses Try again
-- **THEN** the loading screen says that the foes did not load. After Try again, the place loads and play starts. Check: e2e `gloam-downs-run.screens.e2e.mjs`.
+- **THEN** the loading screen says that the foes did not load, and Try again has the focus. After Try again, the place loads and play starts. Check: e2e `gloam-downs-run.lineup.e2e.mjs`.
 
 #### Scenario: The boss files fail
 - **WHEN** the e2e makes the boss files fail once, and the lamplighter walks to within 11 m of the arena's centre. Then the e2e presses A on a mocked gamepad alone.
@@ -1164,8 +1189,15 @@ With `?test`, `__gloam.run()` SHALL return the run state with these fields:
 - **WHEN** a test sets 40 health with `__gloam.set` and ticks a Snuffer's hook onto the lamplighter
 - **THEN** `__gloam.run()` shows `hp` 24, and `stop` counts the 5 steps of a hurt's hit stop. Check: e2e `gloam-downs-run.screens.e2e.mjs`.
 
+### Requirement: The lamplighter's state in a test
+With `?test`, `__gloam.run()` SHALL also return `move`, `t`, `safe` and `combo`. These are the lamplighter's move, the seconds of play in the move, `'roll'` or `'hurt'` in a safe time, and the next hit of the string. It SHALL also return `entry` and `ended`, as the save holds them.
+
+#### Scenario: Read a roll
+- **WHEN** a test presses Roll and ticks 0.1 s
+- **THEN** `__gloam.run()` shows `move` as `'roll'` and `safe` as `'roll'`. After 1 s more, `move` is null. Check: e2e `gloam-downs-run.input.e2e.mjs`.
+
 ### Requirement: The effects in a test
-With `?test`, `__gloam.run().fx` SHALL hold `kick`, `zoom`, `bars` and `grade`. `kick` SHALL be the camera's offset in metres, as [x, y, z]. `zoom` SHALL be the zoom factor, 1 for no zoom. `bars` SHALL be the height of each bar, as a share of the screen's height. `grade` SHALL be the 48 colours after the grade.
+With `?test`, `__gloam.run().fx` SHALL hold `kick`, `zoom`, `bars` and `grade`. `kick` SHALL be the camera's offset in metres, as [x, y, z]. `zoom` SHALL be the zoom factor, 1 for no zoom. `bars` SHALL be the height of each bar, as a share of the screen's height. `grade` SHALL be the 48 colours after the grade. `blink` SHALL be true while the hurt blink hides the figure.
 
 #### Scenario: Effects at rest
 - **WHEN** a run plays in the Gaol with no hit for 2 s
@@ -1207,12 +1239,27 @@ A foe from `__gloam.spawn` SHALL be already risen, with no ember cracks and no c
 ### Requirement: Test hooks for the run's state
 With `?test`, the page SHALL give these hooks for the run's state:
 - `__gloam.fx(flags)` SHALL turn the stop, flash, kick, zoom, grade and shake effects on or off.
-- `__gloam.set(fields)` SHALL set health, flasks, glim carried, the bank, the upgrades and the boss's health (`bossHp`).
-- `__gloam.go(id)` SHALL move the run to the start of a place.
+- `__gloam.set(fields)` SHALL set health, flasks, glim carried, the bank, the upgrades, the wicks and the boss's health (`bossHp`). It SHALL change the current values, and it SHALL never change `entry`.
+- `__gloam.go(id)` SHALL start a place as Walk on does. It SHALL take the entry snapshot from the current values and store the run.
+
 
 #### Scenario: Set health
 - **WHEN** a test sets 40 health and 1 flask with `__gloam.set`
 - **THEN** the HUD shows "40/100" and one full pip. Check: e2e `gloam-downs-run.screens.e2e.mjs`.
+
+### Requirement: Test hooks for targets and hits
+With `?test`, the page SHALL give these hooks, which need no foe:
+- `__gloam.post(x, z)` SHALL stand a training post: a target with health and no attack. `__gloam.posts()` SHALL list the posts and the hits on them.
+- `__gloam.hurt(damage, from)` SHALL land a hit on the lamplighter, as a foe's hit does.
+- `__gloam.project([x, y, z])` SHALL give the screen point of a world point in CSS px, or null behind the eye.
+
+#### Scenario: Swing at a post
+- **WHEN** a test stands a post 2 m in front of the lamplighter, and the player presses J
+- **THEN** `__gloam.posts()` shows a hit of 10 on the post. Check: e2e `gloam-downs-run.input.e2e.mjs`.
+
+#### Scenario: A hit from a test
+- **WHEN** a test calls `__gloam.hurt(16)` at 100 health
+- **THEN** `__gloam.run()` shows `hp` 84 and `stop` 5, and the stored run holds 84. Check: e2e `gloam-downs-run.input.e2e.mjs`.
 
 ### Requirement: Setting the boss's health
 `__gloam.set({ bossHp })` SHALL put the boss at once in the phase of that health. When the phase changes, there SHALL be one hit stop of 9 steps and one stumble of 120 steps (2.0 s). This SHALL hold however many thresholds the change crosses.

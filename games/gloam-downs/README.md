@@ -8,6 +8,8 @@ node games/gloam-downs/bake.mjs                         # bake all five into pub
 node games/gloam-downs/bake.mjs fen --check             # bake one place and check it against the spec
 node games/gloam-downs/bake.mjs fen --check --preview --out /tmp/fen   # also draw CPU pictures: start, wide, beacon, top
 GLOAM_COUNT=1 node games/gloam-downs/bake.mjs fen       # list the heaviest solids (to stay in budget)
+node games/gloam-downs/bake.mjs foes boss --check       # bake the combat run's foe files and boss files, and check them
+node games/gloam-downs/bake.mjs gaol --worlds /tmp/w --no-zones   # write into another folder, and leave the zones out of gaol.json
 node games/gloam-downs/vendor.mjs                       # copy Ink Studio's renderer into public/lab/gloam-downs/ink/
 ```
 
@@ -60,6 +62,7 @@ export default {
   - `lamp(p, r, s)`: a baked light. A material with `g: [index]` turns warm near it: the bake widens a one-step `g` into a six-step ramp, from that colour's own darker step through the shared fire ramp, so lamp light falls off as a warm pool. You can give `g` a full ramp of your own instead.
   - `fire(p, s, { embers, lamp, r, k, hot })`: a flame, embers and its lamp.
   - `wisp(p)` (exactly five), `beacon(p, r)` (one), `spawn(p, yaw)` (one; yaw 0 faces +z).
+  - `zone(id)`: places a zone of the combat run from `lib/zones.mjs`. It adds nothing to the scenery, only to `<id>.json`. A place must place every zone that the module gives it, or the bake stops.
   - `later(fn)`: solids that must not block the feet, such as water, hanging cloth or chains. They are left out of the walk map and baked with the scenery, so its shadows fall on them.
   - `glow(fn)`: emissive extras after every bake (sky dome `B.sky`, moon `B.iso`, motes, clouds).
   - **Where `S.sdf` is valid:**
@@ -76,7 +79,7 @@ export default {
 
 ## The rules `--check` holds a place to
 
-- **Budget:** 250,000 splats or fewer in total, including about 5,400 for the lamplighter, and 1.5 MB or less gzipped.
+- **Budget:** 250,000 splats or fewer in total, including about 5,400 for the lamplighter, and 1.5 MB or less for the three files: the gzipped splat file, the gzipped walk file and the JSON.
   - Terrain is the biggest cost. The default is a near square of ±26 at spacing 0.24, then rings to ±52 at 0.5 and to ±104 at 1.0.
   - Keep prop spacing (`res`) at 0.08–0.14. Big flat walls can go to 0.12–0.16.
   - Far silhouettes beyond the play area can go to 0.3.
@@ -96,3 +99,33 @@ export default {
 - **Walk map:** a wall is anything that rises more than a step. Arches and tree crowns with 1.8 of clearance under them can be walked under. Keep the paths wide (2 or more), because the camera follows close.
   - The bake closes cracks one cell wide, such as the seams between planks or between a porch and a wall. The lamplighter is 0.6 across and cannot go into them, but it stands on the floor under its centre, so it would drop through them. A seam at the edge of a floor, with a drop on its other side, stays open. The bake prints the number closed as `cracks`.
   - The walk file is three `Int16` layers in centimetres, gzipped: the top, the floor under a gap (the top where there is none), and the gap's underside (0 where there is no gap). The JSON names them in `walk.layers`. Each walk file is 102 to 132 KB, and it counts in the 1.5 MB.
+
+## The combat run: zones, foes and the boss
+
+The page plays the combat run with `?run`. Without it, the page is the explorer. Stage 1 of the run bakes these files and data. `openspec/changes/add-gloam-downs/design.md` ("The combat run") has the numbers.
+
+- **`lib/zones.mjs`** is the one home of the zone table. `ZONES` gives each place's zones: the centre `c` [x, y, z] (y is the floor there), the leash, the foes by type (`S` Snuffer, `P` Pitchrook, `M` Mirelight, `I` Ironback, `B` the Barrow Reeve), the guard flag, and for a guard the keeper, the landmark that a toast names. `POOLS` gives each place's pool of slots. `ROUTES` gives each place's route: waypoints a few metres apart on the floor, from the start past the guard zone to the beacon. The biomes place the zones with `ctx.zone(id)`, and the bake writes them into `<id>.json` as `zones`. The zones change no splat file and no walk file.
+- **The foe files.** `node bake.mjs foes` writes `worlds/foes.bin.gz` and `worlds/foes.json.gz`: the four foe types and the light carried after the boss's fall (`L`), from `lib/foes.mjs`. `node bake.mjs boss` writes `worlds/boss.bin.gz` and `worlds/boss.json.gz`: the Barrow Reeve (`B`) on 46 bones and its 12 grave candles (`C`), from `lib/boss.mjs`. `lib/figures.mjs` bakes both.
+  - A figure is `{ code, name, title, height, radius, bones, sculpt, lay, shadow, res, apart, weights, clips }`. Each bone is `{ name, parent, pivot, hidden }`. A bone whose parent is `'ground'` (the shadow and the markers) is placed by the page, not by a clip.
+  - Each figure bakes its body and what glows over it (tells, cores, lights) in two sculptors. In one sculptor the glow swallows the part it glows over.
+  - A clip is `{ dur, loop, at, keys }`, with a key `[rx, ry, rz, sx, sy, sz, tx, ty, tz]` for each bone: a turn Y, then X, then Z about the pivot, in the parent's rest frame, with Catmull-Rom between keys. The body's lean and squash come from `K.acts.frames('windup' | 'attack' | 'hurt')`; the limb moves are our own.
+  - Rings are six slices of 60° and lanes are pieces of 1.5 m or less, each on its own bone. They are flat emissive dabs in fire slots 34 and 35.
+  - `--preview` draws sheets of the figures and a lineup in a place into `--out`.
+- **The rules `--check` holds the figures to** (`lib/check.mjs`): the foe files at most 200 KB together, and the boss files at most 140 KB. In all five palettes, each figure colour snaps under 0.42 luminance, or to the fire, wisp, iron and lamp slots (32 to 39 and 44 to 47). None snaps to slot 40, the brightest wisp, or to the cloak slots 41 to 43, which are the lamplighter's. Each place with its pool has 275,000 splats or fewer, and each place's three files plus the foe files are 1.7 MB or less. A place's `--check` adds its own pool rules when the foe files are baked.
+
+## The pool in the page
+
+`public/lab/gloam-downs/pool.js` has no DOM, so the bake's previews, the Node tests and the page pose the figures with the same code. `makePool(world, meta, slots)` adds a place's slots after its splats, with bone ids after the lamplighter's. Every slot starts parked: at density 0 and out of `world.anim.boned`, so the sorter does not pay for it. `wake` puts a slot on the bones first and then brings its density back, and `park` does the reverse. `pose`, `marker`, `place`, `flash` and `placeGroups` pose a slot, lay a marker piece, place one bone, flash a hit and place the candles. `figures.js` loads the figure files once and lists a place's slots, and `world.js` has `loadFigures()`. With `?run&test&lineup`, `__gloam.lineup()` stands one of each figure in front of the lamplighter. With `?run&lineup` and no `?test`, they stand there and play each of their clips in turn.
+
+## Checks
+
+- `node qa/lab/gloam-downs.test.mjs`: the explorer's controller, walk map, saves and loader (`GLOAM_WORLDS=0` skips the baked places).
+- `node qa/lab/gloam-downs-run.test.mjs`: the run's step and clocks, the lamplighter's moves, the rules, the saves and the pads.
+- `node qa/lab/gloam-downs-foes.test.mjs`: the figures, their clips and poses, the pool, the colours, the budgets, the zones on the baked walk maps, and the bake of the Gaol with and without its zones (`GLOAM_BAKE=0` skips that bake).
+- `node qa/lab/gloam-downs-zones.mjs`: the zones on the walk maps: the wake rule, the guard rule, the cap of 6, the pool slots, the routes, the Ironback walls and the beacon distances.
+- `node qa/lab/gloam-downs-bake-zones.mjs [place ...]`: each place baked with and without its zones into the system's temp folder, one bake at a time (about 1.5 minutes for all five).
+- With the site served: `node qa/lab/gloam-downs.e2e.mjs` (the explorer), `node qa/lab/gloam-downs-run.input.e2e.mjs` (the run's inputs and first cards) and `node qa/lab/gloam-downs-run.lineup.e2e.mjs` (the pool and the figures).
+
+## Design tools
+
+`tools/` keeps the scripts that measured the combat run's design. They are not checks. `sort-bench.mjs`, `sort-bench-page.mjs` and `sort-mix.mjs` time the sort with foes on bones, `layout.mjs` measures the page's controls, `marker-fit.mjs` and `lane-fit.mjs` fit markers to the ground, and `boss-frame.mjs` and `boss-arena.mjs` solve the boss camera's frame. The later stages port what their tests need.
