@@ -1,7 +1,7 @@
 // Gloam Downs: the parts every place shares. A place is built in four steps, in this order:
-//   1. scenery: hills, terrain tiles, buildings and props (solids), lamps; then one bake
-//   2. the walk map, read from the baked distance field (S.sdf) on a grid
-//   3. what must not block the feet (water, hanging cloth), then the lamplighter, each with its own bake
+//   1. scenery: hills, terrain tiles, buildings and props (solids), lamps
+//   2. the walk map, read from the scenery's distance field (S.sdf) on a grid
+//   3. what must not block the feet (water, hanging cloth, chains), baked with the scenery in one bake; then the lamplighter, with its own
 //   4. what glows (flames, wisps, the beacon's fire, motes, the sky dome, the moon), then finish
 // The page gets the splat rows, the walk map and a small JSON file; it never runs the toolkit.
 import { createRequire } from 'node:module';
@@ -138,19 +138,23 @@ export function terrain(S, h, mat, { near = 26, res = 0.24, rings = [[52, 0.5], 
 
 /* ---------------- the walk map ----------------
    For each cell of a grid: the top surface (T), and where a gap of at least `clear` opens under it, the floor below the gap (G). A cell
-   with no gap has G = T. Read from the scenery's own distance field after its bake, so what you see is what you stand on. */
+   with no gap has G = T. Read from the scenery's own distance field (S.sdf, once S.ready() has placed its solids), so what you see is
+   what you stand on. */
 export function walkMap(S, h, { x0, x1, z0, z1, step = 0.25, above = 10, clear = 1.8 }) {
   const nx = Math.round((x1 - x0) / step) + 1, nz = Math.round((z1 - z0) / step) + 1;
   const T = new Int16Array(nx * nz), G = new Int16Array(nx * nz);
   const cm = v => Math.max(-32000, Math.min(32000, Math.round(v * 100)));
   const sdf = S.sdf;
+  /* each step down is at least 0.01, so this many always ends on a surface or under the ground. A column just off a wall's face creeps
+     down it at that least step, all the way to the wall's foot; a shorter march would leave it in mid-air and keep that as the top */
+  const steps = Math.ceil((above + 3) / 0.01) + 10;
   let gaps = 0;
   for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
     const x = x0 + i * step, z = z0 + j * step, hy = h(x, z), top = hy + above;
     let y = top, d = sdf(x, y, z), t;
     if (d <= 0) t = top; // solid all the way up: a tall wall or tower
     else {
-      for (let k = 0; k < 200; k++) {
+      for (let k = 0; k < steps; k++) {
         if (d < 0.006) break;
         y -= Math.max(d * 0.9, 0.01);
         if (y < hy - 3) { y = hy; break; }

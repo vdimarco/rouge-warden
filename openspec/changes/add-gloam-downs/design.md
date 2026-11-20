@@ -44,7 +44,8 @@ All five places, the lamplighter and the names are original.
 - **Points:** the start point, five wisps, and the beacon on the summit.
 
 ## The walk map
-- After the scenery is baked, `S.sdf` still holds the whole distance field. On a grid of 0.25 units, the bake marches down from above and stores the top surface. Where a gap of at least 1.8 units opens under that surface, it also stores the gap's underside and the floor below. Players can then walk under arches and tree crowns.
+- Before the bake, `S.ready()` lets `S.sdf` answer for the whole scenery. On a grid of 0.25 units, the bake marches down from above and stores the top surface; a column beside a wall's face follows it down to the foot. Where a gap of at least 1.8 units opens under that surface, it also stores the gap's underside and the floor below. Players can then walk under arches and tree crowns.
+- Water, hanging cloth and chains (`later`) are added after the walk map, so they never block the feet. They are baked with the scenery in one bake, so its shadows fall on them and what of them is buried in it is dropped.
 - At run time the controller asks for the highest floor at or below its feet plus a step. A floor more than 0.45 above the feet is a wall. The camera uses the top surface to come closer in front of hills.
 - The map is two `Int16` layers, in centimeters, gzipped.
 
