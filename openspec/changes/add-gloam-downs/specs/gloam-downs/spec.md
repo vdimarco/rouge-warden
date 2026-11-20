@@ -77,8 +77,12 @@ The player SHALL move relative to the camera with WASD, the arrow keys, the left
 - **THEN** it walks over the slot or the notch and never stands in it
 
 #### Scenario: No trap
-- **WHEN** the lamplighter walks, runs, jumps or falls anywhere in a place, on a 30, 60, 120 or 144 Hz screen
-- **THEN** from wherever it stands, it can walk or jump back to the start or on to the beacon. It never ends in a slot, a notch, a pit or a nook under a roof that it cannot leave. Check: the bake's `--check` line "no trap", and the Node test `gloam-downs.test.mjs`
+- **WHEN** the lamplighter walks, runs, jumps or falls to a place that the bake's reach check gets to (its own walks and jumps, and wide jumps on 16 headings over anything lower than the jump's top and under roofs), on a 30, 60, 120 or 144 Hz screen
+- **THEN** from there it can walk or jump back to the start or on to the beacon. It never ends in a slot, a notch, a pit or a nook under a roof that it cannot leave, and a trap wider than a crack fails the bake. Check: the bake's `--check` line "no trap", and the Node test `gloam-downs.test.mjs`
+
+#### Scenario: Under a beam
+- **WHEN** the lamplighter walks on the floor under a slanted beam, where the walk map missed a grid point of the beam, on a 30, 60, 120 or 144 Hz screen
+- **THEN** it walks under the beam, and the bake's crack pass puts no solid column there. Check: the Node test `gloam-downs.test.mjs`
 
 #### Scenario: Lean-to against a hall
 - **WHEN** the lamplighter runs and jumps, or walks off, from a low roof (a lean-to, top 2.3) into a hall under a higher roof (underside 5), on a 30, 60, 120 or 144 Hz screen

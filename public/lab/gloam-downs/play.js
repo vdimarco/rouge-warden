@@ -110,10 +110,18 @@ const limit = (top, lean, px, pz) => (lean ? Math.max(top, lean[0] + lean[1] * (
 // of a grid point inside the disc (the map's highest points are at grid points or on the disc's edge); or where one of 16 rays, sampled
 // at a third, two thirds and all of R, first crosses it. Infinity where nothing does. With `any`, the first one found.
 function nearest(walk, x, z, top, feet, R, any = false, lean = null) {
+  /* a floor is read from the tops or floors of the four grid points round it, never above the highest top of them: where no top of the
+     grid points under the disc is over `top` (or the limit, which is never under it), nothing is */
+  const { x0, z0, step, nx, nz, T } = walk;
+  const ia = Math.max(0, Math.floor((x - R - x0) / step)), ib = Math.min(nx - 1, Math.floor((x + R - x0) / step) + 1);
+  const ja = Math.max(0, Math.floor((z - R - z0) / step)), jb = Math.min(nz - 1, Math.floor((z + R - z0) / step) + 1);
+  let hi = -Infinity;
+  for (let j = ja; j <= jb; j++) for (let i = ia, k = j * nx + ia; i <= ib; i++, k++) if (T[k] > hi) hi = T[k];
+  if (hi * 0.01 <= top) return Infinity;
   const e0 = walk.floorAt(x, z, top, feet) - limit(top, lean, x, z);
   if (e0 > 1e-4) return 0;
   let near = Infinity;
-  const { x0, z0, step } = walk, i0 = Math.ceil((x - R - x0) / step), i1 = Math.floor((x + R - x0) / step);
+  const i0 = Math.ceil((x - R - x0) / step), i1 = Math.floor((x + R - x0) / step);
   const j0 = Math.ceil((z - R - z0) / step), j1 = Math.floor((z + R - z0) / step);
   for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
     const px = x0 + i * step, pz = z0 + j * step, d = Math.hypot(px - x, pz - z);
@@ -518,8 +526,15 @@ export const atBeacon = (s, b) => Math.hypot(b.p[0] - s.x, b.p[2] - s.z) < b.r &
    own disc at each grid point and half way to it; it moves the base only where every cell round a point is a slope; a disc that
    already reaches over something too high walks only where each point is no nearer to it, as the controller's does; and a jump lands
    only where the disc can stand on a slope, with nothing on the way higher than both ends. Returns near(p, ...) -> boolean, the number
-   of cells reached, and trapped(exit, out): the reached places that do not lead back (see there). */
-export function reachable(walk, start, bounds, P = PARAMS) {
+   of cells reached, and trapped(exit, out): the reached places that do not lead back (see there).
+   With wide, it then goes on with wide jumps, which are more open than the controller, for the trap rule (it must try every place the
+   controller can get to): from each state with a step of more than 0.6 within two cells, a jump on each of 16 headings that lands on
+   any floor that the run speed carries it to before it falls there, wherever the disc has nothing over the feet. On the way the feet
+   can be at any height up to the jump's top (JUMP over the feet) where there is room: over a cell's top, or under its roof (from the
+   floor under its gap to its underside); a step across a corner goes through one of the two cells beside it. The search goes on from
+   what they reach, by its own walks and jumps and by more wide jumps. What only a wide jump reaches does not count in cells or near()
+   (but for near(..., all)), and no way back goes by a wide jump. */
+export function reachable(walk, start, bounds, P = PARAMS, { wide = false } = {}) {
   const { nx, nz, x0, z0, step } = walk, lim = bounds - 0.6, climb = climbOf(P), steep = steepOf(P);
   const open = (x, z, top, feet) => nearest(walk, x, z, top, feet, P.radius, true) === Infinity;
   /* a walk by a disc that already reaches over something too high (d0, how near its centre that comes; fits() in the controller): along
@@ -536,15 +551,21 @@ export function reachable(walk, start, bounds, P = PARAMS) {
     walk.floorAt(x + a, z + b, top, feet);
     return Math.hypot(walk.grad[0], walk.grad[1]) <= steep;
   });
-  /* reached heights by cell and height (a state), each with the highest base it was reached with (a higher base reaches more), and
-     every walk and jump from one state to another (from[e] to to[e]), for trapped() */
-  const seen = new Map(), queue = [], states = [], from = [], to = [];
-  let cur = -1; // the state the search goes on from
+  /* reached heights by cell and height (a state, keyed by key()), each with the highest base it was reached with (a higher base reaches
+     more), every walk and jump from one state to another (from[e] to to[e]), and every wide jump to a state it found (wfrom, wto) */
+  const seen = new Map(), queue = [], states = [], from = [], to = [], wfrom = [], wto = [];
+  const key = (i, j, y) => (j * nx + i) * 16384 + Math.round(y * 10) + 8192;
+  let cur = -1, byWide = false; // the state the search goes on from, and whether by a wide jump
   const visit = (i, j, y, base) => {
-    const k = `${i},${j},${Math.round(y * 10)}`;
+    const k = key(i, j, y);
     let had = seen.get(k);
-    if (!had) { had = { y, base: -Infinity, id: states.length }; seen.set(k, had); states.push([i, j, had.y]); }
-    if (cur >= 0 && cur !== had.id) { from.push(cur); to.push(had.id); }
+    if (!had) {
+      had = { y, base: -Infinity, id: states.length };
+      seen.set(k, had);
+      states.push([i, j, had.y]);
+      if (byWide) { wfrom.push(cur); wto.push(had.id); }
+    }
+    if (!byWide && cur >= 0 && cur !== had.id) { from.push(cur); to.push(had.id); }
     if (had.base >= base - 1e-6) return;
     had.base = base;
     queue.push([i, j, y, base, k]);
@@ -556,63 +577,157 @@ export function reachable(walk, start, bounds, P = PARAMS) {
      the way the feet are read at the top of the jump, the highest the controller reads them: a gap whose floor is that far below
      them is a roof there */
   const lift = (P.jumpV * P.jumpV) / (2 * P.gravity), jumpUp = lift - 0.1, far = P.jumpV > 0 ? Math.max(1, Math.floor(1.0 / step + 1e-6)) : 0;
-  for (let q = 0; q < queue.length; q++) {
-    const [i, j, y, base, k] = queue[q], st = seen.get(k);
-    if (st.base > base + 1e-6) continue; // reached again since with a higher base
-    cur = st.id;
-    const ox = x0 + i * step, oz = z0 + j * step;
-    let d0; // how near the disc here comes to something above a climb over the base (found when a walk needs it)
-    for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-      const inside = d => {
-        const i2 = i + di * d, j2 = j + dj * d;
-        return i2 >= 0 && j2 >= 0 && i2 < nx && j2 < nz && Math.abs(x0 + i2 * step) <= lim && Math.abs(z0 + j2 * step) <= lim;
-      };
-      if (!inside(1)) continue;
-      const x = ox + di * step, z = oz + dj * step, mx = ox + di * step / 2, mz = oz + dj * step / 2;
-      /* a walk: the disc clear within climb of the base, half way and there, for the feet where they stand, or no nearer there to what
-         it already reaches over here; on a slope the base comes to the feet */
-      let top = base + climb;
-      if ((open(mx, mz, top, y) && open(x, z, top, y)) || away(d0 ??= wallIn(ox, oz, top, y), mx, mz, x, z, top, y)) {
-        const f = walk.floorAt(x, z, top, y);
-        visit(i + di, j + dj, f, slope(x, z, top, y) ? f : Math.min(base, f));
-        if (f > y - 0.1) continue; // level or up: a jump this way starts from there instead
-      }
-      /* a jump: the disc clear at the top of the jump at every grid point and half way along the line. It lands at a grid point where
-         the disc can stand and every cell round it is a slope (so a landing near it is a landing on it, not on the tip of a stake or
-         the edge of a ledge). No floor on the way stands higher than both ends, so nothing between stops it or is landed on first */
-      top = y + jumpUp;
-      const fly = y + lift + 0.05;
-      let high = -Infinity;
-      for (let d = 1; d <= far && inside(d); d++) {
-        const hx = ox + di * (d - 0.5) * step, hz = oz + dj * (d - 0.5) * step, px = ox + di * d * step, pz = oz + dj * d * step;
-        if (!open(hx, hz, top, fly) || !open(px, pz, top, fly)) break;
-        high = Math.max(high, walk.floorAt(hx, hz, top, fly));
-        // and where it lands, the walk from there: the same floor, the disc clear within a climb, every cell round it a slope
-        const f = walk.floorAt(px, pz, top, fly), ft = f + climb;
-        if (high <= Math.max(y, f) + 1e-4 && Math.abs(walk.floorAt(px, pz, ft, f) - f) < 1e-3 && open(px, pz, ft, f) && slope(px, pz, ft, f)) visit(i + di * d, j + dj * d, f, f);
-        high = Math.max(high, f);
+  let qi = 0;
+  const grow = () => {
+    for (; qi < queue.length; qi++) {
+      const [i, j, y, base, k] = queue[qi], st = seen.get(k);
+      if (st.base > base + 1e-6) continue; // reached again since with a higher base
+      cur = st.id;
+      const ox = x0 + i * step, oz = z0 + j * step;
+      let d0; // how near the disc here comes to something above a climb over the base (found when a walk needs it)
+      for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const inside = d => {
+          const i2 = i + di * d, j2 = j + dj * d;
+          return i2 >= 0 && j2 >= 0 && i2 < nx && j2 < nz && Math.abs(x0 + i2 * step) <= lim && Math.abs(z0 + j2 * step) <= lim;
+        };
+        if (!inside(1)) continue;
+        const x = ox + di * step, z = oz + dj * step, mx = ox + di * step / 2, mz = oz + dj * step / 2;
+        /* a walk: the disc clear within climb of the base, half way and there, for the feet where they stand, or no nearer there to what
+           it already reaches over here; on a slope the base comes to the feet */
+        let top = base + climb;
+        if ((open(mx, mz, top, y) && open(x, z, top, y)) || away(d0 ??= wallIn(ox, oz, top, y), mx, mz, x, z, top, y)) {
+          const f = walk.floorAt(x, z, top, y);
+          visit(i + di, j + dj, f, slope(x, z, top, y) ? f : Math.min(base, f));
+          if (f > y - 0.1) continue; // level or up: a jump this way starts from there instead
+        }
+        /* a jump: the disc clear at the top of the jump at every grid point and half way along the line. It lands at a grid point where
+           the disc can stand and every cell round it is a slope (so a landing near it is a landing on it, not on the tip of a stake or
+           the edge of a ledge). No floor on the way stands higher than both ends, so nothing between stops it or is landed on first */
+        top = y + jumpUp;
+        const fly = y + lift + 0.05;
+        let high = -Infinity;
+        for (let d = 1; d <= far && inside(d); d++) {
+          const hx = ox + di * (d - 0.5) * step, hz = oz + dj * (d - 0.5) * step, px = ox + di * d * step, pz = oz + dj * d * step;
+          if (!open(hx, hz, top, fly) || !open(px, pz, top, fly)) break;
+          high = Math.max(high, walk.floorAt(hx, hz, top, fly));
+          // and where it lands, the walk from there: the same floor, the disc clear within a climb, every cell round it a slope
+          const f = walk.floorAt(px, pz, top, fly), ft = f + climb;
+          if (high <= Math.max(y, f) + 1e-4 && Math.abs(walk.floorAt(px, pz, ft, f) - f) < 1e-3 && open(px, pz, ft, f) && slope(px, pz, ft, f)) visit(i + di * d, j + dj * d, f, f);
+          high = Math.max(high, f);
+        }
       }
     }
+  };
+  grow();
+  const sure = states.length; // the states that the search's own walks and jumps reach
+  if (wide && P.jumpV > 0) {
+    const { T, G, U } = walk, N = nx * nz, under = k => (U ? U[k] : G[k] + walk.clear * 100) * 0.01;
+    // the cells with a step of more than 0.6 (in the top or in the floor under a gap) within two cells
+    const edge = new Uint8Array(N);
+    let lowest = Infinity;
+    for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
+      const k = j * nx + i;
+      lowest = Math.min(lowest, G[k] * 0.01);
+      for (let dj = -2; dj <= 2 && !edge[k]; dj++) for (let di = -2; di <= 2; di++) {
+        const i2 = i + di, j2 = j + dj, k2 = j2 * nx + i2;
+        if (i2 >= 0 && j2 >= 0 && i2 < nx && j2 < nz && (Math.abs(T[k2] - T[k]) > 60 || Math.abs(G[k2] - G[k]) > 60)) { edge[k] = 1; break; }
+      }
+    }
+    // how far the run carries a jump from its top down a drop of dy: up at gravity, down at gravity·fallMul, a cell more for the disc
+    const carry = dy => P.run * (P.jumpV / P.gravity + Math.sqrt((2 * Math.max(0, dy)) / (P.gravity * P.fallMul))) + step;
+    // the grid points along 16 headings, out to the farthest a jump from the map's highest top carries down to its lowest floor
+    let highest = -Infinity;
+    for (let k = 0; k < N; k++) highest = Math.max(highest, T[k] * 0.01);
+    const reachOut = Math.ceil(carry(highest + lift - lowest) / step);
+    const rays = RAYS.map(([cx, cz]) => {
+      const out = [];
+      for (let r = 1; r <= reachOut; r++) {
+        const di = Math.round(cx * r), dj = Math.round(cz * r), l = out[out.length - 1];
+        if (!l || l[0] !== di || l[1] !== dj) out.push([di, dj, Math.hypot(di, dj) * step]);
+      }
+      return out;
+    });
+    const land = (i2, j2, px, pz, f) => { if (!seen.has(key(i2, j2, f)) && open(px, pz, f + 0.05, f + 0.05)) visit(i2, j2, f, f); };
+    /* the heights the feet can be at along a wide jump, as spans [lo, hi], each in one open space of a cell: over its top, or under its
+       roof (from the floor under its gap up to its underside). The feet start at y and rise to fly. pass() takes the n spans in sp into
+       cell k: a span goes on into each space of k that it meets, and there the feet can drop to the floor of that space. It writes the
+       spans in k to out (at most two) and returns how many */
+    const spans = new Float64Array(8), sa = new Float64Array(4), sb = new Float64Array(4);
+    const pass = (k, sp, n, out) => {
+      const t = T[k] * 0.01, g = G[k] * 0.01, gap = g < t, u = gap ? under(k) - 0.01 : 0;
+      let over = -Infinity, low = -Infinity;
+      for (let q = 0; q < n; q++) {
+        const lo = sp[2 * q], hi = sp[2 * q + 1];
+        if (hi >= t && hi > over) over = hi;
+        if (gap && hi >= g && lo <= u) low = Math.max(low, Math.min(hi, u));
+      }
+      let m = 0;
+      if (over > -Infinity) { out[0] = t; out[1] = over; m = 1; }
+      if (low > -Infinity) { out[2 * m] = g; out[2 * m + 1] = low; m++; }
+      return m;
+    };
+    for (let done = 0; done < states.length;) {
+      const end = states.length;
+      for (let s = done; s < end; s++) {
+        const [i, j, y] = states[s];
+        if (!edge[j * nx + i]) continue;
+        const top = y + lift, fly = top + 0.05, most = carry(top - lowest);
+        cur = s;
+        byWide = true;
+        for (const ray of rays) {
+          let n = 1, pi = i, pj = j;
+          spans[0] = y; spans[1] = fly;
+          for (const [di, dj, d] of ray) {
+            const i2 = i + di, j2 = j + dj;
+            if (d > most || i2 < 0 || j2 < 0 || i2 >= nx || j2 >= nz) break;
+            const px = x0 + i2 * step, pz = z0 + j2 * step, k2 = j2 * nx + i2;
+            if (Math.abs(px) > lim || Math.abs(pz) > lim) break;
+            // a step across a corner goes through one of the two cells beside it
+            if (i2 !== pi && j2 !== pj) {
+              const na = pass(j2 * nx + pi, spans, n, sa), nb = pass(pj * nx + i2, spans, n, sb);
+              for (let q = 0; q < 2 * na; q++) spans[q] = sa[q];
+              for (let q = 0; q < 2 * nb; q++) spans[2 * na + q] = sb[q];
+              n = na + nb;
+            }
+            n = pass(k2, spans, n, sa);
+            if (!n) break; // no space there that the feet can be in: a wall higher than the jump's top
+            for (let q = 0; q < 2 * n; q++) spans[q] = sa[q];
+            for (let q = 0; q < n; q++) if (d <= carry(top - spans[2 * q])) land(i2, j2, px, pz, spans[2 * q]);
+            pi = i2; pj = j2;
+          }
+        }
+        byWide = false;
+      }
+      done = end;
+      grow();
+    }
   }
-  const byCell = new Map();
-  for (const [k, { y }] of seen) {
-    const c = k.slice(0, k.lastIndexOf(','));
-    (byCell.get(c) || byCell.set(c, []).get(c)).push(y);
+  // the heights reached in each cell: by the search's own walks and jumps (sure), and by all (wide jumps too)
+  const byCell = new Map(), byCellAll = new Map();
+  for (let s = 0; s < states.length; s++) {
+    const c = states[s][1] * nx + states[s][0];
+    if (s < sure) (byCell.get(c) || byCell.set(c, []).get(c)).push(states[s][2]);
+    (byCellAll.get(c) || byCellAll.set(c, []).get(c)).push(states[s][2]);
   }
   return {
     cells: byCell.size,
+    // the states that only wide jumps reach
+    wide: states.length - sure,
     /* the reached states that do not lead back (traps): from them no walk or jump of the search leads to the start, or to a state
-       where exit(x, y, z) holds (by the beacon). The search runs back from those over every walk and jump it made. With out(trap, leads),
-       a trap also leads back when out finds a move from it to a place where leads({ x, z, y }) holds (the bake tries the controller's
-       own walks and jumps there). A place is the state at the grid point nearest to it, with the floor that the feet meet there; a place
-       the search did not reach does not lead back. Each trap comes with the way in: the state it was first reached from, one that leads
-       back or a trap listed before it. -> { traps: [{ i, j, x, z, y, way: { i, j, y } }], leads } */
+       where exit(x, y, z) holds (by the beacon). The search runs back from those over every walk and jump it made (not the wide jumps).
+       With out(trap, leads), a trap also leads back when out finds a move from it to a place where leads({ x, z, y }) holds (the bake
+       tries the controller's own walks and jumps there). A place is the state at the grid point nearest to it, with the floor that the
+       feet meet there; a place the search did not reach does not lead back. Each trap comes with the way in: a state that leads back,
+       or a trap listed before it, with a walk or a jump of the search to it where there is one (the first found), else with a wide jump
+       to it; and wide: true when only wide jumps reach it. -> { traps: [{ i, j, x, z, y, wide, way: { i, j, y } }], leads } */
     trapped(exit = () => false, out = null) {
-      const n = states.length, m = from.length, back = new Int32Array(n + 1), on = new Int32Array(n + 1);
+      const n = states.length, m = from.length, back = new Int32Array(n + 1), on = new Int32Array(n + 1), won = new Int32Array(n + 1);
       for (let e = 0; e < m; e++) { back[to[e] + 1]++; on[from[e] + 1]++; }
-      for (let s = 0; s < n; s++) { back[s + 1] += back[s]; on[s + 1] += on[s]; }
-      const into = new Int32Array(m), outof = new Int32Array(m), bi = back.slice(0, n), oi = on.slice(0, n);
+      for (let e = 0; e < wfrom.length; e++) won[wfrom[e] + 1]++;
+      for (let s = 0; s < n; s++) { back[s + 1] += back[s]; on[s + 1] += on[s]; won[s + 1] += won[s]; }
+      const into = new Int32Array(m), outof = new Int32Array(m), wout = new Int32Array(wfrom.length), bi = back.slice(0, n), oi = on.slice(0, n), wi = won.slice(0, n);
       for (let e = 0; e < m; e++) { into[bi[to[e]]++] = from[e]; outof[oi[from[e]]++] = to[e]; }
+      for (let e = 0; e < wfrom.length; e++) wout[wi[wfrom[e]]++] = wto[e];
       // back from the start and the exits: the states that lead back
       const good = new Uint8Array(n), q = [];
       const back1 = s => {
@@ -623,7 +738,9 @@ export function reachable(walk, start, bounds, P = PARAMS) {
       for (let s = 1; s < n; s++) if (!good[s] && exit(x0 + states[s][0] * step, states[s][2], z0 + states[s][1] * step)) back1(s);
       const at = s => ({ i: states[s][0], j: states[s][1], x: x0 + states[s][0] * step, z: z0 + states[s][1] * step, y: states[s][2] });
       const leads = p => {
-        const i = ci(p.x), j = cj(p.z), y = walk.floorAt(x0 + i * step, z0 + j * step, p.y + climb, p.y), t = seen.get(`${i},${j},${Math.round(y * 10)}`);
+        const i = ci(p.x), j = cj(p.z);
+        if (i < 0 || j < 0 || i >= nx || j >= nz) return false;
+        const y = walk.floorAt(x0 + i * step, z0 + j * step, p.y + climb, p.y), t = seen.get(key(i, j, y));
         return !!t && good[t.id] === 1;
       };
       if (out) {
@@ -632,19 +749,26 @@ export function reachable(walk, start, bounds, P = PARAMS) {
           for (let s = 0; s < n; s++) if (!good[s] && out(at(s), leads)) { back1(s); again = true; }
         }
       }
-      // the traps, from the ways in from the states that lead back, then on through the traps
+      /* the traps, from the ways in from the states that lead back, then on through the traps: by the search's own walks and jumps
+         first, then by wide jumps, so a trap's way in is a wide jump only where no walk or jump of the search gets there */
       const way = new Int32Array(n).fill(-1), list = [];
-      for (let s = 0; s < n; s++) if (good[s]) for (let e = on[s]; e < on[s + 1]; e++) if (!good[outof[e]] && way[outof[e]] < 0) { way[outof[e]] = s; list.push(outof[e]); }
-      for (let h = 0; h < list.length; h++) for (let e = on[list[h]]; e < on[list[h] + 1]; e++) if (!good[outof[e]] && way[outof[e]] < 0) { way[outof[e]] = list[h]; list.push(outof[e]); }
-      return { traps: list.map(s => ({ ...at(s), way: at(way[s]) })), leads };
+      const enter = (s, O, E) => { for (let e = O[s]; e < O[s + 1]; e++) if (!good[E[e]] && way[E[e]] < 0) { way[E[e]] = s; list.push(E[e]); } };
+      for (let s = 0; s < n; s++) if (good[s]) enter(s, on, outof);
+      for (let h = 0; h < list.length; h++) enter(list[h], on, outof);
+      const first = list.length;
+      for (let s = 0; s < n; s++) if (good[s]) enter(s, won, wout);
+      for (let h = 0; h < first; h++) enter(list[h], won, wout);
+      for (let h = first; h < list.length; h++) { enter(list[h], on, outof); enter(list[h], won, wout); }
+      return { traps: list.map(s => ({ ...at(s), wide: s >= sure, way: at(way[s]) })), leads };
     },
-    // can the feet stand near (x, z) at a height from which p (a wisp or the beacon) is in touch?
-    near(p, r = PARAMS.touch * 0.8, lo = -0.7, hi = 2.1) {
-      const n = Math.ceil(r / step);
+    /* can the feet stand near (x, z) at a height from which p (a wisp or the beacon) is in touch? By the search's own walks and jumps,
+       or with all, by wide jumps too */
+    near(p, r = PARAMS.touch * 0.8, lo = -0.7, hi = 2.1, all = false) {
+      const n = Math.ceil(r / step), cellsOf = all ? byCellAll : byCell;
       for (let dj = -n; dj <= n; dj++) for (let di = -n; di <= n; di++) {
         const i = ci(p[0]) + di, j = cj(p[2]) + dj, x = x0 + i * step, z = z0 + j * step;
-        if (Math.hypot(x - p[0], z - p[2]) > r) continue;
-        for (const y of byCell.get(`${i},${j}`) || []) if (p[1] - y > lo && p[1] - y < hi) return true;
+        if (i < 0 || j < 0 || i >= nx || j >= nz || Math.hypot(x - p[0], z - p[2]) > r) continue;
+        for (const y of cellsOf.get(j * nx + i) || []) if (p[1] - y > lo && p[1] - y < hi) return true;
       }
       return false;
     }

@@ -13,7 +13,7 @@ import { performance } from 'node:perf_hooks';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { checkPlace } from './lib/check.mjs';
-import { closeTraps } from './lib/traps.mjs';
+import { closeWalk } from './lib/traps.mjs';
 import { lib, K, palette, hills, terrain, walkMap, walkCells, WALK_LAYERS, lamplighter, shadowDisc, wisp, fire, embers, BONES, INK_VERSION } from './lib/common.mjs';
 import { zonesOf, zoneOf, zoneJson } from './lib/zones.mjs';
 
@@ -25,9 +25,8 @@ export async function loadPlace(id) {
   return (await import(`./biomes/${id}.mjs`)).default;
 }
 
-// build one place; returns { world, meta, walk, stats }. zones: false leaves the zones out of the JSON (and only out of it)
-export function build(def, { zones = true } = {}) {
-  const t0 = performance.now();
+// the scenery of a place, with its marks (the start, the wisps, the beacon, the zones), ready for the walk map and the bake
+function scenery(def) {
   const P = palette(def.palette);
   const B = lib.makeBuilder(def.seed || 7, P.pal, { renderMetadata: false });
   const S0 = K.sculpt(lib.makeSculpt(B));
@@ -85,18 +84,28 @@ export function build(def, { zones = true } = {}) {
   if (!marks.spawn || !marks.beacon || marks.wisps.length !== 5) throw new Error(`${def.id}: needs a spawn, a beacon and five wisps`);
   const missing = zonesOf(def.id).filter(z => !marks.zones.includes(z)).map(z => z.id);
   if (missing.length) throw new Error(`${def.id}: lib/zones.mjs has zones the place does not place: ${missing.join(' ')}`);
-  const t1 = performance.now();
-  // the walk map, read from the scenery's distance field (S.ready() tells the field where the solids are, before the bake)
-  S.ready();
-  const W = def.walk || {};
-  const walk = walkMap(S, h, { x0: -W.half || -36, x1: W.half || 36, z0: -W.half || -36, z1: W.half || 36, step: 0.25, ...W.opts });
-  const t2 = performance.now();
-  /* no trap in reach (lib/traps.mjs): what the start reaches but cannot get back from is filled. The last reach search of it is on the
-     final walk map, so the check uses it */
+  return { P, B, S0, S, L, h, marks, ctx, per, warm };
+}
+// the walk map as the march reads it from the scenery's distance field (S.ready() tells the field where the solids are, before the
+// bake), before closeWalk(). -> { walk, marks, place: the start, beacon and bounds for closeWalk() }, and the scenery for build()
+export function march(def) {
+  const t0 = performance.now(), sc = scenery(def), W = def.walk || {}, t1 = performance.now();
+  sc.S.ready();
+  const walk = walkMap(sc.S, sc.h, { x0: -W.half || -36, x1: W.half || 36, z0: -W.half || -36, z1: W.half || 36, step: 0.25, ...W.opts });
+  return { ...sc, walk, place: { spawn: sc.marks.spawn, beacon: sc.marks.beacon, bounds: W.half || 36 }, times: [t0, t1, performance.now()] };
+}
+
+// build one place; returns { world, meta, walk, stats }. zones: false leaves the zones out of the JSON (and only out of it)
+export function build(def, { zones = true } = {}) {
+  const sc = march(def), { P, B, S0, S, L, h, marks, ctx, per, warm, walk } = sc, [t0, t1, t2] = sc.times;
+  /* the cracks the search reaches, and no trap in reach (lib/traps.mjs closeWalk()): a trap the size of a crack is filled, a wider one
+     fails the bake. The last reach search of it is on the final walk map, so the check uses it */
   let traps;
-  try { traps = closeTraps(walk, { spawn: marks.spawn, beacon: marks.beacon, bounds: W.half || 36 }); } catch (e) { throw new Error(`${def.id}: ${e.message}`); }
+  try { traps = closeWalk(walk, sc.place, { clear: walk.clear }); } catch (e) { throw new Error(`${def.id}: ${e.message}`); }
+  walk.cracks = traps.cracks + traps.cracked.length;
   walk.traps = traps.changed;
-  if (walk.traps.length) walk.gaps = walk.T.reduce((n, t, k) => n + (walk.G[k] < t ? 1 : 0), 0);
+  walk.cracked = traps.cracked;
+  walk.gaps = walk.T.reduce((n, t, k) => n + (walk.G[k] < t ? 1 : 0), 0);
   const t2r = performance.now();
   /* then what must not block the feet (water, hanging cloth, chains), and one bake of it all, so the scenery shadows the late solids and
      hides what of them is buried in it. Baked alone, they would be lit in a field that holds nothing else */
@@ -248,6 +257,7 @@ async function main() {
     const sizes = save(id, built, worlds);
     console.log(`${id}: ${JSON.stringify(built.stats)} gz ${(sizes.splatsGz / 1e6).toFixed(2)} MB, walk ${(sizes.walkGz / 1e3).toFixed(0)} KB`);
     for (const c of built.walk.traps) console.log(`  trap filled at (${c.x}, ${c.z}): top/floor/underside ${c.before.join('/')} -> ${c.after.join('/')} cm`);
+    for (const c of built.walk.cracked) console.log(`  crack closed by a later pass at (${c.x}, ${c.z}): top/floor/underside ${c.before.join('/')} -> ${c.after.join('/')} cm`);
     let frame;
     if (prev || args.includes('--check')) {
       fs.mkdirSync(out, { recursive: true });

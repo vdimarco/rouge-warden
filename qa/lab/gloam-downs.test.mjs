@@ -4,9 +4,11 @@
 //   the controller on made-up ground (walk, run, jump height, walls, steps, ledges, a step on a ledge's lip, falls, walking under an
 //   arch, landing on a sloped roof or crown over a gap and on a sloped floor under one, walking off a ledge into an arch, the corners of
 //   one roof agreeing on the layer, thin roofs, a vault's edge over a grate, a jump under a high roof with the gap's underside, the bake's
-//   crack pass and a hut over its crawl space, the crack pass rule by rule, the bake's trap rule on a pit, a slot, a notch and a nook,
-//   a lean-to against a hall, a dome, a jump up through a thin roof, running jumps up gentle and steep slopes on any heading, curbs and
-//   blocks on a slope), the reach search's walks and jumps against the controller,
+//   crack pass and a hut over its crawl space, the crack pass rule by rule (two cells in a line, a chain of three, a slanted beam), the
+//   bake's trap rule (cracks the search stands by, holes the size of a crack that it fills, wider traps and a pocket over a thin wall that
+//   fail, the way back, the controller's ways out, the check's line), a lean-to against a hall, a dome, a roof's corners joined through
+//   each other, a jump up through a thin roof, running jumps up gentle and steep slopes on any heading, curbs and blocks on a slope), the
+//   reach search's walks and jumps against the controller (and between posts),
 //   the pose (the bones put the figure where the body is), the saved game (rubbish in, a clean save out), and the loader's check of
 //   the walk file's layers.
 // Run: node qa/lab/gloam-downs.test.mjs
@@ -17,7 +19,7 @@ import { fileURLToPath } from 'node:url';
 import { makeWalk, makeBody, makeCamera, pose, reachable, touches, atBeacon, JUMP, PARAMS } from '../../public/lab/gloam-downs/play.js';
 import { clean, fresh, ORDER, wispCount } from '../../public/lab/gloam-downs/save.js';
 import { closeCracks } from '../../games/gloam-downs/lib/cracks.mjs';
-import { byBeacon, closeTraps, findTraps } from '../../games/gloam-downs/lib/traps.mjs';
+import { byBeacon, closeWalk, controllerOut, fillTraps, findTraps, standsIn } from '../../games/gloam-downs/lib/traps.mjs';
 
 const DIR = fileURLToPath(new URL('../../public/lab/gloam-downs/', import.meta.url));
 // load the codec in this realm: in a vm context it rejects this realm's Uint8Array
@@ -66,10 +68,10 @@ for (const id of skipWorlds ? [] : ORDER) {
     const t = L[k], g = L[N + k], u = L[2 * N + k];
     assert(g < t ? u > g && u < t : g === t && u === 0, `${id}: walk cell ${k} has top ${t}, floor ${g}, underside ${u}`);
   }
-  // the bake closed the cracks one cell wide: the pass finds none left
-  const again = L.slice();
-  assert.equal(closeCracks({ T: again.subarray(0, N), G: again.subarray(N, 2 * N), U: again.subarray(2 * N), nx: meta.walk.nx, nz: meta.walk.nz }), 0, `${id}: the walk map has cracks one cell wide (bake it again)`);
   const walk = makeWalk(meta.walk, L);
+  // the bake closed the cracks one cell wide that the search stands by: the pass finds none left
+  const again = L.slice(), stands = standsIn(reachable(walk, meta.spawn, meta.bounds), meta.walk);
+  assert.equal(closeCracks({ T: again.subarray(0, N), G: again.subarray(N, 2 * N), U: again.subarray(2 * N), nx: meta.walk.nx, nz: meta.walk.nz }, { stands }), 0, `${id}: the walk map has cracks one cell wide (bake it again)`);
   assert(walk.U, `${id}: the controller reads the underside`);
   const floor = walk.support(meta.spawn.p[0], meta.spawn.p[2], meta.spawn.p[1] + 1);
   assert(floor !== null && near(floor, meta.spawn.p[1], 0.6), `${id}: the start stands on the ground`);
@@ -80,6 +82,26 @@ for (const id of skipWorlds ? [] : ORDER) {
   meta.wisps.forEach((w, i) => assert(R.near(w.p), `${id}: wisp ${i + 1} can be reached`));
   assert(meta.beacon.p[1] > meta.spawn.p[1] + 2, `${id}: the beacon stands on a rise above the start`);
   pass(`${id}: ${meta.name}`, { splats: count, mb: +((gz.length + wgz.length) / 1e6).toFixed(2), reach: R.cells });
+}
+if (!skipWorlds && !missing.length) {
+  /* the shipped walk maps are what the bake makes now of the march. In the gaol the crack pass makes the grid point that the march
+     missed under a slanted beam's top a slab over the floor at 3.88, not a solid column; in the fen it closes the hole in a hut's porch
+     under its eave, which a running jump onto the porch reaches, to the porch's floor, so the crawl space under the hut is out of reach */
+  let bake = null;
+  try { bake = await import('../../games/gloam-downs/bake.mjs'); } catch (err) { console.log(`SKIP the march of the places: ${err.message.split('\n')[0]} (npm ci --prefix games/gloam-downs)`); }
+  if (bake) {
+    const got = {}, cell = (m, x, z) => { const k = Math.round((z - m.walk.z0) / m.walk.step) * m.walk.nx + Math.round((x - m.walk.x0) / m.walk.step); return [m.walk.T[k], m.walk.G[k], m.walk.U[k]]; };
+    for (const [id, x, z, check] of [['gaol', 21.75, 10, c => c[1] === 388 && c[2] - c[1] >= 180 && c[0] > c[2]], ['fen', -11.5, 11, c => c[0] === 380 && c[1] > 160 && c[1] < 175]]) {
+      const m = bake.march(await bake.loadPlace(id)), res = closeWalk(m.walk, m.place, { clear: m.walk.clear });
+      const raw = new Uint8Array(zlib.gunzipSync(fs.readFileSync(`${DIR}worlds/${id}.walk.bin.gz`))), shipped = new Int16Array(raw.buffer, raw.byteOffset, raw.byteLength >> 1);
+      const N = m.walk.T.length, now = new Int16Array(3 * N);
+      now.set(m.walk.T, 0); now.set(m.walk.G, N); now.set(m.walk.U, 2 * N);
+      assert(now.length === shipped.length && now.every((v, k) => v === shipped[k]), `${id}: the walk file is not what the bake makes of the march now (bake it again)`);
+      assert(check(cell(m, x, z)), `${id}: the cell at (${x}, ${z}) is ${cell(m, x, z)}`);
+      got[id] = { cracks: res.cracks, later: res.cracked.length, filled: res.changed.length, cell: cell(m, x, z) };
+    }
+    pass('the walk files are what the bake makes of the march now: a slab under a beam, and a hole in a porch under an eave closed', got);
+  }
 }
 if (!skipWorlds && !missing.length) { // five different places: names, palettes and landmarks differ
   const metas = ORDER.map(id => JSON.parse(fs.readFileSync(`${DIR}worlds/${id}.json`, 'utf8')));
@@ -524,6 +546,12 @@ const layered = fn => {
   };
   const hut = hutMap();
   assert.equal(hut.closed, 14, `the crack pass closed ${hut.closed} cells, not the 14 cracks`);
+  /* with stands from the search, started on the porch: the same 14 (the crack beside the body is closed for feet that stand 0.3 from
+     it, though the disc's centre cannot stand next to it) */
+  const hutRaw = hutMap(false), hutInfo = { x0: -20, z0: -20, step: 0.25, nx: 161, nz: 161 };
+  const hutStands = standsIn(reachable(hutRaw.walk, { p: [2.6, 1.9, 2.6] }, 20), hutInfo);
+  const hutClosed = closeCracks({ T: hutRaw.cells.subarray(0, hutRaw.N), G: hutRaw.cells.subarray(hutRaw.N, 2 * hutRaw.N), U: hutRaw.cells.subarray(2 * hutRaw.N), nx: 161, nz: 161 }, { stands: hutStands });
+  assert.equal(hutClosed, 14, `with stands from the search the crack pass closed ${hutClosed} cells, not the 14 cracks`);
   for (let k = 0; k < hut.N; k++) {
     const t0 = hut.before[k], g0 = hut.before[hut.N + k], t1 = hut.cells[k], g1 = hut.cells[hut.N + k], u0 = hut.before[2 * hut.N + k];
     const same = t1 === t0 && g1 === g0, porch = t1 === t0 && t0 === 400 && g0 === -50 && g1 === 170, deck = t0 === -50 && t1 === 50 && g1 === 50;
@@ -609,17 +637,22 @@ const lowestNear = (W2, [cx, cy, cz], r, from = 1.6) => {
   return low;
 };
 { /* the crack pass, rule by rule. A seam one cell wide between floors at 0 and 0.5, over a drop of 2 (as in the gaol): it comes up
-     half way, to 0.25. A notch two cells by two in a platform at 4.9, 1.5 deep (as in the fen): it comes up to 4.9. Seams between
-     floors 0.08 apart come up to one of the two floors; 0.15 apart, half way. A seam between a floor and a wall comes up to the floor,
-     the only pair that closes it. A crack in an open porch over the water keeps the porch's gap under it. A crack whose only pair is a
-     crack that the first pass closes is closed by the second. A post over a culvert between two floors whose feet are over its
-     underside is a wall, not a crack, and stays. A slot by a wall under a bracket 0.6 over the floor beside it is closed solid, for
-     less than 1.8 would be left under the bracket. A crack that is the low top of a gap (a grate 1 under the floor, over a pit) stays.
-     Walks and wanders over the seam and the notch, at every frame step, never stand in them */
-  const run1 = fn => { const m = mapOf(fn); m.closed = closeCracks(m.L); return m; };
+     half way, to 0.25, solid (no way under the floors leads to the drop). A notch two cells by two in a platform at 4.9, 1.5 deep (as
+     in the fen): it comes up to 4.9. Seams between floors 0.08 apart come
+     up to one of the two floors; 0.15 apart, half way. A seam between a floor and a wall comes up to the floor, the only pair that
+     closes it. A crack in an open porch over the water keeps the porch's gap under it. A crack whose only pair is a crack that the
+     first pass closes is closed by the second, and a chain of three by the third. A post over a culvert between two floors whose feet
+     are over its underside is a wall, not a crack, and stays. A slot by a wall under a bracket 0.6 over the floor beside it is closed
+     solid, for less than 1.8 would be left under the bracket. A crack that is the low top of a gap (a grate 1 under the floor, over a
+     pit) stays. Two cells in a line come up in steps from the side the feet stand on: between 0 and 0.6, to 0.2 and 0.4; between 0
+     and 0.15, to 0.05 and 0.1; beside a wall, both to the floor; in a porch over the water that slopes from 1.7 to 1.85, to 1.75 and
+     1.8, both with the porch's gap. Feet that cannot stand by a crack (stands says no) close nothing. Walks and wanders over the seam
+     and the notch, at every frame step, never stand in them */
+  const run1 = (fn, o) => { const m = mapOf(fn); m.closed = closeCracks(m.L, o); return m; };
   const seam = run1((x, z) => (on(x, 0) && Math.abs(z) <= 4 ? -2 : x < 0 ? 0 : 0.5));
   assert.equal(seam.closed, 33, `the seam: ${seam.closed} cells closed, not 33`);
   for (let z = -4; z <= 4; z += 0.25) assert.deepEqual(seam.at(0, z), [25, 25, 0], `the seam at z ${z}: ${seam.at(0, z)}`);
+  assert.equal(run1((x, z) => (on(x, 0) && Math.abs(z) <= 4 ? -2 : x < 0 ? 0 : 0.5), { stands: () => false }).closed, 0, 'feet that cannot stand by the seam closed it');
   const sLow = lowestNear(seam.walk(), [0, 0.25, 0], 0.15);
   assert(sLow > -0.05, `walks across the seam between 0 and 0.5 stood in it at ${sLow.toFixed(2)}`);
   const notch = run1((x, z) => (Math.abs(x) > 4 || Math.abs(z) > 4 ? 0 : (on(x, 0) || on(x, 0.25)) && (on(z, 0) || on(z, 0.25)) ? 3.4 : 4.9));
@@ -637,10 +670,26 @@ const lowestNear = (W2, [cx, cy, cz], r, from = 1.6) => {
   // an open porch over the water: top 1.7, the water at -0.5, the porch's underside 1.4
   const porch = run1((x, z) => (on(x, 0) && on(z, 0) ? -0.5 : Math.abs(x) <= 3 && Math.abs(z) <= 3 ? [1.7, -0.5, 1.4] : -0.5));
   assert.deepEqual(porch.at(0, 0), [170, -50, 140], `a crack in an open porch over the water came up to ${porch.at(0, 0)}, not the porch over the water`);
+  // between a solid floor at 1.7 (east, where the feet come from) and that porch (west): the far side's gap is open air too
+  const porchSide = run1((x, z) => (on(x, 0) && on(z, 0) ? -0.5 : Math.abs(x) > 3 || Math.abs(z) > 3 ? -0.5 : x > 0 ? 1.7 : [1.7, -0.5, 1.4]));
+  assert.deepEqual(porchSide.at(0, 0), [170, -50, 140], `a crack between a floor and a porch over the water came up to ${porchSide.at(0, 0)}, not the porch`);
+  // a crack in that porch that reads a rock at 0 under it: a slab would leave 1.4 over the rock, less than 1.8, so it is solid
+  const porchRock = run1((x, z) => (on(x, 0) && on(z, 0) ? 0 : Math.abs(x) <= 3 && Math.abs(z) <= 3 ? [1.7, -0.5, 1.4] : -0.5));
+  assert.deepEqual(porchRock.at(0, 0), [170, 170, 0], `a crack in a porch over a rock came up to ${porchRock.at(0, 0)}, not solid`);
   // planks at 0.5 over the water: one along x up to x 0, and one along z at x 0.5 with a crack at z 0. The crack at (0.25, 0) is
   // closed only once the one at (0.5, 0) is
   const late = run1((x, z) => ((x >= -1 && x <= 0.01 && on(z, 0)) || (on(x, 0.5) && Math.abs(z) <= 1 && !on(z, 0)) ? 0.5 : -0.5));
   assert(late.closed === 2 && late.at(0.25, 0)[0] === 50 && late.at(0.5, 0)[0] === 50, `planks: ${late.closed} closed, (0.25, 0) at ${late.at(0.25, 0)}, (0.5, 0) at ${late.at(0.5, 0)}`);
+  /* the same with feet only on the plank along z and on the end of the plank along x (stands): (0.5, 0), once closed to the planks'
+     floor, counts as stood on, and closes (0.25, 0) against the plank's end */
+  const lateOn = run1((x, z) => ((x >= -1 && x <= 0.01 && on(z, 0)) || (on(x, 0.5) && Math.abs(z) <= 1 && !on(z, 0)) ? 0.5 : -0.5), { stands: k => on(-20 + (k % 161) * 0.25, 0.5) || k === 80 * 161 + 80 });
+  assert(lateOn.closed === 2 && lateOn.at(0.25, 0)[0] === 50, `planks, feet on one plank: ${lateOn.closed} closed, (0.25, 0) at ${lateOn.at(0.25, 0)}`);
+  /* three: planks at 0.5 along x at z 0 (x -1 to 0.5), along z at x 1 (but z 0), and along x at z -0.5 (x 0.75 to 1.5). The crack at
+     (1, 0) is closed by the first pass; (0.75, 0), between the plank's end and it, by the second; (0.75, -0.25), between that and the
+     plank at z -0.5, by the third (each is met before the one it needs, in the order the pass goes) */
+  const plank3 = (x, z) => (on(z, 0) && x >= -1.01 && x <= 0.51) || (on(x, 1) && Math.abs(z) <= 1.01 && !on(z, 0)) || (on(z, -0.5) && x >= 0.74 && x <= 1.51);
+  const chain = run1((x, z) => (plank3(x, z) ? 0.5 : -0.5));
+  assert(chain.closed === 3 && [[1, 0], [0.75, 0], [0.75, -0.25]].every(([x, z]) => chain.at(x, z)[0] === 50), `a chain of three cracks: ${chain.closed} closed`);
   // a post (top 4) over a culvert (floor 0, underside 1.5) in a floor at 2: feet at 2 are over the underside, so the post is a wall
   const post = run1((x, z) => (on(x, 0) && on(z, 0) ? [4, 0, 1.5] : Math.abs(x) <= 3 && Math.abs(z) <= 3 ? 2 : 0));
   assert(post.closed === 0 && post.at(0, 0).join() === '400,0,150', `a post over a culvert: ${post.closed} closed, the post is ${post.at(0, 0)}`);
@@ -650,58 +699,193 @@ const lowestNear = (W2, [cx, cy, cz], r, from = 1.6) => {
   // a grate (top 0, a pit to -3 under it, underside -0.2) one cell wide in a floor at 1
   const grate = run1((x, z) => (on(x, 0) && on(z, 0) ? [0, -3, -0.2] : 1));
   assert(grate.closed === 0 && grate.at(0, 0).join() === '0,-300,-20', `a grate 1 under the floor: ${grate.closed} closed, it is ${grate.at(0, 0)}`);
-  pass('the crack pass: a seam between two floors, a notch two cells wide, floors 0.08 and 0.15 apart, a floor and a wall, an open porch, two passes, and a post that is no crack', { seamLow: +sLow.toFixed(2), notchLow: +nLow.toFixed(2) });
+  // two cells in a line, along x at x 0 and 0.25, between a floor at 0 (x < 0) and the far side (x > 0.25), 1.5 deep
+  const two = far => run1((x, z) => (Math.abs(z) > 2 ? 0 : (on(x, 0) || on(x, 0.25)) ? -1.5 : x < 0 ? 0 : far));
+  for (const [far, want] of [[0.6, [20, 40]], [0.15, [5, 10]], [3, [0, 0]]]) {
+    const m = two(far), got = [m.at(0, 0)[0], m.at(0.25, 0)[0]];
+    assert.deepEqual(got, want, `two cells between 0 and ${far}: came up to ${got}, not ${want}`);
+  }
+  // in a porch over the water (underside 1.4, the water at -0.5) that slopes from 1.7 to 1.85 across them
+  const porch2 = run1((x, z) => (Math.abs(x) > 3 || Math.abs(z) > 3 ? -0.5 : (on(x, 0) || on(x, 0.25)) && on(z, 0) ? -0.5 : [x < 0 ? 1.7 : 1.85, -0.5, 1.4]));
+  assert.deepEqual([porch2.at(0, 0), porch2.at(0.25, 0)], [[175, -50, 140], [180, -50, 140]], `two cells in a sloped porch: ${porch2.at(0, 0)} and ${porch2.at(0.25, 0)}`);
+  /* a slanted beam over a floor at 3.9 (as in the gaol): along x at z 0 and 0.25, its top from 6.3 to 6.8 and its underside 0.15 under
+     that, with one grid point at (0.25, 0) that the march missed (it reads the floor), one at (-0.5, 0) that reads a hole in the floor
+     down to 0, and the floor at (1.25, 0) between the beam's end and a block 6.46 high. With every floor counted (no stands), the pass
+     closes the hole from the floor first (solid, for the beam's floor is not its floor), then the points from the beam's top as slabs
+     over the floor at 3.9: no open cell with 1.8 of air over its floor
+     becomes solid, and every cell keeps a gap's underside between its floor and its top. With stands from the search (feet on the floor
+     only), it closes only the hole, to the floor. Walks under the beam at every frame step pass on both maps */
+  const beamAt = (x, z) => (on(x, -0.5) && on(z, 0) ? 0 : on(x, 1.5) && on(z, 0) ? 6.46 : Math.abs(x) <= 1.01 && (on(z, 0) || on(z, 0.25)) && !(on(x, 0.25) && on(z, 0)) ? [6.3 + 0.25 * (x + 1), 3.9, 6.15 + 0.25 * (x + 1)] : 3.9);
+  const beam = run1(beamAt), beamRaw = mapOf(beamAt);
+  for (let k = 0; k < beam.N; k++) {
+    const t = beam.cells[k], g = beam.cells[beam.N + k], u = beam.cells[2 * beam.N + k];
+    assert(g < t ? u > g && u < t : g === t && u === 0, `the beam: cell ${k} has top ${t}, floor ${g}, underside ${u}`);
+    if (beamRaw.cells[beamRaw.N + k] === beamRaw.cells[k] && t !== beamRaw.cells[k]) assert(g === 390 && u - g >= 180, `the beam: the open cell ${k} under it came up to ${t}/${g}/${u}`);
+  }
+  assert(beam.closed >= 4 && beam.at(0.25, 0)[1] === 390 && beam.at(-0.5, 0)[1] === 390 && beam.at(-0.5, 0)[0] > 600, `the beam: ${beam.closed} closed, the missed point is ${beam.at(0.25, 0)}, the hole ${beam.at(-0.5, 0)}`);
+  // past its high end (6.8, underside 6.65) the floor at (1.25, 0), then a block 6.46 high: the slab there comes up half way, to 6.63,
+  // so its underside is 0.01 under that, not the beam's
+  assert.deepEqual(beam.at(1.25, 0), [663, 390, 662], `the beam's end: ${beam.at(1.25, 0)}`);
+  const beamSearch = mapOf(beamAt), bw = beamSearch.walk(), bInfo = { ...beamSearch.info };
+  assert.equal(closeCracks(beamSearch.L, { stands: standsIn(reachable(bw, { p: [0, 3.9, -3] }, 20), bInfo) }), 1, 'the beam: with stands from the search the pass should close the hole alone');
+  assert.deepEqual([beamSearch.at(0.25, 0), beamSearch.at(-0.5, 0)], [[390, 390, 0], [390, 390, 0]], 'the beam, with stands: the missed point stays and the hole comes up to the floor');
+  for (const [name, m] of [['every floor', beam], ['stands', beamSearch]]) for (const dt of DTS) for (const x of [-0.5, -0.375, 0.125, 0.25, 0.375]) {
+    const b = makeBody(m.walk(), { p: [x, 3.9, -2], yaw: 0 }, 20);
+    hold(b, 2, toward(0, 1), dt);
+    assert(b.s.z > 1.5 && near(b.s.y, 3.9, 0.01), `the beam (${name}), ${hz(dt)} Hz: a walk under it at x ${x} stopped at ${b.s.x.toFixed(2)}, ${b.s.y.toFixed(2)}, ${b.s.z.toFixed(2)}`);
+  }
+  pass('the crack pass: a seam between two floors, a notch two cells wide, floors 0.08 and 0.15 apart, a floor and a wall, an open porch, two and three passes, a post that is no crack, two cells in a line, and a slanted beam over open floor', { seamLow: +sLow.toFixed(2), notchLow: +nLow.toFixed(2) });
 }
-{ /* no trap in reach (lib/traps.mjs). Flat ground at 0 with the start at the middle and the beacon at (-8, 0, -8), and four traps that
-     no walk or jump leaves: a pit a metre across and 2 deep at x, z 3 to 3.75; a slot one cell wide and 2 deep at x 6, z -1 to 1,
-     between the ground and a floor at 0.5 east of it; a notch three cells by three in a platform at 1.0 (x 9 to 12), 1.45 deep, which
-     a jump from a few of its cells leaves on one or two headings of 16 (too few to find); and
-     a nook under a roof (top 3, underside 2.2) over the ground, x -7 to -4, where one cell reads the crawl space 2 under the floor; and a
-     trench 2 deep and a metre wide between walls 3 high (x 0 to 3, z 8 to 9), open only at its west end, so its far end is reached only
-     along it. The search and the controller find each of them. closeTraps() fills them, each to the floor of its way in, and changes nothing else;
-     then none is left, in one round, and walks and wanders at every frame step never stand in them. Without the rule, walks end in them */
+{ /* no trap in reach (lib/traps.mjs), on made-up maps with flat ground at 0, the start at the middle and the beacon at (-8, 0, -8).
+     1. Cracks the search stands by: a slot one cell wide and 2 deep at x 6 (z -1 to 1), between the ground and a floor at 0.5 east of
+     it, and a nook under a roof (top 3, underside 2.2) at x -7 to -4, where one cell reads the crawl space 2 under the floor. The search
+     finds both as traps on the march; closeWalk()'s first crack pass closes them (the slot half way, the nook to the floor under the
+     roof), and then no trap is left and nothing is filled. Walks never stand in them after; on the march they do.
+     2. Traps the size of a crack: on a block 1.38 high, which only a wide jump gets onto, a hole one cell wide down to -0.3, beside a
+     dent at 1.08 that a post 3 high beside it keeps the disc off; under a roof (top 5, underside 3.3) over such a block, a
+     hole down to -0.3; in a porch 1.38 high over a pit (its underside -0.1, the pit at -2), a hole down into the pit; and a grate 1.6
+     under the ground (a gap's top, which the crack pass leaves) over a pit. fillTraps() alone fills each to the floor beside it: the hole
+     in the block solid, to the dent at 1.08 (the lowest floor beside it that is not a drop from the block, where it was reached from);
+     the hole under the roof, its floor under the gap; the porch's hole with the porch's gap; the grate's top, keeping its gap.
+     closeWalk() closes the first three with its crack pass (it stands on floors that wide jumps reach) and fills the grate. It changes
+     nothing else, then no trap is left, and walks never stand in them.
+     3. Traps wider than a crack, or that a jump gets into, fail with their place named: a pit 1 m across, a sunken courtyard 3 by 3, a
+     trench a metre wide between walls 3 high, open only at its west end, a notch 3 by 3 in a platform at 1.0, and a pocket at -0.5
+     behind a wall 1.2 high and one cell thick, walled 3 high round it, which the controller enters with a running jump over the wall
+     (the search's own jumps never go over anything higher than both ends; its wide jumps do).
+     4. The search's way back (trapped()): on open ground nothing is a trap, with no beacon and no help from the controller; a place
+     0.07 over a reached floor leads back; a row of one-cell holes, each of which the given out() leads only to the next one east and
+     the last to the ground, all lead back (out() is tried until nothing changes); and a hole's way in is the state that reached it
+     first. 5. The controller's ways out (controllerOut()): a pit 1.0 deep that only a running jump leaves; a ring of good places that
+     only the walk ends in; and ways out on 5 headings at both rates (out), on 3 (not out), or on 5 at 60 Hz and 2 at 30 Hz (not out) */
   const at = (x, z, x0, x1, z0, z1) => x >= x0 - 0.01 && x <= x1 + 0.01 && z >= z0 - 0.01 && z <= z1 + 0.01;
-  const fn = (x, z) => {
-    if (at(x, z, 3, 3.75, 3, 3.75)) return -2;
+  const place = { spawn: { p: [0, 0, 0] }, beacon: { p: [-8, 0, -8], r: 1.6 }, bounds: 20 };
+  const wOf = m => ({ ...m.info, T: m.L.T, G: m.L.G, U: m.L.U });
+  const changedCells = (m, before) => {
+    const out = [];
+    for (let k = 0; k < m.N; k++) if (m.cells[k] !== before[k] || m.cells[m.N + k] !== before[m.N + k] || m.cells[2 * m.N + k] !== before[2 * m.N + k]) out.push(`${m.info.x0 + (k % m.info.nx) * 0.25},${m.info.z0 + Math.floor(k / m.info.nx) * 0.25}`);
+    return out;
+  };
+  const lows = {};
+  // 1. cracks the search stands by
+  const crackFn = (x, z) => {
     if (on(x, 6) && Math.abs(z) <= 1) return -2;
     if (x > 6 && x < 8.5) return 0.5;
-    if (at(x, z, 10, 10.5, 0, 0.5)) return -0.45;
-    if (at(x, z, 9, 12, -2, 2)) return 1.0;
     if (on(x, -5.5) && on(z, 0)) return [3, -2, 2.2];
     if (at(x, z, -7, -4, -1.5, 1.5)) return [3, 0, 2.2];
-    if (at(x, z, 0, 3, 8, 9)) return -2;
-    if (at(x, z, 0, 3.25, 7.75, 9.25)) return 3;
     return 0;
   };
-  const place = { spawn: { p: [0, 0, 0] }, beacon: { p: [-8, 0, -8], r: 1.6 }, bounds: 20 };
-  const where = t => (at(t.x, t.z, 3, 3.75, 3, 3.75) ? 'pit' : on(t.x, 6) ? 'slot' : at(t.x, t.z, 10, 10.5, 0, 0.5) ? 'notch' : on(t.x, -5.5) && on(t.z, 0) ? 'nook' : at(t.x, t.z, 0, 3, 8, 9) ? 'trench' : `(${t.x}, ${t.z})`);
-  const raw = mapOf(fn), found = findTraps(raw.walk(), place).traps.map(where);
-  assert.deepEqual([...new Set(found)].sort(), ['nook', 'notch', 'pit', 'slot', 'trench'], `the traps found: ${[...new Set(found)].join(', ')}`);
-  // the hook: a trap that out() says leads back is none
-  assert.equal(reachable(raw.walk(), place.spawn, 20).trapped(() => false, () => true).traps.length, 0, 'a trap that the controller leaves is no trap');
-  const m = mapOf(fn), before = m.cells.slice(), w = { ...m.info, T: m.L.T, G: m.L.G, U: m.L.U }, res = closeTraps(w, place);
-  assert.equal(findTraps(m.walk(), place).traps.length, 0, 'traps left after closeTraps()');
-  const want = { pit: 16, slot: 9, notch: 9, nook: 1 }, got = { pit: 0, slot: 0, notch: 0, nook: 0, trench: 0 };
-  for (const c of res.changed) { const k = where(c); assert(k in got, `closeTraps() changed (${c.x}, ${c.z}) too`); got[k]++; }
-  assert.deepEqual({ ...got, trench: undefined }, { ...want, trench: undefined }, `the cells filled: ${JSON.stringify(got)}`);
-  // the trench: every cell along its middle (the cells by its walls, where the disc does not fit, are not reached, so they stay)
-  for (let x = 0; x <= 2.75; x += 0.25) assert.deepEqual(m.at(x, 8.5), [0, 0, 0], `the trench at x ${x} was filled to ${m.at(x, 8.5)}`);
-  assert.equal(res.rounds, 1, `closeTraps() took ${res.rounds} rounds: a trap reached from another comes up to that one's new floor in the same round`);
-  for (let k = 0; k < m.N; k++) if (m.cells[k] !== before[k] || m.cells[m.N + k] !== before[m.N + k] || m.cells[2 * m.N + k] !== before[2 * m.N + k]) {
-    const x = m.info.x0 + (k % m.info.nx) * 0.25, z = m.info.z0 + Math.floor(k / m.info.nx) * 0.25, kind = where({ x, z });
-    const t = m.cells[k], g = m.cells[m.N + k], u = m.cells[2 * m.N + k];
-    const fill = { pit: [0, 0, 0], notch: [100, 100, 0], nook: [300, 0, 220], trench: [0, 0, 0] }[kind];
-    if (fill) assert.deepEqual([t, g, u], fill, `the ${kind} at (${x}, ${z}) was filled to ${[t, g, u]}`);
-    else assert(kind === 'slot' && t === g && u === 0 && (t === 0 || t === 50), `the slot at (${x}, ${z}) was filled to ${[t, g, u]}`);
-  }
-  const W2 = m.walk(), Wraw = raw.walk();
-  const spots = [['pit', [3.375, 0, 3.375], 0.4, -0.05], ['slot', [6, 0, 0], 0.15, -0.05], ['notch', [10.25, 1, 0.25], 0.4, 0.95], ['nook', [-5.5, 0, 0], 0.15, -0.05], ['trench', [0.75, 0, 8.5], 0.6, -0.05]];
-  const lows = {};
-  for (const [kind, p, r, least] of spots) {
-    const low = lowestNear(W2, p, r);
-    assert(low > least, `after closeTraps() the feet stood in the ${kind} at ${low.toFixed(2)}`);
+  const crackKind = t => (on(t.x, 6) ? 'slot' : on(t.x, -5.5) && on(t.z, 0) ? 'nook' : `(${t.x}, ${t.z})`);
+  const cr = mapOf(crackFn), crRaw = mapOf(crackFn), crBefore = cr.cells.slice();
+  assert.deepEqual([...new Set(findTraps(crRaw.walk(), place).traps.map(crackKind))].sort(), ['nook', 'slot'], 'the traps on the march');
+  const crRes = closeWalk(wOf(cr), place);
+  assert(crRes.cracks === 10 && !crRes.changed.length && !crRes.cracked.length && crRes.rounds === 0, `cracks the search stands by: ${crRes.cracks} closed by the crack pass, ${crRes.changed.length} filled, ${crRes.cracked.length} closed after, ${crRes.rounds} rounds`);
+  for (let z = -1; z <= 1; z += 0.25) assert.deepEqual(cr.at(6, z), [25, 25, 0], `the slot at z ${z}: ${cr.at(6, z)}`);
+  assert.deepEqual(cr.at(-5.5, 0), [300, 0, 220], `the nook: ${cr.at(-5.5, 0)}`);
+  assert.equal(changedCells(cr, crBefore).length, 10, 'the crack pass changed other cells');
+  assert.equal(findTraps(cr.walk(), place).traps.length, 0, 'traps left after the crack pass');
+  for (const [kind, p, r, least] of [['slot', [6, 0, 0], 0.15, -0.05], ['nook', [-5.5, 0, 0], 0.15, -0.05]]) {
+    const low = lowestNear(cr.walk(), p, r);
+    assert(low > least, `after closeWalk() the feet stood in the ${kind} at ${low.toFixed(2)}`);
+    assert(lowestNear(crRaw.walk(), p, r) < least - 0.4, `on the march the walks should stand in the ${kind}`);
     lows[kind] = +low.toFixed(2);
-    assert(lowestNear(Wraw, p, r) < least - 0.4, `without the rule the walks should stand in the ${kind}`);
+  }
+  // the hook: a trap that out() says leads back is none
+  assert.equal(reachable(crRaw.walk(), place.spawn, 20).trapped(() => false, () => true).traps.length, 0, 'a trap that the controller leaves is no trap');
+  // 2. traps the size of a crack that the crack pass leaves
+  const fillFn = (x, z) => {
+    if (on(x, 10) && on(z, 0)) return -0.3;
+    if (on(x, 10) && on(z, -0.25)) return 1.08;
+    if (on(x, 10) && on(z, -0.5)) return 3;
+    if (at(x, z, 9, 11, -1, 1)) return 1.38;
+    if (on(x, -10) && on(z, 5)) return [5, -0.3, 3.3];
+    if (at(x, z, -11, -9, 4, 6)) return [5, 1.38, 3.3];
+    if (on(x, 10) && on(z, 5)) return -2;
+    if (at(x, z, 9, 11, 4, 6)) return [1.38, -2, -0.1];
+    if (on(x, -4) && on(z, -6)) return [-1.6, -4, -1.8];
+    return 0;
+  };
+  const holes = { block: [10, 0, [108, 108, 0]], roof: [-10, 5, [500, 138, 330]], porch: [10, 5, [138, -200, -10]], grate: [-4, -6, [0, -400, -180]] };
+  // fillTraps() alone, on the traps of the march (no crack pass), fills each hole by its rules, and nothing else
+  const flRaw = mapOf(fillFn), flFill = mapOf(fillFn), flTraps = findTraps(flFill.walk(), place).traps;
+  const flCells = fillTraps(flFill.L, flTraps).map(k => `${-20 + (k % 161) * 0.25},${-20 + Math.floor(k / 161) * 0.25}`);
+  assert.deepEqual(flCells.sort(), Object.values(holes).map(([x, z]) => `${x},${z}`).sort(), `fillTraps() filled ${flCells.join(' ')}`);
+  for (const [kind, [x, z, want]] of Object.entries(holes)) assert.deepEqual(flFill.at(x, z), want, `fillTraps(): the ${kind}'s hole was filled to ${flFill.at(x, z)}`);
+  /* closeWalk(): its crack pass stands on the floors that wide jumps reach, so it closes the holes in the block (to the block's floor),
+     under the roof and in the porch; then it fills the grate, which the crack pass leaves, in one round */
+  const fl = mapOf(fillFn), flBefore = fl.cells.slice();
+  const flRes = closeWalk(wOf(fl), place);
+  assert(flRes.cracks === 3 && flRes.changed.length === 1 && flRes.rounds === 1, `traps the size of a crack: ${flRes.cracks} closed by the crack pass, ${flRes.changed.length} filled in ${flRes.rounds} rounds`);
+  for (const [kind, [x, z, want]] of Object.entries({ ...holes, block: [10, 0, [138, 138, 0]] })) assert.deepEqual(fl.at(x, z), want, `closeWalk(): the ${kind}'s hole was closed to ${fl.at(x, z)}`);
+  assert.deepEqual(changedCells(fl, flBefore).sort(), Object.values(holes).map(([x, z]) => `${x},${z}`).sort(), 'closeWalk() changed other cells');
+  assert.equal(findTraps(fl.walk(), place).traps.length, 0, 'traps left after closeWalk()');
+  for (const [kind, [x, z, want]] of Object.entries(holes)) {
+    const y = (kind === 'roof' ? want[1] : want[0]) / 100, low = lowestNear(fl.walk(), [x, y, z], 0.15, 0.8);
+    assert(low > y - 0.05, `after closeWalk() the feet stood in the ${kind}'s hole at ${low.toFixed(2)}`);
+    assert(lowestNear(flRaw.walk(), [x, y, z], 0.15, 0.8) < y - 0.45, `on the march the walks should stand in the ${kind}'s hole`);
+    lows[kind] = +low.toFixed(2);
+  }
+  // 3. traps wider than a crack, or that a jump gets into
+  const pocketFn = (x, z) => (at(x, z, 4, 4, -1.75, 1.75) ? 1.2 : at(x, z, 4.25, 5.75, -1.5, 1.5) ? -0.5 : at(x, z, 4, 6.5, -2.25, 2.25) ? 3 : 0);
+  const fails = [
+    ['a pit 1 m across', (x, z) => (at(x, z, 3, 3.75, 3, 3.75) ? -2 : 0), [3, 3.75, 3, 3.75]],
+    ['a sunken courtyard 3 by 3', (x, z) => (at(x, z, 4, 7, -1.5, 1.5) ? -2.5 : 0), [4, 7, -1.5, 1.5]],
+    ['a trench a metre wide', (x, z) => (at(x, z, 0, 3, 8, 9) ? -2 : at(x, z, 0, 3.25, 7.75, 9.25) ? 3 : 0), [0, 3, 8, 9]],
+    ['a notch 3 by 3', (x, z) => (at(x, z, 10, 10.5, 0, 0.5) ? -0.45 : at(x, z, 9, 12, -2, 2) ? 1.0 : 0), [10, 10.5, 0, 0.5]],
+    ['a pocket behind a thin wall', pocketFn, [4.25, 5.75, -1.5, 1.5]]
+  ];
+  for (const [what, fn, box] of fails) {
+    const m = mapOf(fn), inBox = (x, z) => at(x, z, ...box);
+    let msg = '';
+    try { closeWalk(wOf(m), place); } catch (e) { msg = e.message; }
+    const named = [...msg.matchAll(/\((-?[\d.]+), (-?[\d.]+)\)/g)].some(([, x, z]) => inBox(+x, +z));
+    assert(named, `${what}: closeWalk() should fail and name it, not ${msg ? `"${msg}"` : 'pass'}`);
+  }
+  // the pocket: the controller gets in with a running jump over the wall; the search's own walks and jumps do not
+  const pocket = mapOf(pocketFn), pw = pocket.walk();
+  let entered = 0;
+  for (const x0 of [2, 2.5, 2.8]) for (const tj of [0.1, 0.2, 0.3]) {
+    const b = makeBody(pw, { p: [x0, 0.1, 0.1], yaw: 0 }, 20);
+    hold(b, 1.6, t => ({ ...toward(1, 0), jump: t >= tj && t < tj + 0.4 }));
+    hold(b, 1.5, {});
+    if (b.s.ground && at(b.s.x, b.s.z, 4.2, 5.8, -1.5, 1.5) && b.s.y < -0.3) entered++;
+  }
+  assert(entered > 0, 'the controller should get into the pocket behind the thin wall');
+  assert(!reachable(pw, place.spawn, 20).near([5, -0.5, 0], 0.6, -0.1, 0.1), 'the search\'s own jumps should not hop the thin wall');
+  // 4. the search's way back
+  const flat = mapOf(() => 0), Rf = reachable(flat.walk(), place.spawn, 20), tf = Rf.trapped();
+  assert.equal(tf.traps.length, 0, 'open ground: with no beacon and no help from the controller, every reached place should lead back to the start');
+  assert(tf.leads({ x: 2.1, z: 2, y: 0.07 }) && !tf.leads({ x: 30, z: 2, y: 0 }), 'a place 0.07 over a reached floor leads back (by the floor the feet meet there), one off the map does not');
+  const row = mapOf((x, z) => (on(z, 3) && [2, 2.5, 3, 3.5, 4].some(h => on(x, h)) ? -2 : 0)), Rr = reachable(row.walk(), place.spawn, 20);
+  const plain = Rr.trapped();
+  assert.equal(plain.traps.length, 5, `a row of holes: ${plain.traps.length} traps, not 5`);
+  const first = plain.traps.find(t => on(t.x, 2));
+  assert(first && near(Math.abs(first.way.x) + Math.abs(first.way.z), 4.75, 1e-9), `the hole at (2, 3): its way in is (${first?.way.x}, ${first?.way.z}), not the state that reached it first`);
+  assert.equal(Rr.trapped(() => false, (t, leads) => leads({ x: t.x + 0.5, z: t.z, y: t.y })).traps.length, 0, 'a row of holes that each lead to the next: out() should be tried again until nothing changes');
+  // 5. the controller's ways out, from a state t, as controllerOut() makes them: a walk (the stick at half), then a running jump
+  const pit = mapOf((x, z) => (Math.abs(x) <= 1.01 && Math.abs(z) <= 1.01 ? -1 : 0)).walk();
+  assert(controllerOut(pit, 20)({ x: 0, z: 0, y: -1 }, s => s.y > -0.5), 'out of a pit 1.0 deep by a running jump');
+  const open = flat.walk(), t0 = { x: 0, z: 0, y: 0 };
+  assert(controllerOut(open, 20)(t0, s => Math.hypot(s.x, s.z) > 2.5 && Math.hypot(s.x, s.z) < 4.5), 'out by a walk to a ring 2.5 to 4.5 away');
+  const walkEnd = (h, dt) => {
+    const b = makeBody(open, { p: [0, 0, 0] }, 20), a = (h * Math.PI) / 8;
+    b.s.y = b.s.base = b.s.floor = 0;
+    for (let i = 0, n = Math.round(1.2 / dt); i < n; i++) b.step(dt, { mx: Math.cos(a) * 0.5, mz: Math.sin(a) * 0.5, jump: false }, 0);
+    return `${b.s.x.toFixed(6)},${b.s.z.toFixed(6)}`;
+  };
+  const ends = (n60, n30) => new Set([...Array.from({ length: n60 }, (_, h) => walkEnd(h, 1 / 60)), ...Array.from({ length: n30 }, (_, h) => walkEnd(h, 1 / 30))]);
+  const by = set => s => set.has(`${s.x.toFixed(6)},${s.z.toFixed(6)}`);
+  assert(controllerOut(open, 20)(t0, by(ends(5, 5))), 'ways out on 5 headings of 16 at both rates: out');
+  assert(!controllerOut(open, 20)(t0, by(ends(3, 3))), 'ways out on 3 headings of 16 at both rates: not out');
+  assert(!controllerOut(open, 20)(t0, by(ends(5, 2))), 'ways out on 5 headings at 60 Hz and 2 at 30 Hz: not out');
+  // 6. the bake's check (lib/check.mjs) prints the rule: not ok on the march of the cracks' map, ok once closeWalk() has run
+  let check = null;
+  try { check = await import('../../games/gloam-downs/lib/check.mjs'); } catch (err) { console.log(`SKIP the check's 'no trap' line: ${err.message.split('\n')[0]} (npm ci --prefix games/gloam-downs)`); }
+  if (check) {
+    const line = m => check.checkPlace({ meta: { id: 'made', count: 0, pal: [], walk: m.info, spawn: place.spawn, beacon: place.beacon, wisps: [], bounds: 20 }, walk: { T: m.L.T, G: m.L.G, U: m.L.U } }).find(r => r.what.startsWith('no trap'));
+    const bad = line(mapOf(crackFn)), good = line(cr);
+    assert(bad && !bad.ok && /\(1[01] trap cells left/.test(bad.what), `the check on the march: ${bad?.ok ? 'ok' : 'FAIL'} ${bad?.what}`);
+    assert(good && good.ok, `the check after closeWalk(): ${good?.ok ? 'ok' : 'FAIL'} ${good?.what}`);
   }
   /* the foot of a wall, dropped onto from above: a platform at 2 (|x|, z <= 2) with a wall 2.5 high east of it (x 2.25 to 4, z 0.25 to
      1), the ground at 0 round them and the beacon on it. A drop off the platform's edge at (2.25, 0), or off the wall's top, lands
@@ -716,7 +900,7 @@ const lowestNear = (W2, [cx, cy, cz], r, from = 1.6) => {
     hold(b, 1, toward(0, -1), dt);
     assert(b.s.z < -1 && near(b.s.y, 0, 1e-6), `${hz(dt)} Hz: from the wall's foot the controller walked to ${b.s.x.toFixed(2)}, ${b.s.z.toFixed(2)}`);
   }
-  pass('no trap in reach: a pit, a slot, a notch, a nook under a roof and a dead-end trench are found and filled, walks never stand in them, and the foot of a wall is no trap', { filled: res.changed.length, rounds: res.rounds, lows });
+  pass('no trap in reach: cracks the search stands by are closed, traps the size of a crack filled (a hole on a block, under a roof, in a porch, a grate), wider traps and a pocket over a thin wall fail, the way back, the controller\'s ways out, and the foot of a wall', { lows });
 }
 { /* roofs of different solids. A lean-to against a hall, both over a floor at 0. The lean-to's roof (top 2.3, underside 1.9) and the hall's (top 6, underside 5)
      are two roofs, so the lean-to's corners have no say on the hall's. From the lean-to's top, running jumps and walk-offs into the hall
@@ -803,6 +987,12 @@ const lowestNear = (W2, [cx, cy, cz], r, from = 1.6) => {
     }
   }
   assert(split >= 8, `the dome has ${split} cells whose undersides step more than 1.0`);
+  /* the corners of one roof join through each other in any order: in a cell whose corners at (0, 0), (0.25, 0) and (0.25, 0.25) are
+     a roof (top 6) with undersides 3.4, 4.2 and 5.0, and the fourth is solid, the corner at 5.0 joins 3.4 only through 4.2. Feet at
+     4.0 near the corner at 3.4 are over the roof's underside there (blended over all three), so all three read the top */
+  const chainRoof = layered((x, z) => (on(x, 0) && on(z, 0) ? [6, 0, 3.4] : on(x, 0.25) && on(z, 0) ? [6, 0, 4.2] : on(x, 0.25) && on(z, 0.25) ? [6, 0, 5.0] : 6));
+  const fc = chainRoof.floorAt(0.025, 0.025, 4.0, 4.0);
+  assert(near(fc, 6, 1e-9), `three corners of one roof joined through each other: feet at 4.0 read ${fc.toFixed(3)}, not the roof's top 6 at every corner`);
   pass('roofs of other solids have no say (a lean-to and a hall), one wall\'s corners agree (a rampart\'s face), a dome\'s corners are one roof, the hall\'s edge is not climbed, and a jump does not rise up through a roof', { tries });
 }
 { /* a running jump up a slope, the stick at full, at every frame step. In the air the disc may overlap the slope under it, so the slope
@@ -1001,7 +1191,18 @@ const lowestNear = (W2, [cx, cy, cz], r, from = 1.6) => {
   // the walls and the arch's top are not; the floor under the arch is
   assert(!R.near([4.5, 3.5, 0], 0.6) && !R.near([12.5, 10.5, 0], 0.6), 'the tops of the walls are not');
   assert(!R.near([-7.5, 3.5, 0], 0.4) && R.near([-7.5, 0.5, 0], 0.4), 'under the arch is, its top is not');
-  pass('the reach search matches the controller');
+  /* between posts: a disc at (0, 0) that already reaches over a post 2.3 high at (0, -0.25), with another 2.04 high at (-0.75, 0.25),
+     walks away from them. A walk on to (-0.5, 0) is no nearer to them at its end but nearer half way, so the search does not make it,
+     and the controller does not get there either: walks from (0, 0) on 32 headings at two speeds stop at least 0.05 short */
+  const posts = layered((x, z) => (on(x, 0) && on(z, -0.25) ? 2.3 : on(x, -0.75) && on(z, 0.25) ? 2.04 : on(x, 1) && on(z, 0.5) ? 2.39 : on(x, -0.75) && on(z, -0.75) ? 0.29 : on(x, 1.75) && on(z, 0) ? 0.57 : 0));
+  assert(!reachable(posts, { p: [0, 0, 0] }, 20).near([-0.5, 0, 0], 0.01, -0.1, 0.1), 'between posts: the search walked to (-0.5, 0), nearer to a post half way');
+  let closest = Infinity;
+  for (const dt of [1 / 60, 1 / 144]) for (let h = 0; h < 32; h++) for (const mag of [0.35, 1]) {
+    const a = h * Math.PI / 16, b = makeBody(posts, { p: [0, 0, 0] }, 20);
+    for (let i = 0; i < 0.8 / dt; i++) { b.step(dt, { mx: Math.cos(a) * mag, mz: Math.sin(a) * mag }, 0); closest = Math.min(closest, Math.hypot(b.s.x + 0.5, b.s.z)); }
+  }
+  assert(closest > 0.05, `between posts: the controller came within ${closest.toFixed(3)} of (-0.5, 0)`);
+  pass('the reach search matches the controller', { closestBetweenPosts: +closest.toFixed(3) });
 }
 { /* the reach search jumps as the controller does: up to JUMP - 0.1, and across a gap to land up to 1.0 away. Flat ground at 0 with a
      block 1.25 high and one 1.6 high, and two trenches 6 deep across the whole map: to the north two rows of the grid (from its edge

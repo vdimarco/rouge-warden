@@ -34,7 +34,7 @@ export function checkPlace({ meta, walk, world, reach }, { gzBytes, frame, world
   const W = makeWalk(meta.walk, walkCells(walk));
   const sy = W.support(meta.spawn.p[0], meta.spawn.p[2], meta.spawn.p[1] + 1);
   ok(sy !== null && Math.abs(sy - meta.spawn.p[1]) < 0.6, `start stands on the ground (floor ${sy?.toFixed(2)}, start ${meta.spawn.p[1].toFixed(2)})`);
-  const R = reach ?? reachable(W, meta.spawn, meta.bounds);
+  const R = reach ?? reachable(W, meta.spawn, meta.bounds, PARAMS, { wide: true });
   ok(R.cells > 2000, `walkable area ${R.cells} cells`);
   const { traps } = R.trapped(byBeacon(meta.beacon), controllerOut(W, meta.bounds)), cells = new Set(traps.map(t => `${t.i},${t.j}`)).size;
   ok(!traps.length, `no trap: every reached cell can get back (${cells} trap cells left${walk.traps ? `, ${walk.traps.length} filled in the bake` : ''})`);
