@@ -7,8 +7,9 @@
 //   the boss camera does not turn while the mouse is taken or a move across the view is held, and turns after 0.6 s when neither;
 //   the pull-in near a wall eases both ways, with the eye never in the wall, for walls 0.5 and 1 m thick, 1 and 2 m away, at 1.2 and
 //     3 rad/s, at 1280x720 and 390x844; and standing still by a wall or under a roof is still;
-//   on the five baked places (skipped with GLOAM_WORLDS=0): the view swept round with the mouse at 1.2 rad/s at the spawn and each wisp,
-//     at 1280x720 and 390x844: the distance never dives.
+//   on the five baked places (skipped with GLOAM_WORLDS=0): the view swept round with the mouse at 1.2 rad/s both ways at the spawn and
+//     each wisp, at 1280x720 and 390x844: the distance never dives, and the eye comes in faster than 15 m/s only where the walk map says
+//     its own path round meets a wall.
 // Run: node qa/lab/gloam-downs-mouse.test.mjs   (GLOAM_WORLDS=0 to leave out the baked places)
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -231,39 +232,51 @@ function runSide(inp, sec, turn = null, idle = 0) {
   });
 }
 if (process.env.GLOAM_WORLDS !== '0') {
-  /* the five baked places: at the spawn and each wisp, the view turned round with the mouse at 1.2 rad/s for 6 s, at 1280x720 and
-     390x844. A step changes the distance by 0.6 m or less, except where the eye comes in through a wall from behind (the line from the
+  /* the five baked places: at the spawn and each wisp, the view turned round with the mouse at 1.2 rad/s for 6 s, each way, at 1280x720
+     and 390x844. A step changes the distance by 0.6 m or less, except where the eye comes in through a wall from behind (the line from the
      old eye to the new one passes within 0.35 m of the scenery, where play.js lets no eye be; a turn faster than the camera may come
-     in can leave it there): at most 6 such
-     steps in all 60 sweeps, each under 2 m. The camera of 09fd360b changed it by more than 0.6 m on 142 steps here, by up to 2.3 m.
-     And where the eye is clear (the camera does not set c.squeeze, which lets it come in at 33 m/s to stay out of a wall), it comes in
-     at no more than 15 m/s, except at a step through a wall: a wall that the turn will bring between starts it in early, but not
-     faster; and its speed in builds by no more than 360 m/s/s. The camera of 7dcfd747 came in faster on 733 steps here, from 8.5 m
-     to under 1 m in 0.3 s */
-  const DEV = { over: 0.6, cross: 6, crossMax: 2, pull: 15, acc: 360 };
-  let steps = 0, over = 0, cross = 0, crossMax = 0, worst = 0, fast = 0, fastAt = '', jolt = 0, joltAt = '';
+     in can leave it there): at most 8 such steps in all 120 sweeps, each under 2.1 m. Both ways, the camera of 3fe9318f had 8, up to
+     1.75 m, and this one 7, up to 2.05 m: a clear eye now comes in at 15 m/s, not 33, and can meet a wall 2 m thick from behind. The
+     camera of 09fd360b changed it by more than 0.6 m on 142 steps of the 60 sweeps one way. And where the eye is clear, it comes in at no more than 15 m/s, except at a step
+     through a wall: a wall that the turn will bring between starts it in early, but not faster; and its speed in builds by no more than
+     360 m/s/s. "Clear" is read here from the walk map alone, not from play.js: the old eye (its last distance, at this step's aim and
+     pitch) marched along its path round for 0.3 s of the sweep's turn, every 0.1 m, with the 0.35 m clearance of `through`. The camera
+     of 7dcfd747 came in faster on 733 steps here (one way), from 8.5 m to under 1 m in 0.3 s; that of 3fe9318f on 53 steps (both ways),
+     from 8.5 to 2.99 m in 0.23 s at Barrows (-7.9, 12.8), for its look-ahead marched a nearer goal's path, not the eye's */
+  const DEV = { over: 0.6, cross: 8, crossMax: 2.1, pull: 15, acc: 360, look: 0.3, rate: 1.2 };
+  let sum = 0, steps = 0, over = 0, cross = 0, crossMax = 0, worst = 0, fast = 0, fastAt = '', jolt = 0, joltAt = '';
   for (const id of ORDER) {
     const meta = JSON.parse(fs.readFileSync(new URL(`worlds/${id}.json`, DIR), 'utf8'));
     const raw = zlib.gunzipSync(fs.readFileSync(new URL(`worlds/${id}.walk.bin.gz`, DIR)));
     const walk = makeWalk(meta.walk, new Int16Array(raw.buffer, raw.byteOffset, raw.byteLength >> 1));
-    // does the straight line between two eyes pass where an eye may not be (nearer the scenery than 0.35 m, as play.js reads it)?
+    // may an eye be at (x, y, z): 0.35 m clear of the scenery, above it or in the gap under an arch?
+    const free = (x, y, z) => {
+      const t = walk.top(x, z), g = walk.floor(x, z);
+      return y >= t + 0.35 || (g < t - 0.05 && y >= g + 0.35 && y <= g + 1.45);
+    };
+    // does the straight line between two eyes pass where an eye may not be?
     const through = (a, b) => {
-      for (let k = 1; k < 40; k++) {
-        const x = a[0] + (b[0] - a[0]) * k / 40, y = a[1] + (b[1] - a[1]) * k / 40, z = a[2] + (b[2] - a[2]) * k / 40;
-        const t = walk.top(x, z), g = walk.floor(x, z);
-        if (y < t + 0.35 && !(g < t - 0.05 && y >= g + 0.35 && y <= g + 1.45)) return true;
-      }
+      for (let k = 1; k < 40; k++) if (!free(a[0] + (b[0] - a[0]) * k / 40, a[1] + (b[1] - a[1]) * k / 40, a[2] + (b[2] - a[2]) * k / 40)) return true;
       return false;
     };
-    for (const p of [meta.spawn.p, ...meta.wisps.map(q => q.p)]) for (const [w, h] of [[1280, 720], [390, 844]]) {
+    // is the old eye clear on its path round: at distance d, this step's aim and pitch, from yaw0 on by `by`, every 0.1 m?
+    const clearRound = (v, d, yaw0, by) => {
+      const cp = Math.cos(v.pitch), n = Math.max(1, Math.ceil(Math.abs(by) * d * cp / 0.1));
+      for (let k = 0; k <= n; k++) {
+        const a = yaw0 + by * k / n;
+        if (!free(v.target[0] + d * Math.sin(a) * cp, v.target[1] + d * Math.sin(v.pitch), v.target[2] + d * Math.cos(a) * cp)) return false;
+      }
+      return true;
+    };
+    for (const p of [meta.spawn.p, ...meta.wisps.map(q => q.p)]) for (const [w, h] of [[1280, 720], [390, 844]]) for (const dir of [1, -1]) {
       const b = makeBody(walk, { p, yaw: 0 }, 34), cam = makeCamera(walk, { yaw: Math.PI, ...camLayout(w, h) });
       b.place(p, 0); cam.snap(b.s, Math.PI);
       let last = null;
       for (let i = 0; i < 30; i++) last = cam.follow(b.s, STEP, { mouse: true });
       let inPrev = Math.max(0, -cam.c.dv * STEP);
       for (let i = 0; i < 360; i++) {
-        const v = cam.follow(b.s, STEP, { dyaw: 1.2 * STEP, mouse: true });
-        steps++;
+        const v = cam.follow(b.s, STEP, { dyaw: dir * DEV.rate * STEP, mouse: true });
+        steps++; sum += v.dist;
         if (last) {
           const d = Math.abs(v.dist - last.dist);
           worst = Math.max(worst, d);
@@ -279,18 +292,18 @@ if (process.env.GLOAM_WORLDS !== '0') {
             joltAt ||= `${id} ${w}x${h} at ${p[0].toFixed(1)}, ${p[2].toFixed(1)}, step ${i}: in by ${inPrev.toFixed(3)} then ${inw.toFixed(3)} m`;
           }
           inPrev = Math.max(0, inw);
-          if (!cam.c.squeeze && inw > DEV.pull * STEP + 1e-6 && !through(eyeOf(last), eyeOf(v))) {
+          if (inw > DEV.pull * STEP + 1e-6 && !through(eyeOf(last), eyeOf(v)) && clearRound(v, last.dist, last.yaw, dir * DEV.rate * DEV.look)) {
             fast++;
-            fastAt ||= `${id} ${w}x${h} at ${p[0].toFixed(1)}, ${p[2].toFixed(1)}, step ${i}: ${last.dist.toFixed(2)} -> ${v.dist.toFixed(2)} m`;
+            fastAt ||= `${id} ${w}x${h} at ${p[0].toFixed(1)}, ${p[2].toFixed(1)}, turning ${dir > 0 ? 'left' : 'right'}, step ${i}: ${last.dist.toFixed(2)} -> ${v.dist.toFixed(2)} m`;
           }
         }
         last = v;
       }
     }
   }
+  assert.equal(fast, 0, `with the eye clear the camera came in faster than ${DEV.pull} m/s on ${fast} steps, first ${fastAt}`);
   assert(cross <= DEV.cross && crossMax < DEV.crossMax, `${cross} steps came in through a wall, by up to ${crossMax.toFixed(2)} m`);
   assert.equal(jolt, 0, `the speed coming in jumped on ${jolt} steps, first ${joltAt}`);
-  assert.equal(fast, 0, `with the eye clear the camera came in faster than ${DEV.pull} m/s on ${fast} steps, first ${fastAt}`);
-  pass('the five places: a sweep of the mouse at 1.2 rad/s at each spawn and wisp never dives', { sweeps: steps / 360, over, worst: r3(worst), cross });
+  pass('the five places: a sweep of the mouse at 1.2 rad/s each way at each spawn and wisp never dives', { sweeps: steps / 360, mean: r3(sum / steps), over, worst: r3(worst), cross, fast });
 }
 console.log(`${n} checks passed`);

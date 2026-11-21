@@ -403,10 +403,11 @@ export function makeCamera(walk, o = {}) {
     return Math.max(0.3, d);
   };
   const eyeOpen = (x, y, z, yaw, pitch, d) => open(x + Math.sin(yaw) * Math.cos(pitch) * d, y + Math.sin(pitch) * d, z + Math.cos(yaw) * Math.cos(pitch) * d);
-  // is the eye at d clear all the way round as the yaw turns by `by`? A sample every 0.25 m of its path, so no wall is stepped over
-  const arcOpen = (x, y, z, yaw, by, pitch, d) => {
-    const n = Math.ceil(Math.abs(by) * d * Math.cos(pitch) / 0.25);
-    for (let k = 0; k <= n; k++) if (!eyeOpen(x, y, z, yaw + (n ? by * k / n : 0), pitch, d)) return false;
+  /* is the eye at d clear all the way round as the yaw turns by `by` (and the pitch by `bp`)? A sample every 0.25 m of its path, so no
+     wall is stepped over */
+  const arcOpen = (x, y, z, yaw, by, pitch, d, bp = 0) => {
+    const n = Math.ceil(Math.hypot(by * Math.cos(pitch), bp) * d / 0.25);
+    for (let k = 0; k <= n; k++) if (!eyeOpen(x, y, z, yaw + (n ? by * k / n : 0), Math.min(TOP, pitch + (n ? bp * k / n : 0)), d)) return false;
     return true;
   };
   /* can an eye at e see the point h on the figure? Thin things do not count; the line may pass close to the ground near the figure, and
@@ -485,6 +486,13 @@ export function makeCamera(walk, o = {}) {
     // up quickly but never faster than RISE, down slowly
     const up = c.goal.lift > c.lift, cap = c.lift + RISE * dt;
     c.lift += clamp((c.goal.lift - c.lift) * Math.min(1, (up ? 12 : 2) * dt), -RISE * dt, RISE * dt);
+    /* the rise easing down must not lower the eye into the scenery: it holds this step, and the eye starts in (at no more than PULL,
+       below) to where the lower view is clear */
+    let sink = 0;
+    if (c.lift < lift0 && dt > 0) {
+      const p1 = Math.min(TOP, c.pitch + c.lift), p0 = Math.min(TOP, c.pitch + lift0);
+      if (p1 < p0 && !eyeOpen(tx, ty, tz, c.yaw, p1, c.dist) && eyeOpen(tx, ty, tz, c.yaw, p0, c.dist)) { sink = p1 - p0; c.lift = lift0; }
+    }
     let pitch = Math.min(TOP, c.pitch + c.lift), room = reach(tx, ty, tz, c.yaw, pitch, c.want);
     // where the eased rise would bring the eye in, it rises further first, as far as RISE allows this step
     if (room < c.dist - 0.05)
@@ -503,16 +511,28 @@ export function makeCamera(walk, o = {}) {
     /* in and back out, both eased with a critically damped spring (Unity's SmoothDamp), so a wall that comes between is never a jump:
        in over about IN s, and back out over about OUT s */
     let to = Math.min(room, Math.max(c.goal.dist, NEAR));
-    /* where the eye would be inside the scenery now, or anywhere on its way round in the next 0.3 s as the view turns (into a wall),
-       it starts in now. The whole path is marched, so a thin wall that the turn crosses is not stepped over */
-    const d0 = Math.min(c.dist, to), sp3 = clamp(spin, -3, 3);
-    let ds = d0;
-    while (ds > NEAR && !arcOpen(tx, ty, tz, c.yaw, sp3 * 0.3, pitch, ds)) ds -= 0.1;
-    // only an eye that must come in to stay out of a wall may come in faster than PULL (SQUEEZE)
-    const squeeze = ds < d0 - 0.05;
+    /* the eye itself: where it is inside the scenery now at its present distance, or will be anywhere on its way round in the next
+       0.3 s as the view turns (into a wall), it starts in now, and only then may it come in faster than PULL (SQUEEZE). The whole path
+       is marched from where this step began, so a thin wall that the turn crosses is not stepped over */
+    const sp3 = clamp(spin, -3, 3), by = sp3 * 0.3;
+    const squeeze = !arcOpen(tx, ty, tz, yaw0, by, pitch, c.dist);
+    /* the rise easing down (or up) also moves the eye: where that will bring it into the scenery in 0.3 s while the turn alone does
+       not, it starts in too, but at no more than PULL */
+    const bp = dt > 0 ? clamp((sink || pitch - Math.min(TOP, pitch0 + lift0)) / dt, -2, 2) * 0.3 : 0;
+    const round = d => arcOpen(tx, ty, tz, yaw0, by, pitch, d) && (!bp || arcOpen(tx, ty, tz, yaw0, by, pitch, d, bp));
+    let ds = Math.min(c.dist, to);
+    if (!round(c.dist)) {
+      let de = c.dist;
+      while (de > NEAR && !round(de)) de -= 0.1;
+      ds = Math.min(ds, de);
+    }
+    /* a nearer goal whose own path round crosses something only lowers the goal, and the eye comes in to it at no more than PULL: the
+       eye is clear, so there is time */
+    while (ds > NEAR && !round(ds)) ds -= 0.1;
     /* and where the player turns the view so that a wall will come between in 0.15, 0.3 or 0.45 s (AHEADS), it starts in to that
        wall's near side now, at no more than PULL, before the wall comes between: an eye left behind a wall can only come in through
        it with a jump */
+    const d0 = Math.min(c.dist, to);
     if (looked && Math.abs(sp3) > 0.1) for (const t of AHEADS) ds = Math.min(ds, Math.max(NEAR, reach(tx, ty, tz, c.yaw + sp3 * t, pitch, d0)));
     if (ds < d0 - 0.05) to = Math.max(NEAR, ds);
     c.squeeze = squeeze;

@@ -250,6 +250,7 @@
 - [x] Review: a refusal of the lock is a wait, not the fallback: a click in the wait asks again and never swings, the hint says "Click again to look with the mouse", and the page asks again by itself after a first refusal (e2e step with a `requestPointerLock` that rejects once)
 - [x] Review: the pull-in has speed limits (15 m/s past something between, 33 m/s to keep the eye out of a wall, 12 m/s out, 360 m/s²), an early start for the line of sight as the player turns, and a turn held back for a step where the eye would go into a wall; the eye check uses the room from before the grace rule
 - [x] Review: the line-of-sight look-ahead starts the camera in at 15 m/s, not 33 m/s; only the eye's look-ahead (its whole path for 0.3 s) allows 33 m/s, and the turn is held back where the eye would pass through a wall; the place sweep checks 15 m/s with the eye clear and 360 m/s²
+- [x] Review: the 33 m/s limit follows the eye itself (its present distance, its path round for 0.3 s), a nearer goal's crossing only brings the goal in at 15 m/s, and the rise waits where easing down would lower the eye into the scenery; the place sweep runs both ways and reads "eye clear" from the walk map, not from `c.squeeze`
 - [x] Review: Node checks for walls 0.5 and 1 m thick at 1 and 2 m at 1.2, 3 and 6 rad/s, a walk past a pillar, a mouse sweep at each spawn and wisp of the five places, and the boss camera with the mouse taken or a move across held
 
 ### The run's screens
