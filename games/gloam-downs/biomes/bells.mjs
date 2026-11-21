@@ -261,6 +261,7 @@ export default {
         const low = Math.min(h(x, z), top) - 0.5;
         S.box([x, (top + low) / 2, z], [width / 2, (top - low) / 2, half], mat, { ax: yawAx(yaw), rd: 0.06, res: 0.12 });
       }
+      ctx.stair([a, b], width);
     };
     // a cog: an outline (gearLoops) extruded `depth` thick along the frame's W, centred at c; and a hub boss through its middle
     const cog = (c, ax, g, { depth = 1.2, mat = bronze, res = 0.14, boss = true } = {}) => {

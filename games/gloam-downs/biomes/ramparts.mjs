@@ -538,6 +538,7 @@ function rubbleStair(ctx, foot, to, yTop, { mat, loose, width = 2.4, rise = 0.4,
     const F = frameAlong([ux * c - uz * sn, B.rr(-0.05, 0.05), uz * c + ux * sn], B.rr(-0.07, 0.07));
     S.box([x, lo + hy, z], [run / 2 + 0.28, hy, width / 2 * B.rr(0.8, 1.15)], mat, { ax: F, rd: 0.14, res: 0.12 });
   }
+  ctx.stair([foot, to], width);
   // loose blocks tumbled to either side
   for (let i = 0; i < nLoose; i++) {
     const t = B.rr(0.05, 0.85), sd = (i % 2 ? 1 : -1) * B.rr(1.5, 2.4), r = B.rr(0.35, 0.7);
@@ -557,6 +558,8 @@ function breach(ctx, W, s0, s1, { mat, loose }) {
       S.box([q.x, lo + hy, q.z], [0.36, hy, W.thick / 2 * B.rr(0.75, 0.95)], mat, { ax: yawAx(yaw), rd: 0.1, res: 0.12 });
     });
   }
+  // the two flights down into the saddle and up out of it, as one line along the wall
+  ctx.stair([s0 - 0.6, sm, s1 + 0.6].map(s => { const q = W.M.at(s); return [q.x, q.z]; }), W.thick * 0.85);
   // blocks thrown out to both sides of the gap
   for (let i = 0; i < 8; i++) {
     const q = W.M.at(B.rr(s0 - 0.5, s1 + 0.5)), sd = (i % 2 ? 1 : -1) * B.rr(1.8, 4.2), sdv = [q.dz, -q.dx];
@@ -674,6 +677,8 @@ function wallStair(ctx, W, sA, sB, { mat }) {
     const tread = g0 + (top - g0) * (i + 1) / n, lo = Math.min(h(x, z), tread) - 0.6, hy = (tread - lo) / 2;
     S.box([x, lo + hy, z], [run / 2 + 0.03, hy, 0.62], mat, { ax: yawAx(Math.atan2(q.dx, q.dz) + Math.PI / 2), rd: 0.05, res: 0.13 });
   }
+  const q1 = W.M.at(sB), sd1 = W.sideAt(sB);
+  ctx.stair([[q0.x + sd0[0] * off, q0.z + sd0[1] * off], [q1.x + sd1[0] * off, q1.z + sd1[1] * off]], 1.24);
 }
 // an iron fire-basket on three short legs, its fire, and its lamp (lighter than the shared brazier)
 function basket(ctx, x, z, { iron, y, s = 1.0, k = 0.7, r }) {

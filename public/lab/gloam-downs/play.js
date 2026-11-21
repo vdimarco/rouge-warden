@@ -345,7 +345,16 @@ export const VIEW = { fov: 48 * Math.PI / 180, dist: 8.5, tanH: 0.30, half: 4.6,
 export function camLayout(w, h) {
   const asp = w / h, tanH = Math.max(Math.tan(VIEW.fov / 2) * asp, VIEW.tanH), tanV = tanH / asp;
   const t = clamp((1 - asp) / VIEW.tall, 0, 1), yh = VIEW.horizon[0] + (VIEW.horizon[1] - VIEW.horizon[0]) * t;
-  return { fov: 2 * Math.atan(tanV), dist: Math.max(VIEW.dist, VIEW.half / tanH), pitch: Math.atan((1 - 2 * yh) * tanV), aim: VIEW.aim[0] + (VIEW.aim[1] - VIEW.aim[0]) * t };
+  return { fov: 2 * Math.atan(tanV), dist: Math.max(VIEW.dist, VIEW.half / tanH), pitch: Math.atan((1 - 2 * yh) * tanV), aim: VIEW.aim[0] + (VIEW.aim[1] - VIEW.aim[0]) * t, asp };
+}
+/* The follow zoom: where the scenery brings the eye nearer than CLOSE (a cell, a lane under a roof), the field of view widens so that
+   the view is as tall at the aim as it would be from CLOSE, as Cinemachine's Follow Zoom keeps a target's size on screen by its field
+   of view; up to `most` vertically and `wide` across. So the lamplighter, its blade and the floor round it stay in the picture, and the
+   pull-in no longer reads as a zoom. -> the field of view for an eye `d` from the aim, in a window of aspect `asp` */
+export const ZOOM = { close: 3.5, most: 90 * Math.PI / 180, wide: 110 * Math.PI / 180 };
+export function zoomFov(fov, d, asp = 16 / 9) {
+  const t0 = Math.tan(fov / 2), cap = Math.max(t0, Math.min(Math.tan(ZOOM.most / 2), Math.tan(ZOOM.wide / 2) / asp));
+  return 2 * Math.atan(Math.min(cap, t0 * Math.max(1, ZOOM.close / Math.max(d, 1e-3))));
 }
 /* The view turns by itself (the swing behind a running lamplighter, the turn out of a lane, a run's combat and boss cameras) gently:
    after AUTO.wait s with no look input, never while the mouse is taken (the player steers with it), and never while the move held
@@ -376,19 +385,45 @@ export function damp(x, to, v, T, dt) {
 export function makeCamera(walk, o = {}) {
   const pitch0 = o.pitch ?? 0.34, dist0 = o.dist ?? 8.5;
   const c = {
-    yaw: o.yaw ?? 0, pitch: pitch0, base: pitch0, dist: dist0, want: dist0, fov: o.fov ?? null, aim: o.aim ?? 1.15, target: null, idle: 9,
+    yaw: o.yaw ?? 0, pitch: pitch0, base: pitch0, dist: dist0, want: dist0, fov: o.fov ?? null, asp: o.asp ?? 16 / 9, aim: o.aim ?? 1.15, target: null, idle: 9,
     auto: o.auto !== false, lift: 0, goal: { lift: 0, dist: dist0 }, goals: [], turning: false, from: null, hidden: 0, dv: 0, steer: false, across: false, squeeze: false
   };
-  const NEAR = 0.5, TOP = 1.35, LIFT = 0.08, THIN = 0.55, SHORT = 0.6, AHEAD = 0.25, RISE = 4, GRACE = 0.15, HEAD = 1.3, CHEST = 0.8, IN = 0.15, OUT = 0.25;
+  const NEAR = 0.5, TOP = 1.35, DIP = 0.1, LIFT = 0.08, THIN = 0.55, SHORT = 0.6, AHEAD = 0.25, RISE = 4, GRACE = 0.15, HEAD = 1.3, CHEST = 0.8, IN = 0.15, OUT = 0.25;
   // the most speed coming in, m/s: past something between (PULL) and to keep the eye out of a wall (SQUEEZE);
   // the most going back out (BACK); and how fast each builds
   const PULL = 15, SQUEEZE = 33, BACK = 12, ACC = 360, AHEADS = [0.15, 0.3, 0.45];
-  // is a point clear of the scenery by `cl`: above the top, or inside the gap under an arch (at least 1.8 high)?
+  /* the underside of the gap over (x, z) in a map baked with undersides (U): the lowest of the four corners round it, or null where
+     one of them has no gap (the edge of a roof decides by the old rule); with all false, the lowest of those that have one. A room
+     taller than the least gap (1.8) lets the eye stand higher in it */
+  const { U, G: GL, T: TL, nx: NX, nz: NZ } = walk;
+  const ceil = (x, z, all = true) => {
+    if (!U) return null;
+    const i = Math.floor((x - walk.x0) / walk.step), j = Math.floor((z - walk.z0) / walk.step);
+    let lo = Infinity;
+    for (let b = 0; b < 2; b++) for (let a = 0; a < 2; a++) {
+      const k = clamp(j + b, 0, NZ - 1) * NX + clamp(i + a, 0, NX - 1);
+      if (GL[k] < TL[k]) lo = Math.min(lo, U[k] * 0.01);
+      else if (all) return null;
+    }
+    return lo === Infinity ? null : lo;
+  };
+  // is a point clear of the scenery by `cl`: above the top, or inside the gap under an arch (at least 1.8 high), `cl` under its roof?
   const open = (x, y, z, cl = 0.35) => {
     const t = walk.top(x, z);
     if (y >= t + cl) return true;
     const g = walk.floor(x, z);
-    return g < t - 0.05 && y >= g + cl && y <= g + 1.45;
+    if (!(g < t - 0.05 && y >= g + cl)) return false;
+    const u = ceil(x, z);
+    return u === null ? y <= g + 1.45 : y <= Math.max(g + 1.45, u - cl);
+  };
+  /* the aim over feet at (x, y, z): the layout's (c.aim), but under a roof low over the feet (a cell, an archway) it comes down to 1.55
+     under the roof, and never under 0.6 over the feet: so the eye can see out under the lintel (a tall window's aim of 1.8 would sit in
+     it), and has the room's height over the aim to rise into where the walls are close */
+  const aimAt = (x, y, z) => {
+    const t = walk.top(x, z);
+    if (t <= y + 0.05) return c.aim;
+    const u = ceil(x, z, false);
+    return u === null || u < y ? c.aim : clamp(u - y - 1.55, Math.min(0.6, c.aim), c.aim);
   };
   /* a thing in the way is thin when it is open THIN to both sides of the line and no longer than SHORT along it: a post or a lantern,
      not a boulder or a ridge. blocked(t, ...) keeps the start of the run of thin samples; -> the distance where the line is blocked, or
@@ -443,11 +478,18 @@ export function makeCamera(walk, o = {}) {
   function solve(x, y, z, yaw, head) {
     let best = { lift: 0, dist: -1 };
     const chest = [head[0], head[1] - HEAD + CHEST, head[2]];
-    for (let l = 0; c.pitch + l <= TOP + 1e-6; l += LIFT) {
+    /* under a roof over the head (a cell, an archway), the view dips under the lintel first, down to DIP: rising there only brings the
+       roof between */
+    const u = walk.top(head[0], head[2]) > head[1] ? ceil(head[0], head[2], false) : null, under = u !== null && u > head[1] - HEAD;
+    const lifts = [];
+    if (under) { for (let l = 0; c.pitch + l > DIP + 1e-6; l -= LIFT) lifts.push(l); if (c.pitch > DIP) lifts.push(DIP - c.pitch); }
+    for (let l = under ? LIFT : 0; c.pitch + l <= TOP + 1e-6; l += LIFT) lifts.push(l);
+    for (const l of lifts) {
       const p = c.pitch + l, d = reach(x, y, z, yaw, p, c.want), cp = Math.cos(p);
       const e = [x + Math.sin(yaw) * cp * c.want, y + Math.sin(p) * c.want, z + Math.cos(yaw) * cp * c.want];
       if (d >= c.want - 0.05 && sees(head, e) && sees(chest, e)) return { lift: l, dist: c.want };
-      if (d > best.dist + 0.3) best = { lift: l, dist: d };
+      // (under a roof a rise must win by more: over the head it looks down at the floor, not ahead)
+      if (d > best.dist + (under && l > 0 ? 0.6 : 0.3)) best = { lift: l, dist: d };
     }
     return best;
   }
@@ -474,7 +516,7 @@ export function makeCamera(walk, o = {}) {
       const d = wrap(s.yaw + Math.PI - c.yaw);
       if (Math.abs(d) < 2.6) c.yaw += d * Math.min(1, dt * AUTO.swing * Math.min(1, sp / 5));
     }
-    const want = [s.x, s.y + c.aim, s.z];
+    const want = [s.x, s.y + aimAt(s.x, s.y, s.z), s.z];
     if (!c.target) c.target = want.slice();
     // the aim follows the height at 10/s on the ground (down a steep slope it would lag far above the figure), and at 5/s in a jump
     const k = 1 - Math.exp(-9 * dt), ky = 1 - Math.exp(-(s.ground ? 10 : 5) * dt);
@@ -494,13 +536,14 @@ export function makeCamera(walk, o = {}) {
       }
     // the point ahead stands on the floor there, as the lamplighter will
     const ax = s.x + s.vx * AHEAD, az = s.z + s.vz * AHEAD, af = walk.support(ax, az, s.y + 1.2) ?? s.y;
-    const soon = solve(tx + s.vx * AHEAD, Math.max(ty, af + c.aim), tz + s.vz * AHEAD, c.yaw + clamp(spin, -3, 3) * AHEAD, [ax, af + HEAD, az]);
+    const soon = solve(tx + s.vx * AHEAD, Math.max(ty, af + aimAt(ax, af, az)), tz + s.vz * AHEAD, c.yaw + clamp(spin, -3, 3) * AHEAD, [ax, af + HEAD, az]);
     // the rise follows the least of the last three goals up (a goal for one step alone is a flicker) and the goal down
     c.goals.push(Math.max(now.lift, soon.lift));
     if (c.goals.length > 3) c.goals.shift();
     c.goal = { lift: Math.min(...c.goals), dist: now.dist };
     // up quickly but never faster than RISE, down slowly
-    const up = c.goal.lift > c.lift, cap = c.lift + RISE * dt;
+    // (a dip under a lintel, a goal below 0, goes as quickly as a rise)
+    const up = c.goal.lift > c.lift || c.goal.lift < Math.min(0, c.lift), cap = c.lift + RISE * dt;
     c.lift += clamp((c.goal.lift - c.lift) * Math.min(1, (up ? 12 : 2) * dt), -RISE * dt, RISE * dt);
     /* the rise easing down must not lower the eye into the scenery: it holds this step, and the eye starts in (at no more than PULL,
        below) to where the lower view is clear */
@@ -555,6 +598,8 @@ export function makeCamera(walk, o = {}) {
     let [d, v] = damp(c.dist, to, c.dv, to < c.dist ? (squeeze ? IN / 2 : IN) : OUT, dt);
     // the spring never goes past its goal coming in
     if (to < c.dist && d < to) { d = to; v = 0; }
+    // nor moves away from it: a spring still coming in fast when its goal moves out would carry on in, past NEAR and through the aim
+    else if (to >= c.dist && d < c.dist) { d = c.dist; v = 0; }
     /* coming in is never a dive: at most PULL m/s while the eye is clear and only something between hides the figure (a tree trunk),
        and SQUEEZE m/s where the eye must come in to stay out of a wall, each reached at no more than ACC m/s/s */
     if (dt > 0 && d < c.dist) {
@@ -599,21 +644,61 @@ export function makeCamera(walk, o = {}) {
         d = dc;
       }
     }
-    c.dist = d; c.dv = v;
-    return { target: c.target.slice(), dist: c.dist, yaw: c.yaw, pitch, ...(c.fov ? { fov: c.fov } : {}) };
+    c.dist = Math.max(NEAR, d); c.dv = v;
+    return { target: c.target.slice(), dist: c.dist, yaw: c.yaw, pitch, ...(c.fov ? { fov: zoomFov(c.fov, c.dist, c.asp) } : {}) };
   }
   function snap(s, yaw) {
-    c.yaw = yaw; c.target = [s.x, s.y + c.aim, s.z]; c.idle = 9;
+    c.yaw = yaw; c.target = [s.x, s.y + aimAt(s.x, s.y, s.z), s.z]; c.idle = 9;
     c.goal = solve(c.target[0], c.target[1], c.target[2], yaw, [s.x, s.y + HEAD, s.z]);
     c.lift = c.goal.lift; c.goals = [c.lift]; c.hidden = 0; c.dv = 0;
     c.dist = Math.max(NEAR, reach(c.target[0], c.target[1], c.target[2], yaw, Math.min(TOP, c.pitch + c.lift), c.want));
   }
   // a new window: its framing, keeping the pitch the player set relative to the layout's
   function layout(L) {
-    c.want = L.dist; c.fov = L.fov ?? c.fov; c.aim = L.aim ?? c.aim;
+    c.want = L.dist; c.fov = L.fov ?? c.fov; c.aim = L.aim ?? c.aim; c.asp = L.asp ?? c.asp;
     if (Number.isFinite(L.pitch)) { c.pitch = clamp(c.pitch + L.pitch - c.base, 0.08, 1.05); c.base = L.pitch; }
   }
   return { c, follow, snap, layout, reach };
+}
+
+/* ---------------- the near fade ----------------
+   Where the walls bring the eye within NEAR_FADE.far of the lamplighter's body (the line from 0.3 to 1.3 over its feet), a share of its
+   splats is left out, more the nearer the eye, in four steps up to 0.8: a screen-door (dithered) fade by splat, as Super Mario Odyssey
+   dots Mario out when the camera comes close, and as the gameplay-camera plugins' dithering ("Dither Owner") fades the character. So
+   the eye in a cell sees through the hood to the floor and the way ahead instead of a wall of cloak. The blade is never left out.
+   eye: the eye's point. -> the share, 0 to 0.8 */
+export const NEAR_FADE = { near: 0.5, far: 1.2, most: 0.8, steps: 4 };
+export function fadeOf(eye, s) {
+  const dy = clamp(eye[1] - s.y, 0.3, 1.3), d = Math.hypot(eye[0] - s.x, eye[1] - s.y - dy, eye[2] - s.z);
+  const k = clamp((NEAR_FADE.far - d) / (NEAR_FADE.far - NEAR_FADE.near), 0, 1);
+  return Math.round(k * NEAR_FADE.steps) / NEAR_FADE.steps * NEAR_FADE.most;
+}
+// the eye's point of a view { target, dist, yaw, pitch }, as the renderer places it
+export const eyeOf = v => { const cp = Math.cos(v.pitch); return [v.target[0] + v.dist * Math.sin(v.yaw) * cp, v.target[1] + v.dist * Math.sin(v.pitch), v.target[2] + v.dist * Math.cos(v.yaw) * cp]; };
+/* the lamplighter's splats that a fade of share k leaves out, in a place's data: a fixed share of each part by a hash of the splat's
+   number, so the figure thins evenly; the blade's splats (on the right arm's bone, more than 0.3 m from its pivot) stay. Returns
+   set(k): writes the densities (0, or each splat's own) and returns the 512-splat rows it changed, or none when k is as before */
+export function makeFade(data, bones) {
+  const { first, end } = bones, arm = bones.names.indexOf('armR'), pv = bones.pivots[arm], own = new Float32Array(end - first);
+  const keep = new Uint8Array(end - first), rank = new Float32Array(end - first);
+  for (let i = first; i < end; i++) {
+    const o = i * 16;
+    own[i - first] = data[o + 3];
+    keep[i - first] = data[o + 12] === arm && Math.hypot(data[o] - pv[0], data[o + 1] - pv[1], data[o + 2] - pv[2]) > 0.3 ? 1 : 0;
+    rank[i - first] = ((i * 0.6180339887) % 1 + 1) % 1;
+  }
+  let at = 0;
+  return {
+    get k() { return at; },
+    set(k) {
+      if (k === at) return [];
+      at = k;
+      for (let i = first; i < end; i++) data[i * 16 + 3] = !keep[i - first] && rank[i - first] < k ? 0 : own[i - first];
+      const rows = [];
+      for (let r = first >> 9; r <= (end - 1) >> 9; r++) rows.push(r);
+      return rows;
+    }
+  };
 }
 
 /* ---------------- the pose ----------------

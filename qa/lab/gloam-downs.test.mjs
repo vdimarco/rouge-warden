@@ -16,7 +16,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
-import { makeWalk, makeBody, makeCamera, pose, reachable, touches, atBeacon, JUMP, PARAMS } from '../../public/lab/gloam-downs/play.js';
+import { makeWalk, makeBody, makeCamera, pose, reachable, touches, atBeacon, JUMP, PARAMS, makeFade } from '../../public/lab/gloam-downs/play.js';
 import { clean, fresh, ORDER, wispCount } from '../../public/lab/gloam-downs/save.js';
 import { closeCracks } from '../../games/gloam-downs/lib/cracks.mjs';
 import { byBeacon, closeWalk, controllerOut, fillTraps, findTraps, standsIn } from '../../games/gloam-downs/lib/traps.mjs';
@@ -52,6 +52,32 @@ for (const id of skipWorlds ? [] : ORDER) {
     const kind = Math.round(data[i * 16 + 11]) % 16, bone = data[i * 16 + 12];
     assert.equal(kind, 12, `${id}: splat ${i} rides a bone`);
     assert(Number.isInteger(bone) && bone >= 0 && bone < B.names.length);
+  }
+  /* the blade in the right hand ("I dont see my weapon": the figure of 45ffb438 held nothing, its right arm was a sleeve reaching 0.2 m
+     from the shoulder): splats on the right arm's bone reach more than 1 m from the shoulder, out to the side (-x) and forward (+z),
+     where the follow camera behind sees them past the body (more than 0.5 m to the side of the body's middle) */
+  {
+    const arm = B.names.indexOf('armR'), pv = B.pivots[arm], body = B.pivots[B.names.indexOf('body')];
+    let far = 0, reach = 0, side = 0;
+    for (let i = B.first; i < B.end; i++) {
+      if (data[i * 16 + 12] !== arm) continue;
+      const x = data[i * 16], y = data[i * 16 + 1], z = data[i * 16 + 2], d = Math.hypot(x - pv[0], y - pv[1], z - pv[2]);
+      if (d > 0.5) far++;
+      reach = Math.max(reach, d); side = Math.max(side, body[0] - x);
+    }
+    assert(far >= 150 && reach > 1.0 && side > 0.5, `${id}: the blade: ${far} splats past 0.5 m from the shoulder, reaching ${reach.toFixed(2)} m, ${side.toFixed(2)} m to the side`);
+    // the near fade thins the figure and keeps the blade, and puts every density back
+    const before = data.slice(B.first * 16, B.end * 16), fade = makeFade(data, B), rows = fade.set(0.8);
+    assert(rows.length > 0 && fade.set(0.8).length === 0, `${id}: the fade writes its rows once`);
+    let gone = 0, rest = 0, bladeLeft = 0;
+    for (let i = B.first; i < B.end; i++) {
+      const blade = data[i * 16 + 12] === arm && Math.hypot(data[i * 16] - pv[0], data[i * 16 + 1] - pv[1], data[i * 16 + 2] - pv[2]) > 0.3;
+      if (blade) { if (data[i * 16 + 3] === before[(i - B.first) * 16 + 3]) bladeLeft++; else bladeLeft = -Infinity; }
+      else { rest++; if (data[i * 16 + 3] === 0) gone++; }
+    }
+    assert(bladeLeft >= 150 && Math.abs(gone / rest - 0.8) < 0.03, `${id}: the fade left out ${gone} of ${rest} (blade kept: ${bladeLeft})`);
+    fade.set(0);
+    for (let i = B.first; i < B.end; i++) assert.equal(data[i * 16 + 3], before[(i - B.first) * 16 + 3]);
   }
   // wisps and the beacon's fire: glowing splats in their own id ranges, inside the world
   assert.equal(meta.wisps.length, 5);

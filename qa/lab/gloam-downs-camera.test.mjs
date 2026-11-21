@@ -15,7 +15,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
-import { makeWalk, makeBody, makeCamera, camLayout, VIEW } from '../../public/lab/gloam-downs/play.js';
+import { makeWalk, makeBody, makeCamera, camLayout, VIEW, zoomFov, ZOOM, fadeOf } from '../../public/lab/gloam-downs/play.js';
 import { makeCombat, makeMoveLock, makeBossCam, projector, frameClear, bossLeast, yawDiff, asFoes, COMBAT, BOSS } from '../../public/lab/gloam-downs/cameras.js';
 import { clearLine, makePost } from '../../public/lab/gloam-downs/moves.js';
 import { ORDER } from '../../public/lab/gloam-downs/save.js';
@@ -266,6 +266,70 @@ if (!skipWorlds) {
     assert(row.side >= (tall ? PASS.sideTall : PASS.sideWide), `${name}: a foe 3.5 m to each side was on screen on ${row.side} of steps`);
   }
   pass('the five routes at five layouts: the camera stays back, rises over the scenery, and keeps the ground round the lamplighter in view', rows);
+
+  /* The torn cell of the Gaol, where its first wisp hangs: a cell 1.8 m wide and 1.9 deep under the first tier, its floor 2.2 under a
+     roof, open to the yard through a mouth under a lintel. The player's report: "where the first coin is it zooms in too much".
+     Before this fix, a phone's camera (aim 1.8) stood 0.5 m from the aim walking in from the yard, its line in the lintel; the eye
+     could not stand over 1.45 above the floor of any room, however tall; and a mouse sweep in the cell brought the eye through the aim
+     (a distance of -0.19). Now: walking in from the yard, the eye ends out in the yard at the layout's distance from within 20° of
+     square to the mouth, and at least 2 m back from 35° (the view dips under the lintel, and the aim comes down under the roof; a
+     phone's eye 15 m out at 35° meets the yard's far side); a sweep of the mouse in the cell never brings the eye nearer than 0.5; and
+     where the walls bring it in, the field of view widens (the follow zoom). With the eye within 0.8 m of its body the figure thins
+     out by at least 0.4 (the near fade), so the eye sees past it; drawn whole, it is at most the height of the view (it was 2.2 to
+     3.9 times, and 386 times with the eye through the aim) */
+  {
+    const { walk } = place('gaol'), cell = [1.6, -1.7], rows = [];
+    for (const name of ['1280x720', '390x844']) {
+      const [w, h] = LAYOUTS[name], L = camLayout(w, h);
+      for (const ang of [0, 20, 35]) {
+        const a = ang * DEG, sx = cell[0] + Math.sin(a) * 6, sz = cell[1] + Math.cos(a) * 6;
+        const b = makeBody(walk, { p: [sx, walk.top(sx, sz) + 0.3, sz], yaw: a + Math.PI }, 34), cam = cameraFor(walk, name, a);
+        cam.snap(b.s, a);
+        let v;
+        for (let i = 0; i < 240; i++) {
+          const dx = cell[0] - b.s.x, dz = cell[1] - b.s.z, dd = Math.hypot(dx, dz), y = cam.c.yaw;
+          const inp = dd > 0.25 ? { mx: (dx * Math.cos(y) - dz * Math.sin(y)) / dd, mz: -(dx * Math.sin(y) + dz * Math.cos(y)) / dd } : {};
+          b.step(STEP, inp, y);
+          v = cam.follow(b.s, STEP, { ...inp, mouse: true });
+        }
+        assert(Math.hypot(b.s.x - cell[0], b.s.z - cell[1]) < 0.5 && b.s.y < -2, `${name} from ${ang}°: the lamplighter walked into the cell (${b.s.x.toFixed(2)}, ${b.s.y.toFixed(2)}, ${b.s.z.toFixed(2)})`);
+        const least = ang <= 20 ? L.dist - 0.05 : 2;
+        assert(v.dist >= least, `${name} from ${ang}°: in the cell the eye stands ${v.dist.toFixed(2)} back, not out in the yard (${least.toFixed(2)})`);
+        rows.push({ name, from: ang, dist: r2(v.dist), pitch: r2(v.pitch) });
+      }
+      // a full turn of the mouse in 6 s at three places in the cell
+      for (const [x, z] of [[1.6, -1.6], [1.6, -2.1], [1.6, -0.9]]) {
+        const b = stand(walk, x, z, Math.PI, walk.floor(x, z)), cam = cameraFor(walk, name, 0);
+        cam.snap(b.s, 0);
+        let least = Infinity, tallest = 0, faded = 0, closeSteps = 0;
+        for (let i = 0; i < 420; i++) {
+          b.step(STEP, {}, cam.c.yaw);
+          const v = cam.follow(b.s, STEP, i < 60 ? { mouse: true } : { dyaw: 2 * Math.PI / 360, mouse: true });
+          least = Math.min(least, v.dist);
+          // the eye within 0.8 m of the body: the figure thins out (the near fade), by at least 0.4
+          const e = eyeOf(v), dy = Math.min(1.3, Math.max(0.3, e[1] - b.s.y)), near = Math.hypot(e[0] - b.s.x, e[1] - b.s.y - dy, e[2] - b.s.z);
+          if (near < 0.8) { closeSteps++; if (fadeOf(e, b.s) >= 0.4 - 1e-9) faded++; }
+          if (v.dist >= L.dist - 0.05) assert.equal(fadeOf(e, b.s), 0);
+          // the figure drawn whole (no fade): at most the height of the view
+          if (fadeOf(eyeOf(v), b.s) === 0) tallest = Math.max(tallest, 1.4 / (2 * v.dist * Math.tan((v.fov ?? L.fov) / 2)));
+          assert(v.fov >= L.fov - 1e-9 && v.fov <= 90 * DEG + 1e-9, `${name}: the field of view ${(v.fov / DEG).toFixed(1)}°`);
+        }
+        assert(least >= 0.5 - 1e-9, `${name} at ${x}, ${z}: a sweep brought the eye ${least.toFixed(2)} from the aim`);
+        assert(tallest <= 1.0, `${name} at ${x}, ${z}: the lamplighter, drawn whole, was ${tallest.toFixed(2)} times the height of the view`);
+        assert.equal(faded, closeSteps, `${name} at ${x}, ${z}: the figure thinned out on ${faded} of ${closeSteps} steps with the eye within 0.8 m`);
+        rows.push({ name, sweep: [x, z], least: r2(least), tallest: r2(tallest), close: closeSteps });
+      }
+    }
+    // the follow zoom itself: none from CLOSE out, the view as tall as from CLOSE nearer in, and its caps
+    const L = camLayout(1280, 720);
+    assert.equal(zoomFov(L.fov, 8.5, L.asp), L.fov);
+    assert.equal(zoomFov(L.fov, ZOOM.close, L.asp), L.fov);
+    assert(near(2 * 2 * Math.tan(zoomFov(L.fov, 2, L.asp) / 2), 2 * ZOOM.close * Math.tan(L.fov / 2), 1e-9), 'from 2 m the view is as tall as from CLOSE');
+    assert(near(2 * Math.atan(Math.tan(zoomFov(L.fov, 0.3, L.asp) / 2) * L.asp), ZOOM.wide, 1e-9), 'across, the view is at most 110°');
+    const T = camLayout(390, 844);
+    assert(near(zoomFov(T.fov, 0.3, T.asp), ZOOM.most, 1e-9), 'upright, the view is at most 90° tall');
+    pass('the Gaol\'s torn cell: walking in, the eye stays out in the yard; a sweep in the cell never comes nearer than 0.5, and the view widens as it comes in', rows);
+  }
 }
 
 /* ---------------- the combat camera ---------------- */

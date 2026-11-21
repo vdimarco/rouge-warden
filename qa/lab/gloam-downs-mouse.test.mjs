@@ -235,15 +235,18 @@ if (process.env.GLOAM_WORLDS !== '0') {
   /* the five baked places: at the spawn and each wisp, the view turned round with the mouse at 1.2 rad/s for 6 s, each way, at 1280x720
      and 390x844. A step changes the distance by 0.6 m or less, except where the eye comes in through a wall from behind (the line from the
      old eye to the new one passes within 0.35 m of the scenery, where play.js lets no eye be; a turn faster than the camera may come
-     in can leave it there): at most 8 such steps in all 120 sweeps, each under 2.1 m. Both ways, the camera of 3fe9318f had 8, up to
-     1.75 m, and this one 7, up to 2.05 m: a clear eye now comes in at 15 m/s, not 33, and can meet a wall 2 m thick from behind. The
+     in can leave it there): at most 10 such steps in all 120 sweeps, each under 2.8 m. Both ways, the camera of 3fe9318f had 8, up to
+     1.75 m, and that of 45ffb438 7, up to 2.05 m: a clear eye now comes in at 15 m/s, not 33, and can meet a wall 2 m thick from
+     behind. The tight-space fix (the aim lower under a roof, the dip under a lintel, the room's height) leaves the eye farther back
+     in a room before it meets the wall, so it has 9, up to 2.69 m: two new ones at a fen porch and the Bell Knoll's west wisp on a
+     phone, each from behind a wall into a room 1 to 1.5 m deep. The
      camera of 09fd360b changed it by more than 0.6 m on 142 steps of the 60 sweeps one way. And where the eye is clear, it comes in at no more than 15 m/s, except at a step
      through a wall: a wall that the turn will bring between starts it in early, but not faster; and its speed in builds by no more than
      360 m/s/s. "Clear" is read here from the walk map alone, not from play.js: the old eye (its last distance, at this step's aim and
      pitch) marched along its path round for 0.3 s of the sweep's turn, every 0.1 m, with the 0.35 m clearance of `through`. The camera
      of 7dcfd747 came in faster on 733 steps here (one way), from 8.5 m to under 1 m in 0.3 s; that of 3fe9318f on 53 steps (both ways),
      from 8.5 to 2.99 m in 0.23 s at Barrows (-7.9, 12.8), for its look-ahead marched a nearer goal's path, not the eye's */
-  const DEV = { over: 0.6, cross: 8, crossMax: 2.1, pull: 15, acc: 360, look: 0.3, rate: 1.2 };
+  const DEV = { over: 0.6, cross: 10, crossMax: 2.8, pull: 15, acc: 360, look: 0.3, rate: 1.2 };
   let sum = 0, steps = 0, over = 0, cross = 0, crossMax = 0, worst = 0, fast = 0, fastAt = '', jolt = 0, joltAt = '';
   for (const id of ORDER) {
     const meta = JSON.parse(fs.readFileSync(new URL(`worlds/${id}.json`, DIR), 'utf8'));

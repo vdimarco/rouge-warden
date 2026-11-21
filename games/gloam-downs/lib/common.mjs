@@ -193,6 +193,8 @@ export function walkCells(walk) {
    A round hooded figure with a lantern, sculpted facing +z at REST (high above the map, so no shadow of the place falls on it).
    Seven bones: body, head, legL, legR, armL (the lantern arm), armR, shadow. Pivots are in the rest frame. */
 export const REST = [0, 80, 0];
+const norm = v => { const l = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0] / l, v[1] / l, v[2] / l]; };
+const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 export const BONES = ['body', 'head', 'legL', 'legR', 'armL', 'armR', 'shadow'];
 export function lamplighter(S, P) {
   const [x0, y0, z0] = REST;
@@ -225,6 +227,26 @@ export function lamplighter(S, P) {
   S.box(at(0.0, 0.62, -0.33), [0.15, 0.14, 0.06], { r: [P.ramp('cloak')[0], P.ramp('iron')[0], P.ramp('iron')[1]] }, tag('body', { res: 0.035, rd: 0.05 }));
   S.torus?.(at(-0.24, 0.42, -0.18), 0.09, 0.03, { r: P.ramp('iron') }, tag('body', { res: 0.02, ax: [[1, 0, 0], [0, 0.3, 0.95], [0, -0.95, 0.3]] }));
   S.ball(at(-0.37, 0.62, 0), [0.11, 0.16, 0.11], cloak, tag('armR', { res: 0.035 }));
+  /* the blade in the right hand, on the arm's bone, so the cuts swing it: a broad, chunky cleaver held low, out to the side and
+     forward, so the follow camera behind and above sees its flat face beside the figure (pointing straight ahead it would hide behind
+     the body). Iron, with an edge that holds the lantern's warm light (lamp slot 46, under the brightest fire); at rest it reads as a
+     grey bar with a warm rim against the dark ground, and in a cut the rim draws the swing */
+  {
+    const hand = at(-0.42, 0.47, 0.08), len = 0.92, wide = 0.17, thick = 0.035;
+    const u = norm([-0.78, -0.17, 0.6]), w = norm(cross(u, [0, 1, 0])), n = cross(w, u);
+    const along = (d, s = 0, k = 0) => [hand[0] + u[0] * d + w[0] * s + n[0] * k, hand[1] + u[1] * d + w[1] * s + n[1] * k, hand[2] + u[2] * d + w[2] * s + n[2] * k];
+    const ax = [w, n, u], edgeSide = 1; // +w: the back edge, which faces the follow camera at rest
+    const steel = { r: P.ramp('iron') }, rim = { r: [P.ramp('lamp')[0]], em: true };
+    // the grip in the fist, a fat cross guard, a round pommel
+    S.box(along(-0.04), [0.035, 0.035, 0.09], { r: [P.ramp('cloak')[0], P.ramp('iron')[0]] }, tag('armR', { res: 0.02, ax, rd: 0.015 }));
+    S.box(along(0.07), [0.13, 0.04, 0.035], iron, tag('armR', { res: 0.02, ax, rd: 0.015 }));
+    S.ball(along(-0.15), 0.045, iron, tag('armR', { res: 0.02 }));
+    // the blade: broad, a little wider toward the tip like a cleaver, its lit edge along the side the camera sees
+    S.box(along(0.09 + len / 2), [wide / 2, thick / 2, len / 2], steel, tag('armR', { res: 0.03, ax, rd: 0.012 }));
+    S.box(along(0.09 + len * 0.72, 0, 0), [wide * 0.62, thick / 2, len * 0.24], steel, tag('armR', { res: 0.03, ax, rd: 0.02 }));
+    S.box(along(0.09 + len / 2 + 0.02, edgeSide * (wide / 2 + 0.012), 0.004), [0.022, thick / 2 + 0.006, len / 2 + 0.02], rim, tag('armR', { res: 0.024, ax, rd: 0.008 }));
+    S.box(along(0.09 + len * 0.72 + 0.02, edgeSide * (wide * 0.62 + 0.012), 0.004), [0.022, thick / 2 + 0.006, len * 0.24], rim, tag('armR', { res: 0.024, ax, rd: 0.008 }));
+  }
   return {
     rest: REST,
     pivots: {

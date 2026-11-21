@@ -61,7 +61,7 @@ function scenery(def) {
   if (L.shK !== undefined) S.shK = L.shK;
   if (L.aoK !== undefined) S.aoK = L.aoK;
   const h = hills(B, def.hills);
-  const marks = { wisps: [], beacon: null, spawn: null, fires: [], embers: [], late: [], glow: [], lamps: [], zones: [] };
+  const marks = { wisps: [], beacon: null, spawn: null, fires: [], embers: [], late: [], glow: [], lamps: [], zones: [], stairs: [] };
   const ctx = {
     B, S, K, P, h, lib,
     ramp: P.ramp,
@@ -73,6 +73,8 @@ function scenery(def) {
     beacon: (p, r = 1.6) => { marks.beacon = { p, r }; },
     spawn: (p, yaw = 0) => { marks.spawn = { p, yaw }; },
     // a zone of the combat run, from lib/zones.mjs: it adds nothing to the scenery, only to <id>.json
+    // a flight of steps: the walked line from its foot to its head ([x, z] points) and its width, for the stairs check (meta.stairs)
+    stair: (line, width) => { marks.stairs.push({ line: line.map(p => [+p[0].toFixed(2), +p[1].toFixed(2)]), width: +width.toFixed(2) }); },
     zone: zid => { const z = zoneOf(def.id, zid); if (!marks.zones.includes(z)) marks.zones.push(z); return z; },
     later: (fn) => marks.late.push(fn), // solids that must not block the feet: added after the walk map, baked with the scenery
     glow: (fn) => marks.glow.push(fn) // emissive extras (motes, sky, moon): added after every bake
@@ -169,7 +171,8 @@ export function build(def, { zones = true } = {}) {
     bones: { names: BONES, pivots: BONES.map(n => rig.pivots[n]), first: Math.min(...boned), end: Math.max(...boned) + 1, count: boned.length },
     walk: { x0: walk.x0, z0: walk.z0, step: walk.step, nx: walk.nx, nz: walk.nz, layers: WALK_LAYERS, unit: 0.01 },
     bounds: def.walk?.half || 36,
-    hint: def.hint || ''
+    hint: def.hint || '',
+    stairs: marks.stairs
   };
   // in the module's order, so the JSON's zones equal the module's
   if (zones) meta.zones = zonesOf(def.id).map(zoneJson);

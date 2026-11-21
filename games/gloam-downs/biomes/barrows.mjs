@@ -547,6 +547,7 @@ export default {
         // a torch on the outer edge every fifth slab: from the start their fires trace the stair's turn up the dome
         if (i % 5 === 1) post(x + ox * 1.25, z + oz * 1.25, { y: top - 0.1, hgt: 1.4, s: 0.7, k: 0.6, r: 3.4, n: 2 });
       });
+      ctx.stair(SPIRAL, 2.2);
       // the kerb round the dome's foot
       for (let i = 0; i < 9; i++) {
         const a = (i / 9) * Math.PI * 2, x = sx + Math.cos(a) * (TOP + DOME - 0.4), z = sz + Math.sin(a) * (TOP + DOME - 0.4);

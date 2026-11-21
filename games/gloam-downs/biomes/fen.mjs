@@ -241,6 +241,7 @@ export default {
         const low = Math.min(Math.max(h(x, z), BED), top) - 0.4;
         slab([x, (top + low) / 2, z], [width / 2, (top - low) / 2, half], plank, { ax: yawAx(yaw + B.rr(-0.03, 0.03)), rd: 0.05, res: 0.13 });
       }
+      ctx.stair([a, b], width);
     };
     // a boardwalk from a to b: planks across the way, fat posts in pairs, now and then a stump of rail
     const walkway = (a, b, { y = DECK, wid = 2.1, lamp = -1 } = {}) => {

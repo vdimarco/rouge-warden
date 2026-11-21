@@ -19,6 +19,10 @@
 - [x] Explorer page `public/lab/gloam-downs/`: loading bar, help, map, end card, toasts
 - [x] Controller: walk, run, jump with coyote time and a jump buffer, step-up, slopes, walls, ledges, falls; camera that pulls in near walls
 - [x] Walk map and controller fixes: the gap's underside layer, cracks closed and traps filled in the bake, the corners of one roof agree, a jump stops under a roof it rises into, and a running jump up a steep slope still lifts the feet 0.4
+- [x] The blade in the lamplighter's right hand, on the arm's bone, visible from the follow camera at rest and in a cut ("I dont see my weapon"); the five places baked again
+- [x] Tight spaces ("it zooms in too much" in the Gaol's torn cell): the eye uses a room's height, the aim comes down and the view dips under a lintel, the follow zoom, the near fade that keeps the blade, and no distance under 0.5 m; checked in `gloam-downs-camera.test.mjs` and screenshots
+- [x] Stairs ("I got stuck between the stairs"): the bake lists each flight in the place's JSON (`stairs`), and `qa/lab/gloam-downs-stairs.test.mjs` walks every flight in the explorer and the run; no stop is stuck on the walk maps of round 7
+- [ ] A cutaway of the near scenery in a nook under 2 m deep, which needs a change to the pinned Ink Studio renderer
 - [x] Keyboard, mouse, touch stick and look, jump button, gamepad
 - [x] Wisps, the beacon, unlocks, the next place, the end card when all five beacons burn, and Walk again
 - [x] Saved progress, and a bad save is cleaned

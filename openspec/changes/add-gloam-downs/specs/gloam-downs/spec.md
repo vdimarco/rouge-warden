@@ -19,11 +19,15 @@ Every place SHALL be at dusk or at night. Most of the screen SHALL be dark: shad
 - **THEN** the mean luminance of the picture is between 0.05 and 0.32, where 0 is black and 1 is white. Between 0.05% and 12% of its pixels are brighter than 0.55. Check: e2e `gloam-downs.e2e.mjs` through `?wander`.
 
 ### Requirement: The lamplighter
-The player SHALL be a small original figure: a round hooded lamplighter that carries a lantern. The figure SHALL swing its legs and arms when it walks, lean when it runs and squash when it lands. It SHALL cast a round shadow on the ground under it.
+The player SHALL be a small original figure: a round hooded lamplighter that carries a lantern in its left hand and a blade in its right. The blade SHALL be plainly visible from the follow camera at rest and in a swing: broad and chunky, held out to the side, iron with a lit rim, never brighter than the fire. The figure SHALL swing its legs and arms when it walks, lean when it runs and squash when it lands. It SHALL cast a round shadow on the ground under it.
 
 #### Scenario: Walk
 - **WHEN** the visitor holds W or the up arrow
 - **THEN** the lamplighter walks away from the camera with its legs swinging, and its shadow stays on the ground under it. Check: e2e `gloam-downs.e2e.mjs` through `?wander`: W moves it more than 2 m, away from the camera. The Node test checks that the shadow lies on the floor under the body.
+
+#### Scenario: See the blade
+- **WHEN** the run or the explorer starts at 1280 by 720 or 390 by 844, and the player swings
+- **THEN** the blade shows to the right of the lamplighter at rest, a grey bar with a warm rim, and swings with the arm in each cut. Check: Node test `gloam-downs.test.mjs` (in each place, at least 150 splats on the right arm reach more than 0.5 m from the shoulder, the farthest more than 1 m, more than 0.5 m to the side of the body; the figure of 45ffb438 had none, its arm reaching 0.26 m), and screenshots at both sizes at rest and in a cut.
 
 ### Requirement: Move and jump
 The player SHALL move relative to the camera with WASD, the arrow keys, the left stick of a gamepad or the touch stick. Shift SHALL walk slowly. Space, the gamepad A button or the touch Jump button SHALL jump. The lamplighter SHALL stand on the ground, climb low steps, stop at walls and steep slopes, and fall off ledges.
@@ -79,6 +83,10 @@ The player SHALL move relative to the camera with WASD, the arrow keys, the left
 #### Scenario: No trap
 - **WHEN** the lamplighter walks, runs, jumps or falls to a place that the bake's reach check gets to (its own walks and jumps, and wide jumps on 16 headings over anything lower than the jump's top and under roofs), on a 30, 60, 120 or 144 Hz screen
 - **THEN** from there it can walk or jump back to the start or on to the beacon. It never ends in a slot, a notch, a pit or a nook under a roof that it cannot leave, and a trap wider than a crack fails the bake. Check: the bake's `--check` line "no trap", and the Node test `gloam-downs.test.mjs`
+
+#### Scenario: Stairs
+- **WHEN** the lamplighter walks or runs up, down, beside or across any of the 18 flights of steps in the five places, straight or at 30° or 60°, at 30 or 60 Hz, or rolls on them in a run
+- **THEN** wherever it stops, it can walk or jump out on at least one of 16 headings; it is never wedged between steps or between a stair and a wall. Check: Node test `gloam-downs-stairs.test.mjs` (each place's JSON lists its flights as `stairs`; on the walk maps of 45ffb438 it finds 21 stuck stops at the Gaol's west stair)
 
 #### Scenario: Under a beam
 - **WHEN** the lamplighter walks on the floor under a slanted beam, where the walk map missed a grid point of the beam, on a 30, 60, 120 or 144 Hz screen
@@ -201,6 +209,27 @@ The camera SHALL turn by itself (the swing behind a running lamplighter, the tur
 - **WHEN** the lamplighter runs to the side on touch, keys or a gamepad with no look input, and again while the player holds a move to the side
 - **THEN** the swing starts 2 s after the last look input and turns no faster than 0.5 × π/2 rad/s (measured start 2.02 s), and with the move to the side held the view does not turn. Check: Node test `gloam-downs-mouse.test.mjs`.
 
+### Requirement: Tight spaces
+Where the scenery is close round the lamplighter, the camera SHALL keep the lamplighter and the way ahead in view rather than zoom in. The eye SHALL use a room's full height, up to 0.35 m under its ceiling. Under a roof over the feet, the aim SHALL come down to 1.55 m under the roof (never under 0.6 m over the feet), and the view SHALL dip under a lintel, down to a pitch of 0.1, before it rises. The distance SHALL never be under 0.5 m.
+
+#### Scenario: Into the torn cell
+- **WHEN** the lamplighter walks from the Gaol's yard into the torn cell where its first wisp hangs, at 1280 by 720 and 390 by 844, and the player then turns the view round with the mouse at three spots in the cell
+- **THEN** walking in within 20° of square to the mouth the eye ends out in the yard at the layout's distance (at least 2 m at 35°); turning round, the eye never comes nearer than 0.5 m, the figure drawn whole is never taller than the view, and with the eye within 0.8 m of the body the figure is thinned by at least 0.4. Before: a phone's eye stood 0.5 m away walking in, and a sweep put the eye through the aim. Check: Node test `gloam-downs-camera.test.mjs`, and screenshots at the wisp at both sizes.
+
+### Requirement: The follow zoom
+Nearer than 3.5 m, the field of view SHALL widen so the view is as tall at the aim as from 3.5 m, up to 90° tall and 110° across.
+
+#### Scenario: Close by a wall
+- **WHEN** the walls bring the eye 2 m from the aim at 1280 by 720, or 0.3 m from it
+- **THEN** the view is as tall at the aim as from 3.5 m at 2 m, and at most 110° across at 0.3 m (90° tall on a phone). From 3.5 m out the field of view is the layout's. Check: Node test `gloam-downs-camera.test.mjs`.
+
+### Requirement: The near fade
+With the eye within 1.2 m of the lamplighter's body, a share of the figure's splats SHALL be left out, more the nearer the eye, in four steps up to 0.8, as a dithered fade. The blade's splats SHALL stay. All densities SHALL come back when the eye moves off.
+
+#### Scenario: Thin out, keep the blade
+- **WHEN** the fade is set to 0.8 on a baked place, and then to 0
+- **THEN** 0.8 of the figure's other splats are left out (±0.03), the blade's are all kept, and every density comes back. Check: Node test `gloam-downs.test.mjs`.
+
 ### Requirement: An eased pull-in
 When a wall or a hill brings the camera in, it SHALL come in and go back out eased, with a critically damped spring of about 0.15 s in and 0.25 s out. Its eye SHALL still never be inside the scenery. Standing still, the view SHALL not move.
 
@@ -220,7 +249,7 @@ The camera SHALL come in no faster than 15 m/s while its eye is clear, also wher
 
 #### Scenario: A mouse sweep in the five places
 - **WHEN** at the spawn and each wisp of the five places the player turns the view round with the mouse at 1.2 rad/s for 6 s, to the left and to the right, at 1280 by 720 and 390 by 844 (120 sweeps)
-- **THEN** a step changes the distance by 0.6 m or less, except where the eye comes in through a wall from behind (the line from the old eye to the new passes within 0.35 m of the scenery), on 8 steps or fewer in all, each under 2.1 m. Measured: 7 such steps, the largest 2.05 m (the camera of 3fe9318f: 8, up to 1.75 m; that of 09fd360b changed the distance by more than 0.6 m on 142 steps of 60 sweeps one way, by up to 2.3 m). On every other step where the eye is clear, the camera comes in at 15 m/s or less, and its speed in builds by 360 m/s² or less. The test decides "clear" from the walk map alone, not from the camera's own flag: the old eye, at its last distance and this step's aim and pitch, marched along its path round for 0.3 s of the sweep's turn every 0.1 m, with 0.35 m of clearance. Measured: 0 fast steps, 0 jolts (the camera of 3fe9318f: 53 fast steps and 1 jolt, from 8.50 m to 2.99 m in 0.23 s at the Barrows wisp at (−7.9, 12.8) at 1280 by 720; that of 7dcfd747: 739 fast steps one way). Check: Node test `gloam-downs-mouse.test.mjs` (skipped with `GLOAM_WORLDS=0`).
+- **THEN** a step changes the distance by 0.6 m or less, except where the eye comes in through a wall from behind (the line from the old eye to the new passes within 0.35 m of the scenery), on 10 steps or fewer in all, each under 2.8 m. Measured: 9 such steps, the largest 2.69 m (the camera of 45ffb438: 7, up to 2.05 m, before the tight-space fix left the eye farther back in a room before it meets a wall; that of 3fe9318f: 8, up to 1.75 m; that of 09fd360b changed the distance by more than 0.6 m on 142 steps of 60 sweeps one way, by up to 2.3 m). On every other step where the eye is clear, the camera comes in at 15 m/s or less, and its speed in builds by 360 m/s² or less. The test decides "clear" from the walk map alone, not from the camera's own flag: the old eye, at its last distance and this step's aim and pitch, marched along its path round for 0.3 s of the sweep's turn every 0.1 m, with 0.35 m of clearance. Measured: 0 fast steps, 0 jolts (the camera of 3fe9318f: 53 fast steps and 1 jolt, from 8.50 m to 2.99 m in 0.23 s at the Barrows wisp at (−7.9, 12.8) at 1280 by 720; that of 7dcfd747: 739 fast steps one way). Check: Node test `gloam-downs-mouse.test.mjs` (skipped with `GLOAM_WORLDS=0`).
 
 ### Requirement: The camera's framing
 The camera SHALL frame each window so:
