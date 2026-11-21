@@ -225,15 +225,23 @@ Where the scenery is close round the lamplighter, the camera SHALL keep the lamp
 - **THEN** the camera stands at 8 m or more inside the passage, its eye under the roof. Check: Node test `gloam-downs-camera.test.mjs`.
 
 ### Requirement: The framed shot
-Where the room at the mouse's yaw falls under 2 m and the lamplighter moves at 3 m/s or less, the picture SHALL be shown from the nearest yaw, up to 150° from the mouse's, where the eye can stand 3 m back (or at the full distance) and see the head and the chest. The mouse's yaw, and the way a move goes, SHALL stay as the player set it. The picture SHALL turn there only as far as keeps the eye out of the walls, or cut to it, at most once each 0.5 s; a cut SHALL show the lamplighter from an eye clear of the scenery. Once the follow eye stands 3 m back again, the picture SHALL come back to it.
+In a nook (the room at the view's yaw under 2 m, the lamplighter at 3 m/s or less), the view SHALL lean toward the nearest yaw where the eye stands 3 m back and sees the head and the chest. The lean SHALL turn the view itself, so the picture, the moves, the soft aim and the fight's bearings read one yaw. It SHALL stay within 60° of the player's own turns, and past that the eye SHALL come in with the near fade. Every step of a player's turn SHALL turn the picture by 80 to 120% of it.
 
 #### Scenario: Turn round in a nook
 - **WHEN** the player turns the view a full turn with the mouse in 6 s, standing at three spots in the torn cell and at each of the 25 wisps, at 1280 by 720 and 390 by 844
-- **THEN** the eye stands at least 2.5 m back on at least 90% of the steps and never nearer than 0.5 m, it sees the head as it settles, and the lamplighter as drawn covers at most 35% of the view on every step. Before: within 2 m on 84 to 90% of the cell's sweep at 1280 by 720, 65 to 86% on a phone, and the figure a wall of cloak over the view; inside the Bell Knoll's fallen bell the camera stood over the crown with the figure hidden. Check: Node test `gloam-downs-camera.test.mjs`, and screenshots in the cell at both sizes.
+- **THEN** on each step the eye stands at least 2.5 m back or the near fade leaves the figure out whole (the steps in between at most 35% at a spot and 6% over all), never nearer than 0.5 m, it sees the head as it settles, the lamplighter as drawn covers at most 35% of the view on every step, and 1.5 s after the mouse stops in the cell the eye stands at least 2.5 m back again. Before 2337588c: within 2 m on 84 to 90% of the cell's sweep at 1280 by 720, 65 to 86% on a phone, and the figure a wall of cloak over the view; inside the Bell Knoll's fallen bell the camera stood over the crown with the figure hidden. Check: Node test `gloam-downs-camera.test.mjs`.
+
+#### Scenario: The picture turns with the mouse
+- **WHEN** the player turns the view a full turn in 6 s, 1° a step, each way with the mouse and one way with a stick, at the same 28 spots and both sizes, then lets go for 1.5 s
+- **THEN** every step turns the picture by 80 to 120% of the turn (a wall holds back no more than 15% of it, the lean no more than 15%; with the view still the lean turns at up to 1.5 rad/s), the picture never stands still, it is shown from the camera's own yaw, and that yaw stays within 60° of the player's own turns; in the open it turns by exactly the mouse's turn and never leans. Before (100a12c4): the picture was shown from a yaw up to 180° from the mouse's and stood still on 68 to 92% of the steps in the cell. Check: Node test `gloam-downs-mouse.test.mjs`.
+
+#### Scenario: A move goes the way the screen shows
+- **WHEN** the lamplighter stands in the torn cell and the player turns the mouse to 8 yaws, 45° apart, and presses forward, at 1280 by 720 and 390 by 844; and in Node, at the yaws the sweeps show while the framed shot leans, a move held forward, back, left and right
+- **THEN** forward moves the figure up the screen (within 30° in the browser, as drawn from that step's view), and in Node each move goes up, down, left or right on screen within 15°. Before (100a12c4): a press of back went up the screen at one mouse yaw and down at another. Check: browser test `gloam-downs-mouse.e2e.mjs` and Node test `gloam-downs-mouse.test.mjs`.
 
 #### Scenario: Turn against a wall
 - **WHEN** the player turns the view into a long wall 1 or 2 m behind the lamplighter and back, at 1.2, 3 and 6 rad/s, and at each spawn and wisp at 1.2 rad/s each way
-- **THEN** the eye is never in the wall, the follow eye comes in eased, the picture cuts at most twice in one turn there and back, and in the sweeps of the five places at most 8 steps come in through a wall, each under 2.1 m. Check: Node test `gloam-downs-mouse.test.mjs`.
+- **THEN** the eye is never in the wall, the eye comes in eased (no step over 1 m), and in the sweeps of the five places at most 10 steps come in through a wall, each under 2.2 m. Check: Node test `gloam-downs-mouse.test.mjs`.
 
 ### Requirement: The follow zoom
 Nearer than 3.5 m, the field of view SHALL widen so the view is as tall at the aim as from 3.5 m, up to 90° tall and 110° across.

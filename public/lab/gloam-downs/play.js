@@ -386,12 +386,14 @@ export function makeCamera(walk, o = {}) {
   const pitch0 = o.pitch ?? 0.34, dist0 = o.dist ?? 8.5;
   const c = {
     yaw: o.yaw ?? 0, pitch: pitch0, base: pitch0, dist: dist0, want: dist0, fov: o.fov ?? null, asp: o.asp ?? 16 / 9, aim: o.aim ?? 1.15, target: null, idle: 9,
-    auto: o.auto !== false, lift: 0, goal: { lift: 0, dist: dist0 }, goals: [], turning: false, from: null, hidden: 0, dv: 0, steer: false, across: false, squeeze: false, shot: null
+    auto: o.auto !== false, lift: 0, goal: { lift: 0, dist: dist0 }, goals: [], turning: false, from: null, hidden: 0, dv: 0, steer: false, across: false, squeeze: false, off: 0, framing: false
   };
   const NEAR = 0.5, TOP = 1.35, DIP = 0.1, LIFT = 0.08, THIN = 0.55, SHORT = 0.6, AHEAD = 0.25, RISE = 4, GRACE = 0.15, HEAD = 1.3, CHEST = 0.8, IN = 0.15, OUT = 0.25;
   // the most speed coming in, m/s: past something between (PULL) and to keep the eye out of a wall (SQUEEZE);
   // the most going back out (BACK); and how fast each builds
   const PULL = 15, SQUEEZE = 33, BACK = 12, ACC = 360, AHEADS = [0.15, 0.3, 0.45];
+  // the least share of a player's turn that a wall may leave on screen (the rest it holds back, a camera orbiting against a wall)
+  const HOLD = 0.85;
   /* the underside of the gap over (x, z) in a map baked with undersides (U): the lowest of the four corners round it, or null where
      one of them has no gap (the edge of a roof decides by the old rule); with all false, the lowest of those that have one. A room
      taller than the least gap (1.8) lets the eye stand higher in it */
@@ -507,6 +509,8 @@ export function makeCamera(walk, o = {}) {
     c.pitch = clamp(c.pitch + oy * 1.6 * dt, 0.08, 1.05);
     if (inp.dyaw) { c.yaw += inp.dyaw; looked = true; }
     if (inp.dpitch) { c.pitch = clamp(c.pitch + inp.dpitch, 0.08, 1.05); looked = true; }
+    // the player's own turn of this step
+    const mine = wrap(c.yaw - yaw0);
     if (looked) c.idle = 0; else c.idle += dt;
     // the player steers with the mouse (it is taken), or holds a move across the view: then nothing turns the view by itself
     c.steer = !!inp.mouse;
@@ -528,6 +532,8 @@ export function makeCamera(walk, o = {}) {
     c.target[0] += (want[0] - c.target[0]) * k;
     c.target[2] += (want[2] - c.target[2]) * k;
     c.target[1] += (want[1] - c.target[1]) * ky;
+    // in a nook, the view leans toward a clear yaw (the framed shot, below)
+    lean(s, dt, wrap(c.yaw - yaw0), looked, sp);
     // the rise it needs now, and for where the aim and the yaw will be a moment ahead: the larger
     const [tx, ty, tz] = c.target, spin = dt > 0 ? wrap(c.yaw - yaw0) / dt : 0;
     const head = [s.x, s.y + HEAD, s.z], now = solve(tx, ty, tz, c.yaw, head);
@@ -640,6 +646,15 @@ export function makeCamera(walk, o = {}) {
       else if (clear && at(0)) {
         let lo = 0, hi = 1;
         for (let i = 0; i < 8; i++) { const m = (lo + hi) / 2; if (at(m)) lo = m; else hi = m; }
+        /* but a turn the player makes shows on screen: at least HOLD of it. Where the wall would hold it back more, the eye comes in
+           until that much of the turn is clear, by no more than 0.9 m this step and to no nearer than the room at this yaw (a fast
+           flick, 6 rad/s, may still be held back, rather than the eye jump in) */
+        const most = looked && turnBy * mine > 0 ? Math.min(1, HOLD * Math.abs(mine) / Math.abs(turnBy)) : 0;
+        if (lo < most) {
+          const d1 = d, lim = Math.max(room0, c.dist - 0.9);
+          while (d > lim + 1e-6 && !at(most)) d = Math.max(lim, d - 0.05);
+          if (at(most)) { lo = most; if (d < d1) v = 0; } else d = d1;
+        }
         at(lo);
         pitch = Math.min(TOP, c.pitch + c.lift);
       } else {
@@ -649,102 +664,51 @@ export function makeCamera(walk, o = {}) {
       }
     }
     c.dist = Math.max(NEAR, d); c.dv = v;
-    const sh = shot(tx, ty, tz, pitch, head, dt, Math.min(c.dist, room0), sp);
-    const vy = sh ? sh.yaw : c.yaw, vd = sh ? sh.dist : c.dist, vp = sh ? sh.pitch : pitch;
-    c.view = { yaw: vy, dist: vd, pitch: vp, dv: sh ? sh.dv : c.dv };
-    return { target: c.target.slice(), dist: vd, yaw: vy, pitch: vp, ...(c.fov ? { fov: zoomFov(c.fov, vd, c.asp) } : {}) };
+    return { target: c.target.slice(), dist: c.dist, yaw: c.yaw, pitch, ...(c.fov ? { fov: zoomFov(c.fov, c.dist, c.asp) } : {}) };
   }
   /* ---- the framed shot ----
-     In a nook (a cell, a fallen bell, a cleft in the fen) the walls bring the follow eye above in at most yaws of the mouse. Where the room
-     at the mouse's yaw falls under SHOT.in, and the lamplighter is not running (SHOT.run m/s or less: a lane run through is past in a
-     moment), the picture is shown from the nearest yaw (every 15°, up to SHOT.most from the mouse's) where the eye can stand SHOT.clear
-     back, or at the full distance where that is less, on a line from the aim open all the way, and see the head and the chest: the best
-     clear angle, as Cinemachine's Deoccluder does with its Preserve Camera Distance strategy (it turns the camera round the target rather
-     than bring it in), and as its ClearShot picks the camera with the best shot. Only the picture moves: c.yaw, the mouse's yaw and the
-     way a move goes, is left as the player set it. The shown eye turns there at no more than SHOT.turn rad/s, only as far round as keeps
-     it out of the walls; it goes out at no more than BACK and in at no more than PULL. Where the way round is shut, or the eased eye
-     would land in a wall, it cuts (at most once each SHOT.cut s). Once the follow eye stands SHOT.out back, the picture turns back to it,
-     or cuts where that way is shut. -> null (the plain follow view), or { yaw, dist, pitch } */
-  const SHOT = { in: 2, out: 3, clear: 3, step: 15 * Math.PI / 180, most: 150 * Math.PI / 180, turn: 3, cut: 0.5, far: Math.PI / 4, run: 3 };
-  // the nearest clear yaw to `from`, within SHOT.most of the mouse's yaw -> { yaw, pitch } or null
-  function clearYaw(x, y, z, from, head, most = SHOT.most) {
+     In a nook (a cell, a fallen bell, a cleft in the fen) the walls bring the eye in at most yaws. Where the room at the view's yaw falls
+     under SHOT.in, and the lamplighter is not running (SHOT.run m/s or less: a lane run through is past in a moment), the view itself
+     leans toward the nearest yaw (every 15°) where the eye can stand SHOT.clear back (or at the full distance where that is less) on a
+     line from the aim open all the way and see the head and the chest, until the eye stands SHOT.out back: the best clear angle, as
+     Cinemachine's Deoccluder does with its Preserve Camera Distance strategy (it turns the camera round the target rather than bring it
+     in) and as its ClearShot picks the camera with the best shot. The lean is a turn of c.yaw, so the picture, the way a move goes and
+     the fight's bearings stay one yaw. It never takes the view more than SHOT.most from where the player's own turns put it (c.off is
+     the lean so far, forgotten once the eye stands at its full distance again). While the player turns the view (the mouse, a stick, a
+     drag), the lean of a step is at most SHOT.share of that step's turn, so every turn shows on screen (85 to 115% of it); with the view
+     still it turns at up to SHOT.turn rad/s, eased. Where no clear yaw is that near, the view stays where the player put it, and the
+     eye comes in with the near fade. */
+  const SHOT = { in: 2, out: 3, clear: 3, step: 15 * Math.PI / 180, most: 60 * Math.PI / 180, share: 0.15, turn: 1.5, run: 3 };
+  // the nearest clear yaw to c.yaw, no more than SHOT.most from the player's own yaw (c.yaw less the lean so far) -> yaw or null
+  function clearYaw(x, y, z, head) {
     const chest = [head[0], head[1] - HEAD + CHEST, head[2]], need = Math.min(SHOT.clear, c.want - 0.05);
-    for (let k = 0; k * SHOT.step <= 2 * most; k++) for (const sg of k ? [1, -1] : [1]) {
-      const yaw = from + sg * k * SHOT.step;
-      if (Math.abs(wrap(yaw - c.yaw)) > most + 1e-6) continue;
-      for (const l of [0, LIFT * 2, LIFT * 4, -LIFT * 2]) {
+    for (let k = 0; k * SHOT.step <= 2 * SHOT.most; k++) for (const sg of k ? [1, -1] : [1]) {
+      const by = sg * k * SHOT.step;
+      if (Math.abs(c.off + by) > SHOT.most + 1e-6) continue;
+      const yaw = c.yaw + by;
+      for (const l of [0, LIFT * 2, LIFT * 4]) {
         const p = clamp(c.pitch + l, 0.08, TOP), d = reach(x, y, z, yaw, p, c.want, false);
         if (d < need) continue;
         const cp = Math.cos(p), e = [x + Math.sin(yaw) * cp * d, y + Math.sin(p) * d, z + Math.cos(yaw) * cp * d];
-        if (sees(head, e) && sees(chest, e)) return { yaw, pitch: p };
+        if (sees(head, e) && sees(chest, e)) return yaw;
       }
     }
     return null;
   }
-  function shot(x, y, z, pitch, head, dt, room, sp = 0) {
-    let sh = c.shot;
-    // it starts as the room at the mouse's yaw falls under SHOT.in, from the view of the step before (still out, before the eye comes in)
-    const from = sh ?? (c.view && Math.abs(wrap(c.view.yaw - c.yaw)) < 0.5 ? c.view : { yaw: c.yaw, dist: c.dist, pitch });
-    // (a lamplighter running through a lane or an arch is past the walls in a moment: no shot starts at more than SHOT.run m/s)
-    let goal = (sh ? c.dist < SHOT.out : room < SHOT.in && sp <= SHOT.run) ? clearYaw(x, y, z, from.yaw, head) : null;
-    // (no clear yaw near the mouse's while the follow eye is still in: the shot goes to the nearest clear yaw any way round, or holds)
-    if (!goal && sh && c.dist < SHOT.out) goal = clearYaw(x, y, z, sh.yaw, head, Math.PI) ?? { yaw: sh.yaw, pitch: sh.pitch };
-    if (!sh && !goal) return null;
-    if (!sh) sh = c.shot = { yaw: from.yaw, dist: from.dist, pitch: from.pitch, dv: from.dv ?? 0 };
-    if (dt <= 0) return sh;
-    // the turn of this step, eased, at no more than SHOT.turn (and RISE in pitch), and only the share of it that keeps the eye clear
-    // (coming back, the part of the turn left goes down from the mouse's yaw, so a turn of the mouse carries straight through)
-    const gp = goal ? goal.pitch : pitch, e = Math.min(1, 8 * dt), o = wrap(sh.yaw - c.yaw);
-    const by = goal ? clamp(wrap(goal.yaw - sh.yaw) * e, -SHOT.turn * dt, SHOT.turn * dt) : wrap(c.yaw + o - clamp(o * e, -SHOT.turn * dt, SHOT.turn * dt) - sh.yaw);
-    const bp = clamp((gp - sh.pitch) * e, -RISE * dt, RISE * dt);
-    // (an eye that the follow eye left inside the scenery, at NEAR, is not held: any way out is better)
-    let f = 1;
-    const free = eyeOpen(x, y, z, sh.yaw, sh.pitch, sh.dist);
-    if (free && !arcOpen(x, y, z, sh.yaw, by, sh.pitch, sh.dist, bp)) {
-      let lo = 0, hi = 1;
-      for (let i = 0; i < 8; i++) { const m = (lo + hi) / 2; if (arcOpen(x, y, z, sh.yaw, by * m, sh.pitch, sh.dist, bp * m)) lo = m; else hi = m; }
-      f = lo;
-    }
-    /* where the way round to the clear yaw is shut (a wall of the nook between), the picture cuts to it, as a camera that cannot move
-       round to its shot cuts to it, rather than come in to the wall and creep round it; at most one cut each SHOT.cut s (in between,
-       it turns as far as is clear and holds) */
-    sh.since = (sh.since ?? SHOT.cut) + dt;
-    const fresh = sh.since === SHOT.cut + dt && goal && Math.abs(wrap(goal.yaw - sh.yaw)) > SHOT.far;
-    const cut = () => {
-      sh.yaw = goal.yaw; sh.pitch = goal.pitch; sh.dv = 0; sh.since = 0; c.cuts = (c.cuts || 0) + 1;
-      sh.dist = Math.max(NEAR, reach(x, y, z, sh.yaw, sh.pitch, c.want, false));
-      return sh;
-    };
-    const may = goal && sh.since >= SHOT.cut && Math.abs(wrap(goal.yaw - sh.yaw)) + Math.abs(goal.pitch - sh.pitch) > 0.05;
-    // coming back the same way: the follow eye stands SHOT.out back, so the picture cuts back to it
-    if (!goal && f < 1 && sh.since >= SHOT.cut) { c.shot = null; c.cuts = (c.cuts || 0) + 1; return null; }
-    if (may && (fresh || f < 1)) return cut();
-    sh.yaw = wrap(sh.yaw + by * f); sh.pitch += bp * f;
-    // the distance: what is clear at the shown yaw, and back to the follow eye's once the shot is over
-    // (while it frames, the line from the aim must be open all the way, so the eye goes out along it; coming back, as the follow eye's)
-    let to = Math.max(NEAR, goal ? reach(x, y, z, sh.yaw, sh.pitch, c.want, false) : Math.min(reach(x, y, z, sh.yaw, sh.pitch, c.want), c.dist));
-    let [d, v] = damp(sh.dist, to, sh.dv, to < sh.dist ? IN : OUT, dt);
-    if (to >= sh.dist && sh.dv < 0) {
-      // an eye still coming in as the shot takes over slows to a stop at no more than ACC, so the take-over is not a jolt
-      v = Math.min(0, sh.dv + ACC * dt); d = sh.dist + v * dt;
-    } else if (d < sh.dist) {
-      // coming in: never past the goal, and at no more than PULL, reached at no more than ACC
-      v = Math.max((Math.max(d, to) - sh.dist) / dt, -PULL, Math.min(0, sh.dv) - ACC * dt); d = sh.dist + v * dt;
-    } else { v = Math.min((d - sh.dist) / dt, BACK, Math.max(0, sh.dv) + ACC * dt); d = sh.dist + v * dt; }
-    /* the eye is never inside the scenery: where the eased eye would be in it (the line from the aim is shut short of a clear eye, as
-       behind a wall) it cuts to the clear yaw, or failing that holds where it is clear; only an eye in the scenery already comes in */
-    if (!eyeOpen(x, y, z, sh.yaw, sh.pitch, d)) {
-      if (may) return cut();
-      if (eyeOpen(x, y, z, sh.yaw, sh.pitch, sh.dist)) { d = sh.dist; v = 0; }
-      else while (d > NEAR && !eyeOpen(x, y, z, sh.yaw, sh.pitch, d)) { d -= 0.05; v = 0; }
-    }
-    sh.dist = Math.max(NEAR, d); sh.dv = v;
-    // back where the follow eye is: the plain view again
-    if (!goal && Math.abs(wrap(sh.yaw - c.yaw)) < 0.01 && Math.abs(sh.pitch - pitch) < 0.01 && Math.abs(sh.dist - c.dist) < 0.05) c.shot = null;
-    return sh;
+  // the lean of this step; turned: the turn of the view so far this step, looked: the player turned it
+  function lean(s, dt, turned, looked, sp) {
+    if (dt <= 0) return;
+    const [x, y, z] = c.target, room = reach(x, y, z, c.yaw, Math.min(TOP, c.pitch + c.lift), c.want);
+    c.framing = sp <= SHOT.run && (c.framing ? c.dist < SHOT.out : room < SHOT.in);
+    if (!c.framing) { if (c.dist >= c.want - 0.05) c.off = 0; return; }
+    const goal = clearYaw(x, y, z, [s.x, s.y + HEAD, s.z]);
+    if (goal === null) return;
+    const lim = looked ? SHOT.share * Math.abs(turned) : SHOT.turn * dt;
+    const by = clamp(wrap(goal - c.yaw) * Math.min(1, 8 * dt), -lim, lim);
+    c.yaw += by; c.off += by;
   }
   function snap(s, yaw) {
-    c.shot = c.view = null;
+    c.off = 0; c.framing = false;
     c.yaw = yaw; c.target = [s.x, s.y + aimAt(s.x, s.y, s.z), s.z]; c.idle = 9;
     c.goal = solve(c.target[0], c.target[1], c.target[2], yaw, [s.x, s.y + HEAD, s.z]);
     c.lift = c.goal.lift; c.goals = [c.lift]; c.hidden = 0; c.dv = 0;

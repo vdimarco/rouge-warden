@@ -1212,7 +1212,7 @@ const lowestNear = (W2, [cx, cy, cz], r, from = 1.6) => {
   pass('the lamplighter walks under an arch at every frame step and speed');
 }
 { /* the camera rises over a wall between it and the lamplighter and stays back; only where no rise clears the wall (a 3 m wall less
-     0.4 m behind) does the follow eye come in, and then the picture is framed from a clear yaw. Its eye stays out of the wall, and it sees the head */
+     0.4 m behind) does the follow eye come in (the framed shot finds no clear yaw within 60° of a straight wall). Its eye stays out of the wall, and it sees the head */
   const eyeOf = v => {
     const cp = Math.cos(v.pitch);
     return [v.target[0] + v.dist * Math.sin(v.yaw) * cp, v.target[1] + v.dist * Math.sin(v.pitch), v.target[2] + v.dist * Math.cos(v.yaw) * cp];
@@ -1228,8 +1228,12 @@ const lowestNear = (W2, [cx, cy, cz], r, from = 1.6) => {
     for (let i = 0; i < 120; i++) { v = cam.follow(b.s, 1 / 60, {}); assert(clear(v) > 0.1, `body at x ${x}, frame ${i}: the eye ${eyeOf(v).map(n => n.toFixed(2))} is in the wall`); }
     assert(sight(v, b.s), `body at x ${x}: the eye sees the head`);
     if (x <= 3.4) assert(near(v.dist, 8.5, 0.05) && v.pitch > 0.5, `body at x ${x}: it rose over the wall and stayed back (dist ${v.dist}, pitch ${v.pitch})`);
-    // (the follow eye comes in, and the picture is the framed shot from the nearest clear yaw: play.js makeCamera, the framed shot)
-    else assert(cam.c.dist < 2.5 && cam.c.shot && v.dist >= 2.5, `body at x ${x}: no rise clears the wall, so the follow eye came in (${cam.c.dist}) and the shot stands ${v.dist} back`);
+    /* (no rise clears the wall: the framed shot would lean the view to a clear yaw, but along a straight wall 0.4 m behind none is
+       within its 60°, so the view stays where it was and the eye comes in, out of the wall, with the near fade: play.js makeCamera) */
+    else {
+      const turned = Math.abs(Math.atan2(Math.sin(cam.c.yaw - Math.PI / 2), Math.cos(cam.c.yaw - Math.PI / 2)));
+      assert(v.dist < 2.5 && turned <= Math.PI / 3 + 1e-6, `body at x ${x}: no rise clears the wall, the view turned ${(turned * 180 / Math.PI).toFixed(0)}° and stands ${v.dist} back`);
+    }
     seen.push([x, +v.dist.toFixed(2), +v.pitch.toFixed(2)]);
   }
   // backing into the wall with the camera behind

@@ -8,6 +8,7 @@
 //   In the explorer: Walk takes the mouse, Escape frees it and the hint shows, the click that takes it does not jump, and then a left
 //   click jumps.
 //   The fallback: the controls say to drag with the right button, the right drag turns the view, and a left click attacks only.
+//   The Gaol's torn cell at 1280x720 and 390x844: at 8 yaws of the mouse the picture turns with it and forward moves the figure up the screen.
 // The page runs with ?test: the game is stepped by __gloam.tick(), because software WebGL takes about a second a frame.
 // Needs the site served: python3 -m http.server 8765 --bind 0.0.0.0 --directory public
 // Run: node qa/lab/gloam-downs-mouse.e2e.mjs   (SITE_URL to point elsewhere, SHOTS=<dir> to keep pictures)
@@ -277,6 +278,41 @@ try {
     assert.match(await page.textContent('#pauseControls'), /Drag on the left half to move/);
     await shot(page, 'pause-390');
     pass('a phone: no mouse hint, and the pause panel shows the touch controls');
+    if (errors.length) throw new Error(errors.join('\n'));
+    await ctx.close();
+  }
+  /* ---------------- the Gaol's torn cell: a move goes the way the screen shows ----------------
+     In the cell where the first wisp hangs, the framed shot leans the view toward the mouth. At 8 yaws of the mouse (45° apart) and at
+     both sizes, a press of forward moves the figure up the screen, as drawn from the view of that step (both points projected with the
+     same view), and the picture has turned with the mouse. The framed shot of 100a12c4 showed the cell from a yaw up to 180° from the
+     mouse's: there a press of back went up the screen at one yaw and down at another, and the picture stood still across 90° of turn */
+  for (const [w, h] of [[1280, 720], [390, 844]]) {
+    const { ctx, page, errors } = await open({ viewport: { width: w, height: h } }, '?run&test&fresh&nodraw&seed=7');
+    if (await page.isVisible('#runHelp')) await page.click('#bBegin');
+    await G(page, () => window.__gloam.release?.());
+    const rows = await G(page, () => {
+      const g = window.__gloam, out = [];
+      for (const turn of [0, 45, 90, 135, 180, 225, 270, 315]) {
+        g.teleport(1.6, -1.6, Math.PI, -1.7); g.tick(1, { mouse: true });
+        const y0 = g.state().cam.yaw;
+        g.tick(turn / 45 * 0.75, { dyaw: (Math.PI / 4) / 45, mouse: true });
+        const y1 = g.state().cam.yaw;
+        g.tick(0.5, { mouse: true });
+        const s0 = g.state(), s1 = g.tick(0.15, { mz: 1, mouse: true });
+        const a = g.project([s0.x, s0.y + 0.9, s0.z]), b = g.project([s1.x, s1.y + 0.9, s1.z]);
+        const dx = b[0] - a[0], dy = b[1] - a[1];
+        out.push({ turn, shown: +(Math.atan2(Math.sin(y1 - y0), Math.cos(y1 - y0)) * 180 / Math.PI).toFixed(0), cell: s0.y < -1, moved: +Math.hypot(s1.x - s0.x, s1.z - s0.z).toFixed(2), dx: Math.round(dx), dy: Math.round(dy), off: +(Math.abs(Math.atan2(dx, -dy)) * 180 / Math.PI).toFixed(0) });
+      }
+      return out;
+    });
+    for (const r of rows) {
+      assert(r.cell, `${w}x${h} at ${r.turn}°: the lamplighter stands in the cell`);
+      assert(r.moved > 0.05 && r.dy < -2 && r.off <= 30, `${w}x${h} at a mouse turn of ${r.turn}°: forward moved the figure ${r.moved} m, ${r.dx}, ${r.dy} px on screen (${r.off}° from up)`);
+      // the picture turned with the mouse, by 80 to 120% of its turn (a turn past 180° reads as one the other way)
+      const want = r.turn > 180 ? r.turn - 360 : r.turn;
+      assert(Math.abs(r.shown - want) <= 0.2 * Math.abs(want) + 1, `${w}x${h}: a mouse turn of ${r.turn}° turned the picture ${r.shown}°`);
+    }
+    pass(`the torn cell at ${w}x${h}: at 8 yaws of the mouse the picture turns with it and forward moves the figure up the screen`, rows.map(r => [r.turn, r.shown, r.dx, r.dy, r.off]));
     if (errors.length) throw new Error(errors.join('\n'));
     await ctx.close();
   }

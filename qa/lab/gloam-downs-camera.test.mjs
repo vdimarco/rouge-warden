@@ -363,23 +363,26 @@ if (!skipWorlds) {
   }
 
   /* A full turn of the mouse in 6 s, standing at three places in the torn cell and at every wisp of the five places, at 1280x720 and
-     390x844 ("it zooms in too much"). The eye stands at least 2.5 m back on at least 90% of the steps, never nearer than 0.5; it sees the
-     head as it settles (it never stands over a bell's crown with the figure hidden under it); and on every step the lamplighter as drawn
-     (posed, less the near fade's share) covers at most 35% of the view. The camera of 2337588c stood within 2 m on 84 to 90% of the
-     cell's sweep at 1280x720, 65 to 86% on a phone, 80 to 90% in two fen nooks and inside the Bell Knoll's fallen bell, with the
-     figure, at a fade of 0.4 to 0.8, still a wall of cloak over the whole view; the framed shot (play.js) turns the picture to the nearest
-     clear yaw instead, and the near fade leaves the figure out whole from 0.9 m */
+     390x844 ("it zooms in too much"; "mouse feels good"). While the mouse turns the view, a nook has walls on most sides, so the eye
+     cannot stand back at every yaw the player turns to: on each step the eye stands at least 2.5 m back, or the near fade leaves the
+     figure out whole (the eye in 0.9 m of it), and never nearer than 0.5; it sees the head as it settles (it never stands over a bell's
+     crown with the figure hidden under it); and on every step the lamplighter as drawn (posed, less the near fade's share) covers at
+     most 35% of the view. The share of steps in between (the eye 0.9 to 2.5 m back, a share of the figure left out) is at most 35% at
+     a spot and 6% over all. Once the mouse stops, the framed shot leans the view (at most 60°) to a clear yaw: in the torn cell the eye
+     stands 2.5 m back again within 1.5 s. The framed shot of 100a12c4 kept the eye 2.5 m back on 91% of the steps by showing the
+     picture from a yaw up to 150° from the mouse's, so the picture stood still while the mouse turned (on 68 to 92% of the steps in
+     the cell), and a move went sideways on screen; the mouse checks are in gloam-downs-mouse.test.mjs */
   {
     const rows = [], spots = [['gaol', 1.6, -1.6], ['gaol', 1.6, -2.1], ['gaol', 1.6, -0.9]];
     for (const id of ORDER) for (const wp of place(id).meta.wisps) spots.push([id, wp.p[0], wp.p[2], wp.p[1]]);
-    let worstBack = 1, worstCover = 0, worstLeast = Infinity, cuts = 0;
     for (const name of ['1280x720', '390x844']) {
       const [w, h] = LAYOUTS[name];
-      for (const [id, x, z, wy] of spots) {
+      let worstMid = 0, worstCover = 0, worstLeast = Infinity, mid = 0, back = 0, all = 0, settled = Infinity;
+      for (const [k, [id, x, z, wy]] of spots.entries()) {
         const { walk } = place(id), y = wy === undefined ? walk.floor(x, z) : walk.support(x, z, wy + 0.5) ?? walk.floor(x, z);
         const b = stand(walk, x, z, Math.PI, y), cam = cameraFor(walk, name, 0);
         cam.snap(b.s, 0);
-        let back = 0, n = 0, least = Infinity, cover = 0;
+        let n = 0, m = 0, least = Infinity, cover = 0;
         for (let i = 0; i < 420; i++) {
           b.step(STEP, {}, cam.c.yaw);
           const v = cam.follow(b.s, STEP, i < 60 ? { mouse: true } : { dyaw: 2 * Math.PI / 360, mouse: true });
@@ -388,19 +391,29 @@ if (!skipWorlds) {
             assert(clearLine(walk, e[0], e[1], e[2], b.s.x, b.s.y + 1.3, b.s.z), `${name} ${id} at ${x.toFixed(1)}, ${z.toFixed(1)}: the settled eye does not see the head`);
           }
           if (i < 60) continue;
-          n++; if (v.dist >= 2.5) back++;
+          n++; all++;
+          if (v.dist >= 2.5) back++;
+          else if (fadeOf(eyeOf(v), b.s) < NEAR_FADE.most) { m++; mid++; }
           least = Math.min(least, v.dist);
           if (i % 2 === 0 || v.dist < 2.5) cover = Math.max(cover, covers(v, b.s, w, h));
         }
         const tag = `${name} ${id} at ${x.toFixed(1)}, ${z.toFixed(1)}`;
-        assert(back / n >= 0.9, `${tag}: the eye stood 2.5 m back on ${(back / n).toFixed(2)} of a sweep`);
+        assert(m / n <= 0.35, `${tag}: the eye stood 0.9 to 2.5 m back with the figure partly drawn on ${(m / n).toFixed(2)} of a sweep`);
         assert(least >= 0.5 - 1e-9, `${tag}: a sweep brought the eye ${least.toFixed(2)} from the aim`);
         assert(cover <= 0.35, `${tag}: the lamplighter covered ${(cover * 100).toFixed(0)}% of the view`);
-        worstBack = Math.min(worstBack, back / n); worstCover = Math.max(worstCover, cover); worstLeast = Math.min(worstLeast, least); cuts += cam.c.cuts || 0;
+        // the mouse stops: in the torn cell the view leans to the mouth and the eye goes back out
+        if (k < 3) {
+          let v;
+          for (let i = 0; i < 90; i++) { b.step(STEP, {}, cam.c.yaw); v = cam.follow(b.s, STEP, { mouse: true }); }
+          assert(v.dist >= 2.5, `${tag}: 1.5 s after the mouse stopped the eye stands ${v.dist.toFixed(2)} back`);
+          settled = Math.min(settled, v.dist);
+        }
+        worstMid = Math.max(worstMid, m / n); worstCover = Math.max(worstCover, cover); worstLeast = Math.min(worstLeast, least);
       }
-      rows.push({ name, spots: spots.length, back: r2(worstBack), least: r2(worstLeast), cover: r2(worstCover), cuts });
+      assert(mid / all <= 0.06, `${name}: the eye stood 0.9 to 2.5 m back with the figure partly drawn on ${(mid / all).toFixed(3)} of all sweeps`);
+      rows.push({ name, spots: spots.length, back: r2(back / all), between: +(mid / all).toFixed(3), worstBetween: r2(worstMid), least: r2(worstLeast), cover: r2(worstCover), cellSettled: r2(settled) });
     }
-    pass('a sweep of the mouse in the torn cell and at every wisp: the eye stays back and sees the head, and the figure never fills the view', rows);
+    pass('a sweep of the mouse in the torn cell and at every wisp: the eye stands back or the figure is left out, it sees the head, the figure never fills the view, and the eye goes back out once the mouse stops', rows);
   }
   /* the near fade itself: an eye 0.5 m behind the hood (as the walls of a nook can leave it, the view widened to 90°). The figure drawn
      whole covers 30% of the view or more, and thinned by a share of 0.8 (2337588c's most) it covers nearly as much, for each splat left

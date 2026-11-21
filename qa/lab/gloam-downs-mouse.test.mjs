@@ -181,16 +181,12 @@ function runSide(inp, sec, turn = null, idle = 0) {
     for (const rate of [1.2, 3, 6]) for (const [w, h] of [[1280, 720], [390, 844]]) {
       const b = stand(WALL, 0, 0), cam = makeCamera(WALL, { yaw: -Math.PI / 2, ...camLayout(w, h) });
       cam.snap(b.s, -Math.PI / 2);
-      let last = null, step = 0, jerk = 0, inWall = 0, least = Infinity, d1 = 0, cuts = 0, lastD = null;
+      let last = null, step = 0, jerk = 0, inWall = 0, least = Infinity, d1 = null;
       for (let i = 0; i < 240; i++) {
-        const was = cam.c.cuts || 0, v = cam.follow(b.s, STEP, { dyaw: (i < 120 ? 1 : -1) * rate * STEP, mouse: true }), cut = (cam.c.cuts || 0) > was;
+        const v = cam.follow(b.s, STEP, { dyaw: (i < 120 ? 1 : -1) * rate * STEP, mouse: true });
         const e = eyeOf(v);
         if (WALL.support(e[0], e[2], e[1]) === null) inWall++;
-        // (the framed shot may cut: a cut is a new picture, not a step of the eye, so its distance is not eased)
-        if (cut) { cuts++; d1 = null; } else if (last) { const d = v.dist - last.dist; step = Math.max(step, Math.abs(d)); if (d1 !== null) jerk = Math.max(jerk, Math.abs(d - d1)); d1 = d; }
-        // the follow eye (cam.c.dist), which the framed shot hides while it is near, comes in eased too
-        if (lastD !== null) step = Math.max(step, Math.abs(cam.c.dist - lastD));
-        lastD = cam.c.dist;
+        if (last) { const d = v.dist - last.dist; step = Math.max(step, Math.abs(d)); if (d1 !== null) jerk = Math.max(jerk, Math.abs(d - d1)); d1 = d; }
         least = Math.min(least, cam.c.dist);
         last = v;
       }
@@ -198,8 +194,7 @@ function runSide(inp, sec, turn = null, idle = 0) {
       assert(least < cam.c.want - 1, `${tag}: it came in (${least})`);
       assert(step <= 1 && jerk <= 0.4, `${tag}: the distance changed by ${step} m in one step, and its change by ${jerk} m`);
       assert.equal(inWall, 0, `${tag}: the eye was in the wall on ${inWall} steps`);
-      assert(cuts <= 2, `${tag}: the picture cut ${cuts} times in one turn there and back`);
-      out.push({ w, thick, gap, rate, step: r3(step), jerk: r3(jerk), cuts });
+      out.push({ w, thick, gap, rate, step: r3(step), jerk: r3(jerk) });
     }
   }
   /* a tall pillar 0.5 or 1 m thick, 1.5 or 3 m wide, 1 to 3 m behind the lamplighter, which walks past it at 3 and 6 m/s with the mouse
@@ -242,17 +237,18 @@ if (process.env.GLOAM_WORLDS !== '0') {
      old eye to the new one passes within 0.35 m of the scenery, where play.js lets no eye be; a turn faster than the camera may come
      in can leave it there): at most 8 such steps in all 120 sweeps, each under 2.1 m. Both ways, the camera of 3fe9318f had 8, up to
      1.75 m, and that of 45ffb438 7, up to 2.05 m: a clear eye now comes in at 15 m/s, not 33, and can meet a wall 2 m thick from
-     behind. The first tight-space fix (2337588c) had 9, up to 2.69 m; with the framed shot, which turns the picture to a clear yaw in
-     a nook rather than bring the eye in, there are 2. A cut of the framed shot is a new picture, not a step of the eye: its eye must
-     be clear, and the sweeps may have at most 40 of them (one or two at a nook). The
+     behind. The first tight-space fix (2337588c) had 9, up to 2.69 m. The framed shot of 100a12c4 had 2, for it hid the follow eye
+     behind a picture from another yaw, which stood still while the mouse turned. The view now turns with the mouse in a nook too, and
+     the follow eye's own steps show: at most 10 such steps, each under 2.2 m (9, up to 2.08 m, all but two of them into the near
+     fade's 1.5 m). The
      camera of 09fd360b changed it by more than 0.6 m on 142 steps of the 60 sweeps one way. And where the eye is clear, it comes in at no more than 15 m/s, except at a step
      through a wall: a wall that the turn will bring between starts it in early, but not faster; and its speed in builds by no more than
      360 m/s/s. "Clear" is read here from the walk map alone, not from play.js: the old eye (its last distance, at this step's aim and
      pitch) marched along its path round for 0.3 s of the sweep's turn, every 0.1 m, with the 0.35 m clearance of `through`. The camera
      of 7dcfd747 came in faster on 733 steps here (one way), from 8.5 m to under 1 m in 0.3 s; that of 3fe9318f on 53 steps (both ways),
      from 8.5 to 2.99 m in 0.23 s at Barrows (-7.9, 12.8), for its look-ahead marched a nearer goal's path, not the eye's */
-  const DEV = { over: 0.6, cross: 8, crossMax: 2.1, pull: 15, acc: 360, look: 0.3, rate: 1.2, cuts: 40 };
-  let sum = 0, steps = 0, over = 0, cross = 0, crossMax = 0, worst = 0, fast = 0, fastAt = '', jolt = 0, joltAt = '', cuts = 0;
+  const DEV = { over: 0.6, cross: 10, crossMax: 2.2, pull: 15, acc: 360, look: 0.3, rate: 1.2 };
+  let sum = 0, steps = 0, over = 0, cross = 0, crossMax = 0, worst = 0, fast = 0, fastAt = '', jolt = 0, joltAt = '';
   for (const id of ORDER) {
     const meta = JSON.parse(fs.readFileSync(new URL(`worlds/${id}.json`, DIR), 'utf8'));
     const raw = zlib.gunzipSync(fs.readFileSync(new URL(`worlds/${id}.walk.bin.gz`, DIR)));
@@ -297,16 +293,8 @@ if (process.env.GLOAM_WORLDS !== '0') {
       for (let i = 0; i < 30; i++) last = cam.follow(b.s, STEP, { mouse: true });
       let inPrev = Math.max(0, -cam.c.dv * STEP);
       for (let i = 0; i < 360; i++) {
-        const was = cam.c.cuts || 0, v = cam.follow(b.s, STEP, { dyaw: dir * DEV.rate * STEP, mouse: true });
+        const v = cam.follow(b.s, STEP, { dyaw: dir * DEV.rate * STEP, mouse: true });
         steps++; sum += v.dist;
-        // a cut of the framed shot is a new picture: its eye is clear and sees the lamplighter, and it is not a step of the eye
-        if ((cam.c.cuts || 0) > was) {
-          cuts++;
-          const e = eyeOf(v);
-          assert(free(e[0], e[1], e[2]), `${id} ${w}x${h} at ${p[0].toFixed(1)}, ${p[2].toFixed(1)}: a cut put the eye in the scenery`);
-          last = v; inPrev = 0;
-          continue;
-        }
         if (last) {
           const d = Math.abs(v.dist - last.dist);
           worst = Math.max(worst, d);
@@ -333,8 +321,87 @@ if (process.env.GLOAM_WORLDS !== '0') {
   }
   assert.equal(fast, 0, `with the eye clear the camera came in faster than ${DEV.pull} m/s on ${fast} steps, first ${fastAt}`);
   assert(cross <= DEV.cross && crossMax < DEV.crossMax, `${cross} steps came in through a wall, by up to ${crossMax.toFixed(2)} m`);
-  assert(cuts <= DEV.cuts, `the framed shot cut ${cuts} times in the sweeps`);
   assert.equal(jolt, 0, `the speed coming in jumped on ${jolt} steps, first ${joltAt}`);
-  pass('the five places: a sweep of the mouse at 1.2 rad/s each way at each spawn and wisp never dives', { sweeps: steps / 360, mean: r3(sum / steps), over, worst: r3(worst), cross, crossMax: r3(crossMax), fast, cuts });
+  pass('the five places: a sweep of the mouse at 1.2 rad/s each way at each spawn and wisp never dives', { sweeps: steps / 360, mean: r3(sum / steps), over, worst: r3(worst), cross, crossMax: r3(crossMax), fast });
+}
+if (process.env.GLOAM_WORLDS !== '0') {
+  /* "mouse feels good", in a nook too. A full turn in 6 s, 1° a step, at three spots in the Gaol's torn cell and at every wisp of the
+     five places (the camera test's 28 spots), at 1280x720 and 390x844: each way with the mouse, and one way with a stick (0.4 of its
+     2.6 rad/s), then 1.5 s still. On every step the picture turns by 80 to 120% of the player's turn, and the yaw the picture is shown
+     from is the camera's own yaw (cam.c.yaw), which the moves, the soft aim and the fight's bearings read (main.js, run.js, fight.js),
+     so a move goes the way the screen shows. The framed shot's lean never takes it more than 60° from the player's own turns. With
+     the yaws the sweeps show while the framed shot leans, a move held forward, back, left and right goes up, down, left and right on
+     screen, within 15°. The framed shot of 100a12c4 showed the picture from a yaw up to 180° from the mouse's: in the cell it stood
+     still (under 0.1° of a 1° step) on 68 to 92% of the steps, and a move went up to 180° off the way the screen showed */
+  const place = id => {
+    const meta = JSON.parse(fs.readFileSync(new URL(`worlds/${id}.json`, DIR), 'utf8'));
+    const raw = zlib.gunzipSync(fs.readFileSync(new URL(`worlds/${id}.walk.bin.gz`, DIR)));
+    return { meta, walk: makeWalk(meta.walk, new Int16Array(raw.buffer, raw.byteOffset, raw.byteLength >> 1)) };
+  };
+  const places = Object.fromEntries(ORDER.map(id => [id, place(id)]));
+  const spots = [['gaol', 1.6, -1.6], ['gaol', 1.6, -2.1], ['gaol', 1.6, -0.9]];
+  for (const id of ORDER) for (const wp of places[id].meta.wisps) spots.push([id, wp.p[0], wp.p[2], wp.p[1]]);
+  const wrap = a => Math.atan2(Math.sin(a), Math.cos(a)), ONE = DEG;
+  // the way a move held at (mx, mz) goes, for a view from `yaw`, on open ground: the angle from the screen's own way, in degrees
+  const offScreen = (yaw, mx, mz) => {
+    const b = stand(OPEN, 0, 0);
+    for (let i = 0; i < 20; i++) b.step(STEP, { mx, mz }, yaw);
+    // on screen, up is away from the eye, (-sin yaw, -cos yaw); right is (cos yaw, -sin yaw)
+    const want = [mx * Math.cos(yaw) - mz * Math.sin(yaw), -mx * Math.sin(yaw) - mz * Math.cos(yaw)];
+    return Math.abs(wrap(Math.atan2(b.s.x, b.s.z) - Math.atan2(want[0], want[1]))) / DEG;
+  };
+  const rows = [];
+  let leanYaws = [];
+  for (const [w, h] of [[1280, 720], [390, 844]]) for (const how of ['mouse+', 'mouse-', 'stick']) {
+    let lo = Infinity, hi = 0, off = 0, steps = 0, still = 0, framed = 0, own = 0;
+    for (const [id, x, z, wy] of spots) {
+      const { walk } = places[id], y = wy === undefined ? walk.floor(x, z) : walk.support(x, z, wy + 0.5) ?? walk.floor(x, z);
+      const b = makeBody(walk, { p: [x, y + 0.5, z], yaw: Math.PI }, 38), cam = makeCamera(walk, { yaw: 0, ...camLayout(w, h) });
+      cam.snap(b.s, 0);
+      const dir = how === 'mouse-' ? -1 : 1, ox = 0.4, turn = how === 'stick' ? ox * 2.6 * STEP : dir * ONE;
+      let prev = null, mine = 0;
+      for (let i = 0; i < 510; i++) {
+        b.step(STEP, {}, cam.c.yaw);
+        const turning = i >= 60 && i < 420, inp = !turning ? { mouse: how !== 'stick' } : how === 'stick' ? { ox } : { dyaw: turn, mouse: true };
+        const v = cam.follow(b.s, STEP, inp);
+        if (v.yaw !== cam.c.yaw) own++;
+        if (i < 60) { prev = v.yaw; mine = v.yaw; continue; }
+        if (turning) {
+          mine += turn;
+          const r = wrap(v.yaw - prev) / turn;
+          lo = Math.min(lo, r); hi = Math.max(hi, r); steps++;
+          if (Math.abs(wrap(v.yaw - prev)) < 0.1 * DEG) still++;
+        }
+        off = Math.max(off, Math.abs(wrap(v.yaw - mine)));
+        if (cam.c.framing && Math.abs(cam.c.off) > 0.02) { framed++; if (i % 15 === 0) leanYaws.push(v.yaw); }
+        prev = v.yaw;
+      }
+    }
+    const tag = `${w}x${h} ${how}`;
+    assert.equal(own, 0, `${tag}: the picture was shown from another yaw than the camera's on ${own} steps`);
+    assert(lo >= 0.8 && hi <= 1.2, `${tag}: a step of the player's turn turned the picture by ${(lo * 100).toFixed(0)} to ${(hi * 100).toFixed(0)}%`);
+    assert.equal(still, 0, `${tag}: the picture stood still on ${still} steps of the turn`);
+    assert(off <= 60 * DEG + 1e-6, `${tag}: the view stood ${(off / DEG).toFixed(1)}° from the player's own turns`);
+    rows.push({ tag, least: r3(lo), most: r3(hi), off: +(off / DEG).toFixed(1), framed });
+  }
+  assert(leanYaws.length >= 20, `the framed shot leaned on only ${leanYaws.length} sampled steps`);
+  let worst = 0;
+  for (const yaw of leanYaws) for (const [mx, mz] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) worst = Math.max(worst, offScreen(yaw, mx, mz));
+  assert(worst <= 15, `a move went ${worst.toFixed(1)}° off the way the screen shows`);
+  // in the open the mouse is as it was: the view turns by the mouse's turn exactly, and the framed shot never leans
+  {
+    const b = stand(OPEN, 0, 0), cam = makeCamera(OPEN, { yaw: 0, ...camLayout(1280, 720) });
+    cam.snap(b.s, 0);
+    let mine = 0, err = 0, lean = 0;
+    for (let i = 0; i < 360; i++) {
+      const dy = (i < 180 ? 1 : -1.7) * ONE;
+      mine += dy;
+      const v = cam.follow(b.s, STEP, { dyaw: dy, mouse: true });
+      err = Math.max(err, Math.abs(wrap(v.yaw - mine)));
+      if (cam.c.off || cam.c.framing) lean++;
+    }
+    assert(err < 1e-9 && lean === 0, `in the open the view stood ${err} from the mouse's turns, and leaned on ${lean} steps`);
+  }
+  pass('a turn in a nook: the picture turns with the mouse and the stick on every step, the view stays within 60° of the player\'s turns, and a move goes the way the screen shows', { rows, sampled: leanYaws.length, moveOff: +worst.toFixed(1) });
 }
 console.log(`${n} checks passed`);
