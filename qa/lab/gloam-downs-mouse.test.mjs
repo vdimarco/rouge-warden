@@ -234,10 +234,14 @@ if (process.env.GLOAM_WORLDS !== '0') {
   /* the five baked places: at the spawn and each wisp, the view turned round with the mouse at 1.2 rad/s for 6 s, at 1280x720 and
      390x844. A step changes the distance by 0.6 m or less, except where the eye comes in through a wall from behind (the line from the
      old eye to the new one passes within 0.35 m of the scenery, where play.js lets no eye be; a turn faster than the camera may come
-     in can leave it there): at most 4 such
-     steps in all 60 sweeps, each under 2 m. The camera of 09fd360b changed it by more than 0.6 m on 142 steps here, by up to 2.3 m */
-  const DEV = { over: 0.6, cross: 4, crossMax: 2 };
-  let steps = 0, over = 0, cross = 0, crossMax = 0, worst = 0;
+     in can leave it there): at most 6 such
+     steps in all 60 sweeps, each under 2 m. The camera of 09fd360b changed it by more than 0.6 m on 142 steps here, by up to 2.3 m.
+     And where the eye is clear (the camera does not set c.squeeze, which lets it come in at 33 m/s to stay out of a wall), it comes in
+     at no more than 15 m/s, except at a step through a wall: a wall that the turn will bring between starts it in early, but not
+     faster; and its speed in builds by no more than 360 m/s/s. The camera of 7dcfd747 came in faster on 733 steps here, from 8.5 m
+     to under 1 m in 0.3 s */
+  const DEV = { over: 0.6, cross: 6, crossMax: 2, pull: 15, acc: 360 };
+  let steps = 0, over = 0, cross = 0, crossMax = 0, worst = 0, fast = 0, fastAt = '', jolt = 0, joltAt = '';
   for (const id of ORDER) {
     const meta = JSON.parse(fs.readFileSync(new URL(`worlds/${id}.json`, DIR), 'utf8'));
     const raw = zlib.gunzipSync(fs.readFileSync(new URL(`worlds/${id}.walk.bin.gz`, DIR)));
@@ -254,8 +258,9 @@ if (process.env.GLOAM_WORLDS !== '0') {
     for (const p of [meta.spawn.p, ...meta.wisps.map(q => q.p)]) for (const [w, h] of [[1280, 720], [390, 844]]) {
       const b = makeBody(walk, { p, yaw: 0 }, 34), cam = makeCamera(walk, { yaw: Math.PI, ...camLayout(w, h) });
       b.place(p, 0); cam.snap(b.s, Math.PI);
-      for (let i = 0; i < 30; i++) cam.follow(b.s, STEP, { mouse: true });
       let last = null;
+      for (let i = 0; i < 30; i++) last = cam.follow(b.s, STEP, { mouse: true });
+      let inPrev = Math.max(0, -cam.c.dv * STEP);
       for (let i = 0; i < 360; i++) {
         const v = cam.follow(b.s, STEP, { dyaw: 1.2 * STEP, mouse: true });
         steps++;
@@ -267,12 +272,25 @@ if (process.env.GLOAM_WORLDS !== '0') {
             cross++; crossMax = Math.max(crossMax, d);
           }
           if (d > DEV.over) over++;
+          // the speed coming in builds by no more than 360 m/s/s: from rest to 15 m/s over 3 steps, not at once
+          const inw = last.dist - v.dist;
+          if (inw - inPrev > DEV.acc * STEP * STEP + 1e-6 && !through(eyeOf(last), eyeOf(v))) {
+            jolt++;
+            joltAt ||= `${id} ${w}x${h} at ${p[0].toFixed(1)}, ${p[2].toFixed(1)}, step ${i}: in by ${inPrev.toFixed(3)} then ${inw.toFixed(3)} m`;
+          }
+          inPrev = Math.max(0, inw);
+          if (!cam.c.squeeze && inw > DEV.pull * STEP + 1e-6 && !through(eyeOf(last), eyeOf(v))) {
+            fast++;
+            fastAt ||= `${id} ${w}x${h} at ${p[0].toFixed(1)}, ${p[2].toFixed(1)}, step ${i}: ${last.dist.toFixed(2)} -> ${v.dist.toFixed(2)} m`;
+          }
         }
         last = v;
       }
     }
   }
   assert(cross <= DEV.cross && crossMax < DEV.crossMax, `${cross} steps came in through a wall, by up to ${crossMax.toFixed(2)} m`);
+  assert.equal(jolt, 0, `the speed coming in jumped on ${jolt} steps, first ${joltAt}`);
+  assert.equal(fast, 0, `with the eye clear the camera came in faster than ${DEV.pull} m/s on ${fast} steps, first ${fastAt}`);
   pass('the five places: a sweep of the mouse at 1.2 rad/s at each spawn and wisp never dives', { sweeps: steps / 360, over, worst: r3(worst), cross });
 }
 console.log(`${n} checks passed`);

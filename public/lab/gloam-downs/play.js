@@ -361,7 +361,7 @@ export function makeCamera(walk, o = {}) {
   const pitch0 = o.pitch ?? 0.34, dist0 = o.dist ?? 8.5;
   const c = {
     yaw: o.yaw ?? 0, pitch: pitch0, base: pitch0, dist: dist0, want: dist0, fov: o.fov ?? null, aim: o.aim ?? 1.15, target: null, idle: 9,
-    auto: o.auto !== false, lift: 0, goal: { lift: 0, dist: dist0 }, goals: [], turning: false, from: null, hidden: 0, dv: 0, steer: false, across: false
+    auto: o.auto !== false, lift: 0, goal: { lift: 0, dist: dist0 }, goals: [], turning: false, from: null, hidden: 0, dv: 0, steer: false, across: false, squeeze: false
   };
   const NEAR = 0.5, TOP = 1.35, LIFT = 0.08, THIN = 0.55, SHORT = 0.6, AHEAD = 0.25, RISE = 4, GRACE = 0.15, HEAD = 1.3, CHEST = 0.8, IN = 0.15, OUT = 0.25;
   // the most speed coming in, m/s: past something between (PULL) and to keep the eye out of a wall (SQUEEZE);
@@ -403,6 +403,12 @@ export function makeCamera(walk, o = {}) {
     return Math.max(0.3, d);
   };
   const eyeOpen = (x, y, z, yaw, pitch, d) => open(x + Math.sin(yaw) * Math.cos(pitch) * d, y + Math.sin(pitch) * d, z + Math.cos(yaw) * Math.cos(pitch) * d);
+  // is the eye at d clear all the way round as the yaw turns by `by`? A sample every 0.25 m of its path, so no wall is stepped over
+  const arcOpen = (x, y, z, yaw, by, pitch, d) => {
+    const n = Math.ceil(Math.abs(by) * d * Math.cos(pitch) / 0.25);
+    for (let k = 0; k <= n; k++) if (!eyeOpen(x, y, z, yaw + (n ? by * k / n : 0), pitch, d)) return false;
+    return true;
+  };
   /* can an eye at e see the point h on the figure? Thin things do not count; the line may pass close to the ground near the figure, and
      needs 0.3 of clearance from 2.5 m out, for the ground's splats stand above the walk map */
   const sees = (h, e) => {
@@ -497,16 +503,19 @@ export function makeCamera(walk, o = {}) {
     /* in and back out, both eased with a critically damped spring (Unity's SmoothDamp), so a wall that comes between is never a jump:
        in over about IN s, and back out over about OUT s */
     let to = Math.min(room, Math.max(c.goal.dist, NEAR));
-    /* where the eye would be inside the scenery now, or 0.15 s or 0.3 s ahead as the view turns (into a wall), it starts in now. Two
-       marches ahead, so a thin wall that the turn crosses in less than 0.3 s is not stepped over */
+    /* where the eye would be inside the scenery now, or anywhere on its way round in the next 0.3 s as the view turns (into a wall),
+       it starts in now. The whole path is marched, so a thin wall that the turn crosses is not stepped over */
     const d0 = Math.min(c.dist, to), sp3 = clamp(spin, -3, 3);
     let ds = d0;
-    for (const t of [0, 0.15, 0.3]) while (ds > NEAR && !eyeOpen(tx, ty, tz, c.yaw + sp3 * t, pitch, ds)) ds -= 0.1;
-    /* and where the player turns the view so that a wall will come between in 0.15, 0.3 or 0.45 s (AHEADS), it comes in to that
-       wall's near side now, before the wall comes between: an eye left behind a wall can only come in through it with a jump */
-    if (looked && Math.abs(sp3) > 0.1) for (const t of AHEADS) ds = Math.min(ds, Math.max(NEAR, reach(tx, ty, tz, c.yaw + sp3 * t, pitch, d0)));
+    while (ds > NEAR && !arcOpen(tx, ty, tz, c.yaw, sp3 * 0.3, pitch, ds)) ds -= 0.1;
+    // only an eye that must come in to stay out of a wall may come in faster than PULL (SQUEEZE)
     const squeeze = ds < d0 - 0.05;
-    if (squeeze) to = Math.max(NEAR, ds);
+    /* and where the player turns the view so that a wall will come between in 0.15, 0.3 or 0.45 s (AHEADS), it starts in to that
+       wall's near side now, at no more than PULL, before the wall comes between: an eye left behind a wall can only come in through
+       it with a jump */
+    if (looked && Math.abs(sp3) > 0.1) for (const t of AHEADS) ds = Math.min(ds, Math.max(NEAR, reach(tx, ty, tz, c.yaw + sp3 * t, pitch, d0)));
+    if (ds < d0 - 0.05) to = Math.max(NEAR, ds);
+    c.squeeze = squeeze;
     let [d, v] = damp(c.dist, to, c.dv, to < c.dist ? (squeeze ? IN / 2 : IN) : OUT, dt);
     // the spring never goes past its goal coming in
     if (to < c.dist && d < to) { d = to; v = 0; }
@@ -520,19 +529,29 @@ export function makeCamera(walk, o = {}) {
       const vout = Math.min((d - c.dist) / dt, BACK, Math.max(0, c.dv) + ACC * dt);
       d = c.dist + vout * dt; v = vout;
     }
-    /* the eye is never inside the scenery. Where the eased eye would be in it after the view turned, the turn of this step goes only
+    /* the eye is never inside the scenery, and never passes through it as the view turns (a fast turn moves the eye by more than a
+       thin wall is thick). Where the eased eye would be in it, or would cross it on its way round, the turn of this step goes only
        as far as keeps the eye clear (a camera that orbits against a wall), and the camera comes in on the next steps as above. Only
        where no part of the turn helps (the lamplighter backs into a wall) does the eye come in at once, to the first clear distance */
-    if (d > room0 && !eyeOpen(tx, ty, tz, c.yaw, pitch, d)) {
-      const yawT = c.yaw, pitchT = c.pitch, liftT = c.lift, at = f => {
-        c.yaw = yaw0 + wrap(yawT - yaw0) * f; c.pitch = pitch0 + (pitchT - pitch0) * f; c.lift = lift0 + (liftT - lift0) * f;
-        return eyeOpen(tx, ty, tz, c.yaw, Math.min(TOP, c.pitch + c.lift), d);
-      };
+    const yawT = c.yaw, pitchT = c.pitch, liftT = c.lift, turnBy = wrap(yawT - yaw0);
+    // set the turn of this step to the part f of it; -> is the eye at d clear all the way round from where the step began?
+    const at = f => {
+      c.yaw = yaw0 + turnBy * f; c.pitch = pitch0 + (pitchT - pitch0) * f; c.lift = lift0 + (liftT - lift0) * f;
+      const n = Math.max(1, Math.ceil(Math.abs(turnBy * f) * d / 0.1));
+      for (let k = 1; k <= n; k++) {
+        const g = f * k / n;
+        if (!eyeOpen(tx, ty, tz, yaw0 + turnBy * g, Math.min(TOP, pitch0 + (pitchT - pitch0) * g + lift0 + (liftT - lift0) * g), d)) return false;
+      }
+      return true;
+    };
+    if (d > room0 && !at(1)) {
+      // the end of the turn is clear, but the way there crosses a wall
+      const crossed = eyeOpen(tx, ty, tz, c.yaw, pitch, d);
       // the first clear distance in from d at this step's yaw, if one is out of the wall at all
       let dc = d;
       while (dc > room0 + 1e-6 && !eyeOpen(tx, ty, tz, c.yaw, pitch, dc)) dc = Math.max(room0, dc - 0.05);
       const clear = eyeOpen(tx, ty, tz, c.yaw, pitch, dc);
-      if (clear && dt > 0 && c.dist - dc <= SQUEEZE * dt) { d = dc; v = (d - c.dist) / dt; }
+      if (!crossed && clear && dt > 0 && c.dist - dc <= SQUEEZE * dt) { d = dc; v = (d - c.dist) / dt; }
       else if (clear && at(0)) {
         let lo = 0, hi = 1;
         for (let i = 0; i < 8; i++) { const m = (lo + hi) / 2; if (at(m)) lo = m; else hi = m; }
