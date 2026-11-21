@@ -1,5 +1,5 @@
 // Gloam Downs' combat run in a real browser (public/lab/gloam-downs/?run), on software WebGL 2: the inputs and the run's first cards.
-//   The run opens on its help card, and Tab stays in it; J and a left click swing at a training post, and a right drag only looks;
+//   The run opens on its help card, and Tab stays in it; J and a left click swing at a training post, and a move of the taken mouse only looks;
 //   R and the Look tool face a post behind or to the side, a tool click does not swing, and with none near R looks ahead; A and K
 //   roll to the camera's left, the arrows with X, Z and C roll, swing and drink, L with no flask says so; W held through the pause
 //   walks on; a roll, a drink, Heal at full health, a hit that is stored at once and a fall; the pause panel with its focus, End the
@@ -86,13 +86,14 @@ try {
     assert(posts[0].hits.length >= 2, 'a left click swings on the press');
     const swing = (await G(page, () => window.__gloam.sounds())).filter(c => c.cue === 'swing');
     assert(swing.length >= 2 && swing.every(c => Number.isInteger(c.step) && Number.isInteger(c.play)), 'the cue log has game and play steps');
-    // a right drag turns the view and does not swing
+    // Begin the run took the mouse (Enter is a gesture): a move of the mouse with no button turns the view and does not swing
+    assert((await state(page)).mouse.locked, 'Begin the run took the mouse');
     const yaw0 = (await state(page)).cam.yaw;
-    await page.mouse.move(640, 300); await page.mouse.down({ button: 'right' }); await page.mouse.move(560, 300, { steps: 4 }); await page.mouse.up({ button: 'right' });
+    await page.mouse.move(500, 300, { steps: 6 });
     await tick(page, 0.3, 'live');
-    assert(Math.abs((await state(page)).cam.yaw - yaw0) > 0.3, 'a right drag turns the view');
+    assert(Math.abs((await state(page)).cam.yaw - yaw0) > 0.2, 'a move of the taken mouse turns the view');
     assert.equal((await G(page, () => window.__gloam.posts()))[0].hits.length, posts[0].hits.length, 'and does not swing');
-    pass('J and a left click swing at the post; a right drag only looks', { hits: posts[0].hits.map(h => h.dmg) });
+    pass('J and a left click swing at the post; a move of the taken mouse only looks', { hits: posts[0].hits.map(h => h.dmg) });
 
     // a draw mid-swing at 1280x720, for the eye
     await postAhead(page, 1.6);
@@ -115,6 +116,9 @@ try {
     await G(page, () => window.__gloam.clearPosts());
     await postAhead(page, 6, Math.PI / 2);
     const hits0 = (await G(page, () => window.__gloam.posts()))[0].hits.length;
+    // the tools take a click only while the mouse is free (taken, the cursor is hidden and every click goes to the view)
+    await G(page, () => window.__gloam.release());
+    await page.waitForTimeout(250);
     await page.click('#bLook');
     await tick(page, 0.5, 'live');
     const offLook = await viewOff(page);
@@ -245,6 +249,10 @@ try {
     assert.equal(await active(page), 'bResume');
     await page.keyboard.press('Escape');
     assert(!(await page.isVisible('#pause')) && (await run(page)).mode === 'play');
+    // Escape on Resume took the mouse again (a key press is a gesture): wait for the lock, then free it to click the tool
+    await page.waitForTimeout(300);
+    await G(page, () => window.__gloam.release());
+    await page.waitForTimeout(250);
     await page.click('#bMap');
     assert(await page.isVisible('#pause'), 'the Pause tool opens the pause panel');
     await page.click('#bResume');

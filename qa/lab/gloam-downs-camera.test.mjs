@@ -276,7 +276,7 @@ const around = (s, yaw, d, deg) => {
   const fw = [-Math.sin(yaw), -Math.cos(yaw)], rt = [Math.cos(yaw), -Math.sin(yaw)], a = deg * DEG;
   return { x: s.x + d * (fw[0] * Math.cos(a) + rt[0] * Math.sin(a)), y: 0, z: s.z + d * (fw[1] * Math.cos(a) + rt[1] * Math.sin(a)) };
 };
-{ // a Snuffer 5 m away, 60° to the right: after 0.8 s with no look input the view turns right at no more than 0.9 rad/s, and stops at 20°
+{ // a Snuffer 5 m away, 60° to the right: after 2 s with no look input the view turns right at no more than 0.6 rad/s, and stops at 20°
   const b = stand(OPEN, 0, 0), cam = cameraFor(OPEN, '390x844', 0), foe = { id: 'S', ...around(b.s, 0, 5, 60) };
   const combat = makeCombat({ foes: () => [foe] });
   cam.snap(b.s, 0);
@@ -290,20 +290,21 @@ const around = (s, yaw, d, deg) => {
     yaw = cam.c.yaw;
   }
   const d1 = yawDiff(cam.c.yaw, b.s, foe);
-  // the snap leaves idle at 9 s (as after a load): the test gives the look input that a player gave last, so the 0.8 s wait counts
+  // the snap leaves idle at 9 s (as after a load), so it turns at once
   // a foe to the right has a negative yaw difference: the yaw goes down to face it
   assert(d0 < 0 && cam.c.yaw < 0, `the foe is to the right (yaw difference ${d0 / DEG}°), and the view turned right (yaw ${cam.c.yaw})`);
   assert(fastest <= COMBAT.rate + 1e-9, `it turned at ${fastest} rad/s`);
   assert(Math.abs(d1) <= 20 * DEG + 1e-9 && Math.abs(d1) >= 19.5 * DEG, `it stopped at a yaw difference of ${d1 / DEG}°`);
-  // with the wait: after a look input, nothing for 0.8 s
+  // with the wait: after a look input, nothing for 2 s
   const c2 = cameraFor(OPEN, '390x844', 0), m2 = makeCombat({ foes: () => [foe] });
   c2.snap(b.s, 0);
   stepCam(c2, b.s, m2.turn, { ox: 0.5 });
   const y0 = c2.c.yaw;
   let started = null;
-  for (let i = 1; i <= 120; i++) { stepCam(c2, b.s, m2.turn); if (started === null && Math.abs(c2.c.yaw - y0) > 1e-9) started = i * STEP; }
-  assert(started > 0.8 - 1e-9 && started < 0.8 + 2 * STEP, `after a look input the turn starts after ${started} s`);
-  pass('the combat camera turns to a foe after 0.8 s, at 0.9 rad/s, and stops at 20°', { from: r2(d0 / DEG), to: r2(d1 / DEG), rate: r2(fastest), starts: r2(started) });
+  for (let i = 1; i <= 180; i++) { stepCam(c2, b.s, m2.turn); if (started === null && Math.abs(c2.c.yaw - y0) > 1e-9) started = i * STEP; }
+  assert(near(COMBAT.wait, 2, 1e-9) && near(COMBAT.rate, 0.6, 1e-9), 'the wait is 2 s and the rate 0.6 rad/s');
+  assert(started > COMBAT.wait - 1e-9 && started < COMBAT.wait + 2 * STEP, `after a look input the turn starts after ${started} s`);
+  pass('the combat camera turns to a foe after 2 s, at 0.6 rad/s, and stops at 20°', { from: r2(d0 / DEG), to: r2(d1 / DEG), rate: r2(fastest), starts: r2(started) });
 }
 { // no foe awake: the explorer's swing behind a running lamplighter comes back, as without the combat camera
   const run = (useCombat) => {
@@ -342,6 +343,7 @@ const around = (s, yaw, d, deg) => {
   cam.snap(b.s, 0); cam.c.idle = 0.01;
   const yaw0 = b.s.yaw, held = { mz: 1, slow: true };
   let heading = 0, turned = 0;
+  cam.c.idle = 9;
   for (let i = 0; i < 180; i++) {
     b.step(STEP, held, lock.yaw(held, cam.c));
     stepCam(cam, b.s, m.turn);
@@ -369,19 +371,19 @@ const around = (s, yaw, d, deg) => {
   assert.equal(lock.yaw({ mz: 1 }, c), 1.5, 'a look input lets go');
   pass('the move lock holds the turn\'s start, and lets go at 20°, when let go, and on a look input');
 }
-{ // look input wins on the same step: the view follows only the player's input, and turns by itself again only after 0.8 s
+{ // look input wins on the same step: the view follows only the player's input, and turns by itself again only after 2 s
   const b = stand(OPEN, 0, 0), cam = cameraFor(OPEN, '1280x720', 0), foe = { id: 'S', ...around(b.s, 0, 5, 150) };
   const m = makeCombat({ foes: () => [foe] });
   cam.snap(b.s, 0); cam.c.idle = 0;
-  for (let i = 0; i < 70; i++) stepCam(cam, b.s, m.turn);
+  for (let i = 0; i < 130; i++) stepCam(cam, b.s, m.turn);
   assert(m.turning, 'it turns by itself');
   const y0 = cam.c.yaw;
   stepCam(cam, b.s, m.turn, { ox: -0.3 });
   assert(near(cam.c.yaw - y0, -0.3 * 2.6 * STEP, 1e-12) && !m.turning, 'on the step of the look input the view follows only the input');
   const y1 = cam.c.yaw;
   let again = null;
-  for (let i = 1; i <= 90; i++) { stepCam(cam, b.s, m.turn); if (again === null && Math.abs(cam.c.yaw - y1) > 1e-12) again = i * STEP; }
-  assert(again > 0.8 - 1e-9 && again < 0.8 + 2 * STEP, `it turns by itself again after ${again} s`);
+  for (let i = 1; i <= 150; i++) { stepCam(cam, b.s, m.turn); if (again === null && Math.abs(cam.c.yaw - y1) > 1e-12) again = i * STEP; }
+  assert(again > COMBAT.wait - 1e-9 && again < COMBAT.wait + 2 * STEP, `it turns by itself again after ${again} s`);
   pass('look input wins on the same step', { again: r2(again) });
 }
 { // reduced motion: the combat camera never turns by itself

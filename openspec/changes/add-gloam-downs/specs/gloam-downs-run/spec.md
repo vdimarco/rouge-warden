@@ -28,6 +28,13 @@ A browser shows a pad to the page only after its first press. When a pad first s
 - **WHEN** the help card shows on a first visit, and a mocked gamepad shows up only on its first press of A. The e2e presses A twice.
 - **THEN** the first A changes the card to "A jump", "X attack" and the other pad controls, and the card stays. The second A starts the run. Check: e2e `gloam-downs-run.input.e2e.mjs`.
 
+### Requirement: The mouse lines on the cards
+With the keys and the mouse, the controls on the help card and the pause panel SHALL start with "Click the view to take the mouse. Move the mouse to look. Left click attacks, right click rolls. Esc frees the mouse." Without pointer lock, the first line SHALL be "Hold the right button and drag the view to look. Left click attacks."
+
+#### Scenario: The pause panel says how the mouse works
+- **WHEN** at 1280 by 720 the player opens the pause panel with the mouse taken, and in a browser with no pointer lock opens the help card
+- **THEN** the pause panel's first line is the mouse line, and the help card's first line is the drag line. Check: e2e `gloam-downs-mouse.e2e.mjs`, with a screenshot of the pause panel.
+
 ### Requirement: Fixed game step
 The page SHALL step the game at a fixed 1/60 s, as many steps as the frame took. It SHALL take no more than 15 steps for each frame. A time that is not a whole number of steps SHALL round to the nearest step. Timings of moves, warning moves and safe time SHALL be the same at every frame rate.
 
@@ -188,15 +195,34 @@ In a run, each key press SHALL count once, and the keys SHALL do these things:
 - **THEN** within 0.5 s, the yaw difference to the boss is 10° or less. Check: e2e `gloam-downs-run.input.e2e.mjs`.
 
 ### Requirement: Mouse in a run
-In a run, a left press on the view SHALL attack at once. Holding the left button SHALL go on with the string until the pointer moves more than 6 px. A drag with either button SHALL turn the view, as in the explorer. The context menu SHALL not show on the view.
+In a run, the mouse SHALL work as in the explorer's "Mouse look", with these buttons while it is taken: a left press SHALL attack at once, and holding the left button SHALL go on with the string. A right press SHALL roll. The click that takes the mouse SHALL do nothing else. No mouse movement SHALL swing, and no click SHALL turn the view. Without pointer lock, the left button SHALL attack and the right button held and dragged SHALL turn the view. The context menu SHALL not show on the view.
 
 #### Scenario: Click to attack
-- **WHEN** the player clicks the left button on the view
-- **THEN** the lamplighter swings one cut on the press, with no wait for the release. Check: e2e `gloam-downs-run.input.e2e.mjs`.
+- **WHEN** the mouse is taken and the player clicks the left button on the view with a training post 2 m ahead
+- **THEN** the lamplighter swings one cut on the press, with no wait for the release, and the yaw does not change. Check: e2e `gloam-downs-run.input.e2e.mjs` and `gloam-downs-mouse.e2e.mjs`.
 
-#### Scenario: Look without a swing
-- **WHEN** the player drags with the right button
-- **THEN** the view turns and the lamplighter does not swing. Check: e2e `gloam-downs-run.input.e2e.mjs`.
+#### Scenario: Look with no button
+- **WHEN** Begin the run has taken the mouse and the player moves it 100 px right and 40 px down with no button held
+- **THEN** the view turns right by more than 0.15 rad (measured 0.22) and tilts down, and the lamplighter does not swing. Check: e2e `gloam-downs-mouse.e2e.mjs`, and `gloam-downs-run.input.e2e.mjs`.
+
+#### Scenario: Right click rolls
+- **WHEN** the mouse is taken and the player presses the right button
+- **THEN** the lamplighter rolls, and the yaw does not change. Check: e2e `gloam-downs-mouse.e2e.mjs`.
+
+### Requirement: The mouse and the run's cards
+When the mouse is freed in play, by Escape or by the browser, the pause panel SHALL open, and that Escape SHALL not also close it. Any card that opens SHALL free the mouse, so its buttons can be clicked. A button that goes back to play (Begin the run, Resume, Walk on, Go on with the run, Back to the start) SHALL take the mouse again, with its click as the gesture the browser asks for. A gamepad's press is not such a gesture, so the page SHALL not ask then.
+
+#### Scenario: Escape pauses, Resume takes the mouse
+- **WHEN** the mouse is taken in play, and the player presses Escape, clicks Resume, and then the browser takes the mouse back by itself
+- **THEN** Escape frees the mouse and opens the pause panel, Resume takes the mouse again and play goes on, and the browser's release opens the pause panel again. P opens the pause panel and frees the mouse, and the Lamp-room frees it with no pause panel over it. Check: e2e `gloam-downs-mouse.e2e.mjs`.
+
+#### Scenario: No pointer lock in a run
+- **WHEN** the browser has no pointer lock, and the player moves the mouse, clicks the left button, and drags with the right button
+- **THEN** the controls say "Hold the right button and drag the view to look", the move does nothing, the left click swings and does not turn the view, and the right drag turns the view by more than 0.3 rad with no swing and no roll (measured 0.53). Check: e2e `gloam-downs-mouse.e2e.mjs`.
+
+#### Scenario: A phone has no mouse hint
+- **WHEN** the run plays at 390 by 844 on a touch screen
+- **THEN** the mouse hint does not show, and the pause panel shows the touch controls. Check: e2e `gloam-downs-mouse.e2e.mjs`.
 
 ### Requirement: Touch in a run
 On a touch screen in a run, the page SHALL show Attack, Jump, Roll and Heal buttons at the bottom right. The stick on the left half and the look drag on the right half SHALL work as in the explorer. A tap on Attack SHALL aim at the best foe. Holding Attack SHALL go on with the string. Heal SHALL show the number of flasks left, up to 5.
@@ -225,8 +251,8 @@ In a run, the Map tool SHALL read "Pause", and it SHALL open the pause panel. Th
 - **THEN** the view turns to look ahead of the lamplighter, as in the explorer. Check: e2e `gloam-downs-run.input.e2e.mjs`.
 
 #### Scenario: Tools with a mouse
-- **WHEN** an awake foe stands 6 m to the side, and the player clicks Look and then Map with the left button
-- **THEN** within 0.5 s of Look, the yaw difference to the foe is 10° or less. Then the pause panel opens, and the lamplighter does not swing. Check: e2e `gloam-downs-run.input.e2e.mjs`.
+- **WHEN** an awake foe stands 6 m to the side, the mouse is free, and the player clicks Look and then Map with the left button
+- **THEN** within 0.5 s of Look, the yaw difference to the foe is 10° or less. Then the pause panel opens, and the lamplighter does not swing. While the mouse is taken the cursor is hidden and every click goes to the view, so the tools take clicks only while it is free; R and P do the same from the keys. Check: e2e `gloam-downs-run.input.e2e.mjs` (it frees the mouse with the `?test` hook `release()`, as a card does).
 
 ### Requirement: Gamepad in a run
 In a run, a held pad button SHALL count once across all pads, and the pad SHALL do these things:
@@ -340,11 +366,15 @@ Wander's cards SHALL follow Focus in cards. The d-pad, the left stick and Tab SH
 - **THEN** the help card closes for good, as in the explorer. Check: e2e `gloam-downs.e2e.mjs` through `?wander`.
 
 ### Requirement: Combat camera
-In a run, while the combat camera has a foe (see "The combat camera's foe"), the camera SHALL turn toward that foe. The turn SHALL start after 0.8 s with no look input. It SHALL turn at no more than 0.9 rad/s, and stop when the yaw difference to that foe is 20° or less (see "The yaw difference"). While the combat camera has a foe, this turn SHALL take the place of the explorer's swing behind a running lamplighter.
+In a run, while the combat camera has a foe (see "The combat camera's foe"), the camera SHALL turn toward that foe. The turn SHALL start after 2 s with no look input. It SHALL turn at no more than 0.6 rad/s, and stop when the yaw difference to that foe is 20° or less (see "The yaw difference"). While the combat camera has a foe, this turn SHALL take the place of the explorer's swing behind a running lamplighter. It SHALL follow the explorer's "A calm camera".
 
 #### Scenario: The camera turns to a foe
-- **WHEN** an awake Snuffer stands 5 m away, 60° to the right of the view's forward direction. The player gives no look input for 0.8 s.
-- **THEN** the view turns right, no faster than 0.9 rad/s, and stops when the yaw difference is 20° or less. It starts 0.8 s after the last look input, and stops at a yaw difference of 19.5° to 20° (measured: 0.80 s, 0.90 rad/s, 20.0°). Check: Node test `gloam-downs-camera.test.mjs`. The e2e `gloam-downs-camera.e2e.mjs` also checks it at 390 by 844 with a training post 5 m away, 60° to the right.
+- **WHEN** an awake Snuffer stands 5 m away, 60° to the right of the view's forward direction. The player gives no look input for 2 s.
+- **THEN** the view turns right, no faster than 0.6 rad/s, and stops when the yaw difference is 20° or less. It starts 2 s after the last look input, and stops at a yaw difference of 19.5° to 20° (measured: 2.02 s, 0.60 rad/s, 20.0°). Check: Node test `gloam-downs-camera.test.mjs`. The e2e `gloam-downs-camera.e2e.mjs` also checks it at 390 by 844 with a training post 5 m away, 60° to the right.
+
+#### Scenario: No turn while the mouse is taken
+- **WHEN** the mouse is taken, a training post stands 5 m ahead and 0.7 rad to the side, and the player holds W for 5 s past it
+- **THEN** the post is the combat camera's foe, and the yaw does not change at all. Check: e2e `gloam-downs-mouse.e2e.mjs`, and Node test `gloam-downs-mouse.test.mjs` with the mouse taken and with a move held across the view.
 
 #### Scenario: No foe awake
 - **WHEN** the last awake foe goes out, or its zone goes to sleep
@@ -373,14 +403,14 @@ While the combat camera or the boss camera turns by itself, a held move input SH
 
 #### Scenario: Run away from a foe
 - **WHEN** a Snuffer, held still by a test, is awake 4 m behind the lamplighter. The player holds W and Shift, away from it, with no look input for 3 s.
-- **THEN** the lamplighter walks 9 m, ±1 m, to 13 m from the Snuffer. The view turns toward the Snuffer while it is within 10 m, and the lamplighter's heading changes by 10° or less (measured: 8.9 m walked, 12.9 m away, a heading change of 0°, the view turned 1.13 rad). Check: Node test `gloam-downs-camera.test.mjs`.
+- **THEN** the lamplighter walks 9 m, ±1 m, to 13 m from the Snuffer. The view turns toward the Snuffer while it is within 10 m, and the lamplighter's heading changes by 10° or less (measured: 8.9 m walked, 12.9 m away, a heading change of 0°, the view turned 1.22 rad). Check: Node test `gloam-downs-camera.test.mjs`.
 
 ### Requirement: Look input wins
 Look input SHALL take control back from the combat camera and the boss camera on the same step. Both cameras SHALL still come closer in front of a hill or a wall, as the explorer's camera does.
 
 #### Scenario: Look input wins
 - **WHEN** the camera turns by itself, and the player presses Q, drags the look or moves the right stick
-- **THEN** the turn stops on that step, and the view follows only the player's input: on the step of the look input the yaw changes by the input alone (−0.3 × 2.6 / 60). The camera turns by itself again only after 0.8 s with no look input, or 0.6 s in the boss fight. Check: Node test `gloam-downs-camera.test.mjs`.
+- **THEN** the turn stops on that step, and the view follows only the player's input: on the step of the look input the yaw changes by the input alone (−0.3 × 2.6 / 60). The camera turns by itself again only after 2 s with no look input, or 0.6 s in the boss fight. Check: Node test `gloam-downs-camera.test.mjs`.
 
 ### Requirement: Boss camera
 In the boss fight, the boss camera SHALL take the place of the combat camera. It SHALL be on while the fight has started, the boss is up, and the lamplighter is within 7.0 m of the arena's centre. So it SHALL start when the lamplighter first comes within 7.0 m after the intro, and again each time it comes back.
@@ -427,7 +457,7 @@ When a hill or a wall brings the boss camera closer than it chose, its pitch SHA
 - **THEN** at each layout, in at least 95% of the pairs, both chests are inside 80% of the screen's half-width and inside its height (measured: 481 of 481 at each layout). Check: Node test `gloam-downs-camera.test.mjs`.
 
 ### Requirement: Boss camera turn
-After 0.6 s with no look input, the boss camera SHALL turn toward the boss at no more than 1.5 rad/s. It SHALL stop when the yaw difference to the boss is 15° or less. The yaw difference SHALL be measured as in the combat camera, from the lamplighter.
+After 0.6 s with no look input, the boss camera SHALL turn toward the boss at no more than 1.5 rad/s. It SHALL stop when the yaw difference to the boss is 15° or less. It SHALL not turn while the mouse is taken, or while the player holds a move more than 35° from straight ahead or back. The yaw difference SHALL be measured as in the combat camera, from the lamplighter.
 
 #### Scenario: Turn to the boss
 - **WHEN** the boss stands 8 m from the lamplighter, behind the view, and the player gives no look input for 3 s

@@ -331,21 +331,36 @@ export function camLayout(w, h) {
   const t = clamp((1 - asp) / VIEW.tall, 0, 1), yh = VIEW.horizon[0] + (VIEW.horizon[1] - VIEW.horizon[0]) * t;
   return { fov: 2 * Math.atan(tanV), dist: Math.max(VIEW.dist, VIEW.half / tanH), pitch: Math.atan((1 - 2 * yh) * tanV), aim: VIEW.aim[0] + (VIEW.aim[1] - VIEW.aim[0]) * t };
 }
-/* Behind and above, eased. It swings behind the lamplighter when it runs and nobody is turning the view (a run's cameras may take that
-   over: follow's `turn`). When the hills or a wall stand between the eye and the figure (its head and chest), it rises over them (lift)
-   before it comes any closer, as Cinemachine's Deoccluder does with Preserve Camera Height, and only what no rise clears brings it in.
-   The rise is never faster than 4 rad/s; it starts for where the figure will be 0.25 s ahead, so it is under way before a wall comes
-   between, and it settles back slowly. Something that comes between while the eye itself is clear may hide the figure for 0.15 s before
-   the camera comes in (the Deoccluder's minimum occlusion time). A thin thing in the way (a post, a lantern, a stake: open 0.55 m to
-   both sides of the line and no longer than 0.6 m along it) is looked past, but the eye itself is never inside anything. Foes are not in
-   the walk map, so they never move it. */
+/* The view turns by itself (the swing behind a running lamplighter, the turn out of a lane, a run's combat and boss cameras) gently:
+   after AUTO.wait s with no look input, never while the mouse is taken (the player steers with it), and never while the move held
+   points more than AUTO.across from straight ahead or back (a run across the view stays straight across). The swing eases at
+   AUTO.swing per second */
+export const AUTO = { wait: 2.0, swing: 0.5, across: 35 * Math.PI / 180 };
+export const across = (mx, mz) => Math.hypot(mx, mz) >= 0.2 && Math.abs(mx) > Math.tan(AUTO.across) * Math.abs(mz);
+// may the view turn by itself this step? c: a follow camera's state, after follow() has read the step's input
+export const autoTurn = (c, wait = AUTO.wait) => c.auto && !c.steer && !c.across && c.idle > wait;
+// x eased toward `to` with velocity v over about T s, a critically damped spring (Game Programming Gems 4, 1.10, as in Unity's
+// SmoothDamp) -> [x, v]
+export function damp(x, to, v, T, dt) {
+  if (dt <= 0) return [x, v];
+  const w = 2 / T, k = w * dt, e = 1 / (1 + k + 0.48 * k * k + 0.235 * k * k * k), ch = x - to, tmp = (v + w * ch) * dt;
+  return [to + (ch + tmp) * e, (v - w * tmp) * e];
+}
+/* Behind and above, eased. It swings behind the lamplighter when it runs and nobody is turning the view, as autoTurn allows (a run's
+   cameras may take that over: follow's `turn`). When the hills or a wall stand between the eye and the figure (its head and chest), it
+   rises over them (lift) before it comes any closer, as Cinemachine's Deoccluder does with Preserve Camera Height, and only what no
+   rise clears brings it in. The rise is never faster than 4 rad/s; it starts for where the figure will be 0.25 s ahead, so it is under
+   way before a wall comes between, and it settles back slowly. Something that comes between while the eye itself is clear may hide the
+   figure for 0.15 s before the camera comes in (the Deoccluder's minimum occlusion time), and it comes in and goes back out eased. A
+   thin thing in the way (a post, a lantern, a stake: open 0.55 m to both sides of the line and no longer than 0.6 m along it) is looked
+   past, but the eye itself is never inside anything. Foes are not in the walk map, so they never move it. */
 export function makeCamera(walk, o = {}) {
   const pitch0 = o.pitch ?? 0.34, dist0 = o.dist ?? 8.5;
   const c = {
     yaw: o.yaw ?? 0, pitch: pitch0, base: pitch0, dist: dist0, want: dist0, fov: o.fov ?? null, aim: o.aim ?? 1.15, target: null, idle: 9,
-    auto: o.auto !== false, lift: 0, goal: { lift: 0, dist: dist0 }, goals: [], turning: false, from: null, hidden: 0
+    auto: o.auto !== false, lift: 0, goal: { lift: 0, dist: dist0 }, goals: [], turning: false, from: null, hidden: 0, dv: 0, steer: false, across: false
   };
-  const NEAR = 0.5, TOP = 1.35, LIFT = 0.08, THIN = 0.55, SHORT = 0.6, AHEAD = 0.25, RISE = 4, GRACE = 0.15, HEAD = 1.3, CHEST = 0.8;
+  const NEAR = 0.5, TOP = 1.35, LIFT = 0.08, THIN = 0.55, SHORT = 0.6, AHEAD = 0.25, RISE = 4, GRACE = 0.15, HEAD = 1.3, CHEST = 0.8, IN = 0.15, OUT = 0.25;
   // is a point clear of the scenery by `cl`: above the top, or inside the gap under an arch (at least 1.8 high)?
   const open = (x, y, z, cl = 0.35) => {
     const t = walk.top(x, z);
@@ -417,15 +432,18 @@ export function makeCamera(walk, o = {}) {
     if (inp.dyaw) { c.yaw += inp.dyaw; looked = true; }
     if (inp.dpitch) { c.pitch = clamp(c.pitch + inp.dpitch, 0.08, 1.05); looked = true; }
     if (looked) c.idle = 0; else c.idle += dt;
+    // the player steers with the mouse (it is taken), or holds a move across the view: then nothing turns the view by itself
+    c.steer = !!inp.mouse;
+    c.across = across(inp.mx || 0, inp.mz || 0);
     // a run's camera that turns by itself sets c.turning; c.from is the yaw where that turn started (cameras.js holds a move to it)
     const was = c.turning, before = c.yaw;
     c.turning = false;
     // swing in behind a running lamplighter
     const sp = Math.hypot(s.vx, s.vz), ran = !!(turn && turn(c, s, dt, looked));
     if (c.turning && !was) c.from = before;
-    if (!ran && c.auto && c.idle > 0.8 && sp > 1) {
+    if (!ran && autoTurn(c) && sp > 1) {
       const d = wrap(s.yaw + Math.PI - c.yaw);
-      if (Math.abs(d) < 2.6) c.yaw += d * Math.min(1, dt * 0.9 * Math.min(1, sp / 5));
+      if (Math.abs(d) < 2.6) c.yaw += d * Math.min(1, dt * AUTO.swing * Math.min(1, sp / 5));
     }
     const want = [s.x, s.y + c.aim, s.z];
     if (!c.target) c.target = want.slice();
@@ -438,9 +456,9 @@ export function makeCamera(walk, o = {}) {
     const [tx, ty, tz] = c.target, spin = dt > 0 ? wrap(c.yaw - yaw0) / dt : 0;
     const head = [s.x, s.y + HEAD, s.z], now = solve(tx, ty, tz, c.yaw, head);
     /* in a lane or round a corner: when the view must rise more than 0.35 or come in, and the lamplighter runs away from the eye or
-       across the view (never toward it, as when backing into a wall), with no look input for 0.4 s and no run camera turning it, the
-       view turns at up to 1.2 rad/s toward the nearest yaw within 60° that is open with 0.25 less rise */
-    if (c.auto && !c.turning && c.idle > 0.4 && sp > 1 && Math.abs(wrap(s.yaw + Math.PI - c.yaw)) < 1.75 && (now.lift > 0.35 || now.dist < c.want - 0.05))
+       across the view (never toward it, as when backing into a wall), when the view may turn by itself (autoTurn) and no run camera
+       turns it, the view turns at up to 1.2 rad/s toward the nearest yaw within 60° that is open with 0.25 less rise */
+    if (autoTurn(c) && !c.turning && sp > 1 && Math.abs(wrap(s.yaw + Math.PI - c.yaw)) < 1.75 && (now.lift > 0.35 || now.dist < c.want - 0.05))
       for (const j of [1, -1, 2, -2, 3, -3]) {
         const g = solve(tx, ty, tz, c.yaw + j * 0.35, head);
         if (g.dist >= c.want - 0.05 && g.lift <= now.lift - 0.25) { c.yaw += clamp(j * 0.35, -1.2 * dt, 1.2 * dt); break; }
@@ -465,18 +483,31 @@ export function makeCamera(walk, o = {}) {
       }
     room = Math.max(NEAR, room);
     /* something comes between the eye and the aim while the eye itself is still clear: wait up to GRACE before coming in, as the rise
-       may clear it by then. The eye is never in a wall: then it comes in at once */
+       may clear it by then. The eye is never in a wall (see below) */
     if (room < c.dist - 0.05 && eyeOpen(tx, ty, tz, c.yaw, pitch, c.dist) && (c.hidden += dt) <= GRACE) room = c.dist;
     else if (room >= c.dist - 0.05) c.hidden = 0;
-    // come in at once, go back eased
-    const to = Math.min(room, Math.max(c.goal.dist, NEAR));
-    c.dist = room < c.dist ? room : c.dist + (to - c.dist) * Math.min(1, 4 * dt);
+    /* in and back out, both eased with a critically damped spring (Unity's SmoothDamp), so a wall that comes between is never a jump:
+       in over about IN s, and back out over about OUT s. The eye is never inside the scenery: where the eased eye would be in it, the
+       camera comes in only as far as its eye is clear */
+    let to = Math.min(room, Math.max(c.goal.dist, NEAR));
+    // where the eye would be inside the scenery 0.3 s ahead as the view turns (into a wall), it starts in now, and faster
+    const ahead = c.yaw + clamp(spin, -3, 3) * 0.3, d0 = Math.min(c.dist, to);
+    let ds = d0;
+    while (ds > NEAR && !eyeOpen(tx, ty, tz, ahead, pitch, ds)) ds -= 0.1;
+    if (ds < d0) to = Math.max(NEAR, ds);
+    let [d, v] = damp(c.dist, to, c.dv, to < c.dist ? (ds < d0 ? IN / 2 : IN) : OUT, dt);
+    if (d > room) {
+      const eased = d;
+      while (d > room + 1e-6 && !eyeOpen(tx, ty, tz, c.yaw, pitch, d)) d = Math.max(room, d - 0.05);
+      if (d < eased) v = 0;
+    }
+    c.dist = d; c.dv = v;
     return { target: c.target.slice(), dist: c.dist, yaw: c.yaw, pitch, ...(c.fov ? { fov: c.fov } : {}) };
   }
   function snap(s, yaw) {
     c.yaw = yaw; c.target = [s.x, s.y + c.aim, s.z]; c.idle = 9;
     c.goal = solve(c.target[0], c.target[1], c.target[2], yaw, [s.x, s.y + HEAD, s.z]);
-    c.lift = c.goal.lift; c.goals = [c.lift]; c.hidden = 0;
+    c.lift = c.goal.lift; c.goals = [c.lift]; c.hidden = 0; c.dv = 0;
     c.dist = Math.max(NEAR, reach(c.target[0], c.target[1], c.target[2], yaw, Math.min(TOP, c.pitch + c.lift), c.want));
   }
   // a new window: its framing, keeping the pitch the player set relative to the layout's

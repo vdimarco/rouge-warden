@@ -99,7 +99,7 @@
 ### Inputs
 - [x] Press edges with a 0.15 s buffer for attack, roll and heal; a latch for a mouse press
 - [x] Keys: J or Z, K or X, L or C; R faces the nearest awake foe or the boss within 10 m; M, P or Escape pause
-- [x] Mouse: left press attacks at once, hold goes on until 6 px of movement, drag with either button looks
+- [x] Mouse: left press attacks at once, hold goes on until 6 px of movement, drag with either button looks (replaced by mouse look below)
 - [x] Gamepad: X or RT attack, B or LT roll, Y heal, RB face the foe or the boss within 10 m, Start or Back pause
 - [x] One press across all pads; in Wander, X walks, and RT, B, LT and Y do nothing
 - [x] Focus in cards: the d-pad, the left stick and Tab move the focus only between the card's buttons, and wrap
@@ -214,7 +214,7 @@
 - [x] Reduced motion also: no shake of a hit foe, the low health tint steady at 15%, and a steady fire edge on the health bar
 
 ### Cameras
-- [x] The combat camera (spec "Combat camera", cut order 1): 0.9 rad/s after 0.8 s with no look input, while any foe is awake
+- [x] The combat camera (spec "Combat camera", cut order 1): 0.9 rad/s after 0.8 s with no look input, while any foe is awake (now 0.6 rad/s after 2 s: see Mouse look and a calm camera)
 - [x] The combat camera keeps its foe until another is 1.5 m nearer; Node test with two Snuffers that swap distances
 - [x] While a camera turns by itself, a held move keeps its world direction until the input turns by 20° or is let go
 - [x] The combat camera's stop at a yaw difference of 20°, seen from the lamplighter; look input wins on the same step; Node tests
@@ -233,6 +233,20 @@
 - [x] Node tests of the boss camera at the five layouts, with the boss 2 to 13 m away on flat ground
 - [x] Those tests use the spec's HUD and tools rects
 - [x] Node test of the boss camera at 481 pairs of points in the real arena (95%)
+
+### Mouse look and a calm camera (after play on the preview)
+- [x] A click on the view takes the mouse (Pointer Lock API, raw movement where offered); that click does nothing else
+- [x] Taken: a move with no button turns the view at 0.0022 and 0.0018 rad per px, one event at most 120 px, the pitch in 0.08 to 1.05
+- [x] Taken: in a run the left button attacks and holds the string, the right button rolls; in the explorer the left button jumps
+- [x] Escape or the browser frees the mouse; in play in a run that opens the pause panel, and the same Escape does not close it
+- [x] Every card frees the mouse; a button that goes back to play takes it again when its press is a gesture
+- [x] Chrome's limit on requests: no second ask with the raw option, and a refusal waits 1.5 s (5 s after a second one in a row)
+- [x] The fallback without pointer lock: the right drag turns the view, the left button attacks or jumps
+- [x] The hint "Click to look with the mouse", the help card and the pause panel's controls say how the mouse works
+- [x] No turn by itself while the mouse is taken; after 2 s and slower on touch, keys and pads; never with a move held across the view
+- [x] The pull-in near walls eases both ways with a damped spring, and starts early where the view turns toward a wall
+- [x] Node test `qa/lab/gloam-downs-mouse.test.mjs` and e2e `qa/lab/gloam-downs-mouse.e2e.mjs`; the old left-drag steps in the input e2e
+- [ ] Try the mouse look on a real desktop browser with a real mouse (Chrome, Firefox, Safari), and tune the speed by feel
 
 ### The run's screens
 - [x] HUD: health bar, flask pips, glim; the toast 8 px under the HUD's measured bottom at every width

@@ -10,6 +10,7 @@
 // for the boss while the fight has started, the boss is up and the lamplighter is outside the arena within 16 m of its centre. Until the
 // foes land, the training posts and the lineup figures stand in.
 import { makeCamera as viewCamera } from './ink/webgl/view.mjs';
+import { autoTurn } from './play.js';
 
 const DEG = Math.PI / 180;
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -27,10 +28,10 @@ export const asFoes = targets => targets.filter(t => t.alive !== false && t.awak
 
 /* ---------------- the combat camera ----------------
    Its foe is the nearest awake foe in range that is not home and not walking home. It keeps that foe until another is 1.5 m nearer, or
-   its foe goes out, goes home or out of range. With no such foe the explorer's swing applies. After 0.8 s with no look input it turns
-   the yaw toward its foe at no more than 0.9 rad/s, and stops at a yaw difference of 20°. Look input wins on the same step, and with
-   reduced motion it never turns. */
-export const COMBAT = { wait: 0.8, rate: 0.9, stop: 20 * DEG, range: 10, keep: 1.5, held: 20 * DEG };
+   its foe goes out, goes home or out of range. With no such foe the explorer's swing applies. After 2 s with no look input it turns
+   the yaw toward its foe at no more than 0.6 rad/s, and stops at a yaw difference of 20°. Look input wins on the same step, and with
+   reduced motion, while the mouse is taken or while a move across the view is held (play.js autoTurn) it never turns. */
+export const COMBAT = { wait: 2.0, rate: 0.6, stop: 20 * DEG, range: 10, keep: 1.5, held: 20 * DEG };
 export function makeCombat({ foes = () => [], still = false, P = COMBAT } = {}) {
   const m = { foe: null, turning: false };
   function pick(s) {
@@ -46,7 +47,7 @@ export function makeCombat({ foes = () => [], still = false, P = COMBAT } = {}) 
     m.turning = false;
     const f = pick(s);
     if (!f) return false;
-    if (still || looked || c.idle <= P.wait) return true;
+    if (still || looked || !autoTurn({ ...c, auto: true }, P.wait)) return true;
     const d = yawDiff(c.yaw, s, f);
     if (Math.abs(d) <= P.stop) return true;
     c.yaw += Math.sign(d) * Math.min(P.rate * dt, Math.abs(d) - P.stop);
@@ -118,9 +119,9 @@ export function frameClear(pr, L, B, screen, ground = () => L.y) {
    On while the fight has started, the boss is up and the lamplighter is within 7.0 m of the arena's centre. It aims at a point on the
    line from the lamplighter to the boss, 1.15 m up, and picks the smallest distance (from `least` to 24 m) and the aim nearest the
    lamplighter that keep the frame clear. Its own ease takes it there in 60 steps, and back to the follow camera in 60 steps when it goes
-   off. After 0.6 s with no look input it turns toward the boss at up to 1.5 rad/s, and stops at a yaw difference of 15°. A hill or a
-   wall that brings it nearer than it chose raises its pitch to 0.55, eased. With reduced motion it does not turn, but it still aims and
-   pulls back. */
+   off. After 0.6 s with no look input it turns toward the boss at up to 1.5 rad/s, and stops at a yaw difference of 15°, but not while
+   the mouse is taken or a move across the view is held (play.js autoTurn). A hill or a wall that brings it nearer than it chose raises
+   its pitch to 0.55, eased. With reduced motion it does not turn, but it still aims and pulls back. */
 export const BOSS = { on: 7.0, wait: 0.6, rate: 1.5, stop: 15 * DEG, far: 24, least: 12, steps: 60, up: 1.15, slope: 0.55, aims: 0.8 };
 // the least distance: the layout's follow distance, and never under 12 m
 export const bossLeast = follow => Math.max(BOSS.least, follow);
@@ -147,7 +148,7 @@ export function makeBossCam(cam, { screen, boss = () => null, centre = [18, 0.68
     b.turning = false;
     const B = live(s);
     if (!B) return false;
-    if (still || looked || c.idle <= BOSS.wait) return true;
+    if (still || looked || !autoTurn({ ...c, auto: true }, BOSS.wait)) return true;
     const d = yawDiff(c.yaw, s, B);
     if (Math.abs(d) <= BOSS.stop) return true;
     c.yaw += Math.sign(d) * Math.min(BOSS.rate * dt, Math.abs(d) - BOSS.stop);

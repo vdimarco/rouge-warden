@@ -137,11 +137,57 @@ The player SHALL move relative to the camera with WASD, the arrow keys, the left
 - **THEN** it walks up the step without a jump. Check: Node test `gloam-downs.test.mjs`: it walks up steps of 0.35 to more than 0.9 high.
 
 ### Requirement: Look
-Q and E, the right stick, a mouse drag or a touch drag on the right half of the screen SHALL turn the camera. The camera SHALL follow behind the lamplighter with a framing for the window (see "The camera's framing"), and keep the scenery out of the way (see "The camera and the scenery"). In a run, the combat camera and the boss camera of gloam-downs-run SHALL apply.
+Q and E, the right stick, the mouse (see "Mouse look") or a touch drag on the right half of the screen SHALL turn the camera. The camera SHALL follow behind the lamplighter with a framing for the window (see "The camera's framing"), and keep the scenery out of the way (see "The camera and the scenery"). It SHALL turn by itself only as "A calm camera" allows. In a run, the combat camera and the boss camera of gloam-downs-run SHALL apply.
 
 #### Scenario: Turn the camera
 - **WHEN** the player holds E or drags on the right half of a touch screen
 - **THEN** the camera turns around the lamplighter. Check: Node test `gloam-downs-camera.test.mjs`: E held for 1 s turns the yaw by 2.6 rad, ±0.1 (2.60). The e2e `gloam-downs.e2e.mjs` checks that a drag on the right half turns the yaw by more than 0.2 rad.
+
+### Requirement: Mouse look
+On a desktop with a fine pointer, a click on the view SHALL take the mouse with the Pointer Lock API, with raw movement where the browser offers it. That click SHALL do nothing else. While the mouse is taken, a move of the mouse with no button held SHALL turn the view: 0.0022 rad for each pixel across and 0.0018 rad for each pixel down, with no more than 120 px from one event. The pitch SHALL stay between 0.08 and 1.05 rad. No click SHALL turn the view while the mouse is taken.
+
+#### Scenario: Look with the mouse
+- **WHEN** the player moves the mouse 100 px right and 50 px down with the mouse taken
+- **THEN** the yaw goes down by 0.22 rad and the pitch goes up by 0.09 rad. A spike of 5000 px counts as 120 px. Check: Node test `gloam-downs-mouse.test.mjs`.
+
+### Requirement: The mouse in the explorer
+In the explorer, while the mouse is taken, the left button SHALL jump, and a held left button SHALL jump higher, as Space does. The right button SHALL do nothing. Escape, or the browser, SHALL free the mouse, and the walk SHALL go on. A card that opens (the help card, the Map, the end card) SHALL free the mouse, so its buttons can be clicked. A button that goes back to play SHALL take the mouse again.
+
+#### Scenario: Walk takes the mouse, the click that takes it does not jump
+- **WHEN** at 1280 by 720 the player clicks Walk on the help card, presses Escape, and then clicks the view twice
+- **THEN** Walk takes the mouse, Escape frees it and the hint shows, the first click takes the mouse again with no jump, and the second click jumps more than 0.3 m (measured 1.38 m). Check: e2e `gloam-downs-mouse.e2e.mjs`.
+
+### Requirement: The mouse without pointer lock
+Where the browser has no pointer lock, or refuses it, a move with the right button held SHALL turn the view at twice the speed of "Mouse look", and the left button SHALL jump (in a run, attack). The left button SHALL never turn the view. A refusal SHALL keep the page from asking again for 1.5 s, and for 5 s after a second refusal in a row. Meanwhile the mouse SHALL work as without pointer lock.
+
+#### Scenario: No pointer lock
+- **WHEN** the browser has no pointer lock, and the player drags with the right button and then with the left button
+- **THEN** the right drag turns the view, the left drag does not turn it, and the hint does not show. Check: e2e `gloam-downs-mouse.e2e.mjs` (in a run) and Node test `gloam-downs-mouse.test.mjs` (which button does what in the explorer).
+
+### Requirement: The mouse hint and help
+While the mouse is not taken in play, on a desktop that can take it, a small hint "Click to look with the mouse" SHALL show low in the middle of the view. It SHALL hide once the mouse is taken, and SHALL not show over a card or on a touch screen. The help card SHALL say "Click the view to take the mouse. Move the mouse to look round. Left click jumps. Esc frees the mouse." Without pointer lock it SHALL say "Hold the right button and drag the view to look round. Left click jumps."
+
+#### Scenario: The hint
+- **WHEN** at 1280 by 720 the explorer's help card shows, and then the player frees the mouse in play with Escape
+- **THEN** the help card says how the mouse works, and the hint shows at the bottom middle of the view, clear of the HUD and the tools. It hides when a click takes the mouse. Check: e2e `gloam-downs-mouse.e2e.mjs`, with screenshots of the help card and the hint.
+
+### Requirement: A calm camera
+The camera SHALL turn by itself (the swing behind a running lamplighter, the turn out of a blocked lane, and a run's combat and boss cameras) only after 2 s with no look input. It SHALL never turn by itself while the mouse is taken, or while the player holds a move more than 35° from straight ahead or straight back. The swing SHALL ease at 0.5 per second, times the speed up to 5 m/s. With reduced motion it SHALL never turn by itself. R and the Look tool SHALL still turn the view at once.
+
+#### Scenario: The mouse steers
+- **WHEN** the lamplighter runs to the side for 5 s with the mouse taken, or runs past an awake foe, or runs into a lane between walls
+- **THEN** the yaw does not change by itself. With the mouse free, the swing turns it by more than 0.3 rad. Check: Node test `gloam-downs-mouse.test.mjs`.
+
+#### Scenario: A gentle swing
+- **WHEN** the lamplighter runs to the side on touch, keys or a gamepad with no look input, and again while the player holds a move to the side
+- **THEN** the swing starts 2 s after the last look input and turns no faster than 0.5 × π/2 rad/s (measured start 2.02 s), and with the move to the side held the view does not turn. Check: Node test `gloam-downs-mouse.test.mjs`.
+
+### Requirement: An eased pull-in
+When a wall or a hill brings the camera in, it SHALL come in and go back out eased, with a critically damped spring of about 0.15 s in and 0.25 s out. It SHALL start in early where the view turns toward a wall. Its eye SHALL still never be inside the scenery. Standing still, the view SHALL not move.
+
+#### Scenario: No jump near a wall
+- **WHEN** the player turns the view with the mouse at 1.2 rad/s into a 14 m wall 2 m to the side of the lamplighter and back, at 1280 by 720 and 390 by 844
+- **THEN** the camera comes in, its distance changes by no more than 1 m in a step, the change from one step to the next is 0.4 m or less, and the eye is never in the wall (measured 0.35 m and 0.09 m at 1280, 0.91 m and 0.28 m at 390; the camera before came in by 3.6 m in one step at 390). Standing still with the back to the wall, beside it, or under a low roof, the view does not move after it settles. Check: Node test `gloam-downs-mouse.test.mjs`.
 
 ### Requirement: The camera's framing
 The camera SHALL frame each window so:

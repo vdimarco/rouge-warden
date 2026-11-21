@@ -12,8 +12,12 @@
 <style>
   :root { --night: #05060c; --bone: #e8e2d0; --ash: #9a9a9a; --ember: #ff9a32; --emberd: #d2551c; --wisp: #8cf0cc; --panel2: rgba(8, 8, 14, 0.88); --edge: rgba(232, 226, 208, 0.16); }
   html, body { margin: 0; height: 100%; overflow: hidden; background: var(--night); overscroll-behavior: none; }
-  .view { position: fixed; left: 0; top: 0; display: block; touch-action: none; cursor: grab; image-rendering: pixelated; background: var(--night); }
+  .view { position: fixed; left: 0; top: 0; display: block; touch-action: none; cursor: pointer; image-rendering: pixelated; background: var(--night); }
   .view.drag { cursor: grabbing; }
+  .view.taken { cursor: none; }
+  /* "Click to look with the mouse": low in the middle of the view, under every card, and never in the way of a click */
+  .mousehint { position: fixed; left: 50%; bottom: calc(var(--sab) + 22px); transform: translateX(-50%); z-index: 5; margin: 0; padding: 8px 14px; border-radius: 10px; background: var(--panel2); border: 1px solid var(--edge); color: var(--bone); font: 600 14px/1.2 var(--body); pointer-events: none; white-space: nowrap; }
+  .mousehint[hidden] { display: none; }
   .labbar { z-index: 30; }
   /* the Lab bar: 44 px tall, so its bottom is at --sat + 52px */
   .labbar > * { background: var(--panel2); border-color: var(--edge); min-height: 44px; display: inline-flex; align-items: center; }
@@ -191,6 +195,7 @@
 <button type="button" class="act roll" id="bRoll" hidden aria-label="Roll">ROLL</button>
 <button type="button" class="act heal" id="bHeal" hidden aria-label="Heal">HEAL<b id="healN">2</b></button>
 <div class="stick" id="stick" hidden><i></i></div>
+<p class="mousehint" id="mouseHint" hidden>Click to look with the mouse</p>
 
 <div class="arrive off" id="arrive" aria-live="polite"><small id="arriveN">I · The first place</small><h1 id="arriveName">The Sunken Gaol</h1><p id="arriveSub"></p></div>
 <p class="toast" id="toast" role="status"></p>
@@ -201,7 +206,9 @@
   <ul id="helpKeys">
     <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or the arrows move. <kbd>Shift</kbd> walks.</li>
     <li><kbd>Space</kbd> jumps. Hold it to jump higher.</li>
-    <li>Drag the view, or <kbd>Q</kbd> <kbd>E</kbd>, to look round. <kbd>R</kbd> looks ahead.</li>
+    <li id="helpMouse">Click the view to take the mouse. Move the mouse to look round. Left click jumps. <kbd>Esc</kbd> frees the mouse.</li>
+    <li id="helpDrag" hidden>Hold the right button and drag the view to look round. Left click jumps.</li>
+    <li><kbd>Q</kbd> <kbd>E</kbd> also turn the view. <kbd>R</kbd> looks ahead.</li>
     <li><kbd>M</kbd> opens the map. A gamepad works too.</li>
   </ul>
   <ul id="helpTouch" hidden>

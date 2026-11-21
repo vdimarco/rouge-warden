@@ -93,13 +93,28 @@ addEventListener('resize', () => { sizeArt(); if (cam) cam.layout(layoutNow()); 
 
 /* ---------------- input ---------------- */
 const jumpBtn = $('bJump'), stickEl = $('stick'), actBtns = [$('bAttack'), $('bRoll'), $('bHeal')];
-const inp = makeInput({ canvas, stick: stickEl, jump: jumpBtn, attack: $('bAttack'), roll: $('bRoll'), heal: $('bHeal') }, { run: () => RUN, play: () => mode === 'play' });
+/* the mouse: taken by a click on the view (input.js). Freed in play in a run, by Escape or by the browser, it opens the pause panel. A
+   card that opens frees it, so its buttons can be clicked, and a button that goes back to play takes it again (the click is the
+   gesture the browser asks for) */
+const inp = makeInput({ canvas, stick: stickEl, jump: jumpBtn, attack: $('bAttack'), roll: $('bRoll'), heal: $('bHeal') }, {
+  run: () => RUN, play: () => mode === 'play', fine: !coarse,
+  onLock: (taken, ours) => { if (!taken && !ours && RUN && mode === 'play' && rs.run) openPause(); mouseHint(); }
+});
+// a button that goes back to play takes the mouse again, when the press is a gesture the browser counts (not a gamepad's A)
+const retake = () => { if (navigator.userActivation ? navigator.userActivation.isActive : true) inp.take(); mouseHint(); };
+// "Click to look with the mouse": over the view in play while the mouse is not taken, on a desktop that can take it
+const hintEl = $('mouseHint');
+function mouseHint() {
+  const on = mode === 'play' && !!place && inp.lockable && !inp.locked;
+  if (hintEl.hidden === on) hintEl.hidden = !on;
+}
 const input = inp.input;
 const typing = e => e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement;
 addEventListener('keydown', e => {
   if (typing(e) || window.GameSwitch?.isOpen) return;
   const k = e.key.toLowerCase();
-  if (k === 'escape') { if (mode === 'play') { if (RUN) openPause(); } else back(); return; }
+  // the Escape that frees the mouse has opened the pause panel already: it does not also close it
+  if (k === 'escape') { if (performance.now() - inp.lostAt < 400) return; if (mode === 'play') { if (RUN) openPause(); else inp.free(); } else back(); return; }
   if (k === 'm' || (RUN && k === 'p')) {
     if (mode === 'play') { RUN ? openPause() : openMap(); e.preventDefault(); }
     else if (RUN ? mode === 'pause' && !asking : mode === 'map') RUN ? resume() : closePanels();
@@ -115,7 +130,7 @@ const nav = { dir: 0, t: 0 };
 let padWas = { a: false, b: false, start: false, back: false, face: false, pause: false }, padSeen = false;
 // a card or the loading screen takes over: a way the d-pad or the stick already holds moves nothing until it comes back to centre
 const holdNav = () => heldNav(nav, readPads(navigator.getGamepads?.() || [], RUN).nav);
-function showCard(card) { holdNav(); return cards.show(card); }
+function showCard(card) { holdNav(); inp.free(); mouseHint(); return cards.show(card); }
 function padCheck() {
   const any = [...(navigator.getGamepads?.() || [])].some(p => p && p.connected);
   if (any && !padSeen) { padSeen = true; showControls(); return true; }
@@ -225,17 +240,25 @@ function arrive() {
 }
 // the controls for the input in use: the pad once the page has seen one, else touch on a touch screen, else the keys and the mouse
 const CONTROLS = {
-  keys: ['<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or the arrows move. <kbd>Shift</kbd> walks. <kbd>Space</kbd> jumps.',
-    '<kbd>J</kbd> or <kbd>Z</kbd>, or a left click, attacks. Press again, or hold, for the string of three.',
+  keys: ['Click the view to take the mouse. Move the mouse to look. Left click attacks, right click rolls. <kbd>Esc</kbd> frees the mouse.',
+    '<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or the arrows move. <kbd>Shift</kbd> walks. <kbd>Space</kbd> jumps.',
+    '<kbd>J</kbd> or <kbd>Z</kbd> also attacks. Press again, or hold, for the string of three.',
     '<kbd>K</kbd> or <kbd>X</kbd> rolls. <kbd>L</kbd> or <kbd>C</kbd> drinks a flask.',
-    'Drag the view, or <kbd>Q</kbd> <kbd>E</kbd>, to look. <kbd>R</kbd> faces the nearest foe.',
+    '<kbd>Q</kbd> <kbd>E</kbd> also turn the view. <kbd>R</kbd> faces the nearest foe.',
+    '<kbd>M</kbd>, <kbd>P</kbd> or <kbd>Esc</kbd> pauses.'],
+  // a browser that cannot take the mouse
+  drag: ['Hold the right button and drag the view to look. Left click attacks.',
+    '<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or the arrows move. <kbd>Shift</kbd> walks. <kbd>Space</kbd> jumps.',
+    '<kbd>J</kbd> or <kbd>Z</kbd> also attacks. Press again, or hold, for the string of three.',
+    '<kbd>K</kbd> or <kbd>X</kbd> rolls. <kbd>L</kbd> or <kbd>C</kbd> drinks a flask.',
+    '<kbd>Q</kbd> <kbd>E</kbd> also turn the view. <kbd>R</kbd> faces the nearest foe.',
     '<kbd>M</kbd>, <kbd>P</kbd> or <kbd>Esc</kbd> pauses.'],
   touch: ['Drag on the left half to move, and on the right half to look.', 'ATTACK swings: tap it, or hold it for the string of three.',
     'ROLL rolls, HEAL drinks a flask and JUMP jumps.', 'Look faces the nearest foe. Pause stops the run.'],
   pad: ['Left stick: move. A light tilt walks. Right stick: look.', '<kbd>A</kbd> jump · <kbd>X</kbd> attack · <kbd>B</kbd> roll · <kbd>Y</kbd> heal',
     '<kbd>RB</kbd> face the foe · <kbd>Start</kbd> pause']
 };
-const controlsKind = () => (padSeen ? 'pad' : coarse ? 'touch' : 'keys');
+const controlsKind = () => (padSeen ? 'pad' : coarse ? 'touch' : inp.canLock ? 'keys' : 'drag');
 function showControls() {
   if (!RUN) return;
   const html = CONTROLS[controlsKind()].map(l => `<li>${l}</li>`).join('');
@@ -249,7 +272,7 @@ function closePanels() {
   if (!$('help').hidden) { save.seen = true; store(disk, save); }
   let was = false;
   for (const p of panels) if (!$(p).hidden) { $(p).hidden = true; was = true; cards.shut($(p)); }
-  if (was && mode !== 'loading') { mode = 'play'; inp.swallowAll(); canvas.focus?.(); }
+  if (was && mode !== 'loading') { mode = 'play'; inp.swallowAll(); canvas.focus?.(); retake(); }
 }
 function openMap() {
   const box = $('places');
@@ -304,6 +327,7 @@ function closeCard(id) {
   mode = 'play';
   inp.swallowAll();
   canvas.focus?.();
+  retake();
 }
 function openRunHelp() { openCard('runHelp', 'help', () => $('bBegin')); }
 // a new run starts in the Gaol: on the place as it loaded, or on the Gaol loaded again once this place has been played
@@ -352,7 +376,7 @@ $('bYes').addEventListener('click', () => {
   asking = null;
   hideCard('pause');
   // Back to the start restarts the place as a reload does: health and flasks no higher than at its start, its glim and foes back
-  if (kind === 'restart') { reload(rs.run); storeRun(); go(rs.run.place); return; }
+  if (kind === 'restart') { reload(rs.run); storeRun(); retake(); go(rs.run.place); return; }
   // End the run ends it as a death does
   mode = 'play';
   for (const e of runner.kill([])) runEvent(e);
@@ -386,7 +410,7 @@ function openBeacon() {
   openCard('beaconCard', 'beacon', () => (rs.run?.offer ? box.querySelector('button') : $('bWalkOn')));
 }
 // Walk on loads the next place; after a reload at the card, the card already shows over it
-$('bWalkOn').addEventListener('click', () => { if (meta.id === rs.run.place) return closeCard('beaconCard'); hideCard('beaconCard'); go(rs.run.place); });
+$('bWalkOn').addEventListener('click', () => { if (meta.id === rs.run.place) return closeCard('beaconCard'); hideCard('beaconCard'); retake(); go(rs.run.place); });
 $('bSpend').addEventListener('click', () => { hideCard('beaconCard'); openLamp('beacon'); });
 
 /* the Lamp-room: the bank, the five lasting upgrades with Buy, and Begin the run. From a beacon card it shows Back to the beacon in
@@ -441,7 +465,7 @@ function buyUp(id) {
 $('bLampBack').addEventListener('click', () => { hideCard('lamp'); openBeacon(); });
 $('bLampBegin').addEventListener('click', () => beginRun('lamp'));
 // Go on with the run goes on as a reload does, at the start of the run's place
-$('bLampGoOn').addEventListener('click', () => { reload(rs.run); storeRun(); hideCard('lamp'); go(rs.run.place); });
+$('bLampGoOn').addEventListener('click', () => { reload(rs.run); storeRun(); hideCard('lamp'); retake(); go(rs.run.place); });
 $('bLampWander').addEventListener('click', toWander);
 $('bLampToWander').addEventListener('click', toWander);
 
@@ -685,6 +709,8 @@ async function go(id) {
     storeRun();
   } else if (!save.seen) {
     $('helpKeys').hidden = coarse;
+    $('helpMouse').hidden = !inp.canLock;
+    $('helpDrag').hidden = inp.canLock;
     $('helpTouch').hidden = !coarse;
     $('help').hidden = false;
     mode = 'help';
@@ -776,6 +802,7 @@ function frame(now) {
   pollPad(dtRaw);
   if (!place || mode === 'loading') return;
   inp.read();
+  mouseHint();
   // fixed steps of 1/60 s, as many as the frame took (up to 15), so a slow phone does not play in slow motion
   const c = stepCount(acc, dtRaw);
   acc = c.acc;
@@ -831,7 +858,9 @@ window.__gloam = {
     wisps: meta ? (RUN ? runner?.wisps.size ?? 0 : save.wisps[meta.id]?.length || 0) : 0, lit: beaconLit, frames, art: { ...art }, target: artTarget, count: world?.count,
     reached: save.reached.slice(),
     // pitch is the player's; view is what is drawn (with the rise over walls), want the layout's distance, foe the combat camera's
-    cam: cam ? { yaw: cam.c.yaw, dist: cam.c.dist, pitch: cam.c.pitch, want: cam.c.want, fov: cam.c.fov, aim: cam.c.aim, lift: cam.c.lift, view: view ? view.pitch : null, foe: combat?.foe?.id ?? null, turning: cam.c.turning } : null
+    cam: cam ? { yaw: cam.c.yaw, dist: cam.c.dist, pitch: cam.c.pitch, want: cam.c.want, fov: cam.c.fov, aim: cam.c.aim, lift: cam.c.lift, view: view ? view.pitch : null, foe: combat?.foe?.id ?? null, turning: cam.c.turning, idle: cam.c.idle } : null,
+    // the mouse: taken now, the page can take it now, and the hint shows
+    mouse: { locked: inp.locked, lockable: inp.lockable, hint: !hintEl.hidden }
   }),
   // in a run, go(id) moves the run to the start of a place as Walk on does: the entry snapshot is taken from the values now
   go: id => { if (RUN && rs.run) { goTo(rs, id); storeRun(); } return go(id); },
@@ -842,6 +871,8 @@ window.__gloam = {
   light: () => (RUN ? runner.light([]).forEach(runEvent) : lightBeacon()),
   points: () => (meta ? { spawn: meta.spawn, beacon: meta.beacon.p, wisps: meta.wisps.map(w => w.p) } : null),
   close: () => closePanels(),
+  // ?test: free the mouse as a card does (no pause panel), so a test can click the tools with the cursor
+  release: () => { inp.free(); return inp.locked; },
   /* ?test only: step the game by `seconds` at 60 steps a second with these held (mx, mz, jump, slow, ox, attack, roll, heal, look),
      then draw once if asked. With held 'live' it reads the real keys, pointer, touch and gamepad on every step, in every mode */
   tick: (seconds, held = {}, drawAfter = false) => {
@@ -855,6 +886,7 @@ window.__gloam = {
       }
       if (place && mode !== 'loading') { update(); inp.consumed(); }
     }
+    mouseHint();
     if (drawAfter) draw();
     return window.__gloam.state();
   },
