@@ -120,9 +120,27 @@ export function frameClear(pr, L, B, screen, ground = () => L.y) {
    line from the lamplighter to the boss, 1.15 m up, and picks the smallest distance (from `least` to 24 m) and the aim nearest the
    lamplighter that keep the frame clear. Its own ease takes it there in 60 steps, and back to the follow camera in 60 steps when it goes
    off. After 0.6 s with no look input it turns toward the boss at up to 1.5 rad/s, and stops at a yaw difference of 15°, but not while
-   the mouse is taken or a move across the view is held (play.js autoTurn). A hill or a wall that brings it nearer than it chose raises
-   its pitch to 0.55, eased. With reduced motion it does not turn, but it still aims and pulls back. */
-export const BOSS = { on: 7.0, wait: 0.6, rate: 1.5, stop: 15 * DEG, far: 24, least: 12, steps: 60, up: 1.15, slope: 0.55, aims: 0.8 };
+   the mouse is taken or a move across the view is held (play.js autoTurn). A hill or a wall that would bring it nearer than it chose
+   raises its pitch, eased, by the least that lets it stand at its distance (bossRaise), to a pitch of 1.1. With reduced motion it does not turn, but it still aims and pulls back. */
+export const BOSS = { on: 7.0, wait: 0.6, rate: 1.5, stop: 15 * DEG, far: 24, least: 12, steps: 60, up: 1.15, slope: 1.1, rise: 0.05, aims: 0.8 };
+/* the raise of the pitch over what stands in the way: the least raise (in steps of 0.05, to a pitch of 1.1) at which the eye stands at
+   its distance D and sees every point of marks (the boss's chest and feet, and the far points of its marker: a stone beside the eye can
+   hide a shard ring without standing between the eye and the aim); failing that, the least at which it stands at D; failing that, the
+   raise that lets it stand farthest back. reach is play.js's camera reach, and sees(a, b) the sight test (none: every point is seen).
+   look is a least pitch that the marker asks for (the lunge's lane, 0.6), where the search starts.
+   Read from the layout's pitch and not from the raise of the step before, so the answer does not flick between two raises */
+export function bossRaise(reach, aim, yaw, base, D, marks = [], sees = null, look = 0) {
+  let best = { lift: 0, room: -1 }, far = null;
+  for (let l = Math.max(0, Math.round((look - base) / BOSS.rise) * BOSS.rise); base + l <= BOSS.slope + 1e-6; l += BOSS.rise) {
+    const p = base + l, room = reach(aim[0], aim[1], aim[2], yaw, p, D);
+    if (room >= D - 0.1) {
+      const eye = [aim[0] + Math.sin(yaw) * Math.cos(p) * D, aim[1] + Math.sin(p) * D, aim[2] + Math.cos(yaw) * Math.cos(p) * D];
+      if (!sees || marks.every(m => sees(eye, m))) return { lift: l, room, seen: true };
+      far ??= { lift: l, room, seen: false };
+    } else if (!far && room > best.room + 0.3) best = { lift: l, room };
+  }
+  return far || best;
+}
 // the least distance: the layout's follow distance, and never under 12 m
 export const bossLeast = follow => Math.max(BOSS.least, follow);
 export function bossFrame(L, B, yaw, view, screen, ground, least) {
@@ -135,9 +153,9 @@ export function bossFrame(L, B, yaw, view, screen, ground, least) {
   const k = 0.3;
   return { dist: BOSS.far, k, aim: [L.x + (B.x - L.x) * k, L.y + BOSS.up + (B.y - L.y) * k, L.z + (B.z - L.z) * k], clear: false };
 }
-/* cam: a play.js follow camera; screen as for frameClear; boss(): null, or { x, y, z, up, started } for the boss (a stand-in in the
-   tests). centre: the arena's centre. step(s, dt, inp, view) takes the follow camera's view of this step and returns the view to draw */
-export function makeBossCam(cam, { screen, boss = () => null, centre = [18, 0.68, -22], still = false, ground = null } = {}) {
+/* cam: a play.js follow camera; screen as for frameClear; boss(): null, or { x, y, z, up, started, marks } for the boss (a stand-in in
+   the tests; marks are the far points of its marker, for the raise). sees(a, b): the sight test of the walk map (moves.js clearLine). centre: the arena's centre. step(s, dt, inp, view) takes the follow camera's view of this step and returns the view to draw */
+export function makeBossCam(cam, { screen, boss = () => null, centre = [18, 0.68, -22], still = false, ground = null, sees = null } = {}) {
   const b = { on: false, w: 0, goal: null, cur: null, view: null, lift: 0, turning: false, n: 0 };
   const live = s => {
     const B = boss();
@@ -163,7 +181,7 @@ export function makeBossCam(cam, { screen, boss = () => null, centre = [18, 0.68
     // the frame, solved every 4th step; the camera's own aim and distance follow it at 5/s, so a new solution is never a jump
     if (B && (!b.goal || b.n++ % 4 === 0)) {
       const floor = ground || (() => s.y);
-      b.goal = bossFrame({ x: s.x, y: s.y, z: s.z }, B, c.yaw, { pitch: c.base, ...(c.fov ? { fov: c.fov } : {}) }, screen, floor, bossLeast(c.want));
+      b.goal = bossFrame({ x: s.x, y: s.y, z: s.z }, B, c.yaw, { pitch: c.base + b.lift, ...(c.fov ? { fov: c.fov } : {}) }, screen, floor, bossLeast(c.want));
     }
     if (B && !b.cur) b.cur = { aim: b.goal.aim.slice(), dist: b.goal.dist };
     else if (B) {
@@ -172,11 +190,19 @@ export function makeBossCam(cam, { screen, boss = () => null, centre = [18, 0.68
       b.cur.dist += (b.goal.dist - b.cur.dist) * k;
     }
     if (!b.cur || b.w <= 0) { b.cur = B ? b.cur : null; b.goal = B ? b.goal : null; b.view = view; return view; }
-    /* the walls: no nearer than the first thing in the way, and then the pitch eases up to 0.55. Whether something is in the way is read
-       at the layout's pitch, not at the raised one: read at the raised pitch, a stone the raise just clears would send the pitch back
-       down, and the distance would flick between the stone and the frame every few steps */
-    const [ax, ay, az] = b.cur.aim, room = cam.reach(ax, ay, az, c.yaw, c.base, b.cur.dist);
-    b.lift += ((room < b.cur.dist - 0.1 ? BOSS.slope - c.base : 0) - b.lift) * Math.min(1, 4 * dt);
+    /* the walls: a stone or a hill in the way raises the pitch until the eye can stand at its distance (to a pitch of 1.1), and the eye
+       comes no nearer than the first thing still in the way. A raise only to 0.55 left the camera 1.9 to 5.7 m from the lamplighter at
+       about one point in six of the arena (south and west of it, with the grave stones and the crown's slope behind), and the boss's
+       head off the top of the picture. The raise is solved with the frame, every 4th step, and eased at 4/s */
+    const [ax, ay, az] = b.cur.aim;
+    if (B && (!b.raise || b.n % 4 === 1)) {
+      const marks = [[B.x, B.y + 1.7, B.z], [B.x, B.y + 0.3, B.z], ...(B.marks || [])];
+      const r = bossRaise(cam.reach, b.cur.aim, c.yaw, c.base, b.cur.dist, marks, sees, B.look || 0);
+      // the frame is solved at the raised pitch, so the two move each other: a raise comes down only by more than 0.1 at once, or a
+      // stone at the edge of sight rocks the pitch by 2° for as long as the two stand there
+      if (!b.raise || r.lift > b.raise.lift || b.raise.lift - r.lift > 0.1 + 1e-9) b.raise = r;
+    }
+    b.lift += (b.raise.lift - b.lift) * Math.min(1, 4 * dt);
     const dist = Math.min(b.cur.dist, cam.reach(ax, ay, az, c.yaw, c.base + b.lift, b.cur.dist));
     const e = b.w * b.w * (3 - 2 * b.w), mix = (p, q) => p + (q - p) * e;
     b.view = {

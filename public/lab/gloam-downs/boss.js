@@ -15,7 +15,7 @@ const STEP = 1 / 60, DEG = Math.PI / 180;
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const wrap = a => Math.atan2(Math.sin(a), Math.cos(a));
 const ease = u => { const k = clamp(u, 0, 1); return k * k * (3 - 2 * k); };
-const LAMP_R = PARAMS.radius;
+const LAMP_R = PARAMS.radius, BOSS_LOOK = 0.6;
 
 /* ---------------- the numbers ----------------
    design.md "The boss: the Barrow Reeve". The arena: its centre, the leash the boss never walks out of, the 7.0 m inside which the
@@ -467,8 +467,17 @@ export function makeBoss({ walk, arena = null, seed = 1, runner = null, bounds =
   B.toBeacon = at => { if (B.light.state === 'carried') Object.assign(B.light, { state: 'beacon', t: 0, at: at.slice() }); };
   B.shown = shown;
   B.fighting = () => B.started && B.up;
-  // what the boss camera and the combat camera read
-  B.camView = () => ({ id: B.id, x: B.x, y: B.y, z: B.z, up: B.up, started: B.started });
+  // what the boss camera and the combat camera read. marks: the far points of the marker laid, 0.3 m over the ground, which the boss
+  // camera keeps in sight: the shard rings' centres, the lane's far end, the sweeps' two side ends and front at their full reach, and
+  // four points round the slam's ring
+  const at = (m, a, r) => [m.x + Math.sin(a) * r, m.y + 0.3, m.z + Math.cos(a) * r];
+  const marksOf = m => !m ? [] : m.kind === 'shards' ? m.rings.map(r => [r[0], r[1] + 0.3, r[2]])
+    : m.kind === 'lane' ? [at(m, m.yaw, m.full)]
+    : m.kind === 'slices' ? [-1, 0, 1].map(k => at(m, m.face + k * SWEEP.arc, m.full * 0.85))
+    : m.kind === 'ring' ? [0, 1, 2, 3].map(k => at(m, (k * Math.PI) / 2, m.full * 0.85)) : [];
+  // look: the least pitch for the marker laid: the lunge's lane runs straight at the lamplighter and on toward the camera, and seen
+  // from the layout's pitch (about 0.3) it shrinks to a strip behind the two figures, so the camera looks down on it from 0.6
+  B.camView = () => ({ id: B.id, x: B.x, y: B.y, z: B.z, up: B.up, started: B.started, marks: marksOf(B.mk), look: B.mk?.kind === 'lane' ? BOSS_LOOK : 0 });
   // the wind-up under way, for an off-screen notch
   B.windups = () => {
     if (B.state !== 'move') return [];

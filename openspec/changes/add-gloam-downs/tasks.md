@@ -307,10 +307,14 @@
 - [x] It holds its facing and the sweep's slices from 0.3 s before the hit
 - [x] The fall, the light that rides at the lantern, the boss's 30 glim into the glim carried, and the beacon that banks it
 - [x] The bars at the fall ease out over 30 steps after the hit stop, and come in again at the last beacon
-- [x] `__gloam.light()` obeys the boss's light; the dark beacon's toast names the open ground below the crown
+- [x] `__gloam.light()` obeys the boss's light; the dark beacon's toast names the open ground below the standing stones
 - [x] After the fall no zone wakes; the run is stored with `bossDown`, and a reload starts at the arena with the light
 - [x] The win stored at once at the last beacon, and a reload on the win card that shows it again
 - [x] The win card, and the first win opening Wander
+- [x] `qa/lab/gloam-downs-boss.sim.mjs`: a boss bot on Barrow Crown's walk map with the game's moves, runner and boss mind, at skills 0.3, 0.5, 0.7 and 0.9; wins, tries, fight length and hits by attack, written in design.md
+- [x] Every boss attack dodged by a bot with no mistake that reads each wind-up 0.25 to 0.55 s after it starts
+- [x] The boss camera raises its pitch over the grave stones by the least that keeps its distance (to 1.1), and the arena check of 122 pairs in `gloam-downs-boss.test.mjs`
+- [x] Each boss wind-up looked at in its last third at 1280×720 and 390×844, with the boss camera on
 
 ### Sound
 - [ ] WebAudio cues made in code: tells, hits, hurt, glim, beacon, boss, heartbeat; start on the first press

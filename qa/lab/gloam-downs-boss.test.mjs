@@ -18,14 +18,14 @@ import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 import { makeWalk, makeBody, makeCamera, camLayout, PARAMS } from '../../public/lab/gloam-downs/play.js';
 import { STEP, stepCount, startRun, makeRunner, maxOf, reload, goTo, BASE } from '../../public/lab/gloam-downs/run.js';
-import { HITS } from '../../public/lab/gloam-downs/moves.js';
+import { HITS, clearLine } from '../../public/lab/gloam-downs/moves.js';
 import * as RS from '../../public/lab/gloam-downs/run-save.js';
 import { makeBoss, REEVE, REEVE_TEXT, ATTACKS, choose, phaseFor, segAt, segStart, inSlices, inLane, lengthOf, lightAt } from '../../public/lab/gloam-downs/boss.js';
 import { inRing } from '../../public/lab/gloam-downs/foes.js';
 import { makeFight } from '../../public/lab/gloam-downs/fight.js';
 import { readFigures, makePool } from '../../public/lab/gloam-downs/pool.js';
 import { poolFor } from '../../public/lab/gloam-downs/figures.js';
-import { makeBossCam, makeCombat, BOSS } from '../../public/lab/gloam-downs/cameras.js';
+import { makeBossCam, makeCombat, BOSS, projector } from '../../public/lab/gloam-downs/cameras.js';
 import { cardOnLoad, winOf } from '../../public/lab/gloam-downs/screens.js';
 import { makeFeel, FEEL } from '../../public/lab/gloam-downs/feel.js';
 import { POOLS } from '../../games/gloam-downs/lib/zones.mjs';
@@ -623,6 +623,53 @@ if (process.env.GLOAM_WORLDS !== '0') {
     assert(!bc.b.on && bc.b.w === 0, 'at the fall it eases back over 1 s');
     assert.deepEqual(P.G.bossFoe({ x: c[0] + 9, z: c[2] }), [], 'after the fall the boss is no foe of the combat camera');
     pass('the boss camera with the real boss: the combat camera has it at 9 m, the boss camera at 6 m, and it eases back at the fall', { dist: r2(v.dist) });
+  }
+  { /* the boss camera over the whole arena, at 1280x720 and 390x844: the lamplighter on a grid of 1.5 m within 6.6 m of the centre,
+       facing the boss 2.6 m and 5 m toward the centre. After 2.5 s the camera stands at its least distance and the boss's head and feet
+       are on the screen at every point. A raise only to a pitch of 0.55 left it 1.85 to 5.65 m out, with the head off the top, at 20 of
+       122 points: south of the arena the grave stones are 3.3 to 4.6 m tall 3 m behind the lamplighter. The three shard rings of a
+       lamp-shards are on the screen, and in sight of the eye at all but a very few pairs (a mound beside the eye hid them) */
+    const c = arena.c, g = (x, z, y = 3) => walk.support(x, z, y) ?? walk.top(x, z), out = {};
+    const sees = (a, b) => clearLine(walk, a[0], a[1], a[2], b[0], b[1], b[2]);
+    const LAY = {
+      '1280x720': { w: 1280, h: 720, rects: [[10, 60, 262, 91], [1136, 60, 134, 44]] },
+      '390x844': { w: 390, h: 844, rects: [[290, 664, 84, 84], [214, 750, 64, 64], [302, 756, 72, 72], [226, 682, 52, 52], [10, 60, 250, 88], [268, 60, 112, 44]] }
+    };
+    for (const [tag, S] of Object.entries(LAY)) {
+      const L = camLayout(S.w, S.h), screen = { w: S.w, h: S.h, bar: 52, rects: S.rects }, least = Math.max(12, L.dist);
+      let pairs = 0, top = 0, hidden = 0;
+      for (let gx = -6; gx <= 6; gx += 1.5) for (let gz = -6; gz <= 6; gz += 1.5) {
+        if (Math.hypot(gx, gz) > 6.6) continue;
+        for (const bd of [2.6, 5]) {
+          const lx = c[0] + gx, lz = c[2] + gz;
+          let dx = c[0] - lx, dz = c[2] - lz, l = Math.hypot(dx, dz);
+          if (l < 0.5) { dx = 0; dz = -1; l = 1; }
+          const bx = lx + (dx / l) * bd, bz = lz + (dz / l) * bd;
+          // the three shard rings of a lamp-shards at the lamplighter, as the marks the camera keeps in sight
+          const rx = (lz - bz) / bd, rz = -(lx - bx) / bd, ring = k => [lx + rx * k, g(lx + rx * k, lz + rz * k) + 0.3, lz + rz * k];
+          const s = { x: lx, y: g(lx, lz), z: lz }, B = { x: bx, y: g(bx, bz), z: bz, up: true, started: true, marks: [ring(0), ring(2.5), ring(-2.5)] };
+          const cam = makeCamera(walk, { yaw: Math.atan2(-(bx - lx), -(bz - lz)), auto: true, ...L });
+          const bc = makeBossCam(cam, { screen, boss: () => B, centre: c, ground: (x, z) => g(x, z, s.y + 1), sees });
+          let v;
+          // 2.5 s to settle, then 1 s that must hold still: the frame is solved at the raised pitch, and the two must not rock
+          let p0 = Infinity, p1 = -Infinity;
+          for (let i = 0; i < 210; i++) { v = bc.step(s, STEP, cam.follow(s, STEP, {}, bc.turn)); if (i >= 150) { p0 = Math.min(p0, v.pitch); p1 = Math.max(p1, v.pitch); } }
+          assert(p1 - p0 <= 0.01, `${tag}: at (${lx}, ${lz}) the pitch rocks by ${(p1 - p0).toFixed(3)}`);
+          const pr = projector(v, S.w, S.h), on = p => !!p && p[0] >= 0 && p[0] <= S.w && p[1] >= 0 && p[1] <= S.h;
+          assert(v.dist >= least - 0.01, `${tag}: at (${lx}, ${lz}) the boss camera is ${v.dist.toFixed(2)} m out`);
+          const head = pr([bx, B.y + REEVE.height, bz]);
+          assert(on(head) && head[1] >= screen.bar && on(pr([bx, B.y, bz])), `${tag}: at (${lx}, ${lz}) the boss is on the screen, its head below the Lab bar row`);
+          const eye = [v.target[0] + Math.sin(v.yaw) * Math.cos(v.pitch) * v.dist, v.target[1] + Math.sin(v.pitch) * v.dist, v.target[2] + Math.cos(v.yaw) * Math.cos(v.pitch) * v.dist];
+          hidden += B.marks.filter(m => !sees(eye, m)).length;
+          assert(B.marks.every(m => on(pr(m))), `${tag}: at (${lx}, ${lz}) the shard rings are on the screen`);
+          pairs++; top = Math.max(top, v.pitch);
+        }
+      }
+      // a stone beside the eye may still hide a ring at a very few pairs (2 of 366 rings when measured; 24 to 32 with a raise to 0.55)
+      assert(hidden <= 6, `${tag}: ${hidden} shard rings hidden behind the ground`);
+      out[tag] = { pairs, least, pitch: r2(top), hidden };
+    }
+    pass('the boss camera over the arena stands at its least distance with the boss and the shard rings on the screen and in sight, raised over the grave stones', out);
   }
 }
 

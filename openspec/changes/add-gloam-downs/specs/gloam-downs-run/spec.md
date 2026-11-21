@@ -450,7 +450,11 @@ Within its limits, the boss camera SHALL choose the aim point and the smallest d
 - **THEN** the frame is clear each time, and the camera's distance is 21 m or less (measured: 12.0 m in landscape and 15.33 m on the phones). Check: Node test `gloam-downs-camera.test.mjs`.
 
 ### Requirement: Boss camera on a slope
-When a hill or a wall brings the boss camera closer than it chose, its pitch SHALL ease up from the layout's pitch (0.27 to 0.33) to 0.55. Past the walk map's bounds, the boss camera SHALL read the map's edge cells, so scenery outside the map never brings it in.
+When a hill, a stone or a wall would bring the boss camera closer than it chose, its pitch SHALL ease up from the layout's pitch (0.27 to 0.33) by the least raise, in steps of 0.05 up to a pitch of 1.1, at which the camera stands at the distance it chose and its eye sees the boss's chest and feet and the far points of the marker laid (the three shard rings' centres, the lane's far end, the sweeps' two side ends and front, four points round the slam's ring). While the lunge's lane is laid, the raise SHALL start from a pitch of 0.6, so the lane that runs toward the camera is seen from above. When no raise gives both, it SHALL take the least raise at which it stands at that distance, and when none does, the raise that lets it stand farthest back. Whether something is in the way SHALL be read at the layout's pitch. The frame SHALL be solved at the raised pitch. The raise SHALL come down only when the least raise is more than 0.1 under it, so the pitch holds still while the two stand still. Past the walk map's bounds, the boss camera SHALL read the map's edge cells, so scenery outside the map never brings it in.
+
+#### Scenario: Boss camera over the grave stones
+- **WHEN** the Node test stands the lamplighter on Barrow Crown's walk map at every point of a 1.5 m grid within 6.6 m of the arena's centre, facing the boss 2.6 m and then 5 m toward the centre (122 pairs), and steps the boss camera for 2.5 s at 1280 by 720 and at 390 by 844
+- **THEN** at every pair the camera stands at its least distance (12 m in landscape, 15.33 m on the phone), the boss's head and feet and the three shard rings of a lamp-shards laid at the lamplighter are on the screen with the head below the Lab bar row, the pitch moves by 0.01 or less over the next 1 s, and at most 6 of the 366 rings are hidden from the eye by the ground (measured: 122 of 122 pairs at both layouts, the highest pitch 1.08, 1 and 2 rings hidden; with a raise only to 0.55, 20 of 122 pairs came in to 1.85 to 5.65 m with the head off the screen, and 24 to 32 rings were hidden). Check: Node test `gloam-downs-boss.test.mjs`.
 
 #### Scenario: Boss in the arena
 - **WHEN** the Node test puts the lamplighter and the boss at 481 pairs of points in the arena, 3 to 9 m apart. It uses Barrow Crown's walk map. It steps the boss camera for 3 s at each of the five layouts.
@@ -949,6 +953,10 @@ The boss SHALL choose each attack from where the lamplighter stands. It SHALL no
 #### Scenario: Far from the boss
 - **WHEN** the boss stands at the arena's edge in phase 2, and the lamplighter stands 10 m from it in the arena. The boss's last two attacks were not lunges.
 - **THEN** the boss starts the stalking lunge, and a lane grows on the ground toward the lamplighter over 0.7 s. Check: Node test `gloam-downs-run.test.mjs`.
+
+#### Scenario: Every boss attack can be dodged
+- **WHEN** the boss bot fights the Barrow Reeve on Barrow Crown's walk map with the game's own moves, runner and boss mind, reads each wind-up a fixed 0.25 to 0.55 s after it starts, and makes no other mistake (`REACT=0.25` to `0.55` with `SKILLS=1`), in 40 fights or more at each reaction time
+- **THEN** no attack hits it, and each of the five attacks comes in those fights (measured: 0 hits in 60 fights at 0.25, 0.4, 0.5 and 0.55 s; the double sweep's second wind-up of 0.6 s is the shortest read, and a read of 0.6 s or more takes it). Check: `node qa/lab/gloam-downs-boss.sim.mjs`.
 
 ### Requirement: The lamp-shards
 The lamp-shards SHALL fall into three rings of 1.3 m: one at the lamplighter and one 2.5 m to each side. Each ring SHALL grow on the ground over the 0.9 s wind-up. A shard SHALL hit for 14, and only inside its ring.

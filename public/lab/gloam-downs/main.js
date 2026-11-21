@@ -11,7 +11,7 @@ import { makeCombat, makeMoveLock, asFoes, makeBossCam, yawDiff } from './camera
 import { ORDER, load, store, wispCount, fresh } from './save.js';
 import * as RS from './run-save.js';
 import { STEP, stepCount, startRun, reload, goTo, chooseWick, buy, maxOf, flasksOf, makeRunner, newSeed, WICKS } from './run.js';
-import { nearest, faceYaw, makePost, HITS } from './moves.js';
+import { nearest, faceYaw, makePost, HITS, clearLine } from './moves.js';
 import { NUMERAL, NAMES, fmt, stepsOf, INK, inkAt, TIMED, hudOf, wickLine, wickName, upgradeRows, lampButtons, summaryOf, winOf, routeOf, ASKS, cardOnLoad } from './screens.js';
 import { makeInput, navStep, readPads, heldNav } from './input.js';
 import * as cards from './cards.js';
@@ -651,7 +651,8 @@ function newRunner() {
   /* the boss camera (cameras.js), at Barrow Crown: on within 7.0 m of the arena's centre while the fight has started and the boss is
      up, framing the two with the page's own controls kept clear; its step goes after the follow camera's */
   const f = fight;
-  bossCam = f?.boss ? makeBossCam(cam, { screen: bossScreen, boss: () => f.boss.camView(), centre: f.boss.c, still, ground: (x, z) => walk.support(x, z, body.s.y + 1) ?? walk.top(x, z) }) : null;
+  bossCam = f?.boss ? makeBossCam(cam, { screen: bossScreen, boss: () => f.boss.camView(), centre: f.boss.c, still, ground: (x, z) => walk.support(x, z, body.s.y + 1) ?? walk.top(x, z),
+    sees: (a, b) => clearLine(walk, a[0], a[1], a[2], b[0], b[1], b[2]) }) : null;
   if (bossCam) measureScreen();
   return runner;
 }
