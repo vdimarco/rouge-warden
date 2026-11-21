@@ -386,7 +386,7 @@ export function makeCamera(walk, o = {}) {
   const pitch0 = o.pitch ?? 0.34, dist0 = o.dist ?? 8.5;
   const c = {
     yaw: o.yaw ?? 0, pitch: pitch0, base: pitch0, dist: dist0, want: dist0, fov: o.fov ?? null, asp: o.asp ?? 16 / 9, aim: o.aim ?? 1.15, target: null, idle: 9,
-    auto: o.auto !== false, lift: 0, goal: { lift: 0, dist: dist0 }, goals: [], turning: false, from: null, hidden: 0, dv: 0, steer: false, across: false, squeeze: false
+    auto: o.auto !== false, lift: 0, goal: { lift: 0, dist: dist0 }, goals: [], turning: false, from: null, hidden: 0, dv: 0, steer: false, across: false, squeeze: false, shot: null
   };
   const NEAR = 0.5, TOP = 1.35, DIP = 0.1, LIFT = 0.08, THIN = 0.55, SHORT = 0.6, AHEAD = 0.25, RISE = 4, GRACE = 0.15, HEAD = 1.3, CHEST = 0.8, IN = 0.15, OUT = 0.25;
   // the most speed coming in, m/s: past something between (PULL) and to keep the eye out of a wall (SQUEEZE);
@@ -440,12 +440,12 @@ export function makeCamera(walk, o = {}) {
   /* how far the eye can go back from (x, y, z) at this yaw and pitch, up to `far`: two samples short of the first thing in the way that
      is not thin, and then in until the eye itself is clear by 0.35. The line of sight may pass closer to the ground near the aim (a
      lamplighter in the water below a bank), so its clearance grows from 0.1 at the aim to 0.35 at 1.25 m */
-  const reach = (x, y, z, yaw, pitch, far) => {
+  const reach = (x, y, z, yaw, pitch, far, thin = true) => {
     const cp = Math.cos(pitch), ux = Math.sin(yaw) * cp, uy = Math.sin(pitch), uz = Math.cos(yaw) * cp, sx = Math.cos(yaw) * THIN, sz = -Math.sin(yaw) * THIN;
     let d = far;
     run.from = null;
     for (let t = 0.3; t <= far; t += 0.1) {
-      const b = blocked(t, x + ux * t, y + uy * t, z + uz * t, Math.min(0.35, 0.1 + 0.2 * t), sx, sz);
+      const b = blocked(t, x + ux * t, y + uy * t, z + uz * t, Math.min(0.35, 0.1 + 0.2 * t), thin ? sx : 0, thin ? sz : 0);
       if (b === null) continue;
       d = Math.max(0, b - 0.25);
       break;
@@ -474,24 +474,29 @@ export function makeCamera(walk, o = {}) {
     return true;
   };
   /* the least rise that lets the eye stand at its full distance and see the head and the chest (a high aim can clear the brow of a hill
-     that hides the figure); failing that, the rise that lets it stand farthest back */
+     that hides the figure); failing that, the rise that lets it stand farthest back and still see the head (a lift that looks down
+     through a bell's crown onto the figure hidden under it is never chosen while a lower one sees it), and only where none sees the
+     head, the one that stands farthest back. Under a roof over the head (a long passage, an archway) the view may also dip under the
+     lintel, down to DIP, but a dip is taken only where it stands at the full distance: in a nook it only looks into the back wall */
   function solve(x, y, z, yaw, head) {
-    let best = { lift: 0, dist: -1 };
+    let best = { lift: 0, dist: -1 }, seen = null;
     const chest = [head[0], head[1] - HEAD + CHEST, head[2]];
-    /* under a roof over the head (a cell, an archway), the view dips under the lintel first, down to DIP: rising there only brings the
-       roof between */
     const u = walk.top(head[0], head[2]) > head[1] ? ceil(head[0], head[2], false) : null, under = u !== null && u > head[1] - HEAD;
     const lifts = [];
-    if (under) { for (let l = 0; c.pitch + l > DIP + 1e-6; l -= LIFT) lifts.push(l); if (c.pitch > DIP) lifts.push(DIP - c.pitch); }
-    for (let l = under ? LIFT : 0; c.pitch + l <= TOP + 1e-6; l += LIFT) lifts.push(l);
+    for (let l = 0; c.pitch + l <= TOP + 1e-6; l += LIFT) lifts.push(l);
+    if (under) { for (let l = -LIFT; c.pitch + l > DIP + 1e-6; l -= LIFT) lifts.push(l); if (c.pitch > DIP) lifts.push(DIP - c.pitch); }
     for (const l of lifts) {
       const p = c.pitch + l, d = reach(x, y, z, yaw, p, c.want), cp = Math.cos(p);
       const e = [x + Math.sin(yaw) * cp * c.want, y + Math.sin(p) * c.want, z + Math.cos(yaw) * cp * c.want];
       if (d >= c.want - 0.05 && sees(head, e) && sees(chest, e)) return { lift: l, dist: c.want };
-      // (under a roof a rise must win by more: over the head it looks down at the floor, not ahead)
-      if (d > best.dist + (under && l > 0 ? 0.6 : 0.3)) best = { lift: l, dist: d };
+      if (l < 0) continue;
+      if (d > best.dist + 0.3) best = { lift: l, dist: d };
+      if (!seen || d > seen.dist + 0.3) {
+        const k = d / c.want;
+        if (sees(head, [x + (e[0] - x) * k, y + (e[1] - y) * k, z + (e[2] - z) * k])) seen = { lift: l, dist: d };
+      }
     }
-    return best;
+    return seen ?? best;
   }
   const wrap = a => Math.atan2(Math.sin(a), Math.cos(a));
   // turn: (c, s, dt, looked) -> true when a run's camera took the place of the swing this step
@@ -542,8 +547,7 @@ export function makeCamera(walk, o = {}) {
     if (c.goals.length > 3) c.goals.shift();
     c.goal = { lift: Math.min(...c.goals), dist: now.dist };
     // up quickly but never faster than RISE, down slowly
-    // (a dip under a lintel, a goal below 0, goes as quickly as a rise)
-    const up = c.goal.lift > c.lift || c.goal.lift < Math.min(0, c.lift), cap = c.lift + RISE * dt;
+    const up = c.goal.lift > c.lift, cap = c.lift + RISE * dt;
     c.lift += clamp((c.goal.lift - c.lift) * Math.min(1, (up ? 12 : 2) * dt), -RISE * dt, RISE * dt);
     /* the rise easing down must not lower the eye into the scenery: it holds this step, and the eye starts in (at no more than PULL,
        below) to where the lower view is clear */
@@ -645,9 +649,102 @@ export function makeCamera(walk, o = {}) {
       }
     }
     c.dist = Math.max(NEAR, d); c.dv = v;
-    return { target: c.target.slice(), dist: c.dist, yaw: c.yaw, pitch, ...(c.fov ? { fov: zoomFov(c.fov, c.dist, c.asp) } : {}) };
+    const sh = shot(tx, ty, tz, pitch, head, dt, Math.min(c.dist, room0), sp);
+    const vy = sh ? sh.yaw : c.yaw, vd = sh ? sh.dist : c.dist, vp = sh ? sh.pitch : pitch;
+    c.view = { yaw: vy, dist: vd, pitch: vp, dv: sh ? sh.dv : c.dv };
+    return { target: c.target.slice(), dist: vd, yaw: vy, pitch: vp, ...(c.fov ? { fov: zoomFov(c.fov, vd, c.asp) } : {}) };
+  }
+  /* ---- the framed shot ----
+     In a nook (a cell, a fallen bell, a cleft in the fen) the walls bring the follow eye above in at most yaws of the mouse. Where the room
+     at the mouse's yaw falls under SHOT.in, and the lamplighter is not running (SHOT.run m/s or less: a lane run through is past in a
+     moment), the picture is shown from the nearest yaw (every 15°, up to SHOT.most from the mouse's) where the eye can stand SHOT.clear
+     back, or at the full distance where that is less, on a line from the aim open all the way, and see the head and the chest: the best
+     clear angle, as Cinemachine's Deoccluder does with its Preserve Camera Distance strategy (it turns the camera round the target rather
+     than bring it in), and as its ClearShot picks the camera with the best shot. Only the picture moves: c.yaw, the mouse's yaw and the
+     way a move goes, is left as the player set it. The shown eye turns there at no more than SHOT.turn rad/s, only as far round as keeps
+     it out of the walls; it goes out at no more than BACK and in at no more than PULL. Where the way round is shut, or the eased eye
+     would land in a wall, it cuts (at most once each SHOT.cut s). Once the follow eye stands SHOT.out back, the picture turns back to it,
+     or cuts where that way is shut. -> null (the plain follow view), or { yaw, dist, pitch } */
+  const SHOT = { in: 2, out: 3, clear: 3, step: 15 * Math.PI / 180, most: 150 * Math.PI / 180, turn: 3, cut: 0.5, far: Math.PI / 4, run: 3 };
+  // the nearest clear yaw to `from`, within SHOT.most of the mouse's yaw -> { yaw, pitch } or null
+  function clearYaw(x, y, z, from, head, most = SHOT.most) {
+    const chest = [head[0], head[1] - HEAD + CHEST, head[2]], need = Math.min(SHOT.clear, c.want - 0.05);
+    for (let k = 0; k * SHOT.step <= 2 * most; k++) for (const sg of k ? [1, -1] : [1]) {
+      const yaw = from + sg * k * SHOT.step;
+      if (Math.abs(wrap(yaw - c.yaw)) > most + 1e-6) continue;
+      for (const l of [0, LIFT * 2, LIFT * 4, -LIFT * 2]) {
+        const p = clamp(c.pitch + l, 0.08, TOP), d = reach(x, y, z, yaw, p, c.want, false);
+        if (d < need) continue;
+        const cp = Math.cos(p), e = [x + Math.sin(yaw) * cp * d, y + Math.sin(p) * d, z + Math.cos(yaw) * cp * d];
+        if (sees(head, e) && sees(chest, e)) return { yaw, pitch: p };
+      }
+    }
+    return null;
+  }
+  function shot(x, y, z, pitch, head, dt, room, sp = 0) {
+    let sh = c.shot;
+    // it starts as the room at the mouse's yaw falls under SHOT.in, from the view of the step before (still out, before the eye comes in)
+    const from = sh ?? (c.view && Math.abs(wrap(c.view.yaw - c.yaw)) < 0.5 ? c.view : { yaw: c.yaw, dist: c.dist, pitch });
+    // (a lamplighter running through a lane or an arch is past the walls in a moment: no shot starts at more than SHOT.run m/s)
+    let goal = (sh ? c.dist < SHOT.out : room < SHOT.in && sp <= SHOT.run) ? clearYaw(x, y, z, from.yaw, head) : null;
+    // (no clear yaw near the mouse's while the follow eye is still in: the shot goes to the nearest clear yaw any way round, or holds)
+    if (!goal && sh && c.dist < SHOT.out) goal = clearYaw(x, y, z, sh.yaw, head, Math.PI) ?? { yaw: sh.yaw, pitch: sh.pitch };
+    if (!sh && !goal) return null;
+    if (!sh) sh = c.shot = { yaw: from.yaw, dist: from.dist, pitch: from.pitch, dv: from.dv ?? 0 };
+    if (dt <= 0) return sh;
+    // the turn of this step, eased, at no more than SHOT.turn (and RISE in pitch), and only the share of it that keeps the eye clear
+    // (coming back, the part of the turn left goes down from the mouse's yaw, so a turn of the mouse carries straight through)
+    const gp = goal ? goal.pitch : pitch, e = Math.min(1, 8 * dt), o = wrap(sh.yaw - c.yaw);
+    const by = goal ? clamp(wrap(goal.yaw - sh.yaw) * e, -SHOT.turn * dt, SHOT.turn * dt) : wrap(c.yaw + o - clamp(o * e, -SHOT.turn * dt, SHOT.turn * dt) - sh.yaw);
+    const bp = clamp((gp - sh.pitch) * e, -RISE * dt, RISE * dt);
+    // (an eye that the follow eye left inside the scenery, at NEAR, is not held: any way out is better)
+    let f = 1;
+    const free = eyeOpen(x, y, z, sh.yaw, sh.pitch, sh.dist);
+    if (free && !arcOpen(x, y, z, sh.yaw, by, sh.pitch, sh.dist, bp)) {
+      let lo = 0, hi = 1;
+      for (let i = 0; i < 8; i++) { const m = (lo + hi) / 2; if (arcOpen(x, y, z, sh.yaw, by * m, sh.pitch, sh.dist, bp * m)) lo = m; else hi = m; }
+      f = lo;
+    }
+    /* where the way round to the clear yaw is shut (a wall of the nook between), the picture cuts to it, as a camera that cannot move
+       round to its shot cuts to it, rather than come in to the wall and creep round it; at most one cut each SHOT.cut s (in between,
+       it turns as far as is clear and holds) */
+    sh.since = (sh.since ?? SHOT.cut) + dt;
+    const fresh = sh.since === SHOT.cut + dt && goal && Math.abs(wrap(goal.yaw - sh.yaw)) > SHOT.far;
+    const cut = () => {
+      sh.yaw = goal.yaw; sh.pitch = goal.pitch; sh.dv = 0; sh.since = 0; c.cuts = (c.cuts || 0) + 1;
+      sh.dist = Math.max(NEAR, reach(x, y, z, sh.yaw, sh.pitch, c.want, false));
+      return sh;
+    };
+    const may = goal && sh.since >= SHOT.cut && Math.abs(wrap(goal.yaw - sh.yaw)) + Math.abs(goal.pitch - sh.pitch) > 0.05;
+    // coming back the same way: the follow eye stands SHOT.out back, so the picture cuts back to it
+    if (!goal && f < 1 && sh.since >= SHOT.cut) { c.shot = null; c.cuts = (c.cuts || 0) + 1; return null; }
+    if (may && (fresh || f < 1)) return cut();
+    sh.yaw = wrap(sh.yaw + by * f); sh.pitch += bp * f;
+    // the distance: what is clear at the shown yaw, and back to the follow eye's once the shot is over
+    // (while it frames, the line from the aim must be open all the way, so the eye goes out along it; coming back, as the follow eye's)
+    let to = Math.max(NEAR, goal ? reach(x, y, z, sh.yaw, sh.pitch, c.want, false) : Math.min(reach(x, y, z, sh.yaw, sh.pitch, c.want), c.dist));
+    let [d, v] = damp(sh.dist, to, sh.dv, to < sh.dist ? IN : OUT, dt);
+    if (to >= sh.dist && sh.dv < 0) {
+      // an eye still coming in as the shot takes over slows to a stop at no more than ACC, so the take-over is not a jolt
+      v = Math.min(0, sh.dv + ACC * dt); d = sh.dist + v * dt;
+    } else if (d < sh.dist) {
+      // coming in: never past the goal, and at no more than PULL, reached at no more than ACC
+      v = Math.max((Math.max(d, to) - sh.dist) / dt, -PULL, Math.min(0, sh.dv) - ACC * dt); d = sh.dist + v * dt;
+    } else { v = Math.min((d - sh.dist) / dt, BACK, Math.max(0, sh.dv) + ACC * dt); d = sh.dist + v * dt; }
+    /* the eye is never inside the scenery: where the eased eye would be in it (the line from the aim is shut short of a clear eye, as
+       behind a wall) it cuts to the clear yaw, or failing that holds where it is clear; only an eye in the scenery already comes in */
+    if (!eyeOpen(x, y, z, sh.yaw, sh.pitch, d)) {
+      if (may) return cut();
+      if (eyeOpen(x, y, z, sh.yaw, sh.pitch, sh.dist)) { d = sh.dist; v = 0; }
+      else while (d > NEAR && !eyeOpen(x, y, z, sh.yaw, sh.pitch, d)) { d -= 0.05; v = 0; }
+    }
+    sh.dist = Math.max(NEAR, d); sh.dv = v;
+    // back where the follow eye is: the plain view again
+    if (!goal && Math.abs(wrap(sh.yaw - c.yaw)) < 0.01 && Math.abs(sh.pitch - pitch) < 0.01 && Math.abs(sh.dist - c.dist) < 0.05) c.shot = null;
+    return sh;
   }
   function snap(s, yaw) {
+    c.shot = c.view = null;
     c.yaw = yaw; c.target = [s.x, s.y + aimAt(s.x, s.y, s.z), s.z]; c.idle = 9;
     c.goal = solve(c.target[0], c.target[1], c.target[2], yaw, [s.x, s.y + HEAD, s.z]);
     c.lift = c.goal.lift; c.goals = [c.lift]; c.hidden = 0; c.dv = 0;
@@ -662,29 +759,35 @@ export function makeCamera(walk, o = {}) {
 }
 
 /* ---------------- the near fade ----------------
-   Where the walls bring the eye within NEAR_FADE.far of the lamplighter's body (the line from 0.3 to 1.3 over its feet), a share of its
-   splats is left out, more the nearer the eye, in four steps up to 0.8: a screen-door (dithered) fade by splat, as Super Mario Odyssey
-   dots Mario out when the camera comes close, and as the gameplay-camera plugins' dithering ("Dither Owner") fades the character. So
-   the eye in a cell sees through the hood to the floor and the way ahead instead of a wall of cloak. The blade is never left out.
-   eye: the eye's point. -> the share, 0 to 0.8 */
-export const NEAR_FADE = { near: 0.5, far: 1.2, most: 0.8, steps: 4 };
+   Where the walls still bring the eye within NEAR_FADE.far of the lamplighter's body (the line from 0.3 to 1.3 over its feet), a share of
+   its splats is left out, more the nearer the eye, in four steps, and all of them from NEAR_FADE.near in: a screen-door (dithered) fade
+   by splat, as Super Mario Odyssey dots Mario out when the camera comes close, and as the gameplay-camera plugins' dithering ("Dither
+   Owner") fades the character. A splat near the eye is drawn large, so a figure thinned by a share still covers the view; only one
+   left out whole lets the eye see the floor and the way out. What the player holds stays: the blade and the lantern (the splats on
+   either arm's bone more than 0.3 m from its pivot). eye: the eye's point. -> the share, 0 to 1 */
+export const NEAR_FADE = { near: 0.9, far: 2.2, most: 1, steps: 4 };
 export function fadeOf(eye, s) {
   const dy = clamp(eye[1] - s.y, 0.3, 1.3), d = Math.hypot(eye[0] - s.x, eye[1] - s.y - dy, eye[2] - s.z);
   const k = clamp((NEAR_FADE.far - d) / (NEAR_FADE.far - NEAR_FADE.near), 0, 1);
-  return Math.round(k * NEAR_FADE.steps) / NEAR_FADE.steps * NEAR_FADE.most;
+  return Math.ceil(k * NEAR_FADE.steps - 1e-9) / NEAR_FADE.steps * NEAR_FADE.most;
 }
 // the eye's point of a view { target, dist, yaw, pitch }, as the renderer places it
 export const eyeOf = v => { const cp = Math.cos(v.pitch); return [v.target[0] + v.dist * Math.sin(v.yaw) * cp, v.target[1] + v.dist * Math.sin(v.pitch), v.target[2] + v.dist * Math.cos(v.yaw) * cp]; };
 /* the lamplighter's splats that a fade of share k leaves out, in a place's data: a fixed share of each part by a hash of the splat's
-   number, so the figure thins evenly; the blade's splats (on the right arm's bone, more than 0.3 m from its pivot) stay. Returns
-   set(k): writes the densities (0, or each splat's own) and returns the 512-splat rows it changed, or none when k is as before */
+   number, so the figure thins evenly; what it holds (the splats on either arm's bone more than 0.3 m from its pivot: the blade and the
+   lantern) stays. Returns set(k): writes the densities (0, or each splat's own) and returns the 512-splat rows it changed (about 14),
+   or none when k is as before */
+export const held = (data, bones, i) => {
+  const b = data[i * 16 + 12], name = bones.names[b], pv = bones.pivots[b];
+  return (name === 'armR' || name === 'armL') && Math.hypot(data[i * 16] - pv[0], data[i * 16 + 1] - pv[1], data[i * 16 + 2] - pv[2]) > 0.3;
+};
 export function makeFade(data, bones) {
-  const { first, end } = bones, arm = bones.names.indexOf('armR'), pv = bones.pivots[arm], own = new Float32Array(end - first);
+  const { first, end } = bones, own = new Float32Array(end - first);
   const keep = new Uint8Array(end - first), rank = new Float32Array(end - first);
   for (let i = first; i < end; i++) {
     const o = i * 16;
     own[i - first] = data[o + 3];
-    keep[i - first] = data[o + 12] === arm && Math.hypot(data[o] - pv[0], data[o + 1] - pv[1], data[o + 2] - pv[2]) > 0.3 ? 1 : 0;
+    keep[i - first] = held(data, bones, i) ? 1 : 0;
     rank[i - first] = ((i * 0.6180339887) % 1 + 1) % 1;
   }
   let at = 0;
@@ -745,7 +848,8 @@ function actPose(a, parts) {
     case 'roll':
       spin = (a.back ? -1 : 1) * 2 * Math.PI * e;
       squash = 1 - 0.22 * Math.sin(Math.PI * k);
-      parts.armL = parts.armR = rotX(-0.9);
+      // the blade turned to lie along the roll's axis (out to the side), so it turns round over the floor, never into it
+      parts.armL = rotX(-0.9); parts.armR = rotY(-0.66);
       parts.legL = parts.legR = rotX(-1.0);
       parts.head = rotX(0.35);
       break;

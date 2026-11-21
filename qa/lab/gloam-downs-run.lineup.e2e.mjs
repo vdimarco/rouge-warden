@@ -22,7 +22,7 @@ const SHOTS = process.env.SHOTS;
 if (SHOTS) fs.mkdirSync(SHOTS, { recursive: true });
 const executablePath = existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined;
 const GL = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'];
-const LAMP = 6953; // the lamplighter's boned splats in every place (5,436 before the blade)
+const LAMP = 6636; // the lamplighter's boned splats in every place (5,436 before the blade)
 const PLACES = process.argv.slice(2).length ? process.argv.slice(2) : ['gaol', 'ramparts', 'fen', 'bells', 'barrows'];
 // where the lineup stands in each place: open ground, the lamplighter at [x, z] facing yaw
 const SPOT = { gaol: [1, 6, Math.PI], ramparts: [-1.5, 3, Math.PI], fen: [0, 12, Math.PI], bells: [-0.5, 18, Math.PI], barrows: [25, -22, -Math.PI / 2] };
@@ -149,8 +149,8 @@ try {
     assert.equal(p.slots.map(x => x.code).join(''), 'SSSSS', 'the Gaol pool is 5 Snuffer slots');
     assert(p.slots.every(x => !x.awake), 'every slot is parked');
     assert.equal(p.boned, LAMP, 'only the lamplighter rides the bones');
-    // the place (242,099 splats with the blade; 240,582 before), its pool's slots, and the spark pool's 256 splats after them
-    assert(p.count > s.count - 1 && p.count - p.slots.reduce((a, x) => a + x.end - x.first, 0) - p.extra === 242099 && p.extra === 256, `the place and its pool: ${p.count}`);
+    // the place (241,782 splats with the blade; 240,582 before), its pool's slots, and the spark pool's 256 splats after them
+    assert(p.count > s.count - 1 && p.count - p.slots.reduce((a, x) => a + x.end - x.first, 0) - p.extra === 241782 && p.extra === 256, `the place and its pool: ${p.count}`);
     assert.deepEqual(errors, []);
     pass('?run builds the Gaol pool parked: 5 Snuffer slots off the bones', { count: p.count, boned: p.boned });
     await ctx.close();
@@ -159,7 +159,7 @@ try {
     const { ctx, page, errors } = await open({ viewport: { width: 960, height: 540 } }, '?fresh&test');
     await ready(page);
     assert.equal(await G(page, () => window.__gloam.pool()), null, 'the explorer has no pool');
-    assert.equal((await G(page, () => window.__gloam.state())).count, 242099);
+    assert.equal((await G(page, () => window.__gloam.state())).count, 241782);
     assert.deepEqual(errors, []);
     pass('the explorer has no pool, and its world holds only the place');
     await ctx.close();

@@ -137,7 +137,7 @@ These modules have no DOM unless the list says so, so the Node tests use them as
 - `node qa/lab/gloam-downs.test.mjs`: the explorer's controller, walk map, saves and loader (`GLOAM_WORLDS=0` skips the baked places).
 - `node qa/lab/gloam-downs-run.test.mjs`: the run's step and clocks, the lamplighter's moves, the rules, the saves, the pads and the screens.
 - `node qa/lab/gloam-downs-foes-ai.test.mjs`: the foes' moves, tokens, leash, zones and guards on the baked walk maps, glim, the marker fit and the feel (`GLOAM_WORLDS=0` leaves out the baked places).
-- `node qa/lab/gloam-downs-camera.test.mjs`: the follow camera's framing at 14 windows and on the five routes, the Gaol's torn cell (tight spaces), the combat camera and the boss camera.
+- `node qa/lab/gloam-downs-camera.test.mjs`: the follow camera's framing at 14 windows and on the five routes, the Gaol's torn cell and a mouse sweep at every wisp (tight spaces, the framed shot, what the figure covers of the view), the near fade, the combat camera and the boss camera.
 - `node qa/lab/gloam-downs-stairs.test.mjs [place ...]`: every flight of steps listed in the places' JSON, walked by the controller in the explorer and the run; no stop may be stuck (`GLOAM_WALKS=<dir>` walks other walk maps; about a minute).
 - `node qa/lab/gloam-downs-foes.test.mjs`: the figures, their clips and poses, the pool, the colours, the budgets, the zones on the baked walk maps, and the bake of the Gaol with and without its zones (`GLOAM_BAKE=0` skips that bake).
 - `node qa/lab/gloam-downs-zones.mjs`: the zones on the walk maps: the wake rule, the guard rule, the cap of 6, the pool slots, the routes, the Ironback walls and the beacon distances.

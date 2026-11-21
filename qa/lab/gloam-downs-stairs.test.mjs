@@ -6,7 +6,7 @@
 //   at 30° and 60° to it, at a walk and a run, and across it at five points, at 60 and 30 steps a second; in the run, the same lines
 //   with a roll half way. Wherever the lamplighter comes to a stop, the stop is tried on 16 headings, with a walk and with a running
 //   jump: it is stuck when no heading gets it 0.4 m away (wedged in a gap between steps, or between a stair and a wall).
-// The player's report: "I got stuck between the stairs". The walk maps of 45ffb438 had 22 such stops beside the Gaol's west stair (the
+// The player's report: "I got stuck between the stairs". The walk maps of 45ffb438 had 21 such stops beside the Gaol's west stair (the
 // slot one cell wide between the stair's side and the first tier); the crack pass of round 7 closes it. GLOAM_WALKS=<dir> walks the
 // flights on the walk maps in another folder (the old maps fail here).
 // Run: node qa/lab/gloam-downs-stairs.test.mjs [place ...]   (GLOAM_WORLDS=0 skips it)

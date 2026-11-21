@@ -16,7 +16,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
-import { makeWalk, makeBody, makeCamera, pose, reachable, touches, atBeacon, JUMP, PARAMS, makeFade } from '../../public/lab/gloam-downs/play.js';
+import { makeWalk, makeBody, makeCamera, pose, reachable, touches, atBeacon, JUMP, PARAMS, makeFade, held } from '../../public/lab/gloam-downs/play.js';
 import { clean, fresh, ORDER, wispCount } from '../../public/lab/gloam-downs/save.js';
 import { closeCracks } from '../../games/gloam-downs/lib/cracks.mjs';
 import { byBeacon, closeWalk, controllerOut, fillTraps, findTraps, standsIn } from '../../games/gloam-downs/lib/traps.mjs';
@@ -27,6 +27,7 @@ const SplatCodec = new Function(fs.readFileSync(DIR + 'ink/splat-codec.js', 'utf
 let n = 0;
 const pass = (name, data) => { n++; console.log('PASS ' + name + (data ? ' ' + JSON.stringify(data) : '')); };
 const near = (a, b, e) => Math.abs(a - b) <= e;
+let bladeLow = null;
 
 /* ---------------- the five places ---------------- */
 // GLOAM_WORLDS=0 skips the baked places (to test the rules alone while the places are being baked)
@@ -66,18 +67,40 @@ for (const id of skipWorlds ? [] : ORDER) {
       reach = Math.max(reach, d); side = Math.max(side, body[0] - x);
     }
     assert(far >= 150 && reach > 1.0 && side > 0.5, `${id}: the blade: ${far} splats past 0.5 m from the shoulder, reaching ${reach.toFixed(2)} m, ${side.toFixed(2)} m to the side`);
-    // the near fade thins the figure and keeps the blade, and puts every density back
-    const before = data.slice(B.first * 16, B.end * 16), fade = makeFade(data, B), rows = fade.set(0.8);
-    assert(rows.length > 0 && fade.set(0.8).length === 0, `${id}: the fade writes its rows once`);
-    let gone = 0, rest = 0, bladeLeft = 0;
-    for (let i = B.first; i < B.end; i++) {
-      const blade = data[i * 16 + 12] === arm && Math.hypot(data[i * 16] - pv[0], data[i * 16 + 1] - pv[1], data[i * 16 + 2] - pv[2]) > 0.3;
-      if (blade) { if (data[i * 16 + 3] === before[(i - B.first) * 16 + 3]) bladeLeft++; else bladeLeft = -Infinity; }
-      else { rest++; if (data[i * 16 + 3] === 0) gone++; }
+    /* the near fade thins the figure by its share and, at 1, leaves it out whole, but keeps what it holds (the blade and the lantern:
+       splats on either arm's bone more than 0.3 m from its pivot), and puts every density back */
+    const before = data.slice(B.first * 16, B.end * 16), fade = makeFade(data, B);
+    for (const k of [0.5, 1]) {
+      const rows = fade.set(k);
+      assert(rows.length > 0 && rows.length <= 16 && fade.set(k).length === 0, `${id}: the fade writes its ${rows.length} rows once`);
+      let gone = 0, rest = 0, bladeLeft = 0, lamp = 0;
+      for (let i = B.first; i < B.end; i++) {
+        if (held(data, B, i)) {
+          if (data[i * 16 + 3] === before[(i - B.first) * 16 + 3]) { bladeLeft += data[i * 16 + 12] === arm ? 1 : 0; lamp += data[i * 16 + 12] === arm ? 0 : 1; } else bladeLeft = -Infinity;
+        } else { rest++; if (data[i * 16 + 3] === 0) gone++; }
+      }
+      assert(bladeLeft >= 150 && lamp >= 30 && Math.abs(gone / rest - k) < 0.03, `${id}: the fade of ${k} left out ${gone} of ${rest} (kept: blade ${bladeLeft}, lantern ${lamp})`);
     }
-    assert(bladeLeft >= 150 && Math.abs(gone / rest - 0.8) < 0.03, `${id}: the fade left out ${gone} of ${rest} (blade kept: ${bladeLeft})`);
     fade.set(0);
     for (let i = B.first; i < B.end; i++) assert.equal(data[i * 16 + 3], before[(i - B.first) * 16 + 3]);
+    /* the blade stays over the floor in every pose: at rest, through the walk and run cycle, and through each phase of every move of a
+       run (play.js pose and actPose), its lowest splat at least 0.03 over the feet. The blade of 2337588c, held 0.17 down and turned
+       with the sleeve's old poses, went 0.11 m into the floor at the end of the chop and 0.43 m in a roll */
+    {
+      const blade = [];
+      for (let i = B.first; i < B.end; i++) if (data[i * 16 + 12] === arm && held(data, B, i)) blade.push([data[i * 16], data[i * 16 + 1], data[i * 16 + 2]]);
+      const out = new Float32Array(12 * B.names.length), o = 12 * arm;
+      const st = (o2 = {}) => ({ x: 0, y: 0, z: 0, yaw: 0, phase: 0, moveK: 0, runK: 0, landK: 0, landAge: 9, ground: true, vy: 0, floor: 0, act: null, ...o2 });
+      const low = s => { pose(out, B, s, 0, true); let lo = Infinity; for (const [x, y, z] of blade) lo = Math.min(lo, out[o + 3] * x + out[o + 4] * y + out[o + 5] * z + out[o + 10]); return lo - s.y; };
+      const states = [['rest', st()], ['air', st({ ground: false })]];
+      for (let k = 0; k < 16; k++) states.push([`run ${k}/16`, st({ phase: k * Math.PI / 8, moveK: 1, runK: 1 })]);
+      for (const move of ['cut1', 'cut2', 'fin', 'roll', 'hang', 'plunge', 'land', 'drink', 'hurt']) for (const ph of ['wind', 'act', 'rec']) for (let k = 0; k <= 10; k++)
+        states.push([`${move} ${ph} ${k / 10}`, st({ act: { move, ph, k: k / 10 }, ground: move !== 'hang' && move !== 'plunge' })]);
+      let worst = ['', Infinity];
+      for (const [name, s] of states) { const l = low(s); if (l < worst[1]) worst = [name, l]; }
+      assert(worst[1] >= 0.03, `${id}: the blade goes ${(-worst[1]).toFixed(2)} m under the feet in ${worst[0]}`);
+      if (id === 'gaol') bladeLow = worst;
+    }
   }
   // wisps and the beacon's fire: glowing splats in their own id ranges, inside the world
   assert.equal(meta.wisps.length, 5);
@@ -107,7 +130,7 @@ for (const id of skipWorlds ? [] : ORDER) {
   assert(R.near(meta.beacon.p, meta.beacon.r * 0.9, -2.6, 2.6), `${id}: the beacon can be reached`);
   meta.wisps.forEach((w, i) => assert(R.near(w.p), `${id}: wisp ${i + 1} can be reached`));
   assert(meta.beacon.p[1] > meta.spawn.p[1] + 2, `${id}: the beacon stands on a rise above the start`);
-  pass(`${id}: ${meta.name}`, { splats: count, mb: +((gz.length + wgz.length) / 1e6).toFixed(2), reach: R.cells });
+  pass(`${id}: ${meta.name}`, { splats: count, mb: +((gz.length + wgz.length) / 1e6).toFixed(2), reach: R.cells, ...(id === "gaol" && bladeLow ? { bladeLow: [bladeLow[0], +bladeLow[1].toFixed(3)] } : {}) });
 }
 if (!skipWorlds && !missing.length) {
   /* the shipped walk maps are what the bake makes now of the march. In the gaol the crack pass makes the grid point that the march
@@ -1189,7 +1212,7 @@ const lowestNear = (W2, [cx, cy, cz], r, from = 1.6) => {
   pass('the lamplighter walks under an arch at every frame step and speed');
 }
 { /* the camera rises over a wall between it and the lamplighter and stays back; only where no rise clears the wall (a 3 m wall less
-     0.4 m behind) does it come in. Its eye stays out of the wall, and it sees the head */
+     0.4 m behind) does the follow eye come in, and then the picture is framed from a clear yaw. Its eye stays out of the wall, and it sees the head */
   const eyeOf = v => {
     const cp = Math.cos(v.pitch);
     return [v.target[0] + v.dist * Math.sin(v.yaw) * cp, v.target[1] + v.dist * Math.sin(v.pitch), v.target[2] + v.dist * Math.cos(v.yaw) * cp];
@@ -1205,7 +1228,8 @@ const lowestNear = (W2, [cx, cy, cz], r, from = 1.6) => {
     for (let i = 0; i < 120; i++) { v = cam.follow(b.s, 1 / 60, {}); assert(clear(v) > 0.1, `body at x ${x}, frame ${i}: the eye ${eyeOf(v).map(n => n.toFixed(2))} is in the wall`); }
     assert(sight(v, b.s), `body at x ${x}: the eye sees the head`);
     if (x <= 3.4) assert(near(v.dist, 8.5, 0.05) && v.pitch > 0.5, `body at x ${x}: it rose over the wall and stayed back (dist ${v.dist}, pitch ${v.pitch})`);
-    else assert(v.dist < 2.5, `body at x ${x}: no rise clears the wall, so it came in: dist ${v.dist}`);
+    // (the follow eye comes in, and the picture is the framed shot from the nearest clear yaw: play.js makeCamera, the framed shot)
+    else assert(cam.c.dist < 2.5 && cam.c.shot && v.dist >= 2.5, `body at x ${x}: no rise clears the wall, so the follow eye came in (${cam.c.dist}) and the shot stands ${v.dist} back`);
     seen.push([x, +v.dist.toFixed(2), +v.pitch.toFixed(2)]);
   }
   // backing into the wall with the camera behind

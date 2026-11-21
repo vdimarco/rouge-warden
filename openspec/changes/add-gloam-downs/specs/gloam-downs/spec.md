@@ -19,7 +19,7 @@ Every place SHALL be at dusk or at night. Most of the screen SHALL be dark: shad
 - **THEN** the mean luminance of the picture is between 0.05 and 0.32, where 0 is black and 1 is white. Between 0.05% and 12% of its pixels are brighter than 0.55. Check: e2e `gloam-downs.e2e.mjs` through `?wander`.
 
 ### Requirement: The lamplighter
-The player SHALL be a small original figure: a round hooded lamplighter that carries a lantern in its left hand and a blade in its right. The blade SHALL be plainly visible from the follow camera at rest and in a swing: broad and chunky, held out to the side, iron with a lit rim, never brighter than the fire. The figure SHALL swing its legs and arms when it walks, lean when it runs and squash when it lands. It SHALL cast a round shadow on the ground under it.
+The player SHALL be a small original figure: a round hooded lamplighter that carries a lantern in its left hand and a blade in its right. The blade SHALL be plainly visible from the follow camera at rest and in a swing: broad and chunky, held out to the side, grey iron with a thin lit edge, never brighter than the fire. In no pose SHALL it go into the floor. The figure SHALL swing its legs and arms when it walks, lean when it runs and squash when it lands. It SHALL cast a round shadow on the ground under it.
 
 #### Scenario: Walk
 - **WHEN** the visitor holds W or the up arrow
@@ -27,7 +27,11 @@ The player SHALL be a small original figure: a round hooded lamplighter that car
 
 #### Scenario: See the blade
 - **WHEN** the run or the explorer starts at 1280 by 720 or 390 by 844, and the player swings
-- **THEN** the blade shows to the right of the lamplighter at rest, a grey bar with a warm rim, and swings with the arm in each cut. Check: Node test `gloam-downs.test.mjs` (in each place, at least 150 splats on the right arm reach more than 0.5 m from the shoulder, the farthest more than 1 m, more than 0.5 m to the side of the body; the figure of 45ffb438 had none, its arm reaching 0.26 m), and screenshots at both sizes at rest and in a cut.
+- **THEN** the blade shows to the right of the lamplighter at rest, a grey cleaver with a warm edge near its tip, and swings with the arm in each cut. Check: Node test `gloam-downs.test.mjs` (in each place, at least 150 splats on the right arm reach more than 0.5 m from the shoulder, the farthest more than 1 m, more than 0.5 m to the side of the body; the figure of 45ffb438 had none, its arm reaching 0.26 m), and screenshots at both sizes at rest and in a cut.
+
+#### Scenario: The blade over the floor
+- **WHEN** the lamplighter stands, walks, runs, jumps, and takes each phase of every move of a run (the cuts, the finisher, the roll, the plunge, the landing, the drink, a hit taken)
+- **THEN** the blade's lowest splat is at least 0.03 m over the feet. Before: 0.11 m under them at the end of the finisher's chop and 0.43 m in a roll. Check: Node test `gloam-downs.test.mjs`.
 
 ### Requirement: Move and jump
 The player SHALL move relative to the camera with WASD, the arrow keys, the left stick of a gamepad or the touch stick. Shift SHALL walk slowly. Space, the gamepad A button or the touch Jump button SHALL jump. The lamplighter SHALL stand on the ground, climb low steps, stop at walls and steep slopes, and fall off ledges.
@@ -210,11 +214,26 @@ The camera SHALL turn by itself (the swing behind a running lamplighter, the tur
 - **THEN** the swing starts 2 s after the last look input and turns no faster than 0.5 × π/2 rad/s (measured start 2.02 s), and with the move to the side held the view does not turn. Check: Node test `gloam-downs-mouse.test.mjs`.
 
 ### Requirement: Tight spaces
-Where the scenery is close round the lamplighter, the camera SHALL keep the lamplighter and the way ahead in view rather than zoom in. The eye SHALL use a room's full height, up to 0.35 m under its ceiling. Under a roof over the feet, the aim SHALL come down to 1.55 m under the roof (never under 0.6 m over the feet), and the view SHALL dip under a lintel, down to a pitch of 0.1, before it rises. The distance SHALL never be under 0.5 m.
+Where the scenery is close round the lamplighter, the camera SHALL keep the lamplighter and the way ahead in view rather than zoom in. The eye SHALL use a room's full height, up to 0.35 m under its ceiling. Under a roof over the feet, the aim SHALL come down to 1.55 m under the roof (never under 0.6 m over the feet), and the view MAY dip under a lintel, down to a pitch of 0.1, only where the dip stands at the full distance. The camera SHALL not take a rise from which the head is hidden while a lower one sees it. The distance SHALL never be under 0.5 m.
 
 #### Scenario: Into the torn cell
-- **WHEN** the lamplighter walks from the Gaol's yard into the torn cell where its first wisp hangs, at 1280 by 720 and 390 by 844, and the player then turns the view round with the mouse at three spots in the cell
-- **THEN** walking in within 20° of square to the mouth the eye ends out in the yard at the layout's distance (at least 2 m at 35°); turning round, the eye never comes nearer than 0.5 m, the figure drawn whole is never taller than the view, and with the eye within 0.8 m of the body the figure is thinned by at least 0.4. Before: a phone's eye stood 0.5 m away walking in, and a sweep put the eye through the aim. Check: Node test `gloam-downs-camera.test.mjs`, and screenshots at the wisp at both sizes.
+- **WHEN** the lamplighter walks from the Gaol's yard into the torn cell where its first wisp hangs, at 1280 by 720 and 390 by 844
+- **THEN** walking in within 20° of square to the mouth the eye ends out in the yard at the layout's distance (at least 2 m at 35°). Before: a phone's eye stood 0.5 m away walking in. Check: Node test `gloam-downs-camera.test.mjs`, and screenshots at the wisp at both sizes.
+
+#### Scenario: Under a long roof
+- **WHEN** the lamplighter stands in a passage 3 m wide under a roof 2.4 m high
+- **THEN** the camera stands at 8 m or more inside the passage, its eye under the roof. Check: Node test `gloam-downs-camera.test.mjs`.
+
+### Requirement: The framed shot
+Where the room at the mouse's yaw falls under 2 m and the lamplighter moves at 3 m/s or less, the picture SHALL be shown from the nearest yaw, up to 150° from the mouse's, where the eye can stand 3 m back (or at the full distance) and see the head and the chest. The mouse's yaw, and the way a move goes, SHALL stay as the player set it. The picture SHALL turn there only as far as keeps the eye out of the walls, or cut to it, at most once each 0.5 s; a cut SHALL show the lamplighter from an eye clear of the scenery. Once the follow eye stands 3 m back again, the picture SHALL come back to it.
+
+#### Scenario: Turn round in a nook
+- **WHEN** the player turns the view a full turn with the mouse in 6 s, standing at three spots in the torn cell and at each of the 25 wisps, at 1280 by 720 and 390 by 844
+- **THEN** the eye stands at least 2.5 m back on at least 90% of the steps and never nearer than 0.5 m, it sees the head as it settles, and the lamplighter as drawn covers at most 35% of the view on every step. Before: within 2 m on 84 to 90% of the cell's sweep at 1280 by 720, 65 to 86% on a phone, and the figure a wall of cloak over the view; inside the Bell Knoll's fallen bell the camera stood over the crown with the figure hidden. Check: Node test `gloam-downs-camera.test.mjs`, and screenshots in the cell at both sizes.
+
+#### Scenario: Turn against a wall
+- **WHEN** the player turns the view into a long wall 1 or 2 m behind the lamplighter and back, at 1.2, 3 and 6 rad/s, and at each spawn and wisp at 1.2 rad/s each way
+- **THEN** the eye is never in the wall, the follow eye comes in eased, the picture cuts at most twice in one turn there and back, and in the sweeps of the five places at most 8 steps come in through a wall, each under 2.1 m. Check: Node test `gloam-downs-mouse.test.mjs`.
 
 ### Requirement: The follow zoom
 Nearer than 3.5 m, the field of view SHALL widen so the view is as tall at the aim as from 3.5 m, up to 90° tall and 110° across.
@@ -224,11 +243,15 @@ Nearer than 3.5 m, the field of view SHALL widen so the view is as tall at the a
 - **THEN** the view is as tall at the aim as from 3.5 m at 2 m, and at most 110° across at 0.3 m (90° tall on a phone). From 3.5 m out the field of view is the layout's. Check: Node test `gloam-downs-camera.test.mjs`.
 
 ### Requirement: The near fade
-With the eye within 1.2 m of the lamplighter's body, a share of the figure's splats SHALL be left out, more the nearer the eye, in four steps up to 0.8, as a dithered fade. The blade's splats SHALL stay. All densities SHALL come back when the eye moves off.
+With the eye within 2.2 m of the lamplighter's body, a share of the figure's splats SHALL be left out, more the nearer the eye, in four steps, and all of them from 0.9 m in, as a dithered fade. The blade and the lantern SHALL stay. All densities SHALL come back when the eye moves off.
 
-#### Scenario: Thin out, keep the blade
-- **WHEN** the fade is set to 0.8 on a baked place, and then to 0
-- **THEN** 0.8 of the figure's other splats are left out (±0.03), the blade's are all kept, and every density comes back. Check: Node test `gloam-downs.test.mjs`.
+#### Scenario: Leave out the figure, keep what it holds
+- **WHEN** the fade is set to 0.5 and then 1 on a baked place, and then to 0
+- **THEN** that share of the figure's other splats is left out (±0.03), the blade's and the lantern's are all kept, and every density comes back. Check: Node test `gloam-downs.test.mjs`.
+
+#### Scenario: An eye at the hood
+- **WHEN** the eye is 0.5 m behind the hood, the view widened by the follow zoom, at 1280 by 720 and 390 by 844
+- **THEN** the figure as drawn covers at most 10% of the view (drawn whole it covers 30% or more, and thinned by 0.8 nearly as much). Check: Node test `gloam-downs-camera.test.mjs`.
 
 ### Requirement: An eased pull-in
 When a wall or a hill brings the camera in, it SHALL come in and go back out eased, with a critically damped spring of about 0.15 s in and 0.25 s out. Its eye SHALL still never be inside the scenery. Standing still, the view SHALL not move.
