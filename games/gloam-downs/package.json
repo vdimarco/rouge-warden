@@ -1,0 +1,13 @@
+{
+  "name": "gloam-downs-bake",
+  "private": true,
+  "type": "module",
+  "description": "Bakes the Gloam Downs worlds with Ink Studio and copies its WebGL renderer into public/lab/gloam-downs/",
+  "scripts": {
+    "bake": "node bake.mjs",
+    "vendor": "node vendor.mjs"
+  },
+  "dependencies": {
+    "@shapeshift-labs/ink-studio": "github:siliconjungle/shapeshift-labs-ink-studio#6a8c6225c6ab7a96dd2d33b5a92f9251b13c13e7"
+  }
+}
