@@ -172,8 +172,10 @@ export function makeBossCam(cam, { screen, boss = () => null, centre = [18, 0.68
       b.cur.dist += (b.goal.dist - b.cur.dist) * k;
     }
     if (!b.cur || b.w <= 0) { b.cur = B ? b.cur : null; b.goal = B ? b.goal : null; b.view = view; return view; }
-    // the walls: no nearer than the first thing in the way, and then the pitch eases up to 0.55
-    const [ax, ay, az] = b.cur.aim, room = cam.reach(ax, ay, az, c.yaw, c.base + b.lift, b.cur.dist);
+    /* the walls: no nearer than the first thing in the way, and then the pitch eases up to 0.55. Whether something is in the way is read
+       at the layout's pitch, not at the raised one: read at the raised pitch, a stone the raise just clears would send the pitch back
+       down, and the distance would flick between the stone and the frame every few steps */
+    const [ax, ay, az] = b.cur.aim, room = cam.reach(ax, ay, az, c.yaw, c.base, b.cur.dist);
     b.lift += ((room < b.cur.dist - 0.1 ? BOSS.slope - c.base : 0) - b.lift) * Math.min(1, 4 * dt);
     const dist = Math.min(b.cur.dist, cam.reach(ax, ay, az, c.yaw, c.base + b.lift, b.cur.dist));
     const e = b.w * b.w * (3 - 2 * b.w), mix = (p, q) => p + (q - p) * e;

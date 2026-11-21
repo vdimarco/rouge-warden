@@ -126,7 +126,7 @@ These modules have no DOM unless the list says so, so the Node tests use them as
 - **`markers.js`**: fits each ring slice and lane piece to the ground, or to the Fen's water (`fitRing`, `fitLane`).
 - **`sparks.js`**: a port of Ink Studio's `K.play.fx`: sparks, flashes, rings, ember cracks and glim motes.
 - **`feel.js`**: the camera kick, the zoom, the hurt tint, the low-health grade with its heartbeat, the fade to ink, the boss's fall (`fall()`) and its shocks (`shock()`), and reduced motion.
-- **`cameras.js`**: the combat camera, the move lock, and the boss camera (stage 3 wires it to the boss), on top of `play.js`'s follow camera. `camLayout(w, h)` in `play.js` gives each window's framing.
+- **`cameras.js`**: the combat camera, the move lock, and the boss camera (wired to the Barrow Reeve in `main.js`), on top of `play.js`'s follow camera. `camLayout(w, h)` in `play.js` gives each window's framing.
 - **`screens.js`**: what each screen shows, as pure functions: the HUD's health line, the wick buttons, the Lamp-room's rows and buttons, the summary, the pause panel's places and questions, the game-time waits, and the card that a load opens.
 - **`main.js`** wires them: `newRunner()` builds the fight with each place, `fightView()` hands the awake foes to the combat camera, and the `?test` hooks (`foes`, `wake`, `spawn`, `hold`, `out`, `notches`, `combat`, `draw({ time, pool })`, `layout`, `kill`, `toast`, `lamp`) let the checks set up each picture.
 
@@ -135,11 +135,12 @@ These modules have no DOM unless the list says so, so the Node tests use them as
 - `node qa/lab/gloam-downs.test.mjs`: the explorer's controller, walk map, saves and loader (`GLOAM_WORLDS=0` skips the baked places).
 - `node qa/lab/gloam-downs-run.test.mjs`: the run's step and clocks, the lamplighter's moves, the rules, the saves, the pads and the screens.
 - `node qa/lab/gloam-downs-foes-ai.test.mjs`: the foes' moves, tokens, leash, zones and guards on the baked walk maps, glim, the marker fit and the feel (`GLOAM_WORLDS=0` leaves out the baked places).
+- `node qa/lab/gloam-downs-boss.test.mjs`: the Barrow Reeve's mind (`boss.js`): phases, the choice by position, timings at four frame rates, damage, the turn limit, ring, slice and lane hits, the fall and the stored states.
 - `node qa/lab/gloam-downs-camera.test.mjs`: the follow camera's framing at 14 windows and on the five routes, the combat camera and the boss camera.
 - `node qa/lab/gloam-downs-foes.test.mjs`: the figures, their clips and poses, the pool, the colours, the budgets, the zones on the baked walk maps, and the bake of the Gaol with and without its zones (`GLOAM_BAKE=0` skips that bake).
 - `node qa/lab/gloam-downs-zones.mjs`: the zones on the walk maps: the wake rule, the guard rule, the cap of 6, the pool slots, the routes, the Ironback walls and the beacon distances.
 - `node qa/lab/gloam-downs-bake-zones.mjs [place ...]`: each place baked with and without its zones into the system's temp folder, one bake at a time (about 1.5 minutes for all five).
-- With the site served: `node qa/lab/gloam-downs.e2e.mjs` (the explorer), `node qa/lab/gloam-downs-run.input.e2e.mjs` (the run's inputs and first cards), `node qa/lab/gloam-downs-run.lineup.e2e.mjs` (the pool and the figures), `node qa/lab/gloam-downs-run.fight.e2e.mjs` (a fight in four places and on a phone), `node qa/lab/gloam-downs-run.cards.e2e.mjs` (the HUD and every card at five layouts; `ONLY=keys|pad|layout`) and `node qa/lab/gloam-downs-camera.e2e.mjs` (the cameras at five layouts). Each takes 1 to 7 minutes in software WebGL.
+- With the site served: `node qa/lab/gloam-downs.e2e.mjs` (the explorer), `node qa/lab/gloam-downs-run.input.e2e.mjs` (the run's inputs and first cards), `node qa/lab/gloam-downs-run.lineup.e2e.mjs` (the pool and the figures), `node qa/lab/gloam-downs-run.fight.e2e.mjs` (a fight in four places and on a phone), `node qa/lab/gloam-downs-run.cards.e2e.mjs` (the HUD and every card at five layouts; `ONLY=keys|pad|layout`) `node qa/lab/gloam-downs-camera.e2e.mjs` (the cameras at five layouts) and `node qa/lab/gloam-downs-run.boss.e2e.mjs` (port 8831: the boss fight from the intro to the win card, reloads after the fall and on the win card, and boss files that fail). Each takes 1 to 7 minutes in software WebGL.
 
 ## Design tools
 

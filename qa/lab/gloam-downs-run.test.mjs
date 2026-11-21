@@ -1117,8 +1117,8 @@ function runFor(R, count, inp = {}, camYaw = 0) {
 { // game time: a toast of 1.8 s is 108 steps; the fade to ink is 72 steps, half at 36
   assert.deepEqual([stepsOf(1800), stepsOf(2600), stepsOf(3200), INK], [108, 156, 192, 72]);
   assert.deepEqual([inkAt(-1), inkAt(0), inkAt(36), inkAt(72), inkAt(500)], [0, 0, 0.5, 1, 1]);
-  assert.deepEqual(TIMED, ['play', 'dying', 'lit', 'won']);
-  pass('toasts, the arrival card and the fade to ink count steps of the game clock');
+  assert.deepEqual(TIMED, ['play', 'dying', 'lit', 'won', 'intro']);
+  pass('toasts, the arrival card, the fade to ink and the boss intro count steps of the game clock');
 }
 { // a reload at each card: the page reads the save and opens the same card, with the same figures
   const mem = new Map(), storage = { getItem: k => mem.get(k) ?? null, setItem: (k, v) => mem.set(k, String(v)) };

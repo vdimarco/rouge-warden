@@ -37,13 +37,14 @@ function piece(pts, px, pz) {
 const heightOn = (p, cx, cz, x, z) => p.y + p.tilt[0] * (x - cx) + p.tilt[1] * (z - cz);
 /* a ring of radius R round (cx, cz): its six slices, slice q from q·60° to (q+1)·60° past the ring's yaw (the angle from +z toward
    +x, as the bake lays them). Each is fitted to 5 points on its rim and 3 at 0.55 R. A ring is round, so it is laid at the turn of
-   0°, 10°, ... 50° whose slices meet the most rim points, read every 5°: a slice's edge then falls where the ground breaks.
+   0°, 10°, ... 50° whose slices meet the most rim points, read every 5°: a slice's edge then falls where the ground breaks. yaw, when
+   given, is the one turn to lay it at (radians): the boss's sweeps show the three slices in front of its facing.
    -> the six slices, with .yaw */
-export function fitRing(walk, cx, cz, R, y0, water) {
+export function fitRing(walk, cx, cz, R, y0, water, yaw = null) {
   const g = (x, z) => [x, groundAt(walk, x, z, y0, water), z];
   const rad = d => (d * Math.PI) / 180;
   let best = null;
-  for (let turn = 0; turn < 60; turn += 10) {
+  for (const turn of Number.isFinite(yaw) ? [(yaw * 180) / Math.PI] : [0, 10, 20, 30, 40, 50]) {
     let score = 0;
     const slices = Array.from({ length: 6 }, (_, q) => {
       const pts = [];

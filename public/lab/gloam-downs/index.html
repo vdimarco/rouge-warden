@@ -171,6 +171,20 @@
     .panel .ups { margin: 6px 0 8px; gap: 4px; }
     .ups li span { font-size: 13px; }
   }
+  /* the boss bar: a name and a bar in the Lab bar row, between ◀ Lab and Games (main.js placeBossBar sets its left and width); the
+     ticks mark the phases' ends at 800 and 350 of 1,300. It hides while a card shows */
+  .bossbar { position: fixed; top: calc(var(--sat) + 8px); height: 44px; box-sizing: border-box; z-index: 31; display: grid; align-content: center; gap: 5px; padding: 6px 12px;
+    border-radius: 12px; background: var(--panel2); border: 1px solid var(--edge); pointer-events: none; }
+  .bossbar[hidden] { display: none; }
+  .bossbar b { font: 700 12px/1 var(--title); letter-spacing: 0.12em; text-transform: uppercase; color: #f2d7a6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bossbar .bbar { position: relative; display: block; height: 8px; background: #1c0d0b; box-shadow: 0 0 0 1px #5a3424; }
+  .bossbar .bbar i { position: absolute; top: 0; bottom: 0; left: 0; display: block; }
+  .bossbar #bossFill { width: 100%; background: linear-gradient(90deg, #8a2814, var(--emberd)); }
+  .bossbar .tick { width: 2px; margin-left: -1px; background: rgba(5, 6, 12, 0.85); }
+  body.run:has(.panel:not([hidden])) .bossbar { visibility: hidden; }
+  /* in a run the Lab bar stays above the loading screen, so ◀ Lab and Games can be reached while it waits (the boss files) */
+  body.run .labbar { z-index: 41; }
+  .loading .row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
   @media (max-height: 420px) { .arrive { top: 40%; } .arrive p { display: none; } }
   @media (prefers-reduced-motion: reduce) { .arrive, .veil, .loading, .bar i { transition: none; } }
 </style>
@@ -178,6 +192,7 @@
 <body class="toy">
 <canvas class="view" id="view" aria-label="Gloam Downs: a dark place on rolling hills, drawn as pixel art"></canvas>
 <nav class="labbar"><a class="back" href="/lab/">◀ Lab</a><button type="button" id="menu" data-switch>Games</button></nav>
+<div class="bossbar" id="bossBar" hidden role="img" aria-label="The Barrow Reeve"><b>The Barrow Reeve</b><i class="bbar"><i id="bossFill"></i><i class="tick" style="left: 61.5%"></i><i class="tick" style="left: 26.9%"></i></i></div>
 
 <div class="ink" id="ink" aria-hidden="true"></div>
 <div class="hud" id="hud" hidden>
@@ -267,6 +282,13 @@
   <div class="row" id="lampRow"><button type="button" class="go" id="bLampBack" hidden>Back to the beacon</button><button type="button" class="go" id="bLampBegin" hidden>Begin the run</button><button type="button" class="go" id="bLampGoOn" hidden>Go on with the run</button><button type="button" id="bLampWander" hidden>Wander</button><button type="button" id="bLampToWander" hidden>Back to Wander</button></div>
 </div></div>
 
+<div class="panel" id="winCard" hidden><div class="box" role="dialog" aria-labelledby="winT">
+  <h2 id="winT">The downs are lit</h2>
+  <p>The last light of the downs burns over Barrow Crown, and every beacon is lit.</p>
+  <dl class="score"><dt>Time</dt><dd id="winTime"></dd><dt>Best winning time</dt><dd id="winBest"></dd><dt>Glim banked</dt><dd id="winBanked"></dd><dt>Runs</dt><dd id="winRuns"></dd><dt>Deaths</dt><dd id="winDeaths"></dd></dl>
+  <div class="row"><button type="button" class="go" id="bWinLamp">To the Lamp-room</button><button type="button" id="bWinWander" hidden>Wander</button></div>
+</div></div>
+
 <div class="panel" id="summary" hidden><div class="box" role="dialog" aria-labelledby="sumT">
   <h2 id="sumT">The lamp goes out</h2>
   <dl class="score"><dt>Reached</dt><dd id="sumPlace"></dd><dt>Time</dt><dd id="sumTime"></dd><dt>Foes put out</dt><dd id="sumFoes"></dd><dt>Glim lost</dt><dd id="sumLost"></dd><dt>Glim banked</dt><dd id="sumBanked"></dd></dl>
@@ -278,7 +300,7 @@
   <h1>GLOAM DOWNS</h1>
   <p id="loadLine">Loading the place…</p>
   <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="bar"><i id="barFill"></i></div>
-  <button type="button" id="bRetry" hidden>Try again</button>
+  <div class="row"><button type="button" id="bRetry" hidden>Try again</button><button type="button" id="bBack" hidden>Step back</button></div>
 </div></div>
 
 <script src="./ink/pixel-look.js"></script>

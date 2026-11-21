@@ -915,11 +915,11 @@ At the east foot of Barrow Crown, the boss SHALL wait in an arena of 6.5 m. The 
 
 #### Scenario: Intro
 - **WHEN** the lamplighter walks to within 11 m of the arena for the first time
-- **THEN** bars ease in, and the card reads "V · The last light of the downs" and "The Barrow Reeve". The boss bar shows, and the candles light. Check: e2e `gloam-downs-run.screens.e2e.mjs`.
+- **THEN** bars ease in, and the card reads "V · The last light of the downs" and "The Barrow Reeve". The boss bar shows, and the candles light. Check: e2e `gloam-downs-run.boss.e2e.mjs`.
 
 #### Scenario: Touch the dark beacon first
 - **WHEN** the lamplighter touches the beacon of Barrow Crown before the boss falls
-- **THEN** the beacon stays dark. A toast says that the Barrow Reeve holds its light on the open ground below the crown. A notch points to the arena's centre. Check: e2e `gloam-downs-run.screens.e2e.mjs`.
+- **THEN** the beacon stays dark. A toast says that the Barrow Reeve holds its light on the open ground below the standing stones. A notch points to the arena's centre. Check: e2e `gloam-downs-run.screens.e2e.mjs`.
 
 ### Requirement: Other zones at the intro
 At the intro, every other awake zone SHALL sleep, and its foes SHALL sink over 0.6 s.
@@ -962,14 +962,14 @@ When the boss falls, the caged light SHALL rise and follow the lantern. The boss
 
 #### Scenario: Carry the light
 - **WHEN** the boss falls, and the lamplighter walks up to the beacon with the light, carrying 58 glim with 100 banked
-- **THEN** the beacon burns, the bank goes up to 158, and the win card shows 1.8 s later. Check: e2e `gloam-downs-run.screens.e2e.mjs`.
+- **THEN** the beacon burns, the bank goes up to 158, and the win card shows 1.8 s later. Check: e2e `gloam-downs-run.boss.e2e.mjs`.
 
 ### Requirement: The bars at the win
 At the fall, the bars SHALL come in over the 9 steps of hit stop. Then they SHALL ease out over 30 steps. They SHALL come in again over 30 steps when the last beacon lights.
 
 #### Scenario: No bars while the light is carried
 - **WHEN** the boss falls, and the lamplighter carries the light to the beacon
-- **THEN** from 0.7 s after the fall until the beacon lights, `__gloam.run().fx.bars` is 0. In the 0.5 s after the beacon lights, it rises to 0.12. Check: e2e `gloam-downs-run.screens.e2e.mjs`.
+- **THEN** from 0.7 s after the fall until the beacon lights, `__gloam.run().fx.bars` is 0. In the 0.5 s after the beacon lights, it rises to 0.12. Check: e2e `gloam-downs-run.boss.e2e.mjs`.
 
 ### Requirement: The win card
 At the boss's fall, the place's colours, slots 1 to 31, SHALL pull toward fire slot 37 (fff4cc) by up to 50% for 6 steps, fading. Slots 32 to 47 SHALL not change, so fire stays the brightest colour. With reduced motion there SHALL be no such pull.
@@ -978,18 +978,22 @@ The win card SHALL show the time, the best winning time, the glim banked in this
 
 #### Scenario: First win opens Wander
 - **WHEN** a player wins for the first time and opens the Lamp-room
-- **THEN** the Lamp-room shows Wander. Check: e2e `gloam-downs-run.screens.e2e.mjs`.
+- **THEN** the Lamp-room shows Wander. Check: e2e `gloam-downs-run.boss.e2e.mjs`.
 
 ### Requirement: The win is stored
-The page SHALL store the run at once when the boss falls. A reload after the fall SHALL start the lamplighter at the arena with the light at its lantern. The boss SHALL stay down, and the glim carried SHALL be its entry value plus the boss's 30. When the last beacon lights, the page SHALL store the bank, wins plus 1 and the best winning time at once. It SHALL set `run` to null and put the win's figures in `ended`. A reload before the win card closes SHALL show the win card again.
+The page SHALL store the run at once when the boss falls. A reload after the fall SHALL start the lamplighter at the arena with the light at its lantern. The boss SHALL stay down, and the glim carried SHALL be its entry value plus the boss's 30. When the last beacon lights, the page SHALL store the bank, wins plus 1 and the best winning time at once. It SHALL set `run` to null and put the win's figures in `ended`. A reload before the win card closes SHALL show the win card again. While `bossDown` is true, the page SHALL not wait for the boss files: it SHALL not fetch them, and the 11 m pause and Step back SHALL not apply.
 
 #### Scenario: Reload after the fall
 - **WHEN** the boss falls, and the player reloads before the lamplighter reaches the beacon
-- **THEN** the run goes on at the arena with the light at the lantern. The boss is down, no zone wakes, and the glim carried is the entry value plus 30. Check: e2e `gloam-downs-run.screens.e2e.mjs`.
+- **THEN** the run goes on at the arena with the light at the lantern. The boss is down, no zone wakes, and the glim carried is the entry value plus 30. Check: e2e `gloam-downs-run.boss.e2e.mjs`.
+
+#### Scenario: Reload after the fall with no boss files
+- **WHEN** the boss falls, the boss files then fail on every request, and the player reloads
+- **THEN** play goes on at the arena with no loading screen, the light rides at the lantern, the beacon lights with it, and the win card shows. Check: e2e `gloam-downs-run.boss.e2e.mjs`.
 
 #### Scenario: Reload on the win card
 - **WHEN** the last beacon lights, and the player reloads 1.0 s later, before the win card shows
-- **THEN** the win card shows with the same figures, and the wins count went up by one only. Check: e2e `gloam-downs-run.screens.e2e.mjs`.
+- **THEN** the win card shows with the same figures, and the wins count went up by one only. Check: e2e `gloam-downs-run.boss.e2e.mjs`.
 
 ### Requirement: The light after the fall
 The light at the lantern after the boss's fall SHALL be drawn from the carried light in `foes.bin.gz`: 63 emissive splats on one bone, in wisp slots 38 and 39. Barrow Crown's pool SHALL hold a slot for it, so the light needs no boss file.
@@ -1241,7 +1245,7 @@ A place's 1.5 MB SHALL count its three files: `<id>.bin.gz`, `<id>.walk.bin.gz` 
 
 #### Scenario: Boss files after a reload
 - **WHEN** a run reloads in Barrow Crown with an empty cache
-- **THEN** play starts before the boss files have loaded, and the arena wakes only after they have loaded. Check: e2e `gloam-downs-run.screens.e2e.mjs`.
+- **THEN** play starts before the boss files have loaded, and the arena wakes only after they have loaded. Check: e2e `gloam-downs-run.boss.e2e.mjs`.
 
 ### Requirement: Foe and boss files that do not load
 When the foe files do not load, the loading screen SHALL say so and show Try again. Try again SHALL ask for the files again. The lamplighter can come within 11 m of the arena before the boss files are in. Then the page SHALL pause the game and show the loading screen. The loading screen SHALL show progress, or say that the files did not load and show Try again.
@@ -1252,14 +1256,14 @@ When the foe files do not load, the loading screen SHALL say so and show Try aga
 
 #### Scenario: The boss files fail
 - **WHEN** the e2e makes the boss files fail once, and the lamplighter walks to within 11 m of the arena's centre. Then the e2e presses A on a mocked gamepad alone.
-- **THEN** the game pauses, and the loading screen says that the Barrow Reeve did not load. Try again has the focus. After A, the boss files load and play goes on. Check: e2e `gloam-downs-run.screens.e2e.mjs`.
+- **THEN** the game pauses, and the loading screen says that the Barrow Reeve did not load. Try again has the focus. After A, the boss files load and play goes on. Check: e2e `gloam-downs-run.boss.e2e.mjs`.
 
 ### Requirement: Step back from the arena
-When the boss files did not load, the loading screen SHALL also show Step back. Step back SHALL put the lamplighter at the last point of its path that was 13 m or more from the arena's centre. Then play SHALL go on, and the arena SHALL stay asleep.
+When the boss files did not load, the loading screen SHALL also show Step back. Step back SHALL put the lamplighter at the last point of its path that was 13 m or more from the arena's centre. When the path has no such point, Step back SHALL put the lamplighter at the place's start. Then play SHALL go on, and the arena SHALL stay asleep.
 
 #### Scenario: The boss files fail twice
 - **WHEN** the e2e makes the boss files fail twice, and the lamplighter walks to within 11 m of the arena's centre. The player presses Try again, and then Step back.
-- **THEN** the loading screen shows again with Try again and Step back. After Step back, play goes on with the lamplighter 13 m or more from the arena's centre. The arena stays asleep. Check: e2e `gloam-downs-run.screens.e2e.mjs`.
+- **THEN** the loading screen shows again with Try again and Step back. After Step back, play goes on with the lamplighter 13 m or more from the arena's centre. The arena stays asleep. Check: e2e `gloam-downs-run.boss.e2e.mjs`.
 
 ### Requirement: Frame cost in a fight
 A fight SHALL cost little more than the place alone. The place alone SHALL mean the place with the lamplighter's bones and no pool. The checks run on this machine's Node and software WebGL, so they compare ratios.
@@ -1409,7 +1413,7 @@ With `?test`, the page SHALL give these hooks, which need no foe:
 
 #### Scenario: Set the boss's health
 - **WHEN** a test sets `bossHp` to 10 in phase 1 of the boss fight, ticks 2.2 s, and lands a cut on the boss
-- **THEN** the boss is in phase 3 after one stumble. The hit stop and the stumble end within 129 steps, so the cut deals 10, and the boss falls. Its light rises to the lantern. Check: e2e `gloam-downs-run.screens.e2e.mjs`.
+- **THEN** the boss is in phase 3 after one stumble. The hit stop and the stumble end within 129 steps, so the cut deals 10, and the boss falls. Its light rises to the lantern. Check: Node test `gloam-downs-boss.test.mjs` and e2e `gloam-downs-run.boss.e2e.mjs`.
 
 ### Requirement: Test hooks for the beacon and the sound
 With `?test`, `__gloam.light()` SHALL act as a touch on the beacon, so it SHALL obey the guard rule and the boss's light. `__gloam.sounds()` SHALL return a log of the sound cues, each with its cue name, its game step and its play step.

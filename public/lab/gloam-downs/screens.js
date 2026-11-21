@@ -15,8 +15,9 @@ export const placeLine = id => `${NUMERAL[ORDER.indexOf(id)]} · ${NAMES[id]}`;
 export const stepsOf = ms => Math.round((ms * 60) / 1000);
 export const INK = 72; // the fade to ink at death, 1.2 s, and then the run summary
 export const inkAt = since => (since < 0 ? 0 : Math.min(1, since / INK));
-// the modes in which the game clock runs: play, the fade after a death, and the waits after a lit beacon and after the win
-export const TIMED = ['play', 'dying', 'lit', 'won'];
+// the modes in which the game clock runs: play, the fade after a death, the waits after a lit beacon and after the win, and the boss
+// intro's stop
+export const TIMED = ['play', 'dying', 'lit', 'won', 'intro'];
 
 /* ---------------- the HUD ----------------
    The health line: the number, a bar filled by the share of the maximum, and a pip for each flask, full or spent. Below 30% the bar
@@ -78,6 +79,15 @@ export function summaryOf(e) {
   };
 }
 
+// the win card: the time, the best winning time, the glim banked in this run, the runs and the deaths
+export function winOf(rs) {
+  const e = rs.ended || {};
+  return {
+    title: 'The downs are lit',
+    rows: [['Time', fmt(e.time || 0)], ['Best winning time', rs.bestWin ? fmt(rs.bestWin) : '–'], ['Glim banked', `${e.banked || 0} glim`], ['Runs', String(rs.runs)], ['Deaths', String(rs.deaths)]]
+  };
+}
+
 /* ---------------- the pause panel ----------------
    The five places of the run, each passed, here or ahead, and the two questions it asks again before it acts */
 export const routeOf = place => {
@@ -92,9 +102,9 @@ export const ASKS = {
 /* ---------------- a load of the page ----------------
    The card that shows over the place when the page loads: the summary of an ended run (also after a reload in the fade), the beacon
    card while its two wicks wait (the same two, from the save), the help card on a first visit, the Lamp-room on a later visit with no
-   run, or none while a run goes on. Stage 3 adds Wander (rs.wander) and the win card */
+   run, or none while a run goes on. A won run shows the win card again until it closes. Wander's stage adds rs.wander */
 export function cardOnLoad(rs) {
-  if (rs.ended) return 'summary';
+  if (rs.ended) return rs.ended.won ? 'win' : 'summary';
   if (!rs.run) return rs.seen ? 'lamp' : 'help';
   if (rs.run.offer) return 'beacon';
   return null;
