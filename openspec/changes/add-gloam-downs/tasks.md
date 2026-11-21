@@ -247,6 +247,9 @@
 - [x] The pull-in near walls eases both ways with a damped spring, and starts early where the view turns toward a wall
 - [x] Node test `qa/lab/gloam-downs-mouse.test.mjs` and e2e `qa/lab/gloam-downs-mouse.e2e.mjs`; the old left-drag steps in the input e2e
 - [ ] Try the mouse look on a real desktop browser with a real mouse (Chrome, Firefox, Safari), and tune the speed by feel
+- [x] Review: a refusal of the lock is a wait, not the fallback: a click in the wait asks again and never swings, the hint says "Click again to look with the mouse", and the page asks again by itself after a first refusal (e2e step with a `requestPointerLock` that rejects once)
+- [x] Review: the pull-in has speed limits (15 m/s past something between, 33 m/s to keep the eye out of a wall, 12 m/s out, 360 m/s²), an early start for the line of sight as the player turns, and a turn held back for a step where the eye would go into a wall; the eye check uses the room from before the grace rule
+- [x] Review: Node checks for walls 0.5 and 1 m thick at 1 and 2 m at 1.2, 3 and 6 rad/s, a walk past a pillar, a mouse sweep at each spawn and wisp of the five places, and the boss camera with the mouse taken or a move across held
 
 ### The run's screens
 - [x] HUD: health bar, flask pips, glim; the toast 8 px under the HUD's measured bottom at every width

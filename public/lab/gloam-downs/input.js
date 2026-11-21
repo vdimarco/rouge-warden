@@ -5,8 +5,9 @@
 // that move and look stay live through a card, so a held W walks on after Resume.
 // The mouse: on a desktop a click on the view takes it (the Pointer Lock API), and that click does nothing else. While it is taken,
 // moving it turns the view with no button held; the left button attacks (in the explorer, jumps) and the right button rolls. Escape, or
-// the browser, frees it. Where the browser has no pointer lock or refuses it, the right button held and dragged turns the view and the
-// left button attacks or jumps. No click ever turns the view, and no mouse movement ever swings.
+// the browser, frees it. Where the browser has no pointer lock, the right button held and dragged turns the view and the left button
+// attacks or jumps. Where it refuses the lock for a moment, a click asks again as soon as it may, and does nothing else. No click ever
+// turns the view, and no mouse movement ever swings.
 // readPads, navStep, heldNav, pickMove, mouseLook and mouseAct are pure, so Node tests use them.
 
 export const PAD = { A: 0, B: 1, X: 2, Y: 3, LB: 4, RB: 5, LT: 6, RT: 7, BACK: 8, START: 9, UP: 12, DOWN: 13, LEFT: 14, RIGHT: 15 };
@@ -26,7 +27,9 @@ export function mouseLook(dx, dy, drag = false, P = MOUSE) {
   return { dyaw: -clampPx(dx || 0, P.spike) * P.yaw * k, dpitch: clampPx(dy || 0, P.spike) * P.pitch * k };
 }
 /* what a mouse button does on the view: 'take' (the click that takes the mouse: nothing else), 'attack', 'roll', 'jump', 'look' (the
-   fallback's right drag) or null. locked: the mouse is taken now; lockable: the page can take it */
+   fallback's right drag) or null. locked: the mouse is taken now; lockable: the page can take the mouse at all (a fine pointer and the
+   Pointer Lock API). While the browser has just refused the lock and the page waits to ask again, the page is still lockable: a click
+   then only asks again, and never swings */
 export function mouseAct(button, { run = false, locked = false, lockable = false } = {}) {
   if (button !== 0 && button !== 2) return null;
   if (!locked && lockable) return 'take';
@@ -100,10 +103,10 @@ export function makeInput(els, { run = () => false, play = () => false, onLock =
   let stick = null, look = null, drag = null, pads = null;
   // the mouse's buttons held now, by what they do (mouseAct)
   const held = { attack: false, roll: false, jump: false };
-  /* the pointer lock: taken now; refusals in a row; no new try before retryAt (the mouse works as in the fallback till then); when the
-     player or the browser last freed it, not the page (an Escape that the browser passes on as it frees the mouse must not also close
+  /* the pointer lock: taken now; refusals in a row; no new try before retryAt (a click till then asks again at retryAt: retry is that
+     timer, and the click's user activation lasts about 5 s in Chrome, long enough for it); when the player or the browser last freed it, not the page (an Escape that the browser passes on as it frees the mouse must not also close
      the pause panel that opens); ours: the page is freeing it now */
-  const lock = { taken: false, refused: 0, retryAt: 0, lostAt: -1e9, trying: false, promised: false, raw: null, ours: false };
+  const lock = { taken: false, refused: 0, retryAt: 0, retry: 0, lostAt: -1e9, trying: false, promised: false, raw: null, ours: false };
   const now = () => performance.now();
   const canLock = () => fine && typeof canvas.requestPointerLock === 'function';
   const lockable = () => canLock() && now() >= lock.retryAt;
@@ -142,14 +145,25 @@ export function makeInput(els, { run = () => false, play = () => false, onLock =
      next refusals in a row 5 s each (Chrome also refuses too many requests in a short time). A browser whose request gives a promise
      says no through it (it also fires pointerlockerror, even for the first try that falls back); an older one only through
      pointerlockerror */
-  function refuse() { if (!lock.trying) return; lock.trying = false; lock.refused++; lock.retryAt = now() + (lock.refused >= 2 ? 5000 : 1500); }
+  function refuse() {
+    if (!lock.trying) return;
+    lock.trying = false; lock.refused++; lock.retryAt = now() + (lock.refused >= 2 ? 5000 : 1500);
+    // a first refusal asks again by itself when the wait is over (the click that asked is still the gesture then); later ones wait
+    // for a click
+    if (lock.refused === 1) later();
+  }
+  function later() {
+    clearTimeout(lock.retry);
+    lock.retry = setTimeout(() => { lock.retry = 0; if (play()) take(); }, lock.retryAt - now() + 20);
+  }
   function ask(opts) {
     const p = opts ? canvas.requestPointerLock(opts) : canvas.requestPointerLock();
     lock.promised = typeof p?.then === 'function';
     return p;
   }
   function take() {
-    if (lock.taken || !lockable()) return false;
+    if (lock.taken || !canLock()) return false;
+    if (!lockable()) { later(); return true; }
     lock.trying = true;
     const plain = () => { try { ask()?.catch?.(refuse); } catch { refuse(); } };
     // Chrome refuses too many requests in a short time, so a browser that has said no to raw movement once is not asked again
@@ -157,7 +171,7 @@ export function makeInput(els, { run = () => false, play = () => false, onLock =
     try { ask({ unadjustedMovement: true })?.catch?.(err => { if (err?.name === 'NotSupportedError') { lock.raw = false; plain(); } else refuse(); }); } catch { lock.raw = false; plain(); }
     return true;
   }
-  function free() { if (lock.taken) { lock.ours = true; document.exitPointerLock?.(); } }
+  function free() { clearTimeout(lock.retry); lock.retry = 0; if (lock.taken) { lock.ours = true; document.exitPointerLock?.(); } }
   document.addEventListener('pointerlockchange', () => {
     const was = lock.taken, ours = lock.ours;
     lock.taken = document.pointerLockElement === canvas;
@@ -172,7 +186,7 @@ export function makeInput(els, { run = () => false, play = () => false, onLock =
 
   canvas.addEventListener('mousedown', e => {
     if (!play()) return;
-    const act = mouseAct(e.button, { run: run(), locked: lock.taken, lockable: lockable() });
+    const act = mouseAct(e.button, { run: run(), locked: lock.taken, lockable: canLock() });
     if (!act) return;
     e.preventDefault();
     if (act === 'take') { take(); return; }
@@ -260,8 +274,10 @@ export function makeInput(els, { run = () => false, play = () => false, onLock =
   }
   return {
     input, read, readPad, clear, take, free,
-    // the mouse is taken now; the page can take it now; it could take it at all (a fine pointer and the Pointer Lock API)
+    /* the mouse is taken now; the page can take it now; it could take it at all (a fine pointer and the Pointer Lock API); the browser
+       refused it a moment ago and the page waits to ask again */
     get locked() { return lock.taken; }, get lockable() { return lockable(); }, get canLock() { return canLock(); },
+    get waiting() { return canLock() && !lock.taken && !lockable(); },
     // the time the player or the browser last freed the mouse (performance.now)
     get lostAt() { return lock.lostAt; },
     // a step has run on what was read: the latches are spent

@@ -463,6 +463,10 @@ After 0.6 s with no look input, the boss camera SHALL turn toward the boss at no
 - **WHEN** the boss stands 8 m from the lamplighter, behind the view, and the player gives no look input for 3 s
 - **THEN** the view starts to turn after 0.6 s, no faster than 1.5 rad/s, and the yaw difference is 15° or less by 3 s. Check: Node test `gloam-downs-camera.test.mjs`.
 
+#### Scenario: The boss camera waits for the player
+- **WHEN** the boss is up and the fight has started, the lamplighter stands 4 m from the arena's centre after 9 s with no look input, and the player first has the mouse taken for 3 s, then holds a move to the side for 3 s, then gives one small look with the mouse and frees it
+- **THEN** the yaw does not change while the mouse is taken or while the move to the side is held, and the view starts to turn 0.6 s after the small look. Check: Node test `gloam-downs-mouse.test.mjs`.
+
 #### Scenario: Run round the boss
 - **WHEN** the lamplighter runs round a boss for 10 s at 390 by 844, 5 m from it, with no look input. A test holds the boss still.
 - **THEN** the chests of the boss and the lamplighter stay inside the screen. Check: Node test `gloam-downs-camera.test.mjs`.

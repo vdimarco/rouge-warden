@@ -4,15 +4,21 @@
 //   which button does what, with the mouse taken, not taken, and where the page cannot take it;
 //   with the mouse taken, the swing behind a running lamplighter, the turn out of a lane and the combat camera's turn stay off;
 //   on touch, keys and pads, the swing and the combat turn wait 2 s and turn slower, and never while a move across the view is held;
-//   the pull-in near a wall eases both ways, with the eye never in the wall, and standing still by a wall or under a roof is still.
-// Run: node qa/lab/gloam-downs-mouse.test.mjs
+//   the boss camera does not turn while the mouse is taken or a move across the view is held, and turns after 0.6 s when neither;
+//   the pull-in near a wall eases both ways, with the eye never in the wall, for walls 0.5 and 1 m thick, 1 and 2 m away, at 1.2 and
+//     3 rad/s, at 1280x720 and 390x844; and standing still by a wall or under a roof is still;
+//   on the five baked places (skipped with GLOAM_WORLDS=0): the view swept round with the mouse at 1.2 rad/s at the spawn and each wisp,
+//     at 1280x720 and 390x844: the distance never dives.
+// Run: node qa/lab/gloam-downs-mouse.test.mjs   (GLOAM_WORLDS=0 to leave out the baked places)
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import zlib from 'node:zlib';
 import { mouseLook, mouseAct, MOUSE } from '../../public/lab/gloam-downs/input.js';
 import { makeWalk, makeBody, makeCamera, camLayout, across, autoTurn, AUTO } from '../../public/lab/gloam-downs/play.js';
-import { makeCombat, yawDiff, COMBAT } from '../../public/lab/gloam-downs/cameras.js';
+import { makeCombat, makeBossCam, yawDiff, COMBAT, BOSS } from '../../public/lab/gloam-downs/cameras.js';
+import { ORDER } from '../../public/lab/gloam-downs/save.js';
 
-
-
+const DIR = new URL('../../public/lab/gloam-downs/', import.meta.url);
 // the mouse turn in the wall check: 0.02 rad a step, 1.2 rad/s
 const TURN = 0.02;
 const STEP = 1 / 60, DEG = Math.PI / 180;
@@ -143,30 +149,71 @@ function runSide(inp, sec, turn = null, idle = 0) {
   assert.equal(held.yaw, 0, 'holding a move across the view, the combat camera does not turn');
   pass('touch, keys and pads: the turns wait 2 s, the swing eases at 0.5/s, the combat turn at 0.6 rad/s, and a move across stops both', { start: r3(t.start), rate: r3(t.fast) });
 }
-{ // the pull-in near a wall eases both ways: the view turned into a long wall 2 m behind the lamplighter with the mouse (0.02 rad a
-  // step, 1.2 rad/s), and back out again. No step changes the distance by more than 1 m, the change from one step to the next is 0.4 m
-  // or less, and the eye is never in the wall. The camera of the build before came in by 3.6 m in one step here at 390x844
-  const WALL = layered((x, z) => (x >= 2 && x <= 3 ? 14 : 0));
+{ // the boss camera: the boss up and the fight started, the lamplighter 4 m from the arena's centre and 9 s with no look input. With
+  // the mouse taken, or with a move held across the view, it does not turn for 3 s; with neither, it turns after BOSS.wait
+  const centre = [0, 0, 0], boss = { id: 'reeve', x: 0, y: 0, z: 0, up: true, started: true };
+  const screen = { w: 1280, h: 720, bar: 52, rects: [] };
+  const rig = () => {
+    const b = stand(OPEN, 4, 0), cam = makeCamera(OPEN, { yaw: 0, ...camLayout(1280, 720) }), bc = makeBossCam(cam, { screen, boss: () => boss, centre });
+    cam.snap(b.s, 0); cam.c.idle = 9;
+    return { b, cam, bc, step: inp => bc.step(b.s, STEP, cam.follow(b.s, STEP, inp, bc.turn)) };
+  };
+  const yaws = (r, inp, sec) => { const out = []; for (let i = 0; i < sec * 60; i++) { r.step(inp); out.push(r.cam.c.yaw); } return out; };
+  const a = rig(), taken = yaws(a, { mouse: true }, 3);
+  assert(a.bc.live(a.b.s), 'the boss camera is on');
+  assert(taken.every(y => y === 0), `with the mouse taken the boss camera turned to ${Math.max(...taken.map(Math.abs))}`);
+  const across1 = yaws(a, { mx: 1, mz: 0 }, 3);
+  assert(across1.every(y => y === 0), 'with a move held across the view the boss camera does not turn');
+  // a small look with the mouse, then the mouse freed and nothing held: the turn comes BOSS.wait after the look
+  a.step({ dyaw: 0.01, mouse: true });
+  const y1 = a.cam.c.yaw, free = yaws(a, {}, 1.5), first = free.findIndex(y => y !== y1);
+  assert(first >= 0 && near((first + 1) * STEP, BOSS.wait + STEP, 1.5 * STEP), `with neither it turns after ${(first + 1) * STEP} s`);
+  pass('the boss camera: no turn while the mouse is taken or a move across is held, and a turn after 0.6 s with neither', { after: r3((first + 1) * STEP) });
+}
+{ /* the pull-in near a wall eases both ways: the view turned into a long wall with the mouse, and back out again. Walls 0.5 and 1 m
+     thick, 1 and 2 m behind the lamplighter, turned at 1.2 and 3 rad/s. No step changes the distance by more than 1 m, the change from
+     one step to the next is 0.4 m or less, and the eye is never in the wall. The camera of 09fd360b came in by 4.8 m in one step at
+     390x844 by the wall 0.5 m thick and 1 m away at 1.2 rad/s, and its eye was in that wall at 3 rad/s */
   const out = [];
-  for (const [w, h] of [[1280, 720], [390, 844]]) {
-    const b = stand(WALL, 0, 0), cam = makeCamera(WALL, { yaw: -Math.PI / 2, ...camLayout(w, h) });
-    cam.snap(b.s, -Math.PI / 2);
-    let last = null, step = 0, jerk = 0, inWall = 0, least = Infinity, d1 = 0;
-    for (let i = 0; i < 240; i++) {
-      const v = cam.follow(b.s, STEP, { dyaw: (i < 120 ? 1 : -1) * TURN, mouse: true });
-      const e = eyeOf(v);
-      if (WALL.support(e[0], e[2], e[1]) === null) inWall++;
-      if (last) { const d = v.dist - last.dist; step = Math.max(step, Math.abs(d)); jerk = Math.max(jerk, Math.abs(d - d1)); d1 = d; }
-      least = Math.min(least, v.dist);
-      last = v;
+  for (const [thick, gap] of [[1, 2], [0.5, 1], [1, 1], [0.5, 2]]) {
+    const WALL = layered((x, z) => (x >= gap && x <= gap + thick ? 14 : 0));
+    for (const rate of [1.2, 3, 6]) for (const [w, h] of [[1280, 720], [390, 844]]) {
+      const b = stand(WALL, 0, 0), cam = makeCamera(WALL, { yaw: -Math.PI / 2, ...camLayout(w, h) });
+      cam.snap(b.s, -Math.PI / 2);
+      let last = null, step = 0, jerk = 0, inWall = 0, least = Infinity, d1 = 0;
+      for (let i = 0; i < 240; i++) {
+        const v = cam.follow(b.s, STEP, { dyaw: (i < 120 ? 1 : -1) * rate * STEP, mouse: true });
+        const e = eyeOf(v);
+        if (WALL.support(e[0], e[2], e[1]) === null) inWall++;
+        if (last) { const d = v.dist - last.dist; step = Math.max(step, Math.abs(d)); jerk = Math.max(jerk, Math.abs(d - d1)); d1 = d; }
+        least = Math.min(least, v.dist);
+        last = v;
+      }
+      const tag = `${w}x${h}, a wall ${thick} m thick ${gap} m away at ${rate} rad/s`;
+      assert(least < cam.c.want - 1, `${tag}: it came in (${least})`);
+      assert(step <= 1 && jerk <= 0.4, `${tag}: the distance changed by ${step} m in one step, and its change by ${jerk} m`);
+      assert.equal(inWall, 0, `${tag}: the eye was in the wall on ${inWall} steps`);
+      out.push({ w, thick, gap, rate, step: r3(step), jerk: r3(jerk) });
     }
-    assert(least < cam.c.want - 1, `${w}x${h}: it came in (${least})`);
-    assert(step <= 1 && jerk <= 0.4, `${w}x${h}: the distance changed by ${step} m in one step, and its change by ${jerk} m`);
-    assert.equal(inWall, 0, `${w}x${h}: the eye was in the wall on ${inWall} steps`);
-    out.push({ w, least: r3(least), step: r3(step), jerk: r3(jerk) });
   }
+  /* a tall pillar 0.5 or 1 m thick, 1.5 or 3 m wide, 1 to 3 m behind the lamplighter, which walks past it at 3 and 6 m/s with the mouse
+     taken: the pillar comes between, and the eye, clear behind it, must come in past it. The eye is never in the pillar (the camera of
+     09fd360b had it there on 23 steps) */
+  let inPillar = 0;
+  for (const thick of [0.5, 1]) for (const gap of [1, 2, 3]) for (const wide of [1.5, 3]) for (const sp of [3, 6]) for (const [w, h] of [[1280, 720], [390, 844]]) {
+    const P = layered((x, z) => (z >= gap && z <= gap + thick && Math.abs(x) <= wide / 2 ? 14 : 0));
+    const b = makeBody(P, { p: [-6, 0.5, 0], yaw: Math.PI }, 38), cam = makeCamera(P, { yaw: 0, ...camLayout(w, h), auto: false });
+    cam.snap(b.s, 0);
+    for (let i = 0; i < 240; i++) {
+      b.s.x += sp * STEP; b.s.vx = sp;
+      const e = eyeOf(cam.follow(b.s, STEP, { mouse: true }));
+      if (P.support(e[0], e[2], e[1]) === null) inPillar++;
+    }
+  }
+  assert.equal(inPillar, 0, `walking past a pillar the eye was in it on ${inPillar} steps`);
   // standing still with the back to a wall, and under a low roof: the view does not move at all after it settles
   const ROOF = layered((x, z) => (Math.abs(x) <= 1.5 && z > -10 && z < 10 ? [4, 0, 2.4] : Math.abs(x) <= 3 && z > -10 && z < 10 ? 4 : 0));
+  const WALL = layered((x, z) => (x >= 2 && x <= 3 ? 14 : 0));
   for (const [walk, x, z, yaw] of [[WALL, 1.5, 0, -Math.PI / 2], [WALL, 1.2, 0, -Math.PI / 4], [ROOF, 0, 0, 0], [ROOF, 0, 8, 0.4]]) {
     const b = makeBody(walk, { p: [x, 0.5, z], yaw: yaw + Math.PI }, 38), cam = makeCamera(walk, { yaw, ...camLayout(1280, 720) });
     cam.snap(b.s, yaw);
@@ -179,6 +226,53 @@ function runSide(inp, sec, turn = null, idle = 0) {
     }
     assert(moved < 1e-6, `standing still at ${x}, ${z}: the view moved ${moved}`);
   }
-  pass('the pull-in near a wall eases both ways with the eye out of the wall, and the view is still by a wall and under a roof', out);
+  pass('the pull-in near a wall eases both ways with the eye out of the wall, and the view is still by a wall and under a roof', {
+    worstStep: Math.max(...out.map(o => o.step)), worstJerk: Math.max(...out.map(o => o.jerk))
+  });
+}
+if (process.env.GLOAM_WORLDS !== '0') {
+  /* the five baked places: at the spawn and each wisp, the view turned round with the mouse at 1.2 rad/s for 6 s, at 1280x720 and
+     390x844. A step changes the distance by 0.6 m or less, except where the eye comes in through a wall from behind (the line from the
+     old eye to the new one passes within 0.35 m of the scenery, where play.js lets no eye be; a turn faster than the camera may come
+     in can leave it there): at most 4 such
+     steps in all 60 sweeps, each under 2 m. The camera of 09fd360b changed it by more than 0.6 m on 142 steps here, by up to 2.3 m */
+  const DEV = { over: 0.6, cross: 4, crossMax: 2 };
+  let steps = 0, over = 0, cross = 0, crossMax = 0, worst = 0;
+  for (const id of ORDER) {
+    const meta = JSON.parse(fs.readFileSync(new URL(`worlds/${id}.json`, DIR), 'utf8'));
+    const raw = zlib.gunzipSync(fs.readFileSync(new URL(`worlds/${id}.walk.bin.gz`, DIR)));
+    const walk = makeWalk(meta.walk, new Int16Array(raw.buffer, raw.byteOffset, raw.byteLength >> 1));
+    // does the straight line between two eyes pass where an eye may not be (nearer the scenery than 0.35 m, as play.js reads it)?
+    const through = (a, b) => {
+      for (let k = 1; k < 40; k++) {
+        const x = a[0] + (b[0] - a[0]) * k / 40, y = a[1] + (b[1] - a[1]) * k / 40, z = a[2] + (b[2] - a[2]) * k / 40;
+        const t = walk.top(x, z), g = walk.floor(x, z);
+        if (y < t + 0.35 && !(g < t - 0.05 && y >= g + 0.35 && y <= g + 1.45)) return true;
+      }
+      return false;
+    };
+    for (const p of [meta.spawn.p, ...meta.wisps.map(q => q.p)]) for (const [w, h] of [[1280, 720], [390, 844]]) {
+      const b = makeBody(walk, { p, yaw: 0 }, 34), cam = makeCamera(walk, { yaw: Math.PI, ...camLayout(w, h) });
+      b.place(p, 0); cam.snap(b.s, Math.PI);
+      for (let i = 0; i < 30; i++) cam.follow(b.s, STEP, { mouse: true });
+      let last = null;
+      for (let i = 0; i < 360; i++) {
+        const v = cam.follow(b.s, STEP, { dyaw: 1.2 * STEP, mouse: true });
+        steps++;
+        if (last) {
+          const d = Math.abs(v.dist - last.dist);
+          worst = Math.max(worst, d);
+          if (d > DEV.over) {
+            assert(through(eyeOf(last), eyeOf(v)), `${id} ${w}x${h} at ${p[0].toFixed(1)}, ${p[2].toFixed(1)}: the distance changed by ${d.toFixed(2)} m in one step with open air between`);
+            cross++; crossMax = Math.max(crossMax, d);
+          }
+          if (d > DEV.over) over++;
+        }
+        last = v;
+      }
+    }
+  }
+  assert(cross <= DEV.cross && crossMax < DEV.crossMax, `${cross} steps came in through a wall, by up to ${crossMax.toFixed(2)} m`);
+  pass('the five places: a sweep of the mouse at 1.2 rad/s at each spawn and wisp never dives', { sweeps: steps / 360, over, worst: r3(worst), cross });
 }
 console.log(`${n} checks passed`);

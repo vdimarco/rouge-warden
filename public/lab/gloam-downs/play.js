@@ -351,7 +351,10 @@ export function damp(x, to, v, T, dt) {
    rises over them (lift) before it comes any closer, as Cinemachine's Deoccluder does with Preserve Camera Height, and only what no
    rise clears brings it in. The rise is never faster than 4 rad/s; it starts for where the figure will be 0.25 s ahead, so it is under
    way before a wall comes between, and it settles back slowly. Something that comes between while the eye itself is clear may hide the
-   figure for 0.15 s before the camera comes in (the Deoccluder's minimum occlusion time), and it comes in and goes back out eased. A
+   figure for 0.15 s before the camera comes in (the Deoccluder's minimum occlusion time), and it comes in and goes back out eased, and
+   never fast: at most 15 m/s past something between, 33 m/s to keep the eye out of a wall and 12 m/s back out. A turn of the view into
+   a wall brings it in ahead of the wall, and where that is not enough, the wall holds the turn back for a step or two (a camera that
+   orbits against a wall) rather than the eye jumping in. A
    thin thing in the way (a post, a lantern, a stake: open 0.55 m to both sides of the line and no longer than 0.6 m along it) is looked
    past, but the eye itself is never inside anything. Foes are not in the walk map, so they never move it. */
 export function makeCamera(walk, o = {}) {
@@ -361,6 +364,9 @@ export function makeCamera(walk, o = {}) {
     auto: o.auto !== false, lift: 0, goal: { lift: 0, dist: dist0 }, goals: [], turning: false, from: null, hidden: 0, dv: 0, steer: false, across: false
   };
   const NEAR = 0.5, TOP = 1.35, LIFT = 0.08, THIN = 0.55, SHORT = 0.6, AHEAD = 0.25, RISE = 4, GRACE = 0.15, HEAD = 1.3, CHEST = 0.8, IN = 0.15, OUT = 0.25;
+  // the most speed coming in, m/s: past something between (PULL) and to keep the eye out of a wall (SQUEEZE);
+  // the most going back out (BACK); and how fast each builds
+  const PULL = 15, SQUEEZE = 33, BACK = 12, ACC = 360, AHEADS = [0.15, 0.3, 0.45];
   // is a point clear of the scenery by `cl`: above the top, or inside the gap under an arch (at least 1.8 high)?
   const open = (x, y, z, cl = 0.35) => {
     const t = walk.top(x, z);
@@ -425,7 +431,7 @@ export function makeCamera(walk, o = {}) {
   const wrap = a => Math.atan2(Math.sin(a), Math.cos(a));
   // turn: (c, s, dt, looked) -> true when a run's camera took the place of the swing this step
   function follow(s, dt, inp = {}, turn = null) {
-    const ox = inp.ox || 0, oy = inp.oy || 0, yaw0 = c.yaw;
+    const ox = inp.ox || 0, oy = inp.oy || 0, yaw0 = c.yaw, pitch0 = c.pitch, lift0 = c.lift;
     let looked = Math.abs(ox) > 0.01 || Math.abs(oy) > 0.01;
     c.yaw += ox * (inp.rate ?? 2.6) * dt;
     c.pitch = clamp(c.pitch + oy * 1.6 * dt, 0.08, 1.05);
@@ -482,24 +488,61 @@ export function makeCamera(walk, o = {}) {
         if (r >= c.dist - 0.05) break;
       }
     room = Math.max(NEAR, room);
+    // the true room, before the grace below may keep the eye back: an eased eye nearer than this is clear
+    const room0 = room;
     /* something comes between the eye and the aim while the eye itself is still clear: wait up to GRACE before coming in, as the rise
        may clear it by then. The eye is never in a wall (see below) */
     if (room < c.dist - 0.05 && eyeOpen(tx, ty, tz, c.yaw, pitch, c.dist) && (c.hidden += dt) <= GRACE) room = c.dist;
     else if (room >= c.dist - 0.05) c.hidden = 0;
     /* in and back out, both eased with a critically damped spring (Unity's SmoothDamp), so a wall that comes between is never a jump:
-       in over about IN s, and back out over about OUT s. The eye is never inside the scenery: where the eased eye would be in it, the
-       camera comes in only as far as its eye is clear */
+       in over about IN s, and back out over about OUT s */
     let to = Math.min(room, Math.max(c.goal.dist, NEAR));
-    // where the eye would be inside the scenery 0.3 s ahead as the view turns (into a wall), it starts in now, and faster
-    const ahead = c.yaw + clamp(spin, -3, 3) * 0.3, d0 = Math.min(c.dist, to);
+    /* where the eye would be inside the scenery now, or 0.15 s or 0.3 s ahead as the view turns (into a wall), it starts in now. Two
+       marches ahead, so a thin wall that the turn crosses in less than 0.3 s is not stepped over */
+    const d0 = Math.min(c.dist, to), sp3 = clamp(spin, -3, 3);
     let ds = d0;
-    while (ds > NEAR && !eyeOpen(tx, ty, tz, ahead, pitch, ds)) ds -= 0.1;
-    if (ds < d0) to = Math.max(NEAR, ds);
-    let [d, v] = damp(c.dist, to, c.dv, to < c.dist ? (ds < d0 ? IN / 2 : IN) : OUT, dt);
-    if (d > room) {
-      const eased = d;
-      while (d > room + 1e-6 && !eyeOpen(tx, ty, tz, c.yaw, pitch, d)) d = Math.max(room, d - 0.05);
-      if (d < eased) v = 0;
+    for (const t of [0, 0.15, 0.3]) while (ds > NEAR && !eyeOpen(tx, ty, tz, c.yaw + sp3 * t, pitch, ds)) ds -= 0.1;
+    /* and where the player turns the view so that a wall will come between in 0.15, 0.3 or 0.45 s (AHEADS), it comes in to that
+       wall's near side now, before the wall comes between: an eye left behind a wall can only come in through it with a jump */
+    if (looked && Math.abs(sp3) > 0.1) for (const t of AHEADS) ds = Math.min(ds, Math.max(NEAR, reach(tx, ty, tz, c.yaw + sp3 * t, pitch, d0)));
+    const squeeze = ds < d0 - 0.05;
+    if (squeeze) to = Math.max(NEAR, ds);
+    let [d, v] = damp(c.dist, to, c.dv, to < c.dist ? (squeeze ? IN / 2 : IN) : OUT, dt);
+    // the spring never goes past its goal coming in
+    if (to < c.dist && d < to) { d = to; v = 0; }
+    /* coming in is never a dive: at most PULL m/s while the eye is clear and only something between hides the figure (a tree trunk),
+       and SQUEEZE m/s where the eye must come in to stay out of a wall, each reached at no more than ACC m/s/s */
+    if (dt > 0 && d < c.dist) {
+      const vin = Math.max((d - c.dist) / dt, -(squeeze ? SQUEEZE : PULL), Math.min(0, c.dv) - ACC * dt);
+      d = c.dist + vin * dt; v = vin;
+    } else if (dt > 0 && d > c.dist) {
+      // and back out at no more than BACK m/s
+      const vout = Math.min((d - c.dist) / dt, BACK, Math.max(0, c.dv) + ACC * dt);
+      d = c.dist + vout * dt; v = vout;
+    }
+    /* the eye is never inside the scenery. Where the eased eye would be in it after the view turned, the turn of this step goes only
+       as far as keeps the eye clear (a camera that orbits against a wall), and the camera comes in on the next steps as above. Only
+       where no part of the turn helps (the lamplighter backs into a wall) does the eye come in at once, to the first clear distance */
+    if (d > room0 && !eyeOpen(tx, ty, tz, c.yaw, pitch, d)) {
+      const yawT = c.yaw, pitchT = c.pitch, liftT = c.lift, at = f => {
+        c.yaw = yaw0 + wrap(yawT - yaw0) * f; c.pitch = pitch0 + (pitchT - pitch0) * f; c.lift = lift0 + (liftT - lift0) * f;
+        return eyeOpen(tx, ty, tz, c.yaw, Math.min(TOP, c.pitch + c.lift), d);
+      };
+      // the first clear distance in from d at this step's yaw, if one is out of the wall at all
+      let dc = d;
+      while (dc > room0 + 1e-6 && !eyeOpen(tx, ty, tz, c.yaw, pitch, dc)) dc = Math.max(room0, dc - 0.05);
+      const clear = eyeOpen(tx, ty, tz, c.yaw, pitch, dc);
+      if (clear && dt > 0 && c.dist - dc <= SQUEEZE * dt) { d = dc; v = (d - c.dist) / dt; }
+      else if (clear && at(0)) {
+        let lo = 0, hi = 1;
+        for (let i = 0; i < 8; i++) { const m = (lo + hi) / 2; if (at(m)) lo = m; else hi = m; }
+        at(lo);
+        pitch = Math.min(TOP, c.pitch + c.lift);
+      } else {
+        at(1);
+        if (dc < d) v = 0;
+        d = dc;
+      }
     }
     c.dist = d; c.dv = v;
     return { target: c.target.slice(), dist: c.dist, yaw: c.yaw, pitch, ...(c.fov ? { fov: c.fov } : {}) };

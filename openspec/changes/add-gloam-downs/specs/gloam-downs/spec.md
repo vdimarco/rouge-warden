@@ -158,11 +158,18 @@ In the explorer, while the mouse is taken, the left button SHALL jump, and a hel
 - **THEN** Walk takes the mouse, Escape frees it and the hint shows, the first click takes the mouse again with no jump, and the second click jumps more than 0.3 m (measured 1.38 m). Check: e2e `gloam-downs-mouse.e2e.mjs`.
 
 ### Requirement: The mouse without pointer lock
-Where the browser has no pointer lock, or refuses it, a move with the right button held SHALL turn the view at twice the speed of "Mouse look", and the left button SHALL jump (in a run, attack). The left button SHALL never turn the view. A refusal SHALL keep the page from asking again for 1.5 s, and for 5 s after a second refusal in a row. Meanwhile the mouse SHALL work as without pointer lock.
+Where the browser has no pointer lock, a move with the right button held SHALL turn the view at twice the speed of "Mouse look", and the left button SHALL jump (in a run, attack). The left button SHALL never turn the view.
 
 #### Scenario: No pointer lock
 - **WHEN** the browser has no pointer lock, and the player drags with the right button and then with the left button
 - **THEN** the right drag turns the view, the left drag does not turn it, and the hint does not show. Check: e2e `gloam-downs-mouse.e2e.mjs` (in a run) and Node test `gloam-downs-mouse.test.mjs` (which button does what in the explorer).
+
+### Requirement: A refused pointer lock
+A refusal of the pointer lock SHALL keep the page from asking again for 1.5 s, and for 5 s after a second refusal in a row. In that wait a click on the view SHALL do nothing but ask again when the wait is over, and it SHALL never swing, roll or jump. After a first refusal the page SHALL ask again by itself when the wait is over. In the wait the hint SHALL say "Click again to look with the mouse".
+
+#### Scenario: The browser refuses the mouse once
+- **WHEN** in a run at 1280 by 720 the player presses Escape, the browser refuses the mouse once when the player clicks Resume, and the player then clicks the view with a training post 2 m ahead
+- **THEN** play goes on with no pause panel, the hint says "Click again to look with the mouse", the click does not hit the post or roll, and within 1.5 s the page takes the mouse and the hint hides. Check: e2e `gloam-downs-mouse.e2e.mjs` (it makes `requestPointerLock` reject once). The build before swung at the post on that click.
 
 ### Requirement: The mouse hint and help
 While the mouse is not taken in play, on a desktop that can take it, a small hint "Click to look with the mouse" SHALL show low in the middle of the view. It SHALL hide once the mouse is taken, and SHALL not show over a card or on a touch screen. The help card SHALL say "Click the view to take the mouse. Move the mouse to look round. Left click jumps. Esc frees the mouse." Without pointer lock it SHALL say "Hold the right button and drag the view to look round. Left click jumps."
@@ -183,11 +190,25 @@ The camera SHALL turn by itself (the swing behind a running lamplighter, the tur
 - **THEN** the swing starts 2 s after the last look input and turns no faster than 0.5 × π/2 rad/s (measured start 2.02 s), and with the move to the side held the view does not turn. Check: Node test `gloam-downs-mouse.test.mjs`.
 
 ### Requirement: An eased pull-in
-When a wall or a hill brings the camera in, it SHALL come in and go back out eased, with a critically damped spring of about 0.15 s in and 0.25 s out. It SHALL start in early where the view turns toward a wall. Its eye SHALL still never be inside the scenery. Standing still, the view SHALL not move.
+When a wall or a hill brings the camera in, it SHALL come in and go back out eased, with a critically damped spring of about 0.15 s in and 0.25 s out. Its eye SHALL still never be inside the scenery. Standing still, the view SHALL not move.
 
 #### Scenario: No jump near a wall
-- **WHEN** the player turns the view with the mouse at 1.2 rad/s into a 14 m wall 2 m to the side of the lamplighter and back, at 1280 by 720 and 390 by 844
-- **THEN** the camera comes in, its distance changes by no more than 1 m in a step, the change from one step to the next is 0.4 m or less, and the eye is never in the wall (measured 0.35 m and 0.09 m at 1280, 0.91 m and 0.28 m at 390; the camera before came in by 3.6 m in one step at 390). Standing still with the back to the wall, beside it, or under a low roof, the view does not move after it settles. Check: Node test `gloam-downs-mouse.test.mjs`.
+- **WHEN** the player turns the view with the mouse at 1.2, 3 and 6 rad/s into a 14 m wall to the side of the lamplighter and back: walls 0.5 m and 1 m thick, 1 m and 2 m away, at 1280 by 720 and 390 by 844
+- **THEN** the camera comes in, its distance changes by no more than 1 m in a step, the change from one step to the next is 0.4 m or less, and the eye is never in the wall (measured at most 0.55 m and 0.27 m; the camera of 09fd360b came in by 4.8 m in one step at 390 by the wall 0.5 m thick and 1 m away at 1.2 rad/s, and had its eye in it at 6 rad/s). Standing still with the back to the wall, beside it, or under a low roof, the view does not move after it settles. Check: Node test `gloam-downs-mouse.test.mjs`.
+
+### Requirement: The eye out of the wall
+Where the player turns the view toward a wall, the camera SHALL start in early: for the eye 0.15 s and 0.3 s ahead, and for the line of sight 0.15, 0.3 and 0.45 s ahead. Where the eye would still go into a wall, the turn of that step SHALL go only as far as keeps the eye clear. Where something comes between and the eye must come in past it, the eye SHALL not pass through it.
+
+#### Scenario: Walk past a pillar
+- **WHEN** the lamplighter walks past a 14 m pillar 0.5 m or 1 m thick, 1.5 m or 3 m wide and 1 to 3 m behind it, at 3 and 6 m/s with the mouse taken, at 1280 by 720 and 390 by 844
+- **THEN** the eye is never in the pillar (the camera of 09fd360b had it there on 23 steps). Check: Node test `gloam-downs-mouse.test.mjs`.
+
+### Requirement: No dive
+The camera SHALL come in no faster than 15 m/s while only something between hides the figure and the eye is clear, and no faster than 33 m/s where it must come in to keep its eye out of a wall. It SHALL go back out no faster than 12 m/s. Each speed SHALL build at no more than 360 m/s².
+
+#### Scenario: A mouse sweep in the five places
+- **WHEN** at the spawn and each wisp of the five places the player turns the view round with the mouse at 1.2 rad/s for 6 s, at 1280 by 720 and 390 by 844 (60 sweeps)
+- **THEN** a step changes the distance by 0.6 m or less, except where the eye comes in through a wall from behind (the line from the old eye to the new passes within 0.35 m of the scenery), on 4 steps or fewer in all, each under 2 m. Measured: 3 such steps, the largest 1.62 m; the camera of 09fd360b changed the distance by more than 0.6 m on 142 steps, by up to 2.3 m. Check: Node test `gloam-downs-mouse.test.mjs` (skipped with `GLOAM_WORLDS=0`).
 
 ### Requirement: The camera's framing
 The camera SHALL frame each window so:

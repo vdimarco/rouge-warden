@@ -102,11 +102,14 @@ const inp = makeInput({ canvas, stick: stickEl, jump: jumpBtn, attack: $('bAttac
 });
 // a button that goes back to play takes the mouse again, when the press is a gesture the browser counts (not a gamepad's A)
 const retake = () => { if (navigator.userActivation ? navigator.userActivation.isActive : true) inp.take(); mouseHint(); };
-// "Click to look with the mouse": over the view in play while the mouse is not taken, on a desktop that can take it
+/* "Click to look with the mouse": over the view in play while the mouse is not taken, on a desktop that can take it. Just after the
+   browser refused it (a click on Resume too soon after Escape), "Click again to look with the mouse" */
 const hintEl = $('mouseHint');
 function mouseHint() {
-  const on = mode === 'play' && !!place && inp.lockable && !inp.locked;
+  const on = mode === 'play' && !!place && inp.canLock && !inp.locked;
   if (hintEl.hidden === on) hintEl.hidden = !on;
+  const text = inp.waiting ? 'Click again to look with the mouse' : 'Click to look with the mouse';
+  if (on && hintEl.textContent !== text) hintEl.textContent = text;
 }
 const input = inp.input;
 const typing = e => e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement;
@@ -859,8 +862,8 @@ window.__gloam = {
     reached: save.reached.slice(),
     // pitch is the player's; view is what is drawn (with the rise over walls), want the layout's distance, foe the combat camera's
     cam: cam ? { yaw: cam.c.yaw, dist: cam.c.dist, pitch: cam.c.pitch, want: cam.c.want, fov: cam.c.fov, aim: cam.c.aim, lift: cam.c.lift, view: view ? view.pitch : null, foe: combat?.foe?.id ?? null, turning: cam.c.turning, idle: cam.c.idle } : null,
-    // the mouse: taken now, the page can take it now, and the hint shows
-    mouse: { locked: inp.locked, lockable: inp.lockable, hint: !hintEl.hidden }
+    // the mouse: taken now, the page can take it now, the browser refused it a moment ago, the hint shows, and its words
+    mouse: { locked: inp.locked, lockable: inp.lockable, waiting: inp.waiting, hint: !hintEl.hidden, text: hintEl.textContent }
   }),
   // in a run, go(id) moves the run to the start of a place as Walk on does: the entry snapshot is taken from the values now
   go: id => { if (RUN && rs.run) { goTo(rs, id); storeRun(); } return go(id); },

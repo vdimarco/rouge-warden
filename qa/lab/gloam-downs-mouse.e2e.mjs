@@ -2,8 +2,9 @@
 // the page takes the mouse for real and the moves come with movementX and movementY; the fallback is a page whose canvas has no
 // requestPointerLock (an init script takes it away).
 //   In a run at 1280x720: the hint shows while the mouse is free, Begin the run takes it, a move turns the view with no button, a left
-//   click attacks and does not turn, a right click rolls, Escape frees it and opens the pause panel, Resume takes it again, the pause
-//   key and the Lamp-room free it, and in 5 s of running past a foe with the mouse taken the view does not turn by itself.
+//   click attacks and does not turn, a right click rolls, Escape frees it and opens the pause panel, Resume takes it again; when the
+//   browser refuses the mouse once, the hint says to click again, a click on the view does not swing, and the page takes the mouse
+//   after the wait; the pause key and the Lamp-room free it, and in 5 s of running past a foe with the mouse taken the view does not turn by itself.
 //   In the explorer: Walk takes the mouse, Escape frees it and the hint shows, the click that takes it does not jump, and then a left
 //   click jumps.
 //   The fallback: the controls say to drag with the right button, the right drag turns the view, and a left click attacks only.
@@ -110,6 +111,37 @@ try {
     await settle(page);
     assert(await locked(page), 'Resume takes the mouse again');
     assert.equal((await run(page)).mode, 'play');
+    /* the browser refuses the mouse once (Chrome does, for a Resume clicked soon after Escape): the page waits 1.5 s before it asks
+       again. In that wait the hint says to click again, and a click on the view only asks again: it does not swing */
+    await page.keyboard.press('Escape');
+    await settle(page);
+    assert.equal((await run(page)).mode, 'pause');
+    await cool(page);
+    await G(page, () => {
+      const v = document.getElementById('view');
+      v.requestPointerLock = () => { delete v.requestPointerLock; return Promise.reject(new DOMException('refused', 'SecurityError')); };
+    });
+    await page.click('#bResume');
+    await settle(page);
+    await tick(page, 0.05, 'live');
+    let m = (await state(page)).mouse;
+    assert(!m.locked && m.waiting && m.hint, `after a refusal the hint shows (${JSON.stringify(m)})`);
+    assert.equal(m.text, 'Click again to look with the mouse');
+    assert.equal((await run(page)).mode, 'play', 'the refusal does not pause the run');
+    await shot(page, 'hint-again-1280');
+    await postAhead(page, 2.0);
+    await tick(page, 0.05, {});
+    const before = await hits(page);
+    await page.mouse.click(640, 300);
+    await tick(page, 0.8, 'live');
+    assert.equal(await hits(page), before, 'a click in the wait does not swing');
+    assert.notEqual((await run(page)).move, 'roll', 'and does not roll');
+    // when the wait is over the page asks again by itself, and takes the mouse
+    await page.waitForTimeout(1500);
+    await settle(page);
+    assert(await locked(page), 'after the wait the page takes the mouse');
+    await tick(page, 0.05, 'live');
+    assert(!(await state(page)).mouse.hint, 'and the hint hides');
     // the pause key frees it so the card's buttons can be clicked; so does the Lamp-room
     await page.keyboard.press('p');
     await settle(page);
