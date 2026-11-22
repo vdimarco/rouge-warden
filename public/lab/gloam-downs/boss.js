@@ -470,7 +470,8 @@ export function makeBoss({ walk, arena = null, seed = 1, runner = null, bounds =
   // what the boss camera and the combat camera read. marks: the far points of the marker laid, 0.3 m over the ground, which the boss
   // camera keeps in sight: the shard rings' centres and four points on each rim at its full size, the lane's far end, the sweeps' two
   // side ends and front at their full reach, and four points round the slam's ring. With the centres alone, the ground hid part of a
-  // rim at 254 of 2928 rim points over the arena at 390x844 (a ring half over a rise); with the rims, at 104
+  // rim at 254 of 2928 rim points over the arena at 390x844 and 211 at 1280x720 (a ring half over a rise); with the rims, at 44 and 33
+  // (gloam-downs-boss.test.mjs)
   const at = (m, a, r) => [m.x + Math.sin(a) * r, m.y + 0.3, m.z + Math.cos(a) * r];
   const rim = (r, a) => { const x = r[0] + Math.sin(a) * ATTACKS.shards.ring, z = r[2] + Math.cos(a) * ATTACKS.shards.ring; return [x, ground(x, z, r[1]) + 0.3, z]; };
   const marksOf = m => !m ? [] : m.kind === 'shards' ? m.rings.flatMap(r => [[r[0], r[1] + 0.3, r[2]], ...[0, 1, 2, 3].map(k => rim(r, (k * Math.PI) / 2))])
@@ -479,7 +480,31 @@ export function makeBoss({ walk, arena = null, seed = 1, runner = null, bounds =
     : m.kind === 'ring' ? [0, 1, 2, 3].map(k => at(m, (k * Math.PI) / 2, m.full * 0.85)) : [];
   // look: the least pitch for the marker laid: the lunge's lane runs straight at the lamplighter and on toward the camera, and seen
   // from the layout's pitch (about 0.3) it shrinks to a strip behind the two figures, so the camera looks down on it from 0.6
-  B.camView = () => ({ id: B.id, x: B.x, y: B.y, z: B.z, up: B.up, started: B.started, marks: marksOf(B.mk), look: B.mk?.kind === 'lane' ? BOSS_LOOK : 0 });
+  // busy: an attack under way (its marker stands, or its shards fly), which keeps the boss camera on out to 16 m from the centre
+  B.camView = () => ({ id: B.id, x: B.x, y: B.y, z: B.z, up: B.up, started: B.started, busy: B.state === 'move' || !!B.mk || B.shards.length > 0,
+    marks: marksOf(B.mk), look: B.mk?.kind === 'lane' ? BOSS_LOOK : 0 });
+  /* the marker laid, as points on the ground at its full size, 0.1 m up, for the page's fade of the scenery in front of it (veil.js
+     makeOccluders): each shard ring's centre and 8 points on its rim, the lane's middle line every 1.5 m and its four corners, the
+     sweeps' front slices at 0.5, 0.85 and 1.0 of their reach every 22.5°, and the slam's ring at 0.85 and 1.0 every 45° */
+  const flat = (x, z, y) => [x, ground(x, z, y) + 0.1, z];
+  B.markPoints = () => {
+    const m = B.mk;
+    if (!m) return [];
+    const out = [];
+    if (m.kind === 'shards') for (const r of m.rings) {
+      out.push(flat(r[0], r[2], r[1]));
+      for (let k = 0; k < 8; k++) out.push(flat(r[0] + Math.sin(k * Math.PI / 4) * m.full, r[2] + Math.cos(k * Math.PI / 4) * m.full, r[1]));
+    } else if (m.kind === 'lane') {
+      const ux = Math.sin(m.yaw), uz = Math.cos(m.yaw), w = ATTACKS.lunge.width / 2;
+      for (let a = 0; a <= m.full + 1e-9; a += Math.min(1.5, m.full)) out.push(flat(m.x + ux * a, m.z + uz * a, m.y));
+      for (const a of [0, m.full]) for (const k of [-1, 1]) out.push(flat(m.x + ux * a + uz * w * k, m.z + uz * a - ux * w * k, m.y));
+    } else if (m.kind === 'slices') {
+      for (const f of [0.5, 0.85, 1]) for (let k = -4; k <= 4; k++) { const a = m.face + k * SWEEP.arc / 4; out.push(flat(m.x + Math.sin(a) * m.full * f, m.z + Math.cos(a) * m.full * f, m.y)); }
+    } else if (m.kind === 'ring') {
+      for (const f of [0.85, 1]) for (let k = 0; k < 8; k++) out.push(flat(m.x + Math.sin(k * Math.PI / 4) * m.full * f, m.z + Math.cos(k * Math.PI / 4) * m.full * f, m.y));
+    }
+    return out;
+  };
   // the wind-up under way, for an off-screen notch
   B.windups = () => {
     if (B.state !== 'move') return [];

@@ -419,6 +419,17 @@ In the boss fight, the boss camera SHALL take the place of the combat camera. It
 - **WHEN** the intro has ended, and the lamplighter walks from 9 m to 6 m from the arena's centre
 - **THEN** at 9 m, the combat camera has the boss as its foe. At 6 m, the boss camera is on. Check: Node test `gloam-downs-camera.test.mjs` (with a stand-in boss until stage 3).
 
+### Requirement: Boss camera through an attack
+The boss camera SHALL also be on while an attack of the boss is under way (its marker stands or its shards fly) and the lamplighter is within 16 m of the arena's centre, so a lunge or lamp-shards that the lamplighter steps out of the arena from is watched to its end.
+
+#### Scenario: An attack watched from outside the arena
+- **WHEN** the boss at the arena's centre winds up an attack at a lamplighter 7.5 m away, outside the arena
+- **THEN** the boss camera is on at its least distance until the attack is over, and then eases back to the follow camera within 1 s. With an attack under way it comes on at 15.5 m from the centre, and not at 16.5 m. Check: Node test `gloam-downs-camera.test.mjs`.
+
+#### Scenario: Every wind-up from the boss camera
+- **WHEN** the boss e2e stands the lamplighter where each of the five attacks is chosen (the lunge 7.5 m from the boss, outside the arena) and holds the boss in its wind-up, at 1280 by 720 and 390 by 844, after 1.2 s to settle
+- **THEN** the boss camera is on, at 11.9 m or more, the lamplighter is not faded, and each part of the marker shows fire: the sweeps' sector, the slam's disc, the lunge's lane and both halves (near the eye and beyond) of each shard ring, at a share of the part's drawn area no less than the e2e's per-kind least. Check: e2e `gloam-downs-run.boss.e2e.mjs`.
+
 ### Requirement: The boss as the combat camera's foe
 While the fight has started and the boss is up, outside the arena and within 16 m of its centre, the combat camera SHALL count the boss as an awake foe, at any distance from the lamplighter. Before the intro and after the fall, it SHALL not.
 
@@ -437,7 +448,7 @@ The boss camera SHALL aim at a point on the line from the lamplighter to the bos
 The lamplighter SHALL leave the arena when it is more than 7.0 m from the arena's centre, (18, 0.68, −22). When the boss falls or the lamplighter leaves the arena, the camera SHALL ease back to the follow camera over 1 s.
 
 #### Scenario: Leave the arena
-- **WHEN** the lamplighter walks more than 7.0 m from the arena's centre
+- **WHEN** the lamplighter walks more than 7.0 m from the arena's centre, with no attack of the boss under way
 - **THEN** within 1 s the camera is back at the follow camera's distance and aim. Check: Node test `gloam-downs-camera.test.mjs`.
 
 ### Requirement: Boss camera frame
@@ -459,6 +470,20 @@ When a hill, a stone or a wall would bring the boss camera closer than it chose,
 #### Scenario: The marker's far points
 - **WHEN** the Node test reads the boss's camera view with each marker laid
 - **THEN** the far points are the three shard rings' centres with four points on each rim at 1.3 m, the lane's far end, the sweeps' two side ends and front, and four points round the slam's ring, and the lunge's lane asks for a pitch of 0.6. Check: Node test `gloam-downs-boss.test.mjs`.
+
+### Requirement: Scenery in front of a boss marker
+While the boss's marker is laid, a piece of Barrow Crown's scenery that covers a point of the marker on the screen and stands more than 0.3 m nearer the eye than that point SHALL fade out over 0.25 s of game time, and SHALL fade back over 0.25 s when it no longer does.
+
+#### Scenario: The yew in front of a shard ring
+- **WHEN** the boss lays its lamp-shards with the boss camera south of the lamplighter and the yew at (17, −13.5) between the eye and the west ring, which the walk map's sight test hides at every pitch to 1.1
+- **THEN** the yew's crown fades out over 15 steps of the game clock, to density 0, and comes back over 15 steps when the rings are gone. In the e2e picture both halves of the west ring show fire. Check: Node test `gloam-downs-boss.test.mjs` and e2e `gloam-downs-run.boss.e2e.mjs`.
+
+### Requirement: Scenery pieces that may fade
+A piece SHALL be a group of the place's opaque splats within 20 m of the arena's centre that stand more than 1.2 m over the low ground round them, joined on a grid of 0.5 m, with the splats from 0.4 to 1.2 m up in its own columns. A piece more than 4 m across SHALL never fade, so the ground of a slope or a barrow stays. The foot of a piece SHALL stay.
+
+#### Scenario: Pieces round the arena
+- **WHEN** the Node test finds the pieces round Barrow Crown's arena
+- **THEN** none is more than 4 m across, and the yew at (17, −13.5) is one piece. Check: Node test `gloam-downs-boss.test.mjs`.
 
 ### Requirement: Boss camera raise holds still
 Whether something is in the way of the boss camera SHALL be read at the layout's pitch, and its frame SHALL be solved at the raised pitch. The raise SHALL come down only when the least raise is more than 0.1 under it, so the pitch holds still while the lamplighter and the boss stand still. Past the walk map's bounds, the boss camera SHALL read the map's edge cells, so scenery outside the map never brings it in.
@@ -531,7 +556,7 @@ A ring marker SHALL be six slices of 60°. A lane marker SHALL be pieces of 1.5 
 
 #### Scenario: A marker on rolling ground
 - **WHEN** the Node test lays markers at points across each leash on the baked walk maps. These are the Ironback's ring and lane in B1 and W2, and the boss's rings and lane in the arena. They are also the Mirelight's ring in F1 and F2.
-- **THEN** for each marker, at least 90% of its rim points are within 0.15 m of the ground (measured: 90.5% for F2's ring to 99.1% for the shard ring). Check: Node test `gloam-downs-foes-ai.test.mjs`.
+- **THEN** for each marker, at least 90% of its rim points are within 0.15 m of the ground (measured: 91.2% for F2's ring to 99.2% for the shard ring). Check: Node test `gloam-downs-foes-ai.test.mjs`.
 
 ### Requirement: Markers stand still
 A ring or a lane SHALL stay in one place from at least 0.3 s before its hit. The Pitchrook's ring SHALL stay where it was laid at the start of the wind-up. The Ironback's lane SHALL be 1.6 m wide. The boss's lane SHALL be 1.6 m wide and 9 m long. A lane attack SHALL hit only a lamplighter whose centre is inside the lane. A ring or slice attack SHALL hit only a lamplighter whose centre is inside the ring or its slices, within 1.6 m of height (1.8 m for the pulse and the slam).
@@ -1010,9 +1035,12 @@ The page SHALL store the run at once when the boss falls. A reload after the fal
 - **WHEN** the boss falls, and the player reloads before the lamplighter reaches the beacon
 - **THEN** the run goes on at the arena with the light at the lantern. The boss is down, no zone wakes, and the glim carried is the entry value plus 30. Check: e2e `gloam-downs-run.boss.e2e.mjs`.
 
+### Requirement: The place behind a reloaded win card
+After a reload, the win card SHALL show over the place that was won, with its beacon burning.
+
 #### Scenario: Reload on the win card
 - **WHEN** the last beacon lights, and the player reloads 1.0 s later, before the win card shows
-- **THEN** the win card shows with the same figures, and the wins count went up by one only. Check: e2e `gloam-downs-run.boss.e2e.mjs`.
+- **THEN** the win card shows with the same figures over Barrow Crown with its beacon lit, and the wins count went up by one only. Check: e2e `gloam-downs-run.boss.e2e.mjs`.
 
 ### Requirement: No boss files after the fall
 While `bossDown` is true, the page SHALL not wait for the boss files: it SHALL not fetch them, and the 11 m pause and Step back SHALL not apply.

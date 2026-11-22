@@ -116,13 +116,16 @@ export function frameClear(pr, L, B, screen, ground = () => L.y) {
 }
 
 /* ---------------- the boss camera ----------------
-   On while the fight has started, the boss is up and the lamplighter is within 7.0 m of the arena's centre. It aims at a point on the
+   On while the fight has started, the boss is up and the lamplighter is within 7.0 m of the arena's centre, and also, out to 16 m from
+   that centre, while an attack of the boss is under way (its marker stands or its shards fly): a lunge or lamp-shards that the player
+   steps out of the arena from is watched to its end from the boss camera, not from a follow camera pressed against the grave stones
+   south of the arena (from 7.5 m there it stood 0.5 m from the lamplighter, faded out whole). It aims at a point on the
    line from the lamplighter to the boss, 1.15 m up, and picks the smallest distance (from `least` to 24 m) and the aim nearest the
    lamplighter that keep the frame clear. Its own ease takes it there in 60 steps, and back to the follow camera in 60 steps when it goes
    off. After 0.6 s with no look input it turns toward the boss at up to 1.5 rad/s, and stops at a yaw difference of 15°, but not while
    the mouse is taken or a move across the view is held (play.js autoTurn). A hill or a wall that would bring it nearer than it chose
    raises its pitch, eased, by the least that lets it stand at its distance (bossRaise), to a pitch of 1.1. With reduced motion it does not turn, but it still aims and pulls back. */
-export const BOSS = { on: 7.0, wait: 0.6, rate: 1.5, stop: 15 * DEG, far: 24, least: 12, steps: 60, up: 1.15, slope: 1.1, rise: 0.05, aims: 0.8 };
+export const BOSS = { on: 7.0, held: 16, wait: 0.6, rate: 1.5, stop: 15 * DEG, far: 24, least: 12, steps: 60, up: 1.15, slope: 1.1, rise: 0.05, aims: 0.8 };
 /* the raise of the pitch over what stands in the way: the least raise (in steps of 0.05, to a pitch of 1.1) at which the eye stands at
    its distance D and sees every point of marks (the boss's chest and feet, and the far points of its marker: a stone beside the eye can
    hide a shard ring without standing between the eye and the aim); failing that, the least at which it stands at D and sees the most of
@@ -154,13 +157,15 @@ export function bossFrame(L, B, yaw, view, screen, ground, least) {
   const k = 0.3;
   return { dist: BOSS.far, k, aim: [L.x + (B.x - L.x) * k, L.y + BOSS.up + (B.y - L.y) * k, L.z + (B.z - L.z) * k], clear: false };
 }
-/* cam: a play.js follow camera; screen as for frameClear; boss(): null, or { x, y, z, up, started, marks } for the boss (a stand-in in
-   the tests; marks are the far points of its marker, for the raise). sees(a, b): the sight test of the walk map (moves.js clearLine). centre: the arena's centre. step(s, dt, inp, view) takes the follow camera's view of this step and returns the view to draw */
+/* cam: a play.js follow camera; screen as for frameClear; boss(): null, or { x, y, z, up, started, busy, marks } for the boss (a stand-in
+   in the tests; busy: an attack under way; marks are the far points of its marker, for the raise). sees(a, b): the sight test of the walk map (moves.js clearLine). centre: the arena's centre. step(s, dt, inp, view) takes the follow camera's view of this step and returns the view to draw */
 export function makeBossCam(cam, { screen, boss = () => null, centre = [18, 0.68, -22], still = false, ground = null, sees = null } = {}) {
   const b = { on: false, w: 0, goal: null, cur: null, view: null, lift: 0, turning: false, n: 0 };
   const live = s => {
     const B = boss();
-    return B && B.started && B.up && Math.hypot(s.x - centre[0], s.z - centre[2]) <= BOSS.on ? B : null;
+    if (!B || !B.started || !B.up) return null;
+    const d = Math.hypot(s.x - centre[0], s.z - centre[2]);
+    return d <= BOSS.on || (B.busy && d <= BOSS.held) ? B : null;
   };
   // follow()'s turn hook while the fight is on: the boss camera's turn takes the place of the combat camera's
   function turn(c, s, dt, looked) {

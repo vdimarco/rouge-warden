@@ -81,6 +81,52 @@ function markerPoints(m) {
   if (m.kind === 'lane') return Array.from({ length: 6 }, (_, i) => [m.x + Math.sin(m.yaw) * m.len * (i / 5), m.y + 0.05, m.z + Math.cos(m.yaw) * m.len * (i / 5)]);
   return [];
 }
+/* draw, and for each polygon of world points (as CSS px from __gloam.project) count the art pixels inside it and on the canvas, and
+   among them those within 12 (on each of R, G and B) of fire slots 34 to 37 -> [{ fire, area, share }] */
+const fireIn = (page, polys) => G(page, polys => {
+  const g = window.__gloam;
+  g.draw();
+  const c = document.getElementById('view'), gl = c.getContext('webgl2'), w = c.width, h = c.height, px = new Uint8Array(w * h * 4);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, px);
+  const r = c.getBoundingClientRect(), sx = w / r.width, sy = h / r.height;
+  const fire = g.run().fx.grade.slice(34, 38).map(v => [(v >> 16) & 255, (v >> 8) & 255, v & 255]);
+  return polys.map(poly => {
+    const q = poly.map(p => g.project(p)).filter(Boolean).map(v => [(v[0] - r.left) * sx, (v[1] - r.top) * sy]);
+    if (q.length < 3) return { fire: 0, area: 0, share: 0 };
+    const inside = (x, y) => { let o = false; for (let i = 0, j = q.length - 1; i < q.length; j = i++) { const [xi, yi] = q[i], [xj, yj] = q[j]; if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) o = !o; } return o; };
+    const x0 = Math.max(0, Math.floor(Math.min(...q.map(v => v[0])))), x1 = Math.min(w - 1, Math.ceil(Math.max(...q.map(v => v[0]))));
+    const y0 = Math.max(0, Math.floor(Math.min(...q.map(v => v[1])))), y1 = Math.min(h - 1, Math.ceil(Math.max(...q.map(v => v[1]))));
+    let k = 0, area = 0;
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+      if (!inside(x + 0.5, y + 0.5)) continue;
+      area++;
+      const i = ((h - 1 - y) * w + x) * 4;
+      if (fire.some(f => Math.abs(px[i] - f[0]) <= 12 && Math.abs(px[i + 1] - f[1]) <= 12 && Math.abs(px[i + 2] - f[2]) <= 12)) k++;
+    }
+    return { fire: k, area, share: area ? k / area : 0 };
+  });
+}, polys);
+/* the ground a marker covers, as polygons: the sweeps' sector of ±90°, the slam's disc, the lunge's lane and, for each shard ring, the
+   half nearer the eye and the half beyond it (yaw: the view's yaw; the eye is toward +(sin yaw, cos yaw)). Each a tenth wider than
+   the marker, so its rim is inside */
+function markerPolys(m, yaw) {
+  const arc = (x, y, z, r, a0, a1, k) => Array.from({ length: k }, (_, i) => { const a = a0 + ((a1 - a0) * i) / (k - 1); return [x + Math.sin(a) * r, y + 0.05, z + Math.cos(a) * r]; });
+  if (m.kind === 'slices') return [{ name: 'slices', poly: [[m.x, m.y + 0.05, m.z], ...arc(m.x, m.y, m.z, m.R * 1.1, m.face - Math.PI / 2, m.face + Math.PI / 2, 13)] }];
+  if (m.kind === 'ring') return [{ name: 'ring', poly: arc(m.x, m.y, m.z, m.R * 1.1, 0, Math.PI * 2, 24) }];
+  if (m.kind === 'lane') {
+    const ux = Math.sin(m.yaw), uz = Math.cos(m.yaw), w = 0.8 * 1.1, L = m.len + 0.3;
+    return [{ name: 'lane', poly: [[-w, 0], [w, 0], [w, L], [-w, L]].map(([a, b]) => [m.x + uz * a + ux * b, m.y + 0.05, m.z - ux * a + uz * b]) }];
+  }
+  if (m.kind === 'shards') return m.rings.flatMap((r, k) => [
+    { name: `ring ${k} near`, poly: arc(r[0], r[1], r[2], m.R * 1.1, yaw - Math.PI / 2, yaw + Math.PI / 2, 13) },
+    { name: `ring ${k} far`, poly: arc(r[0], r[1], r[2], m.R * 1.1, yaw + Math.PI / 2, yaw + Math.PI * 1.5, 13) }]);
+  return [];
+}
+/* the least share of fire inside each polygon, about half the least measured at 1280x720 and 390x844 once the boss camera stays on
+   through the lunge and the scenery in front of a marker fades: sweeps 18.9% (the double sweep's second, on the phone), slam 20.8%,
+   lane 25.0%, a shard ring's half 21.7%. The west ring's near half under the yew's crown read 2.1% to 3.6% */
+const SHARE = { slices: 0.09, ring: 0.10, lane: 0.12, shards: 0.10 };
 // where the lamplighter stands for each attack, and the time of its wind-up to look at (near its end, the marker grown)
 const ATT = {
   sweep: { d: 2.6, behind: false, t: 0.6 },
@@ -160,11 +206,18 @@ async function fight(viewport, touch, tag) {
     assert.equal(b.move, name);
     assert.equal(b.seg, 'wind');
     assert(b.marker, `${name} lays its marker`);
+    // the boss camera frames every wind-up, the lunge's from outside the arena too: on, 12 m or more out, and the lamplighter not faded
+    const st = await G(page, () => { const s = window.__gloam.state(); return { boss: s.cam.boss, yaw: s.cam.yaw, fade: s.fade, occluded: s.occluded }; });
+    assert(st.boss && st.boss.on, `${name}: the boss camera is on in the wind-up`);
+    assert(st.boss.dist >= 11.9, `${name}: the boss camera stands 12 m or more out (${st.boss.dist})`);
+    assert.equal(st.fade, 0, `${name}: the lamplighter is not faded`);
     const f = await firePixels(page, markerPoints(b.marker));
+    const parts = markerPolys(b.marker, st.yaw), got = await fireIn(page, parts.map(p => p.poly));
     await shot(page, `${tag}-${name}`);
     assert(f.seen >= 3, `${name}: its marker is in view (${f.seen} points)`);
-    assert(f.fire >= 20, `${name}: its marker adds fire (${f.fire})`);
-    pass(`${tag}: the ${name} winds up with its marker in view`, { fire: f.fire, seen: f.seen, kind: b.marker.kind });
+    parts.forEach((p, i) => assert(got[i].area > 0 && got[i].share >= SHARE[b.marker.kind], `${name}: ${p.name} shows ${got[i].fire} fire px of ${got[i].area} (${(got[i].share * 100).toFixed(1)}%)`));
+    pass(`${tag}: the ${name} winds up with its marker in view from the boss camera`, { dist: Math.round(st.boss.dist * 100) / 100, seen: f.seen, kind: b.marker.kind,
+      share: Object.fromEntries(parts.map((p, i) => [p.name, `${got[i].fire}/${got[i].area}`])), faded: st.occluded?.map(o => o.c), at: b.marker.kind === 'shards' ? b.marker.rings.map(r => r.map(v => Math.round(v * 100) / 100)) : [Math.round(b.x * 100) / 100, Math.round(b.z * 100) / 100] });
   }
   { // the phase change itself: hits do nothing in the stumble
     const s = await G(page, () => { const g = window.__gloam; g.hold('B', null); g.set({ bossHp: 1300 }); g.tick(2.5, {}); g.set({ bossHp: 790 }); g.tick(0.3, {}); return g.boss(); });
@@ -223,15 +276,18 @@ if (part('fight')) {
     await G(page, () => window.__gloam.tick(0.7, {}));
     await reload(page);
     await ready(page);
-    const r = await G(page, () => ({ card: !document.getElementById('winCard').hidden, rows: [...document.querySelectorAll('#winCard dd')].map(d => d.textContent), wander: !document.getElementById('bWinWander').hidden }));
+    const r = await G(page, () => ({ card: !document.getElementById('winCard').hidden, rows: [...document.querySelectorAll('#winCard dd')].map(d => d.textContent), wander: !document.getElementById('bWinWander').hidden,
+      place: window.__gloam.state().place, lit: window.__gloam.state().lit }));
     assert.equal(r.card, true);
+    assert.equal(r.place, 'barrows', 'the win card shows over Barrow Crown, the place won');
+    assert.equal(r.lit, true, 'with its beacon burning');
     assert.equal(r.wander, true, 'the first win opens Wander');
     await shot(page, 'desktop-win');
     const after = await G(page, () => JSON.stringify(localStorage));
     const count = s => JSON.parse(JSON.parse(s)['gloam-downs.run.v1']).wins;
     assert.equal(count(after), 1, 'the wins counted once');
     assert.equal(count(wins), 1);
-    pass('the carried light lights the last beacon; the win is stored at once, and a reload before the card shows it again, with Wander', { rows: r.rows, wins: count(after) });
+    pass('the carried light lights the last beacon; the win is stored at once, and a reload before the card shows it again over Barrow Crown with its beacon lit, with Wander', { rows: r.rows, wins: count(after), place: r.place });
   }
   { // the win card after 1.8 s of game time, in a fresh win
     const t = await G(page, () => {

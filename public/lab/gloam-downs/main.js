@@ -17,7 +17,7 @@ import { makeInput, navStep, readPads, heldNav } from './input.js';
 import * as cards from './cards.js';
 import { makePool } from './pool.js';
 import { figures, poolFor, lineup, LINEUP } from './figures.js';
-import { findVeils, makeVeils } from './veil.js';
+import { findVeils, makeVeils, findOccluders, makeOccluders, VEIL } from './veil.js';
 import { makeFight, SPARKS } from './fight.js';
 import { REEVE, REEVE_TEXT } from './boss.js';
 
@@ -47,7 +47,7 @@ let renderer = null, place = null, walk = null, body = null, cam = null, world =
 let mode = 'loading', paused = false, lost = false, last = 0, time = 0, frames = 0, acc = 0, steps = 0;
 let artTarget = TARGET[q.get('q')] || (coarse ? 46000 : TARGET.mid), adapt = !q.has('q');
 let art = { w: 320, h: 200, s: 1 };
-let lampFade = null, pendingRows = new Set(), fogNear = 10, beaconLit = false, arriveTimer = 0, toastTimer = 0, slowFor = 0, pool = null, slots = null, veils = null;
+let lampFade = null, pendingRows = new Set(), fogNear = 10, beaconLit = false, arriveTimer = 0, toastTimer = 0, slowFor = 0, pool = null, slots = null, veils = null, occluders = null;
 const intervals = [];
 // the run: the sound cues logged across places, the effects' flags (each can be turned off with __gloam.fx), what the effects give
 // this frame, training posts (?test), the fight in this place (fight.js) and the foes' targets
@@ -850,6 +850,10 @@ async function go(id) {
   // in a run, the mist and haze sheets that lie in front of an awake figure fade out (veil.js); the beacon and the wisps are left alone
   const pack = c => ((c >> 16) & 255) + ((c >> 8) & 255) * 256 + (c & 255) * 65536;
   veils = RUN ? makeVeils(world, findVeils(world, { count: placeCount, skip: [...meta.beacon.fire, ...meta.wisps.map(w => w.ids)], shared: meta.pal.slice(32).map(pack) })) : null;
+  // at Barrow Crown in a run, the pieces of scenery round the arena that fade while they hide the boss's marker (veil.js)
+  const arenaZone = RUN && !LOOK ? (meta.zones || []).find(z => z.boss) : null;
+  occluders = arenaZone ? makeOccluders(world, findOccluders(world, walk, { count: placeCount, skip: [...meta.beacon.fire, ...meta.wisps.map(w => w.ids)],
+    shared: meta.pal.slice(32).map(pack), centre: arenaZone.c, r: 20 })) : null;
   saved.clear();
   pendingRows = new Set();
   if (RUN) {
@@ -891,10 +895,11 @@ async function go(id) {
   arrive();
   if (manual && !nodraw) draw();
   if (RUN) {
+    if (!rs.run && rs.ended?.won && rs.ended.place === id) { beaconLit = true; setLit(meta.beacon.fire, true); }
     openOnLoad();
     storeRun();
     // the boss files come while The Bell Knoll plays, or once play starts in Barrow Crown; never after the boss's fall
-    if (!LOOK && (id === 'bells' || id === 'barrows') && !rs.run?.bossDown) fetchBoss();
+    if (!LOOK && rs.run && (id === 'bells' || id === 'barrows') && !rs.run.bossDown) fetchBoss();
   } else if (!save.seen) {
     $('helpKeys').hidden = coarse;
     $('helpMouse').hidden = !inp.canLock;
@@ -949,6 +954,14 @@ function update() {
   input.dyaw = input.dpitch = 0;
   for (const r of lampFade.set(fadeOf(eyeOf(view), body.s))) pendingRows.add(r);
   if (veils) unveil();
+  if (occluders) clearMarker();
+}
+// the scenery in front of the boss's marker fades out while the marker is laid, seen from where the eye is now
+function clearMarker() {
+  const B = fight?.boss, pts = B?.fighting() ? B.markPoints() : [];
+  if (!pts.length && !occluders.list.some(o => o.k < VEIL.FADE)) return;
+  const c = viewCamera(world, { camera: view }, art.w, art.h);
+  for (const r of occluders.step(c.view, art.h / 2 / c.tangent, pts)) pendingRows.add(r);
 }
 // the veils over the awake figures fade out, seen from where the eye is now: nine points on each figure, at its feet, middle and head,
 // in the middle and at its two sides as the eye sees them
@@ -1055,6 +1068,8 @@ window.__gloam = {
     // pitch is the player's; view is what is drawn (with the rise over walls), want the layout's distance, foe the combat camera's
     cam: cam ? { yaw: cam.c.yaw, dist: cam.c.dist, pitch: cam.c.pitch, want: cam.c.want, fov: cam.c.fov, aim: cam.c.aim, lift: cam.c.lift, view: view ? view.pitch : null, foe: combat?.foe?.id ?? null, turning: cam.c.turning, idle: cam.c.idle,
       boss: bossCam ? { on: bossCam.b.on, w: bossCam.b.w, dist: view?.dist ?? null, aim: view?.target ?? null } : null } : null,
+    // the pieces of scenery faded in front of the boss's marker (veil.js makeOccluders), or null away from Barrow Crown's run
+    occluded: occluders ? occluders.faded() : null,
     // the near fade's share now (play.js fadeOf: 0 to 1, or NEAR_FADE.all with the whole figure left out)
     fade: lampFade?.k ?? 0,
     // the mouse: taken now, the page can take it now, the browser refused it a moment ago, the hint shows, and its words
@@ -1215,7 +1230,8 @@ window.__gloam = {
   if (RUN) {
     // a reload in a run restarts its place: health and flasks no higher than they were, the glim carried and the foes as they entered
     if (rs.run) reload(rs.run);
-    return go(rs.run?.place || ORDER[0]);
+    // a reload on the win card shows it over the place that was won, with its beacon burning
+    return go(rs.run?.place || (rs.ended?.won && ORDER.includes(rs.ended.place) ? rs.ended.place : ORDER[0]));
   }
   const start = q.get('place');
   await go(ORDER.includes(start) && save.reached.includes(start) ? start : save.at || 'gaol');

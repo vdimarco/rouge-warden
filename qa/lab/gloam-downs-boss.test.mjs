@@ -26,6 +26,9 @@ import { makeFight } from '../../public/lab/gloam-downs/fight.js';
 import { readFigures, makePool } from '../../public/lab/gloam-downs/pool.js';
 import { poolFor } from '../../public/lab/gloam-downs/figures.js';
 import { makeBossCam, makeCombat, BOSS, projector } from '../../public/lab/gloam-downs/cameras.js';
+import { findOccluders, makeOccluders, OCCLUDE } from '../../public/lab/gloam-downs/veil.js';
+import { fitRing } from '../../public/lab/gloam-downs/markers.js';
+import { makeCamera as viewCamera } from '../../public/lab/gloam-downs/ink/webgl/view.mjs';
 import { cardOnLoad, winOf } from '../../public/lab/gloam-downs/screens.js';
 import { makeFeel, FEEL } from '../../public/lab/gloam-downs/feel.js';
 import { POOLS } from '../../games/gloam-downs/lib/zones.mjs';
@@ -438,9 +441,16 @@ function attackAt(rate, setup) {
       });
     } else assert.equal(v.marks.length, { lunge: 1, sweep: 3, slam: 4 }[name]);
     assert.equal(v.look, name === 'lunge' ? 0.6 : 0);
+    // the attack under way keeps the boss camera on outside the arena; the page's fade of the scenery reads the marker's ground points
+    assert.equal(v.busy, true, `${name}: busy while under way`);
+    assert.equal(W.B.markPoints().length, { shards: 27, lunge: 11, sweep: 27, slam: 16 }[name], `${name}: its ground points`);
+    got[name].points = W.B.markPoints().length;
     W.B.holdAt(null);
   }
-  pass("each marker's far points for the boss camera: three ring centres and four rim points each, the lane's end with a pitch of 0.6, the sweeps' ends and front, the slam's four", got);
+  W.B.state = 'idle'; W.B.move = null; W.B.mk = null; W.B.shards = [];
+  assert.equal(W.B.camView().busy, false, 'idle with no marker: not busy');
+  assert.equal(W.B.markPoints().length, 0);
+  pass("each marker's far points for the boss camera: three ring centres and four rim points each, the lane's end with a pitch of 0.6, the sweeps' ends and front, the slam's four; busy while an attack is under way, and the ground points for the fade", got);
 }
 { /* the run stored at the fall with bossDown; a reload after the fall: the boss stays down, the light rides from the start, and the glim
      carried is the entry value plus 30. Then the beacon banks it, the win is stored at once (wins + 1, the best time, run null), and a
@@ -699,6 +709,46 @@ if (process.env.GLOAM_WORLDS !== '0') {
       out[tag] = { pairs, least, pitch: r2(top), hidden, rims: `${rimHid}/${rimAll}` };
     }
     pass('the boss camera over the arena stands at its least distance with the boss and the shard rings on the screen and in sight, raised over the grave stones', out);
+  }
+  { /* the scenery in front of a marker (veil.js makeOccluders). The e2e's lamp-shards at 1280x720: the boss at (18, −20.65) facing
+       south, the lamplighter 5.5 m in front of it, the boss camera at 12 m and a pitch of 1.063 (yaw 0). The west ring's near rim lies
+       behind the yew at (17, −13.5): the walk map's sight test hides it at every pitch to 1.1, and sees it only from 1.4. Round the arena
+       the pieces that may fade are things standing on the ground, none more than 4 m across; the yew's crown is one of them, and it fades
+       out over 15 steps while the ring is laid and comes back over 15 when it is gone. The ground and the boss's own ranges never fade */
+    const place = SplatCodec.decode(new Uint8Array(zlib.gunzipSync(fs.readFileSync(`${W}barrows.bin.gz`))), { maxRows: 1_000_000 });
+    const world = { data: place.data, count: place.count, radius: meta.radius, cam: meta.cam };
+    const pack = c => ((c >> 16) & 255) + ((c >> 8) & 255) * 256 + (c & 255) * 65536;
+    const list = findOccluders(world, walk, { skip: [...meta.beacon.fire, ...meta.wisps.map(w => w.ids)], shared: meta.pal.slice(32).map(pack), centre: arena.c, r: 20 });
+    assert(list.length >= 1 && list.every(o => o.r <= OCCLUDE.WIDEST), 'pieces round the arena, none more than 4 m across');
+    const yew = list.find(o => Math.hypot(o.c[0] - 17, o.c[2] + 13.5) < 0.5);
+    assert(yew && yew.ids.length > 500, 'the yew at (17, −13.5) is a piece');
+    const ground = (x, z, y) => walk.support(x, z, y + 2.5) ?? walk.top(x, z);
+    const rings = [[18, -15.145], [20.5, -15.145], [15.5, -15.145]].map(([x, z]) => [x, ground(x, z, 0.9), z]), pts = [];
+    for (const r of rings) { pts.push([r[0], r[1] + 0.1, r[2]]); for (let k = 0; k < 8; k++) { const x = r[0] + Math.sin(k * Math.PI / 4) * 1.3, z = r[2] + Math.cos(k * Math.PI / 4) * 1.3; pts.push([x, ground(x, z, r[1]) + 0.1, z]); } }
+    const aim = [18, 2.016, -16.596], near = pts[2 * 9 + 1];
+    const eyeAt = p => [aim[0], aim[1] + Math.sin(p) * 12, aim[2] + Math.cos(p) * 12];
+    for (const p of [0.9, 1.0, 1.1]) assert(!clearLine(walk, ...eyeAt(p), ...near), `at a pitch of ${p} the yew hides the west ring's near rim`);
+    assert(clearLine(walk, ...eyeAt(1.4), ...near), 'from 1.4 the eye sees it');
+    const c = viewCamera(world, { camera: { target: aim, dist: 12, pitch: 1.063, yaw: 0, fov: 0.838 } }, 320, 180), focal = 180 / 2 / c.tangent;
+    const occ = makeOccluders(world, list), a0 = world.data[yew.ids[0] * 16 + 3];
+    let k = 0;
+    while (yew.k > 0 && k < 40) { occ.step(c.view, focal, pts); k++; }
+    assert.equal(k, OCCLUDE.FADE, `the yew's crown fades out over ${OCCLUDE.FADE} steps (${k})`);
+    assert(yew.ids.every(i => world.data[i * 16 + 3] === 0), 'every splat of the crown at density 0');
+    const others = occ.faded().filter(o => o !== yew && Math.hypot(o.c[0] - 17, o.c[2] + 13.5) >= 0.5);
+    let back = 0;
+    while (yew.k < OCCLUDE.FADE && back < 40) { occ.step(c.view, focal, []); back++; }
+    assert.equal(back, OCCLUDE.FADE, 'and comes back over 15 steps with no marker');
+    assert.equal(world.data[yew.ids[0] * 16 + 3], a0, 'at its baked density');
+    pass('the scenery in front of a marker fades: the yew that hides the west shard ring from the south fades out over 0.25 s and back after', { pieces: list.length, crown: yew.ids.length, alsoFaded: others.length });
+    // with the crown faded the ring under its edge shows: its slices lie on the ground (0.83 m), not on the crown's top that the walk
+    // map keeps there (1.4 to 3.3 m), at every size it grows through
+    // (two places of the west ring: this view's, and the e2e's after the slam, 1.37 m from the yew's trunk with two slices wholly under it)
+    const worst = [];
+    for (const west of [rings[2], [16.525, ground(16.525, -14.786, 1), -14.786]])
+      for (const R of [0.6, 1.0, 1.2, 1.3]) for (const sl of fitRing(walk, west[0], west[2], R, west[1])) worst.push(Math.abs(sl.y - west[1]), Math.abs(sl.tilt[0]) * R, Math.abs(sl.tilt[1]) * R);
+    assert(Math.max(...worst) <= 0.35, `the west ring lies on the ground beside the yew (worst ${Math.max(...worst).toFixed(2)} m)`);
+    pass("the shard ring beside the yew lies on the ground under the crown's edge, not on its top", { worst: Math.round(Math.max(...worst) * 100) / 100 });
   }
 }
 

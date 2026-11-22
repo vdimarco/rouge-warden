@@ -8,6 +8,12 @@
 export const WATER = { fen: 0 };
 const TILT = 1.2; // the steepest a piece may tilt: past that it would stand up like a sign
 const NEAR = 0.15; // a rim point this close to the ground is on it (the spec's measure)
+/* a sample point more than STEP over another sample of its piece, and steeper from it than STEEP, is the top of something standing
+   there, not ground: the walk map keeps no gap under a yew's low crown, so at Barrow Crown the shard ring beside the yew at
+   (17, −13.5) read the crown's top (1.4 to 3.3 m, against 0.83 a step away) under the rim of one slice, which stood up into the crown
+   at the tilt cap, hidden while the crown was drawn and seen once the crown fades in front of a marker (veil.js makeOccluders). A real
+   slope is never steeper than the cap, so it keeps every point */
+const STEP = 0.55, STEEP = 1.5;
 
 export function groundAt(walk, x, z, y0, water) {
   let g = walk.support(x, z, y0 + 2.5);
@@ -26,9 +32,14 @@ export function fitPlane(pts, w = null) {
 }
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 /* one piece: its plane through its sample points, reweighted three times toward the points it already meets (where a rim crosses a
-   boardwalk or a porch edge, no plane follows both, so it lies on the ground most of the rim is on). -> { y: the plane's height at
+   boardwalk or a porch edge, no plane follows both, so it lies on the ground most of the rim is on). The tops of things standing
+   (STEP, STEEP) are left out first, measured against the piece's other points and, for a ring's slice, the ring's foot (ref): a
+   slice wholly under the crown has no low point of its own; with half of its points or fewer left, the piece lies flat on the lowest of them (none left: on the foot y0 or the lowest point). -> { y: the plane's height at
    (px, pz), tilt: [dy/dx, dy/dz] } */
-function piece(pts, px, pz) {
+function piece(all, px, pz, y0, ref = null) {
+  const low = ref ? [...all, ref] : all;
+  const pts = all.filter(p => !low.some(q => p[1] - q[1] > STEP && p[1] - q[1] > STEEP * Math.hypot(p[0] - q[0], p[2] - q[2])));
+  if (pts.length < all.length / 2 + 1) return { y: pts.length ? Math.min(...pts.map(p => p[1])) : Math.min(y0, ...all.map(p => p[1])), tilt: [0, 0] };
   let [a, bx, bz] = fitPlane(pts);
   for (let it = 0; it < 3; it++) [a, bx, bz] = fitPlane(pts, pts.map(([x, y, z]) => 1 / Math.max(0.04, Math.abs(y - (a + bx * x + bz * z)))));
   bx = clamp(bx, -TILT, TILT); bz = clamp(bz, -TILT, TILT);
@@ -50,7 +61,7 @@ export function fitRing(walk, cx, cz, R, y0, water, yaw = null) {
       const pts = [];
       for (let k = 0; k <= 4; k++) { const a = rad(turn + q * 60 + k * 15); pts.push(g(cx + Math.sin(a) * R, cz + Math.cos(a) * R)); }
       for (const k of [1, 2, 3]) { const a = rad(turn + q * 60 + k * 15); pts.push(g(cx + Math.sin(a) * R * 0.55, cz + Math.cos(a) * R * 0.55)); }
-      const p = piece(pts, cx, cz);
+      const p = piece(pts, cx, cz, y0, [cx, y0, cz]);
       for (let k = 0; k < 12; k++) {
         const a = rad(turn + q * 60 + k * 5 + 2.5), [x, y, z] = g(cx + Math.sin(a) * R, cz + Math.cos(a) * R);
         if (Math.abs(y - heightOn(p, cx, cz, x, z)) <= NEAR) score++;
@@ -75,7 +86,7 @@ export function fitLane(walk, x0, z0, yaw, len, w, L, n, y0, water) {
     const pts = [], l = L * k;
     for (let j = 0; j <= 4; j++) for (const s of [-1, 1]) { const t = a + (l * j) / 4; pts.push(g(x0 + ux * t + rx * s * w * 0.5, z0 + uz * t + rz * s * w * 0.5)); }
     for (const j of [1, 2, 3]) { const t = a + (l * j) / 4; pts.push(g(x0 + ux * t, z0 + uz * t)); }
-    out.push({ x: px, z: pz, ...piece(pts, px, pz), k });
+    out.push({ x: px, z: pz, ...piece(pts, px, pz, y0), k });
   }
   return out;
 }

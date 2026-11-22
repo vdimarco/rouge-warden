@@ -323,6 +323,9 @@
 - [x] The boss camera raises its pitch over the grave stones by the least that keeps its distance (to 1.1), and the arena check of 122 pairs in `gloam-downs-boss.test.mjs`
 - [x] Each boss wind-up looked at in its last third at 1280×720 and 390×844, with the boss camera on
 - [x] The phone's shard rings: the boss gives the camera four rim points of each ring as marks, and the raise takes the one that sees the most of them; over the arena each whole ring is inside the middle 94% of the width and under no control at 1280×720 and 390×844, and the ground hides 33 and 44 of 2928 rim points (211 and 254 with the centres alone). The boss e2e lets the boss camera settle 1.2 s before each wind-up's picture
+- [x] The boss camera stays on through an attack under way out to 16 m from the arena's centre, so the lunge from 7.5 m is framed from 12 m; the boss e2e asserts the boss camera on, 11.9 m or more and no fade at every wind-up, and the fire inside each part of each marker as a share of its drawn area
+- [x] The scenery in front of a boss marker fades over 0.25 s (`veil.js` makeOccluders): the yew at (17, −13.5) in front of the west shard ring
+- [x] A reload on the win card shows it over the place won, with its beacon lit
 
 ### Sound
 - [ ] WebAudio cues made in code: tells, hits, hurt, glim, beacon, boss, heartbeat; start on the first press
