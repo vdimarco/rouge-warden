@@ -64,7 +64,7 @@ The numbers of the moves, the roll, the plunge, health and the flasks SHALL be t
 - **THEN** the first cut deals 10, and a drink heals 35 of 100. The next roll can start 0.25 s after one ends, and the plunge hits within 1.6 m. Check: Node test `gloam-downs-run.test.mjs`.
 
 ### Requirement: The blade
-The Attack control SHALL swing the blade in a string of three hits: two cuts, then a finisher. A press up to 0.15 s early SHALL be kept. Each next hit SHALL be able to start 0.10 s into the recovery of the hit before, also the first cut after a finisher. Holding Attack SHALL go on with the string. The string SHALL start again at the first cut 0.35 s after the recovery of the last hit ends.
+The Attack control SHALL swing the blade in a string of three hits: two cuts, then a finisher. A press up to 0.15 s early SHALL be kept. A press of Attack during a hit SHALL be kept until the next hit can start. Each next hit SHALL be able to start 0.10 s into the recovery of the hit before, also the first cut after a finisher. Holding Attack SHALL go on with the string. The string SHALL start again at the first cut 0.35 s after the recovery of the last hit ends.
 
 #### Scenario: Hold
 - **WHEN** the player holds Attack for 2 s near a Snuffer held still by a test
@@ -73,6 +73,10 @@ The Attack control SHALL swing the blade in a string of three hits: two cuts, th
 #### Scenario: The string starts again
 - **WHEN** the player lands two hits, then presses Attack 0.7 s after the second hit's recovery ends
 - **THEN** the next hit is the first cut. A press 0.2 s after that recovery ends gives the finisher instead. Check: Node test `gloam-downs-run.test.mjs`.
+
+#### Scenario: A press in a hit
+- **WHEN** the player presses Attack once at the start of a cut, and once more in that cut's active time
+- **THEN** the second cut starts as soon as it can, 0.10 s into the first cut's recovery. Check: Node test `gloam-downs-run.test.mjs`.
 
 ### Requirement: The blade's hits
 Each hit of the string SHALL have the times, damage, reach and lunge in this table. Reach SHALL be measured from the lamplighter's centre to the foe's edge.
@@ -86,6 +90,34 @@ Each hit of the string SHALL have the times, damage, reach and lunge in this tab
 #### Scenario: Three presses
 - **WHEN** the player presses Attack at 0, 0.3 and 0.6 s, 2.1 m from the edge of a Snuffer held still by a test
 - **THEN** three hits land for 10, 11 and 22 damage. The lamplighter moves 0.45, 0.45 and 0.8 m forward, each ±0.15 m. Check: Node test `gloam-downs-run.test.mjs`.
+
+### Requirement: The swings
+The blade SHALL swing in a wide arc that a player can read at play distance. Each hit SHALL draw the blade back, hold it at the top, strike fastest at the hit, follow through past the target and settle into a guard that leads into the next hit. On the play step that a hit lands, the pose SHALL show the blade within 20° of straight ahead, and hit stop SHALL hold that pose. The body SHALL twist, lean, squash and step with the blade.
+
+#### Scenario: The hit lands where the blade is
+- **WHEN** the player holds Attack 2.6 m from a training post
+- **THEN** on the step each hit lands, the blade's tip is within 20° of straight ahead. The strike's top speed is at least 1.6 times the wind-up's (1.2 times for the first cut after a finisher). A cut's tip sweeps at least 200°, and the finisher's tip falls at least 1.8 m. The tip stays at least 0.1 m over the floor and out of the body and the head. Check: Node test `gloam-downs-run.test.mjs`.
+
+### Requirement: Smooth poses
+No part of the lamplighter SHALL jump from one pose to the next. Each move SHALL ease in from the pose shown before it, and the walk SHALL ease back after it. The lantern SHALL swing after the blade.
+
+#### Scenario: No pose jumps
+- **WHEN** the lamplighter rolls, is hit, or ends a cut and walks on
+- **THEN** outside a cut's wind-up and strike the blade's tip moves at most 0.4 m in one play step, and in a held string it moves at most 1.0 m outside a strike (1.5 m in the first cut's wind-up after a finisher). The hand moves at most 0.55 m in one step, and the lantern's fastest step comes after the blade's. Check: Node test `gloam-downs-run.test.mjs`.
+
+### Requirement: The swing's trail
+Each swing SHALL lay a short trail of bright smears along the blade's arc. The trail SHALL hold in hit stop.
+
+#### Scenario: A trail on a phone
+- **WHEN** the first cut lands at 1280×720 and at 390×844
+- **THEN** the hit step's picture has at least 12 more lamp pixels round the figure than the same cut with the trail turned off, and the trail changes no cue. Check: `gloam-downs-run.swing.e2e.mjs`.
+
+### Requirement: Phase cues
+The page SHALL log the phase cues of each hit in `__gloam.sounds()`: `swing` as the wind-up starts, `strike` as the blade leaves the top, `hit` on the step it meets a target, and `whiff` (when it met nothing) and `recover` as the active time ends. The plunge SHALL log `drop` as it falls.
+
+#### Scenario: Phase cues
+- **WHEN** the player swings the string at a training post
+- **THEN** each hit logs `swing` on its first step, `strike` 4 steps later (9 for the finisher), `hit` 6 steps after `swing` (12 for the finisher) and `recover` 11 steps after `swing` (18 for the finisher). A cut that meets nothing logs `whiff` with `recover`. Check: Node test `gloam-downs-run.test.mjs`, and `gloam-downs-run.swing.e2e.mjs` in the browser.
 
 ### Requirement: Soft aim
 At the start of each hit, the lamplighter SHALL turn up to 75° toward the best foe. A foe SHALL be a candidate when all of these are true:

@@ -5,6 +5,7 @@
 //   4. what glows (flames, wisps, the beacon's fire, motes, the sky dome, the moon), then finish
 // The page gets the splat rows, the walk map and a small JSON file; it never runs the toolkit.
 import { createRequire } from 'node:module';
+import { BLADE } from '../../../public/lab/gloam-downs/play.js';
 const require = createRequire(import.meta.url);
 const ink = require('@shapeshift-labs/ink-studio');
 export const lib = ink.load();
@@ -193,8 +194,6 @@ export function walkCells(walk) {
    A round hooded figure with a lantern, sculpted facing +z at REST (high above the map, so no shadow of the place falls on it).
    Seven bones: body, head, legL, legR, armL (the lantern arm), armR, shadow. Pivots are in the rest frame. */
 export const REST = [0, 80, 0];
-const norm = v => { const l = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0] / l, v[1] / l, v[2] / l]; };
-const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 export const BONES = ['body', 'head', 'legL', 'legR', 'armL', 'armR', 'shadow'];
 export function lamplighter(S, P) {
   const [x0, y0, z0] = REST;
@@ -234,9 +233,8 @@ export function lamplighter(S, P) {
      holds the lantern's warm light (lamp slot 46, under the brightest fire); at rest it reads as a grey cleaver with a lit edge against
      the dark ground, and in a cut the edge draws the swing */
   {
-    const hand = at(-0.42, 0.47, 0.08), len = 0.92, wide = 0.17, thick = 0.035, turn = -20 * Math.PI / 180;
-    const u = norm([-0.78, 0.03, 0.6]), w0 = norm(cross(u, [0, 1, 0])), n0 = cross(w0, u);
-    const w = [0, 1, 2].map(i => w0[i] * Math.cos(turn) + n0[i] * Math.sin(turn)), n = cross(w, u);
+    // the blade's numbers are play.js BLADE's, so the pose (and the swing's trail) knows where the blade is
+    const hand = at(...BLADE.hand), { len, wide, thick, u, w, n } = BLADE;
     const along = (d, s = 0, k = 0) => [hand[0] + u[0] * d + w[0] * s + n[0] * k, hand[1] + u[1] * d + w[1] * s + n[1] * k, hand[2] + u[2] * d + w[2] * s + n[2] * k];
     const ax = [w, n, u], edgeSide = 1; // +w: the back edge, which faces the follow camera at rest
     const steel = { r: P.ramp('iron') }, rim = { r: [P.ramp('lamp')[0]], em: true };

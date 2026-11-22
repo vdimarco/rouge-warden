@@ -23,7 +23,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
-import { makeWalk, makeBody, pose, PARAMS } from '../../public/lab/gloam-downs/play.js';
+import { makeWalk, makeBody, pose, PARAMS, SWINGS, BLADE, bladeAt } from '../../public/lab/gloam-downs/play.js';
 import { ORDER, KEY as EXPLORER_KEY, fresh as explorerFresh, store as explorerStore } from '../../public/lab/gloam-downs/save.js';
 import {
   STEP, MAX_STEPS, steps, stepCount, makeClock, advance, hitStop, drawOffer, stream, startRun, enter, reload, goTo, chooseWick, buy,
@@ -1205,6 +1205,122 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   assert(out[12 * 6] !== 0, 'the shadow stays');
   assert(rest.every(Number.isFinite));
   pass('the pose of each move is finite, the roll turns round the middle, and the blink hides every bone but the shadow');
+}
+
+/* ---------------- the swings (design.md "The swings") ----------------
+   The blade as the pose shows it on each play step, from the lamplighter's feet, turned so that its facing at the start (-z) is +z:
+   the tip, the hand, points along the blade, and the lantern. A post stands 2.6 m ahead, so every hit lands */
+const RIG = { names: ['body', 'head', 'legL', 'legR', 'armL', 'armR', 'shadow'], pivots: [[0, 80.1, 0], [0, 80.82, 0], [0.15, 80.24, 0], [-0.15, 80.24, 0], [0.33, 80.72, 0.04], [-0.33, 80.72, 0], [0, 120, 0]] };
+function trace(inp, count, { post = true, at = null } = {}) {
+  const { F, s } = fighterAt(FLAT, -2, 3, Math.PI);
+  play(F, 30, {}, [], 0);
+  const posts = post ? [makePost(FLAT, -2, 3 - 2.6)] : [], out = new Float32Array(84), rows = [];
+  // facing -z: x and z turn over, so azimuth atan2(x, z) is 0 straight ahead and + to the left
+  const f = p => [s.x - p[0], p[1] - s.y, s.z - p[2]];
+  for (let i = 0; i < count; i++) {
+    const ev = [];
+    if (at) at(i, F, s);
+    F.step(typeof inp === 'function' ? inp(i) : inp, 0, posts, ev);
+    const b = bladeAt(RIG, s, [0.3, 0.5, 0.75]);
+    pose(out, RIG, s, 0, true);
+    // the lantern's glass, on armL
+    const L = [0.56, 80.35, 0.14], o = 12 * 4, lan = [0, 1, 2].map(r => out[o + r * 3] * L[0] + out[o + r * 3 + 1] * L[1] + out[o + r * 3 + 2] * L[2] + out[o + 9 + r]);
+    rows.push({ i, act: s.act ? { ...s.act } : null, ev, tip: f(b.tip), hand: f(b.hand), pts: b.points.map(f), lantern: f(lan) });
+  }
+  return rows;
+}
+const az = p => Math.atan2(p[0], p[2]) / DEG;
+const moved = (rows, k, key) => Math.hypot(...rows[k][key].map((v, j) => v - rows[k - 1][key][j]));
+const striking = a => { const S = a && SWINGS[a.move]; return !!S && a.t > S.strike && a.t <= S.wind + S.act; };
+{ // the swings' lengths are the hits' own, and each hit's strike starts before its active time
+  for (const h of HITS) {
+    const S = SWINGS[h.id];
+    assert.deepEqual([S.wind, S.act, S.rec], [h.wind, h.act, h.rec], `${h.id}: the keys are made for ${S.wind}/${S.act}/${S.rec} steps`);
+    assert(S.strike < h.wind && S.hit === h.wind + 1, `${h.id}: the strike at ${S.strike}, the hit shown at ${S.hit}`);
+  }
+  assert(BLADE.tip > 1 && Math.abs(Math.hypot(...BLADE.u) - 1) < 1e-9, 'the blade is a metre long, along a unit direction');
+  pass("the swings' keys have the hits' wind-up, active and recovery steps");
+}
+{ // a held string: each hit is shown straight ahead on the step it lands, the strike is fast after a slower wind-up, the arc is wide,
+  // the tip stays over the floor and out of the figure, no part jumps, and the lantern swings after the blade
+  const rows = trace(i => ({ attack: i < 90 }), 110);
+  const hitsAt = rows.filter(r => r.ev.some(e => e.type === 'hit')).map(r => r.i);
+  assert(hitsAt.length >= 4, `four hits or more in the held string: ${hitsAt}`);
+  const got = [];
+  for (const k of hitsAt) {
+    const r = rows[k], id = r.act.move, S = SWINGS[id], start = k - S.wind;
+    const speed = j => moved(rows, j, 'tip') * 60;
+    const wind = Math.max(...rows.slice(start + 1, start + S.strike).map(q => speed(q.i)));
+    const strike = Math.max(...rows.slice(start + S.strike, start + S.wind + S.act).map(q => speed(q.i)));
+    const top = rows[start + S.top - 1], end = rows[start + S.wind + S.act - 1], sweep = Math.abs(az(end.tip) - az(top.tip)), drop = top.tip[1] - end.tip[1];
+    const after = id === 'cut1' && rows[start + 1].act.from?.move === 'fin';
+    got.push({ id, az: Math.round(az(r.tip)), wind: Math.round(wind), strike: Math.round(strike), sweep: Math.round(sweep), drop: +drop.toFixed(2) });
+    assert(Math.abs(az(r.tip)) <= 20, `${id}: the tip is ${az(r.tip).toFixed(0)}° from straight ahead on the hit step`);
+    assert(strike >= (after ? 1.2 : 1.6) * wind, `${id}: the strike's top speed ${strike.toFixed(1)} m/s against the wind-up's ${wind.toFixed(1)}`);
+    if (id === 'fin') assert(drop >= 1.8, `the finisher chops down ${drop.toFixed(2)} m`);
+    else assert(sweep >= 200, `${id}: the tip sweeps ${sweep.toFixed(0)}°`);
+  }
+  for (const r of rows) {
+    assert(r.tip[1] >= 0.1, `step ${r.i}: the tip ${r.tip[1].toFixed(2)} m over the floor`);
+    // out of the body (a bell 0.42 round up to 0.9) and the head (0.3 round at 1.0 up)
+    for (const p of [...r.pts, r.tip])
+      assert(!(p[1] < 0.9 && Math.hypot(p[0], p[2]) < 0.42) && Math.hypot(p[0], p[1] - 1.0, p[2]) >= 0.3, `step ${r.i}: the blade at ${p.map(v => v.toFixed(2))} is in the figure`);
+  }
+  // no part jumps: outside a strike the tip moves at most 1.0 m a step (1.5 in the first cut's wind-up after a finisher), the hand 0.55
+  for (let k = 1; k < rows.length; k++) {
+    const a = rows[k].act, lim = a?.move === 'cut1' && a.from?.move === 'fin' && a.t <= SWINGS.cut1.strike ? 1.5 : 1.0;
+    if (!striking(a)) assert(moved(rows, k, 'tip') <= lim, `step ${k} (${a?.move} ${a?.t}): the tip jumps ${moved(rows, k, 'tip').toFixed(2)} m`);
+    assert(moved(rows, k, 'hand') <= 0.55, `step ${k}: the hand jumps ${moved(rows, k, 'hand').toFixed(2)} m`);
+  }
+  // the lantern's fastest step comes after the blade's in the first cut: it hangs and follows
+  const peak = key => { let b = 1; for (let k = 1; k < 25; k++) if (moved(rows, k, key) > moved(rows, b, key)) b = k; return b; };
+  assert(peak('lantern') > peak('tip'), `the lantern's fastest step ${peak('lantern')}, the blade's ${peak('tip')}`);
+  pass('a held string: each hit shown straight ahead on its hit step, a fast strike after a slower wind-up, a wide arc, the blade over the floor and out of the figure, no jump, the lantern after the blade', got);
+}
+{ // a roll and a hurt start and end with no jump, and the walk eases back after a cut
+  const roll = trace(i => ({ roll: i === 0 }), 40, { post: false });
+  const hurt = trace({}, 30, { post: false, at: (i, F, s) => { if (i === 2) F.knock([s.x, s.z - 1]); } });
+  const cut = trace(i => ({ attack: i === 0 }), 45, { post: false });
+  const most = {};
+  for (const [name, rows] of [['roll', roll], ['hurt', hurt], ['cut', cut]])
+    for (let k = 1; k < rows.length; k++) {
+      const a = rows[k].act;
+      if (striking(a)) continue;
+      // a cut's wind-up draws the blade back fast on purpose (at most 1.0 m a step, as in the string); everything else eases
+      const lim = a && SWINGS[a.move] && a.t <= SWINGS[a.move].strike ? 1.0 : 0.4;
+      if (lim < 1) most[name] = Math.max(most[name] || 0, +moved(rows, k, 'tip').toFixed(2));
+      assert(moved(rows, k, 'tip') <= lim, `${name} step ${k}: the tip jumps ${moved(rows, k, 'tip').toFixed(2)} m`);
+    }
+  assert(cut.slice(25).every(r => r.act === null), 'the cut is over by step 25');
+  pass("the roll, a hurt and the walk after a cut ease in and out: the tip moves at most 0.4 m a step outside a cut's wind-up and strike", most);
+}
+{ // the phase cues: swing as the wind-up starts, strike as the blade leaves the top, hit on the hit step, recover (and whiff when the
+  // blade met nothing) as the active time ends
+  const rows = trace(i => ({ attack: i < 60 }), 70);
+  const per = {};
+  let at = null;
+  for (const r of rows) for (const e of r.ev) {
+    const c = e.type === 'hit' ? 'hit' : e.type === 'cue' ? e.cue : null;
+    if (c === 'swing') { at = { start: r.i }; (per[e.hit] ||= []).push(at); }
+    else if (c && at) at[c] = at[c] ?? r.i - at.start;
+  }
+  let n = 0;
+  for (const h of HITS) for (const a of per[h.id] || []) {
+    if (a.recover === undefined) continue;
+    n++;
+    assert.deepEqual([a.strike, a.hit, a.recover, a.whiff], [SWINGS[h.id].strike, h.wind, h.wind + h.act, undefined], `${h.id}: ${JSON.stringify(a)}`);
+  }
+  assert(n >= 3, `${n} whole hits`);
+  const miss = trace(i => ({ attack: i === 0 }), 20, { post: false }).flatMap(r => r.ev.filter(e => e.type === 'cue').map(e => [r.i, e.cue]));
+  assert.deepEqual(miss, [[0, 'swing'], [4, 'strike'], [11, 'whiff'], [11, 'recover']], JSON.stringify(miss));
+  pass("the phase cues of each hit: swing at 0, strike at 4 (9 for the finisher), hit at the wind-up's end, whiff and recover as the active time ends", per);
+}
+{ // one press of Attack in a cut's active time is kept until the next hit can start, so the string goes on at its own pace
+  const rows = trace(i => ({ attack: i === 0 || i === 7 }), 40);
+  const sw = rows.flatMap(r => r.ev.filter(e => e.type === 'cue' && e.cue === 'swing').map(e => [r.i, e.hit]));
+  const h = HITS[0];
+  assert.deepEqual(sw, [[0, 'cut1'], [h.wind + h.act + MOVES.chain, 'cut2']], JSON.stringify(sw));
+  pass('a press in a hit is kept until the next hit can start', sw);
 }
 
 /* ---------------- on the baked places ---------------- */

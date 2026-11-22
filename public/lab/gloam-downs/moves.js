@@ -4,7 +4,7 @@
 // Every time is in play steps of 1/60 s (a time that is not a whole number of steps rounds to the nearest), so a move plays the same
 // at any frame rate. A target is anything with { x, y, z, r, alive, hit(raw, how) }: a foe, the boss, or a training post (makePost).
 // hit() takes the damage before the target's own factor and rounding, and returns what it took, or false when the blade passes.
-import { PARAMS } from './play.js';
+import { PARAMS, SWINGS, shownState } from './play.js';
 
 const S = sec => Math.round(sec * 60);
 const DEG = Math.PI / 180;
@@ -13,6 +13,14 @@ const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const wrap = a => Math.atan2(Math.sin(a), Math.cos(a));
 // the camera yaw for which "forward" is the world direction (dx, dz): the renderer's eye sits at +(sin yaw, cos yaw) from the target
 export const yawFor = (dx, dz) => Math.atan2(-dx, -dz);
+// a copy of a shown state (play.js shownState) that keeps two states back, for the pose's blends; null stays null
+export function snap(st, depth = 2) {
+  if (!st) return null;
+  const c = { ...st };
+  if (c.from) c.from = depth > 0 ? snap(c.from, depth - 1) : null;
+  if (c.after) c.after = depth > 0 ? { ...c.after, from: snap(c.after.from, depth - 1) } : null;
+  return c;
+}
 
 // the string: two cuts, then a finisher (design.md "The lamplighter's moves")
 export const HITS = [
@@ -95,8 +103,9 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
   const f = {
     move: null, t: 0, hit: 0, next: 0, since: Infinity, landed: false, target: null, dir: [0, 1], lungeV: 0,
     buf: { attack: 0, roll: 0, heal: 0 }, was: { attack: false, roll: false, heal: false },
-    cool: 0, safe: 0, pushV: 0, shave: 0, top: 0, firm: [s.x, s.y, s.z], firmYaw: s.yaw, firmAge: 0
+    cool: 0, safe: 0, pushV: 0, shave: 0, top: 0, firm: [s.x, s.y, s.z], firmYaw: s.yaw, firmAge: 0, queue: false, from: null
   };
+  s.after = null;
   // move the body one step at speed v along (ux, uz), with no stick, no turn and (for the plunge) its own gravity
   function drive(v, ux, uz, gravity = KEEP.gravity) {
     P.run = P.walk = v; P.accel = P.airAccel = 400; P.turnRate = 0; P.gravity = gravity;
@@ -141,10 +150,11 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
     f.dir = [Math.sin(yaw), Math.cos(yaw)];
     return f.target;
   }
-  function begin(move) { f.move = move; f.t = 0; }
+  // a move begins from what the pose shows now, so the pose eases from it (play.js BLEND)
+  function begin(move) { f.from = snap(shownState(s)); f.move = move; f.t = 0; }
   function startHit(i, act, camYaw, targets, ev) {
     const h = HITS[i], dir = heldDir(act, camYaw);
-    begin('hit'); f.hit = i; f.landed = false; f.buf.attack = 0;
+    begin('hit'); f.hit = i; f.landed = false; f.buf.attack = 0; f.queue = false;
     const t = aim(targets, dir);
     // the lunge: its full length over the wind-up, or to 0.25 short of the target's edge; none in the air
     let L = s.ground ? h.lunge : 0;
@@ -159,12 +169,12 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
     f.dir = dir ? [dir[0], dir[1]] : [-Math.sin(s.yaw), -Math.cos(s.yaw)];
     if (dir) s.yaw = Math.atan2(dir[0], dir[1]);
     f.back = !dir;
-    begin('roll'); f.buf.roll = 0;
+    begin('roll'); f.buf.roll = 0; f.queue = false;
     s.vx = f.dir[0] * MOVES.roll.v; s.vz = f.dir[1] * MOVES.roll.v;
     ev.push({ type: 'cue', cue: 'roll' });
   }
   function startPlunge(ev) {
-    begin('hang'); f.buf.attack = 0; f.top = s.y;
+    begin('hang'); f.buf.attack = 0; f.queue = false; f.top = s.y;
     s.vx = s.vz = s.vy = 0;
     ev.push({ type: 'cue', cue: 'plunge' });
   }
@@ -211,13 +221,15 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
   }
   function step(act, camYaw, targets, ev) {
     const st = stats();
-    // press edges, kept 0.15 s; a held Attack or Roll goes on as if pressed again
+    // press edges, kept 0.15 s; a held Attack or Roll goes on as if pressed again. A press of Attack in a hit is kept until the next
+    // hit can start (the string's own buffer), so presses as fast as the player likes give the string at its own pace
+    if (act.attack && !f.was.attack && f.move === 'hit') f.queue = true;
     for (const k of ['attack', 'roll', 'heal']) {
       const h = !!act[k];
       f.buf[k] = h && !f.was[k] ? MOVES.buffer : Math.max(0, f.buf[k] - 1);
       f.was[k] = h;
     }
-    const wantAttack = f.buf.attack > 0 || f.was.attack, wantRoll = f.buf.roll > 0 || f.was.roll;
+    const wantAttack = f.buf.attack > 0 || f.was.attack || f.queue, wantRoll = f.buf.roll > 0 || f.was.roll;
     if (f.cool > 0) f.cool--;
     if (f.safe > 0) f.safe--;
     if (f.shave > 0) f.shave--;
@@ -254,7 +266,11 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
         // the lunge runs over the wind-up, and stops dead at its end; a cut in the air falls on as it was falling
         if (!s.ground) glide(camYaw);
         else drive(f.t < h.wind ? f.lungeV : 0, ...f.dir);
+        // the phases as cues: 'strike' as the blade leaves the wind-up's top, 'hit' on the step it meets a target, 'whiff' and
+        // 'recover' as the active time ends (play.js SWINGS; design.md "The swings")
+        if (f.t === SWINGS[h.id].strike) ev.push({ type: 'cue', cue: 'strike', hit: h.id });
         if (f.t >= h.wind && f.t < h.wind + h.act && !f.landed) strike(h, targets, ev, h.dmg * (1 + bonusNow(st)));
+        if (f.t === h.wind + h.act) { if (!f.landed) ev.push({ type: 'cue', cue: 'whiff', hit: h.id }); ev.push({ type: 'cue', cue: 'recover', hit: h.id }); }
         if (++f.t >= h.wind + h.act + h.rec) { f.move = null; f.since = 0; f.next = (f.hit + 1) % 3; }
         break;
       }
@@ -277,7 +293,7 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
       case 'hang':
         s.vy = 0;
         drive(0, ...f.dir, 0);
-        if (++f.t >= MOVES.plunge.hang) begin('plunge');
+        if (++f.t >= MOVES.plunge.hang) { begin('plunge'); ev.push({ type: 'cue', cue: 'drop' }); }
         break;
       case 'plunge':
         s.vy = -MOVES.plunge.v;
@@ -308,7 +324,12 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
       f.firmAge = 0;
       if (firm()) { f.firm = [s.x, s.y, s.z]; f.firmYaw = s.yaw; }
     }
+    const was = s.act;
     s.act = pose();
+    // the steps since a move ended, while the walk eases back from it
+    if (s.act) s.after = null;
+    else if (was) s.after = { from: snap(was), t: 1 };
+    else if (s.after && ++s.after.t > 24) s.after = null;
     return ev;
   }
   // what the pose reads: the move, its phase and how far through it (0..1)
@@ -318,10 +339,10 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
       const h = HITS[f.hit], t = f.t;
       const ph = t < h.wind ? 'wind' : t < h.wind + h.act ? 'act' : 'rec';
       const k = ph === 'wind' ? t / h.wind : ph === 'act' ? (t - h.wind) / h.act : (t - h.wind - h.act) / h.rec;
-      return { move: h.id, ph, k: clamp(k, 0, 1) };
+      return { move: h.id, ph, k: clamp(k, 0, 1), t, from: f.from };
     }
     const n = { roll: MOVES.roll.steps, hang: MOVES.plunge.hang, plunge: 30, land: MOVES.plunge.rec, drink: MOVES.drink.steps, hurt: MOVES.hurt.lock }[f.move];
-    return { move: f.move, ph: f.move, k: clamp(f.t / n, 0, 1), back: f.move === 'roll' && f.back };
+    return { move: f.move, ph: f.move, k: clamp(f.t / n, 0, 1), t: f.t, from: f.from, back: f.move === 'roll' && f.back };
   }
   // the hit lands on the lamplighter: no control for 0.25 s while it is pushed `dist` away from the source (walls stop the push),
   // and safe for 0.9 s. It stops any move; a drink keeps its flask
@@ -330,9 +351,11 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
     f.dir = l > 1e-6 ? [dx / l, dz / l] : [-Math.sin(s.yaw), -Math.cos(s.yaw)];
     f.pushV = (dist * 60) / MOVES.hurt.lock;
     begin('hurt');
+    f.queue = false;
     f.safe = MOVES.hurt.safe;
     s.vx = s.vz = 0;
     s.act = pose();
+    s.after = null;
   }
   // 'roll' in the roll's safe time, 'hurt' in the safe time after a hit, else null
   function safe() {
@@ -349,8 +372,8 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
   // back on the last firm ground after a fall
   function toFirm() {
     body.place(f.firm, f.firmYaw);
-    f.move = null; f.t = 0;
-    s.act = null;
+    f.move = null; f.t = 0; f.queue = false;
+    s.act = null; s.after = null;
   }
   return { f, step, knock, safe, nextHit, toFirm, nearMiss: () => { f.shave = MOVES.shave.steps; }, body, walk };
 }

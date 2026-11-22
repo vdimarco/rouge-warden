@@ -28,7 +28,7 @@ export function makeSparks(world, first, n, pal, { glim = 64, seed = 9 } = {}) {
     next = (next + 1) % N;
     return p;
   };
-  const fresh = p => { live++; dirty = true; p.keep = false; p.grow = 0; return p; };
+  const fresh = p => { live++; dirty = true; p.keep = false; p.grow = 0; p.hold = false; return p; };
   const api = {
     total: n, first,
     // streaks thrown outward; (dx, dz) leans them one way
@@ -71,15 +71,21 @@ export function makeSparks(world, first, n, pal, { glim = 64, seed = 9 } = {}) {
         Object.assign(p, { type: 3, life, max: life, p: [px, gy + OVER, pz], a: a + rnd(-0.5, 0.5), s: rnd(0.03, 0.05), l, col: PK[i % 3 ? 34 : 35], ph: rnd(0, TAU), keep: true });
       }
     },
+    /* a smear of the swing: a bright streak from a to b that stays where it was laid, thins and fades over life seconds, and holds
+       in hit stop (it ages on play steps only), so the arc of a cut hangs in the air while the hit holds (fight.js trail) */
+    smear(a, b, ci, w, life) {
+      const p = fresh(get()), dx = b[0] - a[0], dy = b[1] - a[1], dz = b[2] - a[2], l = Math.hypot(dx, dy, dz) || 1e-3;
+      Object.assign(p, { type: 4, life, max: life, p: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2], ax: [dx / l, dy / l, dz / l], l: l / 2 + w * 0.5, s: w, hold: true, col: PK[ci] });
+    },
     clear() { for (const p of ps) p.life = 0; live = 0; dirty = true; },
     alive: () => ps.filter(p => p.life > 0).length,
     // one game step of the bursts
-    update(dt) {
+    update(dt, play = true) {
       if (!live && !dirty) return;
       live = 0;
       for (const p of ps) {
         if (p.life <= 0) continue;
-        p.life -= dt;
+        if (!p.hold || play) p.life -= dt;
         if (p.life > 0) live++;
         if (p.type === 0 || p.type === 1) { p.v[1] -= p.g * dt; p.p[0] += p.v[0] * dt; p.p[1] += p.v[1] * dt; p.p[2] += p.v[2] * dt; }
       }
@@ -119,6 +125,13 @@ export function makeSparks(world, first, n, pal, { glim = 64, seed = 9 } = {}) {
       const w = p.s * (1 - u * 0.85), l = Math.max(w, ((r * TAU) / p.n) * 0.36), q = l * l - w * w;
       d[o] = p.p[0] + c * r; d[o + 1] = p.p[1]; d[o + 2] = p.p[2] + s * r;
       d[o + 4] = w * w + q * s * s; d[o + 5] = 0; d[o + 6] = -q * s * c; d[o + 8] = w * w * 0.3; d[o + 9] = 0; d[o + 10] = w * w + q * c * c;
+      return;
+    }
+    if (p.type === 4) {
+      // a smear: a streak along its axis, thinning as it fades (most of its width goes in the first half of its life)
+      const w = p.s * Math.sqrt(1 - u) * (1 - 0.3 * u), l = Math.max(w, p.l * (1 - 0.25 * u)), [ax, ay, az] = p.ax, q = l * l - w * w;
+      d[o] = p.p[0]; d[o + 1] = p.p[1]; d[o + 2] = p.p[2];
+      d[o + 4] = w * w + q * ax * ax; d[o + 5] = q * ax * ay; d[o + 6] = q * ax * az; d[o + 8] = w * w + q * ay * ay; d[o + 9] = q * ay * az; d[o + 10] = w * w + q * az * az;
       return;
     }
     if (p.type === 3) {

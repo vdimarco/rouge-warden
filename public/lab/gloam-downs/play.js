@@ -923,29 +923,203 @@ function put(out, b, A, t) {
   for (let i = 0; i < 9; i++) out[o + i] = A[i];
   out[o + 9] = t[0]; out[o + 10] = t[1]; out[o + 11] = t[2];
 }
-/* the moves of a run (moves.js sets s.act = { move, ph, k }, k from 0 to 1 through the phase). The right arm is the blade arm: a cut
-   swings it across the front, the finisher lifts it overhead and chops. The roll turns the whole figure over round its middle. The
-   plunge holds the blade arm down in front and swings the lantern arm up behind, not a seated drop. -> what it changes in the pose */
+/* ---------------- the blade ----------------
+   The cleaver on armR as common.mjs sculpts it (it takes these numbers from here), in the figure's rest frame (feet at 0, facing +z):
+   the hand, the blade's direction u, its wide axis w toward the back edge (the cutting edge is on -w) and n = w × u. */
+const nrm = v => { const l = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0] / l, v[1] / l, v[2] / l]; };
+const crs = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+export const BLADE = (() => {
+  const hand = [-0.42, 0.47, 0.08], len = 0.92, wide = 0.17, thick = 0.035, turn = -20 * Math.PI / 180;
+  const u = nrm([-0.78, 0.03, 0.6]), w0 = nrm(crs(u, [0, 1, 0])), n0 = crs(w0, u);
+  const w = [0, 1, 2].map(i => w0[i] * Math.cos(turn) + n0[i] * Math.sin(turn)), n = crs(w, u);
+  // the tip is 0.09 + len along u from the hand: the guard, then the blade
+  return { hand, len, wide, thick, u, w, n, tip: 0.09 + len };
+})();
+
+/* ---------------- the swings ----------------
+   Each hit of the string is a set of keys in play steps from the hit's start, on the shown step (moves.js counts it after the step:
+   the first shown pose is step 1, and the hit lands on the first active step, shown as step wind + 1). A key holds:
+   az, el: the blade's direction (degrees, round from the facing, + to the left; up from level), in the facing frame of the move;
+   ha, hr, hy: the hand, at azimuth ha and hr metres out from the figure's middle, hy over the feet;
+   tw, ln, sd: the body's twist (+ to the left), lean forward and lean to the left, in degrees; sq: its height share (the squash);
+   sh: a step of the body forward in metres (the weight going over the front foot); lL, lR: the legs' swing (- forward);
+   aL, aLz: the lantern arm's swing (+ back) and roll; hd: the head's nod (+ down).
+   A missing number keeps the key before. Between keys each number follows a monotone cubic (Fritsch and Carlson 1980), so no curve
+   overshoots its keys or stops between them: the swing slows only where a key turns it (the wind-up's top, the follow-through's end).
+   The keys are in the facing frame: the pose takes the body's twist, lean and squash back out of the blade and the hand, so a key's
+   blade points where it says whatever the body does.
+   The plan of each hit, from the sources in design.md ("The swings"): a wind-up that draws the blade back fast and holds it a step
+   (anticipation), a strike that starts two steps before the hit (three for the finisher) and is fastest at the hit (the contact pose
+   is on the hit step, so hit stop holds it), a wide follow-through past the target that slows to a stop, and a settle into a guard that
+   leads into the next hit: the first cut ends on the left, where the second (a rising backhand) starts, and the second ends high on
+   the right, where the finisher's overhead chop starts. strike: the step the strike starts (the 'strike' cue). plane: the swing's
+   turn, from the wind-up's top to the hit; the blade's cutting edge leads along it. */
+const DEG = Math.PI / 180;
+export const SWINGS = {
+  cut1: {
+    wind: 6, act: 5, rec: 14, strike: 4, top: 4, hit: 7, out: 10,
+    keys: [
+      [0, { az: -60, el: 4, ha: -80, hr: 0.45, hy: 0.62, tw: 0, ln: 0, sd: 0, sq: 1, sh: 0, lL: 0, lR: 0, aL: 0, aLz: 0, hd: 0 }],
+      [1.8, { az: -108, el: 10, ha: -100, hr: 0.45, hy: 0.84, tw: -16, ln: -3, sd: -2, sq: 0.96, sh: -0.02, lL: -8, lR: 10, aL: -14, aLz: -4, hd: 2 }],
+      [3.6, { az: -146, el: 14, ha: -118, hr: 0.44, hy: 0.95, tw: -28, ln: -5, sd: -3, sq: 0.93, sh: -0.04, lL: -14, lR: 16, aL: -26, aLz: -8, hd: 4 }],
+      [4, { az: -150, el: 15, ha: -120, hy: 0.97, tw: -30, ln: -6, sd: -4, sq: 0.92, sh: -0.05, lL: -15, lR: 17, aL: -28, aLz: -9 }],
+      [5.5, { az: -110, el: 8, ha: -92, hr: 0.47, hy: 0.95, tw: -18, ln: 0, sd: -2, sq: 0.97, sh: -0.01, lL: -20, lR: 20, aL: -20, hd: 6 }],
+      [7, { az: 0, el: -3, ha: -18, hr: 0.52, hy: 0.92, tw: 8, ln: 8, sd: 2, sq: 1.04, sh: 0.06, lL: -26, lR: 24, aL: 10, aLz: 6, hd: 8 }],
+      [9, { az: 80, el: -9, ha: 40, hr: 0.5, hy: 0.88, tw: 24, ln: 9, sd: 4, sq: 1.0, sh: 0.07, lL: -28, aL: 22, hd: 7 }],
+      [11, { az: 112, el: -13, ha: 70, hr: 0.48, hy: 0.85, tw: 30, ln: 8, sq: 0.96, aL: 26, aLz: 8, hd: 6 }],
+      [14, { az: 120, el: -15, ha: 78, hr: 0.47, hy: 0.84, tw: 32, ln: 7, sd: 3, sq: 0.95, sh: 0.06, aL: 24, hd: 5 }],
+      [19, { az: 85, el: -10, ha: 50, hr: 0.46, hy: 0.8, tw: 20, ln: 5, sd: 1, sq: 0.98, sh: 0.04, lL: -18, lR: 16, aL: 12, aLz: 4, hd: 3 }],
+      [25, { az: 20, el: -2, ha: 0, hr: 0.45, hy: 0.72, tw: 6, ln: 2, sd: 0, sq: 1, sh: 0.02, lL: -8, lR: 8, aL: 4, aLz: 0, hd: 1 }]
+    ]
+  },
+  cut2: {
+    wind: 6, act: 5, rec: 16, strike: 4, top: 4, hit: 7, out: 10,
+    keys: [
+      [0, { az: 90, el: -10, ha: 55, hr: 0.46, hy: 0.8, tw: 22, ln: 4, sd: 2, sq: 0.98, sh: 0.02, lL: -16, lR: 14, aL: 14, aLz: 4, hd: 3 }],
+      [3.6, { az: 146, el: -22, ha: 100, hr: 0.44, hy: 0.66, tw: 36, ln: 2, sd: 4, sq: 0.91, sh: -0.04, lL: -10, lR: 20, aL: 30, aLz: 10 }],
+      [4, { az: 150, el: -24, ha: 102, hy: 0.64, tw: 38, sd: 5, sq: 0.9, sh: -0.05, aL: 32, aLz: 11 }],
+      [5.5, { az: 110, el: -14, ha: 70, hr: 0.47, hy: 0.74, tw: 24, ln: 5, sd: 2, sq: 0.96, sh: -0.01, lL: -16, aL: 20, hd: 4 }],
+      [7, { az: 0, el: 10, ha: 10, hr: 0.52, hy: 0.92, tw: -6, ln: 8, sd: -2, sq: 1.05, sh: 0.06, lL: -24, lR: 26, aL: -6, aLz: -4, hd: 6 }],
+      [9, { az: -75, el: 26, ha: -50, hr: 0.5, hy: 1.02, tw: -22, ln: 7, sd: -4, sq: 1.03, sh: 0.07, aL: -18 }],
+      [11, { az: -108, el: 34, ha: -78, hr: 0.48, hy: 1.08, tw: -28, ln: 5, sd: -5, sq: 1.0, lL: -26, lR: 24, aL: -22, aLz: -8 }],
+      [14, { az: -116, el: 36, ha: -84, hr: 0.47, hy: 1.1, tw: -30, ln: 4, sq: 0.99, aL: -20 }],
+      [20, { az: -92, el: 24, ha: -72, hr: 0.46, hy: 0.96, tw: -20, ln: 3, sd: -3, sq: 0.98, sh: 0.04, lL: -16, lR: 14, aL: -12, aLz: -4, hd: 2 }],
+      [27, { az: -60, el: 6, ha: -70, hr: 0.45, hy: 0.7, tw: -6, ln: 1, sd: 0, sq: 1, sh: 0.01, lL: -6, lR: 6, aL: -4, aLz: 0, hd: 0 }]
+    ]
+  },
+  fin: {
+    wind: 12, act: 6, rec: 24, strike: 9, top: 9, hit: 13, out: 12,
+    keys: [
+      [0, { az: -95, el: 25, ha: -80, hr: 0.46, hy: 0.9, tw: -15, ln: 2, sd: 0, sq: 1, sh: 0, lL: -12, lR: 12, aL: -8, aLz: -2, hd: 0 }],
+      [4, { az: -130, el: 50, ha: -105, hr: 0.42, hy: 1.2, tw: -32, ln: -6, sd: -3, sq: 0.9, sh: -0.03, lL: -12, lR: 18, aL: -24, aLz: -10, hd: -4 }],
+      [8, { az: -165, el: 74, ha: -122, hr: 0.4, hy: 1.46, tw: -40, ln: -11, sd: -5, sq: 1.06, sh: -0.06, lL: -16, lR: 22, aL: -36, aLz: -14, hd: -8 }],
+      [9, { az: -168, el: 76, ha: -124, hy: 1.48, tw: -41, ln: -12, sq: 1.07, aL: -37 }],
+      [11, { az: -110, el: 52, ha: -80, hr: 0.44, hy: 1.32, tw: -18, ln: -2, sd: -2, sq: 1.02, sh: 0, lL: -24, lR: 26, aL: -10, hd: 0 }],
+      [13, { az: -8, el: -6, ha: -14, hr: 0.52, hy: 0.92, tw: 10, ln: 8, sd: 3, sq: 0.9, sh: 0.09, lL: -34, lR: 30, aL: 30, aLz: 10, hd: 12 }],
+      [15, { az: 22, el: -20, ha: 12, hr: 0.52, hy: 0.72, tw: 18, ln: 9, sd: 4, sq: 0.84, sh: 0.1, aL: 38, hd: 14 }],
+      [18, { az: 32, el: -24, ha: 20, hr: 0.5, hy: 0.64, tw: 21, ln: 9, sq: 0.82, lL: -36, aL: 40, aLz: 12 }],
+      [24, { az: 34, el: -22, ha: 22, hy: 0.66, ln: 8, sd: 3, sq: 0.85, sh: 0.09, aL: 30, hd: 12 }],
+      [33, { az: 10, el: -12, ha: 0, hr: 0.47, hy: 0.7, tw: 10, ln: 5, sd: 1, sq: 0.95, sh: 0.05, lL: -20, lR: 16, aL: 12, aLz: 4, hd: 5 }],
+      [42, { az: -40, el: 0, ha: -60, hr: 0.45, hy: 0.62, tw: 0, ln: 1, sd: 0, sq: 1, sh: 0.01, lL: -4, lR: 4, aL: 2, aLz: 0, hd: 0 }]
+    ]
+  }
+};
+const CH = ['az', 'el', 'ha', 'hr', 'hy', 'tw', 'ln', 'sd', 'sq', 'sh', 'lL', 'lR', 'aL', 'aLz', 'hd'];
+// monotone cubic tangents (Fritsch and Carlson), flat at the two ends
+function tangents(ts, vs) {
+  const n = ts.length, d = [], m = new Array(n).fill(0);
+  for (let i = 0; i < n - 1; i++) d.push((vs[i + 1] - vs[i]) / (ts[i + 1] - ts[i]));
+  for (let i = 1; i < n - 1; i++) m[i] = d[i - 1] * d[i] <= 0 ? 0 : (d[i - 1] + d[i]) / 2;
+  for (let i = 0; i < n - 1; i++) {
+    if (d[i] === 0) { m[i] = m[i + 1] = 0; continue; }
+    const a = m[i] / d[i], b = m[i + 1] / d[i], h = a * a + b * b;
+    if (h > 9) { const k = 3 / Math.sqrt(h); m[i] = k * a * d[i]; m[i + 1] = k * b * d[i]; }
+  }
+  return m;
+}
+const dirOf = (az, el) => [Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el)];
+for (const S of Object.values(SWINGS)) {
+  let last = {};
+  S.ts = S.keys.map(k => k[0]);
+  S.vs = {};
+  const rows = S.keys.map(([, k]) => (last = { ...last, ...k }));
+  for (const c of CH) S.vs[c] = rows.map(r => r[c]);
+  S.ms = Object.fromEntries(CH.map(c => [c, tangents(S.ts, S.vs[c])]));
+  // the swing's plane: the turn from the wind-up's top to the hit
+  const at = t => { const i = S.ts.indexOf(t); return dirOf(rows[i].az * DEG, rows[i].el * DEG); };
+  S.plane = nrm(crs(at(S.top), at(S.hit)));
+  S.len = S.wind + S.act + S.rec;
+}
+// every number of a swing at step t (fractional), the angles in radians
+export function swingAt(S, t) {
+  const ts = S.ts, n = ts.length, o = {};
+  const tt = clamp(t, ts[0], ts[n - 1]);
+  let i = 0;
+  while (i < n - 2 && tt > ts[i + 1]) i++;
+  const h = ts[i + 1] - ts[i], u = (tt - ts[i]) / h, u2 = u * u, u3 = u2 * u;
+  const h00 = 2 * u3 - 3 * u2 + 1, h10 = u3 - 2 * u2 + u, h01 = -2 * u3 + 3 * u2, h11 = u3 - u2;
+  for (const c of CH) {
+    const v = h00 * S.vs[c][i] + h10 * h * S.ms[c][i] + h01 * S.vs[c][i + 1] + h11 * h * S.ms[c][i + 1];
+    o[c] = c === 'hr' || c === 'hy' || c === 'sq' || c === 'sh' ? v : v * DEG;
+  }
+  return o;
+}
+
+/* ---------------- the pose ----------------
+   A pose is { tw, ln, sd, sq, sp, sh: the body's twist, lean, side lean, squash, roll-over spin and step forward; bones: the head's,
+   legs' and lantern arm's 3×3 matrices in the body's frame; arm: the blade arm as { d, e, H }: the blade's direction, its back-edge
+   axis and the hand, from the feet, in the body's frame }. The walk's own pose, a move's pose and a blend of two poses are all one.
+   moves.js sets s.act = { move, ph, k, t, from } (k from 0 to 1 through the phase, t the steps since the move began, from what was
+   shown when it began), and s.after = { from, t } for the steps after a move ends; a new move eases in from what was shown over
+   IN steps, and the walk eases back over OUT steps, so no bone ever jumps from one pose to the next. */
 const ease = k => k * k * (3 - 2 * k);
-function actPose(a, parts) {
-  const k = a.k, e = ease(k), back = 1 - e;
+export const BLEND = {
+  in: { cut1: 3, cut2: 3, fin: 3, roll: 4, hang: 3, plunge: 3, land: 3, drink: 4, hurt: 4 },
+  // the first cut after a finisher starts from the blade low on the left, half a turn from its wind-up: it eases in over more steps
+  afterFin: 5,
+  out: { cut1: 10, cut2: 10, fin: 12, roll: 7, hang: 4, plunge: 4, land: 8, drink: 8, hurt: 8 },
+  // how far the lantern lags the body in a swing, and its sway after the hit: the overlap of what hangs
+  lag: 2, sway: 14, swayDecay: 7, swayRate: 0.75
+};
+const I3 = [1, 0, 0, 0, 1, 0, 0, 0, 1];
+const tr = a => [a[0], a[3], a[6], a[1], a[4], a[7], a[2], a[5], a[8]];
+// the arm's { d, e, H } from a matrix about the shoulder pv (from the feet) and an offset of the hand
+function armOf(A, pv, off = [0, 0, 0]) {
+  const B = BLADE, h = [B.hand[0] - pv[0], B.hand[1] - pv[1], B.hand[2] - pv[2]], q = app(A, h);
+  return { d: app(A, B.u), e: app(A, B.w), H: [pv[0] + q[0] + off[0], pv[1] + q[1] + off[1], pv[2] + q[2] + off[2]] };
+}
+// the matrix and the offset of the hand that put the blade along d, its back edge on e, and the hand at H
+function armMatrix(arm, pv) {
+  const B = BLADE, d = arm.d, e = arm.e, m = crs(e, d);
+  const A = [0, 1, 2].flatMap(r => [0, 1, 2].map(c => d[r] * B.u[c] + e[r] * B.w[c] + m[r] * B.n[c]));
+  const h = [B.hand[0] - pv[0], B.hand[1] - pv[1], B.hand[2] - pv[2]], q = app(A, h);
+  return { A, off: [arm.H[0] - pv[0] - q[0], arm.H[1] - pv[1] - q[1], arm.H[2] - pv[2] - q[2]] };
+}
+// the walk's own pose: the bones as the explorer has always posed them
+function walkParts(s, time, still) {
+  const sw = Math.sin(s.phase), m = s.moveK, air = !s.ground, breath = still ? 0 : Math.sin(time * 2.1) * 0.02;
+  return {
+    head: mul(rotX(0.07 * Math.sin(s.phase * 2) * m - 0.06 * s.runK + breath * 2), rotY(0.05 * sw * m)),
+    legL: rotX(air ? 0.45 : -0.75 * sw * m),
+    legR: rotX(air ? -0.25 : 0.75 * sw * m),
+    armL: rotX(air ? -0.5 : 0.22 * sw * m + 0.05 * Math.sin(time * 1.7)),
+    armR: mul(rotX(air ? -0.9 : -0.65 * sw * m), rotZ(air ? 0.5 : 0.08))
+  };
+}
+const poseFrom = (parts, pv, o = {}) => ({
+  tw: o.twist || 0, ln: o.lean || 0, sd: 0, sq: o.squash ?? 1, sp: o.spin || 0, sh: 0,
+  bones: { head: parts.head, legL: parts.legL, legR: parts.legR, armL: parts.armL }, arm: armOf(parts.armR, pv)
+});
+// the shown step of a hit, from t or else from its phase and share (as a test may give it)
+function hitStep(a, S) {
+  if (Number.isFinite(a.t)) return a.t;
+  return a.ph === 'wind' ? a.k * S.wind : a.ph === 'act' ? S.wind + a.k * S.act : S.wind + S.act + a.k * S.rec;
+}
+// a hit of the string from its keys
+function swingPose(a, pv) {
+  const S = SWINGS[a.move], t = hitStep(a, S), k = swingAt(S, t), kl = swingAt(S, t - BLEND.lag);
+  // the facing frame into the body's: the body turns by tw, then leans by ln (about x) and sd (about z), and squashes by sq in height
+  const back = mul(rotZ(-k.sd), mul(rotX(-k.ln), rotY(-k.tw)));
+  const d = app(back, dirOf(k.az, k.el)), N = app(back, S.plane);
+  let v = crs(N, d);
+  if (Math.hypot(v[0], v[1], v[2]) < 1e-4) v = crs([0, 1, 0], d);
+  const e = nrm(v).map(x => -x);
+  const H = app(back, [k.hr * Math.sin(k.ha), k.hy / k.sq, k.hr * Math.cos(k.ha)]);
+  // the lantern swings against the blade, a little behind the body, and sways after the hit
+  const since = t - S.hit, sway = since > 0 ? BLEND.sway * DEG * Math.exp(-since / BLEND.swayDecay) * Math.sin(since * BLEND.swayRate) : 0;
+  return {
+    tw: k.tw, ln: k.ln, sd: k.sd, sq: k.sq, sp: 0, sh: k.sh,
+    bones: { head: mul(rotX(k.hd), rotY(-0.4 * k.tw)), legL: rotX(k.lL), legR: rotX(k.lR), armL: mul(rotX(kl.aL), rotZ(kl.aLz + sway)) },
+    arm: { d, e, H }
+  };
+}
+/* the other moves of a run. The roll turns the whole figure over round its middle. The plunge holds the blade arm down in front and
+   swings the lantern arm up behind, not a seated drop */
+function movePose(a, walk, pv) {
+  const k = a.k, e = ease(k), back = 1 - e, parts = { ...walk };
   let lean = 0, spin = 0, twist = 0, squash = 1;
   switch (a.move) {
-    case 'cut1':
-      if (a.ph === 'wind') { parts.armR = mul(rotX(-1.3 * e), rotZ(-1.1 * e)); twist = 0.35 * e; }
-      else if (a.ph === 'act') { parts.armR = mul(rotX(-1.35), rotZ(-1.1 + 2.3 * e)); twist = 0.35 - 0.75 * e; lean = 0.12; }
-      else { parts.armR = mul(rotX(-1.35 * back), rotZ(1.2 * back)); twist = -0.4 * back; lean = 0.12 * back; }
-      break;
-    case 'cut2':
-      if (a.ph === 'wind') { parts.armR = mul(rotX(-1.25 * e), rotZ(1.15 * e)); twist = -0.35 * e; }
-      else if (a.ph === 'act') { parts.armR = mul(rotX(-1.3), rotZ(1.15 - 2.4 * e)); twist = -0.35 + 0.75 * e; lean = 0.12; }
-      else { parts.armR = mul(rotX(-1.3 * back), rotZ(-1.25 * back)); twist = 0.4 * back; lean = 0.12 * back; }
-      break;
-    case 'fin':
-      if (a.ph === 'wind') { parts.armR = rotX(-2.7 * e); parts.armL = rotX(0.5 * e); lean = -0.18 * e; }
-      else if (a.ph === 'act') { parts.armR = rotX(-2.7 + 3.1 * e); parts.armL = rotX(0.5); lean = -0.18 + 0.48 * e; squash = 1 - 0.08 * e; }
-      else { parts.armR = rotX(0.4 * back); parts.armL = rotX(0.5 * back); lean = 0.3 * back; squash = 1 - 0.08 * back; }
-      break;
     case 'roll':
       spin = (a.back ? -1 : 1) * 2 * Math.PI * e;
       squash = 1 - 0.22 * Math.sin(Math.PI * k);
@@ -976,8 +1150,51 @@ function actPose(a, parts) {
       lean = -0.4 * back;
       break;
   }
-  return { lean, spin, twist, squash };
+  return poseFrom(parts, pv, { lean, spin, twist, squash });
 }
+const lerp = (a, b, w) => a + (b - a) * w;
+const lerpV = (a, b, w) => a.map((x, i) => x + (b[i] - x) * w);
+// a rotation between two, by its rows mixed and made square again (Gram and Schmidt)
+function mixRot(A, B, w) {
+  const M = lerpV(A, B, w), r0 = nrm(M.slice(0, 3)), r1p = M.slice(3, 6), r1 = nrm(r1p.map((x, i) => x - dot(r1p, r0) * r0[i])), r2 = crs(r0, r1);
+  return [...r0, ...r1, ...r2];
+}
+function mix(A, B, w) {
+  if (w >= 1) return B;
+  if (w <= 0) return A;
+  // the spin is a turn: mix it the short way round (a whole roll is no turn at all)
+  const sp = A.sp + Math.atan2(Math.sin(B.sp - A.sp), Math.cos(B.sp - A.sp)) * w;
+  /* the blade's direction the short way round; two that point nearly apart (the first cut after a finisher) go over the top, as a
+     blade lifted over the head, never through the figure */
+  const bow = Math.max(0, -dot(A.arm.d, B.arm.d)) * 1.5 * Math.sin(Math.PI * w), dl = lerpV(A.arm.d, B.arm.d, w);
+  const d = nrm([dl[0], dl[1] + bow, dl[2]]), ep = lerpV(A.arm.e, B.arm.e, w);
+  let eo = ep.map((x, i) => x - dot(ep, d) * d[i]);
+  if (Math.hypot(eo[0], eo[1], eo[2]) < 1e-3) eo = crs(d, [0, 0, 1]);
+  const e = nrm(eo);
+  const bones = {};
+  for (const n of ['head', 'legL', 'legR', 'armL']) bones[n] = mixRot(A.bones[n], B.bones[n], w);
+  return { tw: lerp(A.tw, B.tw, w), ln: lerp(A.ln, B.ln, w), sd: lerp(A.sd, B.sd, w), sq: lerp(A.sq, B.sq, w), sp, sh: lerp(A.sh, B.sh, w), bones, arm: { d, e, H: lerpV(A.arm.H, B.arm.H, w) } };
+}
+// the pose a move's state shows: the move itself, eased in from what it began from (up to `depth` moves back)
+function actPoseOf(a, walk, pv, depth = 2) {
+  const own = SWINGS[a.move] ? swingPose(a, pv) : movePose(a, walk, pv);
+  const n = a.move === 'cut1' && a.from?.move === 'fin' ? BLEND.afterFin : BLEND.in[a.move] || 3;
+  if (depth <= 0 || !Number.isFinite(a.t) || a.t >= n) return own;
+  // from the walk when the move began from no move
+  return mix(a.from ? shownOf(a.from, walk, pv, depth - 1) : poseFrom(walk, pv), own, ease(Math.max(0, a.t) / n));
+}
+// what a state shows: a move, or the walk, eased back from the move that ended
+function shownOf(st, walk, pv, depth = 2) {
+  if (st.move) return actPoseOf(st, walk, pv, depth);
+  const base = poseFrom(walk, pv);
+  const af = st.after;
+  if (!af || !af.from || depth <= 0) return base;
+  const n = BLEND.out[af.from.move] || 8;
+  if (af.t >= n) return base;
+  return mix(shownOf(af.from, walk, pv, depth - 1), base, ease(af.t / n));
+}
+// the state the pose shows now: { move, ... } in a move, { after } after one, or null for the walk alone
+export const shownState = s => (s.act ? s.act : s.after ? { move: null, after: s.after } : null);
 export function pose(out, rig, s, time = 0, still = false) {
   const { names, pivots } = rig;
   const P0 = pivots[0], F = [P0[0], P0[1] - 0.1, P0[2]];
@@ -987,26 +1204,30 @@ export function pose(out, rig, s, time = 0, still = false) {
   const land = s.landK * Math.exp(-s.landAge * 9);
   const rising = air && s.vy > 0 ? Math.min(1, s.vy / 8) : 0;
   const breath = still ? 0 : Math.sin(time * 2.1) * 0.02;
-  const parts = {
-    body: [1, 0, 0, 0, 1, 0, 0, 0, 1],
-    head: mul(rotX(0.07 * Math.sin(s.phase * 2) * m - 0.06 * s.runK + breath * 2), rotY(0.05 * sw * m)),
-    legL: rotX(air ? 0.45 : -0.75 * sw * m),
-    legR: rotX(air ? -0.25 : 0.75 * sw * m),
-    armL: rotX(air ? -0.5 : 0.22 * sw * m + 0.05 * Math.sin(time * 1.7)),
-    armR: mul(rotX(air ? -0.9 : -0.65 * sw * m), rotZ(air ? 0.5 : 0.08))
-  };
-  const act = s.act ? actPose(s.act, parts) : null;
+  const parts = walkParts(s, time, still);
+  const st = shownState(s);
+  let act = null, armOff = [0, 0, 0];
+  if (st) {
+    const iR = names.indexOf('armR'), pv = iR >= 0 ? [pivots[iR][0] - F[0], pivots[iR][1] - F[1], pivots[iR][2] - F[2]] : [-0.33, 0.72, 0];
+    const p = shownOf(st, parts, pv);
+    Object.assign(parts, p.bones);
+    const arm = armMatrix(p.arm, pv);
+    parts.armR = arm.A; armOff = arm.off;
+    act = { lean: p.ln, spin: p.sp, twist: p.tw, squash: p.sq, side: p.sd, shift: p.sh };
+  }
   const sy = (1 - 0.28 * land + 0.1 * rising) * (act ? act.squash : 1), sxz = 1 + 0.14 * land - 0.04 * rising;
   const lean = 0.2 * s.runK + 0.06 * m + (air ? -0.08 : 0) + (act ? act.lean : 0);
-  let Ab = mul(rotY(s.yaw + (act ? act.twist : 0)), mul(scl(sxz, sy * (1 + breath), sxz), mul(rotX(lean), rotZ(0.05 * sw * m))));
+  let Ab = mul(rotY(s.yaw + (act ? act.twist : 0)), mul(scl(sxz, sy * (1 + breath), sxz), mul(rotX(lean), rotZ(0.05 * sw * m + (act ? act.side : 0)))));
   const bob = Math.abs(sw) * 0.07 * m;
   const P = [s.x, s.y + bob, s.z];
+  if (act && act.shift) { P[0] += Math.sin(s.yaw) * act.shift; P[2] += Math.cos(s.yaw) * act.shift; }
   if (act && act.spin) {
     // turn over round the middle of the figure, 0.45 over the feet: that point stays where it was
     const Ab2 = mul(Ab, rotX(act.spin)), a1 = app(Ab, [0, 0.45, 0]), a2 = app(Ab2, [0, 0.45, 0]);
     P[0] += a1[0] - a2[0]; P[1] += a1[1] - a2[1]; P[2] += a1[2] - a2[2];
     Ab = Ab2;
   }
+  const offW = app(Ab, armOff);
   names.forEach((name, b) => {
     const pv = pivots[b];
     if (s.hide && name !== 'shadow') { put(out, b, HIDE, [0, -500, 0]); return; }
@@ -1017,12 +1238,29 @@ export function pose(out, rig, s, time = 0, still = false) {
       put(out, b, A, [to[0] - ap[0], to[1] - ap[1], to[2] - ap[2]]);
       return;
     }
-    const A = name === 'body' ? Ab : mul(Ab, parts[name] || parts.body);
-    // where the bone's pivot lands: P + Ab (pivot - feet); then t = that - A pivot
-    const rel = [pv[0] - F[0], pv[1] - F[1], pv[2] - F[2]], w = app(Ab, rel), ap = app(A, pv);
-    put(out, b, A, [P[0] + w[0] - ap[0], P[1] + w[1] - ap[1], P[2] + w[2] - ap[2]]);
+    const A = name === 'body' ? Ab : mul(Ab, parts[name] || parts.body || I3);
+    // where the bone's pivot lands: P + Ab (pivot - feet); then t = that - A pivot (and the blade arm's hand offset)
+    const rel = [pv[0] - F[0], pv[1] - F[1], pv[2] - F[2]], w = app(Ab, rel), ap = app(A, pv), o = name === 'armR' ? offW : [0, 0, 0];
+    put(out, b, A, [P[0] + w[0] - ap[0] + o[0], P[1] + w[1] - ap[1] + o[1], P[2] + w[2] - ap[2] + o[2]]);
   });
   return out;
+}
+/* the blade in the world as the pose shows it: the hand, a point on the blade share k of the way to the tip (each k given), and the
+   tip. For the swing's trail (fight.js) and the checks */
+let bladeBuf = null;
+export function bladeAt(rig, s, ks = [0.5, 1], time = 0) {
+  const n = rig.names.length;
+  if (!bladeBuf || bladeBuf.length < 12 * n) bladeBuf = new Float32Array(12 * n);
+  const hide = s.hide;
+  s.hide = false;
+  pose(bladeBuf, rig, s, time, true);
+  s.hide = hide;
+  const F = [rig.pivots[0][0], rig.pivots[0][1] - 0.1, rig.pivots[0][2]], o = 12 * rig.names.indexOf('armR'), B = BLADE;
+  const at = d => {
+    const p = [F[0] + B.hand[0] + B.u[0] * d, F[1] + B.hand[1] + B.u[1] * d, F[2] + B.hand[2] + B.u[2] * d];
+    return [0, 1, 2].map(r => bladeBuf[o + r * 3] * p[0] + bladeBuf[o + r * 3 + 1] * p[1] + bladeBuf[o + r * 3 + 2] * p[2] + bladeBuf[o + 9 + r]);
+  };
+  return { hand: at(0), points: ks.map(k => at(0.09 + B.len * k)), tip: at(B.tip) };
 }
 
 /* ---------------- touch ---------------- */

@@ -151,6 +151,19 @@
 - [x] Falls below y −25: last firm ground, 10 health lost
 - [x] After a fall, 0.9 s safe with the blink; feet below the fall line are never firm ground
 
+### The swings (after play on the boss build)
+- [x] Measure the old swings step by step in Node and take contact sheets of every move at 1280x720 and 390x844
+- [x] Read how others make melee swings strong, and name the sources in design.md ("The swings", "Sources")
+- [x] Key each hit on monotone cubic curves: a wind-up with a hold at the top, a strike that is fastest on the hit step, a wide follow-through and a settle that leads into the next hit
+- [x] Place the blade arm by its blade direction, edge and hand, with the cutting edge leading along the swing's plane; the blade's numbers in `play.js` `BLADE`, which `common.mjs` takes
+- [x] Weight in the body: twist, lean, squash, a step onto the front foot, the legs and the head; the lantern swings after the blade and sways after the hit
+- [x] Blends: each move eases in from what was shown, and the walk eases back after it; a roll's turn the short way round, and blades that point apart over the top
+- [x] The trail: smears along the blade's arc at fractional steps, held in hit stop, lamp colours (gold at the finisher's tip), `__gloam.fx({ trail })`
+- [x] A press of Attack during a hit is kept until the next hit can start
+- [x] Phase cues for sound: `swing`, `strike`, `hit`, `whiff`, `recover`, and `drop` for the plunge
+- [x] The Gaol bakes the same files byte for byte with the blade's numbers from `play.js`
+- [x] Node checks in `gloam-downs-run.test.mjs`, and `qa/lab/gloam-downs-run.swing.e2e.mjs` for the cues and the trail at 1280x720 and 390x844
+
 ### Foes
 - [x] The spark pool, ported from `K.play.fx`; glim motes in the lamp colours
 - [x] `foes` bake target: the Snuffer first, on 8 bones, with `foes.bin.gz` and `foes.json.gz` (ranges, bones, pivots, pose keyframes)
