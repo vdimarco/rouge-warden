@@ -421,6 +421,27 @@ function attackAt(rate, setup) {
   assert.equal(Wd.B.lightable().ok, true);
   pass('the beacon of Barrow Crown lights only with the light carried to it; before the fall the toast names the ground below the stones');
 }
+{ /* the far points each marker gives the boss camera (camView marks), on flat ground: the shard rings' centres and four points on each
+     rim at 1.3 m, the lane's far end with a least pitch of 0.6, the sweeps' two side ends and front, and four points round the slam's ring */
+  const W = bossOn(FLAT, { x: 0, z: 5, bossHp: 700 }), got = {};
+  W.B.started = true;
+  for (const name of ['shards', 'lunge', 'sweep', 'slam']) {
+    W.B.holdAt(name, 0.5);
+    const v = W.B.camView(), m = W.B.view().marker;
+    got[name] = { marks: v.marks.length, look: v.look };
+    if (name === 'shards') {
+      assert.equal(v.marks.length, 15);
+      m.rings.forEach((r, k) => {
+        const [c, ...rims] = v.marks.slice(k * 5, k * 5 + 5);
+        assert(Math.hypot(c[0] - r[0], c[2] - r[2]) < 1e-9 && Math.abs(c[1] - r[1] - 0.3) < 1e-9, 'a ring centre, 0.3 m up');
+        for (const q of rims) assert(Math.abs(Math.hypot(q[0] - r[0], q[2] - r[2]) - ATTACKS.shards.ring) < 1e-9, 'a rim point at 1.3 m');
+      });
+    } else assert.equal(v.marks.length, { lunge: 1, sweep: 3, slam: 4 }[name]);
+    assert.equal(v.look, name === 'lunge' ? 0.6 : 0);
+    W.B.holdAt(null);
+  }
+  pass("each marker's far points for the boss camera: three ring centres and four rim points each, the lane's end with a pitch of 0.6, the sweeps' ends and front, the slam's four", got);
+}
 { /* the run stored at the fall with bossDown; a reload after the fall: the boss stays down, the light rides from the start, and the glim
      carried is the entry value plus 30. Then the beacon banks it, the win is stored at once (wins + 1, the best time, run null), and a
      reload on the win card shows it again with the same figures */
@@ -628,7 +649,9 @@ if (process.env.GLOAM_WORLDS !== '0') {
        facing the boss 2.6 m and 5 m toward the centre. After 2.5 s the camera stands at its least distance and the boss's head and feet
        are on the screen at every point. A raise only to a pitch of 0.55 left it 1.85 to 5.65 m out, with the head off the top, at 20 of
        122 points: south of the arena the grave stones are 3.3 to 4.6 m tall 3 m behind the lamplighter. The three shard rings of a
-       lamp-shards are on the screen, and in sight of the eye at all but a very few pairs (a mound beside the eye hid them) */
+       lamp-shards are on the screen, and in sight of the eye at all but a very few pairs (a mound beside the eye hid them). Each ring
+       whole (8 points on its rim of 1.3 m) lies inside the middle 94% of the width, below the Lab bar row and under no control, and the
+       ground hides at most 5% of the rim points (the boss gives the camera 4 rim points of each ring as marks, as boss.js camView) */
     const c = arena.c, g = (x, z, y = 3) => walk.support(x, z, y) ?? walk.top(x, z), out = {};
     const sees = (a, b) => clearLine(walk, a[0], a[1], a[2], b[0], b[1], b[2]);
     const LAY = {
@@ -637,7 +660,7 @@ if (process.env.GLOAM_WORLDS !== '0') {
     };
     for (const [tag, S] of Object.entries(LAY)) {
       const L = camLayout(S.w, S.h), screen = { w: S.w, h: S.h, bar: 52, rects: S.rects }, least = Math.max(12, L.dist);
-      let pairs = 0, top = 0, hidden = 0;
+      let pairs = 0, top = 0, hidden = 0, rimHid = 0, rimAll = 0;
       for (let gx = -6; gx <= 6; gx += 1.5) for (let gz = -6; gz <= 6; gz += 1.5) {
         if (Math.hypot(gx, gz) > 6.6) continue;
         for (const bd of [2.6, 5]) {
@@ -647,7 +670,9 @@ if (process.env.GLOAM_WORLDS !== '0') {
           const bx = lx + (dx / l) * bd, bz = lz + (dz / l) * bd;
           // the three shard rings of a lamp-shards at the lamplighter, as the marks the camera keeps in sight
           const rx = (lz - bz) / bd, rz = -(lx - bx) / bd, ring = k => [lx + rx * k, g(lx + rx * k, lz + rz * k) + 0.3, lz + rz * k];
-          const s = { x: lx, y: g(lx, lz), z: lz }, B = { x: bx, y: g(bx, bz), z: bz, up: true, started: true, marks: [ring(0), ring(2.5), ring(-2.5)] };
+          const rimOf = (r, a) => { const x = r[0] + Math.sin(a) * ATTACKS.shards.ring, z = r[2] + Math.cos(a) * ATTACKS.shards.ring; return [x, g(x, z, r[1]) + 0.3, z]; };
+          const centres = [ring(0), ring(2.5), ring(-2.5)], rims = centres.flatMap(r => Array.from({ length: 8 }, (_, i) => rimOf(r, (i * Math.PI) / 4)));
+          const s = { x: lx, y: g(lx, lz), z: lz }, B = { x: bx, y: g(bx, bz), z: bz, up: true, started: true, marks: centres.flatMap((r, k) => [r, ...rims.slice(k * 8, k * 8 + 8).filter((_, i) => i % 2 === 0)]) };
           const cam = makeCamera(walk, { yaw: Math.atan2(-(bx - lx), -(bz - lz)), auto: true, ...L });
           const bc = makeBossCam(cam, { screen, boss: () => B, centre: c, ground: (x, z) => g(x, z, s.y + 1), sees });
           let v;
@@ -660,14 +685,18 @@ if (process.env.GLOAM_WORLDS !== '0') {
           const head = pr([bx, B.y + REEVE.height, bz]);
           assert(on(head) && head[1] >= screen.bar && on(pr([bx, B.y, bz])), `${tag}: at (${lx}, ${lz}) the boss is on the screen, its head below the Lab bar row`);
           const eye = [v.target[0] + Math.sin(v.yaw) * Math.cos(v.pitch) * v.dist, v.target[1] + Math.sin(v.pitch) * v.dist, v.target[2] + Math.cos(v.yaw) * Math.cos(v.pitch) * v.dist];
-          hidden += B.marks.filter(m => !sees(eye, m)).length;
-          assert(B.marks.every(m => on(pr(m))), `${tag}: at (${lx}, ${lz}) the shard rings are on the screen`);
+          hidden += centres.filter(m => !sees(eye, m)).length;
+          assert(centres.every(m => on(pr(m))), `${tag}: at (${lx}, ${lz}) the shard rings are on the screen`);
+          const inR = ([x, y], [rx, ry, rw, rh]) => x >= rx && x <= rx + rw && y >= ry && y <= ry + rh;
+          for (const p of rims.map(m => pr([m[0], m[1] - 0.3, m[2]]))) assert(p && p[0] >= 0.03 * S.w && p[0] <= 0.97 * S.w && p[1] >= screen.bar && p[1] <= S.h && !S.rects.some(r => inR(p, r)), `${tag}: at (${lx}, ${lz}, ${bd}) a shard ring's rim at ${p} is at the edge or under a control`);
+          rimHid += rims.filter(m => !sees(eye, m)).length; rimAll += rims.length;
           pairs++; top = Math.max(top, v.pitch);
         }
       }
       // a stone beside the eye may still hide a ring at a very few pairs (2 of 366 rings when measured; 24 to 32 with a raise to 0.55)
       assert(hidden <= 6, `${tag}: ${hidden} shard rings hidden behind the ground`);
-      out[tag] = { pairs, least, pitch: r2(top), hidden };
+      assert(rimHid <= 0.05 * rimAll, `${tag}: ${rimHid} of ${rimAll} rim points hidden behind the ground`);
+      out[tag] = { pairs, least, pitch: r2(top), hidden, rims: `${rimHid}/${rimAll}` };
     }
     pass('the boss camera over the arena stands at its least distance with the boss and the shard rings on the screen and in sight, raised over the grave stones', out);
   }

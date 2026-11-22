@@ -450,11 +450,26 @@ Within its limits, the boss camera SHALL choose the aim point and the smallest d
 - **THEN** the frame is clear each time, and the camera's distance is 21 m or less (measured: 12.0 m in landscape and 15.33 m on the phones). Check: Node test `gloam-downs-camera.test.mjs`.
 
 ### Requirement: Boss camera on a slope
-When a hill, a stone or a wall would bring the boss camera closer than it chose, its pitch SHALL ease up from the layout's pitch (0.27 to 0.33) by the least raise, in steps of 0.05 up to a pitch of 1.1, at which the camera stands at the distance it chose and its eye sees the boss's chest and feet and the far points of the marker laid (the three shard rings' centres, the lane's far end, the sweeps' two side ends and front, four points round the slam's ring). While the lunge's lane is laid, the raise SHALL start from a pitch of 0.6, so the lane that runs toward the camera is seen from above. When no raise gives both, it SHALL take the least raise at which it stands at that distance, and when none does, the raise that lets it stand farthest back. Whether something is in the way SHALL be read at the layout's pitch. The frame SHALL be solved at the raised pitch. The raise SHALL come down only when the least raise is more than 0.1 under it, so the pitch holds still while the two stand still. Past the walk map's bounds, the boss camera SHALL read the map's edge cells, so scenery outside the map never brings it in.
+When a hill, a stone or a wall would bring the boss camera closer than it chose, its pitch SHALL ease up by the least raise, in steps of 0.05 to a pitch of 1.1, at which it stands at its distance and sees the boss's chest and feet and the far points of the marker laid. A lane laid SHALL start the raise from a pitch of 0.6. Failing that, it SHALL take the least raise that stands at the distance and sees the most points; failing that, the raise that stands farthest back.
 
 #### Scenario: Boss camera over the grave stones
 - **WHEN** the Node test stands the lamplighter on Barrow Crown's walk map at every point of a 1.5 m grid within 6.6 m of the arena's centre, facing the boss 2.6 m and then 5 m toward the centre (122 pairs), and steps the boss camera for 2.5 s at 1280 by 720 and at 390 by 844
-- **THEN** at every pair the camera stands at its least distance (12 m in landscape, 15.33 m on the phone), the boss's head and feet and the three shard rings of a lamp-shards laid at the lamplighter are on the screen with the head below the Lab bar row, the pitch moves by 0.01 or less over the next 1 s, and at most 6 of the 366 rings are hidden from the eye by the ground (measured: 122 of 122 pairs at both layouts, the highest pitch 1.08, 1 and 2 rings hidden; with a raise only to 0.55, 20 of 122 pairs came in to 1.85 to 5.65 m with the head off the screen, and 24 to 32 rings were hidden). Check: Node test `gloam-downs-boss.test.mjs`.
+- **THEN** at every pair the camera stands at its least distance (12 m in landscape, 15.33 m on the phone), the boss's head and feet and the three shard rings of a lamp-shards laid at the lamplighter are on the screen with the head below the Lab bar row, the pitch moves by 0.01 or less over the next 1 s, each ring's rim (8 points at 1.3 m) is inside the middle 94% of the width, below the Lab bar row and under no control, at most 5% of the rim points are hidden from the eye by the ground, and at most 6 of the 366 rings are hidden from the eye by the ground (measured: 122 of 122 pairs at both layouts, the highest pitch 1.08, 1 and 2 rings hidden, 33 and 44 of 2928 rim points hidden; with a raise only to 0.55, 20 of 122 pairs came in to 1.85 to 5.65 m with the head off the screen, and 24 to 32 rings were hidden). Check: Node test `gloam-downs-boss.test.mjs`.
+
+#### Scenario: The marker's far points
+- **WHEN** the Node test reads the boss's camera view with each marker laid
+- **THEN** the far points are the three shard rings' centres with four points on each rim at 1.3 m, the lane's far end, the sweeps' two side ends and front, and four points round the slam's ring, and the lunge's lane asks for a pitch of 0.6. Check: Node test `gloam-downs-boss.test.mjs`.
+
+### Requirement: Boss camera raise holds still
+Whether something is in the way of the boss camera SHALL be read at the layout's pitch, and its frame SHALL be solved at the raised pitch. The raise SHALL come down only when the least raise is more than 0.1 under it, so the pitch holds still while the lamplighter and the boss stand still. Past the walk map's bounds, the boss camera SHALL read the map's edge cells, so scenery outside the map never brings it in.
+
+#### Scenario: Boss camera raise at rest
+- **WHEN** the Node test lets the boss camera settle for 2.5 s at each of the arena's 122 pairs at 1280 by 720 and 390 by 844, and steps it 1 s more
+- **THEN** the pitch moves by 0.01 or less over that second at every pair. Check: Node test `gloam-downs-boss.test.mjs`.
+
+#### Scenario: Boss camera by the grave stone
+- **WHEN** the lamplighter stands at (18, −18), with the grave stone south of the arena behind it, in the browser at 1280 by 720 and 390 by 844
+- **THEN** the boss camera stays 12 m or more out (15.33 m on the phone). Check: e2e `gloam-downs-run.boss.e2e.mjs`.
 
 #### Scenario: Boss in the arena
 - **WHEN** the Node test puts the lamplighter and the boss at 481 pairs of points in the arena, 3 to 9 m apart. It uses Barrow Crown's walk map. It steps the boss camera for 3 s at each of the five layouts.
@@ -989,19 +1004,22 @@ The win card SHALL show the time, the best winning time, the glim banked in this
 - **THEN** the Lamp-room shows Wander. Check: e2e `gloam-downs-run.boss.e2e.mjs`.
 
 ### Requirement: The win is stored
-The page SHALL store the run at once when the boss falls. A reload after the fall SHALL start the lamplighter at the arena with the light at its lantern. The boss SHALL stay down, and the glim carried SHALL be its entry value plus the boss's 30. When the last beacon lights, the page SHALL store the bank, wins plus 1 and the best winning time at once. It SHALL set `run` to null and put the win's figures in `ended`. A reload before the win card closes SHALL show the win card again. While `bossDown` is true, the page SHALL not wait for the boss files: it SHALL not fetch them, and the 11 m pause and Step back SHALL not apply.
+The page SHALL store the run at once when the boss falls. A reload after the fall SHALL start the lamplighter at the arena with the light at its lantern. The boss SHALL stay down, and the glim carried SHALL be its entry value plus the boss's 30. When the last beacon lights, the page SHALL store the bank, wins plus 1 and the best winning time at once. It SHALL set `run` to null and put the win's figures in `ended`. A reload before the win card closes SHALL show the win card again.
 
 #### Scenario: Reload after the fall
 - **WHEN** the boss falls, and the player reloads before the lamplighter reaches the beacon
 - **THEN** the run goes on at the arena with the light at the lantern. The boss is down, no zone wakes, and the glim carried is the entry value plus 30. Check: e2e `gloam-downs-run.boss.e2e.mjs`.
 
-#### Scenario: Reload after the fall with no boss files
-- **WHEN** the boss falls, the boss files then fail on every request, and the player reloads
-- **THEN** play goes on at the arena with no loading screen, the light rides at the lantern, the beacon lights with it, and the win card shows. Check: e2e `gloam-downs-run.boss.e2e.mjs`.
-
 #### Scenario: Reload on the win card
 - **WHEN** the last beacon lights, and the player reloads 1.0 s later, before the win card shows
 - **THEN** the win card shows with the same figures, and the wins count went up by one only. Check: e2e `gloam-downs-run.boss.e2e.mjs`.
+
+### Requirement: No boss files after the fall
+While `bossDown` is true, the page SHALL not wait for the boss files: it SHALL not fetch them, and the 11 m pause and Step back SHALL not apply.
+
+#### Scenario: Reload after the fall with no boss files
+- **WHEN** the boss falls, the boss files then fail on every request, and the player reloads
+- **THEN** play goes on at the arena with no loading screen, the light rides at the lantern, the beacon lights with it, and the win card shows. Check: e2e `gloam-downs-run.boss.e2e.mjs`.
 
 ### Requirement: The light after the fall
 The light at the lantern after the boss's fall SHALL be drawn from the carried light in `foes.bin.gz`: 63 emissive splats on one bone, in wisp slots 38 and 39. Barrow Crown's pool SHALL hold a slot for it, so the light needs no boss file.

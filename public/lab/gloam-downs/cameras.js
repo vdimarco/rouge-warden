@@ -125,8 +125,8 @@ export function frameClear(pr, L, B, screen, ground = () => L.y) {
 export const BOSS = { on: 7.0, wait: 0.6, rate: 1.5, stop: 15 * DEG, far: 24, least: 12, steps: 60, up: 1.15, slope: 1.1, rise: 0.05, aims: 0.8 };
 /* the raise of the pitch over what stands in the way: the least raise (in steps of 0.05, to a pitch of 1.1) at which the eye stands at
    its distance D and sees every point of marks (the boss's chest and feet, and the far points of its marker: a stone beside the eye can
-   hide a shard ring without standing between the eye and the aim); failing that, the least at which it stands at D; failing that, the
-   raise that lets it stand farthest back. reach is play.js's camera reach, and sees(a, b) the sight test (none: every point is seen).
+   hide a shard ring without standing between the eye and the aim); failing that, the least at which it stands at D and sees the most of
+   them; failing that, the raise that lets it stand farthest back. reach is play.js's camera reach, and sees(a, b) the sight test (none: every point is seen).
    look is a least pitch that the marker asks for (the lunge's lane, 0.6), where the search starts.
    Read from the layout's pitch and not from the raise of the step before, so the answer does not flick between two raises */
 export function bossRaise(reach, aim, yaw, base, D, marks = [], sees = null, look = 0) {
@@ -135,8 +135,9 @@ export function bossRaise(reach, aim, yaw, base, D, marks = [], sees = null, loo
     const p = base + l, room = reach(aim[0], aim[1], aim[2], yaw, p, D);
     if (room >= D - 0.1) {
       const eye = [aim[0] + Math.sin(yaw) * Math.cos(p) * D, aim[1] + Math.sin(p) * D, aim[2] + Math.cos(yaw) * Math.cos(p) * D];
-      if (!sees || marks.every(m => sees(eye, m))) return { lift: l, room, seen: true };
-      far ??= { lift: l, room, seen: false };
+      const seen = sees ? marks.filter(m => sees(eye, m)).length : marks.length;
+      if (seen === marks.length) return { lift: l, room, seen: true };
+      if (!far || seen > far.n) far = { lift: l, room, seen: false, n: seen };
     } else if (!far && room > best.room + 0.3) best = { lift: l, room };
   }
   return far || best;

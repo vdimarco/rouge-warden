@@ -468,10 +468,12 @@ export function makeBoss({ walk, arena = null, seed = 1, runner = null, bounds =
   B.shown = shown;
   B.fighting = () => B.started && B.up;
   // what the boss camera and the combat camera read. marks: the far points of the marker laid, 0.3 m over the ground, which the boss
-  // camera keeps in sight: the shard rings' centres, the lane's far end, the sweeps' two side ends and front at their full reach, and
-  // four points round the slam's ring
+  // camera keeps in sight: the shard rings' centres and four points on each rim at its full size, the lane's far end, the sweeps' two
+  // side ends and front at their full reach, and four points round the slam's ring. With the centres alone, the ground hid part of a
+  // rim at 254 of 2928 rim points over the arena at 390x844 (a ring half over a rise); with the rims, at 104
   const at = (m, a, r) => [m.x + Math.sin(a) * r, m.y + 0.3, m.z + Math.cos(a) * r];
-  const marksOf = m => !m ? [] : m.kind === 'shards' ? m.rings.map(r => [r[0], r[1] + 0.3, r[2]])
+  const rim = (r, a) => { const x = r[0] + Math.sin(a) * ATTACKS.shards.ring, z = r[2] + Math.cos(a) * ATTACKS.shards.ring; return [x, ground(x, z, r[1]) + 0.3, z]; };
+  const marksOf = m => !m ? [] : m.kind === 'shards' ? m.rings.flatMap(r => [[r[0], r[1] + 0.3, r[2]], ...[0, 1, 2, 3].map(k => rim(r, (k * Math.PI) / 2))])
     : m.kind === 'lane' ? [at(m, m.yaw, m.full)]
     : m.kind === 'slices' ? [-1, 0, 1].map(k => at(m, m.face + k * SWEEP.arc, m.full * 0.85))
     : m.kind === 'ring' ? [0, 1, 2, 3].map(k => at(m, (k * Math.PI) / 2, m.full * 0.85)) : [];

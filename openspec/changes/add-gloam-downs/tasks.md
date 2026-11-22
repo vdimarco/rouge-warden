@@ -264,13 +264,13 @@
 - [x] HUD: health bar, flask pips, glim; the toast 8 px under the HUD's measured bottom at every width
 - [x] At 520 px wide or less, the health line is one row, with a 12 px number, a 56 × 8 px bar and 6 px pips
 - [x] `#hud.boss` hides the hint, and `gloam-downs-run.cards.e2e.mjs` checks that the widest HUD and the tools fit the spec's rects at the five layouts
-- [ ] Stage 3 sets `#hud.boss` in the boss fight, and moves that check into the layout e2e
-- [ ] The boss bar in the Lab bar row in every layout: at most 360 px on touch and 520 px with a fine pointer
+- [x] Stage 3 sets `#hud.boss` in the boss fight; `gloam-downs-run.boss.e2e.mjs` (`ONLY=layout`) checks it in the real fight at the five layouts until the layout e2e is built
+- [x] The boss bar in the Lab bar row in every layout: at most 360 px on touch and 520 px with a fine pointer (boss e2e: 214, 144, 184 and 360 px on touch at 390, 320, 360 and 800 wide; 520 × 44 at 1280×720)
 - [x] The overlap check with the widest HUD: 165/165, 5 of 5 flasks, 5/5 wisps and 254 glim
 - [x] The overlap check also has the longest toast in the run's data (86 characters) and a toast of 96 characters
-- [ ] The overlap check also has a boss bar (stage 3)
+- [x] The overlap check also has a boss bar (stage 3; in the boss e2e, with the widest HUD and a toast of 96 characters)
 - [x] No card button under ◀ Lab or Games: in a run the cards clear the Lab bar row
-- [ ] No card button under the boss bar, and the boss bar hides while a card shows (stage 3)
+- [x] No card button under the boss bar, and the boss bar hides while a card shows (stage 3; the pause panel in the fight at the five layouts, in the boss e2e)
 - [x] The help card with the run's controls, the text about keepers and banking, and Begin the run
 - [x] The beacon card: the wick choice, Spend glim, Walk on
 - [x] The wick offer stored with the run, and a reload at the beacon card that shows the same two wicks
@@ -322,6 +322,7 @@
 - [x] Every boss attack dodged by a bot with no mistake that reads each wind-up 0.25 to 0.55 s after it starts
 - [x] The boss camera raises its pitch over the grave stones by the least that keeps its distance (to 1.1), and the arena check of 122 pairs in `gloam-downs-boss.test.mjs`
 - [x] Each boss wind-up looked at in its last third at 1280×720 and 390×844, with the boss camera on
+- [x] The phone's shard rings: the boss gives the camera four rim points of each ring as marks, and the raise takes the one that sees the most of them; over the arena each whole ring is inside the middle 94% of the width and under no control at 1280×720 and 390×844, and the ground hides 33 and 44 of 2928 rim points (211 and 254 with the centres alone). The boss e2e lets the boss camera settle 1.2 s before each wind-up's picture
 
 ### Sound
 - [ ] WebAudio cues made in code: tells, hits, hurt, glim, beacon, boss, heartbeat; start on the first press

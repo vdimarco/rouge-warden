@@ -4,11 +4,13 @@
 //   in view in its wind-up; a phase change stumbles the boss; the fall breaks it, and the light comes to the lantern; a reload after
 //   the fall goes on at the arena with the light, also when the boss files fail; the carried light lights the last beacon, the win card
 //   shows 1.8 s of game time later, and a reload before it shows it again with the wins counted once; and when the boss files fail,
-//   the loading screen shows Try again and Step back with ◀ Lab above it.
+//   the loading screen shows Try again and Step back with ◀ Lab above it. At the five layouts (390x844, 320x640, 360x640 and 800x600 on
+//   touch, 1280x720 and 800x600 with a mouse), the boss bar in the Lab bar row with the widest HUD and a long toast, and no overlap; the
+//   pause panel in the fight hides the bar, with no card button under it.
 // Takes pictures of the intro, each attack's wind-up and the fall at 1280x720 and 390x844 (SHOTS=<dir> keeps them). Software WebGL
 // draws about one frame a second, so the game steps with __gloam.tick and draws only for a picture.
 // Needs the site served: python3 -m http.server 8831 --bind 127.0.0.1 --directory public
-// Run: node qa/lab/gloam-downs-run.boss.e2e.mjs   (SITE_URL to point elsewhere)
+// Run: node qa/lab/gloam-downs-run.boss.e2e.mjs   (SITE_URL to point elsewhere, ONLY=fight|layout|fail)
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
@@ -16,6 +18,8 @@ import { existsSync } from 'node:fs';
 const { chromium } = createRequire(new URL('../browser/x.mjs', import.meta.url))('playwright');
 const SITE = (process.env.SITE_URL || 'http://127.0.0.1:8831').replace(/\/$/, '');
 const SHOTS = process.env.SHOTS;
+// ONLY=fight|layout|fail runs those parts (comma separated)
+const part = name => !process.env.ONLY || process.env.ONLY.split(',').includes(name);
 if (SHOTS) fs.mkdirSync(SHOTS, { recursive: true });
 const executablePath = existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined;
 const GL = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'];
@@ -85,14 +89,16 @@ const ATT = {
   lunge: { d: 7.5, behind: false, t: 0.55 },
   dsweep: { d: 2.6, behind: false, t: 1.3 }
 };
-// stand the lamplighter at a place relative to the boss, then hold the boss at t s of the attack
+/* stand the lamplighter at a place relative to the boss, then hold the boss at t s of the attack (a held boss does not hit), and let the
+   boss camera settle on that picture for 1.2 s, as it would in play: a teleport snaps the follow camera, and the boss camera eases its
+   aim, distance and raise over about a second */
 const stage = (page, name) => G(page, ({ name, a }) => {
   const g = window.__gloam, b = g.boss();
   const yaw = b.yaw + (a.behind ? Math.PI : 0);
   const x = b.x + Math.sin(yaw) * a.d, z = b.z + Math.cos(yaw) * a.d;
   g.teleport(x, z, Math.atan2(b.x - x, b.z - z));
   g.hold('B', name, a.t);
-  g.tick(0.05, {});
+  g.tick(1.2, {});
   return g.boss();
 }, { name, a: ATT[name] });
 
@@ -187,7 +193,7 @@ async function fight(viewport, touch, tag) {
 }
 
 /* ---------------- the desktop: the whole fight, the reloads and the win ---------------- */
-{
+if (part('fight')) {
   const { ctx, page, errors } = await fight({ width: 1280, height: 720 }, false, 'desktop');
   { // a reload after the fall, with the boss files failing: no loading screen, the arena, the light, no zone awake
     await ctx.route('**/worlds/boss.*', r => r.fulfill({ status: 404, body: '' }));
@@ -240,7 +246,7 @@ async function fight(viewport, touch, tag) {
 }
 
 /* ---------------- a phone held upright ---------------- */
-{
+if (part('fight')) {
   const { ctx, page, errors } = await fight({ width: 390, height: 844 }, true, 'phone');
   { // the light to the beacon: the win card shows 1.8 s of game time after the beacon lights, and not before
     const a = await G(page, () => {
@@ -262,8 +268,95 @@ async function fight(viewport, touch, tag) {
   await ctx.close();
 }
 
-/* ---------------- the boss files fail ---------------- */
+/* ---------------- the boss bar at the five layouts ----------------
+   In the boss fight, with the widest HUD (165/165, 5 of 5 flasks, 5/5 wisps, 254 glim) and a toast of 96 characters: the boss bar in the
+   Lab bar row between ◀ Lab and Games, at most 360 px on a touch screen and 520 px with a fine pointer (520 at 1280x720); #hud.boss with
+   the hint hidden and the HUD and tools inside the spec's rects; the HUD, toast, tools, touch buttons, Lab bar and boss bar on nothing
+   else and inside the screen. Then the pause panel in the fight: the boss bar hidden, and no card button under it or the Lab bar */
+const LONG = 'A toast of ninety-six characters, to check that a long line wraps under the HUD at every width.';
+const RECTS = { 320: [180, 88, 198], 360: [220, 88, 238], 390: [250, 88, 268], 800: [262, 91, 656], 1280: [262, 91, 1136] };
+function layoutFaults() {
+  const R = el => el.getBoundingClientRect();
+  const over = (a, b) => a.left < b.right - 0.5 && b.left < a.right - 0.5 && a.top < b.bottom - 0.5 && b.top < a.bottom - 0.5;
+  const inside = r => r.left >= -0.5 && r.top >= -0.5 && r.right <= innerWidth + 0.5 && r.bottom <= innerHeight + 0.5;
+  const shown = el => el && !el.hidden && el.getClientRects().length && getComputedStyle(el).visibility !== 'hidden' && +getComputedStyle(el).opacity > 0;
+  const parts = { lab: document.querySelector('.labbar .back'), games: document.getElementById('menu'), boss: document.getElementById('bossBar'), hud: document.getElementById('hud'), tools: document.getElementById('tools'), toast: document.getElementById('toast') };
+  for (const id of ['bAttack', 'bRoll', 'bHeal', 'bJump']) parts[id] = document.getElementById(id);
+  const out = [], rect = {};
+  for (const [k, el] of Object.entries(parts)) if (shown(el)) rect[k] = R(el);
+  const keys = Object.keys(rect);
+  keys.forEach((k, i) => {
+    if (!inside(rect[k])) out.push(`${k} outside the screen`);
+    if (!['hud', 'toast'].includes(k) && Math.min(rect[k].width, rect[k].height) < 44 - 0.01) out.push(`${k} under 44 px`);
+    keys.slice(i + 1).forEach(j => { if (over(rect[k], rect[j])) out.push(`${k} over ${j}`); });
+  });
+  if (document.scrollingElement.scrollWidth > innerWidth + 1 || document.scrollingElement.scrollHeight > innerHeight + 1) out.push('the page scrolls');
+  const r4 = r => r && [r.x, r.y, r.width, r.height].map(v => +v.toFixed(1));
+  return { out, boss: r4(rect.boss), hud: r4(rect.hud), tools: r4(rect.tools), lab: r4(rect.lab), games: r4(rect.games), cls: document.getElementById('hud').classList.contains('boss'), hint: shown(document.querySelector('#hud .hint')) };
+}
+function pauseFaults() {
+  const R = el => el.getBoundingClientRect();
+  const over = (a, b) => a.left < b.right - 0.5 && b.left < a.right - 0.5 && a.top < b.bottom - 0.5 && b.top < a.bottom - 0.5;
+  const bar = document.getElementById('bossBar'), out = [];
+  if (document.getElementById('pause').hidden) return ['no pause panel'];
+  if (!bar.hidden && getComputedStyle(bar).visibility !== 'hidden') out.push('the boss bar shows over the pause panel');
+  // where the bar stands in the fight, from its own style (hidden, it keeps its left and width)
+  const b = R(bar), under = [b, R(document.querySelector('.labbar .back')), R(document.getElementById('menu'))];
+  for (const x of document.querySelectorAll('#pause .box button')) {
+    if (x.hidden || !x.getClientRects().length) continue;
+    const r = R(x);
+    if (Math.min(r.width, r.height) < 44 - 0.01) out.push(`${x.id} under 44 px`);
+    if (under.some(u => u.width > 0 && over(r, u))) out.push(`${x.id} under the boss bar or the Lab bar`);
+  }
+  return out;
+}
 {
+  const sizes = {};
+  if (part('layout')) for (const [label, touch, list] of [['touch', true, [[390, 844], [320, 640], [360, 640], [800, 600]]], ['mouse', false, [[1280, 720], [800, 600]]]]) {
+    const { ctx, page, errors } = await open({ width: list[0][0], height: list[0][1] }, touch);
+    await bossIn(page);
+    // the widest HUD, then the intro and the fight
+    await G(page, () => { const g = window.__gloam; g.set({ up: { mantle: 3, flask: 2 }, wicks: ['long', 'oil'] }); for (let i = 0; i < 5; i++) g.wisp(i); g.set({ hp: 165, flasks: 5, carried: 254 }); });
+    const p = toward(10.5);
+    await G(page, p => { const g = window.__gloam; g.teleport(p.x, p.z, p.yaw); g.tick(0.1, {}); g.tick(2.8, {}); g.hold('B', 'sweep', 0.1); g.set({ hp: 165 }); }, p);
+    assert.equal((await G(page, () => window.__gloam.run().mode)), 'play');
+    assert.equal(await page.textContent('#hpN'), '165/165');
+    await G(page, t => window.__gloam.toast(t, 60000), LONG);
+    for (const [w, hgt] of list) {
+      await page.setViewportSize({ width: w, height: hgt });
+      await page.waitForTimeout(300);
+      const f = await G(page, layoutFaults);
+      const at = `${label} ${w}x${hgt}`;
+      assert.deepEqual(f.out, [], `the boss fight's HUD at ${at}`);
+      assert(f.boss, `the boss bar shows at ${at}`);
+      assert(f.cls && !f.hint, `#hud.boss with the hint hidden at ${at}`);
+      const [bx, by, bw, bh] = f.boss;
+      assert(by < f.games[1] + f.games[3] && by + bh > f.games[1], `the boss bar in the Lab bar row at ${at}`);
+      assert(bx >= f.lab[0] + f.lab[2] && bx + bw <= f.games[0], `the boss bar between ◀ Lab and Games at ${at}`);
+      assert(bw <= (touch ? 360 : 520) + 0.5, `the boss bar ${bw} px at ${at}`);
+      if (!touch && w === 1280) assert(Math.abs(bw - 520) < 0.5 && Math.abs(bh - 44) < 0.5, `the boss bar 520 by 44 at 1280x720 (${bw}x${bh})`);
+      const [hw, hh, tx] = RECTS[w], tw = w <= 520 ? 112 : 134;
+      assert(f.hud[0] >= 10 && f.hud[1] >= 60 && f.hud[0] + f.hud[2] <= 10 + hw + 0.5 && f.hud[1] + f.hud[3] <= 60 + hh + 0.5, `the HUD ${f.hud} in ${hw}x${hh} at ${at}`);
+      assert(f.tools[0] >= tx - 0.5 && f.tools[0] + f.tools[2] <= tx + tw + 0.5 && f.tools[3] <= 44.5, `the tools ${f.tools} at ${at}`);
+      sizes[at] = { bar: f.boss, hud: f.hud };
+      await shot(page, `layout-boss-${label}-${w}x${hgt}`);
+    }
+    // the pause panel in the boss fight, at each size
+    await G(page, () => document.getElementById('bMap').click());
+    for (const [w, hgt] of list) {
+      await page.setViewportSize({ width: w, height: hgt });
+      await page.waitForTimeout(150);
+      assert.deepEqual(await G(page, pauseFaults), [], `the pause panel in the boss fight at ${label} ${w}x${hgt}`);
+      await shot(page, `layout-boss-pause-${label}-${w}x${hgt}`);
+    }
+    if (errors.length) throw new Error(errors.join('\n'));
+    await ctx.close();
+  }
+  if (part('layout')) pass('the boss bar at the five layouts: in the Lab bar row between ◀ Lab and Games, 360 px or less on touch and 520 with a mouse; #hud.boss inside the spec\'s rects; no overlap with the widest HUD and a 96-character toast; hidden under the pause panel, with no card button under it', sizes);
+}
+
+/* ---------------- the boss files fail ---------------- */
+if (part('fail')) {
   const { ctx, page, errors } = await open({ width: 1280, height: 720 }, false, { failBoss: true });
   await page.waitForFunction(() => window.__gloam.boss()?.files === 'failed', null, { timeout: 60000 });
   const p = toward(14);
