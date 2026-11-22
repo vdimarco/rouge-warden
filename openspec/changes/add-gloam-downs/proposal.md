@@ -39,13 +39,15 @@ Then: "beautiful now can we turn this into a playable game?" So the walk becomes
 - The walk of today stays as **Wander**. It opens after the first win, or at once for a player who finished the walk before.
 - The HUD shows health, flasks, glim and a boss bar. Touch screens get Attack, Roll and Heal buttons. The Map tool pauses, and the Look tool faces the nearest foe.
 - Keys and gamepads get the same moves, and every card works with keys alone or a gamepad alone.
-- In a fight, the camera turns toward the foes when the player does not turn it. The player's look input always wins. Sound is made in code.
+- In a fight, the camera turns toward the foes when the player does not turn it. The player's look input always wins.
+- Sound and music, after the boss fight. The user asked: "MAKE IT FEEL POWERFUL WITH SOUND EFFECTS" and "AND FEEL GOOD". So every swing, hit, kill, roll, plunge and boss hit is a heavy, layered sound made in code, keyed to the move events, with a short duck of the music on big hits. Each attack has its own warning sound that starts with its tell.
+- A score for the run: a theme for each place in the dark dusk mood, a combat layer that comes in when a zone wakes and leaves when it sleeps, on bar lines, a boss theme that changes at each phase, stingers for a lit beacon, death and the win, and a Lamp-room theme. It plays a small sampled bank (six FluidR3_GM instruments, 500 KB or less, loaded after the first press) and voices made in code. The pause panel has a Sound switch and a Music switch.
 - Each place's splat file (`<id>.bin.gz`) and walk map (`<id>.walk.bin.gz`) do not change. Its `<id>.json` gains the zones.
 - Foes come from two shared baked files, and the boss from two more. These files do not count toward a place's 1.5 MB, which now counts the place's JSON too.
 - A new capability, `gloam-downs-run`. The explorer's requirements for wisps, the beacon, the end of the walk, the Map and the save now apply to Wander.
 
 ## Scope
-A Lab piece. The run adds enemies, combat and sound. Names, places, characters, enemies, items and the UI are original. No name, level layout, character, enemy, item, UI or exact look comes from Dead Cells or Super Mario 64.
+A Lab piece. The run adds enemies, combat, sound and music. No melody, motif or sound comes from another game. Names, places, characters, enemies, items and the UI are original. No name, level layout, character, enemy, item, UI or exact look comes from Dead Cells or Super Mario 64.
 
 The second place was called "Crow Ramparts", which shares a word with a Dead Cells biome. For originality, its display name is now "The Crow Wall". The id `ramparts`, its files, its bake, its order and its look stay. design.md records this under "The names and the order of the places".
 

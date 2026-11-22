@@ -363,7 +363,7 @@ Stage 3a built the boss fight, behind `?run`. These numbers were measured on thi
 - **The win.** When the last beacon lights, the page stores at once: the bank, `wins` plus 1, `bestWin`, `run` as null and the win's figures in `ended`. A reload before the win card closes shows the win card again. A reload in the 1.8 s before the card shows it at once.
 - **Run time.** It runs in play, and stops in cards, in the pause panel and at the win.
 - **A load of the page** opens the card that `cardOnLoad()` in `screens.js` gives: the summary if a run ended, else the help card on a first visit, the Lamp-room on a later visit with no run, the beacon card while an offer waits, or play.
-- **Pause.** The pause panel shows the run's places, its time, Resume, Sound on or Sound off (stored at once in `rs.sound`; stage 3 makes the sound), Back to the start and End the run, in that focus order. Back to the start asks again ("Back to the start of <place>? The glim you found here is lost."), and then restarts the place as a reload does. So a player stuck in a place has a way out that keeps the run.
+- **Pause.** The pause panel shows the run's places, its time, Resume, the Sound and Music switches (stored at once in `rs.sound` and `rs.music`; see "Sound and music"), Back to the start and End the run, in that focus order. Back to the start asks again ("Back to the start of <place>? The glim you found here is lost."), and then restarts the place as a reload does. So a player stuck in a place has a way out that keeps the run.
 - **The beacon card** shows the bank after the choice: "Banked: N glim. Spend it in the Lamp-room, or walk on." Spend glim and Walk on show only after the choice. The Lamp-room line reads "Banked: N glim. What you buy here lasts for every run." From Wander's Map (stage 3), the Lamp-room shows Back to Wander.
 - **Test hooks.** Software WebGL draws about one frame a second. So the e2e sets up each picture with hooks under `?test`:
   - `wake(zone)`;
@@ -375,6 +375,7 @@ Stage 3a built the boss fight, behind `?run`. These numbers were measured on thi
   - `go(id)`, which moves the run to the start of a place;
   - `light()`, which acts as a touch on the beacon, so it obeys the guard rule and the boss's light;
   - `sounds()`, a log of the cues with their game and play steps, so a test can check a sound with no speakers;
+  - `music()`, the score's state and a log of its changes, each with its bar line (stage 3b; see "Sound and music");
   - `post(x, z)` and `posts()`, a training post with health and no attack, and the hits on it;
   - `hurt(damage, from)`, a hit on the lamplighter as a foe's hit lands;
   - `project([x, y, z])`, the screen point of a world point in CSS px, or null behind the eye;
@@ -758,7 +759,7 @@ Most pages below were read through search extracts, because gamedeveloper.com, 8
 - **Markers fitted to the ground:** none fit. The usual answer is a projected decal, as in the Decal Projector of Unity's High Definition Render Pipeline. The Ink Studio renderer has no decal pass that reads depth. So each slice is a boned plane fitted to `walk.support`, which is our own method.
 - **Death into bone parts:** none fit beyond Nijman's marks that stay. It is our own.
 - **A page-made draw order:** none fit. It is our own test.
-- **Sound:** none fit. A few oscillator and noise envelopes in WebAudio, made in code.
+- **Sound and music:** see the sources in "Sound and music" at the end of this file.
 
 ### The names and the order of the places
 The user asked that no name be copied from Dead Cells. The reviews found three things that come close.
@@ -829,7 +830,7 @@ If time runs short, cut from the top, and change the spec to match:
 3. One wick, Close shave. Five wicks stay, so the fourth beacon offers the last two. Cut no second wick. If a build ever keeps only four, the fourth beacon offers the last wick and a fixed second choice: heal to full health. A full flask refill is no choice there, because every lit beacon fills the flasks.
 4. The grave candles.
 5. The wicks.
-6. Sound (the scrape, whistle and hum cues go; the visual tells stay).
+6. Music: first the boss phases (one boss layer stays), then the place themes' combat layers, then the sampled bank (the voices made in code play every part). Effects are not cut: the user asked for power from sound.
 
 ### What this replaces
 - "Speed" above: its step sentence now gives the fixed 1/60 s step (see The step).
@@ -845,4 +846,149 @@ If time runs short, cut from the top, and change the spec to match:
 - `screens.js` holds what each screen shows as pure functions, and `main.js` and `index.html` import `NUMERAL`, `NAMES` and `fmt` from it.
 
 ### Not checked
-Nothing ran on a real phone, a real graphics card or real speakers. The frame costs are ratios in SwiftShader and Node on this machine. The pacing comes from bots, not from players. The first build must check the frame time on a real phone at 46k art pixels with 6 foes awake. Stage 1's and stage 2's browser checks ran in SwiftShader only, with a mocked pad and CDP touches, and no real phone or speakers. Stage 2 has no sound yet: the pause panel's switch only stores the setting.
+Nothing ran on a real phone, a real graphics card or real speakers. The frame costs are ratios in SwiftShader and Node on this machine. The pacing comes from bots, not from players. The first build must check the frame time on a real phone at 46k art pixels with 6 foes awake. Stage 1's and stage 2's browser checks ran in SwiftShader only, with a mocked pad and CDP touches, and no real phone or speakers. Stage 3a has no sound yet: the pause panel's switch only stores the setting. "Sound and music" gives the design of stage 3b.
+
+## Sound and music
+The user asked for sound and music after the boss fight. After playing the boss build, the user wrote: "now add sound and music AND THE WEAPON ANNIMATIONS ARE NOT GOOD", "MAKE IT FEEL POWERFUL WITH SOUND EFFECTS", "AND LOOK FLUID" and "AND FEEL GOOD". So the first goal of the sound is power. Every swing, hit, kill, near miss, roll, plunge and boss hit must feel heavy and punchy. The music comes second. It sets the dark dusk mood, and it always sits under the effects. Another agent reworks the weapon animations at the same time. So every swing sound is keyed to a move event in the code, never to a fixed delay.
+
+### The choice
+- **Effects are made in code.** Every effect is a few oscillators, noise sources and filters in WebAudio, with no sound files, as the run spec already says. A sound made in code can follow the move's own timing, and it can vary on each play. It also costs no download.
+- **Music is a small sampled bank plus voices made in code.** We tried the idea of a score made only in code. Drones, bells, water and drums come out well in code. A bowed or plucked lead made in code sounds like a toy synthesizer, and that fights the gritty look. N64 games had the same limit and the same answer: a small bank of short compressed samples, played by a sequencer, with the pitch moved by the playback rate (the Ultra64 audio library, below). So we take six instruments from First Breath's FluidR3_GM set: harp (the pluck), strings (the bowed lead and pads), contrabass (the low drone), flute (the reed of Lantern Fen, played low, with breath noise), choir (Barrow Crown and the boss) and timpani (the slow pulses). The bells, the water, the wind, the drums and the drones are made in code.
+- **The bank** is copied to `public/lab/gloam-downs/audio/` with First Breath's license note (FluidR3_GM by Frank Wen, MIT; rendered by gleitz/midi-js-soundfonts, CC BY 3.0). We keep only the notes that the score plays, one sample every 4 semitones, so no note moves more than 2 semitones. The bank is 500 KB or less. It loads after the first press that starts the sound. It does not count toward a place's 1.5 MB or the 1.7 MB before play. Until the bank has loaded, or when it fails, a voice made in code plays each instrument's part (a filtered saw for strings, a decaying triangle for harp, a sine for choir, a pitched noise burst for timpani), as First Breath's `music.js` does.
+- **The N64 colour.** The music bus has a low-pass at 9 kHz and a short room made in code (a convolution with seeded noise). The samples are short, and long notes loop the middle of the sample. That gives the soft, slightly dull top of a cartridge score, with no copy of any game's sound.
+- **Only original material.** No melody, motif, rhythm or sound comes from Dead Cells, Super Mario 64 or any other game. The motifs below are our own.
+
+### The graph
+- `public/lab/gloam-downs/sound.js` holds the effects, and `music.js` holds the score engine. Both take an injected context, so a test renders them in an `OfflineAudioContext`. `main.js` builds the graph once, on the first press in a run.
+- The buses: effects voices go to the **effects bus**, and the score goes to the **music bus**, through the **duck gain**. Both buses go to the **master**: a high-pass at 35 Hz, a compressor (threshold −14 dB, ratio 4, attack 3 ms, release 120 ms), then a limiter (a compressor at −3 dB, ratio 20, attack 1 ms). Then the context's output.
+- Levels: the effects bus at 0 dB, the music bus at −12 dB. So in a fight the score sits about 8 LU under the effects (see Loudness).
+- Voices: at most 24 effect voices and 40 music voices at once. The oldest effect voice of the lowest rank goes first. A tell or a hit taken never gives way to glim or a card tick. A cue makes at most 8 nodes, and the nodes stop and disconnect when the cue ends.
+- **Phones.** On a coarse pointer the music bus is 3 dB lower, and the master's high-pass moves to 90 Hz, so the small speaker does not distort on the sub. The body of every hit therefore also has harmonics from 150 to 400 Hz (a soft clip of the thump), as First Breath gives her heart a 2nd and 3rd harmonic so that phone speakers carry it.
+
+### Timing
+- **Cues follow the game clock.** The runner already logs each cue with its game step and play step. A frame can run up to 15 steps. The sound lays the cues of a frame at the context time of the frame plus 1/60 s for each step after the frame's first step, capped at 0.25 s. So a cue keeps its order and its spacing at 30, 60, 120 and 144 Hz and in `?test`.
+- **The swing is keyed to the move.** The `swing` cue carries the move's wind-up and active steps (`wind`, `act`) and its hit id. The whoosh rises over the wind-up, peaks on the first active step and falls over the active time. If the moves change, the sound follows them. A roll that cancels a wind-up stops the whoosh with a 20 ms fade. The `plunge` cue carries the hang. The `land` cue is the landing.
+- **Hit stop and sound.** A hit's body lasts about as long as its hit stop (3 steps for a cut, 5 for the finisher, 6 for a boss slam, 9 for a phase change or death). So the thump fills the frozen frames, the crunch lands on the first of them, and the ring decays after the game moves on. The sound does not stop in hit stop.
+- **Music** uses the lookahead of Chris Wilson's "A Tale of Two Clocks": a 25 ms timer lays the notes of the next 150 ms plus the output latency on the context clock. A note that is more than 20 ms late is dropped. After a stall of more than 1 s, a hidden page or a pause, the notes laid ahead are cancelled, and the score goes on at the next bar line. First Breath's `music.js` uses the same scheme.
+
+### Power: how a hit is built
+Each hit is three layers that start on the same sample, so they fuse into one event (the sources on layered impacts, below):
+1. **Body.** A sine with a fast pitch drop and a soft clip, from about 0 to 150 Hz plus its harmonics: the weight. It is the kick drum recipe of Chris Lowis's "Synthesising Drum Sounds with the Web Audio API".
+2. **Crunch.** Noise through a band-pass at 1 to 4 kHz with a 2 to 6 ms attack and a short decay: the transient, which the ear reads as the hit itself.
+3. **Tick or ring.** A bright noise click over 5 kHz, or for metal a few inharmonic sines (the Ironback's bell shell, the boss's crook): the edge.
+
+| Cue | Body: from Hz to Hz, time | Crunch | Tick or ring | Peak, effects bus | Music duck |
+|---|---|---|---|---|---|
+| cut 1, cut 2 | 150 to 60, 50 ms | 1.8 kHz, 40 ms | click 7 kHz, 15 ms | −5 dB, cut 2 at −4 dB and 3% lower | −2 dB |
+| finisher | 120 to 42, 85 ms, plus a 30 Hz sub | 1.4 kHz, 70 ms, a second grain 30 ms later | ring 2.6 kHz, 250 ms | −1 dB | −4 dB |
+| plunge landing | 100 to 35, 120 ms | 900 Hz, 90 ms, gravel noise | click 6 kHz | 0 dB, +1 dB per metre fallen over 1 m, to +3 | −4 dB |
+| a foe put out (`out`) | 90 to 30, 160 ms | the foe's material, 120 ms | ember hiss 6 to 9 kHz, 400 ms | 0 dB | −5 dB |
+| hit taken (`hurt`) | 80 to 40, 110 ms, low-passed at 1 kHz | dull 600 Hz | none: the hit taken is darker than a hit landed | −1 dB, 0 dB at 20 damage or more | −5 dB |
+| boss slam, Ironback slam | 70 to 25, 220 ms, plus a 28 Hz sub | rubble 500 Hz to 2 kHz, 250 ms | none | 0 dB, the loudest cue | −6 dB |
+| boss phase change (`stumble`) | 60 to 25, 300 ms | a crack, 3 grains | the cage rings, 1.8 s | 0 dB | −8 dB, then the next phase |
+| boss fall | 55 to 20, 500 ms | a long crack | the light's tone | 0 dB | the score stops |
+
+- **Material.** The crunch takes the target's material: soot and cloth for the Snuffer (band-pass 1.2 kHz, wide), feathers and pitch for the Pitchrook (a hiss with a flutter), flame for the Mirelight (a breathy roar, no body), bell bronze for the Ironback (a ring of 5 inharmonic partials over 1.2 s), and earth and roots for the Barrow Reeve. A training post is wood.
+- **Heavy hits get more.** The finisher, the plunge, a kill and every boss hit add the sub layer and a longer tail. A kill also plays a short ember burst, in time with the spark burst.
+- **The string grows.** Cut 1, cut 2 and the finisher rise in weight: cut 2 is 1 dB louder than cut 1 and 3% lower, and the finisher is 4 dB louder than cut 1 with a lower body.
+- **Variation.** Each cue has 4 variants, picked as a shuffle with no variant twice in a row. Each play also moves pitch by up to ±4% and level by up to ±1.5 dB, from the run's seed. Unity's Random Container gives the shuffle; the pitch range is from the forum notes below. Tells vary by ±2% only, so the player learns them.
+- **The duck.** A duck takes the music down in 10 ms, holds for the hit stop and comes back over 250 ms. A new duck takes the deeper of the two. This is a small form of the "loudest sound wins" idea of DICE's HDR audio.
+- **Space and distance.** Foe cues are panned by their bearing from the camera (±0.6), and they fall 6 dB for each doubling of distance past 4 m, to −18 dB at 16 m. A tell never falls below −10 dB, so a foe behind the player is still heard. That goes with the off-screen notches.
+
+### The cues
+Each name below is the cue name that the code emits today and logs in `__gloam.sounds()`. The build changes one name: the Ironback's charge tell is `paw`, no longer `scrape`, so each warning move has its own sound.
+
+**The lamplighter**
+- `swing`: a blade whoosh, band-passed noise that sweeps from 600 Hz to 3 kHz over the wind-up and peaks on the first active step. The finisher's whoosh is wider and lower (400 Hz to 2 kHz), with a cloth flap at its start.
+- `hit`: the layered hit above, for the hit id and the target's material.
+- `roll`: a cloth whoosh of 0.3 s (low-passed noise, 300 Hz to 1.2 kHz) and a foot scuff at its end.
+- `miss`: a near miss in the roll's safe time. A short reversed whoosh and a bright glass tick at 4 kHz. With Close shave, a rising fifth on the tick says that the next hit is stronger. The game has no parry. If a later stage adds one, it gets its own cue `parry`.
+- `plunge`: a short rising air hiss over the hang. `land`: the plunge landing above.
+- `drink`: a cork and two glugs (a filtered pulse at 90 to 140 Hz). `heal`: a warm two-note chime at its end, in the key of the place's theme.
+- `hurt`, `fall` (a falling wind and the landing thump) and `death`: a low drop, then a single toll made in code. The score stops on `death`.
+- `beat`: the heartbeat below 30% health, every 55 steps: two soft thumps (55 then 45 Hz, with harmonics), 0.18 s apart.
+
+**Pickups and the beacon**
+- `glim`: a tiny bell tick at about 2.5 kHz, −18 dB. Each glim within 0.4 s of the last goes one step up a pentatonic scale, from the place's key, up to 8 steps. After a gap it starts again at the bottom. At most 4 glim voices sound at once.
+- `wisp`: a soft two-note rise, a fourth apart.
+- `beacon`: a fire whoosh (noise, low-pass rising from 200 Hz to 6 kHz over 0.6 s), a low boom, then the beacon stinger of the score.
+
+**Foes and their tells** (a tell starts on the first step of the wind-up, with the pose and the glow)
+- Snuffer: `scrape`, iron on stone, a noise band at 2.2 kHz with a rough tremolo, over the wind-up.
+- Pitchrook: `whistle`, a sine that rises from 900 Hz to 2.4 kHz over the wind-up, with a little noise. `coal`: a hiss and a thud where the coal lands.
+- Mirelight: `hum`, from 220 to 440 Hz over the wind-up, as the foe table says, with a breathy tone. `pulse`: a soft roar and a body at the ring.
+- Ironback: `paw`, two heavy hoof scrapes, low (800 Hz) and slow. `charge`: a rumble that follows the charge. `rear`: a deep bronze groan for the slam's tell. `slam`: the slam above. `clang`: a wall stun, a big bell clang with a 1.5 s ring.
+- A zone: `cracks`, an ember crackle (random clicks in band-passed noise) for the 0.6 s of the cracks. `rise`: earth that crumbles, as the foes rise.
+- `out`: a foe put out, the layered kill above.
+
+**The Barrow Reeve**
+- `reeve`: the intro. A deep drone in code and a choir swell under the arrival card.
+- `bossBar`: a low strike as the boss bar shows.
+- `crook` (sweep tell): an iron drag that rises in pitch over the wind-up. `sweep`: the sweep's hit, a wide whoosh and a heavy iron ring. In the double sweep, each sweep has its own `crook` and `sweep`.
+- `cage` (slam tell): the ribs rattle (fast clicks) and a rising tone. `slam`: the boss slam above.
+- `chime` (lamp-shards tell): three glass chimes, one for each ring. `shards`: the release. `shard`: each landing, a glass crack.
+- `crouch` (lunge tell): a low growl that rises. `lunge`: the lunge's rush.
+- `stumble`: the phase change above. `fall`: the boss's fall above. `light`: a pure choir tone as the light rises and rides at the lantern.
+
+**Cards and the pause panel**
+- New cues for the cards: `card`, a soft low tick when a card opens; `focus`, a quiet tick at 1.6 kHz when the focus moves; `choice`, a short harp pluck for a wick, Walk on or Begin the run; `buy`, a pour of glim ticks; `refuse`, a dull thunk for a buy the bank cannot pay for.
+- The pause panel stops the effects. The score goes on, low-passed to 600 Hz and 8 dB down, while the panel shows.
+
+### The music
+Every theme is in bars of 1.9 to 3.0 s, so a change waits less than one bar.
+
+| Theme | Key, metre, tempo, bar | Explore layer | Combat layer |
+|---|---|---|---|
+| The Sunken Gaol | D Phrygian, 4/4, 92, 2.61 s | a contrabass drone on D, a slow chain clank in code on beat 1, a bowed strings motif of 4 notes every 4 bars, a dripping harp note | low toms in code on the off-beats, a strings ostinato of eighths, timpani on 1 and 3 |
+| The Crow Wall | E Aeolian, 3/4, 96, 1.88 s | wind in code, a strings drone on E and B, a harp figure in fourths | a frame drum in a 3/4 gallop, low strings on each beat |
+| Lantern Fen | C♯ Dorian, 4/4, 84, 2.86 s | water in code (lapping noise and drips), the reed (flute, low and breathy), a harp pluck | a hand drum, a harp ostinato, a contrabass pulse |
+| The Bell Knoll | F Aeolian, 3/4, 72, 2.50 s | bells in code (FM, inharmonic) as the lead, a toll on bar 1 of every 4 bars, a strings pad | timpani and toms, strings tremolo |
+| Barrow Crown | A Locrian, 4/4, 80, 3.00 s | a choir pad, a low drone, wind, a sparse harp | low toms and a timpani pulse |
+| The Barrow Reeve | B Phrygian, 4/4, 100, 2.40 s (phase 3 at 112, 2.14 s) | (the boss theme has no explore layer) | phase 1: a timpani pulse on each beat, a low strings ostinato, choir chords. Phase 2: adds toms in eighths and a harp ostinato, and the strings motif moves up a fourth. Phase 3: the tempo goes to 112, every layer plays, and bells join |
+| The Lamp-room | D Dorian, 3/4, 60, 3.00 s | a warm harp and low strings, quiet | none |
+
+- **Vertical layers.** Each place's theme has its explore layer and its combat layer, made to play together (vertical remixing, as Winifred Phillips describes it). Only the layer gains change; the bars never jump.
+- **Combat comes in on the beat.** When a zone wakes, the combat layer starts on the next beat with a one-beat pickup (a tom fill), and it is at full level on the next bar line. A guard zone adds a third percussion part.
+- **Combat leaves on the bar.** When no zone is awake, or every awake foe is put out, the combat layer waits 2 s. Then it fades out over one bar, from the next bar line. A wake in that wait keeps it. So a fight that stops and starts does not flap the music.
+- **The boss.** The intro stops the place's theme. One bar of silence, under the arrival card, then the `reeve` drone. The boss theme starts on the next bar line after the boss bar shows. A phase change plays its hit at once, and the next phase's layers begin on the next bar line, inside the 2.0 s stumble. At the boss's fall, the score stops. Then 2.5 s of silence, with only the `light` tone, and a quiet choir drone while the light is carried.
+- **Stingers.** The beacon stinger (a rising harp arpeggio, a bell, a choir swell, 3 s, in the place's key) plays over the theme, which fades out under it. The death stinger (a timpani roll that falls and a strings fall, 3 s) plays on `death`, and then there is silence through the fade to ink. The win stinger is 6 s of bells and choir, and it has the first major chord in the score: the light is home.
+- **The Lamp-room and the cards.** The Lamp-room theme plays in the Lamp-room, in the run summary after 2 s of silence, and on the beacon card. The win card holds the end of the win stinger and then the Lamp-room theme.
+- **Silence that serves the mood.** Each place starts with its sounds in code only (wind, water, drips, wind in the stones) for the arrival card. The theme starts on the first bar after the card closes. Low health low-passes the score to 900 Hz and takes it 3 dB down, so the heartbeat leads.
+- **Wander and the explorer** make no sound and make no `AudioContext`. A Lamp-room opened from Wander's Map makes no sound until the player begins a run or goes on with one.
+
+### The switches and the first press
+- The pause panel has two switches, Sound and Music, in their own row under Resume. Each reads "on" or "off", and each is stored at once in the run's save, as `rs.sound` and `rs.music`. Sound off silences the effects. Music off silences the score. Both off suspend the context.
+- The context is made on the first key, click or tap in a run (Begin the run on the Lamp-room, the help card's button, or the first press in play after a reload). A gamepad press is not a user gesture to the browser, so with a gamepad alone the sound starts on the first key, click or tap. Until then, the pause panel's Sound line reads "Sound on (starts on a key or tap)".
+- `/arcade/quiet.js` is the page's first script. It suspends the context while the page is hidden. The score lays no notes while hidden, and it goes on at the next bar line when the page shows.
+
+### Loudness
+The targets come from Sony's Audio Standards Working Group and ITU-R BS.2434: about −24 LUFS integrated for a console, and −18 LUFS for a portable device, with a true peak of −1 dBTP. A browser game on a laptop or a phone is closer to a portable device, so we take the portable target.
+- **A fight** (the demo's scripted 40 s fight in the Gaol, with every hit, a kill, a hit taken and the music): −18 ±2 LUFS integrated, true peak −1 dBTP or lower.
+- **The music alone** in the same render: at least 8 LU under the effects alone (integrated, each measured on its own bus render).
+- **Each theme** for 8 bars with combat on: −28 ±3 LUFS integrated at the music bus level.
+- **The string:** the finisher's momentary maximum is at least 3 LU over cut 1's. A kill and a boss slam are at least 3 LU over cut 1's, and the boss slam is the loudest cue.
+- **Three layers in a hit:** in the first 120 ms of each hit cue, the energy below 150 Hz, from 1 to 4 kHz and over 5 kHz is each within 15 dB of the loudest of the three.
+- **Phones:** the same fight render with the coarse-pointer mix is −18 ±2 LUFS integrated.
+
+### The demo and the checks
+- `qa/lab/gloam-downs-sound-demo.mjs` (`DEMO=<dir>`, the system temp folder by default) renders in Chromium's `OfflineAudioContext` and writes mp3s with `/usr/bin/ffmpeg`: each cue (and each of its 4 variants for the hit cues), each place's theme for 8 bars of explore, 4 bars of the combat layer coming in and 4 bars of it going out, each boss phase, each stinger, the Lamp-room theme and the scripted fight, both mixes. It writes `loudness.json` with ffmpeg's `ebur128` figures (integrated, momentary maximum, true peak) for each file.
+- `qa/lab/gloam-downs-sound.test.mjs` (Node): every cue that the code can emit has a recipe; the shuffle never plays a variant twice in a row; the bar maths; the scheduler on a fake clock (notes 150 ms ahead, a late note dropped, a stall resumed on a bar line); the cue times of a frame of many steps; the combat layer's enter and leave rules; the settings in the save.
+- `qa/lab/gloam-downs-sound.e2e.mjs` (browser): the renders and the loudness and band figures above, the sound log and the music log, the swing keyed to the wind-up, the duck, both switches and their save, the first press, and no `AudioContext` in Wander or the explorer.
+- `qa/arcade/quiet.mjs` gets a `lab/gloam-downs` entry in `PAGES` that starts the sound as a player does: `?run&fresh`, close the help card with a tap, with `music: true`.
+
+### Sources
+- **Lookahead scheduling:** Chris Wilson, "A Tale of Two Clocks: Scheduling Web Audio with Precision", HTML5 Rocks, 2013, now at https://web.dev/articles/audio-scheduling (web.dev did not resolve in this session, so it was read through search extracts; the IRCAM tutorial https://ircam-ismm.github.io/webaudio-tutorials/scheduling/timing-and-scheduling.html gives the same rule, that the timer's period is less than the lookahead). The house version is First Breath's `ui/music.js` and `ui/sound.js`.
+- **Vertical layers and changes on musical lines:** Winifred Phillips, "Hybrid horizontal/vertical structure for game music composers: from Spyder to Sackboy", GDC 2021, https://www.gamedeveloper.com/game-platforms/hybrid-horizontal-vertical-structure-for-game-music-composers-from-spyder-to-sackboy-gdc-2021-, and "Horizontal resequencing and dynamic transitions", same series, https://www.gamedeveloper.com/audio/horizontal-resequencing-and-dynamic-transitions-for-game-music-composers-from-spyder-to-sackboy-gdc-2021- (search extracts). "Adaptive music", Wikipedia, https://en.wikipedia.org/wiki/Adaptive_music. The beat pickup and the 2 s wait before the combat layer leaves are our own.
+- **Hits in layers:** "How to Design Weapon Sounds for Games", Violet Recording, https://violetrecording.com/how-to-design-weapon-sounds/ (a transient, a body and a tail, aligned to one instant); Lior Tega, "First person shooter gun sound design", https://www.liortega.com/post/first-person-shooter-gun-sound-design (sub, body and mech layers); "Transmodality in game sound design", A Sound Effect, https://asoundeffect.com/transmodality-game-sound-design (a thump for the resistance of the target). Read through search extracts; no author was in the first.
+- **The kick body with a pitch drop:** Chris Lowis, "Synthesising Drum Sounds with the Web Audio API", Dev.Opera, https://dev.opera.com/articles/drum-sounds-webaudio (the author from the Sonoport post that cites it, https://sonoport.github.io/synthesising-sounds-webaudio.html; search extracts).
+- **Sounds from noise and envelopes:** Boris Smus, "Web Audio API", O'Reilly 2013, chapter 6, https://www.oreilly.com/library/view/web-audio-api/9781449332679/ch06.html (a gunshot from a noise buffer); jsfxr by Chris McCormick, https://github.com/chr15m/jsfxr (the sfxr presets as a set of envelope and slide parameters). We take the method, not the presets or their sound.
+- **Variation:** Unity documentation, "Audio Random Container", https://docs.unity.com/en-us/engine/6000.3/manual/audio/random-container/ui (shuffle, avoid the last); "How to avoid the machine gun effect using round-robin sampling", MusicRadar, https://musicradar.com/tuition/tech/how-to-avoid-the-machine-gun-effect-using-round-robin-sampling-632302. The ±4% pitch is inside the 0.9 to 1.1 range of the forum notes found with them.
+- **The duck:** Anders Clerwall, "How HDR Audio Makes Battlefield: Bad Company Go BOOM", GDC 2009, https://www.ea.com/frostbite/news/how-hdr-audio-makes-battlefield-bad-company-go-boom, and "Finding your way with high dynamic range audio in Wwise", Designing Sound, https://designingsound.org/2013/06/finding-your-way-with-high-dynamic-range-audio-in-wwise/ (search extracts). Our duck is a fixed gain per cue, not a full HDR mix.
+- **N64 sample banks:** Nintendo, "Nintendo 64 Programming Manual", chapters 17 and 20 (the audio library and its overview), https://ultra64.ca/files/documentation/online-manuals/man-v5-1/pro-man/pro20/20-01.htm; N64brew wiki, "SGI Audio Tools", https://n64brew.dev/wiki/SGI_Audio_Tools; RetroReversing, "N64 Sound", https://retroreversing.com/n64sound (sequenced music on a small bank of ADPCM samples, synthesized by the CPU and RSP). We take the idea, a small bank and a sequencer, not any sound.
+- **Loudness:** Garry Taylor in "Video games and loudness standards", Designing Sound, 2012, https://designingsound.org/2012/07/30/video-games-and-loudness-standards-interview-with-sonys-garry-taylor/; "Different loudness ranges for console and mobile games", Designing Sound, 2013, https://designingsound.org/2013/02/different-loudness-ranges-for-console-and-mobile-games/; ITU-R Report BS.2434 (2018), https://www.itu.int/dms_pub/itu-r/opb/rep/R-REP-BS.2434-2018-PDF-E.pdf; Audiokinetic, "Mastering a Game with Wwise, Part 1", https://audiokinetic.com/en/mastering-a-game-with-wwise-part1. Read through search extracts.
+- **Samples:** FluidR3_GM by Frank Wen (MIT), rendered by gleitz/midi-js-soundfonts, https://github.com/gleitz/midi-js-soundfonts (CC BY 3.0), as `public/first-breath/audio/score/README.md` records.
+- **The house rules:** `public/arcade/quiet.js` and `qa/arcade/quiet.mjs`; First Breath's `music-demo.mjs`, `music-engine.test.mjs` and `sound.e2e.mjs` for the demo and the checks.
+- **Bells in code, water, wind, the glim scale, the material table, the tells' sounds and every motif:** none fit as a published source. They are our own.
+
+### Not checked
+These are design numbers. No speakers, headphones or phone played them in this session. The build must listen to the demo's mp3s and tune the levels by ear, then measure again and write the figures here.
