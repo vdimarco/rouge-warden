@@ -6,20 +6,21 @@
 import { createRenderer } from './ink/webgl/renderer.mjs';
 import { makeCamera as viewCamera } from './ink/webgl/view.mjs';
 import { loadPlace } from './world.js';
-import { makeWalk, makeBody, makeCamera, camLayout, pose, touches, atBeacon, PARAMS, makeFade, fadeOf, eyeOf } from './play.js';
-import { makeCombat, makeMoveLock, asFoes } from './cameras.js';
+import { makeWalk, makeBody, makeCamera, camLayout, pose, touches, atBeacon, autoTurn, PARAMS, makeFade, fadeOf, eyeOf } from './play.js';
+import { makeCombat, makeMoveLock, asFoes, makeBossCam, yawDiff } from './cameras.js';
 import { ORDER, load, store, wispCount, fresh } from './save.js';
 import * as RS from './run-save.js';
 import { STEP, stepCount, startRun, reload, goTo, chooseWick, buy, maxOf, flasksOf, makeRunner, newSeed, WICKS } from './run.js';
-import { nearest, faceYaw, makePost, HITS } from './moves.js';
-import { NUMERAL, NAMES, fmt, stepsOf, INK, inkAt, TIMED, hudOf, wickLine, wickName, upgradeRows, lampButtons, summaryOf, routeOf, ASKS, cardOnLoad } from './screens.js';
+import { nearest, faceYaw, makePost, HITS, clearLine } from './moves.js';
+import { NUMERAL, NAMES, fmt, stepsOf, INK, inkAt, TIMED, hudOf, wickLine, wickName, upgradeRows, lampButtons, summaryOf, winOf, routeOf, ASKS, cardOnLoad } from './screens.js';
 import { makeInput, navStep, readPads, heldNav } from './input.js';
 import * as cards from './cards.js';
 import { makePool } from './pool.js';
 import { figures, poolFor, lineup, LINEUP } from './figures.js';
-import { findVeils, makeVeils } from './veil.js';
+import { findVeils, makeVeils, findOccluders, makeOccluders, VEIL } from './veil.js';
 import { makeCut, CUT } from './cut.js';
 import { makeFight, SPARKS } from './fight.js';
+import { REEVE, REEVE_TEXT } from './boss.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('view'), loading = $('loading'), loadLine = $('loadLine'), barFill = $('barFill'), bar = $('bar');
@@ -47,7 +48,7 @@ let renderer = null, place = null, walk = null, body = null, cam = null, world =
 let mode = 'loading', paused = false, lost = false, last = 0, time = 0, frames = 0, acc = 0, steps = 0;
 let artTarget = TARGET[q.get('q')] || (coarse ? 46000 : TARGET.mid), adapt = !q.has('q');
 let art = { w: 320, h: 200, s: 1 };
-let cut = null, lampFade = null, pendingRows = new Set(), fogNear = 10, beaconLit = false, arriveTimer = 0, toastTimer = 0, slowFor = 0, pool = null, slots = null, veils = null;
+let cut = null, lampFade = null, pendingRows = new Set(), fogNear = 10, beaconLit = false, arriveTimer = 0, toastTimer = 0, slowFor = 0, pool = null, slots = null, veils = null, occluders = null;
 const intervals = [];
 // the run: the sound cues logged across places, the effects' flags (each can be turned off with __gloam.fx), what the effects give
 // this frame, training posts (?test), the fight in this place (fight.js) and the foes' targets
@@ -57,6 +58,10 @@ const fxNow = { kick: [0, 0, 0], zoom: 1, bars: 0 };
 const posts = [];
 let foeTargets = () => [], fight = null;
 let sinceStore = 0, endAt = 0;
+/* the boss files: they load during The Bell Knoll, or after play starts in Barrow Crown, and stay. bossFile once they are in, bossLoad
+   while they come, bossFail when they did not; bossWaiting while the game waits for them at 11 m from the arena. lastFar is the last
+   point of the lamplighter's path 13 m or more from the arena's centre, where Step back puts it */
+let bossFile = null, bossLoad = null, bossFail = null, bossWaiting = false, bossCam = null, lastFar = null;
 // ?run&lineup without ?test: one of each foe and the Barrow Reeve stand in a row and play each of their moves in turn, to look at
 let gallery = null;
 function startGallery() {
@@ -72,13 +77,26 @@ function stepGallery() {
 }
 const targets = () => [...posts.filter(p => p.alive), ...foeTargets()];
 // what the cameras need from a fight: the awake foes (home: standing at home; homing: walking home; rising) and the blade's target
-const fightView = () => (fight ? { foes: fight.foes.awake(), target: fight.foes.target() } : { foes: [], target: null });
+const fightView = () => (fight ? { foes: fight.foes.awake(), target: fight.foes.target(), boss: fight.boss?.fighting() ? fight.boss.camView() : null } : { foes: [], target: null });
 /* what the combat camera turns toward: the training posts (?test), and the awake foes of the fight (or, with no fight, the targets that
-   a test hands the page with setTargets). A foe at home, walking home or sinking is never its foe */
+   a test hands the page with setTargets). A foe at home, walking home or sinking is never its foe. Outside the arena, within 16 m
+   of its centre, the boss is its foe at any distance while the fight has started and the boss is up */
 const awake = () => [
   ...asFoes(posts.filter(p => p.alive)),
-  ...(fight ? fightView().foes.map(f => ({ id: f.id, x: f.x, y: f.y, z: f.z, home: f.home || f.homing || f.state === 'sink' })) : asFoes(foeTargets()))
+  ...(fight ? fightView().foes.map(f => ({ id: f.id, x: f.x, y: f.y, z: f.z, home: f.home || f.homing || f.state === 'sink' })) : asFoes(foeTargets())),
+  ...(fight && body ? fight.bossFoe(body.s) : [])
 ];
+// in a run, the camera's turn hook: in the boss fight the boss camera's turn goes before the combat camera's
+const runTurn = (c, s, dt, looked) => (bossCam ? bossCam.turn(c, s, dt, looked) : false) || (combat ? combat.turn(c, s, dt, looked) : false);
+// in the boss intro the view turns toward the boss (no faster than the boss camera, and not with reduced motion); look input wins, and
+// as for the run's cameras it never turns while the mouse is taken or a move across the view is held (play.js autoTurn)
+const introTurn = (c, s, dt, looked) => {
+  const B = fight?.boss;
+  if (still || looked || !B || !autoTurn({ ...c, auto: true }, 0)) return true;
+  const d = yawDiff(c.yaw, s, B), stop = 10 * Math.PI / 180;
+  if (Math.abs(d) > stop) { c.yaw += Math.sign(d) * Math.min(1.5 * dt, Math.abs(d) - stop); c.turning = true; }
+  return true;
+};
 
 /* ---------------- the art size: a small picture scaled up by a whole number ---------------- */
 function sizeArt() {
@@ -90,7 +108,7 @@ function sizeArt() {
 }
 // the camera's framing for this window (play.js camLayout): a tall screen keeps its width of view, so it still sees 4 m to each side
 const layoutNow = () => camLayout(innerWidth, innerHeight);
-addEventListener('resize', () => { sizeArt(); if (cam) cam.layout(layoutNow()); });
+addEventListener('resize', () => { sizeArt(); if (cam) cam.layout(layoutNow()); placeBossBar(); measureScreen(); });
 
 /* ---------------- input ---------------- */
 const jumpBtn = $('bJump'), stickEl = $('stick'), actBtns = [$('bAttack'), $('bRoll'), $('bHeal')];
@@ -182,6 +200,38 @@ function lookAhead() { if (cam && body) { cam.c.yaw = body.s.yaw + Math.PI; cam.
 
 /* ---------------- the HUD and the cards ---------------- */
 const hud = $('hud'), tools = $('tools');
+/* the boss bar: in the Lab bar row, between ◀ Lab and Games. On a touch screen it runs from 8 px right of ◀ Lab to 8 px left of Games,
+   at most 360 px wide; with a fine pointer it is centred between them, at most 520 px. It hides while a card shows (index.html) */
+function placeBossBar() {
+  const el = $('bossBar');
+  if (!RUN || el.hidden) return;
+  const a = document.querySelector('.labbar .back').getBoundingClientRect(), g = $('menu').getBoundingClientRect();
+  const left = a.right + 8, room = g.left - 8 - left, w = Math.max(0, Math.min(coarse ? 360 : 520, room));
+  el.style.width = `${w}px`;
+  el.style.left = `${coarse ? left : left + (room - w) / 2}px`;
+}
+function fillBossBar() {
+  const B = fight?.boss;
+  if (B) $('bossFill').style.width = `${((B.hp / B.max) * 100).toFixed(1)}%`;
+}
+function bossBar(on) {
+  if (!RUN) return;
+  $('bossBar').hidden = !on;
+  // in the boss fight the hint hides, so the HUD fits the rects the boss camera keeps clear
+  hud.classList.toggle('boss', on);
+  placeBossBar();
+  fillBossBar();
+  measureScreen();
+}
+/* what the boss camera keeps clear: the screen, the Lab bar row's bottom, and the rects of the HUD, the tools and the touch buttons as
+   the page lays them out (in each of the five layouts they lie inside the spec's rects of "The HUD in the boss fight") */
+const bossScreen = { w: 1280, h: 720, bar: 52, rects: [] };
+function measureScreen() {
+  bossScreen.w = innerWidth;
+  bossScreen.h = innerHeight;
+  bossScreen.bar = $('menu').getBoundingClientRect().bottom || 52;
+  bossScreen.rects = [hud, tools, jumpBtn, ...actBtns].filter(el => !el.hidden).map(el => el.getBoundingClientRect()).filter(r => r.width > 0).map(r => [r.left, r.top, r.width, r.height]);
+}
 function showHud(on) {
   hud.hidden = tools.hidden = !on;
   jumpBtn.hidden = !(on && coarse);
@@ -241,6 +291,17 @@ function arrive() {
   clearTimeout(arriveTimer);
   if (RUN) arriveLeft = stepsOf(still ? 2400 : 3200);
   else arriveTimer = setTimeout(() => a.classList.add('off'), still ? 2400 : 3200);
+}
+// the boss intro's card: three lines, for the 2.4 s of the intro
+function arriveBoss() {
+  const [n, name, sub] = REEVE_TEXT.card;
+  $('arriveN').textContent = n;
+  $('arriveName').textContent = name;
+  $('arriveSub').textContent = sub;
+  toastLeft = 0;
+  $('toast').classList.remove('on');
+  $('arrive').classList.remove('off');
+  arriveLeft = REEVE.intro;
 }
 // the controls for the input in use: the pad once the page has seen one, else touch on a touch screen, else the keys and the mouse
 const CONTROLS = {
@@ -420,8 +481,8 @@ $('bSpend').addEventListener('click', () => { hideCard('beaconCard'); openLamp('
 /* the Lamp-room: the bank, the five lasting upgrades with Buy, and Begin the run. From a beacon card it shows Back to the beacon in
    place of Begin the run and Wander; with a run in progress, Go on with the run. A buy stores the run at once */
 const LAMP = { back: 'bLampBack', begin: 'bLampBegin', goon: 'bLampGoOn', wander: 'bLampWander', toWander: 'bLampToWander' };
-// stage 3 opens Wander after the first win or a finished explorer walk, and builds it behind ?wander
-const wanderOpen = () => false;
+// Wander opens after the first win, or for a player whose explorer save shows a finished walk (Wander itself is built behind ?wander)
+const wanderOpen = () => rs.wins > 0 || save.done >= 1;
 const toWander = () => location.assign('./?wander');
 function openLamp(from = null) {
   const b = lampButtons(rs, from, wanderOpen());
@@ -487,10 +548,26 @@ $('bSumLamp').addEventListener('click', () => {
   hideCard('summary');
   go(ORDER[0]);
 });
+/* the win card: the time, the best winning time, the glim banked in this run, the runs and the deaths. It opens the Lamp-room, where
+   Wander shows from the first win, or Wander. The win is stored already, so a reload before it closes shows it again */
+function openWin() {
+  const w = winOf(rs), dds = $('winCard').querySelectorAll('dd');
+  w.rows.forEach(([, v], i) => { dds[i].textContent = v; });
+  $('bWinWander').hidden = !wanderOpen();
+  openCard('winCard', 'ended', () => $('bWinLamp'));
+}
+$('bWinLamp').addEventListener('click', () => {
+  rs.ended = null;
+  storeRun();
+  hideCard('winCard');
+  go(ORDER[0]);
+});
+$('bWinWander').addEventListener('click', () => { rs.ended = null; storeRun(); toWander(); });
 // the card that a load of the page opens over the place (screens.js cardOnLoad)
 function openOnLoad() {
   const card = cardOnLoad(rs);
-  if (card === 'summary') openSummary();
+  if (card === 'win') openWin();
+  else if (card === 'summary') openSummary();
   else if (card === 'help') openRunHelp();
   else if (card === 'lamp') openLamp();
   else if (card === 'beacon') openBeacon();
@@ -566,12 +643,18 @@ function lightBeacon() {
 function newRunner() {
   // the foes of this place, with the place: every foe back, and the foes put out kept for this place only
   fight = pool && !LOOK && rs.run ? makeFight({ walk, meta, world, pool, rs, max: () => maxOf(rs), still, fx, project, doc: document }) : null;
-  foeTargets = fight ? () => fight.foes.targets() : () => [];
+  foeTargets = fight ? () => fight.targets() : () => [];
   runner = makeRunner({
     walk, meta, body, rs, targets, still, log: cues, fx,
-    ...(fight ? { lightable: fight.foes.lightable, drop: fight.foes.drop, think: fight.think, onLight: fight.foes.bank } : {})
+    ...(fight ? { lightable: fight.lightable, drop: fight.foes.drop, think: fight.think, onLight: fight.foes.bank } : {})
   });
   fight?.bind(runner);
+  /* the boss camera (cameras.js), at Barrow Crown: on within 7.0 m of the arena's centre while the fight has started and the boss is
+     up, framing the two with the page's own controls kept clear; its step goes after the follow camera's */
+  const f = fight;
+  bossCam = f?.boss ? makeBossCam(cam, { screen: bossScreen, boss: () => f.boss.camView(), centre: f.boss.c, still, ground: (x, z) => walk.support(x, z, body.s.y + 1) ?? walk.top(x, z),
+    sees: (a, b) => clearLine(walk, a[0], a[1], a[2], b[0], b[1], b[2]) }) : null;
+  if (bossCam) measureScreen();
   return runner;
 }
 // what the runner's step did, on the page
@@ -590,12 +673,14 @@ function runEvent(e) {
       mode = 'lit';
       break;
     case 'win':
+      // the run clock stops, the win is stored at once (run.js win and the store that follows), and the win card shows 1.8 s later
       beaconLit = true;
       setLit(meta.beacon.fire, true);
       toast('The last beacon burns', 2400);
       endAt = steps + 108;
       mode = 'won';
       break;
+    case 'boss': bossEvent(e); break;
     case 'dark': toast(e.why || 'The beacon will not catch yet', 2600); break;
     case 'toast': toast(e.what === 'full' ? 'Health is full' : 'No flask left. A lit beacon fills the flasks.', 2200); break;
     case 'fall': cam.snap(body.s, body.s.yaw + Math.PI); toast('A fall · −10 health'); break;
@@ -604,6 +689,89 @@ function runEvent(e) {
     case 'store': storeRun(); break;
   }
   if (['wisp', 'drink', 'hurt', 'fall', 'beacon', 'win', 'store', 'glim', 'foeOut'].includes(e.type)) updateHud();
+}
+/* the boss on the page: the intro stops the game for 2.4 s with its card (the bars and the zoom are fight.js's); then the boss bar
+   shows and the fight starts; at the fall the bar goes, and when the light comes to the lantern a toast says where to take it */
+function bossEvent(e) {
+  switch (e.what) {
+    case 'intro': mode = 'intro'; arriveBoss(); break;
+    case 'start': if (mode === 'intro') mode = 'play'; bossBar(true); break;
+    case 'fall': bossBar(false); break;
+    case 'light': toast(REEVE_TEXT.carry, 2600); break;
+    case 'hp': fillBossBar(); break;
+  }
+}
+
+/* ---------------- the boss files ----------------
+   They load during The Bell Knoll, or after play starts in Barrow Crown, and the arena sleeps until they are in. At 11 m from the arena
+   without them the game waits on the loading screen, with their progress; when they failed, with Try again and Step back. After the
+   boss's fall the page never waits for them: the light at the lantern is in the foe files. The Lab bar stays above the loading screen
+   in a run (index.html), so ◀ Lab and Games can still be reached */
+function fetchBoss() {
+  if (bossFile || bossLoad) return;
+  bossFail = null;
+  bossLoad = figures('./worlds/', 'boss', f => { if (bossWaiting) progress(f); }).then(f => {
+    bossFile = f; bossLoad = null;
+    if (meta?.id === 'barrows' && fight?.boss) fight.fill(f);
+    if (bossWaiting) bossResume();
+  }, err => {
+    bossLoad = null; bossFail = err;
+    if (bossWaiting) bossFailed(err);
+  });
+}
+// each play step at Barrow Crown: the path's last point far from the arena, and the wait at 11 m while the boss files are not in
+function bossWatch() {
+  const B = fight.boss, s = body.s, d = Math.hypot(s.x - B.c[0], s.z - B.c[2]);
+  if (d >= REEVE.arena.back && s.ground) lastFar = { p: [s.x, s.y + 0.3, s.z], yaw: s.yaw };
+  if (!B.ready && B.state === 'wait' && !rs.run?.bossDown && d <= REEVE.arena.intro) bossWait();
+}
+function bossWait() {
+  bossWaiting = true;
+  mode = 'loading';
+  // a pause like any card: the mouse is freed, and taken back when play goes on
+  holdNav();
+  inp.free();
+  mouseHint();
+  // the arrival card and a toast count game steps, which wait with the game: they go, so they do not stand over the loading screen
+  arriveLeft = toastLeft = 0;
+  $('arrive').classList.add('off');
+  $('toast').classList.remove('on');
+  loading.classList.remove('done');
+  $('bRetry').hidden = $('bBack').hidden = true;
+  if (bossFail) return bossFailed(bossFail);
+  loadLine.textContent = 'The Barrow Reeve is coming…';
+  progress(0);
+  cards.shut(loading);
+  fetchBoss();
+}
+function bossFailed(err) {
+  loadLine.textContent = `The Barrow Reeve did not load (${err.message}).`;
+  const r = $('bRetry'), b = $('bBack');
+  r.hidden = b.hidden = false;
+  r.onclick = () => { bossFail = null; bossWait(); };
+  b.onclick = stepBack;
+  // Try again takes the focus; B on a pad and Escape are Step back
+  showCard({ el: loading, main: () => r, back: stepBack });
+  padCheck();
+}
+function bossResume() {
+  bossWaiting = false;
+  cards.shut(loading);
+  $('bRetry').hidden = $('bBack').hidden = true;
+  progress(1);
+  loading.classList.add('done');
+  mode = 'play';
+  inp.swallowAll();
+  canvas.focus?.();
+  retake();
+}
+// Step back: to the last point of the path 13 m or more from the arena's centre (or the place's start when there is none); the arena
+// stays asleep, and the next time within 11 m the loading screen shows again
+function stepBack() {
+  const to = lastFar || { p: meta.spawn.p, yaw: meta.spawn.yaw };
+  body.place(to.p, to.yaw);
+  cam.snap(body.s, to.yaw + Math.PI);
+  bossResume();
 }
 
 /* ---------------- loading a place ---------------- */
@@ -638,7 +806,7 @@ async function go(id) {
   // in a run, the foe files load with the first place (and stay), and each place gets its pool of foes
   if (RUN) {
     try {
-      const foes = await figures('./worlds/', 'foes'), boss = LOOK ? await figures('./worlds/', 'boss') : null;
+      const foes = await figures('./worlds/', 'foes'), boss = LOOK ? await figures('./worlds/', 'boss') : bossFile;
       slots = poolFor(id, foes, boss, LOOK ? LINEUP : undefined);
     } catch (err) {
       loadLine.textContent = `The foes did not load (${err.message}).`;
@@ -659,7 +827,13 @@ async function go(id) {
   // a run's moves drive the body through its own copy of PARAMS
   body = makeBody(walk, meta.spawn, meta.bounds, RUN ? { ...PARAMS } : PARAMS);
   cam = makeCamera(walk, { yaw: meta.spawn.yaw + Math.PI, auto: !still, ...layoutNow() });
-  cam.snap(body.s, meta.spawn.yaw + Math.PI);
+  // a run that goes on after the boss's fall starts at the arena, facing the beacon, with the light at the lantern
+  const arena = RUN && rs.run?.bossDown ? meta.zones?.find(z => z.boss) : null;
+  if (arena) {
+    const [x, y0, z] = arena.c, yaw = Math.atan2(meta.beacon.p[0] - x, meta.beacon.p[2] - z);
+    body.place([x, (walk.support(x, z, y0 + 2) ?? walk.top(x, z)) + 0.3, z], yaw);
+  }
+  cam.snap(body.s, body.s.yaw + Math.PI);
   // in a run, the combat camera turns the view toward the foes (cameras.js); reduced motion keeps it still
   combat = RUN ? makeCombat({ foes: awake, still }) : null;
   // a held move keeps its world direction while a camera turns by itself: a run's cameras, and the framed shot's lean (play.js)
@@ -678,9 +852,14 @@ async function go(id) {
   // in a run, the mist and haze sheets that lie in front of an awake figure fade out (veil.js); the beacon and the wisps are left alone
   const pack = c => ((c >> 16) & 255) + ((c >> 8) & 255) * 256 + (c & 255) * 65536;
   veils = RUN ? makeVeils(world, findVeils(world, { count: placeCount, skip: [...meta.beacon.fire, ...meta.wisps.map(w => w.ids)], shared: meta.pal.slice(32).map(pack) })) : null;
-  // in a nook under a roof the camera stands behind the wall and the splats between are left out (cut.js); the veils, the lamplighter,
-  // the wisps and the beacon's fire are never cut
-  cut = makeCut(world.data, { count: placeCount, skip: [[meta.bones.first, meta.bones.end], ...meta.beacon.fire, ...meta.wisps.map(w => w.ids)], except: veils ? new Set(veils.list.map(v => v.i)) : null });
+  // at Barrow Crown in a run, the pieces of scenery round the arena that fade while they hide the boss's marker (veil.js)
+  const arenaZone = RUN && !LOOK ? (meta.zones || []).find(z => z.boss) : null;
+  occluders = arenaZone ? makeOccluders(world, findOccluders(world, walk, { count: placeCount, skip: [...meta.beacon.fire, ...meta.wisps.map(w => w.ids)],
+    shared: meta.pal.slice(32).map(pack), centre: arenaZone.c, r: 20 })) : null;
+  // in a nook under a roof the camera stands behind the wall and the splats between are left out (cut.js); the veils, the arena's
+  // occluders, the lamplighter, the wisps and the beacon's fire are never cut (veil.js fades those itself)
+  const faded = new Set([...(veils?.list || []), ...(occluders?.list || [])].flatMap(v => v.ids ?? [v.i]));
+  cut = makeCut(world.data, { count: placeCount, skip: [[meta.bones.first, meta.bones.end], ...meta.beacon.fire, ...meta.wisps.map(w => w.ids)], except: faded.size ? faded : null });
   saved.clear();
   pendingRows = new Set();
   if (RUN) {
@@ -692,6 +871,9 @@ async function go(id) {
     deadAt = -1;
     placeFresh = true;
     toastLeft = 0;
+    lastFar = null;
+    bossWaiting = false;
+    bossBar(false);
     $('toast').classList.remove('on');
     $('ink').style.background = hex(meta.pal?.[0] ?? 0x05060c);
     $('ink').style.opacity = '0';
@@ -719,8 +901,11 @@ async function go(id) {
   arrive();
   if (manual && !nodraw) draw();
   if (RUN) {
+    if (!rs.run && rs.ended?.won && rs.ended.place === id) { beaconLit = true; setLit(meta.beacon.fire, true); }
     openOnLoad();
     storeRun();
+    // the boss files come while The Bell Knoll plays, or once play starts in Barrow Crown; never after the boss's fall
+    if (!LOOK && rs.run && (id === 'bells' || id === 'barrows') && !rs.run.bossDown) fetchBoss();
   } else if (!save.seen) {
     $('helpKeys').hidden = coarse;
     $('helpMouse').hidden = !inp.canLock;
@@ -741,12 +926,13 @@ function update() {
   steps++;
   time += STEP;
   if (RUN) {
-    if (runner && ['play', 'dying', 'won', 'lit'].includes(mode)) {
+    if (runner && ['play', 'dying', 'won', 'lit', 'intro'].includes(mode)) {
       const play = mode === 'play';
       // while a camera turns by itself, a held move keeps its world direction
       const yaw = play && held ? held.yaw(input, cam.c) : cam.c.yaw;
       for (const e of runner.step(play ? input : {}, yaw)) runEvent(e);
       if (rs.run && ++sinceStore >= 120) storeRun();
+      if (mode === 'play' && fight?.boss) bossWatch();
     }
     if (gallery) stepGallery();
     if (runner && TIMED.includes(mode)) screensTick();
@@ -755,6 +941,7 @@ function update() {
       endAt = 0;
       mode = 'play';
       if (was === 'lit') openBeacon();
+      else if (rs.ended?.won) openWin();
       else openSummary();
     }
   } else if (mode === 'play') {
@@ -765,11 +952,23 @@ function update() {
     if (!beaconLit && atBeacon(s, meta.beacon)) lightBeacon();
     if (s.y < -25) { body.place(meta.spawn.p, meta.spawn.yaw); cam.snap(body.s, meta.spawn.yaw + Math.PI); toast('Back to the start'); }
   }
-  view = cam.follow(body.s, STEP, input, combat && mode === 'play' ? combat.turn : null);
+  view = cam.follow(body.s, STEP, input, RUN && mode === 'play' ? runTurn : RUN && mode === 'intro' ? introTurn : null);
+  if (bossCam) {
+    view = bossCam.step(body.s, STEP, view);
+    if (bossCam.b.on && steps % 30 === 0) measureScreen();
+  }
   input.dyaw = input.dpitch = 0;
   for (const r of lampFade.set(fadeOf(eyeOf(view), body.s))) pendingRows.add(r);
   for (const r of cut.step(view.cut ? eyeOf(view) : null, [body.s.x, body.s.y + CUT.mid, body.s.z], STEP)) pendingRows.add(r);
   if (veils) unveil();
+  if (occluders) clearMarker();
+}
+// the scenery in front of the boss's marker fades out while the marker is laid, seen from where the eye is now
+function clearMarker() {
+  const B = fight?.boss, pts = B?.fighting() ? B.markPoints() : [];
+  if (!pts.length && !occluders.list.some(o => o.k < VEIL.FADE)) return;
+  const c = viewCamera(world, { camera: view }, art.w, art.h);
+  for (const r of occluders.step(c.view, art.h / 2 / c.tangent, pts)) pendingRows.add(r);
 }
 // the veils over the awake figures fade out, seen from where the eye is now: nine points on each figure, at its feet, middle and head,
 // in the middle and at its two sides as the eye sees them
@@ -790,9 +989,9 @@ function draw(o = {}) {
   pose(world.anim.bones, meta.bones, body.s, t, still);
   if (fight) {
     fight.draw(view, { time: Number.isFinite(o.time) ? o.time : undefined, pool: o.pool, art: art.h });
-    fxNow.kick = fight.kick; fxNow.zoom = fight.zoom;
+    fxNow.kick = fight.kick; fxNow.zoom = fight.zoom; fxNow.bars = fight.bars;
     fight.showNotches(view, mode === 'play');
-  } else if (RUN) { fxNow.kick = [0, 0, 0]; fxNow.zoom = 1; world.anim.grade = null; }
+  } else if (RUN) { fxNow.kick = [0, 0, 0]; fxNow.zoom = 1; fxNow.bars = 0; world.anim.grade = null; }
   if (RUN) { world.anim.kick = fxNow.kick; world.anim.zoom = fxNow.zoom; world.anim.bars = fxNow.bars; }
   // the fog stays at fogNear..fogFar whatever the camera's distance (the renderer spreads it over dist ± radius)
   world.radius = Math.max(6, meta.fogFar - view.dist);
@@ -862,7 +1061,7 @@ const runState = () => {
     step: k?.step ?? 0, playStep: k?.play ?? 0, stop: k?.stop ?? 0, ended: rs?.ended ? { ...rs.ended } : null,
     move: f?.move ?? null, hit: f?.move === 'hit' ? HITS[f.hit].id : null, t: f ? f.t / 60 : 0, safe: runner?.fighter.safe() ?? null, combo: runner?.fighter.nextHit() ?? 0,
     fx: {
-      kick: fxNow.kick.slice(), zoom: fxNow.zoom, bars: fxNow.bars, grade: (fight?.cols || meta?.pal || []).slice(), blink: !!body?.s.hide,
+      kick: fxNow.kick.slice(), zoom: fight ? fight.feel.zoom() : fxNow.zoom, bars: fight ? fight.feel.bars() : fxNow.bars, grade: (fight?.cols || meta?.pal || []).slice(), blink: !!body?.s.hide,
       low: !!fight?.feel.low, beats: fight?.feel.beats ?? 0, tell: fight?.grow ?? 1
     }
   };
@@ -874,7 +1073,10 @@ window.__gloam = {
     wisps: meta ? (RUN ? runner?.wisps.size ?? 0 : save.wisps[meta.id]?.length || 0) : 0, lit: beaconLit, frames, art: { ...art }, target: artTarget, count: world?.count,
     reached: save.reached.slice(),
     // pitch is the player's; view is what is drawn (with the rise over walls), want the layout's distance, foe the combat camera's
-    cam: cam ? { yaw: cam.c.yaw, dist: cam.c.dist, pitch: cam.c.pitch, want: cam.c.want, fov: cam.c.fov, aim: cam.c.aim, lift: cam.c.lift, view: view ? view.pitch : null, foe: combat?.foe?.id ?? null, turning: cam.c.turning, idle: cam.c.idle } : null,
+    cam: cam ? { yaw: cam.c.yaw, dist: cam.c.dist, pitch: cam.c.pitch, want: cam.c.want, fov: cam.c.fov, aim: cam.c.aim, lift: cam.c.lift, view: view ? view.pitch : null, foe: combat?.foe?.id ?? null, turning: cam.c.turning, idle: cam.c.idle,
+      boss: bossCam ? { on: bossCam.b.on, w: bossCam.b.w, dist: view?.dist ?? null, aim: view?.target ?? null } : null } : null,
+    // the pieces of scenery faded in front of the boss's marker (veil.js makeOccluders), or null away from Barrow Crown's run
+    occluded: occluders ? occluders.faded() : null,
     // the near fade's share now (play.js fadeOf: 0 to 1, or NEAR_FADE.all with the whole figure left out)
     fade: lampFade?.k ?? 0,
     // the cutaway: on (the view stands behind the wall), how many of the place's splats are left out or easing back now, and the
@@ -952,7 +1154,8 @@ window.__gloam = {
       if (Number.isFinite(o.flasks)) run.flasks = Math.max(0, Math.min(flasksOf(rs), Math.round(o.flasks)));
       if (Number.isFinite(o.carried)) run.carried = Math.max(0, Math.round(o.carried));
     }
-    // o.bossHp is stage 3's (the boss fight)
+    // the boss's health: the phase of that health at once, with one hit stop of 9 steps and one stumble of 2 s
+    if (Number.isFinite(o.bossHp) && fight?.boss) { fight.hooks.bossHp(o.bossHp); fillBossBar(); }
     updateHud();
     if (mode === 'lamp') fillLamp();
     storeRun();
@@ -986,6 +1189,18 @@ window.__gloam = {
      hold(foe, null) lets it go; out(foe | zone) puts foes out as a death does; notches() lists the ember notches on screen;
      combat() is what the cameras read: the awake foes and the blade's target */
   foes: () => (fight ? fight.list() : []),
+  /* the boss (?run): its state, phase, health, move and segment, its marker and its light; the boss files (in, loading, failed); the
+     boss camera, and the boss bar's rect */
+  boss: () => {
+    const B = fight?.boss;
+    if (!B) return null;
+    const bar = $('bossBar');
+    return {
+      ...B.view(), files: bossFile ? 'in' : bossLoad ? 'loading' : bossFail ? 'failed' : 'none', waiting: bossWaiting,
+      cam: bossCam ? { on: bossCam.b.on, w: bossCam.b.w } : null, bar: bar.hidden ? null : bar.getBoundingClientRect().toJSON(),
+      lastFar: lastFar ? lastFar.p.slice() : null
+    };
+  },
   wake: id => (fight ? fight.hooks.wake(id) : { ok: false, why: 'no fight' }),
   spawn: (type, x, z, yaw = 0) => (fight ? fight.hooks.spawn(type, x, z, yaw) : { ok: false, why: 'no fight' }),
   hold: (foe, move, t = 0) => fight?.hooks.hold(foe, move, t) ?? null,
@@ -1025,7 +1240,8 @@ window.__gloam = {
   if (RUN) {
     // a reload in a run restarts its place: health and flasks no higher than they were, the glim carried and the foes as they entered
     if (rs.run) reload(rs.run);
-    return go(rs.run?.place || ORDER[0]);
+    // a reload on the win card shows it over the place that was won, with its beacon burning
+    return go(rs.run?.place || (rs.ended?.won && ORDER.includes(rs.ended.place) ? rs.ended.place : ORDER[0]));
   }
   const start = q.get('place');
   await go(ORDER.includes(start) && save.reached.includes(start) ? start : save.at || 'gaol');

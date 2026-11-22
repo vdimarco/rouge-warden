@@ -85,7 +85,7 @@
 - [x] Store the run at once on each hit taken, each drink and each wick chosen
 - [x] The Lamp-room stores the run at once after each buy (`storeRun()`; stage 2)
 - [x] Store the run at once on each lit beacon and at 0 health
-- [ ] Store the run at once at the boss's fall, with `bossDown` (stage 3)
+- [x] Store the run at once at the boss's fall, with `bossDown` (stage 3)
 - [x] Store the run every 120 steps otherwise, when the tab is hidden and on pagehide
 - [x] A wick or a buy raises the entry health, flasks and maximums by what it gives
 - [x] Node tests for a reload just after a hit and in the death fade
@@ -118,7 +118,7 @@
 - [x] The page reads the pad on the loading screen, and Try again takes the focus
 - [x] Back in cards in a run: B and Escape go back where a card has a back action (Resume and No built; `cards.show({ back })`)
 - [x] Back to the beacon (stage 2's Lamp-room) passes its back action to `cards.show`
-- [ ] Step back (stage 3's boss loading screen) passes its back action to `cards.show`
+- [x] Step back (stage 3's boss loading screen) passes its back action to `cards.show`
 - [x] While End the run asks again, Escape and B choose No; M, P, Start and the pad's Back do nothing
 - [x] In a run, Start and Back close only the pause panel
 - [x] Wander's cards: Escape, B and Start close the help, the Map and the end card; M and Start open the Map
@@ -212,14 +212,14 @@
 ### Feel
 - [x] Every effect counts whole steps of the game clock, which go on during hit stop; moves count the play clock
 - [x] Hit stop of 3, 5 and 9 steps, the cap of 9 steps in any 30, and the picture shake
-- [ ] Hit stop of 6 steps and `feel.shock()` for the boss slam (stage 3)
+- [x] Hit stop of 6 steps and `feel.shock()` for the boss slam (stage 3)
 - [x] The hit flash and the hurt tint, 3 steps (0.05 s) each; a Node test at 30 and 144 Hz
 - [x] Camera kick: the square of the shake value times smooth noise; the zoom of 7 steps
 - [x] Grade: hurt on slots 1 to 31 only, low health with the heartbeat every 55 steps, and the fade to ink
 - [x] The health bar pulses at each heartbeat below 30% health: the HUD sets `.low`, and the fight sets `.beat` for 12 steps after each beat
 - [x] Reduced motion: no kick, no zoom, no turn of the camera by itself, the blink every 8 steps, no flash
 - [x] With reduced motion, `fx.kick` stays [0, 0, 0] and `fx.zoom` stays 1 on hits and hurts
-- [ ] The boss intro's zoom of 1.15 goes through `feel`, so with reduced motion `fx.zoom` stays 1 (stage 3)
+- [x] The boss intro's zoom of 1.15 goes through `feel`, so with reduced motion `fx.zoom` stays 1 (stage 3)
 - [x] Reduced motion also: no shake of a hit foe, the low health tint steady at 15%, and a steady fire edge on the health bar
 
 ### Cameras
@@ -228,9 +228,9 @@
 - [x] While a camera turns by itself, a held move keeps its world direction until the input turns by 20° or is let go
 - [x] The combat camera's stop at a yaw difference of 20°, seen from the lamplighter; look input wins on the same step; Node tests
 - [x] The boss camera (spec "Boss camera", cut order 2) as a module, `makeBossCam` in `cameras.js`, whose turn goes before the combat camera's
-- [ ] Stage 3 wires the boss camera in `main.js` with the real boss and the arena's centre, and calls its step after `cam.follow`
+- [x] Stage 3 wires the boss camera in `main.js` with the real boss and the arena's centre, and calls its step after `cam.follow`
 - [x] It is on within 7.0 m of the arena's centre while the fight has started and the boss is up (Node test with a stand-in boss)
-- [ ] Outside the arena, to 16 m, stage 3 hands the boss to the combat camera as a target with `range: Infinity` while the fight has started and the boss is up
+- [x] Outside the arena, to 16 m, stage 3 hands the boss to the combat camera as a target with `range: Infinity` while the fight has started and the boss is up
 - [x] The boss camera's own ease reaches its aim and distance in 60 steps
 - [x] Its aim on the line to the boss, and its distance at least the layout's follow distance and at least 12 m, up to 24 m
 - [x] The boss camera's frame: the smallest distance and an aim that keep the feet's ground, the chests and the boss's head clear of the controls
@@ -266,13 +266,13 @@
 - [x] HUD: health bar, flask pips, glim; the toast 8 px under the HUD's measured bottom at every width
 - [x] At 520 px wide or less, the health line is one row, with a 12 px number, a 56 × 8 px bar and 6 px pips
 - [x] `#hud.boss` hides the hint, and `gloam-downs-run.cards.e2e.mjs` checks that the widest HUD and the tools fit the spec's rects at the five layouts
-- [ ] Stage 3 sets `#hud.boss` in the boss fight, and moves that check into the layout e2e
-- [ ] The boss bar in the Lab bar row in every layout: at most 360 px on touch and 520 px with a fine pointer
+- [x] Stage 3 sets `#hud.boss` in the boss fight; `gloam-downs-run.boss.e2e.mjs` (`ONLY=layout`) checks it in the real fight at the five layouts until the layout e2e is built
+- [x] The boss bar in the Lab bar row in every layout: at most 360 px on touch and 520 px with a fine pointer (boss e2e: 214, 144, 184 and 360 px on touch at 390, 320, 360 and 800 wide; 520 × 44 at 1280×720)
 - [x] The overlap check with the widest HUD: 165/165, 5 of 5 flasks, 5/5 wisps and 254 glim
 - [x] The overlap check also has the longest toast in the run's data (86 characters) and a toast of 96 characters
-- [ ] The overlap check also has a boss bar (stage 3)
+- [x] The overlap check also has a boss bar (stage 3; in the boss e2e, with the widest HUD and a toast of 96 characters)
 - [x] No card button under ◀ Lab or Games: in a run the cards clear the Lab bar row
-- [ ] No card button under the boss bar, and the boss bar hides while a card shows (stage 3)
+- [x] No card button under the boss bar, and the boss bar hides while a card shows (stage 3; the pause panel in the fight at the five layouts, in the boss e2e)
 - [x] The help card with the run's controls, the text about keepers and banking, and Begin the run
 - [x] The beacon card: the wick choice, Spend glim, Walk on
 - [x] The wick offer stored with the run, and a reload at the beacon card that shows the same two wicks
@@ -301,25 +301,33 @@
 - [x] The colour rule covers the boss; the cage light uses wisp slots 38 and 39
 - [x] The boss's three shard rings and its 12 candles
 - [x] Measure the boss files in the first boss task, against the cap of 140 KB; if they are over, cut the boss to 11,000 splats
-- [ ] Fetch the boss files during The Bell Knoll, or after play starts in Barrow Crown; the arena asleep until they have loaded
-- [ ] When the boss files are not in at 11 m, pause the game and show the loading screen, with Try again when a file failed
-- [ ] Step back beside Try again: the lamplighter goes back 13 m or more from the arena's centre, and the arena stays asleep
+- [x] Fetch the boss files during The Bell Knoll, or after play starts in Barrow Crown; the arena asleep until they have loaded
+- [x] When the boss files are not in at 11 m, pause the game and show the loading screen, with Try again when a file failed
+- [x] Step back beside Try again: the lamplighter goes back 13 m or more from the arena's centre, and the arena stays asleep
 - [x] Every slot, the boss slot too, starts parked and out of `boned`
-- [ ] The boss slot wakes at the intro, and the other slots park in the boss fight (stage 3)
-- [ ] The boss joins the targets of the blade, soft aim, R, Look and RB (`__gloam.setTargets`) while the fight has started and the boss is up
-- [ ] The intro: the stop, the bars, the zoom, the card ("V · The last light of the downs"), the boss bar; other awake zones sleep
-- [ ] The phases and the stumble; leaving and coming back
-- [ ] `set({ bossHp })` puts the boss in the phase of that health, with one hit stop and one stumble
-- [ ] The attacks: sweep, cage slam, lamp-shards on their three rings, stalking lunge, double sweep, and the choice by position
-- [ ] The sweeps' marker: the front three slices of the slam's ring at 4.0 m
-- [ ] In a sweep's wind-up, the boss turns at 1.5 rad/s at most
-- [ ] It holds its facing and the sweep's slices from 0.3 s before the hit
-- [ ] The fall, the light that rides at the lantern, the boss's 30 glim into the glim carried, and the beacon that banks it
-- [ ] The bars at the fall ease out over 30 steps after the hit stop, and come in again at the last beacon
-- [ ] `__gloam.light()` obeys the boss's light; the dark beacon's toast names the open ground below the crown
-- [ ] After the fall no zone wakes; the run is stored with `bossDown`, and a reload starts at the arena with the light
-- [ ] The win stored at once at the last beacon, and a reload on the win card that shows it again
-- [ ] The win card, and the first win opening Wander
+- [x] The boss slot wakes at the intro, and the other slots park in the boss fight (stage 3)
+- [x] The boss joins the targets of the blade, soft aim, R, Look and RB (`__gloam.setTargets`) while the fight has started and the boss is up
+- [x] The intro: the stop, the bars, the zoom, the card ("V · The last light of the downs"), the boss bar; other awake zones sleep
+- [x] The phases and the stumble; leaving and coming back
+- [x] `set({ bossHp })` puts the boss in the phase of that health, with one hit stop and one stumble
+- [x] The attacks: sweep, cage slam, lamp-shards on their three rings, stalking lunge, double sweep, and the choice by position
+- [x] The sweeps' marker: the front three slices of the slam's ring at 4.0 m
+- [x] In a sweep's wind-up, the boss turns at 1.5 rad/s at most
+- [x] It holds its facing and the sweep's slices from 0.3 s before the hit
+- [x] The fall, the light that rides at the lantern, the boss's 30 glim into the glim carried, and the beacon that banks it
+- [x] The bars at the fall ease out over 30 steps after the hit stop, and come in again at the last beacon
+- [x] `__gloam.light()` obeys the boss's light; the dark beacon's toast names the open ground below the standing stones
+- [x] After the fall no zone wakes; the run is stored with `bossDown`, and a reload starts at the arena with the light
+- [x] The win stored at once at the last beacon, and a reload on the win card that shows it again
+- [x] The win card, and the first win opening Wander
+- [x] `qa/lab/gloam-downs-boss.sim.mjs`: a boss bot on Barrow Crown's walk map with the game's moves, runner and boss mind, at skills 0.3, 0.5, 0.7 and 0.9; wins, tries, fight length and hits by attack, written in design.md
+- [x] Every boss attack dodged by a bot with no mistake that reads each wind-up 0.25 to 0.55 s after it starts
+- [x] The boss camera raises its pitch over the grave stones by the least that keeps its distance (to 1.1), and the arena check of 122 pairs in `gloam-downs-boss.test.mjs`
+- [x] Each boss wind-up looked at in its last third at 1280×720 and 390×844, with the boss camera on
+- [x] The phone's shard rings: the boss gives the camera four rim points of each ring as marks, and the raise takes the one that sees the most of them; over the arena each whole ring is inside the middle 94% of the width and under no control at 1280×720 and 390×844, and the ground hides 33 and 44 of 2928 rim points (211 and 254 with the centres alone). The boss e2e lets the boss camera settle 1.2 s before each wind-up's picture
+- [x] The boss camera stays on through an attack under way out to 16 m from the arena's centre, so the lunge from 7.5 m is framed from 12 m; the boss e2e asserts the boss camera on, 11.9 m or more and no fade at every wind-up, and the fire inside each part of each marker as a share of its drawn area
+- [x] The scenery in front of a boss marker fades over 0.25 s (`veil.js` makeOccluders): the yew at (17, −13.5) in front of the west shard ring
+- [x] A reload on the win card shows it over the place won, with its beacon lit
 
 ### Sound
 - [ ] WebAudio cues made in code: tells, hits, hurt, glim, beacon, boss, heartbeat; start on the first press

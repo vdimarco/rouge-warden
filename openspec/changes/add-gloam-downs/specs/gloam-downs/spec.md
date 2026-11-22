@@ -283,6 +283,10 @@ While the cutaway is on, the place's splats between its eye and the figure SHALL
 - **WHEN** an eye 3.2 m from the figure has a wall of splats between, with others beside, behind the figure, the sky and the figure's own, and the eye then goes
 - **THEN** the wall eases out in 9 steps at 60 Hz and back in 15, the rest never change, and a reset brings back every density. Check: Node test `gloam-downs.test.mjs`.
 
+#### Scenario: The cutaway yields to the boss camera
+- **WHEN** in a run the boss camera is on (its eye 12 to 24 m back)
+- **THEN** the view it draws cuts none of the place's splats, so no long cone is cut through the arena. Check: Node test `gloam-downs-camera.test.mjs`.
+
 ### Requirement: The framed shot with the view still
 With no look input the lean is a turn by itself. It SHALL turn the view only as "A calm camera" allows (never while the mouse is taken or with reduced motion, only after 2 s with no look input), never while a run's combat or boss camera has the yaw, and at no more than 0.5 rad/s. While it turns, a held move SHALL keep its world direction.
 

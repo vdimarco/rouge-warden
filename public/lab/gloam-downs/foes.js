@@ -90,6 +90,19 @@ export function makeRoom(guard, awake, pool, x, z) {
 }
 export const poolCounts = codes => [...codes].filter(t => 'SPMI'.includes(t)).reduce((n, t) => ((n[t] = (n[t] || 0) + 1), n), {});
 
+// a ring's hit: the lamplighter's centre inside the ring, within rise of its height
+export const inRing = (s, x, y, z, R, rise) => Math.hypot(s.x - x, s.z - z) <= R && Math.abs(s.y - y) <= rise;
+/* the lamplighter at s against a body at (x, y, z) of radius r: it loses its speed into it, and gets the overlap × 6 m/s outward, as a
+   velocity before the next step. -> [ux, uz, overlap] when they overlap, else null */
+export function pushOut(s, x, y, z, r) {
+  const dx = s.x - x, dz = s.z - z, d = Math.hypot(dx, dz), min = r + LAMP_R;
+  if (d >= min || d < 1e-6 || Math.abs(s.y - y) > 1.5) return null;
+  const ux = dx / d, uz = dz / d, over = min - d, vin = s.vx * ux + s.vz * uz;
+  if (vin < 0) { s.vx -= vin * ux; s.vz -= vin * uz; }
+  s.vx += ux * over * 6; s.vz += uz * over * 6;
+  return [ux, uz, over];
+}
+
 // where a guard zone's keepers stand, as a toast says it: a landmark the player can see, never a compass word
 const STAND = { 'the keep': 'in the keep', 'the mill': 'at the mill', 'the terrace': 'on the terrace' };
 export const keeperLine = keeper => `The beacon will not catch while its keepers stand ${STAND[keeper] || keeper}.`;
@@ -257,7 +270,6 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
     const r = F.runner.hurt(dmg, from, o, ev);
     return r === 'hit' || r === 'dead' || r === 'none';
   }
-  const inRing = (s, x, y, z, R, rise) => Math.hypot(s.x - x, s.z - z) <= R && Math.abs(s.y - y) <= rise;
   function hookReaches(f, M, s) {
     const d = Math.hypot(s.x - f.x, s.z - f.z);
     if (d - LAMP_R > M.reach || Math.abs(s.y - f.y) > 1.6) return false;
@@ -621,7 +633,7 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
       if (!Z.awake || Z.spawned || Z.boss || distTo(Z, s.x, s.z) <= RULES.sleep) continue;
       if (Z.members.every(f => gone(f) || f.state === 'asleep' || (f.state === 'idle' && atHome(f)))) sleepZone(Z);
     }
-    if (F.calm) return;
+    if (F.calm || F.quiet) return;
     for (const Z of F.zones) {
       if (Z.awake || Z.boss || !live(Z) || Z.members.some(f => f.state === 'sink') || distTo(Z, s.x, s.z) >= RULES.wake) continue;
       const awake = awakeList(), me = { c: Z.c, foes: live(Z) };
@@ -696,13 +708,9 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
     const s = lamp(), rolling = F.runner?.fighter.f.move === 'roll';
     const list = F.foes.filter(f => solid(f) && !f.hold);
     for (const f of list) {
-      if (f.move === 'charge' && phaseOf(f.T.moves.charge, f.mt) === 'act') continue;
-      const dx = s.x - f.x, dz = s.z - f.z, d = Math.hypot(dx, dz), min = f.T.r + LAMP_R;
-      if (d >= min || d < 1e-6 || Math.abs(s.y - f.y) > 1.5 || rolling) continue;
-      const ux = dx / d, uz = dz / d, over = min - d, vin = s.vx * ux + s.vz * uz;
-      if (vin < 0) { s.vx -= vin * ux; s.vz -= vin * uz; }
-      s.vx += ux * over * 6; s.vz += uz * over * 6;
-      if (f.T.light) f.shove = [-ux * over * 6, -uz * over * 6];
+      if (rolling || (f.move === 'charge' && phaseOf(f.T.moves.charge, f.mt) === 'act')) continue;
+      const p = pushOut(s, f.x, f.y, f.z, f.T.r);
+      if (p && f.T.light) f.shove = [-p[0] * p[2] * 6, -p[1] * p[2] * 6];
     }
     for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) {
       const a = list[i], b = list[j], dx = b.x - a.x, dz = b.z - a.z, d = Math.hypot(dx, dz), min = a.T.r + b.T.r;
@@ -735,6 +743,12 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
     if (F.pending.length) { ev.push(...F.pending); F.pending.length = 0; }
   };
   F.bind = r => { F.runner = r; return F; };
+  /* the boss fight (boss.js): every awake zone gives up its slots, its foes sinking over 0.6 s with their health, and no zone wakes
+     again in this visit of the place, so only the boss is awake in the fight and no zone wakes after its fall */
+  F.hush = () => {
+    F.quiet = true;
+    for (const Z of F.zones) if (Z.awake && !Z.boss) giveUp(Z);
+  };
 
   /* ---------------- what the run and the page ask ---------------- */
   // the targets of the blade, soft aim, R, Look and RB: the foes that can be hit (not rising, sinking or going out)

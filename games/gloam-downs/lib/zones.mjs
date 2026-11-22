@@ -34,7 +34,7 @@ export const ZONES = {
     { id: 'W1', name: 'under the start barrow', c: [0, 1.06, 14.3], leash: 5, foes: 'SS' },
     { id: 'W2', name: 'hollow', c: [1, 0.18, 3.5], leash: 5.5, foes: 'IS' },
     { id: 'W4', name: 'before the gate', c: [-0.5, 1.52, -4.8], leash: 3, foes: 'PM' },
-    { id: 'arena', name: 'the arena', c: [18, 0.68, -22], leash: 6.5, foes: 'B', guard: true, boss: true, keeper: 'the open ground below the crown' }
+    { id: 'arena', name: 'the arena', c: [18, 0.68, -22], leash: 6.5, foes: 'B', guard: true, boss: true, keeper: 'the open ground below the standing stones' }
   ]
 };
 

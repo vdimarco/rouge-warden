@@ -883,6 +883,14 @@ function bossRig(walk, name, at, boss, o = {}) {
   }
   pass('the boss camera keeps the frame clear at five layouts', { largest: out });
 }
+{ // the cutaway yields to the boss camera: with the boss camera on, the view it draws never cuts the place's splats
+  const boss = { x: 0, y: 0, z: -6, up: true, started: true };
+  const r = bossRig(OPEN, '1280x720', { x: 0, z: 0 }, boss);
+  let cuts = 0, on = 0;
+  for (let i = 0; i < 120; i++) { const v = r.step(); if (r.bc.b.w > 0) { on++; if (v.cut) cuts++; } }
+  assert(on > 0 && cuts === 0, `the boss camera's view cut ${cuts} of ${on} steps`);
+  pass('the cutaway yields to the boss camera', { on });
+}
 { // its distance at 390x844: the lamplighter 4 m from the arena's centre and the boss 4 m in front of it, on flat ground
   const centre = [0, 0, 0], at = { x: 4, z: 0 }, boss = { x: 0, y: 0, z: 0, up: true, started: true };
   const r = bossRig(OPEN, '390x844', at, boss, { centre });
@@ -919,6 +927,26 @@ function bossRig(walk, name, at, boss, o = {}) {
   }
   assert(back !== null && back <= 60, `back at the follow camera after ${back} steps`);
   pass('the boss camera starts within 7.0 m and hands back over 1 s', { back });
+}
+{ /* an attack under way keeps it on outside the arena: the boss at the centre winds up a lunge at a lamplighter 7.5 m away, and the boss
+     camera stays on, out at its least distance, until the attack is over; then it hands back within 1 s. Out to 16 m it comes on for an
+     attack, and not beyond. With no attack, 7.5 m is outside (as above) */
+  const centre = [0, 0, 0], boss = { id: 'reeve', x: 0, y: 0, z: 0, up: true, started: true, busy: true };
+  const r = bossRig(OPEN, '1280x720', { x: 0, z: 7.5 }, boss, { centre });
+  let v;
+  for (let i = 0; i < 90; i++) v = r.step();
+  assert(r.bc.b.on, 'at 7.5 m, with the attack under way, the boss camera is on');
+  assert(v.dist >= bossLeast(r.cam.c.want) - 0.01, `and out at its least distance (${v.dist})`);
+  boss.busy = false;
+  let back = null;
+  for (let i = 1; i <= 90; i++) { const f = r.cam.follow(r.b.s, STEP, {}, null); v = r.bc.step(r.b.s, STEP, f); if (back === null && v === f) back = i; }
+  assert(!r.bc.b.on && back !== null && back <= 60, `the attack over, back at the follow camera after ${back} steps`);
+  boss.busy = true;
+  r.b.s.z = 15.5; r.step();
+  assert(r.bc.b.on, 'at 15.5 m an attack under way turns it on');
+  r.b.s.z = 16.5; r.step();
+  assert(!r.bc.b.on, 'beyond 16 m it is off');
+  pass('an attack under way keeps the boss camera on out to 16 m from the centre, and the camera hands back when it ends', { back });
 }
 { // the turn to the boss: the boss 8 m behind the view; it starts after 0.6 s, turns at no more than 1.5 rad/s, and is within 15° by 3 s
   const centre = [0, 0, -4], boss = { x: 0, y: 0, z: 0, up: true, started: true };

@@ -54,7 +54,7 @@ export function drawOffer(seed, k, chosen = []) {
 }
 
 /* ---------------- the numbers ---------------- */
-export const BASE = { hp: 100, flasks: 2, heal: 0.35, wisp: 4 };
+export const BASE = { hp: 100, flasks: 2, heal: 0.35, wisp: 4, boss: 30 };
 export const WICKS = [
   { id: 'long', name: 'Long wick', text: '+20 health' },
   { id: 'keen', name: 'Keen edge', text: '+15% blade damage' },
@@ -91,12 +91,13 @@ export function startRun(rs, seed) {
   return rs.run;
 }
 export function enter(run) { run.entry = { hp: run.hp, flasks: run.flasks, carried: run.carried, foes: run.foes }; return run; }
+// after the boss's fall the boss stays down, so a reload keeps its 30 glim and its one foe on top of the entry values
 export function reload(run) {
-  const e = run.entry || enter(run).entry;
+  const e = run.entry || enter(run).entry, down = run.bossDown ? 1 : 0;
   run.hp = Math.min(run.hp, e.hp);
   run.flasks = Math.min(run.flasks, e.flasks);
-  run.carried = e.carried;
-  run.foes = e.foes;
+  run.carried = e.carried + down * BASE.boss;
+  run.foes = e.foes + down;
   return run;
 }
 // move the run to the start of a place, as Walk on does: the entry snapshot is taken from the values now
