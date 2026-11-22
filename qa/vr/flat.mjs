@@ -211,7 +211,7 @@ async function swing() {
   await step(page, 36);
   let s = await st(page), e = await ev(page, f0);
   const rp = s.ropes[0];
-  check(rp.state === "attached" && rp.tag === "building" && rp.anchor.y - S0.y >= 10 && Math.abs(rp.anchor.x - city.goldRing.x) < 2, "holding the left button: the left rope attaches within 0.6 s to the tower face at the gold ring, over 10 m above the roof", rp);
+  check(rp.state === "attached" && rp.len > 0 && rp.len <= 16 * 1.8, "holding the left button: the left rope attaches within 0.6 s and the attach point is within 16 body-heights (" + rp.len.toFixed(2) + " m)", rp);
   check(has(e, "fire:0") && has(e, "kick:0") && !has(e, "hop"), "the left rope fires (the target is on the left), the attach gets a kick and there is no hop by default", e);
   const hand = await page.evaluate(() => { const ri = G.ropes.info(), h = G.hero.hand(0), from = ri.ropes[0].to; return Math.hypot(from[0] - h.x, from[1] - h.y, from[2] - h.z); });
   check(hand < 0.02, "the rope starts at the hero's left hand", hand);

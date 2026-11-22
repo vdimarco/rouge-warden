@@ -183,7 +183,8 @@ export function createBloom(renderer) {
   const pass = (mat, target) => { quad.material = mat; renderer.setRenderTarget(target); const clear = renderer.autoClear; renderer.autoClear = false; try { renderer.render(quad, cam); } finally { renderer.autoClear = clear; } };
 
   const B = {
-    level: "off", frames: 0, last: { calls: 0, triangles: 0 }, // last: the scene's own draw counts (the passes after it would reset them)
+    level: "off", frames: 0, straight: false, last: { calls: 0, triangles: 0 }, // last: the scene's own draw counts (the passes after it would reset them)
+    depth: () => sceneRT.depthTexture,
     verse: false, // the Verse pass ran on the last frame
     // render scene through camera with the glow of `level` ("off" | "low" | "high"). verse (or null): { focus (m, where the
     // plates are on register), plate (px, the slip far from the focus), impact 0..1, sense 0..1, head ({ x, y } in 0..1 uv),
@@ -194,7 +195,8 @@ export function createBloom(renderer) {
       const L = BLOOM[level];
       B.level = L ? level : "off";
       B.verse = !!verse;
-      if (!L && !verse && !shaft) { renderer.render(scene, camera); B.last.calls = renderer.info.render.calls; B.last.triangles = renderer.info.render.triangles; return; }
+      B.straight = !L && !verse && !shaft;
+      if (B.straight) { renderer.render(scene, camera); B.last.calls = renderer.info.render.calls; B.last.triangles = renderer.info.render.triangles; return; }
       renderer.getDrawingBufferSize(size);
       if (size.x !== w || size.y !== h) {
         w = size.x; h = size.y;

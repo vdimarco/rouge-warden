@@ -322,7 +322,7 @@ section("Frozen");
 /* ---------------- snap ---------------- */
 section("Rope snap");
 {
-  // a rope straight through a Financial tower snaps after 0.25 s
+  // a held rope through a tower does not snap. Once the hand has let go, a sticky rope still does.
   const t = city.buildings.find((b) => b.district === 1 && b.h > 150 && b.w > 20);
   const T0 = t.tiers[0], zc = (T0.minZ + T0.maxZ) / 2;
   const P = createPlayer(city);
@@ -332,7 +332,12 @@ section("Rope snap");
   attachAt(P, 0, T0.maxX + 8, 70, zc);
   let snapAt = -1;
   run(P, 120, (Q, i) => { if (snapAt < 0 && Q.events.some((e) => e.type === "snap")) snapAt = i * h; return inp(); });
-  check(snapAt > SWING.snapBlocked - 0.02 && snapAt < SWING.snapBlocked + 0.05 && P.ropes[0].state === "idle", `a rope through a tower snaps after ${f2(snapAt)} s`);
+  check(snapAt < 0 && P.ropes[0].state === "attached", "a held rope through a tower does not snap");
+  P.ropes[0].sticky = true;
+  P.events.length = 0;
+  let released = -1;
+  run(P, 120, (Q, i) => { if (released < 0 && Q.events.some((e) => e.type === "snap")) released = i * h; return inp({ hands: [hand({ holding: false }), hand({ holding: false })] }); });
+  check(released > SWING.snapBlocked - 0.02 && released < SWING.snapBlocked + 0.05 && P.ropes[0].state === "idle", `a rope the hand has released snaps after ${f2(released)} s`);
   const Q = hang(SWING, 30, 40);
   run(Q, 240);
   check(!Q.events.some((e) => e.type === "snap") && Q.ropes[0].state === "attached", "a clear rope does not snap");

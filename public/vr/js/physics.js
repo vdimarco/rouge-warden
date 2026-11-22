@@ -659,10 +659,13 @@ export function step(P, h, inp) {
     if (P.onGround ? into > 0.5 : air) { grab(P); return; }
   }
 
-  /* ---- a rope that runs through a wall for too long snaps ---- */
+  /* ---- a rope that runs through a wall snaps only after the hand has let go ---- */
+  // A held rope has no snap. The line is tested when it fires; a corner it clips later stays until the button lifts.
   C.x = pos.x; C.y = pos.y + P.chest; C.z = pos.z;
   for (const r of P.ropes) {
     if (r.state !== "attached") continue;
+    const holding = inp && inp.hands && inp.hands[r.side] && inp.hands[r.side].holding;
+    if (holding) { r.blockedT = 0; continue; }
     const ex = r.anchor.x - C.x, ey = r.anchor.y - C.y, ez = r.anchor.z - C.z, d = len3(ex, ey, ez);
     if (d > 1.2 && city.raycast(C.x, C.y, C.z, ex, ey, ez, d - 0.6, HIT)) r.blockedT += h;
     else r.blockedT = 0;

@@ -6,4 +6,4 @@ The gold ring is resolved by a short ray from just outside the published face, s
 
 A finger that is still down returns from the phone release before the roof, stall, and arc timers. A wall the chest touches does not grab while a hand is holding an attached rope.
 
-The chase line is the existing world-space cylinder. Its radius is half of 2 CSS px at 1280 and 1.5 CSS px at 390. Nothing new was adapted from a paper or a shader; the painted ink and the 150 ms fade were already there.
+The chase line is the existing world-space cylinder. It is drawn after the colour grade and the red/blue plate slip, the way a spot colour is printed after the plates, so those passes cannot tint it or spread it. The ink is #2B2A33, 2 CSS px at 1280 and 1.5 at 390, with 1 CSS px of paper #F3E9D6 on each side. The 150 ms fade is unchanged: at 100 ms the line is about a third of the way gone. The plate slip itself is the one already in the verse pass (Spider-Man: Into the Spider-Verse). Nothing new was adapted from a paper.

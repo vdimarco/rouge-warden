@@ -5,7 +5,14 @@ A rope the player is holding SHALL stay attached until the finger lifts or the b
 
 #### Scenario: Five seconds on a building
 - **WHEN** the player holds a rope on a building for 5 seconds with the button still down
-- **THEN** the rope is still attached
+- **THEN** the rope is still attached and the game has logged no snap
+
+### Requirement: A blocked line is skipped when the rope fires
+When a mouse or pad rope fires, the game SHALL try the ring face when it is within 16 body-heights of the hand, then a building, then sky. A candidate whose line from the hand is blocked by a wall SHALL be skipped. The ring face past 16 body-heights SHALL be skipped. Sky SHALL stay inside 16 body-heights.
+
+#### Scenario: A street hold beside a car
+- **WHEN** the player holds the left button for 5.5 seconds on the street beside the first traffic car, at 1280, after the first click has taken the pointer lock
+- **THEN** the rope is still attached and the game has logged no snap
 
 ### Requirement: The gold ring is its own tower
 While the gold-ring lesson is the target and the ring is in reach, the rope SHALL attach to the face the ring is painted on.

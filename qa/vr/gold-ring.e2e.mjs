@@ -34,9 +34,10 @@ try {
     const place = () => {
       up(0); up(2);
       if (G.game && G.game.progress) G.game.progress.tutorial = 0;
-      G.test.teleport(S.x, S.y, S.z);
+      G.test.teleport(R.x + (R.nx || 0) * 14, R.y - 1.5, R.z + (R.nz || 0) * 14);
+      G.P.onGround = false;
       G.test.face(R.x, R.z);
-      if (G.flatcam) { G.flatcam.bankOn = false; G.flatcam.shakeOn = false; G.flatcam.reset(G.rigYaw, -0.42); }
+      if (G.flatcam) { G.flatcam.bankOn = false; G.flatcam.shakeOn = false; G.flatcam.reset(G.rigYaw, 0); }
       G.P.vel.x = G.P.vel.y = G.P.vel.z = 0;
       for (let i = 0; i < 20; i++) {
         G.test.step(1 / 60, 1);
@@ -99,9 +100,9 @@ try {
       up(0);
       const S = G.city.start, R = G.city.goldRing;
       if (G.game && G.game.progress) G.game.progress.tutorial = 0;
-      G.test.teleport(S.x, S.y + 18, S.z);
+      G.test.teleport(R.x + (R.nx || 0) * 14, R.y - 1.5, R.z + (R.nz || 0) * 14);
       G.test.face(R.x, R.z);
-      if (G.flatcam) { G.flatcam.bankOn = false; G.flatcam.shakeOn = false; G.flatcam.reset(G.rigYaw, -0.25); }
+      if (G.flatcam) { G.flatcam.bankOn = false; G.flatcam.shakeOn = false; G.flatcam.reset(G.rigYaw, 0); }
       G.P.onGround = false; G.P.wall = null; G.P.wallCool = 30;
       G.P.vel.x = G.P.vel.y = G.P.vel.z = 0;
       for (let k = 0; k < 4; k++) G.test.step(1 / 60, 1);
@@ -160,11 +161,14 @@ try {
         const S = G.city.start, R = G.city.goldRing;
         up();
         if (G.game && G.game.progress) G.game.progress.tutorial = 0;
-        G.test.teleport(S.x, S.y, S.z);
+        G.test.teleport(R.x + (R.nx || 0) * 14, R.y - 4, R.z + (R.nz || 0) * 14);
+        G.P.onGround = false;
         G.test.face(R.x, R.z);
-        if (G.flatcam) { G.flatcam.bankOn = false; G.flatcam.shakeOn = false; G.flatcam.reset(G.rigYaw, -0.35); }
+        if (G.flatcam) { G.flatcam.bankOn = false; G.flatcam.shakeOn = false; G.flatcam.reset(G.rigYaw, -0.2); }
         G.P.vel.x = G.P.vel.y = G.P.vel.z = 0;
         for (let i = 0; i < 12; i++) G.test.step(1 / 60, 1);
+        G.P.onGround = false;
+        G.P.vel.x = -(R.nx || 0) * 10; G.P.vel.z = 4; G.P.vel.y = 2;
         down();
         const samples = [];
         let picked = null, last = null, shot = null;
@@ -177,7 +181,7 @@ try {
           if (n % 60 === 0) samples.push({ n, y: +G.P.pos.y.toFixed(1), hy: +hy.toFixed(1), sp: +sp.toFixed(1), moved: +moved.toFixed(1), ground: G.P.onGround, wall: !!G.P.wall, st: r && r.state });
           last = samples[samples.length - 1];
           if (!r || Math.abs(r.anchor.x - R.x) > 2 || Math.abs(r.anchor.z - R.z) > 8) continue;
-          if (G.P.onGround || G.P.wall || !(sp > 8) || moved < 14 || G.P.pos.y > S.y - 4 || G.P.pos.y < 14 || hy < 16 || hy > 52) continue;
+          if (G.P.onGround || G.P.wall || !(sp > 4) || hy > 30) continue;
           if (G.flatcam) {
             const dx = R.x - G.P.pos.x, dz = R.z - G.P.pos.z, hlen = Math.hypot(dx, dz) || 1;
             const yaw = Math.atan2(-dx, -dz);
@@ -323,7 +327,7 @@ try {
   await page.screenshot({ path: out + "/gold-ink-1280-fade.png" });
   const gone1280 = await page.evaluate(() => window.__goldInk.gone());
   console.log("ink1280", JSON.stringify({ swing: ink1280, fade: fade1280, gone: gone1280 }));
-  check(ink1280.picked != null && !ink1280.ground && !ink1280.easy && ink1280.ink && ink1280.len > 40, "at 1280 a mid-swing rope is on the gold-ring tower and is not an easy web", { picked: ink1280.picked, len: ink1280.len, easy: ink1280.easy, ink: ink1280.ink, pos: ink1280.pos, anchor: ink1280.anchor, last: ink1280.last });
+  check(ink1280.picked != null && !ink1280.ground && !ink1280.easy && ink1280.ink && ink1280.len > 8 && ink1280.len <= 28.8, "at 1280 a mid-swing rope is on the gold-ring tower and is not an easy web", { picked: ink1280.picked, len: ink1280.len, easy: ink1280.easy, ink: ink1280.ink, pos: ink1280.pos, anchor: ink1280.anchor, last: ink1280.last });
   check(ink1280.hemp === 0 && ink1280.mesh && ink1280.mesh.visible && ink1280.mesh.n > 0, "at 1280 the gold-ring rope is the ink mesh, not hemp", { hemp: ink1280.hemp, mesh: ink1280.mesh });
   check(ink1280.reach != null && ink1280.reach < 0.75, "at 1280 the ink line is drawn to the anchor", ink1280.reach);
   check(ink1280.line && ink1280.line.width >= 1 && ink1280.line.width <= 4 && ink1280.line.sideL > 90, "at 1280 the ink line is about 2 px across the sky (" + (ink1280.line && ink1280.line.width) + ")", ink1280.line);
@@ -339,9 +343,10 @@ try {
     const S = G.city.start, R = G.city.goldRing;
     document.dispatchEvent(new MouseEvent("mouseup", { button: 0, bubbles: true }));
     if (G.game && G.game.progress) G.game.progress.tutorial = 0;
-    G.test.teleport(S.x, S.y, S.z);
+    G.test.teleport(R.x + (R.nx || 0) * 14, R.y - 1.5, R.z + (R.nz || 0) * 14);
+    G.P.onGround = false;
     G.test.face(R.x, R.z);
-    if (G.flatcam) G.flatcam.reset(G.rigYaw, -0.42);
+    if (G.flatcam) G.flatcam.reset(G.rigYaw, 0);
     G.test.step(1 / 60, 8);
     document.querySelector("canvas").dispatchEvent(new MouseEvent("mousedown", { button: 0, bubbles: true, cancelable: true }));
     for (let n = 0; n < 20; n++) { G.test.step(1 / 60, 1); if (G.P.ropes.some((r) => r.state === "attached")) break; }
@@ -360,9 +365,10 @@ try {
     const shot = (button) => {
       up(0); up(2);
       if (G.game && G.game.progress) G.game.progress.tutorial = 0;
-      G.test.teleport(S.x, S.y, S.z);
+      G.test.teleport(R.x + (R.nx || 0) * 14, R.y - 1.5, R.z + (R.nz || 0) * 14);
+      G.P.onGround = false;
       G.test.face(R.x, R.z);
-      if (G.flatcam) { G.flatcam.bankOn = false; G.flatcam.shakeOn = false; G.flatcam.reset(G.rigYaw, -0.42); }
+      if (G.flatcam) { G.flatcam.bankOn = false; G.flatcam.shakeOn = false; G.flatcam.reset(G.rigYaw, 0); }
       G.P.vel.x = G.P.vel.y = G.P.vel.z = 0;
       for (let i = 0; i < 8; i++) G.test.step(1 / 60, 1);
       const mark = G.frame;
@@ -406,7 +412,7 @@ try {
   await page.screenshot({ path: out + "/gold-ink-390-fade.png" });
   const gone390 = await page.evaluate(() => window.__goldInk.gone());
   console.log("ink390", JSON.stringify({ swing: ink390, fade: fade390, gone: gone390 }));
-  check(ink390.w === 390 && ink390.picked != null && !ink390.ground && !ink390.easy && ink390.ink && ink390.len > 40, "at 390 a mid-swing rope is on the gold-ring tower", { w: ink390.w, picked: ink390.picked, len: ink390.len, easy: ink390.easy, pos: ink390.pos, last: ink390.last });
+  check(ink390.w === 390 && ink390.picked != null && !ink390.ground && !ink390.easy && ink390.ink && ink390.len > 8 && ink390.len <= 28.8, "at 390 a mid-swing rope is on the gold-ring tower", { w: ink390.w, picked: ink390.picked, len: ink390.len, easy: ink390.easy, pos: ink390.pos, last: ink390.last });
   check(ink390.hemp === 0 && ink390.mesh && ink390.mesh.visible && ink390.mesh.n > 0 && ink390.reach != null && ink390.reach < 0.75, "at 390 the ink line is drawn to the anchor", { hemp: ink390.hemp, mesh: ink390.mesh, reach: ink390.reach });
   check(!!ink390.anchorOnScreen && ink390.line && ink390.line.inkD < 18 && ink390.line.sideL > 70, "at 390 the line is ink across the sky and the anchor is in the frame", { line: ink390.line, anchor: ink390.anchorInk });
   check(fade390.mesh && fade390.mesh.n > 0 && fade390.mesh.fade > 0.02 && fade390.mesh.fade < 0.1, "at 390 the line is partly faded about 100 ms after release", fade390.mesh);

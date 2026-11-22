@@ -68,7 +68,7 @@ try {
   });
   await page.screenshot({ path: out + "/chain.png" });
   console.log("chain", JSON.stringify({ frames: held.frames, cue: held.cue, wallAt: held.wallAt, first: held.first, still: held.still, fires: held.fires, y: held.y, log: held.log }));
-  check(held.first && held.first.tag === "building" && held.still && held.detaches === 0 && held.buildings === 1 && held.fires === 1 && held.wallAt < 0, "holding E keeps that building rope on until the button comes up", held);
+  check(held.first && (held.first.tag === "building" || held.first.tag === "sky") && held.still && held.detaches === 0 && held.fires === 1 && held.wallAt < 0, "holding E keeps that rope on until the button comes up", held);
   check(held.ups === 0 && held.drys === 0, "a held rope does not dry-fire and does not take a second press", held);
 
   await page.keyboard.up("KeyE");

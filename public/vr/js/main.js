@@ -1885,7 +1885,74 @@ function turnToSwing(a) {
   project(TCTX, a.x, a.y, a.z, PROJ);
   if (PROJ.behind || Math.abs(PROJ.x) > 1 || Math.abs(PROJ.y) > 1) flatcam.turnTo(Math.atan2(-(a.x - P.pos.x), -(a.z - P.pos.z)));
 }
+const LINE = { t: 0, x: 0, y: 0, z: 0, nx: 0, ny: 0, nz: 0, collider: null };
+function handOrigin(i, h) {
+  if (flatOn && !isXR() && flatcam && flatcam.opacity > 0.5 && hero) {
+    const p = hero.hand(i);
+    if (p && Number.isFinite(p.x)) return p;
+  }
+  return h.aimPos;
+}
+// The face the gold ring is painted on, while that lesson is still the target.
+function ringFace() {
+  if (!game || !game.progress || game.progress.tutorial !== 0 || !city || !city.goldRing) return null;
+  const g = city.goldRing;
+  const hit = city.raycast(g.x + (g.nx || 0) * 0.6, g.y + (g.ny || 0) * 0.6, g.z + (g.nz || 0) * 0.6, -(g.nx || 0), -(g.ny || 0), -(g.nz || 0), 2, LINE);
+  if (!hit || !hit.collider) return null;
+  return { x: hit.x, y: hit.y, z: hit.z, nx: hit.nx, ny: hit.ny, nz: hit.nz, tag: hit.collider.tag || "building", id: hit.collider.id, bid: bidOf(hit.collider), easy: false, easyH: bodyH(), sky: false, valid: true, same: false, special: false };
+}
+function otherAnchor(i) {
+  const o = P.ropes[1 - i];
+  if (!o || (o.state !== "attached" && o.state !== "flying")) return null;
+  return o.anchor;
+}
+function sameSpot(a, b) {
+  return !!(b && Math.abs(a.x - b.x) < 1.5 && Math.abs(a.y - b.y) < 1.5 && Math.abs(a.z - b.z) < 1.5);
+}
+// Fire-time order: the ring face within 16 body-heights, then the aimed point, then a building, then sky.
+// A blocked line is skipped. The ring face past 16 body-heights is skipped. Sky is capped there.
+// A clear building keeps its real distance. The other hand does not copy the same point.
+function clearAnchor(i, h, proposed) {
+  const from = handOrigin(i, h), cap = 16 * bodyH(), held = otherAnchor(i);
+  const ring = ringFace();
+  if (ring) {
+    const dx = ring.x - from.x, dy = ring.y - from.y, dz = ring.z - from.z, d = Math.hypot(dx, dy, dz);
+    const blocked = d > 1.2 && d <= cap + 1e-3 && city.raycast(from.x, from.y, from.z, dx, dy, dz, d - 0.6, LINE);
+    if (d <= cap + 1e-3 && d > 0.05 && !blocked && !sameSpot(ring, held)) return ring;
+  }
+  const list = [];
+  if (proposed && proposed.valid && !(ring && proposed.id === ring.id && Math.abs(proposed.x - ring.x) < 1 && Math.abs(proposed.y - ring.y) < 2)) list.push(proposed);
+  const near = playerEasy(otherWeb(i), false);
+  if (near && !near.sky) list.push(near);
+  easyDir();
+  const H = bodyH();
+  let sx = P.pos.x + easyDx * 10 * H, sy = P.pos.y + 12 * H, sz = P.pos.z + easyDz * 10 * H;
+  const cx = P.pos.x, cy = P.pos.y + (P.chest || 0), cz = P.pos.z;
+  let vx = sx - cx, vy = sy - cy, vz = sz - cz, sd = Math.hypot(vx, vy, vz);
+  if (sd > cap) { const k = cap / sd; sx = cx + vx * k; sy = cy + vy * k; sz = cz + vz * k; }
+  list.push({ x: sx, y: sy, z: sz, nx: 0, ny: -1, nz: 0, tag: "sky", id: "sky", bid: -1, easy: true, easyH: H, sky: true, valid: true, same: false, special: false });
+  const seen = new Set();
+  let clipped = null;
+  for (const a of list) {
+    if (sameSpot(a, held)) continue;
+    const key = (a.tag || "") + ":" + a.id + ":" + Math.round(a.x * 2) + ":" + Math.round(a.y * 2) + ":" + Math.round(a.z * 2);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const dx = a.x - from.x, dy = a.y - from.y, dz = a.z - from.z, d = Math.hypot(dx, dy, dz);
+    if ((a.sky || (ring && a.id === ring.id)) && d > cap + 1e-3) continue;
+    const blocked = d > 1.2 && city.raycast(from.x, from.y, from.z, dx, dy, dz, d - 0.6, LINE);
+    if (!blocked) return a;
+    if (!clipped) clipped = a;
+  }
+  return clipped;
+}
 function shoot(i, h, a) {
+  // Phone taps keep the picker's own aim. The fire-time line check is the mouse and pad swing.
+  if (!ov.aim[i] && !G.input.easySwing) {
+    const pick = clearAnchor(i, h, a);
+    if (!pick) { dryFire(i, h, h.aimDir); return; }
+    a = pick;
+  }
   const phone = G.input.easySwing, real = !phone && !!(h.swingDown || realWait[i]);
   realWait[i] = false;
   if (flatOn && !isXR() && pickerOn && P.wall && flatcam.opacity > 0.5 && (phone || real)) turnToSwing(a); // before fire: it lets go of the wall. A headset does not turn the view.
@@ -2344,7 +2411,7 @@ const WEB_HAND = new THREE.Vector3(), WEB_ANCH = new THREE.Vector3(), WEB_DIR = 
 const WEB_G = new THREE.Vector3(), WEB_AXIS = new THREE.Vector3(), WEB_FROM = new THREE.Vector3();
 const WEB_QT = new THREE.Quaternion(), WEB_M = new THREE.Matrix4(), WEB_SC = new THREE.Vector3(1, 1, 1);
 const WEB_Y = new THREE.Vector3(0, 1, 0);
-let webMesh = null, webFadeAttr = null, webSeg = 0;
+let webMesh = null, webFadeAttr = null, webSeg = 0, ropeLayer = null, webDrawPx = 0;
 function webCss() {
   const e5 = camera.projectionMatrix.elements[5];
   const h = innerHeight || renderer.domElement.clientHeight || 1;
@@ -2362,7 +2429,13 @@ function ensureWeb() {
   geo.setAttribute("aFade", webFadeAttr);
   const mat = new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, toneMapped: false, fog: false,
-    uniforms: { uPix: { value: 0.001 } },
+    uniforms: {
+      uPix: { value: 0.001 },
+      uColor: { value: new THREE.Color(0x2B2A33) },
+      uDepth: { value: null },
+      uOcclude: { value: 0 },
+      uRes: { value: new THREE.Vector2(1, 1) },
+    },
     vertexShader: `
       attribute float aFade;
       uniform float uPix;
@@ -2376,8 +2449,19 @@ function ensureWeb() {
         gl_Position = projectionMatrix * viewMatrix * vec4(axis + rad * max(r, 1e-4), 1.0);
       }`,
     fragmentShader: `
+      uniform vec3 uColor;
+      uniform sampler2D uDepth;
+      uniform float uOcclude;
+      uniform vec2 uRes;
       varying float vFade;
-      void main() { gl_FragColor = vec4(${(0x2b / 255).toFixed(5)}, ${(0x2a / 255).toFixed(5)}, ${(0x33 / 255).toFixed(5)}, vFade); }`,
+      void main() {
+        if (uOcclude > 0.5) {
+          vec2 uv = gl_FragCoord.xy / max(uRes, vec2(1.0));
+          float sd = texture2D(uDepth, uv).r;
+          if (gl_FragCoord.z > sd + 0.0005) discard;
+        }
+        gl_FragColor = vec4(uColor, vFade);
+      }`,
   });
   webMesh = new THREE.InstancedMesh(geo, mat, WEB_MAX);
   webMesh.name = "easyWeb";
@@ -2387,8 +2471,36 @@ function ensureWeb() {
   webMesh.renderOrder = 2;
   webMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   webFadeAttr.setUsage(THREE.DynamicDrawUsage);
-  webMesh.onBeforeRender = () => { mat.uniforms.uPix.value = webCss() * webPx() * 0.5; };
+  webMesh.onBeforeRender = () => { mat.uniforms.uPix.value = webDrawPx; };
+  ropeLayer = new THREE.Scene();
   scene.add(webMesh);
+}
+// The grade and the red/blue fringe have already been drawn. The rope is a spot colour on top of that,
+// ink in the middle and 1 CSS px of paper on each side, so the fringe cannot tint it or spread it.
+function paintRope() {
+  if (!webMesh || webMesh.count < 1) return;
+  const mat = webMesh.material, gl = renderer.getContext(), straight = !!bloom.straight;
+  mat.uniforms.uOcclude.value = straight ? 0 : 1;
+  mat.uniforms.uRes.value.set(gl.drawingBufferWidth, gl.drawingBufferHeight);
+  if (!straight && bloom.depth) mat.uniforms.uDepth.value = bloom.depth();
+  mat.depthTest = straight;
+  const parent = webMesh.parent;
+  if (parent) parent.remove(webMesh);
+  ropeLayer.add(webMesh);
+  webMesh.visible = true;
+  const prev = renderer.autoClear;
+  renderer.autoClear = false;
+  renderer.setRenderTarget(null);
+  const css = webCss(), ink = webPx();
+  webDrawPx = css * (ink + 2) * 0.5;
+  mat.uniforms.uColor.value.set(0xF3E9D6);
+  renderer.render(ropeLayer, camera);
+  webDrawPx = css * ink * 0.5;
+  mat.uniforms.uColor.value.set(0x2B2A33);
+  renderer.render(ropeLayer, camera);
+  renderer.autoClear = prev;
+  ropeLayer.remove(webMesh);
+  if (parent) parent.add(webMesh);
 }
 function webSagPx(tension) {
   const ten = tension < 0 ? 0 : tension > 1 ? 1 : tension;
@@ -2505,15 +2617,20 @@ function strokeWeb(ctx, hand, anchor, sag, alpha, w, h) {
   const x1 = (WEB_B.x * 0.5 + 0.5) * w, y1 = (0.5 - WEB_B.y * 0.5) * h;
   const seg = clipSeg(x0, y0, x1, y1, w, h);
   if (!seg.ok) return;
-  ctx.strokeStyle = "#2B2A33";
-  ctx.globalAlpha = alpha;
-  ctx.lineWidth = webPx();
   ctx.lineCap = "round";
-  ctx.beginPath();
-  ctx.moveTo(seg.x0, seg.y0);
-  if (sag > 0.5) ctx.quadraticCurveTo((seg.x0 + seg.x1) / 2, (seg.y0 + seg.y1) / 2 + sag, seg.x1, seg.y1);
-  else ctx.lineTo(seg.x1, seg.y1);
-  ctx.stroke();
+  ctx.globalAlpha = alpha;
+  const ink = webPx();
+  const draw = (style, width) => {
+    ctx.strokeStyle = style;
+    ctx.lineWidth = width;
+    ctx.beginPath();
+    ctx.moveTo(seg.x0, seg.y0);
+    if (sag > 0.5) ctx.quadraticCurveTo((seg.x0 + seg.x1) / 2, (seg.y0 + seg.y1) / 2 + sag, seg.x1, seg.y1);
+    else ctx.lineTo(seg.x1, seg.y1);
+    ctx.stroke();
+  };
+  draw("#F3E9D6", ink + 2);
+  draw("#2B2A33", ink);
   ctx.globalAlpha = 1;
 }
 const handOf = (i) => TIPS[i] || { x: P.pos.x, y: P.pos.y + P.chest, z: P.pos.z };
@@ -2751,12 +2868,15 @@ function render(frame, rdt = 0) {
   // A painted comic panel covers the canvas. The draw under it is what a software frame spends its time on,
   // and that stall runs past the music horizon, so the scene goes quiet while the music step still moves.
   if (!xr && G.state === "cutscene" && cutscenes.painted && !shot && !samples.length && !FLAGS.debug) return;
+  const showRope = !!(webMesh && webMesh.visible && webMesh.count > 0);
+  if (showRope) webMesh.visible = false;
   if (!xr) {
     const vs = verseFrame(rdt);
     bloom.render(scene, camera, bloomLevel(), vs, sunShaft());
     if (camLeaned) { camLeaned = false; flatcam.restore(); } // the lean and the shake are for the eye only
   } else renderer.render(scene, camera);
   const info = xr ? renderer.info.render : bloom.last;
+  if (!xr && showRope) paintRope();
   lastInfo.calls = info.calls; lastInfo.tris = info.triangles;
   lastInfo.views = xr ? renderer.xr.getCamera().cameras.length || 1 : 1;
   if (samples.length) readSamples();
