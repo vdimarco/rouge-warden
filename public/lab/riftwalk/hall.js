@@ -86,11 +86,21 @@ export function roomSeats(screens) {
 // in a ring round the visitor at eye level, each turned to face them. The first frame is straight ahead and the others
 // follow to the right. A room with a few games has larger frames. No room shows more than FRAMES.most frames at once.
 export const FRAMES = { most: 8, radius: 2.5, step: 0.36, width: 0.62, height: 0.82 };
+// How far, in radians, the last frame's far edge may sit from the first. A portrait phone (78° vertical, 390 by 844)
+// sees about 0.36 rad to the right of straight ahead. The row has to fit there, because the camera looks at the first game.
+const ROW_EDGE = 0.32;
 export function frameRing(count, eye = 1.4) {
   const n = Math.max(0, Math.min(FRAMES.most, count)), grow = n <= 1 ? 1.5 : n <= 3 ? 1.25 : 1, out = [];
+  const width = FRAMES.width * grow, height = FRAMES.height * grow;
+  // The first frame stays straight ahead. The ring moves out until the last frame's far edge is inside a phone's view,
+  // and neighbours stay a width apart so a click hits one.
+  let radius = FRAMES.radius;
+  const edge = (R) => (n - 1) * (width * GROW) / R + Math.atan((width * GROW) / (2 * R));
+  while (n > 1 && edge(radius) > ROW_EDGE && radius < 80) radius *= 1.08;
+  const step = n > 1 ? (width * GROW) / radius : 0;
   for (let k = 0; k < n; k++) {
-    const heading = wrap(k * FRAMES.step * (n <= 3 ? 1.35 : 1)), d = direction(heading);
-    out.push({ frame: true, heading, distance: FRAMES.radius, centre: [d.x * FRAMES.radius, eye + 0.05, d.z * FRAMES.radius], right: [-d.z, 0, d.x], up: [0, 1, 0], normal: [-d.x, 0, -d.z], width: FRAMES.width * grow, height: FRAMES.height * grow });
+    const heading = wrap(k * step), d = direction(heading);
+    out.push({ frame: true, heading, distance: radius, centre: [d.x * radius, eye + 0.05, d.z * radius], right: [-d.z, 0, d.x], up: [0, 1, 0], normal: [-d.x, 0, -d.z], width, height });
   }
   return out;
 }

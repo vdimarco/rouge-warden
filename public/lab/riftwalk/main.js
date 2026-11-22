@@ -319,6 +319,8 @@ function show(portal, game) {
 // station is nearest. Each zone keeps its own page of games.
 const visit = { phase: 'title', zone: 0, page: ZONES.map(() => 0), yaw: 0, pitch: 0, turnTo: null, pitchTo: 0, aim: -1, glide: null };
 const REACH = 9;       // metres: a place farther than this is not named and the arrows pass it over
+// A frame row stands further out so the last frame fits on a phone. Those frames are still named.
+const reach = () => (room !== null && HALL.frames ? 40 : REACH);
 const lit = () => portals.map(p => !!p.game);
 const gamesIn = i => zoneGames(ZONES[i].id, GAMES), seatsIn = i => room !== null ? roomSeats(SCREENS) : seats(ZONES[i].id, SCREENS, STATIONS[i].station, STATIONS[i].facing);
 const pagesIn = i => pages(gamesIn(i).length, seatsIn(i).length);
@@ -471,7 +473,7 @@ const seen = () => PLACES.map(p => { const dx = p.centre[0] - frame.position.x, 
   return { ...p, heading: Math.atan2(dx, -dz), distance, pitch: Math.atan2(p.centre[1] - HALL.eye, distance), front: -(dx * p.normal[0] + dz * p.normal[2]) > 0.25 * distance }; });
 // The arrows start from the place in view, so one press moves on to the next place. In the hall they stop at machines
 // only: a ring hangs right over its machines, and the Room button and the R key open the room of the zone.
-function turn(step) { if (visit.phase !== 'hall' || visit.glide) return; const now = seen(), stops = lit().map((on, k) => on && now[k].front && !(room === null && SCREENS.length && portals[k].door)), i = neighbour(visit.turnTo ?? (visit.aim >= 0 ? now[visit.aim].heading : visit.yaw), now, stops, step, REACH); if (i >= 0) { visit.turnTo = now[i].heading; visit.pitchTo = now[i].pitch; visit.aimTo = i; } }
+function turn(step) { if (visit.phase !== 'hall' || visit.glide) return; const now = seen(), stops = lit().map((on, k) => on && now[k].front && !(room === null && SCREENS.length && portals[k].door)), i = neighbour(visit.turnTo ?? (visit.aim >= 0 ? now[visit.aim].heading : visit.yaw), now, stops, step, reach()); if (i >= 0) { visit.turnTo = now[i].heading; visit.pitchTo = now[i].pitch; visit.aimTo = i; } }
 // Walking through a portal. In the alley, a visitor who walks at a door, inside its width and within about two
 // metres of it (the wall of the shop stops them there), goes into its world. In a world, a visitor who walks to the
 // edge of the floor toward the portal behind them goes back to the alley. (x, z) is the way they walk, one metre long.
@@ -526,7 +528,7 @@ function step(dt) {
   // The lit place in the middle of the view is named on screen. A ring is high on the wall, so it counts only when
   // the visitor looks up at it.
   const now = seen(), mask = lit().map((on, i) => on && now[i].front && Math.abs(now[i].pitch - visit.pitch) < 0.32);
-  const aim = facing(visit.yaw, now, mask, 0.3, REACH); if (aim !== visit.aim) { visit.aim = aim; paint(); if (aim >= 0) sound.tick(); }
+  const aim = facing(visit.yaw, now, mask, 0.3, reach()); if (aim !== visit.aim) { visit.aim = aim; paint(); if (aim >= 0) sound.tick(); }
   // The door in view hums in its zone's pitch, louder the nearer the visitor stands.
   { const p = portals[visit.aim]; sound.hum(room === null && p?.door && !p.game?.exit ? clamp(1.4 - now[visit.aim].distance / 6, 0.25, 1) : 0, p?.game?.zone ?? 0); }
 }
