@@ -381,6 +381,70 @@ async function proof(width, height, dpr, tag) {
   await ctx.close();
 }
 
+// Reads the framebuffer the page is actually showing. No seed, no posed camera.
+async function visible(width, height, dpr) {
+  const ctx = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: dpr, hasTouch: width < 800 });
+  const page = await ctx.newPage();
+  const errs = [];
+  page.on("pageerror", (e) => errs.push(String(e)));
+  await page.goto(GAME, { waitUntil: "domcontentloaded" });
+  await page.waitForFunction(() => window.__test && __test.ready());
+  await page.evaluate(() => __test.enter());
+  await page.evaluate(() => new Promise((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  }));
+  const sample = await page.evaluate(() => {
+    const canvas = document.querySelector("canvas");
+    const gl = canvas.getContext("webgl2");
+    const rect = canvas.getBoundingClientRect();
+    const st = __test.state();
+    const GROUND = [[0x2b, 0x2a, 0x33], [0x1a, 0x1a, 0x22]];
+    const OCHRE = [0xc9, 0x8b, 0x3c];
+    const near = (c, t, tol) => Math.abs(c[0] - t[0]) <= tol && Math.abs(c[1] - t[1]) <= tol && Math.abs(c[2] - t[2]) <= tol;
+    const isGround = (c) => GROUND.some((g) => near(c, g, 6));
+    const readAt = (clientX, clientY, n) => {
+      const fx = (clientX - rect.left) * (canvas.width / rect.width);
+      const fy = (clientY - rect.top) * (canvas.height / rect.height);
+      const cx = Math.round(fx);
+      const cy = Math.round(canvas.height - fy);
+      const half = (n - 1) >> 1;
+      const x0 = Math.min(canvas.width - n, Math.max(0, cx - half));
+      const y0 = Math.min(canvas.height - n, Math.max(0, cy - half));
+      const buf = new Uint8Array(n * n * 4);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.readPixels(x0, y0, n, n, gl.RGBA, gl.UNSIGNED_BYTE, buf);
+      const px = [];
+      for (let i = 0; i < n * n; i++) px.push([buf[i * 4], buf[i * 4 + 1], buf[i * 4 + 2]]);
+      return px;
+    };
+    const body = __test.client(st.player.x, st.player.y, 16);
+    const around = readAt(body.x, body.y, 9);
+    const ochre = around.filter((c) => near(c, OCHRE, 6)).length;
+    const allGround = around.every(isGround);
+    const corners = [[0, 0], [6, 0], [0, 6], [6, 6]].map(([x, y]) => __test.project(x, y, 0));
+    const ax = corners.reduce((s, p) => s + p.x, 0) / 4;
+    const ay = corners.reduce((s, p) => s + p.y, 0) / 4;
+    const v = __test.view();
+    const midX = rect.left + (v.ox + ax * v.scale) * rect.width / v.backW;
+    const midY = rect.top + (v.backH - (v.oy + (v.artH - ay) * v.scale)) * rect.height / v.backH;
+    const centre = readAt(midX, midY, 1)[0];
+    return { ochre, allGround, centre, n: around.length, body, errs: null };
+  });
+  check(!sample.allGround, width + " runner window is not all ground");
+  check(sample.ochre >= 20, width + " shows " + sample.ochre + " ochre pixels in the 9x9 around the runner");
+  const centreGround = [[0x2b, 0x2a, 0x33], [0x1a, 0x1a, 0x22]].some((g) =>
+    Math.abs(sample.centre[0] - g[0]) <= 6 && Math.abs(sample.centre[1] - g[1]) <= 6 && Math.abs(sample.centre[2] - g[2]) <= 6);
+  check(!centreGround, width + " block centre is not plain ground (" + sample.centre.join(",") + ")");
+  check(errs.length === 0, width + " visible check stays quiet");
+  console.log("  nums  " + width + " ochre=" + sample.ochre + "/81 centre=" + sample.centre.join(","));
+  await page.screenshot({ path: OUT + "/" + width + "-visible.png" });
+  await ctx.close();
+  return sample;
+}
+
+console.log("visible canvas");
+await visible(1280, 800, 1);
+await visible(390, 844, 2);
 console.log("proof 1280 and 390");
 await proof(1280, 800, 1, "1280");
 await proof(390, 844, 2, "390");

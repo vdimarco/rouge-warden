@@ -99,6 +99,7 @@ void main() {
   float q = floor(clamp(lit, 0.0, 0.999) * 4.0) / 3.0;
   col = mix(col, pal(4.0), wall * step(0.05, lit));
   col = mix(col, lcol, q * wall);
+  col = mix(col, base, runner);
   o = vec4(col, 1.0);
 }`;
 
@@ -415,12 +416,11 @@ export function createRenderer(canvas, atlas, palette) {
     if (scene.runnerPaper && scene.runnerCount > 0) {
       gl.depthFunc(gl.GREATER);
       gl.depthMask(false);
-      gl.enable(gl.POLYGON_OFFSET_FILL);
-      gl.polygonOffset(-2, -2);
       const kept = api.slices;
       drawStack(1, scene.runnerCount);
+      gl.depthFunc(gl.LEQUAL);
+      drawStack(0, scene.runnerCount);
       api.slices = kept;
-      gl.disable(gl.POLYGON_OFFSET_FILL);
       gl.depthFunc(gl.LESS);
       gl.depthMask(true);
     }

@@ -255,6 +255,8 @@ export function build(seed) {
     const s = cells[i]; cells[i] = cells[j]; cells[j] = s;
   }
   const spots = [...reserved, ...cells.slice(0, 6)];
+  // The middle of the crossing is a short stack, so the centre of the block is not bare street.
+  for (let s = 0; s < 12; s++) slices.push(slice(96, 100, 0.6 + s, 14, 14, bands[2], 0, 0, -1, true));
   const heights = spots.map(() => 16 + Math.floor(rng() * 25));
 
   spots.forEach(([tx, ty], i) => {
