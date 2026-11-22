@@ -8,7 +8,7 @@ import { WICKS, UPGRADES, maxHp, flasksMax } from './run.js';
 export const KEY = 'gloam-downs.run.v1';
 export const fresh = () => ({
   v: 1, bank: 0, up: Object.fromEntries(UPGRADES.map(u => [u.id, 0])), runs: 0, wins: 0, deaths: 0, furthest: 0, bestWin: 0,
-  sound: true, seen: false, wander: false, run: null, ended: null
+  sound: true, music: true, seen: false, wander: false, run: null, ended: null
 });
 const WICK_IDS = WICKS.map(w => w.id);
 const obj = v => v && typeof v === 'object' && !Array.isArray(v);
@@ -47,6 +47,7 @@ export function clean(raw) {
   s.furthest = intIn(raw.furthest, 0, ORDER.length - 1, 0);
   s.bestWin = secs(raw.bestWin);
   s.sound = raw.sound !== false;
+  s.music = raw.music !== false;
   s.seen = raw.seen === true;
   s.wander = raw.wander === true;
   s.run = cleanRun(raw.run, s.up);

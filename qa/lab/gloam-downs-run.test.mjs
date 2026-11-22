@@ -1207,6 +1207,16 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   pass('the pose of each move is finite, the roll turns round the middle, and the blink hides every bone but the shadow');
 }
 
+{ // the score's sample bank: 500 KB or less, every file in its manifest, and the license note
+  const man = JSON.parse(fs.readFileSync(`${DIR}audio/manifest.json`, 'utf8'));
+  let bytes = 0, files = 0;
+  for (const e of Object.values(man.instruments)) for (const f of Object.values(e.notes)) { bytes += fs.statSync(`${DIR}audio/${f}`).size; files++; }
+  assert(bytes <= 500 * 1024, `the bank is ${bytes} bytes`);
+  const readme = fs.readFileSync(`${DIR}audio/README.md`, 'utf8');
+  assert(/FluidR3_GM/.test(readme) && /Frank Wen/.test(readme) && /CC BY 3\.0/.test(readme) && /MIT/.test(readme));
+  pass('the sample bank is 500 KB or less, and audio/README.md holds the license note', { files, kb: Math.round(bytes / 1024) });
+}
+
 /* ---------------- on the baked places ---------------- */
 const skipWorlds = process.env.GLOAM_WORLDS === '0';
 const placeOf = id => {

@@ -151,9 +151,10 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
     if (t && L) L = clamp(edge(t) - MOVES.aim.short, 0, L);
     f.lungeV = (L * 60) / h.wind;
     if (s.ground) { s.vx = f.dir[0] * f.lungeV; s.vz = f.dir[1] * f.lungeV; }
-    ev.push({ type: 'cue', cue: 'swing', hit: h.id });
+    // the swing's sound is keyed to the move: its wind-up and active steps, so the whoosh peaks on the first active step
+    ev.push({ type: 'cue', cue: 'swing', hit: h.id, wind: h.wind, act: h.act });
   }
-  function startRoll(act, camYaw, ev) {
+  function startRoll(act, camYaw, ev, cut = false) {
     const dir = heldDir(act, camYaw);
     // the direction is fixed at the start: the stick or keys, or straight back from the facing (the figure keeps facing forward)
     f.dir = dir ? [dir[0], dir[1]] : [-Math.sin(s.yaw), -Math.cos(s.yaw)];
@@ -161,16 +162,18 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
     f.back = !dir;
     begin('roll'); f.buf.roll = 0;
     s.vx = f.dir[0] * MOVES.roll.v; s.vz = f.dir[1] * MOVES.roll.v;
-    ev.push({ type: 'cue', cue: 'roll' });
+    // cut: the roll cancels a wind-up, so the swing's whoosh stops
+    ev.push({ type: 'cue', cue: 'roll', ...(cut ? { cut: true } : {}) });
   }
   function startPlunge(ev) {
     begin('hang'); f.buf.attack = 0; f.top = s.y;
     s.vx = s.vz = s.vy = 0;
-    ev.push({ type: 'cue', cue: 'plunge' });
+    ev.push({ type: 'cue', cue: 'plunge', hang: MOVES.plunge.hang });
   }
   // the blade meets every live target in its reach and arc that it can see, on the first active step that meets any
   function strike(h, targets, ev, raw) {
     let any = false;
+    const on = [];
     for (const t of targets) {
       if (!t.alive || edge(t) > h.reach || Math.abs(t.y - s.y) > MOVES.aim.rise) continue;
       if (Math.hypot(t.x - s.x, t.z - s.z) > 1e-6 && !inArc(t, s.yaw, h.arc)) continue;
@@ -178,9 +181,11 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
       const dmg = t.hit(raw, { from: [s.x, s.z], push: h.push, knock: h.knock, stagger: !!h.stagger, kind: h.id });
       if (dmg === false) continue;
       any = true;
+      on.push(t.type || 'post');
       ev.push({ type: 'hit', kind: h.id, target: t, dmg });
     }
-    if (any) { f.landed = true; f.shave = 0; ev.push({ type: 'stop', n: h.stop }, { type: 'cue', cue: 'hit', hit: h.id }); }
+    // the hit's sound: the hit id, the hit stop, and the types of the targets hit (the crunch takes the first one's material)
+    if (any) { f.landed = true; f.shave = 0; ev.push({ type: 'stop', n: h.stop }, { type: 'cue', cue: 'hit', hit: h.id, on, stop: h.stop }); }
   }
   const bonusNow = st => (st.bonus || 0) + (f.shave > 0 ? MOVES.shave.bonus : 0);
   // the plunge lands: it meets every target whose edge is within its ring of the landing point
@@ -188,14 +193,16 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
     const L = MOVES.plunge, r = st.heavy ? L.heavyR : L.r, fallen = Math.max(0, f.top - s.y);
     const raw = Math.min(L.max, L.dmg + L.perM * Math.max(0, fallen - 1)) * (1 + bonusNow(st)) * (st.heavy ? L.heavy : 1);
     let any = false;
+    const on = [];
     for (const t of targets) {
       if (!t.alive || Math.hypot(t.x - s.x, t.z - s.z) - t.r > r || Math.abs(t.y - s.y) > L.rise) continue;
       const dmg = t.hit(raw, { from: [s.x, s.z], push: L.push, knock: L.knock, stagger: true, kind: 'plunge' });
       if (dmg === false) continue;
       any = true;
+      on.push(t.type || 'post');
       ev.push({ type: 'hit', kind: 'plunge', target: t, dmg });
     }
-    ev.push({ type: 'ring', x: s.x, y: s.y, z: s.z, r }, { type: 'cue', cue: 'land' });
+    ev.push({ type: 'ring', x: s.x, y: s.y, z: s.z, r }, { type: 'cue', cue: 'land', fallen: +fallen.toFixed(2), on, ...(any ? { stop: L.stop } : {}) });
     if (any) { f.shave = 0; ev.push({ type: 'stop', n: L.stop }); }
   }
   // the last firm ground: where the feet stand at least 1 m from a ledge (a drop of more than stepDown; a wall is no ledge)
@@ -228,7 +235,7 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
       const h = f.move === 'hit' ? HITS[f.hit] : null;
       if (!f.move || f.move === 'drink' || (h && (f.t < h.wind || f.t >= h.wind + h.act))) {
         if (h) { f.since = 0; f.next = f.landed ? (f.hit + 1) % 3 : f.hit; }
-        startRoll(act, camYaw, ev);
+        startRoll(act, camYaw, ev, !!h && f.t < h.wind);
       }
     }
     // the next hit can start 0.10 s into the recovery of the hit before

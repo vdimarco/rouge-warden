@@ -219,7 +219,7 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
     if (!run || R.dead) return 'none';
     const safe = fighter.safe();
     if (safe) {
-      if (safe === 'roll') { if (run.wicks.includes('shave')) fighter.nearMiss(); ev.push({ type: 'miss' }); }
+      if (safe === 'roll') { const shave = run.wicks.includes('shave'); if (shave) fighter.nearMiss(); ev.push({ type: 'miss' }); cue(ev, 'miss', shave ? { shave } : {}); }
       return 'safe';
     }
     run.hp = Math.max(0, run.hp - Math.round(dmg));
@@ -227,7 +227,7 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
     R.hurtAt = clock.step;
     stop(MOVES.hurt.stop);
     ev.push({ type: 'hurt', dmg, hp: run.hp }, { type: 'store' });
-    cue(ev, 'hurt');
+    cue(ev, 'hurt', { dmg: Math.round(dmg) });
     if (run.hp <= 0) { kill(ev); return 'dead'; }
     return 'hit';
   }
@@ -271,7 +271,11 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
         rs.run.flasks -= 1;
         rs.run.hp = Math.min(maxOf(rs), rs.run.hp + healOf(rs.up, maxOf(rs)));
         ev.push({ type: 'store' });
-      } else if (e.type === 'cue' && !e.logged) R.log.push({ cue: e.cue, step: clock.step, play: clock.play, ...(e.hit ? { hit: e.hit } : {}) });
+      } else if (e.type === 'cue' && !e.logged) {
+        // the cue with its game and play steps, and what it carries (hit, on, wind, act, foe, ...) for the sound
+        const { type, logged, cue: name, ...more } = e;
+        R.log.push({ cue: name, step: clock.step, play: clock.play, ...more });
+      }
     }
     // the hurt blink: the figure hides and shows every 4 game steps (8 with reduced motion) while the hit's safe time lasts. The
     // fighter stops stepping at 0 health, so its safe time stops counting: the figure stays shown through the death fade
