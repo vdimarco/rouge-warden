@@ -1,0 +1,420 @@
+{
+ "note": "The present page uses six Marble worlds that the owner gave as splat files (worlds/hall and worlds/rooms). The Atlas hall and the earlier Marble API worlds below are the record of earlier versions; only the brick hall (ascii) is still in the page.",
+ "atlas": {
+  "steps": [
+   {
+    "task": "atlasTextToImage",
+    "operation_id": "d9b32e3895444d1fbeb2a76da979de0a",
+    "seed": 33,
+    "sample": 0,
+    "prompt": "Wide eye-level one-point-perspective view from the entrance of a very large, wide and deep rectangular cyberpunk arcade hall at night, looking straight at the back wall. The hall has six separate sections of arcade machines, two on each of three walls. On the left wall stand two clusters, the nearer one lit amber and the farther one lit hot magenta. On the back wall stand two clusters side by side, the left one lit acid green and the right one lit cyan. On the right wall stand two clusters, the farther one lit red and the nearer one lit violet. Each cluster is a long row of eight tall narrow retro arcade cabinets, eight in every cluster, in one tight row, shoulder to shoulder with no gaps, backs against the wall, facing into the room, with neon edge strips in its cluster's colour. Clear gaps of bare wall separate the clusters. Every cabinet has one large flat upright screen glowing plain white with no picture. On the wall above the middle of each cluster hangs one large round neon ring in that cluster's colour, like a portal: six rings in all. The middle of the hall is a wide open floor of wet black concrete that mirrors the neon. Dark steel walls with pipes, cables and vents, a dark ceiling with beams. Deep shadows, saturated colour, cinematic, sharp fine detail. No people, no text, no letters, no logos."
+   },
+   {
+    "task": "images2PosedRGBD",
+    "operation_id": "1330742750a549858f2d6f8817ece0f2",
+    "targetResolution": [
+     1280,
+     720
+    ]
+   },
+   {
+    "task": "atlasGenerate",
+    "operation_id": "77c0167ca1a04257a21c5e76aaecdd13",
+    "views": 14,
+    "note": "Cameras along the middle of the hall, looking at each wall, back down the hall, and up at the rings.",
+    "targetCameras": [
+     {
+      "extrinsics": {
+       "position": [
+        0,
+        1.3,
+        -3.5
+       ],
+       "quaternion": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+       ],
+       "coordinateSystem": "rub"
+      },
+      "intrinsics": {
+       "fx": 800,
+       "fy": 800,
+       "cx": 640,
+       "cy": 360,
+       "width": 1280,
+       "height": 720
+      }
+     },
+     {
+      "extrinsics": {
+       "position": [
+        0.8,
+        1.3,
+        -5.5
+       ],
+       "quaternion": [
+        0.0,
+        0.608761,
+        0.0,
+        0.793353
+       ],
+       "coordinateSystem": "rub"
+      },
+      "intrinsics": {
+       "fx": 800,
+       "fy": 800,
+       "cx": 640,
+       "cy": 360,
+       "width": 1280,
+       "height": 720
+      }
+     },
+     {
+      "extrinsics": {
+       "position": [
+        -0.8,
+        1.3,
+        -5.5
+       ],
+       "quaternion": [
+        0.0,
+        -0.608761,
+        0.0,
+        0.793353
+       ],
+       "coordinateSystem": "rub"
+      },
+      "intrinsics": {
+       "fx": 800,
+       "fy": 800,
+       "cx": 640,
+       "cy": 360,
+       "width": 1280,
+       "height": 720
+      }
+     },
+     {
+      "extrinsics": {
+       "position": [
+        0,
+        1.3,
+        -8.5
+       ],
+       "quaternion": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+       ],
+       "coordinateSystem": "rub"
+      },
+      "intrinsics": {
+       "fx": 800,
+       "fy": 800,
+       "cx": 640,
+       "cy": 360,
+       "width": 1280,
+       "height": 720
+      }
+     },
+     {
+      "extrinsics": {
+       "position": [
+        0.8,
+        1.3,
+        -11
+       ],
+       "quaternion": [
+        0.0,
+        0.642788,
+        0.0,
+        0.766044
+       ],
+       "coordinateSystem": "rub"
+      },
+      "intrinsics": {
+       "fx": 800,
+       "fy": 800,
+       "cx": 640,
+       "cy": 360,
+       "width": 1280,
+       "height": 720
+      }
+     },
+     {
+      "extrinsics": {
+       "position": [
+        -0.8,
+        1.3,
+        -11
+       ],
+       "quaternion": [
+        0.0,
+        -0.642788,
+        0.0,
+        0.766044
+       ],
+       "coordinateSystem": "rub"
+      },
+      "intrinsics": {
+       "fx": 800,
+       "fy": 800,
+       "cx": 640,
+       "cy": 360,
+       "width": 1280,
+       "height": 720
+      }
+     },
+     {
+      "extrinsics": {
+       "position": [
+        -1.2,
+        1.3,
+        -11.5
+       ],
+       "quaternion": [
+        0.0,
+        0.087156,
+        0.0,
+        0.996195
+       ],
+       "coordinateSystem": "rub"
+      },
+      "intrinsics": {
+       "fx": 800,
+       "fy": 800,
+       "cx": 640,
+       "cy": 360,
+       "width": 1280,
+       "height": 720
+      }
+     },
+     {
+      "extrinsics": {
+       "position": [
+        1.2,
+        1.3,
+        -11.5
+       ],
+       "quaternion": [
+        0.0,
+        -0.087156,
+        0.0,
+        0.996195
+       ],
+       "coordinateSystem": "rub"
+      },
+      "intrinsics": {
+       "fx": 800,
+       "fy": 800,
+       "cx": 640,
+       "cy": 360,
+       "width": 1280,
+       "height": 720
+      }
+     },
+     {
+      "extrinsics": {
+       "position": [
+        0,
+        1.3,
+        -12
+       ],
+       "quaternion": [
+        0.0,
+        1.0,
+        0.0,
+        0.0
+       ],
+       "coordinateSystem": "rub"
+      },
+      "intrinsics": {
+       "fx": 800,
+       "fy": 800,
+       "cx": 640,
+       "cy": 360,
+       "width": 1280,
+       "height": 720
+      }
+     },
+     {
+      "extrinsics": {
+       "position": [
+        0.5,
+        1.3,
+        -8
+       ],
+       "quaternion": [
+        0.0,
+        0.92388,
+        0.0,
+        0.382683
+       ],
+       "coordinateSystem": "rub"
+      },
+      "intrinsics": {
+       "fx": 800,
+       "fy": 800,
+       "cx": 640,
+       "cy": 360,
+       "width": 1280,
+       "height": 720
+      }
+     },
+     {
+      "extrinsics": {
+       "position": [
+        -0.5,
+        1.3,
+        -8
+       ],
+       "quaternion": [
+        0.0,
+        -0.92388,
+        0.0,
+        0.382683
+       ],
+       "coordinateSystem": "rub"
+      },
+      "intrinsics": {
+       "fx": 800,
+       "fy": 800,
+       "cx": 640,
+       "cy": 360,
+       "width": 1280,
+       "height": 720
+      }
+     },
+     {
+      "extrinsics": {
+       "position": [
+        0,
+        1.3,
+        -7
+       ],
+       "quaternion": [
+        0.173648,
+        0.0,
+        0.0,
+        0.984808
+       ],
+       "coordinateSystem": "rub"
+      },
+      "intrinsics": {
+       "fx": 800,
+       "fy": 800,
+       "cx": 640,
+       "cy": 360,
+       "width": 1280,
+       "height": 720
+      }
+     },
+     {
+      "extrinsics": {
+       "position": [
+        1.5,
+        1.3,
+        -11.5
+       ],
+       "quaternion": [
+        0.190821,
+        0.65257,
+        -0.174856,
+        0.712155
+       ],
+       "coordinateSystem": "rub"
+      },
+      "intrinsics": {
+       "fx": 800,
+       "fy": 800,
+       "cx": 640,
+       "cy": 360,
+       "width": 1280,
+       "height": 720
+      }
+     },
+     {
+      "extrinsics": {
+       "position": [
+        -1.5,
+        1.3,
+        -11.5
+       ],
+       "quaternion": [
+        0.190821,
+        -0.65257,
+        0.174856,
+        0.712155
+       ],
+       "coordinateSystem": "rub"
+      },
+      "intrinsics": {
+       "fx": 800,
+       "fy": 800,
+       "cx": 640,
+       "cy": 360,
+       "width": 1280,
+       "height": 720
+      }
+     }
+    ]
+   },
+   {
+    "task": "posedImages2Splats",
+    "operation_id": "17ede62a175a4574b0cc48e7dd36e8bb",
+    "frames": 15,
+    "cost_credits": 5000,
+    "splats": 2000000
+   }
+  ],
+  "known_costs": "posedImages2Splats 5,000 credits. The other steps have no listed price in the docs."
+ },
+ "earlier_marble_worlds": {
+  "note": "Seven Marble worlds were made before the hall: 230 + 6 x 1,580 = 9,710 Marble API credits. Four of them are the rooms behind the rift rings.",
+  "worlds": {
+   "cottage": {
+    "world_id": "813454e2-60e3-483a-9eb8-2d7adb44f269",
+    "model": "marble-1.1"
+   },
+   "action": {
+    "world_id": "cb7ab700-3676-44aa-ab34-51425a1ba5fd",
+    "model": "marble-1.1"
+   },
+   "ascii": {
+    "world_id": "4709ab97-6746-4514-a6a5-31c3cf7f1a87",
+    "model": "marble-1.1"
+   },
+   "strategy": {
+    "world_id": "a3819c78-f7ef-4c66-a830-12a4e8df86c9",
+    "model": "marble-1.1"
+   },
+   "gta": {
+    "world_id": "92e5e14e-b031-485e-858d-ab9b865c3671",
+    "model": "marble-1.1"
+   },
+   "lab": {
+    "world_id": "3d07374e-27d4-40ad-b542-740704f967d9",
+    "model": "marble-1.1"
+   }
+  }
+ },
+ "rooms": {
+  "note": "The main world and the worlds behind its storefronts. Five are Marble app exports from the owner (the Marble world ids are from the links the owner shared; the files were exported by the owner, and which id is which world was not checked). games/riftwalk/tools/scenery-room.py made the smaller copies, the door pictures and screens.json.",
+  "hall": "Neon Alley Urban Landscape, 2,000,000 splats (worlds/hall/hall.spz)",
+  "cottage": "Fantasy Meadow with Distant Portal, 1,920,000 splats",
+  "action": "Ancient Temple of Sacred Statues, 1,920,000 splats",
+  "strategy": "Great Wall Sunset Majesty, 1,920,000 splats, turn 180 degrees",
+  "gta": "Retro Diner Interior with Booths, 500,000 splats",
+  "lab": "Futuristic Space Station Interior, 1,920,000 splats",
+  "ascii": "the first brick neon hall, a Marble API world of an earlier version (y down)",
+  "marble_links": [
+   "ba077656-2cde-46a0-96aa-daebabdf3951",
+   "889a5974-c395-4a6a-a401-e2d6aec4f12b",
+   "26bc6939-b6ae-407a-b59a-51c073219325",
+   "a150489a-533e-4c21-918d-43d44c144eed",
+   "f85c5b58-927e-4fe2-8418-3b46c8c599fe"
+  ]
+ }
+}

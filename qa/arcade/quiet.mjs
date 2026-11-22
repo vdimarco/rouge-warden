@@ -377,6 +377,8 @@ const PAGES = [
   { id: "silent-depth", path: "/silent-depth/", boot: () => document.querySelector("#modal")?.open, start: async (t) => { await t.tapEl("#modal-action"); await t.tapEl("#sound"); }, sound: "ctx" },
   // the hall, which has the sound: without ?view=classic a browser with WebGL and no navigator.webdriver (the plain Chromium
   // of the "real" and "freeze" runs) goes on to the walk-through at /corridor/, which makes no sound
+  // Riftwalk makes its sound with Web Audio from the press on Enter the alley. ?world=none skips the 3 MB world file.
+  { id: "riftwalk", path: "/lab/riftwalk/?world=none", boot: () => { const b = document.querySelector("#go"); return !!b && !b.disabled; }, start: click("#go"), sound: "ctx", music: true },
   { id: "arcade", path: "/?view=classic", start: (t) => t.tap(5, 5), sound: "ctx", music: true },
   { id: "fall", path: "/fall/", start: (t) => t.key("Enter"), sound: "ctx", music: true },
   { id: "wild", path: "/wild/", boot: () => document.querySelector("#title") && !document.querySelector("#title").hidden && !document.querySelector("#tpress").hidden, start: (t) => t.key("Enter"), sound: "ctx", music: true, slow: true },
@@ -392,6 +394,9 @@ const PAGES = [
   { id: "lab/plunge", path: "/lab/plunge/", start: click(".card.start .go"), sound: "ctx" },
   { id: "lab/creek", path: "/lab/creek/", start: click(".card.start .go"), sound: "ctx" },
   { id: "lab/tilt", path: "/lab/tilt/", start: click("#play-button"), sound: "ctx" },
+  // Splat Isle paints its island in the page first (q=low keeps that short); a fresh game opens on the first words, and a
+  // tap on them is the first press, which starts the sound.
+  { id: "lab/splat-isle", path: "/lab/splat-isle/?q=low&fresh", boot: () => !!window.__splatIsle?.state().ready, start: click("#talk"), sound: "ctx", slow: true },
   { id: "lab/rules", path: "/lab/rules/", start: click(".card.start .go"), sound: "ctx" },
   { id: "lab/worlds", path: "/lab/worlds/", start: click("#start-button"), sound: "ctx" },
   { id: "moonwell", path: "/moonwell/", start: click("#launch"), sound: "ctx" },
@@ -419,6 +424,8 @@ const PAGES = [
   // routed through that context; a hidden page pauses the match, and the game pauses its music and suspends its own context
   { id: "frostwing", path: "/frostwing/", boot: () => !!window.__fw && !document.querySelector("#title").classList.contains("hidden") && !document.querySelector("#playBtn").disabled, start: click("#playBtn"), sound: "ctx", music: true },
   { id: "ember-drift", path: "/ember-drift/", boot: () => !!document.querySelector('#panel [data-go="start"]'), start: click('#panel [data-go="start"]'), sound: "ctx" },
+  // Ember Tide makes its context on the first tap: Begin campaign sounds a blip, then its opening cutscene plays
+  { id: "ember-tide", path: "/ember-tide/", boot: () => !!window.__emberTide && !!document.querySelector(".panel.title .btn.primary"), start: click(".panel.title .btn.primary"), sound: "ctx" },
   { id: "lake-brawl", path: "/lake-brawl/", boot: () => !!window.dbg, start: (t) => t.key("Enter"), sound: "ctx" },
   // In Full Swing does not load quiet.js. Its own code stops the sound on visibilitychange when it is played flat on a phone (not on pagehide, not in a headset).
   { id: "vr", path: "/vr/", start: click("#playFlat"), sound: "ctx", slow: true, own: true, only: ["emulate", "real"] },

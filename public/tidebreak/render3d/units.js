@@ -3,7 +3,7 @@
 // camp beasts and the Wild Hunt are static models with procedural motion. A view outlives its unit for a death.
 import * as THREE from 'three';
 import { clone as cloneSkinned } from '/vr/lib/addons/utils/SkeletonUtils.js';
-import { assets, heroModel, clipsFor, HERO_CLIPS, CLIP_TIMING } from './assets.js';
+import { assets, heroModel, clipsFor, HERO_CLIPS, CLIP_TIMING, danceFor } from './assets.js';
 import { unitMaterial, unitUniforms, worldMapped } from './materials.js';
 import { skinnedMeshOf } from '../hero-rig.js';
 import { HERO_IDENTITIES } from '../hero-identities.js';
@@ -62,6 +62,8 @@ class Rig {
     this.mixer = new THREE.AnimationMixer(root); this.actions = {}; this.weights = {}; this.targets = {};
     for (const n of names) if (clips[n]) { const a = this.mixer.clipAction(clips[n]); a.play(); a.setEffectiveWeight(0); a.enabled = false; this.actions[n] = a; this.weights[n] = 0; this.targets[n] = 0; }
   }
+  // Adds a clip after the rig is built.
+  add(name, clip) { if (this.actions[name] || !clip) return; const a = this.mixer.clipAction(clip); a.play(); a.setEffectiveWeight(0); a.enabled = false; this.actions[name] = a; this.weights[name] = 0; this.targets[name] = 0; }
   target(name, w) { if (name in this.targets) this.targets[name] = w; }
   clearTargets() { for (const k in this.targets) this.targets[k] = 0; }
   time(name, t) { const a = this.actions[name]; if (a) { a.time = Math.max(0, Math.min(a.getClip().duration - .001, t)); a.paused = true; } }
@@ -85,7 +87,7 @@ class HeroView {
   constructor(units, e) {
     this.units = units; this.root = new THREE.Group(); this.root.name = 'hero'; units.group.add(this.root);
     this.identity = HERO_IDENTITIES[e.identity] || HERO_IDENTITIES.find(h => h.kit === e.hero) || HERO_IDENTITIES[0];
-    this.slug = this.identity.slug; this.clips = HERO_CLIPS[this.slug] || ['slash', 'cast'];
+    this.slug = this.identity.slug; this.clips = HERO_CLIPS[this.slug] || ['slash', 'cast']; this.dance = danceFor(this.slug);
     this.scale = (e.player ? 1.1 : 1); this.height = HERO_HEIGHT * this.scale; this.yaw = yawOf(e.facing); this.speed = 0; this.lx = e.x; this.ly = e.y;
     this.uniforms = unitUniforms(); this.uniforms.uRim.value.copy(RIM[e.team] || RIM[2]); this.uniforms.uDissolveColor.value.lerp(RIM[e.team] || RIM[2], .35);
     this.outlineColor = e.player ? OUTLINE_PLAYER : OUTLINE_COLOR[e.team] || OUTLINE_COLOR[2];
@@ -103,7 +105,7 @@ class HeroView {
     for (const o of parts) { const copy = o.isSkinnedMesh ? new THREE.SkinnedMesh(o.geometry, outline) : new THREE.Mesh(o.geometry, outline); if (o.isSkinnedMesh) { copy.bind(o.skeleton, o.bindMatrix); copy.bindMode = o.bindMode; } copy.frustumCulled = false; copy.name = 'outline'; o.add(copy); }
     this.outline = outline; this.outlines = parts.length;
     const mesh = skinnedMeshOf(model), clips = { ...clipsFor(this.slug, mesh, []), ...windupClips(this.slug, mesh) };
-    this.rig = new Rig(model, clips, ['idle', 'run', 'hit', 'death', ...this.clips, 'windup', 'crouch']);
+    this.rig = new Rig(model, clips, ['idle', 'run', 'hit', 'death', ...this.clips, 'windup', 'crouch']); this.mesh = mesh;
     this.root.remove(this.stand); this.stand.traverse(o => { o.geometry?.dispose(); o.material?.dispose(); }); this.stand = null;
     this.root.add(model); this.model = model; return true;
   }
@@ -115,7 +117,9 @@ class HeroView {
     const inst = moved > 120 ? 0 : moved / Math.max(dt, 1e-3); this.speed += (inst - this.speed) * (1 - Math.exp(-dt * 10));
     let x = e.x, y = e.y, lift = 0;
     if (e.motion) { const t = Math.max(0, Math.min(1, (s.time - e.motion.start) / e.motion.duration)), k = ease(t); x = e.motion.x + (e.x - e.motion.x) * k; y = e.motion.y + (e.y - e.motion.y) * k; lift = Math.sin(t * Math.PI) * e.motion.arc * 1.3; }
-    const pose = dead ? null : attackPose(e, s.time), facing = pose?.angle ?? e.facing;
+    // The match is won: the living heroes of the winning team turn to the camera and dance. Reduced motion keeps them still.
+    const dancing = !dead && s.winner === e.team && !this.units.reduced;
+    const pose = dead || dancing ? null : attackPose(e, s.time), facing = dancing ? Math.PI / 2 : pose?.angle ?? e.facing;
     this.yaw += angleTo(this.yaw, yawOf(facing)) * (1 - Math.exp(-dt * (pose ? 22 : 12)));
     r.rotation.y = this.yaw;
     // Death: the clip plays once and holds; the body then burns away from the head down, with an ember edge, and sinks a
@@ -134,6 +138,7 @@ class HeroView {
     const g = this.rig; g.clearTargets();
     const [attackClip, castClip] = this.clips, cast = !dead && e.castIntent, casting = pose?.casting;
     if (dead) { g.target('death', 1); g.time('death', Math.min(2.3, since * 1.1)); }
+    else if (dancing) { if (!g.actions[this.dance]) g.add(this.dance, clipsFor(this.slug, this.mesh, [this.dance])[this.dance]); g.target(this.dance, 1); g.run(this.dance, 1); this.units.poses.push({ id: e.id, hero: e.hero, identity: this.identity.id, stage: 'victory', clip: this.dance, model: this.slug }); }
     else if (pose && !casting) {
       const timing = CLIP_TIMING[attackClip];
       if (timing) { g.target(attackClip, 1); g.time(attackClip, strikeTime(timing, pose.variant, pose.age, e.attackWindup || .12, pose.duration)); this.units.poses.push({ id: e.id, hero: e.hero, identity: this.identity.id, stage: pose.stage, clip: attackClip, model: this.slug }); }
@@ -154,7 +159,7 @@ class HeroView {
       g.target(running ? 'run' : 'idle', 1); g.run('run', Math.max(.55, Math.min(1.7, this.speed / (470 * this.scale)))); g.run('idle', 1);
       if (e.hit > 0) { g.target('hit', .5 * e.hit / .16); g.time('hit', .1 + (.16 - e.hit) / .16 * .45); }
     }
-    g.update(dt, dead ? .12 : .14);
+    g.update(dt, dead ? .12 : dancing ? .3 : .14);
   }
   dispose() { this.units.group.remove(this.root); this.root.traverse(o => { if (o.isMesh && o.material?.userData?.uniforms) o.material.dispose(); }); this.outline?.dispose(); this.rig?.mixer.stopAllAction(); }
 }

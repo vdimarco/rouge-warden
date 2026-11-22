@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="/arcade/quiet.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0a0612">
+<title>Riftwalk · The Lab</title>
+<link rel="icon" href="/favicon.ico">
+<link rel="stylesheet" href="/lab/kit/lab.css">
+<style>
+/* The top bar stays over the loading screen: a visitor can change the view, or open the list of games, while the alley loads. */
+.labbar { z-index: 45; }
+
+#sound[aria-pressed="false"] { text-decoration: line-through; opacity: 0.6; }
+
+/* The loading screen: a still of the alley, the title in neon, a line that says what loads, and a bar. It covers the
+   view until the first, small file of the alley is drawn, and then fades. */
+.loading { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; background: #06040c; transition: opacity 0.7s ease, visibility 0.7s; }
+.loading.done { opacity: 0; visibility: hidden; pointer-events: none; }
+.loading-art { position: absolute; inset: -24px; background: url("./worlds/hall/poster.webp") center / cover no-repeat; filter: blur(9px) brightness(0.5) saturate(1.2); animation: loading-drift 16s ease-in-out infinite alternate; }
+.loading-art::after { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at center, #06040c00 30%, #06040ccc 100%); }
+.loading-box { position: relative; width: min(440px, calc(100vw - 40px)); text-align: center; color: #fff; }
+.loading-kicker { margin: 0 0 6px; font: 600 12px/1 var(--body); letter-spacing: 0.32em; text-transform: uppercase; color: #ffb45e; }
+.loading-title { margin: 0; font: 800 clamp(40px, 12vw, 76px)/1 var(--body); letter-spacing: 0.08em; color: #fff; text-shadow: 0 0 8px #ff3dd0, 0 0 28px #ff3dd0aa, 0 0 60px #35c8ff88; animation: loading-neon 3.2s ease-in-out infinite; }
+.loading-line { margin: 18px 0 10px; font: 600 15px/1.3 var(--body); min-height: 20px; }
+.loading-bar { height: 8px; border-radius: 99px; background: #ffffff1f; overflow: hidden; box-shadow: 0 0 0 1px #ffffff26; }
+.loading-bar i { display: block; height: 100%; width: 0%; border-radius: 99px; background: linear-gradient(90deg, #ff3dd0, #ffb45e, #35c8ff); box-shadow: 0 0 14px #ff3dd0aa; transition: width 0.25s ease; }
+.loading-hint { margin: 14px 0 0; font: 400 13.5px/1.4 var(--body); color: #ffffffb8; min-height: 38px; }
+@keyframes loading-neon { 0%, 100% { opacity: 1; } 46% { opacity: 1; } 48% { opacity: 0.72; } 50% { opacity: 1; } 78% { opacity: 0.9; } }
+@keyframes loading-drift { from { transform: scale(1.02) translateX(-8px); } to { transform: scale(1.08) translateX(8px); } }
+@media (prefers-reduced-motion: reduce) { .loading-art, .loading-title { animation: none; } .loading, .loading-bar i { transition: none; } }
+/* While the full alley loads behind the visitor, a small line says so. */
+.sharp { position: fixed; right: 10px; bottom: calc(var(--sab, 0px) + 8px); z-index: 4; margin: 0; padding: 5px 10px; border-radius: 99px; background: #0b0a14cc; color: #ffffffb8; font: 600 11.5px/1 var(--body); pointer-events: none; }
+.sharp[hidden] { display: none; }
+
+/* The Views menu: the three views of the arcade's home. It opens under the Views button, over the zone buttons. */
+.views { position: fixed; top: calc(var(--sat, 0px) + 48px); left: 50%; transform: translateX(-50%); z-index: 60; width: min(300px, calc(100vw - 24px)); display: grid; gap: 6px; padding: 8px; border: 1px solid var(--line); border-radius: 16px; background: #0b0a14f2; box-shadow: 0 14px 40px #000a; }
+.views[hidden] { display: none; }
+.views a { display: grid; gap: 2px; min-height: 48px; align-content: center; padding: 7px 12px; border-radius: 11px; border: 1px solid transparent; color: var(--ink); text-decoration: none; font: 600 15px/1.2 var(--body); }
+.views a span { font-weight: 400; font-size: 12.5px; opacity: 0.72; }
+.views a:hover, .views a:focus-visible { border-color: var(--line); background: #ffffff12; }
+.views a[aria-current] { border-color: var(--zone, #ffb45e); background: #ffffff0d; }
+#views[aria-expanded="true"] { border-color: var(--zone, #ffb45e); }
+
+  :root { --neon: #ff4fd8; --cyan: #5ff2ff; }
+  html, body { background: #0a0612; }
+  canvas.view { touch-action: none; cursor: grab; }
+  canvas.view.look { cursor: grabbing; }
+  canvas.view.aim { cursor: pointer; }
+  /* The portal in the middle of the view: its name, a line about it, and what a press does. */
+  .target { position: fixed; left: 50%; bottom: calc(var(--sab) + 84px); transform: translateX(-50%); width: max-content; max-width: calc(100vw - 32px); padding: 10px 18px 11px; border-radius: 16px; background: rgba(10, 6, 18, 0.86); border: 1px solid var(--tint, var(--cyan)); box-shadow: 0 0 22px color-mix(in srgb, var(--tint, var(--cyan)) 45%, transparent); text-align: center; pointer-events: none; z-index: 4; }
+  .target[hidden] { display: none; }
+  .target b { display: block; font: 700 21px/1.15 var(--title); color: #fff; }
+  .target span { display: block; color: var(--muted); font: 500 14px/1.3 var(--body); margin-top: 2px; }
+  .target i { display: block; font: 700 12px/1 var(--body); font-style: normal; letter-spacing: 0.08em; text-transform: uppercase; color: var(--tint, var(--cyan)); margin-top: 7px; }
+  /* Turn to the next portal, go back a ring, and go in: big enough for a thumb. */
+  .keys { position: fixed; left: 0; right: 0; bottom: calc(var(--sab) + 16px); display: flex; justify-content: center; gap: 10px; z-index: 5; pointer-events: none; }
+  .keys[hidden] { display: none; }
+  .keys button { pointer-events: auto; min-width: 56px; height: 52px; padding: 0 16px; border-radius: 14px; border: 1px solid var(--line); background: rgba(10, 6, 18, 0.86); color: var(--ink); font: 700 17px/1 var(--body); cursor: pointer; }
+  .keys button.go { background: var(--gold); color: #1d1606; border-color: transparent; min-width: 112px; }
+  .keys button[hidden] { display: none; }
+  /* The zones of the hall: one button for each. A button takes the visitor to that zone. */
+  .groups { position: fixed; left: 0; right: 0; top: calc(var(--sat) + 48px); display: flex; gap: 8px; justify-content: safe center; padding: 0 12px; overflow-x: auto; scrollbar-width: none; z-index: 5; }
+  .groups::-webkit-scrollbar { display: none; }
+  .groups[hidden] { display: none; }
+  .groups button { flex: none; height: 44px; min-width: 44px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: rgba(10, 6, 18, 0.86); color: var(--ink); font: 700 14px/1 var(--body); cursor: pointer; white-space: nowrap; }
+  .groups button[aria-pressed="true"] { background: var(--tint, var(--gold)); color: #14100a; border-color: transparent; box-shadow: 0 0 16px color-mix(in srgb, var(--tint, var(--gold)) 60%, transparent); }
+  /* The zone's name, large for a moment on the way in. */
+  .zone { position: fixed; left: 0; right: 0; top: 30%; text-align: center; font: 700 clamp(34px, 8vw, 84px)/1 var(--title); letter-spacing: 0.04em; text-transform: uppercase; color: #fff; text-shadow: 0 0 18px var(--zone, var(--neon)), 0 0 46px var(--zone, var(--neon)); opacity: 0; pointer-events: none; z-index: 4; }
+  .zone.show { animation: zone-in 2.2s ease-out both; }
+  @keyframes zone-in { 0% { opacity: 0; transform: scale(1.12); } 14% { opacity: 1; transform: none; } 70% { opacity: 1; } 100% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { @keyframes zone-in { 0% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } } }
+  .load { position: fixed; left: 50%; bottom: calc(var(--sab) + 28px); transform: translateX(-50%); color: var(--muted); font: 600 14px/1 var(--body); z-index: 6; pointer-events: none; text-align: center; width: max-content; max-width: calc(100vw - 32px); }
+  .load[hidden] { display: none; }
+  /* The flash that covers the view while a game opens. */
+  /* The light that covers the view on the way into a game or a zone: it blooms from the portal in the middle of the view,
+     and on arrival it closes back to a point. */
+  .flash { position: fixed; inset: 0; background: radial-gradient(circle at 50% 46%, #fff, var(--tint, var(--cyan)) 45%, color-mix(in srgb, var(--tint, var(--cyan)) 35%, #0a0612)); clip-path: circle(0% at 50% 46%); pointer-events: none; z-index: 8; transition: clip-path 0.55s cubic-bezier(0.5, 0, 0.9, 0.4); }
+  .flash.on { clip-path: circle(125% at 50% 46%); }
+  .card .credit { color: var(--muted); font-size: 13px; margin: 12px 0 0; }
+  .card button:disabled { opacity: 0.5; cursor: default; }
+  /* Every game as a plain link: read by screen readers always, and shown to everyone when 3D graphics are missing. */
+  .list { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .list.shown { position: fixed; inset: calc(var(--sat) + 56px) 0 0 0; width: auto; height: auto; overflow: auto; clip-path: none; white-space: normal; padding: 8px 20px 40px; z-index: 7; background: #0a0612; }
+  .list h2 { font: 700 20px/1.2 var(--title); color: var(--gold); margin: 18px 0 6px; }
+  .list ul { margin: 0; padding-left: 20px; } .list li { margin: 6px 0; } .list a { color: var(--ink); }
+  @media (max-width: 430px) { .target b { font-size: 18px; } .keys { gap: 7px; } .keys button { padding: 0 12px; } }
+  /* A short window: the card is one compact block, so it stays under the portal in front. */
+  @media (max-height: 640px) { .target { bottom: calc(var(--sab) + 76px); padding: 6px 14px 7px; } .target b { font-size: 17px; } .target span { font-size: 13px; } .target i { display: none; } }
+  @media (prefers-reduced-motion: reduce) { .flash { transition: none; } }
+</style>
+<script type="importmap">{"imports":{"three":"/vr/lib/three.module.min.js","three/addons/postprocessing/Pass.js":"/lab/riftwalk/lib/Pass.js","@sparkjsdev/spark":"/lab/riftwalk/lib/spark.module.min.js"}}</script>
+</head>
+<body class="toy">
+<canvas class="view" id="view" aria-label="Riftwalk: a neon alley at night. Each storefront is a portal to a world for one game category, and in that world each game floats in a portal frame that launches it."></canvas>
+<nav class="labbar"><a class="back" href="/lab/">◀ Lab</a><button type="button" id="views" aria-expanded="false" aria-controls="viewsMenu">Views</button><button type="button" id="sound" aria-pressed="true">Sound</button><button type="button" id="menu" data-switch>Games</button></nav>
+<div class="views" id="viewsMenu" hidden role="group" aria-label="Views of the arcade">
+  <a href="/?view=alley" aria-current="page"><b>Alley</b><span>A neon street of portals</span></a>
+  <a href="/?view=corridor"><b>Corridor</b><span>A walk past every cabinet</span></a>
+  <a href="/?view=classic"><b>All games</b><span>The list, with search and ranks</span></a>
+</div>
+<div class="groups ui" id="groups" hidden role="group" aria-label="Storefronts of the alley"></div>
+<div class="target" id="target" hidden role="status" aria-live="polite"><b id="tTitle"></b><span id="tSub"></span><i id="tDo"></i></div>
+<div class="keys ui" id="keys" hidden>
+  <button type="button" id="kBack" hidden>Alley</button>
+  <button type="button" id="kRoom" hidden>Go in</button>
+  <button type="button" id="kPrev" aria-label="Turn to the portal on the left">◀</button>
+  <button type="button" id="kMore" hidden>More</button>
+  <button type="button" id="kGo" class="go">Play</button>
+  <button type="button" id="kNext" aria-label="Turn to the portal on the right">▶</button>
+</div>
+<div class="zone" id="zone" aria-hidden="true"></div>
+<p class="load" id="load" hidden>Loading the alley…</p>
+<div class="loading" id="loading" role="status" aria-live="polite">
+  <div class="loading-art" aria-hidden="true"></div>
+  <div class="loading-box">
+    <p class="loading-kicker">Cottage Arcade</p>
+    <h2 class="loading-title" aria-hidden="true">RIFTWALK</h2>
+    <p class="loading-line" id="loadingLine">Opening the alley…</p>
+    <div class="loading-bar" id="loadingBar" role="progressbar" aria-label="The alley's world" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i></i></div>
+    <p class="loading-hint" id="loadingHint">Each storefront is a portal to a world of games.</p>
+  </div>
+</div>
+<p class="sharp" id="sharp" hidden></p>
+<div class="flash" id="flash"></div>
+<section class="card start" id="start" hidden>
+  <h1>Riftwalk</h1>
+  <p class="pitch">The arcade as a neon alley at night. Each storefront is a portal to a world for one game category: a meadow, a temple, a diner, a space station, the Great Wall and an arcade hall. In each world the games float in portal frames.</p>
+  <ul class="how">
+    <li><b>Look:</b> drag the view, or use ◀ and ▶ to turn from portal to portal.</li>
+    <li><b>Storefronts:</b> the buttons at the top, or the up and down arrow keys, take you to a shop.</li>
+    <li><b>Go in:</b> walk into the shop's door, tap it, or press Enter or R. The portal behind you, the Alley button or Esc brings you back.</li>
+    <li><b>Play:</b> tap or click a game's frame, or press Enter.</li>
+    <li><b>Walk:</b> tap or click a spot on the street, or use W A S D.</li>
+  </ul>
+  <button class="go" type="button" id="go" disabled>Loading…</button>
+  <p class="credit">The alley and the worlds are Gaussian splat worlds made with Marble by World Labs, and their Spark library draws them. The music was made with ElevenLabs Music.</p>
+</section>
+<nav class="list" id="list" aria-label="All games, as links"></nav>
+<script src="/arcade/switch.js"></script>
+<script type="module" src="./main.js"></script>
+<script src="/arcade/analytics.js" data-game="riftwalk"></script>
+</body>
+</html>

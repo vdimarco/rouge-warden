@@ -35,3 +35,10 @@ the car's ink outline (`<car>-ink.glb`). It does not meshopt-compress, because
 `public/frostwing/models/`: centred, scaled by its longest horizontal side (or by height with `--height`), turned so the front
 faces -z, simplified, PBR maps kept as WebP, meshopt-compressed. `--floor` puts the base on y = 0. The commands and job IDs are in
 `public/frostwing/models/sources.json`.
+
+# PINOC motions for Shore of the Ancients
+
+`node pinoc-clip.mjs motion.glb ../../public/tidebreak/models/clips.json <clipName> [fps] [label]` adds a Viggle PINOC motion
+(the "mixamo-glb" format) to the Shore clip library. It maps the Mixamo bones to the Meshy rig and stores a bind pose that matches
+the heroes' A-pose, so `hero-rig.js` can retarget the clip like any other. The asset IDs are in
+`public/tidebreak/models/sources.json` under `dances`. The script has no dependencies.

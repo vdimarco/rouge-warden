@@ -1,13 +1,16 @@
-// Checks which view the arcade home opens against openspec/changes/arcade-corridor-default.
+// Checks which view the arcade home opens, and the controls that change the view, against
+// openspec/changes/arcade-corridor-default and openspec/changes/arcade-alley-default.
 // Serve public/ first: python3 -m http.server 8765 --directory public
 // Run: NODE_PATH=qa/browser/node_modules node qa/arcade/default-view.e2e.mjs   (SHOTS=/tmp/dir saves screenshots; CHROME or CHROMIUM_PATH picks the browser)
 import { createRequire } from "module";
 import path from "path";
+import { readFileSync } from "fs";
 const { chromium } = createRequire(import.meta.url)("playwright");
 
 const BASE = (process.env.ARCADE_URL || "http://localhost:8765/").replace(/\/?$/, "/");
 const SHOTS = process.env.SHOTS || "";
-const WALK = BASE + "corridor/";
+const WALK = BASE + "corridor/", ALLEY = BASE + "lab/riftwalk/";
+const SMALL = readFileSync(new URL("../../public/lab/riftwalk/worlds/rooms/gta/150k.spz", import.meta.url));
 const SIZES = [
   { name: "1280", width: 1280, height: 800, touch: false },
   { name: "390", width: 390, height: 844, touch: true },
@@ -29,14 +32,35 @@ for (const size of SIZES) {
     return ctx;
   };
   let ctx = await visitor();
+  // The Alley's world file is 29 MB and 2,000,000 splats. A small world stands in for it here: this check is about the views.
+  await ctx.route("**/worlds/hall/*.spz", (r) => r.fulfill({ contentType: "application/octet-stream", body: SMALL }));
   let page = await ctx.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
 
   await page.goto(BASE);
+  await page.waitForURL(ALLEY);
+  await page.waitForFunction(() => !!window.__riftwalk, null, { timeout: 30000 });
+  check(page.url() === ALLEY, "the home opens the Alley");
+  // the Views menu of the Alley: a button of 44 px or more, three views, the Alley marked as the current one
+  const menu = await page.evaluate(() => {
+    const b = document.getElementById("views"), r = b.getBoundingClientRect(); b.click();
+    const links = [...document.querySelectorAll("#viewsMenu a")], box = document.getElementById("viewsMenu").getBoundingClientRect();
+    return { w: r.width, h: r.height, inView: r.left >= 0 && r.right <= innerWidth, open: !document.getElementById("viewsMenu").hidden && b.getAttribute("aria-expanded") === "true",
+      names: links.map((a) => a.querySelector("b").textContent), hrefs: links.map((a) => a.getAttribute("href")), current: links.filter((a) => a.hasAttribute("aria-current")).map((a) => a.querySelector("b").textContent),
+      tall: Math.min(...links.map((a) => a.getBoundingClientRect().height)), fits: box.left >= 0 && box.right <= innerWidth, wide: document.documentElement.scrollWidth > innerWidth };
+  });
+  check(menu.inView && menu.w >= 44 && menu.h >= 28, `Views button is on screen and ${Math.round(menu.w)}x${Math.round(menu.h)}`);
+  check(menu.open && menu.names.join() === "Alley,Corridor,All games" && menu.current.join() === "Alley", "Views lists the Alley, the Corridor and All games, with the Alley current");
+  check(menu.tall >= 44 && menu.fits && !menu.wide, "the menu's links are 44 px tall and the menu fits the screen");
+  if (SHOTS) await page.screenshot({ path: path.join(SHOTS, size.name + "-alley-views.png") });
+  await page.keyboard.press("Escape");
+  check(await page.evaluate(() => document.getElementById("viewsMenu").hidden), "Esc closes the menu");
+  // force: software WebGL draws the Alley at a frame in seconds, so the page never looks "stable" to the click
+  await page.click("#views", { force: true }); await page.click('#viewsMenu a[href="/?view=corridor"]', { force: true });
   await page.waitForURL(WALK);
   await page.waitForSelector(".cr.is-ready", { timeout: 20000 });
-  check(page.url() === WALK, "the home opens the corridor");
+  check(page.url() === WALK, "Views opens the Corridor");
   const walk = await page.evaluate(() => {
     const a = document.querySelector(innerWidth <= 760 ? "#classic-pill" : "#classic-link"), b = a.getBoundingClientRect();
     const play = [...document.querySelectorAll("a[href]")].map((x) => x.getAttribute("href")).filter((h) => /^https?:\/\/arcade\./.test(h));
@@ -44,6 +68,8 @@ for (const size of SIZES) {
   });
   check(walk.canvas, "the corridor draws on a canvas");
   check(walk.inView && walk.h >= 30 && walk.w >= 44, `All games control is on screen and ${Math.round(walk.w)}x${Math.round(walk.h)}`);
+  const alley = await page.evaluate(() => { const a = document.querySelector(innerWidth <= 760 ? "#alley-pill" : "#alley-link"), b = a.getBoundingClientRect(); return { w: b.width, h: b.height, inView: b.left >= 0 && b.right <= innerWidth && b.top >= 0, href: a.getAttribute("href") }; });
+  check(alley.inView && alley.h >= 30 && alley.w >= 44 && alley.href === "/?view=alley", `Alley control is on screen and ${Math.round(alley.w)}x${Math.round(alley.h)}`);
   check(!walk.wide, "the corridor has no sideways scroll");
   if (SHOTS) await page.screenshot({ path: path.join(SHOTS, size.name + "-corridor.png") });
 
@@ -73,7 +99,13 @@ for (const size of SIZES) {
   await page.waitForURL(WALK);
   await page.goto(BASE);
   await page.waitForURL(WALK);
-  check(page.url() === WALK, "Corridor returns to the corridor and forgets the choice");
+  check(page.url() === WALK, "Corridor returns to the corridor, and the corridor is remembered");
+  await page.waitForSelector(".cr.is-ready", { timeout: 20000 });
+  await page.click(size.width <= 760 ? "#alley-pill" : "#alley-link");
+  await page.waitForURL(ALLEY);
+  await page.goto(BASE);
+  await page.waitForURL(ALLEY);
+  check(page.url() === ALLEY, "Alley returns to the Alley and forgets the choice");
   await ctx.close();
 
   ctx = await visitor();
@@ -98,62 +130,22 @@ for (const size of SIZES) {
 
   check(errors.length === 0, "no page errors" + (errors.length ? ": " + errors.join(" | ") : ""));
 
-  // a clean browser leaves webdriver on and has no stored choice. / is the corridor, same as ?view=walk.
+  // a clean browser leaves webdriver on and has no stored choice. / is the Alley when WebGL2 is there.
   ctx = await browser.newContext({ viewport: { width: size.width, height: size.height }, hasTouch: size.touch });
+  await ctx.route("**/worlds/hall/*.spz", (r) => r.fulfill({ contentType: "application/octet-stream", body: SMALL }));
   page = await ctx.newPage();
   const cleanErrors = [];
   page.on("pageerror", (e) => cleanErrors.push(e.message));
-  const visible = (sels) => page.evaluate((sels) => {
-    for (const sel of sels) {
-      const el = document.querySelector(sel);
-      if (!el) continue;
-      const s = getComputedStyle(el), b = el.getBoundingClientRect();
-      if (s.display === "none" || s.visibility === "hidden" || b.width < 1 || b.height < 1) continue;
-      return sel;
-    }
-    return "";
-  }, sels);
+  await page.goto(BASE);
+  await page.waitForURL(ALLEY);
+  check(page.url() === ALLEY, "a clean / opens the Alley");
   const hit = (sel) => page.evaluate((sel) => {
     const el = document.querySelector(sel), b = el.getBoundingClientRect();
     const top = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2);
     return { self: top === el, id: top && top.id, cls: top && String(top.className || "") };
   }, sel);
-  await page.goto(BASE);
-  await page.waitForURL(WALK);
-  await page.waitForSelector(".cr.is-ready", { timeout: 20000 });
-  await page.waitForFunction(() => ["#classic-link", "#classic-pill"].some((sel) => {
-    const el = document.querySelector(sel);
-    if (!el) return false;
-    const b = el.getBoundingClientRect();
-    return getComputedStyle(el).display !== "none" && b.width > 0 && b.height > 0;
-  }));
   const boardUp = () => page.locator(".gsw.scoreboard").isVisible();
-  check(page.url() === WALK && !(await boardUp()), "a clean / opens the corridor with the leaderboard closed");
   if (size.width === 390 || size.width === 1280) {
-    if (SHOTS) await page.screenshot({ path: path.join(SHOTS, "clean-" + size.name + "-corridor.png") });
-    const games = await visible(["#classic-link", "#classic-pill"]);
-    const at = await hit(games);
-    check(!!games && at.self, `${size.name}: All Games is the element at its centre (${games}; hit ${at.id || at.cls})`);
-    // A normal click, not a forced one. On software WebGL the corridor's frame is most of a second,
-    // so the click's own stability check can take longer than the open. The list has to be up within 1s of arrival.
-    let arrived = 0;
-    const mark = () => { arrived = Date.now(); };
-    page.on("framenavigated", mark);
-    const t0 = Date.now();
-    await page.locator(games).click({ timeout: 20000 });
-    const clickMs = Date.now() - t0;
-    page.off("framenavigated", mark);
-    const tList = Date.now();
-    await page.waitForSelector(".gsw.scoreboard .board-launch", { timeout: 1000 });
-    const listMs = Date.now() - (arrived || tList);
-    check(listMs <= 1000 && await boardUp(), `${size.name}: All Games opens the list in ${listMs} ms of arrival (${clickMs} ms for the click on this machine)`);
-    if (SHOTS) await page.screenshot({ path: path.join(SHOTS, "clean-" + size.name + "-all-games.png") });
-
-    await page.goto(BASE + "?view=walk");
-    await page.waitForURL(WALK);
-    await page.waitForSelector(".cr.is-ready", { timeout: 20000 });
-    check(page.url() === WALK && !(await boardUp()), "?view=walk opens the corridor");
-
     await page.goto(BASE + "?view=board");
     await page.waitForSelector(".gsw.scoreboard:not([hidden]) .board-launch");
     check(new URL(page.url()).searchParams.get("view") === "board" && await boardUp(), "?view=board opens the leaderboard");

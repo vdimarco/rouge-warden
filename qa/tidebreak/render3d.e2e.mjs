@@ -56,7 +56,7 @@ try {
     const t = await open('?renderer=3d'), { page, read, pump } = t;
     let g = await t.graphics();
     assert.equal(g.renderer, 'Mythic 3D', 'the 3D renderer starts');
-    assert.equal(g.models.world, g.models.worldTotal); assert.equal(g.models.clips, 17);
+    assert.equal(g.models.world, g.models.worldTotal); assert.equal(g.models.clips, 21);
     assert.equal(await page.evaluate(() => !!document.getElementById('battle-3d') && !!document.getElementById('battle-overlay')), true, 'the WebGL canvas and the overlay exist');
     // The hero select shows the 3D arena behind it: the renderer draws and the menu drops its painted backdrop.
     await until(() => page.evaluate(() => document.getElementById('menu').classList.contains('arena-3d') && document.getElementById('battle').__shore3d.drawCalls > 20), 'the arena behind the hero select', 120);

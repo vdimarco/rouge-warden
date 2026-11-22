@@ -212,6 +212,11 @@
       "added": "2026-11-11T10:21:35-05:00",
       "updated": "2026-11-11T10:21:35-05:00"
     },
+    "riftwalk": {
+      "path": "public/lab/riftwalk",
+      "added": "2026-11-15T17:30:00-05:00",
+      "updated": "2026-11-16T08:10:00-05:00"
+    },
     "last-light": {
       "path": "public/last-light",
       "added": "2026-10-08T19:24:54-04:00",
@@ -221,6 +226,16 @@
       "path": "public/ember-drift",
       "added": "2026-11-11T16:08:03+00:00",
       "updated": "2026-11-11T16:08:03+00:00"
+    },
+    "splat-isle": {
+      "path": "public/lab/splat-isle",
+      "added": "2026-11-17T09:30:00-05:00",
+      "updated": "2026-11-17T17:24:40+00:00"
+    },
+    "ember-tide": {
+      "path": "public/ember-tide",
+      "added": "2026-11-17T12:39:58+00:00",
+      "updated": "2026-11-17T12:39:58+00:00"
     }
   }
 }

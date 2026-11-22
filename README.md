@@ -555,6 +555,12 @@ Ember Drift (`/ember-drift/`) is an Action game. You steer an ember that always 
 
 Endless flight makes the sky as you fly. Fuel burns faster with time and depth, dark clouds burn it fast and follow you, comets cross your path, gold flares drift away, and blue beacons give a timed bonus. Puzzle stages are 16 hand-made skies with one goal each; clearing a stage opens the next, and par time gives 3 sparks. The game is one `index.html` with no build step. See [`openspec/specs/ember-drift/spec.md`](openspec/specs/ember-drift/spec.md).
 
+## Ember Tide
+
+Ember Tide (`/ember-tide/`) is an Action game: a fighter-jet campaign of twelve sorties in three acts. You fly marker gates, skim the sea, shoot down raiders, roll missiles off and counter-attack, hold a picket line, and twice fight an ace with a health bar. Each sortie gives up to three stars, which buy five hangar upgrades and open four paint schemes. Seven cutscenes tell the story between sorties and can be watched again from the flight line.
+
+The scene comes from a Forge fragment, kept in `games/ember-tide/forge-src/` and patched by `games/ember-tide/tools/build_engine.py`; its licence has not been checked. Sorties and balance are in `public/ember-tide/missions.js`, cutscenes in `public/ember-tide/cutscenes.js`. See [`openspec/specs/ember-tide/spec.md`](openspec/specs/ember-tide/spec.md) and `games/ember-tide/README.md`.
+
 ## The lab
 
 The lab at `/lab/` holds toys. A toy is a small build that tests the core move of a new game idea before anyone builds the game. The arcade shows the lab: The Lab machine opens `/lab/`, the **LAB ↗** link under the sign does too, and each toy has a machine of its own. The game switcher lists the lab and its toys. Each lab page asks search engines not to index it. The ideas, and the bar a new game must pass, are in `docs/game-ideas.md`.

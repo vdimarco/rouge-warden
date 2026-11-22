@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="/arcade/quiet.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Splat Isle · Cottage Arcade Lab</title>
+<meta name="description" content="Five tiny islands written as shapes, painted with Gaussian splats like brush strokes, and shown as pixel art. Relight the lighthouse: help the islanders, break things, tend your flower and your goat, and sail.">
+<link rel="icon" href="/favicon.ico">
+<link rel="stylesheet" href="/lab/kit/lab.css">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #1b1626; overscroll-behavior: none; }
+  .view { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; image-rendering: pixelated; }
+  .labbar { z-index: 30; }
+  /* The title, top middle, in the pixel palette's warm light */
+  .tag { position: fixed; top: calc(var(--sat, 0px) + 10px); left: 50%; transform: translateX(-50%); z-index: 5; margin: 0; padding: 6px 14px; border-radius: 999px; background: #1b1626cc; color: #fbe9c4; font: 700 14px/1 var(--body); letter-spacing: 0.08em; pointer-events: none; white-space: nowrap; }
+  .isle-hud { position: fixed; top: calc(var(--sat, 0px) + 46px); left: 10px; z-index: 6; max-width: min(430px, calc(100vw - 20px)); pointer-events: none; display: grid; gap: 4px; justify-items: start; }
+  .isle-hud p { margin: 0; padding: 5px 10px; border-radius: 10px; background: #1b1626cc; color: #fbe9c4; font: 500 13px/1.3 var(--body); }
+  .isle-hud .where { font-weight: 700; color: #f6c58c; letter-spacing: 0.04em; }
+  .isle-hud .chores { color: #a8cc62; }
+  .isle-hud .inv { display: flex; flex-wrap: wrap; gap: 4px 10px; } .isle-hud .inv:empty { display: none; } .isle-hud .inv b { color: #f09a68; font-weight: 700; }
+  .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(var(--sab, 0px) + 68px); z-index: 7; margin: 0; padding: 8px 14px; border-radius: 12px; background: #2f2340f0; color: #fff8ea; font: 600 14px/1.3 var(--body); text-align: center; pointer-events: none; max-width: calc(100vw - 24px); box-sizing: border-box; }
+  .talk { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(var(--sab, 0px) + 66px); z-index: 12; width: min(560px, calc(100vw - 20px)); box-sizing: border-box; padding: 12px 16px 10px; border-radius: 14px; border: 2px solid #f6c58c; background: #1b1626f2; color: #fbe9c4; cursor: pointer; }
+  .talk b { display: block; color: #f09a68; font: 800 13px/1 var(--body); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; } .talk b[hidden] { display: none; }
+  .talk p { margin: 0 0 6px; font: 500 16px/1.4 var(--body); } .talk small { color: #fbe9c499; font: 500 12px/1 var(--body); }
+  .float { position: fixed; left: 0; top: 0; z-index: 8; pointer-events: none; color: #ffd56a; font: 900 22px/1 var(--body); text-shadow: 2px 2px 0 #2f2340; }
+  /* The controls: one row at the foot. Every control is at least 44 px. */
+  .controls { position: fixed; left: 8px; right: 8px; bottom: calc(var(--sab, 0px) + 10px); z-index: 10; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; pointer-events: none; }
+  .controls > *, .panel > * { pointer-events: auto; }
+  .controls button, .panel button, .goop, .isles button, .close { min-height: 44px; min-width: 44px; box-sizing: border-box; border-radius: 12px; border: 1px solid #fbe9c440; background: #1b1626e6; color: #fbe9c4; font: 600 14px/1 var(--body); padding: 0 13px; cursor: pointer; }
+  .controls button[hidden] { display: none; }
+  #bSound[aria-pressed="false"] { text-decoration: line-through; opacity: 0.7; }
+  #bAct { min-width: 150px; background: #73405f; border-color: #f6c58c; } #bAct:disabled { background: #1b1626e6; border-color: #fbe9c440; }
+  .controls button[aria-pressed="true"], .panel button[aria-pressed="true"], #bLook[aria-expanded="true"] { background: #d26e5a; border-color: #f6c58c; color: #fff8ea; }
+  .controls button:disabled, .panel button:disabled { opacity: 0.5; cursor: default; }
+  .panel { position: fixed; right: 8px; bottom: calc(var(--sab, 0px) + 62px); z-index: 11; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; max-width: calc(100vw - 16px); padding: 8px; border-radius: 14px; background: #2f2340e6; box-sizing: border-box; }
+  .panel[hidden] { display: none; }
+  .goop { display: inline-flex; align-items: center; gap: 8px; cursor: default; }
+  .goop input { width: 110px; accent-color: #f09a68; height: 28px; }
+  .goop output { min-width: 34px; font-variant-numeric: tabular-nums; }
+  .map, .end { position: fixed; inset: 0; z-index: 15; display: grid; place-items: center; background: #1b162699; } .map[hidden], .end[hidden] { display: none; }
+  .map-box { width: min(420px, calc(100vw - 24px)); box-sizing: border-box; max-height: calc(100vh - 24px); overflow: auto; padding: 16px; border-radius: 16px; border: 2px solid #f6c58c; background: #1b1626f5; color: #fbe9c4; text-align: center; }
+  .map-box h2 { margin: 0 0 10px; font: 800 22px/1 var(--body); color: #f6c58c; letter-spacing: 0.06em; } .map-box p { font: 500 15px/1.4 var(--body); }
+  .isles { display: grid; gap: 6px; margin-bottom: 10px; }
+  .isles button { display: grid; gap: 3px; padding: 8px 12px; text-align: left; } .isles button b { font-size: 15px; color: #f6c58c; } .isles button small { font: 500 12px/1.2 var(--body); color: #fbe9c4b0; }
+  .isles button:disabled { opacity: 0.5; cursor: default; }
+  .close { width: 100%; background: #73405f; }
+  @media (max-width: 560px) { .controls button, .panel button, .goop { padding: 0 10px; font-size: 13px; } #bAct { min-width: 120px; } .goop input { width: 84px; } .isle-hud p { font-size: 12px; } .tag { display: none; } }
+  /* Loading: the island is painted in the page, stroke by stroke, before it can be drawn */
+  .loading { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; background: #1b1626; transition: opacity 0.5s, visibility 0.5s; }
+  .loading.done { opacity: 0; visibility: hidden; pointer-events: none; }
+  .loading-box { width: min(380px, calc(100vw - 40px)); text-align: center; color: #fbe9c4; }
+  .loading-box h1 { margin: 0 0 6px; font: 800 clamp(34px, 10vw, 54px)/1 var(--body); letter-spacing: 0.06em; color: #f6c58c; text-shadow: 3px 3px 0 #73405f; }
+  .loading-box p { margin: 8px 0; font: 500 14px/1.4 var(--body); }
+  .bar { height: 10px; background: #2f2340; border: 2px solid #4b3157; }
+  .bar i { display: block; height: 100%; width: 0; background: #f09a68; transition: width 0.15s; }
+  @media (prefers-reduced-motion: reduce) { .loading, .bar i { transition: none; } }
+</style>
+</head>
+<body class="toy">
+<canvas class="view" id="view" aria-label="Splat Isle: small islands on a calm sea, painted with soft splats and shown as pixel art. You are the keeper of Home Isle. Tap the ground to walk, tap a thing to use it or break it, and drag to turn the view."></canvas>
+<nav class="labbar"><a class="back" href="/lab/">◀ Lab</a><button type="button" id="menu" data-switch>Games</button></nav>
+<p class="tag" aria-hidden="true">SPLAT ISLE</p>
+<div class="isle-hud" aria-live="polite">
+  <p class="where" id="where">Home Isle · Day 1</p>
+  <p class="goal" id="goal"></p>
+  <p class="chores" id="chores" hidden></p>
+  <p class="inv" id="inv"></p>
+</div>
+<p class="toast" id="toast" role="status" hidden></p>
+<div class="talk" id="talk" role="dialog" aria-label="Someone speaks" hidden><b id="talkName"></b><p id="talkText"></p><small>Tap or press E</small></div>
+<div class="controls" role="group" aria-label="Splat Isle controls">
+  <button type="button" id="bAct" title="E or Space" disabled>Act</button>
+  <button type="button" id="bMap" title="M">Map</button>
+  <button type="button" id="bRide" aria-pressed="false" title="G" hidden>Ride</button>
+  <button type="button" id="bLook" aria-expanded="false" aria-controls="lookPanel">Look</button>
+  <button type="button" id="bSound" aria-pressed="true" title="Sound on or off">Sound</button>
+</div>
+<div class="panel" id="lookPanel" role="group" aria-label="How the islands look" hidden>
+  <button type="button" id="bPixel" aria-pressed="true" title="P">Pixel</button>
+  <button type="button" id="bPalette" title="C">Palette: Dusk</button>
+  <label class="goop" title="The size of every stroke">Goop <input type="range" id="goop" min="0.3" max="3" step="0.1" value="1" aria-label="Stroke size"> <output id="goopValue">1.0×</output></label>
+  <button type="button" id="bShapes" aria-pressed="false" title="X">Shapes</button>
+  <button type="button" id="bReset">New game</button>
+</div>
+<div class="map" id="map" role="dialog" aria-label="Sail to an island" hidden>
+  <div class="map-box"><h2>Sail to</h2><div class="isles" id="isles"></div><button type="button" id="mapClose" class="close">Stay here</button></div>
+</div>
+<div class="end" id="end" role="dialog" aria-label="The lighthouse shines" hidden>
+  <div class="map-box"><h2>The light is lit</h2><p>The lighthouse turns again over the dark sea, and the boats find their way home.</p><p id="endDays"></p><button type="button" id="endGo" class="close">Keep playing</button></div>
+</div>
+<div class="loading" id="loading" role="status" aria-live="polite">
+  <div class="loading-box">
+    <h1 id="loadTitle">SPLAT ISLE</h1>
+    <p id="loadLine">Painting the islands…</p>
+    <div class="bar" id="loadingBar" role="progressbar" aria-label="Painting the island" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i></i></div>
+    <p>Every stroke is laid on shapes written as math, with the light baked in. Your game saves in this browser.</p>
+  </div>
+</div>
+<script type="importmap">{"imports":{"three":"/vr/lib/three.module.min.js","three/addons/postprocessing/Pass.js":"/lab/riftwalk/lib/Pass.js","@sparkjsdev/spark":"/lab/riftwalk/lib/spark.module.min.js"}}</script>
+<script src="/arcade/switch.js"></script>
+<script type="module" src="./main.js"></script>
+<script src="/arcade/analytics.js" data-game="splat-isle"></script>
+</body>
+</html>

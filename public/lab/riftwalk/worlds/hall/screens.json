@@ -1,0 +1,186 @@
+{
+ "note": "The main world is a neon alley at a crossroads, a Marble app export (y up, not metric: the floor is 0.5415 units under the origin, so the scale puts the eye at 1.45 m). It has no arcade machines. Each zone is a storefront: ring is the door on the shop front, measured from the splats, and station is the place on the street in front of it. A door draws as an upright oval inside its width and height.",
+ "hall": {
+  "scale": 2.6777,
+  "eye": 1.45,
+  "file": "hall.spz",
+  "flip": false,
+  "offset": [
+   0,
+   1.45,
+   0
+  ],
+  "bounds": {
+   "boxes": [
+    {
+     "x": [
+      -9,
+      9
+     ],
+     "z": [
+      -3.1,
+      0.2
+     ]
+    },
+    {
+     "x": [
+      -1.8,
+      0.7
+     ],
+     "z": [
+      -14,
+      7
+     ]
+    }
+   ]
+  },
+  "start": {
+   "x": -0.4,
+   "z": -0.6,
+   "facing": 0
+  },
+  "fileTouch": "hall-1m.spz",
+  "fileFirst": "hall-first.spz"
+ },
+ "zones": {
+  "cottage": {
+   "station": [
+    -4.35,
+    -1.0
+   ],
+   "facing": 0,
+   "room": true,
+   "shop": "nw",
+   "ring": {
+    "centre": [
+     -4.35,
+     1.06,
+     -4.9
+    ],
+    "normal": [
+     0.0,
+     0,
+     1.0
+    ],
+    "width": 1.5,
+    "height": 1.95
+   }
+  },
+  "action": {
+   "station": [
+    0.7,
+    -6.74
+   ],
+   "facing": -1.5708,
+   "room": true,
+   "shop": "w",
+   "ring": {
+    "centre": [
+     -2.1,
+     1.06,
+     -6.74
+    ],
+    "normal": [
+     1.0,
+     0,
+     0.0
+    ],
+    "width": 1.5,
+    "height": 1.95
+   }
+  },
+  "ascii": {
+   "station": [
+    -1.8,
+    -6.0
+   ],
+   "facing": 1.5708,
+   "room": true,
+   "shop": "e",
+   "ring": {
+    "centre": [
+     2.58,
+     1.06,
+     -6.0
+    ],
+    "normal": [
+     -1.0,
+     0,
+     0.0
+    ],
+    "width": 1.5,
+    "height": 1.95
+   }
+  },
+  "strategy": {
+   "station": [
+    4.14,
+    -0.2
+   ],
+   "facing": 0,
+   "room": true,
+   "shop": "ne",
+   "ring": {
+    "centre": [
+     4.14,
+     1.06,
+     -3.83
+    ],
+    "normal": [
+     0.0,
+     0,
+     1.0
+    ],
+    "width": 1.5,
+    "height": 1.95
+   }
+  },
+  "gta": {
+   "station": [
+    5.11,
+    -1.6
+   ],
+   "facing": 3.1416,
+   "room": true,
+   "shop": "se",
+   "ring": {
+    "centre": [
+     5.11,
+     1.06,
+     2.04
+    ],
+    "normal": [
+     0.0,
+     0,
+     -1.0
+    ],
+    "width": 1.5,
+    "height": 1.95
+   }
+  },
+  "lab": {
+   "station": [
+    0.2,
+    2.95
+   ],
+   "facing": -1.5708,
+   "room": true,
+   "shop": "sw",
+   "ring": {
+    "centre": [
+     -3.81,
+     1.06,
+     2.95
+    ],
+    "normal": [
+     1.0,
+     0,
+     0.0
+    ],
+    "width": 1.5,
+    "height": 1.95
+   }
+  }
+ },
+ "screens": []
+}
