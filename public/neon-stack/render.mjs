@@ -13,12 +13,16 @@ out vec3 vW;
 flat out float vKind;
 flat out float vSign;
 void main() {
-  vec3 p = vec3(i0.x + (aC.x - 0.5) * i0.w * 2.0, i0.z, i0.y + (aC.y - 0.5) * i1.x * 2.0);
-  vW = p;
+  float upright = step(0.5, i2.w);
+  float faceZ = step(1.5, i2.w);
+  vec3 horiz = vec3(i0.x + (aC.x - 0.5) * i0.w * 2.0, i0.z, i0.y + (aC.y - 0.5) * i1.x * 2.0);
+  vec3 faceX = vec3(i0.x, i0.z + (aC.y - 0.5) * i1.x * 2.0, i0.y + (aC.x - 0.5) * i0.w * 2.0);
+  vec3 faceZv = vec3(i0.x + (aC.x - 0.5) * i0.w * 2.0, i0.z + (aC.y - 0.5) * i1.x * 2.0, i0.y);
+  vW = mix(horiz, mix(faceX, faceZv, faceZ), upright);
   vUV = mix(vec2(i1.y, i1.z), vec2(i1.w, i2.x), aC);
   vKind = i2.y;
   vSign = i2.z;
-  gl_Position = uVP * vec4(p, 1.0);
+  gl_Position = uVP * vec4(vW, 1.0);
 }`;
 
 const FRAG = `#version 300 es
@@ -53,14 +57,6 @@ vec3 pal(float id) { return texture(uPal, vec2((id + 0.5) / 16.0, 0.5)).rgb; }
 void main() {
   vec4 t = texture(uAtlas, vUV);
   if (t.a < 0.5) discard;
-  vec3 tint = vec3(0.0);
-  float best = 0.0;
-  for (int i = 0; i < 8; i++) {
-    float a = clamp(1.0 - distance(vW, uL[i].xyz) / max(uL[i].w, 0.001), 0.0, 1.0) * uI[i] * step(0.5, uL[i].w);
-    float win = step(best, a);
-    best = mix(best, a, win);
-    tint = mix(tint, uC[i].rgb, win);
-  }
   float face = t.g * 255.0;
   float id = t.r * 255.0;
   float fade = fadeOf(vSign);
@@ -82,29 +78,41 @@ void main() {
   float runner = step(abs(vKind - 1.0), 0.25);
   col = mix(col, pal(9.0), runner * side * step(0.55, dot(n.xz, uRim)));
   col = mix(col, pal(1.0), step(abs(vKind - 2.0), 0.25));
-  col = mix(col, uHaze, clamp(vW.y / 48.0, 0.0, 1.0) * 0.35 * (1.0 - isNeon));
-  vec4 paper = vec4(pal(9.0), 1.0);
-  vec4 lit = vec4(col, 1.0);
-  o = mix(lit, paper, step(0.5, uPass) * step(uPass, 1.5));
-  o = mix(o, vec4(tint, best), step(1.5, uPass));
+  col = mix(col, uHaze, clamp(vW.y / 48.0, 0.0, 1.0) * 0.28 * (1.0 - isNeon) * (1.0 - runner));
+  float wall = step(side, 0.0);
+  wall = 1.0 - wall;
+  wall = wall * (1.0 - isNeon) * (1.0 - runner) * (1.0 - step(abs(vKind - 2.0), 0.25));
+  float lit = 0.0;
+  vec3 lcol = pal(4.0);
+  for (int i = 0; i < 8; i++) {
+    vec3 toL = uL[i].xyz - vW;
+    float dist = length(toL);
+    float faceL = dot(n.xz, toL.xz / max(length(toL.xz), 0.001));
+    float a = clamp(1.0 - dist / max(uL[i].w, 0.001), 0.0, 1.0) * uI[i] * step(0.2, faceL) * step(0.5, uL[i].w);
+    float win = step(lit, a);
+    lit = mix(lit, a, win);
+    lcol = mix(lcol, uC[i].rgb, win);
+  }
+  float q = floor(clamp(lit, 0.0, 0.999) * 4.0) / 3.0;
+  col = mix(col, pal(4.0), wall * step(0.05, lit));
+  col = mix(col, lcol, q * wall);
+  o = vec4(col, 1.0);
 }`;
 
 const COMP = `#version 300 es
 precision highp float;
 uniform sampler2D uAlb;
-uniform sampler2D uLight;
 uniform vec2 uDrop[60];
 uniform vec3 uSmog;
+uniform vec3 uPaper;
+uniform vec4 uSil;
 uniform vec4 uHalo[8];
 uniform vec4 uHaloC[8];
 uniform highp float uTime;
 in vec2 vUV;
 layout(location=0) out vec4 o;
 void main() {
-  vec4 alb = texture(uAlb, vUV);
-  vec4 L = texture(uLight, vUV);
-  float q = floor(clamp(L.a, 0.0, 0.999) * 4.0) / 3.0;
-  vec3 col = mix(alb.rgb, L.rgb, q * 0.82);
+  vec3 col = texture(uAlb, vUV).rgb;
   vec2 pix = floor(gl_FragCoord.xy);
   float rain = 0.0;
   for (int i = 0; i < 60; i++) {
@@ -112,12 +120,14 @@ void main() {
     rain = max(rain, step(0.0, d.x) * step(d.x, 2.01) * step(abs(d.y + d.x), 0.1));
   }
   col = mix(col, uSmog, rain * 0.4);
-  float phase = step(0.5, fract(uTime * 0.25));
-  float dither = step(0.5, fract((pix.x + pix.y + phase) * 0.5));
+  float dither = step(0.5, fract(pix.x + pix.y + step(0.5, fract(uTime))));
   for (int i = 0; i < 8; i++) {
-    float ring = step(abs(distance(pix, uHalo[i].xy) - 7.0), 0.6) * step(0.2, uHalo[i].z) * dither;
+    float ring = step(abs(distance(pix, uHalo[i].xy) - 5.0), 0.5) * step(0.2, uHalo[i].z) * dither;
     col = mix(col, uHaloC[i].rgb, ring);
   }
+  vec2 box = abs(pix - uSil.xy);
+  float sil = step(box.x, uSil.z) * step(box.y, uSil.z * 1.7) * step(0.5, uSil.w);
+  col = mix(col, uPaper, sil);
   o = vec4(col, 1.0);
 }`;
 
@@ -334,7 +344,7 @@ export function createRenderer(canvas, atlas, palette) {
       const s = slices[i], o = i * 12;
       data[o] = s.x; data[o + 1] = s.z; data[o + 2] = s.y; data[o + 3] = s.hx;
       data[o + 4] = s.hz; data[o + 5] = s.uv[0]; data[o + 6] = s.uv[1]; data[o + 7] = s.uv[2];
-      data[o + 8] = s.uv[3]; data[o + 9] = s.kind; data[o + 10] = s.sign; data[o + 11] = 0;
+      data[o + 8] = s.uv[3]; data[o + 9] = s.kind; data[o + 10] = s.sign; data[o + 11] = s.orient || 0;
     }
     gl.bindBuffer(gl.ARRAY_BUFFER, inst);
     gl.bufferData(gl.ARRAY_BUFFER, data.subarray(0, n * 12), gl.DYNAMIC_DRAW);
@@ -362,22 +372,27 @@ export function createRenderer(canvas, atlas, palette) {
     api.drawCalls++;
     api.slices += count;
   }
-  api.resize = (backW, backH) => {
-    let scale = Math.max(1, Math.ceil(backW / 320));
-    let artW = Math.floor(backW / scale);
-    let artH = Math.floor(backH / scale);
+  api.resize = (backW, backH, cssW, cssH, dpr) => {
+    const ref = Math.min(dpr || 1, 2);
+    const targetW = Math.max(1, (cssW || backW) * ref);
+    const targetH = Math.max(1, (cssH || backH) * ref);
+    let scale = Math.max(1, Math.ceil(targetW / 320));
+    let artW = Math.floor(targetW / scale);
+    let artH = Math.max(2, Math.floor(targetH / scale));
     while (artW > 320 && scale < 32) {
       scale++;
-      artW = Math.floor(backW / scale);
-      artH = Math.floor(backH / scale);
+      artW = Math.floor(targetW / scale);
+      artH = Math.max(2, Math.floor(targetH / scale));
     }
-    artW = Math.max(2, artW);
-    artH = Math.max(2, artH);
+    if (artW < 256) {
+      artW = 256;
+      artH = Math.max(2, Math.round((cssH || backH) * (artW / Math.max(1, cssW || backW))));
+    }
     const blit = Math.max(1, Math.floor(Math.min(backW / artW, backH / artH)));
     const ox = Math.floor((backW - artW * blit) / 2);
     const oy = Math.floor((backH - artH * blit) / 2);
-    api.view = { artW, artH, scale: blit, ox, oy, backW, backH };
-    ensure(artW, artH, backW < 800);
+    api.view = { artW, artH, scale: blit, ox, oy, backW, backH, cssW: cssW || backW, cssH: cssH || backH };
+    ensure(artW, artH, (cssW || backW) < 800);
   };
   api.draw = (scene) => {
     if (lost || !alb) return;
@@ -403,16 +418,6 @@ export function createRenderer(canvas, atlas, palette) {
     gl.clearColor(14 / 255, 16 / 255, 32 / 255, 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     drawStack(0, count);
-    gl.depthFunc(gl.GREATER);
-    gl.depthMask(false);
-    drawStack(1, scene.runnerCount);
-    gl.depthMask(true);
-    gl.depthFunc(gl.LESS);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, light.fb);
-    gl.viewport(0, 0, light.w, light.h);
-    gl.clearColor(0, 0, 0, 0);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    drawStack(2, count);
     gl.disable(gl.DEPTH_TEST);
     gl.bindFramebuffer(gl.FRAMEBUFFER, comp.fb);
     gl.viewport(0, 0, artW, artH);
@@ -420,11 +425,10 @@ export function createRenderer(canvas, atlas, palette) {
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, alb.color);
     gl.uniform1i(gl.getUniformLocation(compProg, "uAlb"), 0);
-    gl.activeTexture(gl.TEXTURE1);
-    gl.bindTexture(gl.TEXTURE_2D, light.color);
-    gl.uniform1i(gl.getUniformLocation(compProg, "uLight"), 1);
     gl.uniform2fv(gl.getUniformLocation(compProg, "uDrop"), scene.drops);
     gl.uniform3fv(gl.getUniformLocation(compProg, "uSmog"), scene.smog);
+    gl.uniform3fv(gl.getUniformLocation(compProg, "uPaper"), scene.paper);
+    gl.uniform4fv(gl.getUniformLocation(compProg, "uSil"), scene.sil);
     gl.uniform4fv(gl.getUniformLocation(compProg, "uHalo"), scene.halo);
     gl.uniform4fv(gl.getUniformLocation(compProg, "uHaloC"), scene.haloColor);
     gl.uniform1f(gl.getUniformLocation(compProg, "uTime"), scene.time);
@@ -486,7 +490,7 @@ export function createRenderer(canvas, atlas, palette) {
     lost = false;
     alb = light = comp = null;
     boot();
-    api.resize(api.view.backW, api.view.backH);
+    api.resize(api.view.backW, api.view.backH, api.view.cssW, api.view.cssH, window.devicePixelRatio || 1);
   });
   api.lost = () => lost;
   return api;

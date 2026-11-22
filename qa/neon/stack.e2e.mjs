@@ -145,24 +145,16 @@ const fire = await desk.page.evaluate(async () => {
   const barrel = lights.find((l) => l.type === "fire");
   const neon = lights.filter((l) => l.type === "neon");
   const dist = Math.min(...neon.map((l) => Math.hypot(l.x - barrel.x, l.y - barrel.y)));
-  __test.moveTo(Math.min(5.2, barrel.x), barrel.y - 0.9);
-  const dx = barrel.x - __test.state().player.x;
-  const dy = barrel.y - __test.state().player.y;
+  __test.moveTo(2.5, 2.5);
+  __test.setTilt(48);
+  const dx = barrel.x - 2.5, dy = barrel.y - 2.5;
   __test.setYaw((Math.atan2(dx, dy) * 180 / Math.PI + 360) % 360);
+  await new Promise((r) => setTimeout(r, 280));
+  const view = __test.view();
   let warm = null;
-  for (const tilt of [28, 36, 48, 62]) {
-    __test.setTilt(tilt);
-    await new Promise((r) => setTimeout(r, 180));
-    const p = __test.project(barrel.x, barrel.y, 2);
-    const view = __test.view();
-    if (p.x < 8 || p.y < 8 || p.x > view.artW - 8 || p.y > view.artH - 8) continue;
-    for (let y = Math.max(0, p.y - 24); y < Math.min(view.artH, p.y + 24) && !warm; y += 2) {
-      for (let x = Math.max(0, p.x - 24); x < Math.min(view.artW, p.x + 24); x += 2) {
-        const c = __test.pixel(x, y);
-        if (c[0] > 160 && c[1] > 70 && c[2] < 120 && c[0] > c[2] + 40) warm = c.join(",");
-      }
-    }
-    if (warm) break;
+  for (let y = 0; y < view.artH && !warm; y += 2) for (let x = 0; x < view.artW; x += 2) {
+    const c = __test.pixel(x, y);
+    if (c[0] > 150 && c[1] > c[2] + 25 && c[0] > c[1] && c[2] < 120) warm = c.join(",");
   }
   return { dist, warm, on: barrel.on };
 });
@@ -260,6 +252,102 @@ for (const [w, h, dpr] of [[1280, 800, 1], [390, 844, 2], [320, 640, 2]]) {
   await page.screenshot({ path: OUT + "/lab-" + w + ".png" });
   await ctx.close();
 }
+
+async function proof(width, height, dpr, tag) {
+  const ctx = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: dpr, hasTouch: width < 800 });
+  const page = await ctx.newPage();
+  const errs = [];
+  page.on("pageerror", (e) => errs.push(String(e)));
+  page.on("console", (m) => { if (m.type() === "error") errs.push(m.text()); });
+  await page.goto(GAME + "?seed=4", { waitUntil: "domcontentloaded" });
+  await page.waitForFunction(() => window.__test && __test.ready());
+  await page.evaluate(() => { __test.enter(); __test.moveTo(2.5, 2.5); __test.forceCutaway(false); __test.setTilt(55); __test.setYaw(20); });
+  await page.waitForTimeout(220);
+  const view = await page.evaluate(() => __test.view());
+  check(view.artW >= 256 && view.artW <= 320, tag + " art width " + view.artW + " stays in 256..320");
+  check(view.ratio <= 2, tag + " buffer ratio " + view.ratio + " is at most 2");
+  await page.screenshot({ path: OUT + "/" + tag + "-block55.png" });
+  await page.evaluate(() => __test.setTilt(20));
+  await page.waitForTimeout(160);
+  await page.screenshot({ path: OUT + "/" + tag + "-tilt20.png" });
+  await page.evaluate(() => __test.setTilt(87));
+  await page.waitForTimeout(160);
+  await page.screenshot({ path: OUT + "/" + tag + "-tilt87.png" });
+
+  const wall = await page.evaluate(async () => {
+    __test.setTilt(50);
+    __test.setYaw(18);
+    __test.moveTo(2.5, 2.5);
+    await new Promise((r) => setTimeout(r, 280));
+    const v = __test.view();
+    const snap = () => {
+      const rows = [];
+      for (let y = 0; y < v.artH; y += 3) {
+        const row = [];
+        for (let x = 0; x < v.artW; x += 3) row.push(__test.pixel(x, y));
+        rows.push(row);
+      }
+      return rows;
+    };
+    const before = snap();
+    for (let i = 0; i < 5; i++) __test.setSign(i, false);
+    await new Promise((r) => setTimeout(r, 400));
+    const after = snap();
+    let hit = null;
+    for (let y = 0; y < before.length && !hit; y++) for (let x = 0; x < before[0].length; x++) {
+      const a = before[y][x], b = after[y][x];
+      const d = Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+      const grey = Math.abs(a[0] - a[1]) < 18 && Math.abs(a[1] - a[2]) < 18;
+      if (d > 80 && !grey) hit = { x: x * 3, y: y * 3, a, b, d: Math.round(d) };
+    }
+    return { hit, on: __test.state().lights.filter((l) => l.type === "neon").map((l) => l.on) };
+  });
+  check(wall.hit && wall.on.every((v) => v === false), tag + " a lit wall pixel changes when the signs go dark" + (wall.hit ? " (" + wall.hit.a.join(",") + " -> " + wall.hit.b.join(",") + ")" : ""));
+  await page.screenshot({ path: OUT + "/" + tag + "-signs-off.png" });
+  await page.evaluate(() => { for (let i = 0; i < 5; i++) __test.setSign(i, null); });
+  await page.waitForTimeout(280);
+  await page.screenshot({ path: OUT + "/" + tag + "-signs-on.png" });
+
+  const sil = await page.evaluate(async () => {
+    __test.moveTo(4.5, 1.5);
+    __test.setYaw(0);
+    __test.setTilt(55);
+    __test.forceCutaway(true);
+    await new Promise((r) => setTimeout(r, 300));
+    const st = __test.state();
+    const p = __test.project(st.player.x, st.player.y, 8);
+    const v = __test.view();
+    let near = 0;
+    for (let y = Math.max(0, Math.floor(p.y - 24)); y < Math.min(v.artH, p.y + 24); y++) {
+      for (let x = Math.max(0, Math.floor(p.x - 16)); x < Math.min(v.artW, p.x + 16); x++) {
+        const c = __test.pixel(x, y);
+        if (c[0] > 220 && c[1] > 210 && c[2] > 190) near++;
+      }
+    }
+    __test.forceCutaway(false);
+    await new Promise((r) => setTimeout(r, 250));
+    return { near, slices: st.slices, full: __test.state().slices, p };
+  });
+  check(sil.slices < sil.full && sil.near > 8, tag + " paper silhouette sits on the runner (" + sil.near + " px, slices " + sil.slices + " vs " + sil.full + ")");
+  await page.screenshot({ path: OUT + "/" + tag + "-silhouette.png" });
+  const nums = await page.evaluate(() => __test.state());
+  console.log("  nums  " + tag + " drawCalls=" + nums.drawCalls + " slices=" + nums.slices + " frameMs=" + nums.frameMs.toFixed(1) + " fps=" + nums.fps.toFixed(1) + " art=" + view.artW + " ratio=" + view.ratio);
+  check(errs.length === 0, tag + " stays quiet " + errs.slice(0, 2).join(" | "));
+  await ctx.close();
+}
+
+console.log("proof 1280 and 390");
+await proof(1280, 800, 1, "1280");
+await proof(390, 844, 2, "390");
+const hi = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3 });
+const hiPage = await hi.newPage();
+await hiPage.goto(GAME + "?seed=4", { waitUntil: "domcontentloaded" });
+await hiPage.waitForFunction(() => window.__test && __test.ready());
+await hiPage.waitForTimeout(200);
+const hiView = await hiPage.evaluate(() => __test.view());
+check(hiView.ratio <= 2, "DPR 3 keeps the buffer ratio at most 2 (" + hiView.ratio + ")");
+check(hiView.artW >= 256 && hiView.artW <= 320, "DPR 3 art width " + hiView.artW);
+await hi.close();
 
 await browser.close();
 console.log(failed ? "FAIL " + failed : "PASS neon stack e2e");

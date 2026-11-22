@@ -3,7 +3,7 @@ import { TILE, PALETTE, build, pathfind } from "./world.mjs";
 import { createRenderer, lookAt, perspective, mul } from "./render.mjs";
 
 const FOV = 26 * Math.PI / 180;
-const VIS_W = 80;
+const VIS_W = 16 * TILE;
 const SUN = norm([0.48, 0.84, 0.26]);
 const HAZE = [0x1f / 255, 0x2a / 255, 0x3a / 255];
 const SMOG = [0x8a / 255, 0x83 / 255, 0x78 / 255];
@@ -106,12 +106,13 @@ function fit() {
   const cssW = window.innerWidth, cssH = window.innerHeight;
   const bw = Math.max(2, Math.floor(cssW * ratio));
   const bh = Math.max(2, Math.floor(cssH * ratio));
-  if (canvas.width !== bw || canvas.height !== bh) {
+  const dpr = window.devicePixelRatio || 1;
+  if (canvas.width !== bw || canvas.height !== bh || renderer.view.cssW !== cssW) {
     canvas.width = bw;
     canvas.height = bh;
     canvas.style.width = cssW + "px";
     canvas.style.height = cssH + "px";
-    renderer.resize(bw, bh);
+    renderer.resize(bw, bh, cssW, cssH, dpr);
   }
 }
 function planes(dist) {
@@ -192,14 +193,15 @@ function scene() {
     const d = Math.hypot(dx, dy, dz) || 1;
     const a = Math.max(0, 1 - d / l.radius) * (l.intensity ?? 1);
     if (a > best) { best = a; rimx = dx / d; rimz = dz / d; }
-    const pr = { x: 0, y: 0 };
-    halo[i * 4] = pr.x; halo[i * 4 + 1] = pr.y; halo[i * 4 + 2] = l.intensity ?? 1; halo[i * 4 + 3] = 0;
+    const onSign = l.sign >= 0 ? (l.intensity ?? 1) : 0;
+    halo[i * 4 + 2] = onSign;
     haloC[i * 4] = r; haloC[i * 4 + 1] = g; haloC[i * 4 + 2] = b; haloC[i * 4 + 3] = 1;
     l._world = [x, y, z];
   });
   const rl = Math.hypot(rimx, rimz) || 1;
   const vp = mul(proj, view);
   renderer.vp = vp;
+  const runnerP = renderer.project([rx, 8, rz]);
   lights.forEach((l, i) => {
     const p = renderer.project(l._world);
     halo[i * 4] = p.x;
@@ -207,7 +209,9 @@ function scene() {
   });
   return {
     vp, slices: runner.concat(rest), runnerCount: runner.length,
-    sun: SUN, haze: HAZE, smog: SMOG, rim: [rimx / rl, rimz / rl],
+    sun: SUN, haze: HAZE, smog: SMOG, paper: [0xf3 / 255, 0xe9 / 255, 0xd6 / 255],
+    sil: [runnerP.x, renderer.view.artH - runnerP.y, 7, cuts.size ? 1 : 0],
+    rim: [rimx / rl, rimz / rl],
     fade: fadeU, lights: uL, lightColor: uC, intensity: uI,
     drops, halo, haloColor: haloC, time, lightsApi: lights,
   };
@@ -264,7 +268,7 @@ function frame(now) {
   fps = frameMs > 0 ? 1000 / frameMs : 0;
   warmed++;
   cool -= dt;
-  const cap = window.devicePixelRatio || 1;
+  const cap = Math.min(window.devicePixelRatio || 1, 2);
   if (warmed > 90 && cool <= 0) {
     if (frameMs < 12 && ratio + 0.25 <= cap + 1e-4) { ratio = Math.round((ratio + 0.25) * 4) / 4; cool = 2.5; fit(); }
     else if (frameMs > 28 && ratio - 0.25 >= 1) { ratio = Math.round((ratio - 0.25) * 4) / 4; cool = 2.5; fit(); }

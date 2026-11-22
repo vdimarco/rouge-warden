@@ -185,8 +185,8 @@ function boxFace(x, z, w, h) {
   return UP;
 }
 
-function slice(x, z, y, hx, hz, uv, kind, sign, bid, low) {
-  return { x, z, y, hx, hz, uv, kind, sign, bid, low };
+function slice(x, z, y, hx, hz, uv, kind, sign, bid, low, orient) {
+  return { x, z, y, hx, hz, uv, kind, sign, bid, low, orient: orient || 0 };
 }
 
 export function pathfind(blocked, x0, y0, x1, y1) {
@@ -243,7 +243,7 @@ export function build(seed) {
   const buildings = [];
   const blocked = Array.from({ length: GRID }, () => Array(GRID).fill(false));
 
-  const reserved = [[1, 1], [1, 2], [1, 3], [3, 2], [3, 4]];
+  const reserved = [[1, 1], [1, 2], [1, 3], [3, 2], [4, 2], [3, 4]];
   const hold = new Set(reserved.map(([tx, ty]) => tx + "," + ty));
   const cells = [];
   for (let ty = 0; ty < GRID; ty++) for (let tx = 0; tx < GRID; tx++) {
@@ -254,7 +254,7 @@ export function build(seed) {
     const j = Math.floor(rng() * (i + 1));
     const s = cells[i]; cells[i] = cells[j]; cells[j] = s;
   }
-  const spots = [...reserved, ...cells.slice(0, 7)];
+  const spots = [...reserved, ...cells.slice(0, 6)];
   const heights = spots.map(() => 16 + Math.floor(rng() * 25));
 
   spots.forEach(([tx, ty], i) => {
@@ -265,7 +265,7 @@ export function build(seed) {
     buildings.push({ tx, ty, h, x: cx, z: cz, hx: 11, hz: 11 });
     for (let s = 0; s < h; s++) {
       const t = h === 1 ? 1 : s / (h - 1);
-      const band = t < 0.25 ? 0 : t < 0.55 ? 1 : t < 0.85 ? 2 : 3;
+      const band = t < 0.25 ? 0 : t < 0.55 ? 1 : 2;
       slices.push(slice(cx, cz, 0.6 + s, 11, 11, bands[band], 0, 0, i, s < 6));
     }
     const lean = 0.55 * h;
@@ -287,26 +287,28 @@ export function build(seed) {
     if (def.grid.some((row) => row.length !== w)) throw new Error(def.name + " grid is ragged");
     const host = hosts[si];
     const toward = host.tx < 2 ? 1 : -1;
-    const edge = host.x + toward * (host.hx + 0.6);
+    const edge = host.x + toward * (host.hx + 0.4);
     const cz = host.z;
     const W = w + 2;
     const H = h + 2;
-    for (let s = 0; s < H; s++) {
-      const row = H - 1 - s;
-      const pix = new Uint8Array(W * 4);
+    const pix = new Uint8Array(W * H * 4);
+    for (let row = 0; row < H; row++) {
+      const img = H - 1 - row;
       for (let x = 0; x < W; x++) {
-        const inside = row > 0 && row < H - 1 && x > 0 && x < W - 1;
-        const tube = inside && def.grid[row - 1][x - 1] === "#";
-        stamp(pix, W, x, 0, tube ? def.col : INK, UP, 180);
+        const inside = img > 0 && img < H - 1 && x > 0 && x < W - 1;
+        const tube = inside && def.grid[img - 1][x - 1] === "#";
+        const face = toward > 0 ? PX : NX;
+        stamp(pix, W, x, row, tube ? def.col : INK, face, 200);
       }
-      const uv = pack.put(pix, W, 1);
-      slices.push(slice(edge, cz, 1.2 + s, 0.5, W / 2, uv, 3, si + 1, -1, true));
     }
+    const uv = pack.put(pix, W, H);
+    const lift = 0.6 + 4;
+    slices.push(slice(edge, cz, lift + H / 2, W / 2, H / 2, uv, 3, si + 1, -1, true, 1));
     const lx = edge / TILE;
     const ly = cz / TILE;
     lights.push({
-      x: lx, y: ly, z: 1.2 + H * 0.5, colour: def.colour, type: "neon",
-      on: true, sign: si, radius: 13, buzz: def.buzz, name: def.name,
+      x: lx, y: ly, z: lift + H / 2, colour: def.colour, type: "neon",
+      on: true, sign: si, radius: TILE * 3, buzz: def.buzz, name: def.name,
     });
     signMeta.push({ name: def.name, colour: def.colour, w, h, tx: host.tx, ty: host.ty, buzz: def.buzz, x: lx, y: ly });
   });
@@ -332,7 +334,7 @@ export function build(seed) {
   }
   lights.push({
     x: barrelX / TILE, y: barrelZ / TILE, z: 6.2, colour: "#F2A33A", type: "fire",
-    on: true, sign: -1, radius: 11, buzz: false, name: "barrel",
+    on: true, sign: -1, radius: TILE * 3, buzz: false, name: "barrel",
   });
 
   const carTy = 5;
@@ -357,7 +359,7 @@ export function build(seed) {
   });
   lights.push({
     x: carX / TILE, y: carZ / TILE, z: 0.4, colour: "#3DE0E8", type: "strip",
-    on: true, sign: -1, radius: 12, buzz: false, name: "car",
+    on: true, sign: -1, radius: TILE * 3, buzz: false, name: "car",
   });
 
   const left = buildings.find((b) => b.tx === 1 && b.ty === 2);
@@ -373,21 +375,15 @@ export function build(seed) {
   const gw = GRID * TILE;
   const gh = GRID * TILE;
   const ground = new Uint8Array(gw * gh * 4);
-  const gr = mulberry32((Number(seed) || 1) ^ 0x51ed);
+  const cell = (x, z) => {
+    let n = Math.imul(x | 0, 374761393) + Math.imul(z | 0, 668265263);
+    n = (n ^ (n >>> 13)) >>> 0;
+    return n;
+  };
   for (let z = 0; z < gh; z++) for (let x = 0; x < gw; x++) {
-    const n = gr();
-    const col = n < 0.72 ? BASE : n < 0.9 ? INK : MID;
+    const size = 2 + (cell(Math.floor(x / 4), Math.floor(z / 4)) % 3);
+    const col = (cell(Math.floor(x / size), Math.floor(z / size)) % 8) < 3 ? INK : BASE;
     stamp(ground, gw, x, z, col, UP, 30);
-  }
-  for (const sign of signMeta) {
-    const len = 4 + Math.floor(gr() * 5);
-    const sx = Math.max(1, Math.min(gw - 2, Math.round(sign.x * TILE)));
-    const sz = Math.max(1, Math.min(gh - len - 1, Math.round(sign.y * TILE)));
-    for (let i = 0; i < len; i++) {
-      const x = sx, y = sz + i;
-      if (((Math.floor(x / 2) + Math.floor(y / 2)) & 1) !== 0) continue;
-      stamp(ground, gw, x, y, SIGNS.find((d) => d.name === sign.name).col, UP, 50);
-    }
   }
   const guv = pack.put(ground, gw, gh);
   slices.push(slice(gw / 2, gh / 2, 0.05, gw / 2, gh / 2, guv, 0, 0, -1, true));
