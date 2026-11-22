@@ -226,9 +226,12 @@ async function render(name, spec, note = '', extra = null) {
   return r;
 }
 const T0 = 0.2;
-// the fight's loudness target (LUFS integrated, ±2), each theme's with combat on (±3), and the fight's render time budget (a share of
-// real time on this desktop)
-const FIGHT_LUFS = -24, THEME_LUFS = -32, CPU = 0.12;
+/* the fight's loudness target (LUFS integrated, ±2) in the desktop mix and in the phone mix, each theme's with combat on (±3), the
+   most the effects' limiter may take on any hit (dB), the most the chain may move a hit's first 10 ms (dB), and the fight's render
+   time budget (a share of real time on this desktop). The fight is at -20 LUFS: a browser game plays on a laptop or a phone, near
+   the portable -18 of ASWG, and the user asked for power; the hits' own shapers keep the peaks near their loudness (design.md
+   "Loudness") */
+const FIGHT_LUFS = -20, PHONE_LUFS = -20, THEME_LUFS = -29, LIM = 3, PUNCH = 2, CPU = 0.12;
 
 // ---- the cues
 if (want('cues')) {
@@ -297,12 +300,26 @@ if (want('power')) {
     }
     // the punch kept: each heavy hit through the chain against the same hit with no dynamics, aligned by cross-correlation. The first
     // 10 ms and the tail from 120 to 250 ms after the onset, in dB against the bypass
-    for (const [name, cue, o] of [['cut1', 'hit', { hit: 'cut1', on: ['S'], stop: 3 }], ['fin', 'hit', { hit: 'fin', on: ['S'], stop: 5 }], ['slam', 'slam', { type: 'B', foe: 'reeve' }]]) {
-      const acts = [{ t: T0, cue, o: { ...o, variant: 0 } }];
-      const a = await window.__render({ len: 1, acts, bypass: true }), b = await window.__render({ len: 1, acts });
-      const lag = window.__lag(a.buf, b.buf, T0 - 0.005);
-      const wins = [[T0, T0 + 0.01], [T0 + 0.12, T0 + 0.25]], A = window.__bandDb(a.buf, wins), B = window.__bandDb(b.buf, wins, 0, 0, lag);
-      res[`punch-${name}`] = { lag: +(lag * 1000).toFixed(1), first: +(B[0] - A[0]).toFixed(2), tail: +(B[1] - A[1]).toFixed(2) };
+    // The limiter's meter starts far down and takes about 2 s to settle, so each hit lands 3 s in; lim is the most the limiter takes in
+    // the 150 ms after it, for each of the 4 variants (the loudest)
+    const TP0 = 3;
+    for (const [name, cue, o] of [['cut1', 'hit', { hit: 'cut1', on: ['S'], stop: 3 }], ['cut2', 'hit', { hit: 'cut2', on: ['S'], stop: 3 }], ['fin', 'hit', { hit: 'fin', on: ['S'], stop: 5 }],
+      ['land', 'land', { fallen: 2, on: ['S'], stop: 5 }], ['hurt', 'hurt', { dmg: 20 }], ['out', 'out', { type: 'S' }], ['outI', 'out', { type: 'I' }], ['slamI', 'slam', { type: 'I' }],
+      ['slam', 'slam', { type: 'B', foe: 'reeve' }], ['sweep', 'sweep', { type: 'B' }], ['stumble', 'stumble', { type: 'B' }]]) {
+      let worst = null;
+      for (let v = 0; v < 4; v++) {
+        const acts = [{ t: TP0, cue, o: { ...o, variant: v } }];
+        const a = await window.__render({ len: TP0 + 0.8, acts, bypass: true }), b = await window.__render({ len: TP0 + 0.8, acts });
+        const lag = window.__lag(a.buf, b.buf, TP0 - 0.005);
+        const wins = [[TP0, TP0 + 0.01], [TP0 + 0.12, TP0 + 0.25]], A = window.__bandDb(a.buf, wins), B = window.__bandDb(b.buf, wins, 0, 0, lag);
+        const lim = -Math.min(0, ...b.red.filter(x => x[0] >= TP0 && x[0] <= TP0 + 0.15).map(x => x[1]));
+        const r = { lag: +(lag * 1000).toFixed(1), first: +(B[0] - A[0]).toFixed(2), tail: +(B[1] - A[1]).toFixed(2), lim: +lim.toFixed(2), v };
+        // the variant that moves its first 10 ms most, with the most any variant reads on the limiter
+        const most = Math.max(r.lim, worst?.lim ?? 0);
+        if (!worst || Math.abs(r.first) > Math.abs(worst.first)) worst = r;
+        worst.lim = most;
+      }
+      res[`punch-${name}`] = worst;
     }
     // a tell 100 ms and 250 ms after a cut 1 and after a finisher: its 1 to 5 kHz band in its first 0.3 s, in the mix less the hit
     // alone, against the tell alone
@@ -387,11 +404,15 @@ if (want('fight')) {
   // render time against the fight's length
   const cut1 = acts.filter(a => a.cue === 'hit' && a.o.hit === 'cut1').map(a => a.t), fin = acts.filter(a => a.cue === 'hit' && a.o.hit === 'fin').map(a => a.t);
   const most = ts => Math.max(...ts.map(t => -Math.min(0, ...fr.red.filter(x => x[0] >= t && x[0] <= t + 0.15).map(x => x[1]))));
-  power.fight = { cut1: +most(cut1).toFixed(2), fin: +most(fin).toFixed(2), lim: +(-Math.min(...fr.red.filter(x => x[0] >= 2.5).map(x => x[1]))).toFixed(2), cpu: +(fr.ms / 40000).toFixed(4), ms: Math.round(fr.ms) };
+  const of = pred => acts.filter(a => a.cue && pred(a)).map(a => a.t);
+  power.fight = { cut1: +most(cut1).toFixed(2), fin: +most(fin).toFixed(2), out: +most(of(a => a.cue === 'out')).toFixed(2), hurt: +most(of(a => a.cue === 'hurt')).toFixed(2),
+    land: +most(of(a => a.cue === 'land')).toFixed(2), lim: +(-Math.min(...fr.red.filter(x => x[0] >= 2.5).map(x => x[1]))).toFixed(2), cpu: +(fr.ms / 40000).toFixed(4), ms: Math.round(fr.ms) };
   console.log(`fight dynamics       ${JSON.stringify(power.fight)}`);
   await render('fight-phone', { len: 40, phone: true, acts }, 'the scripted fight, phone mix');
   await render('fight-fx', { len: 40, bus: 'fx', acts }, 'the effects alone');
   await render('fight-music', { len: 40, bus: 'music', acts }, 'the music alone');
+  await render('fight-phone-fx', { len: 40, phone: true, bus: 'fx', acts }, 'the effects alone, phone mix');
+  await render('fight-phone-music', { len: 40, phone: true, bus: 'music', acts }, 'the music alone, phone mix');
 }
 await browser.close();
 server?.kill();
@@ -410,8 +431,10 @@ const fails = [];
 const need = (ok, what) => { if (!ok) fails.push(what); };
 for (const [k, v] of Object.entries(all)) need(v.TP <= -1, `${k}: true peak ${v.TP} dBTP over -1`);
 if (all['fight-desktop']) {
-  for (const k of ['fight-desktop', 'fight-phone']) need(Math.abs(all[k].I - FIGHT_LUFS) <= 2, `${k}: ${all[k].I} LUFS, not ${FIGHT_LUFS} ±2`);
+  need(Math.abs(all['fight-desktop'].I - FIGHT_LUFS) <= 2, `fight-desktop: ${all['fight-desktop'].I} LUFS, not ${FIGHT_LUFS} ±2`);
+  need(Math.abs(all['fight-phone'].I - PHONE_LUFS) <= 2, `fight-phone: ${all['fight-phone'].I} LUFS, not ${PHONE_LUFS} ±2`);
   need(all['fight-fx'].I - all['fight-music'].I >= 8, `the music is ${(all['fight-fx'].I - all['fight-music'].I).toFixed(1)} LU under the effects, not 8`);
+  if (all['fight-phone-fx']) need(all['fight-phone-fx'].I - all['fight-phone-music'].I >= 8, `phone mix: the music is ${(all['fight-phone-fx'].I - all['fight-phone-music'].I).toFixed(1)} LU under the effects, not 8`);
 }
 for (const id of info.places) if (all[`combat-${id}`]) need(Math.abs(all[`combat-${id}`].I - THEME_LUFS) <= 3, `combat-${id}: ${all[`combat-${id}`].I} LUFS, not ${THEME_LUFS} ±3`);
 const mm = k => Math.max(...[0, 1, 2, 3].map(v => all[`cue-${k}-v${v}`]?.M ?? -99));
@@ -441,13 +464,15 @@ if (all['cue-strike'] && all['cue-hit-cut1-v0']) {
 }
 if (pw2.gain) for (const [bus, g] of Object.entries(pw2.gain)) need(Math.abs(g.out - g.want) <= 0.5, `the ${bus} bus comes out at ${g.out} dB for ${g.want} dB: the make-up gain is not taken off`);
 for (const id of ['cut1', 'fin']) if (pw2[`under-${id}`]) { const u = pw2[`under-${id}`]; need(u.crunch <= 3 && u.tick <= 3, `${id}: the whoosh lifts the hit's crunch by ${u.crunch} dB and its tick by ${u.tick} dB, over 3`); }
-// (the boss slam may take up to 6 dB on the limiter, the only cue that does)
-for (const k of ['cut1', 'fin', 'slam']) if (pw2[`punch-${k}`]) { const u = pw2[`punch-${k}`]; need(Math.abs(u.first) <= (k === 'slam' ? 6 : 2) && u.tail <= 4, `${k}: the chain moves the first 10 ms by ${u.first} dB and lifts the tail by ${u.tail} dB`); }
+// every heavy hit keeps its punch: the chain moves its first 10 ms by 2 dB or less, and the limiter takes under 3 dB
+for (const [k, u] of Object.entries(pw2)) if (k.startsWith('punch-')) {
+  need(Math.abs(u.first) <= PUNCH && u.tail <= 4, `${k}: the chain moves the first 10 ms by ${u.first} dB and lifts the tail by ${u.tail} dB`);
+  if (u.lim !== undefined) need(u.lim < LIM, `${k}: the limiter takes ${u.lim} dB, not under ${LIM}`);
+}
 for (const [k, v] of Object.entries(pw2)) if (k.startsWith('tell-')) need(v.loss <= 3, `${k}: the tell loses ${v.loss} dB in the mix, over 3`);
 if (pw2.landing) need(pw2.landing.over <= 1 && pw2.landing.drop >= 6, `the landing does not stop the drop: ${JSON.stringify(pw2.landing)}`);
 if (pw2.fight) {
-  need(pw2.fight.cut1 <= 2, `a cut 1 hit reads ${pw2.fight.cut1} dB of gain reduction, over 2`);
-  need(pw2.fight.fin <= 5, `a finisher reads ${pw2.fight.fin} dB of gain reduction, over 5`);
+  for (const k of ['cut1', 'fin', 'out', 'hurt', 'land']) if (pw2.fight[k] !== undefined) need(pw2.fight[k] < LIM, `in the fight, a ${k} hit reads ${pw2.fight[k]} dB of gain reduction, not under ${LIM}`);
   need(pw2.fight.cpu <= CPU, `the fight renders at ${(pw2.fight.cpu * 100).toFixed(1)}% of real time, over ${CPU * 100}%`);
 }
 if (errors.length) fails.push(...errors.slice(0, 3));

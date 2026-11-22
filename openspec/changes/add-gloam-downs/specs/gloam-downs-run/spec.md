@@ -96,17 +96,21 @@ The blade SHALL swing in a wide arc that a player can read at play distance. Eac
 
 #### Scenario: The hit lands where the blade is
 - **WHEN** the player holds Attack 2.6 m from a training post
-- **THEN** on the step each hit lands, the blade's tip is within 20° of straight ahead. The strike's top speed is at least 1.6 times the wind-up's (1.2 times for the first cut after a finisher). A cut's tip sweeps at least 200°, and the finisher's tip falls at least 1.8 m. The tip stays at least 0.1 m over the floor and out of the body and the head. Check: Node test `gloam-downs-run.test.mjs`.
+- **THEN** on the step each hit lands, the blade's tip is within 20° of straight ahead. The cuts meet the target 7° (the first) and 20° (the second) over level, and the finisher meets it 4° to the left of straight ahead, so from the follow camera part of the blade shows past the body on the hit step. The strike's top speed is at least 1.6 times the wind-up's (1.2 times for the first cut after a finisher). A cut's tip sweeps at least 200°, and the finisher's tip falls at least 1.8 m. The tip stays at least 0.1 m over the floor and out of the body and the head. Check: Node test `gloam-downs-run.test.mjs`.
 
 ### Requirement: Smooth poses
 No part of the lamplighter SHALL jump from one pose to the next. Each move SHALL ease in from the pose shown before it, and the walk SHALL ease back after it. The lantern SHALL swing after the blade.
 
 #### Scenario: No pose jumps
-- **WHEN** the lamplighter rolls, is hit, or ends a cut and walks on
-- **THEN** outside a cut's wind-up and strike the blade's tip moves at most 0.4 m in one play step, and in a held string it moves at most 1.0 m outside a strike (1.5 m in the first cut's wind-up after a finisher). The hand moves at most 0.55 m in one step, and the lantern's fastest step comes after the blade's. Check: Node test `gloam-downs-run.test.mjs`.
+- **WHEN** the lamplighter rolls, is hit, ends a cut and walks on, or rolls out of a cut's recovery after the cut lands
+- **THEN** outside a cut's wind-up and strike the blade's tip moves at most 0.4 m in one play step (0.55 m for a roll late in the finisher's recovery, where the blade points straight ahead), and in a roll out of a hit the tip stays at most 1.8 m over the feet: it does not go over the head. In a held string the tip moves at most 1.0 m outside a strike (1.5 m in the first cut's wind-up after a finisher). The hand moves at most 0.55 m in one step, and the lantern's fastest step comes after the blade's. Before: a roll out of a cut's recovery moved the tip 0.8 to 1.2 m in one step, over the head. Check: Node test `gloam-downs-run.test.mjs`.
 
 ### Requirement: The swing's trail
-Each swing SHALL lay a short trail of bright smears along the blade's arc. The trail SHALL hold in hit stop.
+Each swing SHALL lay a short trail of bright smears along the blade's arc. The trail SHALL hold in hit stop. It SHALL be laid from the strike to the step after the hit step only, it SHALL fade faster after hit stop, and it SHALL stay one band as it fades: no row of it SHALL split off as a thin line.
+
+#### Scenario: A short trail in one band
+- **WHEN** the first cut lands on a Snuffer at 60 steps a second
+- **THEN** smears are laid on the swing's steps after the strike up to the hit step + 1 only, the last one is gone at most 8 game steps after it is laid (hit stop included), each piece is a ribbon along the blade that reaches the next row, and the inner row fades first. Before: the trail was laid up to 2 steps after the active time and stayed 13 to 17 frames, and its three rows thinned into three lines. Check: Node test `gloam-downs-foes-ai.test.mjs`.
 
 #### Scenario: A trail on a phone
 - **WHEN** the first cut lands at 1280×720 and at 390×844
@@ -1605,7 +1609,7 @@ A tell SHALL vary in pitch by no more than ±2%, so the player learns it. A tell
 - **THEN** the tell's band from 1 to 5 kHz in its first 0.3 s, in the mix less the hit alone, is at most 3 dB under the tell alone. Check: `qa/lab/gloam-downs-music-demo.mjs`, `power.json`.
 
 ### Requirement: Swings follow the moves
-A swing's sound SHALL be laid from the move events in the code, not from a fixed delay. The `swing` cue SHALL play a short press transient and the draw-back. The `strike` cue SHALL start the whoosh as the blade leaves the wind-up's top. The whoosh SHALL peak one step before the first active step, where the `hit` cue is logged, and it SHALL stay under its hit: the hit SHALL take it 18 dB down, so the hit's crunch and tick sit alone on the impact. A whiff SHALL let it ring. A tell SHALL take it 5 dB down. A roll that cancels a wind-up, a hit taken, a death and a fall SHALL stop the swing's sound within 2 steps.
+A swing's sound SHALL follow the move events, not a fixed delay. `swing` SHALL play a press transient and the draw-back; `strike` SHALL start the whoosh as the blade leaves the top. The whoosh SHALL peak one step before the first active step, where `hit` is logged. The hit SHALL take it 18 dB down, a tell 5 dB; a whiff SHALL let it ring. A roll that cancels a wind-up, a hit taken, a death and a fall SHALL stop the swing's sound within 2 steps.
 
 #### Scenario: The strike lands on the hit
 - **WHEN** the player swings the string at a training post
@@ -1646,8 +1650,8 @@ Each hit landed, each foe put out, each hit taken and each boss hit SHALL be thr
 - **THEN** the finisher's momentary maximum is at least 3 LU over cut 1's, and cut 2's is at least cut 1's. A kill and the boss slam are each at least 3 LU over cut 1's. The boss slam is the loudest cue. Check: `qa/lab/gloam-downs-music-demo.mjs`, `loudness.json`.
 
 #### Scenario: The punch is kept
-- **WHEN** the demo renders cut 1, the finisher and the boss slam through the mix and again with no limiter and no clip, aligned by cross-correlation
-- **THEN** the first 10 ms of cut 1 and of the finisher are within 2 dB of the render with no dynamics, the boss slam's within 6 dB, and no tail from 120 to 250 ms is lifted more than 4 dB. In the scripted fight, the limiter takes 2 dB or less on a cut 1 and 5 dB or less on a finisher, and the score passes no compressor. Check: `qa/lab/gloam-downs-music-demo.mjs`, `power.json`.
+- **WHEN** the demo renders each heavy hit (cut 1, cut 2, the finisher, the landing, a hit taken, a Snuffer's and an Ironback's kill, the Ironback's and the boss's slam, the sweep and the phase change), each of its 4 variants, through the mix and again with no limiter and no clip, aligned by cross-correlation, 3 s into the render so the limiter's meter has settled
+- **THEN** the first 10 ms of each are within 2 dB of the render with no dynamics, no tail from 120 to 250 ms is lifted more than 4 dB, and the limiter takes under 3 dB on each. In the scripted fight, the limiter takes under 3 dB on each cut 1, finisher, kill, hit taken and landing, and the score passes no compressor. Before: the boss slam's first 10 ms were 5.7 dB down, and the limiter took 4.55 dB on a finisher. Check: `qa/lab/gloam-downs-music-demo.mjs`, `power.json`.
 
 ### Requirement: Hits that vary
 Each hit cue SHALL have 4 variants, played as a shuffle with no variant twice in a row. A variant SHALL change the recipe, not only the pitch: the crunch's centre, the crunch's and the tick's level, the body's decay and the second grain's offset. Each play SHALL move pitch by up to ±4% and level by up to ±1.5 dB, from the run's seed.
@@ -1728,7 +1732,11 @@ A lit beacon, a death and the win SHALL each play a short stinger. The theme SHA
 - **THEN** `__gloam.music().changes` has `sting beacon`, then `lamp`; `sting death`, then `silent`, then `lamp` at least 2 s later; and `sting win`, then `lamp`. Check: e2e `gloam-downs-run.sound.e2e.mjs` (the beacon) and Node test `gloam-downs-sound.test.mjs` (all three).
 
 ### Requirement: The music log
-With `?test`, `__gloam.music()` SHALL return the score's `state` (`place`, `boss`, `lamp`, `sting`, `silent` or `off`), the place or theme, the `layers` that play, the `phase`, the `bpm`, the bar length, and `changes`: the last 32 changes, each with what changed, its game step and its context time `at`. It SHALL also give `fxLive`, the names of the effect voices that sound, and `lag`: how far ahead of the context's clock the last cue was laid, the delay of the effects' dynamics and the output's latency. The effects SHALL trail the picture by no more than 30 ms plus the output's latency. Each change of layers or theme SHALL fall on a bar line of the playing theme, within 5 ms, except a stinger's hit and the stop at a death or a fall.
+With `?test`, `__gloam.music()` SHALL return the score's `state` (`place`, `boss`, `lamp`, `sting`, `silent` or `off`), the theme, the `layers`, the `phase`, the `bpm`, the bar length and `changes` (the last 32, each with its game step and context time `at`). Each change of layers or theme SHALL fall on a bar line within 5 ms, except a stinger's hit and the stop at a death or a fall.
+
+#### Scenario: The voices and the lag
+- **WHEN** the e2e lands a cut in a run
+- **THEN** `__gloam.music()` gives `fxLive` (the effect voices that sound) and `lag`: the lead of the last cue on the context's clock (read inside `play()`, so it is never below 0), the delay of the effects' dynamics and the output's latency. The lead and the delay add to 30 ms or less, so the effects trail the picture by no more than 30 ms plus the output's latency. Check: e2e `gloam-downs-run.sound.e2e.mjs` and Node test `gloam-downs-sound.test.mjs`.
 
 #### Scenario: Changes on the bar
 - **WHEN** the e2e plays the Gaol with a spawned Snuffer, a wake of G2 and a beacon
@@ -1754,19 +1762,16 @@ The music's samples SHALL be FluidR3_GM notes (harp, strings, contrabass, flute,
 
 ### Requirement: Loudness
 The mix SHALL keep the music under the effects, and no hit SHALL pump the music. On the demo's renders, measured with ffmpeg's `ebur128` filter:
-- the scripted 40 s fight SHALL be −24 ±2 LUFS integrated, with a true peak of −1 dBTP or lower, in the desktop mix and in the phone mix;
-- the music alone in that fight SHALL be at least 8 LU under the effects alone;
-- each place's theme, 8 bars with the combat layer, SHALL be −32 ±3 LUFS integrated;
-- no cue SHALL have a true peak over −1 dBTP;
-- a steady tone into each bus SHALL come out at the bus level ±0.5 dB, so no compressor adds its own make-up gain;
-- the scripted fight SHALL render in 12% of its length or less on the desktop that runs the demo.
+- the scripted 40 s fight SHALL be −20 ±2 LUFS integrated in the desktop mix and in the phone mix, with a true peak of −1 dBTP or lower;
+- the music alone in that fight SHALL be at least 8 LU under the effects alone, in each mix;
+- no cue SHALL have a true peak over −1 dBTP.
 
 #### Scenario: Loudness figures
 - **WHEN** `NODE_PATH=/home/user/rouge-warden/qa/browser/node_modules node qa/lab/gloam-downs-music-demo.mjs` runs and writes `loudness.json`
-- **THEN** each figure above is inside its range. Check: `qa/lab/gloam-downs-music-demo.mjs`, which exits with an error when one is not.
+- **THEN** each figure above is inside its range. Each place's theme, 8 bars with the combat layer, is −29 ±3 LUFS integrated; a steady tone into each bus comes out at the bus level ±0.5 dB; the fight renders in 12% of its length or less. The fight's −20 LUFS is near ASWG's portable −18, because a browser game plays on a laptop or a phone and the user asked first for power; the review's −24 left the fight 7 dB under the first build. Check: `qa/lab/gloam-downs-music-demo.mjs`, which exits with an error when one is not.
 
 ### Requirement: The phone mix
-On a coarse pointer, the music SHALL be 3 dB lower, and the master's high-pass SHALL be at 90 Hz, so a phone speaker does not distort. Each hit's body SHALL also have harmonics from 150 to 400 Hz, so a phone speaker carries its weight.
+On a coarse pointer, the music SHALL be 3 dB lower, and the master's high-pass SHALL be at 90 Hz, so a phone speaker does not distort. Each hit's body SHALL also have harmonics from 150 to 500 Hz, driven harder on a phone, so a phone speaker carries its weight.
 
 #### Scenario: A phone
 - **WHEN** the e2e opens `?run&test` with a coarse pointer and starts the sound

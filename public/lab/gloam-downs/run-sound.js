@@ -80,7 +80,8 @@ export function makeRunSound({ log, rs, phone = false, step = () => 0, ear = () 
     if (f) { o.pos = f.pos; o.type = f.type; }
     A.fx.setEar(ear());
     const r = A.fx.play(c.cue, at, o);
-    if (r) A.lead = +(r.at - A.ctx.currentTime).toFixed(4);
+    // the lead is read inside play(), on the same reading of the clock as the cue's time: a read here could come a render quantum later
+    if (r) A.lead = +r.lead.toFixed(4);
     if (r) { c.at = +r.at.toFixed(4); c.v = r.v; if (r.glim !== undefined) c.glim = r.glim; }
   }
   /* a cue of the page itself (the cards): logged in the same queue as the game's cues. Inside a frame the frame's flush lays it with

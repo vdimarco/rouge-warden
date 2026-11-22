@@ -18,7 +18,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
-import { makeWalk, makeBody, PARAMS, reachable, camLayout } from '../../public/lab/gloam-downs/play.js';
+import { makeWalk, makeBody, PARAMS, reachable, camLayout, SWINGS } from '../../public/lab/gloam-downs/play.js';
 import { STEP, stepCount, startRun, makeRunner, maxOf } from '../../public/lab/gloam-downs/run.js';
 import { HITS, MOVES } from '../../public/lab/gloam-downs/moves.js';
 import * as RS from '../../public/lab/gloam-downs/run-save.js';
@@ -483,8 +483,8 @@ const SplatCodec = new Function(fs.readFileSync(DIR + 'ink/splat-codec.js', 'utf
 const decode = file => SplatCodec.decode(new Uint8Array(zlib.gunzipSync(fs.readFileSync(file))), { maxRows: 1_000_000 });
 const foesFile = (() => { const json = readFigures(JSON.parse(zlib.gunzipSync(fs.readFileSync(`${W}foes.json.gz`)).toString())); return { json, ...decode(`${W}foes.bin.gz`) }; })();
 const PAL = JSON.parse(fs.readFileSync(`${W}gaol.json`, 'utf8')).pal;
-function pageFight(walk, { codes = 'SSSPMI', still = false, fx = {}, x = 0, z = 0 } = {}) {
-  const meta = { id: 'test', pal: PAL, bones: { names: ['body', 'head', 'legL', 'legR', 'armL', 'armR', 'shadow'], first: 0, end: 4 }, zones: [], bounds: 20 };
+function pageFight(walk, { codes = 'SSSPMI', still = false, fx = {}, x = 0, z = 0, pivots = undefined } = {}) {
+  const meta = { id: 'test', pal: PAL, bones: { names: ['body', 'head', 'legL', 'legR', 'armL', 'armR', 'shadow'], first: 0, end: 4, pivots }, zones: [], bounds: 20 };
   const world = { data: new Float32Array(16 * 4), count: 4, pal: PAL, anim: { bones: new Float32Array(12 * 7), boned: new Int32Array(0) } };
   const pool = makePool(world, meta, poolFor('x', foesFile, null, codes), { extra: 256 });
   const rs = RS.fresh();
@@ -526,6 +526,37 @@ function pageFight(walk, { codes = 'SSSPMI', still = false, fx = {}, x = 0, z = 
     assert.equal(o.hp, 84);
   }
   pass('the hit flash and the hurt tint each last 3 steps (0.05 s) at 30 and at 144 frames a second', out);
+}
+{ /* the swing's trail (fight.js trail, sparks.js smear): smears are laid from the strike to the hit step + 1 only, the last one is gone
+     8 game steps or less after that step at 60 Hz (hit stop included: the first build's lingered 13 to 17), and each step's three rows
+     join into one band (each ribbon spans half the gap to its neighbour along the blade), with the inner row fading first */
+  // the stand-in place takes the lamplighter's bone pivots, so the trail is laid
+  const pivots = [[0, 80.1, 0], [0, 80.82, 0], [0.15, 80.24, 0], [-0.15, 80.24, 0], [0.33, 80.72, 0.04], [-0.33, 80.72, 0], [0, 120, 0]];
+  const P = pageFight(FLAT, { codes: 'SSS', pivots });
+  P.G.hooks.spawn('S', 0, -1.6, 0);
+  const laid = [], parts = [], smear = P.G.sparks.smear;
+  let step = 0, start = -1, hitAt = -1, lastAlive = -1;
+  // the swing's own step (play steps: hit stop holds it) on which each piece is laid
+  P.G.sparks.smear = (...a) => { const q = smear(...a); laid.push(step); parts.push({ step, t: P.R.fighter.body.s.act?.t, q, life: a[4], along: a[5], span: a[6] }); return q; };
+  for (; step < 60; step++) {
+    const ev = P.step({ attack: step === 2 });
+    for (const e of ev) { if (e.type === 'cue' && e.cue === 'swing' && start < 0) start = step; if (e.type === 'hit' && hitAt < 0) hitAt = step; }
+    if (parts.some(p => p.q.life > 0)) lastAlive = step;
+  }
+  assert(start >= 0 && hitAt > start, `the cut swung (${start}) and hit (${hitAt})`);
+  assert(laid.length > 0, 'the trail laid smears');
+  const S = SWINGS.cut1;
+  const lastT = Math.max(...parts.map(p => p.t));
+  assert(lastT <= S.hit + 1 && Math.min(...parts.map(p => p.t)) > S.strike, `smears laid on swing steps ${[...new Set(parts.map(p => p.t))]}, not from the strike (${S.strike}) to the hit step + 1 (${S.hit + 1})`);
+  const gone = lastAlive - Math.max(...laid);
+  assert(gone <= 8, `the trail lingers ${gone} steps after its last piece`);
+  for (const st of new Set(laid)) {
+    const ps = parts.filter(p => p.step === st);
+    for (const p of ps) assert(p.along && p.span > 0, 'each piece is a ribbon along the blade');
+  }
+  const inner = parts.filter(p => p.life < Math.max(...parts.map(q => q.life)));
+  assert(inner.length > 0 && inner.length < parts.length, 'the inner row fades first');
+  pass('the trail: laid from the strike to the hit step + 1, gone within 8 steps of its last piece, one band of ribbons whose inner row fades first', { swingSteps: [...new Set(parts.map(p => p.t))], gameSteps: [...new Set(laid)].map(x => x - start), hit: hitAt - start, gone });
 }
 { // the pool's slots: a foe's slot wakes when it rises, flashes on a hit, and parks when its parts have fallen
   const P = pageFight(FLAT, { codes: 'SS' });

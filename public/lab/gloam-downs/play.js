@@ -954,7 +954,10 @@ export const BLADE = (() => {
    is on the hit step, so hit stop holds it), a wide follow-through past the target that slows to a stop, and a settle into a guard that
    leads into the next hit: the first cut ends on the left, where the second (a rising backhand) starts, and the second ends high on
    the right, where the finisher's overhead chop starts. strike: the step the strike starts (the 'strike' cue). plane: the swing's
-   turn, from the wind-up's top to the hit; the blade's cutting edge leads along it. */
+   turn, from the wind-up's top to the hit; the blade's cutting edge leads along it.
+   The contact keys are made for the follow camera, which looks over the lamplighter's back: the cuts meet the target 10° higher than
+   level (the body hid a level blade on the hit step), and the finisher meets it 4° to the left, so part of the blade shows past the
+   body; each is still within the spec's 20° of straight ahead. */
 const DEG = Math.PI / 180;
 export const SWINGS = {
   cut1: {
@@ -965,7 +968,7 @@ export const SWINGS = {
       [3.6, { az: -146, el: 14, ha: -118, hr: 0.44, hy: 0.95, tw: -28, ln: -5, sd: -3, sq: 0.93, sh: -0.04, lL: -14, lR: 16, aL: -26, aLz: -8, hd: 4 }],
       [4, { az: -150, el: 15, ha: -120, hy: 0.97, tw: -30, ln: -6, sd: -4, sq: 0.92, sh: -0.05, lL: -15, lR: 17, aL: -28, aLz: -9 }],
       [5.5, { az: -110, el: 8, ha: -92, hr: 0.47, hy: 0.95, tw: -18, ln: 0, sd: -2, sq: 0.97, sh: -0.01, lL: -20, lR: 20, aL: -20, hd: 6 }],
-      [7, { az: 0, el: -3, ha: -18, hr: 0.52, hy: 0.92, tw: 8, ln: 8, sd: 2, sq: 1.04, sh: 0.06, lL: -26, lR: 24, aL: 10, aLz: 6, hd: 8 }],
+      [7, { az: 0, el: 7, ha: -18, hr: 0.52, hy: 0.92, tw: 8, ln: 8, sd: 2, sq: 1.04, sh: 0.06, lL: -26, lR: 24, aL: 10, aLz: 6, hd: 8 }],
       [9, { az: 80, el: -9, ha: 40, hr: 0.5, hy: 0.88, tw: 24, ln: 9, sd: 4, sq: 1.0, sh: 0.07, lL: -28, aL: 22, hd: 7 }],
       [11, { az: 112, el: -13, ha: 70, hr: 0.48, hy: 0.85, tw: 30, ln: 8, sq: 0.96, aL: 26, aLz: 8, hd: 6 }],
       [14, { az: 120, el: -15, ha: 78, hr: 0.47, hy: 0.84, tw: 32, ln: 7, sd: 3, sq: 0.95, sh: 0.06, aL: 24, hd: 5 }],
@@ -980,7 +983,7 @@ export const SWINGS = {
       [3.6, { az: 146, el: -22, ha: 100, hr: 0.44, hy: 0.66, tw: 36, ln: 2, sd: 4, sq: 0.91, sh: -0.04, lL: -10, lR: 20, aL: 30, aLz: 10 }],
       [4, { az: 150, el: -24, ha: 102, hy: 0.64, tw: 38, sd: 5, sq: 0.9, sh: -0.05, aL: 32, aLz: 11 }],
       [5.5, { az: 110, el: -14, ha: 70, hr: 0.47, hy: 0.74, tw: 24, ln: 5, sd: 2, sq: 0.96, sh: -0.01, lL: -16, aL: 20, hd: 4 }],
-      [7, { az: 0, el: 10, ha: 10, hr: 0.52, hy: 0.92, tw: -6, ln: 8, sd: -2, sq: 1.05, sh: 0.06, lL: -24, lR: 26, aL: -6, aLz: -4, hd: 6 }],
+      [7, { az: 0, el: 20, ha: 10, hr: 0.52, hy: 0.92, tw: -6, ln: 8, sd: -2, sq: 1.05, sh: 0.06, lL: -24, lR: 26, aL: -6, aLz: -4, hd: 6 }],
       [9, { az: -75, el: 26, ha: -50, hr: 0.5, hy: 1.02, tw: -22, ln: 7, sd: -4, sq: 1.03, sh: 0.07, aL: -18 }],
       [11, { az: -108, el: 34, ha: -78, hr: 0.48, hy: 1.08, tw: -28, ln: 5, sd: -5, sq: 1.0, lL: -26, lR: 24, aL: -22, aLz: -8 }],
       [14, { az: -116, el: 36, ha: -84, hr: 0.47, hy: 1.1, tw: -30, ln: 4, sq: 0.99, aL: -20 }],
@@ -996,7 +999,7 @@ export const SWINGS = {
       [8, { az: -165, el: 74, ha: -122, hr: 0.4, hy: 1.46, tw: -40, ln: -11, sd: -5, sq: 1.06, sh: -0.06, lL: -16, lR: 22, aL: -36, aLz: -14, hd: -8 }],
       [9, { az: -168, el: 76, ha: -124, hy: 1.48, tw: -41, ln: -12, sq: 1.07, aL: -37 }],
       [11, { az: -110, el: 52, ha: -80, hr: 0.44, hy: 1.32, tw: -18, ln: -2, sd: -2, sq: 1.02, sh: 0, lL: -24, lR: 26, aL: -10, hd: 0 }],
-      [13, { az: -8, el: -6, ha: -14, hr: 0.52, hy: 0.92, tw: 10, ln: 8, sd: 3, sq: 0.9, sh: 0.09, lL: -34, lR: 30, aL: 30, aLz: 10, hd: 12 }],
+      [13, { az: 4, el: -6, ha: -14, hr: 0.52, hy: 0.92, tw: 10, ln: 8, sd: 3, sq: 0.9, sh: 0.09, lL: -34, lR: 30, aL: 30, aLz: 10, hd: 12 }],
       [15, { az: 22, el: -20, ha: 12, hr: 0.52, hy: 0.72, tw: 18, ln: 9, sd: 4, sq: 0.84, sh: 0.1, aL: 38, hd: 14 }],
       [18, { az: 32, el: -24, ha: 20, hr: 0.5, hy: 0.64, tw: 21, ln: 9, sq: 0.82, lL: -36, aL: 40, aLz: 12 }],
       [24, { az: 34, el: -22, ha: 22, hy: 0.66, ln: 8, sd: 3, sq: 0.85, sh: 0.09, aL: 30, hd: 12 }],
@@ -1058,6 +1061,11 @@ export const BLEND = {
   in: { cut1: 3, cut2: 3, fin: 3, roll: 4, hang: 3, plunge: 3, land: 3, drink: 4, hurt: 4 },
   // the first cut after a finisher starts from the blade low on the left, half a turn from its wind-up: it eases in over more steps
   afterFin: 5,
+  /* a move that starts from a hit of the string (a roll that cancels a cut's recovery): the blade is far out to the side, so it eases
+     in over 8 steps (6 left 0.44 m a step on a roll late in the recovery). When the hit left it on the figure's left, the roll keeps
+     it there along its axis (it whipped over the head to the right, 0.8 to 1.2 m a step, before), and the walk takes it back over
+     rollOut steps after the roll */
+  fromHit: { roll: 8, rollOut: 16 },
   out: { cut1: 10, cut2: 10, fin: 12, roll: 7, hang: 4, plunge: 4, land: 8, drink: 8, hurt: 8 },
   // how far the lantern lags the body in a swing, and its sway after the hit: the overlap of what hangs
   lag: 2, sway: 14, swayDecay: 7, swayRate: 0.75
@@ -1176,12 +1184,22 @@ function mix(A, B, w) {
   return { tw: lerp(A.tw, B.tw, w), ln: lerp(A.ln, B.ln, w), sd: lerp(A.sd, B.sd, w), sq: lerp(A.sq, B.sq, w), sp, sh: lerp(A.sh, B.sh, w), bones, arm: { d, e, H: lerpV(A.arm.H, B.arm.H, w) } };
 }
 // the pose a move's state shows: the move itself, eased in from what it began from (up to `depth` moves back)
+// a roll out of a hit that left the blade on the figure's left. Read from the hit's own keys (not from the blend), so every depth of
+// the blends agrees
+const rollLeft = (a, pv) => a.move === 'roll' && !!SWINGS[a.from?.move] && swingPose(a.from, pv).arm.d[0] > 0;
+// the blade arm mirrored to the figure's other side (its left): the blade's direction, its back edge and the hand
+const mirrorArm = p => ({ ...p, arm: { d: [-p.arm.d[0], p.arm.d[1], p.arm.d[2]], e: [-p.arm.e[0], p.arm.e[1], p.arm.e[2]], H: [-p.arm.H[0], p.arm.H[1], p.arm.H[2]] } });
 function actPoseOf(a, walk, pv, depth = 2) {
-  const own = SWINGS[a.move] ? swingPose(a, pv) : movePose(a, walk, pv);
-  const n = a.move === 'cut1' && a.from?.move === 'fin' ? BLEND.afterFin : BLEND.in[a.move] || 3;
+  let own = SWINGS[a.move] ? swingPose(a, pv) : movePose(a, walk, pv);
+  const hit = !!SWINGS[a.from?.move];
+  const n = a.move === 'cut1' && a.from?.move === 'fin' ? BLEND.afterFin : (hit && BLEND.fromHit[a.move]) || BLEND.in[a.move] || 3;
+  const from = depth > 0 && a.from ? shownOf(a.from, walk, pv, depth - 1) : null;
+  /* a roll out of a hit whose blade is on the figure's left (the first cut's and the finisher's follow-through): the blade lies along
+     the roll's axis on that side, so it never crosses over the head to the right while the figure turns over */
+  if (rollLeft(a, pv)) own = mirrorArm(own);
   if (depth <= 0 || !Number.isFinite(a.t) || a.t >= n) return own;
   // from the walk when the move began from no move
-  return mix(a.from ? shownOf(a.from, walk, pv, depth - 1) : poseFrom(walk, pv), own, ease(Math.max(0, a.t) / n));
+  return mix(from || poseFrom(walk, pv), own, ease(Math.max(0, a.t) / n));
 }
 // what a state shows: a move, or the walk, eased back from the move that ended
 function shownOf(st, walk, pv, depth = 2) {
@@ -1189,7 +1207,8 @@ function shownOf(st, walk, pv, depth = 2) {
   const base = poseFrom(walk, pv);
   const af = st.after;
   if (!af || !af.from || depth <= 0) return base;
-  const n = BLEND.out[af.from.move] || 8;
+  // the walk takes the blade back from the left over more steps after a roll that kept it there
+  const n = rollLeft(af.from, pv) ? BLEND.fromHit.rollOut : BLEND.out[af.from.move] || 8;
   if (af.t >= n) return base;
   return mix(shownOf(af.from, walk, pv, depth - 1), base, ease(af.t / n));
 }

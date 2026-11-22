@@ -39,7 +39,9 @@ const eighths = (n, v, beats = 4, bar = 0) => n.map((x, i) => [bar, i * 0.5, x, 
 /* ---------------- the themes ----------------
    key: the tonic (MIDI) the effects take their chimes from. layers: amb (the sounds made in code that play from the arrival card on),
    explore, combat, guard (a third percussion part for a guard zone). The boss theme's layers come in by phase */
-// the Barrow Reeve's ostinato: a falling tritone back to the tonic and a 3+3+2 accent, its own figure (the Gaol keeps its own)
+/* the Barrow Reeve's ostinato, its own figure: it climbs by steps from the tonic to the tritone (B C D F), falls back by steps
+   (E C A#) and lands on the tonic, accented 3+3+2. It has no pedal note: the tonic sounds only at its two ends. The Gaol's combat
+   strings are a pedal figure (D on every other eighth), so the two do not share a shape */
 const REEVE_ACCENT = [0.6, 0.36, 0.4, 0.6, 0.38, 0.36, 0.58, 0.4];
 export const THEMES = {
   // The Sunken Gaol: D Phrygian, 4/4 at 92. A drone, a chain on beat 1, a motif of four strings notes every 4 bars, a dripping harp
@@ -131,7 +133,7 @@ export const THEMES = {
     }
   },
   // The Barrow Reeve: B Phrygian, 4/4 at 100. Its layers by phase: the drone of the intro; phase 1 a timpani pulse, a low strings
-  // ostinato (a tritone and a 3+3+2 accent) and choir chords; phase 2 toms and a harp ostinato, and the strings a fourth up; phase 3 (reeve3, at 112) every layer
+  // ostinato (a climb to the tritone and back, accented 3+3+2) and choir chords; phase 2 toms and a harp ostinato, and the strings a fourth up; phase 3 (reeve3, at 112) every layer
   // and the bells
   reeve: {
     name: 'The Barrow Reeve', key: 'B3', bpm: 100, beats: 4,
@@ -140,8 +142,8 @@ export const THEMES = {
       drone: [P('drone', 1, [[0, 0, 'B1', 4, 0.5]])],
       p1: [P('timpani', 1, on([0, 1, 2, 3], 'B2', 1, [0.62, 0.45])),
         P('choir', 2, [[0, 0, 'B3', 4, 0.34], [0, 0, 'D4', 4, 0.3], [0, 0, 'F#4', 4, 0.28], [1, 0, 'C4', 4, 0.34], [1, 0, 'E4', 4, 0.3], [1, 0, 'G4', 4, 0.28]])],
-      low: [P('strings', 1, eighths(['B2', 'B2', 'F3', 'B2', 'C3', 'B2', 'A#2', 'B2'], REEVE_ACCENT))],
-      high: [P('strings', 1, eighths(['E3', 'E3', 'Bb3', 'E3', 'F3', 'E3', 'D#3', 'E3'], REEVE_ACCENT))],
+      low: [P('strings', 1, eighths(['B2', 'C3', 'D3', 'F3', 'E3', 'C3', 'A#2', 'B2'], REEVE_ACCENT))],
+      high: [P('strings', 1, eighths(['E3', 'F3', 'G3', 'Bb3', 'A3', 'F3', 'D#3', 'E3'], REEVE_ACCENT))],
       p2: [P('tom', 1, eighths(Array(8).fill('B2'), [0.55, 0.35])), P('harp', 1, eighths(['B4', 'F#4', 'D5', 'F#4', 'C5', 'F#4', 'B4', 'F#4'], [0.36, 0.26]))],
       p3: [P('bell', 2, [[0, 0, 'B5', 1, 0.42], [0, 1, 'C6', 1, 0.4], [0, 2, 'D6', 2, 0.42], [1, 0, 'C6', 2, 0.4], [1, 2, 'B5', 2, 0.38]])]
     }

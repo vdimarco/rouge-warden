@@ -41,6 +41,8 @@ export const CUES = {
 // the duck of a hit landed, by the blade's hit id
 const HIT_DUCK = { cut1: 2, cut2: 2, fin: 4, plunge: 4 };
 export const FX_VOICES = 24;
+// how much harder a body's soft clip is driven on a phone (more mid harmonics for a small speaker)
+const PHONE_DRIVE = 1.6;
 // the materials of the targets: the crunch of a hit takes the first target's
 export const MATERIAL = { S: 'soot', P: 'feather', M: 'flame', I: 'bronze', B: 'earth', post: 'wood' };
 
@@ -100,14 +102,14 @@ export function space(src, ear, tell = false) {
 
 /* ---------------- the graph ---------------- */
 // the bus levels (dB), set by the demo's loudness figures (design.md "Loudness")
-const FX_DB = -5, MUSIC_DB = -15.5;
+const FX_DB = -1, MUSIC_DB = -12.5;
 export const MIX = {
   fx: FX_DB, music: MUSIC_DB, phoneMusic: -3, hp: 35, phoneHp: 90,
   /* the effects' limiter: only the heavy hits reach it, a finisher by about 2 dB and a boss slam by about 6 dB. There is no
      compressor: a DynamicsCompressorNode looks 6 ms ahead, so even at a 20 ms attack it took 3 dB out of a finisher's first 10 ms */
   lim: { threshold: -1.5, ratio: 20, attack: 0.001, release: 0.1 },
   // the soft clip: unity gain up to 0.84, then a tanh knee to about -1 dBFS; then the ceiling gain
-  clip: [0.84, 0.05], ceil: -1
+  clip: [0.84, 0.05], ceil: -1.3
 };
 /* the make-up gain that a DynamicsCompressorNode adds by itself (Chromium's DynamicsCompressorKernel, the same in Firefox and Safari):
    (1 / the gain at 0 dBFS) ^ 0.6. With a knee of 0 the gain at 0 dBFS is threshold × (1 - 1/ratio), so the make-up is
@@ -179,12 +181,26 @@ export function createSound(ctx, { mix, seed = 1, key = 50 } = {}) {
   // two seconds of seeded white noise, shared by every cue (each read starts at its own offset)
   const SR = ctx.sampleRate, noise = ctx.createBuffer(1, Math.round(SR * 2), SR);
   { const d = noise.getChannelData(0), n = rng(seed ^ 0xbeef); for (let i = 0; i < d.length; i++) d[i] = n() * 2 - 1; }
-  // a soft clip (tanh), which gives a thump its 2nd and 3rd harmonics so a phone speaker carries it
+  // a soft clip (tanh), which gives a thump its 3rd and 5th harmonics so a phone speaker carries it
   const curve = new Float32Array(1024);
   for (let i = 0; i < 1024; i++) { const x = (i / 1023) * 2 - 1; curve[i] = Math.tanh(2.4 * x) / Math.tanh(2.4); }
 
-  // one voice: its output (a gain and a panner into the effects bus), the nodes to stop and free at its end, its rank
-  function voice(at, end, rank, pan = 0, gainDb = 0, name = '') {
+  /* the shaper of a heavy cue: a soft clip on the voice's own sum, before its level (unity up to 0.7 of the ceiling c, then a tanh knee
+     to c), 2x oversampled. It takes the first 1 to 2 ms spike of the layers (where the crunch and the tick start on the body's
+     first cycle) down to the body's level, so the hit's peak is near its loudness and the bus limiter has little to take. It has
+     no memory, so it cannot pump; the punch check sees it in both renders. The curve reads ±SPAN voice units */
+  const SPAN = 4, shapes = new Map();
+  function shapeCurve(c) {
+    if (!shapes.has(c)) {
+      const k = new Float32Array(2049), a = 0.7 * c, w = c - a;
+      for (let i = 0; i < k.length; i++) { const x = ((i / (k.length - 1)) * 2 - 1) * SPAN, ax = Math.abs(x); k[i] = Math.sign(x) * (ax <= a ? ax : a + w * Math.tanh((ax - a) / w)); }
+      shapes.set(c, k);
+    }
+    return shapes.get(c);
+  }
+  // one voice: its output (a gain and a panner into the effects bus), the nodes to stop and free at its end, its rank. shape: the
+  // ceiling of the voice's soft clip (heavy cues), or none. The layers go into V.x: the shaper's input, or the output gain itself
+  function voice(at, end, rank, pan = 0, gainDb = 0, name = '', shape = 0) {
     prune(at);
     while (S.live.length >= FX_VOICES) {
       let k = 0;
@@ -195,7 +211,13 @@ export function createSound(ctx, { mix, seed = 1, key = 50 } = {}) {
     const g = ctx.createGain(), p = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
     g.gain.value = db(gainDb);
     if (p) { p.pan.value = pan; g.connect(p); p.connect(mix.fx); } else g.connect(mix.fx);
-    const V = { name, at, end, rank, g, p, srcs: [], nodes: [g, p].filter(Boolean) };
+    const V = { name, at, end, rank, g, p, x: g, srcs: [], nodes: [g, p].filter(Boolean) };
+    if (shape) {
+      const pre = ctx.createGain(), sh = ctx.createWaveShaper();
+      pre.gain.value = 1 / SPAN; sh.curve = shapeCurve(shape); sh.oversample = '2x';
+      pre.connect(sh); sh.connect(g);
+      V.x = pre; V.nodes.push(pre, sh);
+    }
     S.live.push(V);
     return V;
   }
@@ -230,12 +252,13 @@ export function createSound(ctx, { mix, seed = 1, key = 50 } = {}) {
     if (i >= 0) S.live.splice(i, 1);
     setTimeout(() => free(V), 200);
   }
-  // an envelope: attack to peak, then an exponential fall to 0.001 over `dur`
-  function env(param, t, peak, attack, dur) {
+  // an envelope: attack to peak, hold there `hold` s (a heavy body), then an exponential fall to 0.001 over `dur`
+  function env(param, t, peak, attack, dur, hold = 0) {
     param.setValueAtTime(0, t);
     param.linearRampToValueAtTime(peak, t + attack);
-    param.exponentialRampToValueAtTime(Math.max(1e-4, peak * 0.001), t + attack + dur);
-    param.setValueAtTime(0, t + attack + dur + 0.005);
+    if (hold > 0) param.setValueAtTime(peak, t + attack + hold);
+    param.exponentialRampToValueAtTime(Math.max(1e-4, peak * 0.001), t + attack + hold + dur);
+    param.setValueAtTime(0, t + attack + hold + dur + 0.005);
   }
   // the layers
   const add = (V, n) => { V.nodes.push(n); return n; };
@@ -244,19 +267,21 @@ export function createSound(ctx, { mix, seed = 1, key = 50 } = {}) {
      given, with an envelope of `dur`. The kick recipe of Chris Lowis's "Synthesising Drum Sounds with the Web Audio API" */
   function body(V, t, o) {
     if (S.solo === 'body' && o.sub) return;
-    const { f0, f1 = f0, dur, gain = 1, attack = 0.001, type = 'sine', clip = 0, drop = 0.6 } = o;
+    const { f0, f1 = f0, dur, gain = 1, attack = 0.001, type = 'sine', clip = 0, drop = 0.6, hold = 0 } = o;
     const os = add(V, ctx.createOscillator()), g = add(V, ctx.createGain());
     os.type = type;
     os.frequency.setValueAtTime(f0, t);
+    // the pitch falls from the start, in the hold too (the hold keeps the level, not the pitch)
     if (f1 !== f0) os.frequency.exponentialRampToValueAtTime(Math.max(10, f1), t + dur * drop);
     let n = os;
     if (clip) {
       const pre = add(V, ctx.createGain()), sh = add(V, ctx.createWaveShaper());
-      pre.gain.value = clip; sh.curve = curve; os.connect(pre); pre.connect(sh); n = sh;
+      // on a phone the clip is driven harder: more of the body's 3rd and 5th harmonics (150 to 500 Hz), which a small speaker plays
+      pre.gain.value = clip * (mix?.phone ? PHONE_DRIVE : 1); sh.curve = curve; os.connect(pre); pre.connect(sh); n = sh;
     }
-    n.connect(g); g.connect(o.to || V.g);
-    env(g.gain, t, gain, attack, dur);
-    src(V, os, t, t + attack + dur + 0.02);
+    n.connect(g); g.connect(o.to || V.x);
+    env(g.gain, t, gain, attack, dur, hold);
+    src(V, os, t, t + attack + hold + dur + 0.02);
   }
   // noise through a filter (band-pass by default), from f to f1, with an envelope of `dur`
   function hiss(V, t, o) {
@@ -267,7 +292,7 @@ export function createSound(ctx, { mix, seed = 1, key = 50 } = {}) {
     fl.type = type; fl.Q.value = q;
     fl.frequency.setValueAtTime(f, t);
     if (f1 !== f) fl.frequency.exponentialRampToValueAtTime(f1, t + glide);
-    s.connect(fl); fl.connect(g); g.connect(o.to || V.g);
+    s.connect(fl); fl.connect(g); g.connect(o.to || V.x);
     if (o.shape) o.shape(g.gain, t); else env(g.gain, t, gain, attack, dur);
     V.srcs.push(s); V.nodes.push(s);
     s.start(t, r() * 1.8);
@@ -280,7 +305,7 @@ export function createSound(ctx, { mix, seed = 1, key = 50 } = {}) {
     for (const [k, a, d = 1] of parts) {
       const os = add(V, ctx.createOscillator()), g = add(V, ctx.createGain());
       os.frequency.value = f * k;
-      os.connect(g); g.connect(V.g);
+      os.connect(g); g.connect(V.x);
       env(g.gain, t, gain * a, attack, dur * d);
       src(V, os, t, t + attack + dur * d + 0.02);
     }
@@ -293,7 +318,7 @@ export function createSound(ctx, { mix, seed = 1, key = 50 } = {}) {
     os.type = type;
     os.frequency.setValueAtTime(f0, t);
     if (f1 !== f0) os.frequency.exponentialRampToValueAtTime(f1, t + glide);
-    os.connect(g); g.connect(o.to || V.g);
+    os.connect(g); g.connect(o.to || V.x);
     env(g.gain, t, gain, attack, dur);
     src(V, os, t, t + attack + dur + 0.02);
   }
@@ -342,14 +367,16 @@ export function createSound(ctx, { mix, seed = 1, key = 50 } = {}) {
   const VARIANTS = [{ c: 1, g: 0, d: 1, o: 0.03 }, { c: 0.86, g: 2.2, d: 1.14, o: 0.022 }, { c: 1.14, g: -2.2, d: 0.87, o: 0.038 }, { c: 0.93, g: 1.2, d: 1.08, o: 0.026 }];
   function layered(V, t, spec, mat, rate, v = 0) {
     const b = spec, w = VARIANTS[v & 3], k = db(w.g);
-    body(V, t, { f0: b.f0 * rate, f1: b.f1 * rate, dur: b.body * 1.8 * w.d, gain: 0.8, clip: 2.2, drop: 0.5 });
-    if (b.sub) body(V, t, { f0: b.sub * 1.6, f1: b.sub, dur: b.body * 3 * w.d, gain: 0.45, attack: 0.004, drop: 0.4, sub: true });
-    crunch(V, t, mat, 2.0 * k, b.crunch * 1.4, w.c);
-    if (b.second) crunch(V, t + w.o, mat, 1.1 * k, b.crunch, w.c);
-    if (b.gravel) hiss(V, t, { f: 900 * w.c, q: 0.4, dur: b.crunch * 2, gain: 0.9 * k });
-    if (b.tick) tick(V, t, b.tick[0] * (2 - w.c), b.tick[1] * 1.6, 1.6 * k);
+    // the body holds its first cycles (a quarter of its time) before it falls, so the weight lasts and the peak stays at the body's level
+    body(V, t, { f0: b.f0 * rate, f1: b.f1 * rate, dur: b.body * 1.8 * w.d, hold: b.body * 0.25, gain: 0.8, clip: 2.2, drop: 0.5 });
+    if (b.sub) body(V, t, { f0: b.sub * 1.6, f1: b.sub, dur: b.body * 3 * w.d, hold: b.body * 0.3, gain: 0.45, attack: 0.004, drop: 0.4, sub: true });
+    // (the crunch and the tick are 2 dB up on the first build's, so they stand over the held body in the first 120 ms)
+    crunch(V, t, mat, 2.5 * k, b.crunch * 1.6, w.c);
+    if (b.second) crunch(V, t + w.o, mat, 1.4 * k, b.crunch, w.c);
+    if (b.gravel) hiss(V, t, { f: 900 * w.c, q: 0.4, dur: b.crunch * 2, gain: 1.1 * k });
+    if (b.tick) tick(V, t, b.tick[0] * (2 - w.c), b.tick[1] * 1.6, 2.0 * k);
     if (b.ring) {
-      tick(V, t, 6500 * (2 - w.c), 0.02, 1.4 * k);
+      tick(V, t, 6500 * (2 - w.c), 0.02, 1.8 * k);
       ring(V, t, { f: b.ring * rate, parts: [[1, 0.22], [1.48, 0.12, 0.7], [2.11, 0.07, 0.5]], dur: 0.25 * w.d, gain: 1 });
     }
   }
@@ -702,26 +729,29 @@ export function createSound(ctx, { mix, seed = 1, key = 50 } = {}) {
   function lp(V, f) {
     const fl = add(V, ctx.createBiquadFilter());
     fl.type = 'lowpass'; fl.frequency.value = f; fl.Q.value = 0.8;
-    fl.connect(V.g);
+    fl.connect(V.x);
     return fl;
   }
   // each cue's level on the effects bus (dB), set by ear and by the demo's loudness figures (design.md "Loudness")
   const LEVEL = {
-    swing: 3, strike: 2, whiff: 8, recover: -8, drop: 1, hit: -2, land: 0, out: -2, hurt: 0, roll: 2, miss: 4, plunge: 2, drink: 0, heal: 2, fall: 0, death: -8, heart: 4,
+    swing: 3, strike: 2, whiff: 8, recover: -8, drop: 1, hit: -2, land: -1, out: -2, hurt: -1, roll: 2, miss: 4, plunge: 2, drink: 0, heal: 2, fall: 0, death: -8, heart: 4,
     glim: -4, wisp: 2, beacon: -2, scrape: 4, whistle: 3, hum: 4, paw: 5, rear: 1, coal: 2, pulse: 2, charge: 4, slam: 3,
     clang: -4, cracks: 2, rise: 1, reeve: -4, bossBar: -4, crook: 5, sweep: -1, cage: 5, chime: 4, shards: 3, shard: 2, crouch: 5,
     lunge: 3, stumble: -7, light: 2, card: -2, focus: -4, choice: 0, buy: 0, refuse: 0
   };
 
+  // the shaper's ceiling (voice units) of each heavy cue: the body sits near 0.8, so the spike over about 1 is shaped away
+  const SHAPE = { hit: 1, land: 1, hurt: 1, out: 1, slam: 1, sweep: 1, stumble: 1, fall: 1, death: 1, beacon: 1, clang: 1, pulse: 1, coal: 1 };
   const HIT_LEVEL = { cut1: -4, cut2: -3, fin: 0.5, plunge: 0 };
   S.LEVEL = LEVEL;
 
   /* play one cue at context time `at`. o: the logged cue (cue, hit, on, foe, wind, act, dmg, ...) plus pos (its [x, z]) and type
-     (the foe's type, for its material). -> { v, at, glim } or null when the voices are all taken by louder ones */
+     (the foe's type, for its material). -> { v, at, lead, glim } or null when the voices are all taken by louder ones */
   S.play = (name, at, o = {}) => {
     const recipe = R[name], info = CUES[name];
     if (!recipe || !info) return null;
-    const t = Math.max(at, ctx.currentTime);
+    // now: the context's clock read once, so the lead (how far ahead of it the cue is laid) is never below 0 by a tick of the clock
+    const now = ctx.currentTime, t = Math.max(at, now);
     const va = vary(name), sp = o.pos ? space(o.pos, S.ear, info.tell) : { pan: 0, gain: 0 };
     // the demo asks for each variant in turn
     if (Number.isInteger(o.variant)) va.v = o.variant & 3;
@@ -733,7 +763,7 @@ export function createSound(ctx, { mix, seed = 1, key = 50 } = {}) {
     if (name === 'hurt' && (o.dmg || 0) >= 20) lvl += 1;
     // the variants: each moves the pitch and the level a little, and the hit cues pick one of 4 bodies
     const x = va.rate * (info.hit ? [1, 0.96, 1.035, 0.93][va.v] : 1);
-    const V = voice(t, t + 4, info.rank, sp.pan, lvl, name);
+    const V = voice(t, t + 4, info.rank, sp.pan, lvl, name, SHAPE[name] || 0);
     if (!V) return null;
     V.g.k = V.g.gain.value;
     // a tell ranks over the lamplighter's whoosh: the whoosh steps 5 dB down, so the warning is heard through a string
@@ -744,7 +774,7 @@ export function createSound(ctx, { mix, seed = 1, key = 50 } = {}) {
     // the duck: a hit landed by its hit id, the others by the table; the hit stop sets how long it holds
     const d = name === 'hit' ? [HIT_DUCK[o.hit] ?? 2, o.stop ?? 3] : name === 'land' && o.stop ? [4, o.stop] : info.duck;
     if (d) mix.duck(d[0], Math.max(0.05, (o.stop ?? d[1]) * STEP), t);
-    return { v: va.v, at: t, ...(V.glim !== undefined ? { glim: V.glim } : {}) };
+    return { v: va.v, at: t, lead: t - now, ...(V.glim !== undefined ? { glim: V.glim } : {}) };
   };
   // the pause panel stops the effects: every voice fades out
   S.hush = (t = ctx.currentTime) => { for (const V of S.live.slice()) kill(V, t); S.swing = []; S.dive = null; };

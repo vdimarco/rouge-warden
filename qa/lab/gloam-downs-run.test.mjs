@@ -1294,18 +1294,28 @@ const striking = a => { const S = a && SWINGS[a.move]; return !!S && a.t > S.str
   const roll = trace(i => ({ roll: i === 0 }), 40, { post: false });
   const hurt = trace({}, 30, { post: false, at: (i, F, s) => { if (i === 2) F.knock([s.x, s.z - 1]); } });
   const cut = trace(i => ({ attack: i === 0 }), 45, { post: false });
+  /* a roll that cancels a cut's recovery after the cut has landed on a post (the first build whipped the blade over the head there,
+     0.8 to 1.2 m a step): a roll from a hit eases in over BLEND.fromHit.roll steps */
+  const cutRoll = [12, 14, 17, 20, 23].map(at => [`cut-roll-${at}`, trace(i => ({ attack: i === 0, roll: i === at }), 50)]);
+  // and out of the finisher's recovery (the string's third hit starts on step 34; its recovery runs from 52). Late in it (step 68) the
+  // blade points straight ahead, 1.5 m out, and must go a quarter turn to the roll's axis while the figure starts to turn over: there
+  // the limit is 0.55 m a step (the first build: 0.85)
+  for (const at of [54, 60, 68]) cutRoll.push([`fin-roll-${at}`, trace(i => ({ attack: i < 36, roll: i === at }), at + 45)]);
+  for (const [name, rows] of cutRoll) assert(rows.some(r => r.act?.move === 'roll' && SWINGS[r.act.from?.move]), `${name}: the roll starts from the cut`);
   const most = {};
-  for (const [name, rows] of [['roll', roll], ['hurt', hurt], ['cut', cut]])
+  for (const [name, rows] of [['roll', roll], ['hurt', hurt], ['cut', cut], ...cutRoll])
     for (let k = 1; k < rows.length; k++) {
       const a = rows[k].act;
       if (striking(a)) continue;
       // a cut's wind-up draws the blade back fast on purpose (at most 1.0 m a step, as in the string); everything else eases
-      const lim = a && SWINGS[a.move] && a.t <= SWINGS[a.move].strike ? 1.0 : 0.4;
+      const lim = a && SWINGS[a.move] && a.t <= SWINGS[a.move].strike ? 1.0 : name === 'fin-roll-68' ? 0.55 : 0.4;
       if (lim < 1) most[name] = Math.max(most[name] || 0, +moved(rows, k, 'tip').toFixed(2));
+      // the roll out of a hit turns the blade over beside the figure, not over its head
+      if (name.includes('-roll-') && rows[k].act?.move === 'roll') assert(rows[k].tip[1] <= 1.8, `${name} step ${k}: the tip goes over the head (${rows[k].tip[1].toFixed(2)} m up)`);
       assert(moved(rows, k, 'tip') <= lim, `${name} step ${k}: the tip jumps ${moved(rows, k, 'tip').toFixed(2)} m`);
     }
   assert(cut.slice(25).every(r => r.act === null), 'the cut is over by step 25');
-  pass("the roll, a hurt and the walk after a cut ease in and out: the tip moves at most 0.4 m a step outside a cut's wind-up and strike", most);
+  pass("the roll, a hurt, a roll out of a cut's recovery and the walk after a cut ease in and out: the tip moves at most 0.4 m a step outside a cut's wind-up and strike (0.55 for a roll late in the finisher's recovery)", most);
 }
 { // the phase cues: swing as the wind-up starts, strike as the blade leaves the top, hit on the hit step, recover (and whiff when the
   // blade met nothing) as the active time ends

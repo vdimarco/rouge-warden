@@ -371,7 +371,9 @@ class CdpTab {
 // start(t) does what a player does. sound is what to wait for: "ctx" (a context runs), "song" (also a SoundCloud song plays).
 // music is for pages with a song of their own made with chip.js or a scheduler: nothing new is scheduled while hidden.
 // resume(t), for a game that pauses itself when the page is hidden (its sound stays off on its pause screen), does what a
-// player does after the page shows again; the sound must then come back.
+// player does after the page shows again; the sound must then come back. backMs is how long to wait for the sound to come back
+// after a show (8 s by default): Gloam Downs in software WebGL holds its main thread 12 to 25 s for one frame, and its context's
+// resume() settles only after that frame (quiet.js calls it at once on the show).
 const click = (sel) => (t) => t.tapEl(sel);
 const PAGES = [
   { id: "silent-depth", path: "/silent-depth/", boot: () => document.querySelector("#modal")?.open, start: async (t) => { await t.tapEl("#modal-action"); await t.tapEl("#sound"); }, sound: "ctx" },
@@ -382,7 +384,7 @@ const PAGES = [
   // Gloam Downs makes its context on the first press in a run (?run): Enter on the help card presses Begin the run, which has the
   // focus. A key, not a click: software WebGL draws a frame of the place in about a second, too slow for Playwright's click checks.
   // The explorer makes no sound.
-  { id: "lab/gloam-downs", path: "/lab/gloam-downs/?run&fresh", boot: () => { try { return !!window.__gloam?.ready() && !document.querySelector("#runHelp").hidden; } catch (e) { return false; } }, start: (t) => t.key("Enter"), sound: "ctx", music: true, slow: true },
+  { id: "lab/gloam-downs", path: "/lab/gloam-downs/?run&fresh", backMs: 40000, boot: () => { try { return !!window.__gloam?.ready() && !document.querySelector("#runHelp").hidden; } catch (e) { return false; } }, start: (t) => t.key("Enter"), sound: "ctx", music: true, slow: true },
   { id: "arcade", path: "/?view=classic", start: (t) => t.tap(5, 5), sound: "ctx", music: true },
   { id: "fall", path: "/fall/", start: (t) => t.key("Enter"), sound: "ctx", music: true },
   { id: "wild", path: "/wild/", boot: () => document.querySelector("#title") && !document.querySelector("#title").hidden && !document.querySelector("#tpress").hidden, start: (t) => t.key("Enter"), sound: "ctx", music: true, slow: true },
@@ -484,7 +486,7 @@ async function cycle(P, driver, { policy, modes }) {
         await sleep(800);
         await t.show(mode);
         if (P.resume) await P.resume(t);
-        const [ok, s] = await waitFor(t, back, 8000);
+        const [ok, s] = await waitFor(t, back, P.backMs || 8000);
         c("sound is back after the page wakes" + tag, ok, brief(s));
         continue;
       }
@@ -503,7 +505,7 @@ async function cycle(P, driver, { policy, modes }) {
       }
       await t.show(mode);
       if (P.resume) await P.resume(t);
-      const [ok1, s3] = await waitFor(t, back, 8000);
+      const [ok1, s3] = await waitFor(t, back, P.backMs || 8000);
       c("sound is back when visible" + tag, ok1, brief(s3));
       // hide and show in one tick must leave the sound running; show and hide in one tick must leave it silent
       if (mode === "emulate" || mode === "pagehide") {
@@ -511,14 +513,14 @@ async function cycle(P, driver, { policy, modes }) {
         await flip([true, false]);
         await sleep(1200);
         if (P.resume) await P.resume(t);
-        const [ok2, s4] = await waitFor(t, back, 8000);
+        const [ok2, s4] = await waitFor(t, back, P.backMs || 8000);
         c("hide then show in one tick: running" + tag, ok2, brief(s4));
         await flip([true, false, true]);
         const [ok3, s5] = await waitFor(t, quiet, 5000);
         c("hide, show, hide in one tick: silent" + tag, ok3, brief(s5));
         await t.show(mode);
         if (P.resume) await P.resume(t);
-        const [ok4, s6] = await waitFor(t, back, 8000);
+        const [ok4, s6] = await waitFor(t, back, P.backMs || 8000);
         c("and running when shown again" + tag, ok4, brief(s6));
       }
       first = false;

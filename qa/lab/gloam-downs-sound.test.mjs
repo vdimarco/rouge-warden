@@ -9,7 +9,7 @@
 //   on a fake AudioContext: the swing's voices that a roll, a hit taken, a death or a fall stop, the drop that the landing stops, the
 //   whoosh that steps aside under its hit and under a tell; the run's sound laying no effect while paused, with Sound off or with the
 //   context suspended, a card cue in a frame that keeps the frame's other cues, and a later press that resumes a suspended context;
-//   the Barrow Reeve's ostinato, which no place's theme shares.
+//   the Barrow Reeve's ostinato, its own figure (no pedal note; no place shares its steps or its notes in any key).
 // Run: node qa/lab/gloam-downs-sound.test.mjs
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -298,6 +298,17 @@ const swingAt = (S, t, id = 'cut1') => {
   assert(S.liveNames().includes('strike'), 'a plain roll stopped the whoosh');
   pass('a roll that cuts the wind-up, a hit taken, a death and a fall stop the swing\'s draw-back and whoosh; a plain roll does not');
 }
+{ /* the lead (how far ahead of the clock a cue is laid, __gloam.music().lag) is read inside play() on the same reading of the clock
+     as the cue's time. The e2e read the clock again after play(), and a render quantum (128 samples) could pass between, so the lead
+     read -0.0008 s. Here the clock moves one quantum on every read */
+  const c = fakeCtx(), mix = createMix(c), S = createSound(c, { mix, seed: 7 });
+  let now = 1;
+  Object.defineProperty(c, 'currentTime', { get: () => (now += 128 / 48000) });
+  const late = S.play('hit', 0.5, { hit: 'cut1', on: ['S'], stop: 3 }), ahead = S.play('hit', now + 0.02, { hit: 'cut1', on: ['S'], stop: 3 });
+  assert(late.lead === 0, `a late cue is laid now: lead ${late.lead}`);
+  assert(ahead.lead >= 0 && ahead.lead <= 0.02 + 1e-9, `a cue 20 ms ahead: lead ${ahead.lead}`);
+  pass('a cue\'s lead is read on the same clock reading as its time: never below 0 when the clock moves during play()', { late: late.lead, ahead: +ahead.lead.toFixed(4) });
+}
 { // the landing stops the plunge's fall; a hit taken stops it too
   for (const cue of ['land', 'hurt']) {
     const { c, S } = fakeSound();
@@ -333,7 +344,7 @@ const swingAt = (S, t, id = 'cut1') => {
     const A = makeRunSound({ log, rs, step: () => st });
     A.ctx = { state: 'running', currentTime: 2, resumed: 0, resume() { this.resumed++; return Promise.resolve(); } };
     A.mix = { delay: { fx: 0.006 } };
-    A.fx = { play: (n, at) => { played.push(n); return { v: 0, at }; }, setEar() {}, hush() { played.push('hush'); }, voices: () => 0, liveNames: () => [] };
+    A.fx = { play: (n, at) => { played.push(n); return { v: 0, at, lead: 0 }; }, setEar() {}, hush() { played.push('hush'); }, voices: () => 0, liveNames: () => [] };
     return { A, log, rs, played, next: () => ++st };
   };
   const cue = (log, name, step) => log.push({ cue: name, step, play: step });
@@ -356,13 +367,31 @@ const swingAt = (S, t, id = 'cut1') => {
   }
   pass('the run\'s sound lays nothing while paused, with Sound off or suspended; a card in a frame keeps its cues; a press resumes');
 }
-{ // the Barrow Reeve's ostinato is its own: no place's eighths share its intervals
-  const shape = part => { const m = part.notes.map(n => n.m); return m.slice(1).map((x, i) => x - m[i]).join(','); };
-  const reeve = ['low', 'high'].map(k => shape(THEMES.reeve.layers[k][0]));
+{ /* the Barrow Reeve's ostinato is its own figure. The first build compared only the steps between notes, so a figure with the
+     same shape (a pedal on the tonic with a neighbour between: 0,0,+1,0,+3,0,+1,-2 in the Gaol, 0,0,+6,0,+1,0,-1,0 in the Reeve)
+     passed. Now: no place's part of 6 notes or more has the Reeve's steps or its notes from the first note (in any key), the
+     Reeve's figure has no pedal (its first note sounds at its two ends only), and its own contour climbs to the tritone */
+  const ms = part => part.notes.map(n => n.m);
+  const steps = m => m.slice(1).map((x, i) => x - m[i]).join(',');
+  const from = m => m.map(x => x - m[0]).join(',');
+  const pedal = m => m.filter((x, i) => i % 2 === 1 && i < m.length - 1 && x === m[0]).length;
+  const reeve = ['low', 'high'].map(k => ms(THEMES.reeve.layers[k][0]));
+  for (const m of reeve) {
+    assert(m.filter(x => x === m[0]).length <= 2, `the Reeve's figure sounds its first note ${m.filter(x => x === m[0]).length} times: a pedal`);
+    assert.equal(Math.max(...m) - m[0], 6, 'the Reeve\'s figure climbs to the tritone');
+  }
+  assert.equal(from(reeve[0]), from(reeve[1]), 'phase 2 plays the same figure a fourth up');
+  let gaolPedal = 0;
   for (const id of PLACES) for (const [k, parts] of Object.entries(THEMES[id].layers)) for (const p of parts) {
     if (p.notes.length < 6) continue;
-    assert(!reeve.includes(shape(p)), `${id} ${k} ${p.inst} shares the Reeve's ostinato`);
+    const m = ms(p);
+    if (id === 'gaol' && k === 'combat' && p.inst === 'strings') gaolPedal = pedal(m);
+    for (const r of reeve) {
+      assert(steps(m) !== steps(r), `${id} ${k} ${p.inst} has the Reeve's steps`);
+      assert(from(m) !== from(r), `${id} ${k} ${p.inst} has the Reeve's notes in another key`);
+    }
   }
-  pass('the Barrow Reeve\'s ostinato shares its intervals with no place\'s theme', reeve);
+  assert(gaolPedal >= 3 && pedal(reeve[0]) === 0, `the Gaol's strings are a pedal figure (${gaolPedal} of its inner off-beats on D), the Reeve's is not`);
+  pass('the Barrow Reeve\'s ostinato is its own figure: no place shares its steps or its notes, and it has no pedal note', reeve.map(from));
 }
 console.log(`PASS qa/lab/gloam-downs-sound.test.mjs: ${passed} checks`);

@@ -28,11 +28,14 @@ export const tellGrow = (view, artH) => {
   return Math.max(1, Math.min(TELL.max, TELL.px / px));
 };
 const NOTCH = { size: 30, gap: 8, most: 3, keepers: 180 };
-/* The trail of a swing: from the step the strike leaves the wind-up's top to two steps after the active time, a smear along the
-   blade's own arc at three points of the blade (from 0.55 of its length to the tip), sampled `sub` times a step at fractional steps
-   of the swing, so each piece follows the curve and not the chord. Lamp colours (slots 46 and 47, the blade's lit edge) for the cuts,
-   and gold (36) at the finisher's tip. A piece shorter than `min` (a slow blade) is left out. Life in seconds, on play steps */
-export const TRAIL = { ks: [0.55, 0.78, 1], cols: [46, 46, 47], fin: [46, 36, 36], sub: 3, min: 0.06, w: { cut1: 0.055, cut2: 0.055, fin: 0.075 }, life: { cut1: 0.1, cut2: 0.1, fin: 0.16 } };
+/* The trail of a swing: from the step the strike leaves the wind-up's top to the step after the hit's own (the hit step + 1), a smear
+   along the blade's own arc at three points of the blade (from 0.6 of its length to the tip), sampled `sub` times a step at fractional
+   steps of the swing, so each piece follows the curve and not the chord. Each piece is a ribbon: long along the arc, `span` wide along
+   the blade (half the gap between the rows, so the three rows join into one band) and thin across it. The inner row lives `inner` of
+   the others' life, so as the trail fades it narrows toward the tip and stays one band. Lamp colours (slots 46 and 47, the blade's
+   lit edge) for the cuts, and gold (36) at the finisher's tip. A piece shorter than `min` (a slow blade) is left out. Life in
+   seconds, on play steps; after hit stop a smear ages `after` times as fast (sparks.js) */
+export const TRAIL = { ks: [0.6, 0.8, 1], cols: [46, 46, 47], fin: [46, 36, 36], sub: 3, min: 0.06, inner: 0.6, w: { cut1: 0.04, cut2: 0.04, fin: 0.05 }, life: { cut1: 0.075, cut2: 0.075, fin: 0.11 } };
 const mul = (a, b) => [
   a[0] * b[0] + a[1] * b[3] + a[2] * b[6], a[0] * b[1] + a[1] * b[4] + a[2] * b[7], a[0] * b[2] + a[1] * b[5] + a[2] * b[8],
   a[3] * b[0] + a[4] * b[3] + a[5] * b[6], a[3] * b[1] + a[4] * b[4] + a[5] * b[7], a[3] * b[2] + a[4] * b[5] + a[5] * b[8],
@@ -110,12 +113,19 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
   }
   function trail() {
     const s = G.runner?.fighter.body.s, a = s?.act, S = a && SWINGS[a.move];
-    if (!sparks || !S || fx.trail === false || !meta.bones?.pivots || a.t <= S.strike || a.t > S.wind + S.act + 2) return;
-    const cols = a.move === 'fin' ? TRAIL.fin : TRAIL.cols, w = TRAIL.w[a.move], life = TRAIL.life[a.move];
+    if (!sparks || !S || fx.trail === false || !meta.bones?.pivots || a.t <= S.strike || a.t > S.hit + 1) return;
+    const cols = a.move === 'fin' ? TRAIL.fin : TRAIL.cols, w = TRAIL.w[a.move], life = TRAIL.life[a.move], n = TRAIL.ks.length;
     let prev = null;
     for (let j = 0; j <= TRAIL.sub; j++) {
       const cur = bladeAt(meta.bones, { ...s, hide: false, act: { ...a, t: a.t - 1 + j / TRAIL.sub } }, TRAIL.ks).points;
-      if (prev) cur.forEach((p, i) => { if (Math.hypot(p[0] - prev[i][0], p[1] - prev[i][1], p[2] - prev[i][2]) >= TRAIL.min) sparks.smear(prev[i], p, cols[i], w * (0.6 + 0.4 * TRAIL.ks[i]), life); });
+      if (prev) {
+        // the blade's direction here (inner row to tip), and half the gap between two rows: each ribbon reaches its neighbours
+        const b = [cur[n - 1][0] - cur[0][0], cur[n - 1][1] - cur[0][1], cur[n - 1][2] - cur[0][2]], bl = Math.hypot(b[0], b[1], b[2]) || 1;
+        const along = b.map(v => v / bl), span = (bl / (n - 1)) * 0.5;
+        cur.forEach((p, i) => {
+          if (Math.hypot(p[0] - prev[i][0], p[1] - prev[i][1], p[2] - prev[i][2]) >= TRAIL.min) sparks.smear(prev[i], p, cols[i], w, i === 0 ? life * TRAIL.inner : life, along, span);
+        });
+      }
       prev = cur;
     }
     G.trails = (G.trails || 0) + 1;

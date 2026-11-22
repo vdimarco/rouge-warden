@@ -9,6 +9,8 @@ const TAU = Math.PI * 2;
 const KIND = 0 + 16 + 32; // plain, left out of outlines (nd), glows (em)
 // over the walk map's floor: the places' ground splats stand up to about 0.1 m over it (the markers' lift, fight.js MARK_LIFT)
 export const OVER = 0.14;
+// how much faster a swing's smear ages once hit stop is over (sparks' smear, fight.js trail)
+export const AFTER = 1.6;
 export const SPARK_SLOTS = { ember: 33, fire: 34, flame: 35, gold: 36, white: 37, lamp: 46, lampPale: 47 };
 
 /* makeSparks(world, first, n, pal): splats first .. first + n of world.data are the pool (the pool.js reserve). glim is how many of
@@ -71,11 +73,14 @@ export function makeSparks(world, first, n, pal, { glim = 64, seed = 9 } = {}) {
         Object.assign(p, { type: 3, life, max: life, p: [px, gy + OVER, pz], a: a + rnd(-0.5, 0.5), s: rnd(0.03, 0.05), l, col: PK[i % 3 ? 34 : 35], ph: rnd(0, TAU), keep: true });
       }
     },
-    /* a smear of the swing: a bright streak from a to b that stays where it was laid, thins and fades over life seconds, and holds
-       in hit stop (it ages on play steps only), so the arc of a cut hangs in the air while the hit holds (fight.js trail) */
-    smear(a, b, ci, w, life) {
+    /* a smear of the swing: a ribbon from a to b that stays where it was laid, long along a to b, `span` wide (a half-width) along the
+       unit direction `along` (the blade) and w thick, that narrows and fades over life seconds. It holds in hit stop (it ages on play
+       steps only), so the arc of a cut hangs in the air while the hit holds, and after hit stop it ages AFTER times as fast, so it
+       does not linger (fight.js trail) */
+    smear(a, b, ci, w, life, along = null, span = 0) {
       const p = fresh(get()), dx = b[0] - a[0], dy = b[1] - a[1], dz = b[2] - a[2], l = Math.hypot(dx, dy, dz) || 1e-3;
-      Object.assign(p, { type: 4, life, max: life, p: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2], ax: [dx / l, dy / l, dz / l], l: l / 2 + w * 0.5, s: w, hold: true, col: PK[ci] });
+      Object.assign(p, { type: 4, life, max: life, p: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2], ax: [dx / l, dy / l, dz / l], l: l / 2 + w * 0.5, s: w, hold: true, held: false, col: PK[ci], bd: along, span });
+      return p;
     },
     clear() { for (const p of ps) p.life = 0; live = 0; dirty = true; },
     alive: () => ps.filter(p => p.life > 0).length,
@@ -85,7 +90,9 @@ export function makeSparks(world, first, n, pal, { glim = 64, seed = 9 } = {}) {
       live = 0;
       for (const p of ps) {
         if (p.life <= 0) continue;
-        if (!p.hold || play) p.life -= dt;
+        // a smear that has held through hit stop ages faster once play goes on
+        if (p.hold && !play) p.held = true;
+        if (!p.hold || play) p.life -= dt * (p.held ? AFTER : 1);
         if (p.life > 0) live++;
         if (p.type === 0 || p.type === 1) { p.v[1] -= p.g * dt; p.p[0] += p.v[0] * dt; p.p[1] += p.v[1] * dt; p.p[2] += p.v[2] * dt; }
       }
@@ -128,10 +135,13 @@ export function makeSparks(world, first, n, pal, { glim = 64, seed = 9 } = {}) {
       return;
     }
     if (p.type === 4) {
-      // a smear: a streak along its axis, thinning as it fades (most of its width goes in the first half of its life)
-      const w = p.s * Math.sqrt(1 - u) * (1 - 0.3 * u), l = Math.max(w, p.l * (1 - 0.25 * u)), [ax, ay, az] = p.ax, q = l * l - w * w;
+      /* a smear: a ribbon along its axis and across the blade, thinning as it fades (most of its width goes in the first half of its
+         life). Its span across the blade shrinks with its thickness, so the rows stay joined while they fade */
+      const k = Math.sqrt(1 - u), w = p.s * k * (1 - 0.3 * u), l = Math.max(w, p.l * (1 - 0.25 * u)), [ax, ay, az] = p.ax, q = l * l - w * w;
+      const sp = p.bd ? Math.max(w, p.span * (0.4 + 0.6 * k)) : w, r = sp * sp - w * w, [bx, by, bz] = p.bd || [0, 0, 0];
       d[o] = p.p[0]; d[o + 1] = p.p[1]; d[o + 2] = p.p[2];
-      d[o + 4] = w * w + q * ax * ax; d[o + 5] = q * ax * ay; d[o + 6] = q * ax * az; d[o + 8] = w * w + q * ay * ay; d[o + 9] = q * ay * az; d[o + 10] = w * w + q * az * az;
+      d[o + 4] = w * w + q * ax * ax + r * bx * bx; d[o + 5] = q * ax * ay + r * bx * by; d[o + 6] = q * ax * az + r * bx * bz;
+      d[o + 8] = w * w + q * ay * ay + r * by * by; d[o + 9] = q * ay * az + r * by * bz; d[o + 10] = w * w + q * az * az + r * bz * bz;
       return;
     }
     if (p.type === 3) {
