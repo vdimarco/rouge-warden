@@ -60,11 +60,19 @@ await page.evaluate(() => {
   };
   /* spec: { len, phone, bus: 'all' | 'fx' | 'music', ear, acts: [{ t, cue, o } | { t, score: method, args } | { t, filter: [hz, db] }] }
      -> 16-bit stereo PCM in base64, and what the score did */
-  window.__demo = async spec => {
+  // render a spec -> { buf (the AudioBuffer), red (the gain reduction of the compressor and the limiter every 25 ms), ms, ... }
+  window.__render = async spec => {
     const { createMix, createSound } = await import('/lab/gloam-downs/sound.js');
     const { createMusic } = await import('/lab/gloam-downs/music.js');
     const SR = 44100, c = new OfflineAudioContext(2, Math.round(SR * spec.len), SR);
-    const mix = createMix(c, { phone: !!spec.phone });
+    const mix = createMix(c, { phone: !!spec.phone, bypass: !!spec.bypass });
+    // a steady tone into one bus, to measure the chain's gain: { bus: 'fx' | 'music', db, hz }
+    if (spec.tone) {
+      const o = c.createOscillator(), g = c.createGain();
+      o.frequency.value = spec.tone.hz || 1000; g.gain.value = Math.pow(10, spec.tone.db / 20);
+      o.connect(g); g.connect(spec.tone.bus === 'music' ? mix.duckNode : mix.fx); o.start(0);
+    }
+    const red = [];
     if (spec.bus === 'fx') mix.set({ music: false });
     if (spec.bus === 'music') mix.set({ fx: false });
     const fx = createSound(c, { mix, seed: 7 });
@@ -84,14 +92,42 @@ await page.evaluate(() => {
         else if (a.score) m.score[a.score](...(a.args || []));
         else if (a.filter) m.setFilter(...a.filter);
       }
-      m.score.tick();
+      if (!spec.tone) m.score.tick();
+      const rd = mix.reduction();
+      red.push([+t.toFixed(3), +rd.lim.toFixed(2)]);
     };
     run(0);
     for (let t = 0.025; t < spec.len - 0.01; t += 0.025) {
       const tt = Math.round(t / 0.025) * 0.025;
       c.suspend(tt).then(() => { run(tt); c.resume(); });
     }
-    const buf = await c.startRendering();
+    const t0 = performance.now(), buf = await c.startRendering(), ms = performance.now() - t0;
+    return { buf, red, ms, m, plays, SR };
+  };
+  // the energy (dB) of a band of a buffer in windows [from, to] (s): L+R, a 4th-order band-pass made of two RBJ high-passes at lo and
+  // two RBJ low-passes at hi (no band: the whole signal)
+  window.__bandDb = (buf, wins, lo = 0, hi = 0, shift = 0) => {
+    const sr = buf.sampleRate, L = buf.getChannelData(0), R = buf.getChannelData(1), x = new Float64Array(L.length);
+    for (let i = 0; i < x.length; i++) x[i] = (L[i] + R[i]) / 2;
+    const biq = (f, hp) => {
+      const w = 2 * Math.PI * f / sr, cs = Math.cos(w), al = Math.sin(w) / (2 * Math.SQRT1_2);
+      const b0 = hp ? (1 + cs) / 2 : (1 - cs) / 2, b1 = hp ? -(1 + cs) : 1 - cs, a0 = 1 + al, a1 = -2 * cs, a2 = 1 - al;
+      let x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+      for (let i = 0; i < x.length; i++) { const v = x[i], y = (b0 * v + b1 * x1 + b0 * x2 - a1 * y1 - a2 * y2) / a0; x2 = x1; x1 = v; y2 = y1; y1 = y; x[i] = y; }
+    };
+    if (lo) { biq(lo, true); biq(lo, true); }
+    if (hi) { biq(hi, false); biq(hi, false); }
+    return wins.map(([a, b]) => { let e = 0; for (let i = Math.max(0, Math.round((a + shift) * sr)); i < Math.min(x.length, Math.round((b + shift) * sr)); i++) e += x[i] * x[i]; return +(10 * Math.log10(e + 1e-12)).toFixed(2); });
+  };
+  // the delay (s) of buffer b against buffer a, by cross-correlation of [from, from + 0.1 s] over lags of 0 to 30 ms
+  window.__lag = (a, b, from) => {
+    const sr = a.sampleRate, x = a.getChannelData(0), y = b.getChannelData(0), i0 = Math.round(from * sr), n = Math.round(0.1 * sr);
+    let best = -Infinity, at = 0;
+    for (let k = 0; k <= Math.round(0.03 * sr); k++) { let s = 0; for (let i = 0; i < n; i++) s += x[i0 + i] * y[i0 + i + k]; if (s > best) { best = s; at = k; } }
+    return at / sr;
+  };
+  window.__demo = async spec => {
+    const { buf, red, ms, m, plays, SR } = await window.__render(spec);
     const L = buf.getChannelData(0), R = buf.getChannelData(1), pcm = new Int16Array(L.length * 2);
     let peak = 0;
     for (let i = 0; i < L.length; i++) {
@@ -102,7 +138,7 @@ await page.evaluate(() => {
     const u = new Uint8Array(pcm.buffer);
     let str = '';
     for (let i = 0; i < u.length; i += 0x8000) str += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000));
-    return { pcm: btoa(str), sr: SR, peak, samples: m.loaded, failed: m.failed, music: m.score.view(), plays };
+    return { pcm: btoa(str), sr: SR, peak, samples: m.loaded, failed: m.failed, music: m.score.view(), plays, red, ms };
   };
 });
 const info = await page.evaluate(async () => {
@@ -190,6 +226,9 @@ async function render(name, spec, note = '', extra = null) {
   return r;
 }
 const T0 = 0.2;
+// the fight's loudness target (LUFS integrated, ±2), each theme's with combat on (±3), and the fight's render time budget (a share of
+// real time on this desktop)
+const FIGHT_LUFS = -24, THEME_LUFS = -32, CPU = 0.12;
 
 // ---- the cues
 if (want('cues')) {
@@ -228,6 +267,71 @@ if (want('cues')) {
   // a tell from behind: 2 m in front and 14 m behind the camera (the eye looks toward -z at yaw 0)
   await render('tell-scrape-near', { len: 1.4, ear: { x: 0, z: 0, yaw: 0 }, acts: [{ t: T0, cue: 'scrape', o: { pos: [0, -2] } }] });
   await render('tell-scrape-far', { len: 1.4, ear: { x: 0, z: 0, yaw: 0 }, acts: [{ t: T0, cue: 'scrape', o: { pos: [0, 14] } }] });
+}
+// ---- power: the measures in the browser on the float renders (no mp3), into power.json
+const power = {};
+if (want('power')) {
+  // the chain's gain: a 1 kHz tone at -40 dBFS into each bus comes out at the bus level, so the compressors' own make-up is taken off
+  power.gain = await page.evaluate(async () => {
+    const { MIX } = await import('/lab/gloam-downs/sound.js');
+    const out = {};
+    for (const bus of ['fx', 'music']) {
+      const r = await window.__render({ len: 1, tone: { bus, db: -40 } });
+      const e = window.__bandDb(r.buf, [[0.5, 1]])[0], rms = 10 * Math.log10(Math.pow(10, e / 10) / (0.5 * r.SR)) + 3.01;
+      out[bus] = { out: +rms.toFixed(2), want: -40 + (bus === 'fx' ? MIX.fx : MIX.music) + MIX.ceil };
+    }
+    return out;
+  });
+  const P = await page.evaluate(async T0 => {
+    const res = {};
+    const whole = (id, w, act, st, hit) => [{ t: T0, cue: 'swing', o: { hit: id, wind: w, act, strike: st } }, { t: T0 + st / 60, cue: 'strike', o: { hit: id, lead: w - st, act } },
+      ...(hit ? [{ t: T0 + w / 60, cue: 'hit', o: { hit: id, on: ['S'], stop: id === 'fin' ? 5 : 3, variant: 0 } }] : [])];
+    // the whoosh under its hit: the 40 ms after the hit, with the swing and the strike against the hit alone, in the crunch band
+    // (1 to 4 kHz) and the tick band (over 5 kHz)
+    for (const [id, w, act, st] of [['cut1', 6, 5, 4], ['fin', 12, 6, 9]]) {
+      const tHit = T0 + w / 60, win = [[tHit, tHit + 0.04]];
+      const both = await window.__render({ len: 1.2, acts: whole(id, w, act, st, true) });
+      const alone = await window.__render({ len: 1.2, acts: [{ t: tHit, cue: 'hit', o: { hit: id, on: ['S'], stop: id === 'fin' ? 5 : 3, variant: 0 } }] });
+      res[`under-${id}`] = { crunch: +(window.__bandDb(both.buf, win, 1000, 4000)[0] - window.__bandDb(alone.buf, win, 1000, 4000)[0]).toFixed(2),
+        tick: +(window.__bandDb(both.buf, win, 5000)[0] - window.__bandDb(alone.buf, win, 5000)[0]).toFixed(2) };
+    }
+    // the punch kept: each heavy hit through the chain against the same hit with no dynamics, aligned by cross-correlation. The first
+    // 10 ms and the tail from 120 to 250 ms after the onset, in dB against the bypass
+    for (const [name, cue, o] of [['cut1', 'hit', { hit: 'cut1', on: ['S'], stop: 3 }], ['fin', 'hit', { hit: 'fin', on: ['S'], stop: 5 }], ['slam', 'slam', { type: 'B', foe: 'reeve' }]]) {
+      const acts = [{ t: T0, cue, o: { ...o, variant: 0 } }];
+      const a = await window.__render({ len: 1, acts, bypass: true }), b = await window.__render({ len: 1, acts });
+      const lag = window.__lag(a.buf, b.buf, T0 - 0.005);
+      const wins = [[T0, T0 + 0.01], [T0 + 0.12, T0 + 0.25]], A = window.__bandDb(a.buf, wins), B = window.__bandDb(b.buf, wins, 0, 0, lag);
+      res[`punch-${name}`] = { lag: +(lag * 1000).toFixed(1), first: +(B[0] - A[0]).toFixed(2), tail: +(B[1] - A[1]).toFixed(2) };
+    }
+    // a tell 100 ms and 250 ms after a cut 1 and after a finisher: its 1 to 5 kHz band in its first 0.3 s, in the mix less the hit
+    // alone, against the tell alone
+    for (const id of ['cut1', 'fin']) for (const d of [0.1, 0.25]) {
+      const hit = { t: T0, cue: 'hit', o: { hit: id, on: ['S'], stop: id === 'fin' ? 5 : 3, variant: 0 } }, tell = { t: T0 + d, cue: 'scrape', o: { pos: [1, -3] } };
+      const win = [[T0 + d, T0 + d + 0.3]];
+      const mixed = window.__bandDb((await window.__render({ len: 1.2, acts: [hit, tell] })).buf, win, 1000, 5000)[0];
+      const h = window.__bandDb((await window.__render({ len: 1.2, acts: [hit] })).buf, win, 1000, 5000)[0];
+      const t = window.__bandDb((await window.__render({ len: 1.2, acts: [{ ...tell, t: T0 + d }] })).buf, win, 1000, 5000)[0];
+      const inMix = 10 * Math.log10(Math.max(1e-12, Math.pow(10, mixed / 10) - Math.pow(10, h / 10)));
+      res[`tell-${id}-${d * 1000}`] = { loss: +(t - inMix).toFixed(2) };
+    }
+    // the plunge's fall stops at the landing: the drop's band (1.5 to 3 kHz) from 0.1 to 0.4 s after the landing, with the drop and
+    // with the landing alone, and the drop alone (it would still sound there)
+    {
+      const land = { t: T0 + 0.2, cue: 'land', o: { fallen: 2, on: ['S'], stop: 5, variant: 0 } }, drop = { t: T0, cue: 'drop', o: {} }, win = [[T0 + 0.3, T0 + 0.6]];
+      const both = window.__bandDb((await window.__render({ len: 1.2, acts: [drop, land] })).buf, win, 1500, 3000)[0];
+      const alone = window.__bandDb((await window.__render({ len: 1.2, acts: [land] })).buf, win, 1500, 3000)[0];
+      const dropOnly = window.__bandDb((await window.__render({ len: 1.2, acts: [drop] })).buf, win, 1500, 3000)[0];
+      res.landing = { over: +(both - alone).toFixed(2), drop: +(dropOnly - alone).toFixed(2) };
+    }
+    return res;
+  }, T0);
+  Object.assign(power, P);
+  for (const [k, v] of Object.entries(power)) console.log(`${k.padEnd(18)} ${JSON.stringify(v)}`);
+  // the swing's parts alone, for the power order: the strike's whoosh against its hit
+  await render('cue-strike-fin', { len: 2, acts: [{ t: T0, cue: 'strike', o: { hit: 'fin', lead: 3, act: 6 } }] });
+  await render('cue-swing-cut1-hit', { len: 2, acts: [{ t: T0, cue: 'swing', o: { hit: 'cut1', wind: 6, act: 5, strike: 4 } }, { t: T0 + 4 / 60, cue: 'strike', o: { hit: 'cut1', lead: 2, act: 5 } },
+    { t: T0 + 6 / 60, cue: 'hit', o: { hit: 'cut1', on: ['S'], stop: 3 } }, { t: T0 + 11 / 60, cue: 'recover', o: { hit: 'cut1' } }] }, 'a cut that lands: the press, the whoosh, the hit and the settle');
 }
 // ---- the themes: 8 bars of explore, the combat layer in for 4 bars, 4 bars going out; and 8 bars with combat on
 if (want('themes')) {
@@ -277,7 +381,14 @@ function fight() {
 }
 if (want('fight')) {
   const acts = fight();
-  await render('fight-desktop', { len: 40, acts }, 'the scripted fight, desktop mix');
+  const fr = await render('fight-desktop', { len: 40, acts }, 'the scripted fight, desktop mix');
+  // the limiter's gain reduction on each cut 1 and each finisher (the most in the 150 ms after it) and over the fight (from 2.5 s: the
+  // meter of a DynamicsCompressorNode starts at its floor and takes about 2 s to settle; the sound itself is not touched), and the
+  // render time against the fight's length
+  const cut1 = acts.filter(a => a.cue === 'hit' && a.o.hit === 'cut1').map(a => a.t), fin = acts.filter(a => a.cue === 'hit' && a.o.hit === 'fin').map(a => a.t);
+  const most = ts => Math.max(...ts.map(t => -Math.min(0, ...fr.red.filter(x => x[0] >= t && x[0] <= t + 0.15).map(x => x[1]))));
+  power.fight = { cut1: +most(cut1).toFixed(2), fin: +most(fin).toFixed(2), lim: +(-Math.min(...fr.red.filter(x => x[0] >= 2.5).map(x => x[1]))).toFixed(2), cpu: +(fr.ms / 40000).toFixed(4), ms: Math.round(fr.ms) };
+  console.log(`fight dynamics       ${JSON.stringify(power.fight)}`);
   await render('fight-phone', { len: 40, phone: true, acts }, 'the scripted fight, phone mix');
   await render('fight-fx', { len: 40, bus: 'fx', acts }, 'the effects alone');
   await render('fight-music', { len: 40, bus: 'music', acts }, 'the music alone');
@@ -286,6 +397,10 @@ await browser.close();
 server?.kill();
 
 // ---- the targets (design.md "Loudness")
+let prevPower = {};
+try { prevPower = JSON.parse(fs.readFileSync(path.join(OUT, 'power.json'), 'utf8')); } catch { /* none yet */ }
+const pw2 = { ...prevPower, ...power };
+fs.writeFileSync(path.join(OUT, 'power.json'), JSON.stringify(pw2, null, 1) + '\n');
 let prev = {};
 try { prev = JSON.parse(fs.readFileSync(path.join(OUT, 'loudness.json'), 'utf8')); } catch { /* none yet */ }
 const all = { ...prev, ...results };
@@ -295,10 +410,10 @@ const fails = [];
 const need = (ok, what) => { if (!ok) fails.push(what); };
 for (const [k, v] of Object.entries(all)) need(v.TP <= -1, `${k}: true peak ${v.TP} dBTP over -1`);
 if (all['fight-desktop']) {
-  for (const k of ['fight-desktop', 'fight-phone']) need(Math.abs(all[k].I + 18) <= 2, `${k}: ${all[k].I} LUFS, not -18 ±2`);
+  for (const k of ['fight-desktop', 'fight-phone']) need(Math.abs(all[k].I - FIGHT_LUFS) <= 2, `${k}: ${all[k].I} LUFS, not ${FIGHT_LUFS} ±2`);
   need(all['fight-fx'].I - all['fight-music'].I >= 8, `the music is ${(all['fight-fx'].I - all['fight-music'].I).toFixed(1)} LU under the effects, not 8`);
 }
-for (const id of info.places) if (all[`combat-${id}`]) need(Math.abs(all[`combat-${id}`].I + 28) <= 3, `combat-${id}: ${all[`combat-${id}`].I} LUFS, not -28 ±3`);
+for (const id of info.places) if (all[`combat-${id}`]) need(Math.abs(all[`combat-${id}`].I - THEME_LUFS) <= 3, `combat-${id}: ${all[`combat-${id}`].I} LUFS, not ${THEME_LUFS} ±3`);
 const mm = k => Math.max(...[0, 1, 2, 3].map(v => all[`cue-${k}-v${v}`]?.M ?? -99));
 if (all['cue-hit-cut1-v0']) {
   const cut1 = mm('hit-cut1');
@@ -313,6 +428,27 @@ if (all['cue-hit-cut1-v0']) {
     need(v.pitch[1] <= v.pitch[0] * 0.5, `${k}: the body goes from ${v.pitch[0]} to ${v.pitch[1]} Hz`);
   }
   need(all['tell-scrape-near'].M - all['tell-scrape-far'].M <= 10, `the far tell is ${(all['tell-scrape-near'].M - all['tell-scrape-far'].M).toFixed(1)} LU under the near one, more than 10`);
+}
+// power (design.md "Power"): the whoosh leads into its hit and stays under it; the chain keeps the punch; a tell is heard through a cut
+if (all['cue-strike'] && all['cue-hit-cut1-v0']) {
+  need(mm('hit-cut1') - all['cue-strike'].M >= 4, `the strike's whoosh is ${(mm('hit-cut1') - all['cue-strike'].M).toFixed(1)} LU under cut 1, not 4`);
+  if (all['cue-strike-fin']) need(mm('hit-fin') - all['cue-strike-fin'].M >= 4, `the finisher's whoosh is ${(mm('hit-fin') - all['cue-strike-fin'].M).toFixed(1)} LU under its hit, not 4`);
+  // the 4 variants of a hit differ in their bands, not only in pitch
+  for (const k of ['hit-cut1', 'hit-cut2', 'hit-fin']) {
+    const b = [0, 1, 2, 3].map(v => all[`cue-${k}-v${v}`]?.bands).filter(Boolean);
+    if (b.length === 4) { const spread = Math.max(...[1, 2].map(j => Math.max(...b.map(x => x[j])) - Math.min(...b.map(x => x[j])))); need(spread >= 1.5, `${k}: the variants' bands spread ${spread.toFixed(1)} dB, not 1.5`); }
+  }
+}
+if (pw2.gain) for (const [bus, g] of Object.entries(pw2.gain)) need(Math.abs(g.out - g.want) <= 0.5, `the ${bus} bus comes out at ${g.out} dB for ${g.want} dB: the make-up gain is not taken off`);
+for (const id of ['cut1', 'fin']) if (pw2[`under-${id}`]) { const u = pw2[`under-${id}`]; need(u.crunch <= 3 && u.tick <= 3, `${id}: the whoosh lifts the hit's crunch by ${u.crunch} dB and its tick by ${u.tick} dB, over 3`); }
+// (the boss slam may take up to 6 dB on the limiter, the only cue that does)
+for (const k of ['cut1', 'fin', 'slam']) if (pw2[`punch-${k}`]) { const u = pw2[`punch-${k}`]; need(Math.abs(u.first) <= (k === 'slam' ? 6 : 2) && u.tail <= 4, `${k}: the chain moves the first 10 ms by ${u.first} dB and lifts the tail by ${u.tail} dB`); }
+for (const [k, v] of Object.entries(pw2)) if (k.startsWith('tell-')) need(v.loss <= 3, `${k}: the tell loses ${v.loss} dB in the mix, over 3`);
+if (pw2.landing) need(pw2.landing.over <= 1 && pw2.landing.drop >= 6, `the landing does not stop the drop: ${JSON.stringify(pw2.landing)}`);
+if (pw2.fight) {
+  need(pw2.fight.cut1 <= 2, `a cut 1 hit reads ${pw2.fight.cut1} dB of gain reduction, over 2`);
+  need(pw2.fight.fin <= 5, `a finisher reads ${pw2.fight.fin} dB of gain reduction, over 5`);
+  need(pw2.fight.cpu <= CPU, `the fight renders at ${(pw2.fight.cpu * 100).toFixed(1)}% of real time, over ${CPU * 100}%`);
 }
 if (errors.length) fails.push(...errors.slice(0, 3));
 if (fails.length) { console.log(`FAIL ${FILE}:\n  ${fails.join('\n  ')}`); process.exit(1); }

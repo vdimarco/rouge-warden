@@ -3,10 +3,10 @@
 // run's scene for the score, and keeps the Sound and Music switches. Before the context exists every call is cheap and silent, and
 // the scene is kept, so the score starts in the right place.
 import { createMix, createSound, cueAt, CUES } from './sound.js';
-import { createMusic, TIMER, keyOf, THEMES } from './music.js';
+import { createMusic, TIMER, keyOf, THEMES, LOOKAHEAD, PHONE_LOOKAHEAD } from './music.js';
 
 export function makeRunSound({ log, rs, phone = false, step = () => 0, ear = () => null, foe = () => null, base = './audio/', fetchFn = null, seed = 1 }) {
-  const A = { ctx: null, mix: null, fx: null, music: null, heard: 0, timer: 0, scene: { kind: 'silent' }, paused: false, low: false, frame: null, failed: null };
+  const A = { ctx: null, mix: null, fx: null, music: null, heard: 0, timer: 0, scene: { kind: 'silent' }, paused: false, low: false, frame: null, failed: null, lead: null };
   // the scene the score follows: arrive (the arrival card), place, boss, lamp or silent. Kept before the context exists
   A.setScene = (kind, o = {}) => {
     const was = A.scene;
@@ -31,7 +31,7 @@ export function makeRunSound({ log, rs, phone = false, step = () => 0, ear = () 
     const ctx = A.ctx;
     A.mix = createMix(ctx, { phone });
     A.fx = createSound(ctx, { mix: A.mix, seed });
-    A.music = createMusic(ctx, { mix: A.mix, base, fetchFn, seed });
+    A.music = createMusic(ctx, { mix: A.mix, base, fetchFn, seed, lookahead: phone ? PHONE_LOOKAHEAD : LOOKAHEAD });
     A.music.step = step;
     A.heard = log.length;
     A.switches();
@@ -46,6 +46,12 @@ export function makeRunSound({ log, rs, phone = false, step = () => 0, ear = () 
     if (sc.kind === 'boss') { A.music.score.bossIntro(); if (sc.phase) A.music.score.bossPhase(sc.phase); A.scene = sc; } else A.setScene(sc.kind, sc);
     return true;
   };
+  /* every later press: a context that a browser made suspended (a touch whose first event was no user activation, an iPhone that
+     only lets touchend or click start sound) is resumed inside the press. -> a promise, or null */
+  A.wake = () => {
+    if (!A.ctx || A.ctx.state === 'running' || A.ctx.state === 'closed' || !(rs.sound || rs.music) || (typeof document !== 'undefined' && document.hidden)) return null;
+    try { const p = A.ctx.resume(); return p && p.catch ? p.catch(() => {}) : p; } catch { return null; }
+  };
   // Sound and Music: Sound off silences the effects, Music off the score, and with both off the context is suspended
   A.switches = () => {
     if (!A.ctx) return;
@@ -55,30 +61,34 @@ export function makeRunSound({ log, rs, phone = false, step = () => 0, ear = () 
     else if (A.ctx.state === 'suspended') A.ctx.resume().catch(() => {});
   };
   // a frame begins: the context time and the game step before its first step
-  A.begin = () => { A.frame = A.ctx ? { t: A.ctx.currentTime + 0.005, base: step() } : null; };
+  A.begin = () => { A.frame = { t: A.ctx ? A.ctx.currentTime + 0.005 : 0, base: step() }; };
   // the cues logged since the last flush, laid at the frame's time plus 1/60 s a step (capped at 0.25 s)
   A.flush = () => {
-    const fr = A.frame || (A.ctx ? { t: A.ctx.currentTime + 0.005, base: step() - 1 } : null);
+    let fr = A.frame || { t: 0, base: step() - 1 };
     A.frame = null;
+    if (A.ctx && !fr.t) fr = { ...fr, t: A.ctx.currentTime + 0.005 };
     for (; A.heard < log.length; A.heard++) {
       const c = log[A.heard];
       if (!A.ctx || !rs.sound || A.paused || A.ctx.state !== 'running') continue;
       lay(c, cueAt(fr.t, fr.base, c.step));
     }
-  };
+  }
+  // lay one cue. A.lead keeps how far ahead of the context's clock it was laid; with the dynamics' pre-delays and the output's
+  // latency it is the effects' lag behind the picture (__gloam.music().lag)
   function lay(c, at) {
     const f = c.foe ? foe(c.foe) : null, o = { ...c };
     if (f) { o.pos = f.pos; o.type = f.type; }
     A.fx.setEar(ear());
     const r = A.fx.play(c.cue, at, o);
+    if (r) A.lead = +(r.at - A.ctx.currentTime).toFixed(4);
     if (r) { c.at = +r.at.toFixed(4); c.v = r.v; if (r.glim !== undefined) c.glim = r.glim; }
   }
-  // a cue of the page itself (the cards): logged and played now
+  /* a cue of the page itself (the cards): logged in the same queue as the game's cues. Inside a frame the frame's flush lays it with
+     them; outside one it is laid now. So a card that opens in a frame never takes the frame's other cues with it */
   A.cue = (name, more = {}) => {
     if (!CUES[name]) return;
-    const c = { cue: name, step: step(), play: step(), ...more };
-    log.push(c);
-    if (A.ctx && rs.sound && !A.paused && A.ctx.state === 'running') { lay(c, A.ctx.currentTime + 0.005); A.heard = log.length; }
+    log.push({ cue: name, step: step(), play: step(), ...more });
+    if (!A.frame) A.flush();
   };
   // the pause panel: the effects stop, the score goes on low-passed to 600 Hz and 8 dB down; low health takes it to 900 Hz, 3 dB down
   A.pause = on => {
@@ -107,7 +117,9 @@ export function makeRunSound({ log, rs, phone = false, step = () => 0, ear = () 
     return {
       ...v, ctx: A.ctx ? A.ctx.state : null, mix: phone ? 'phone' : 'desktop', scene: { ...A.scene },
       buses: A.mix ? { fx: A.mix.fx.gain.value, music: A.mix.music.gain.value, duck: +A.mix.duckDb().toFixed(2), hp: A.mix.hp.frequency.value } : null,
-      fxVoices: A.fx ? A.fx.voices() : 0, time: A.ctx ? A.ctx.currentTime : null, failed: A.failed
+      fxVoices: A.fx ? A.fx.voices() : 0, fxLive: A.fx ? A.fx.liveNames() : [], time: A.ctx ? A.ctx.currentTime : null, failed: A.failed,
+      reduction: A.mix ? A.mix.reduction() : null,
+      lag: A.ctx ? { lead: A.lead, pre: A.mix.delay.fx, out: A.ctx.outputLatency || 0, base: A.ctx.baseLatency || 0 } : null
     };
   };
   return A;

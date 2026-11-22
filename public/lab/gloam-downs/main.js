@@ -71,7 +71,20 @@ const audio = RUN ? makeRunSound({
     return f ? { pos: [f.x, f.z], type: f.type } : null;
   }
 }) : null;
-const soundPress = () => { if (audio && !audio.ctx && !(mode === 'lamp' && lampFromWander)) { audio.start(); soundLabel(); } };
+/* the first press that the browser counts as a user activation makes the context: a key but Escape, a mouse button, a touch's
+   pointerup or touchend, or a click (a button's own handler calls this with no event). A touch's pointerdown is no activation (the
+   HTML spec; WebKit counts only touchend), so a context made there would start suspended and stay so. Every later press resumes a
+   context that is not running, as First Breath's ensureAudio does */
+const activates = e => !e || (e.type === 'keydown' ? e.key !== 'Escape' : e.type === 'pointerdown' ? e.pointerType === 'mouse' : true);
+const soundPress = e => {
+  if (!audio || (mode === 'lamp' && lampFromWander)) return;
+  if (!audio.ctx) {
+    if (!activates(e)) return;
+    audio.start();
+    audio.ctx?.addEventListener?.('statechange', soundLabel);
+    soundLabel();
+  } else audio.wake()?.then?.(soundLabel);
+};
 if (audio) for (const k of ['keydown', 'pointerdown', 'pointerup', 'touchend', 'click']) addEventListener(k, soundPress, true);
 // after a card that played the Lamp-room theme (or silence), the place's own sounds come back: under the arrival card, or the theme
 function sceneOfPlace() {
@@ -472,7 +485,7 @@ function ask(kind) {
    Sound line says when it starts */
 function soundLabel() {
   if (!RUN) return;
-  const waits = rs.sound && audio && !audio.ctx;
+  const waits = rs.sound && audio && (!audio.ctx || (audio.ctx.state === 'suspended' && !document.hidden));
   $('bSound').textContent = rs.sound ? (waits ? 'Sound on (starts on a key or tap)' : 'Sound on') : 'Sound off';
   $('bSound').setAttribute('aria-pressed', String(rs.sound));
   $('bMusic').textContent = rs.music ? 'Music on' : 'Music off';

@@ -1532,11 +1532,15 @@ Each bot SHALL play until its first win, or for 12 runs. The bot SHALL spread it
 - **THEN** they finish in less than 10 minutes together. Check: the bot, `gloam-downs-bot.mjs`.
 
 ### Requirement: Sound in a run
-The run SHALL make its effects in code with WebAudio, with no sound files. Its music SHALL play a small sampled bank and voices made in code. Sound SHALL start only after a key, click or tap on the page in a run.
+The run SHALL make its effects in code with WebAudio, with no sound files. Its music SHALL play a small sampled bank and voices made in code. Sound SHALL start only after a key, click or tap on the page in a run. The page SHALL make its context only on an event that the browser counts as a user activation, and each later press SHALL resume a context that does not run, so a phone that refuses sound on a touch's first event still plays.
 
 #### Scenario: No sound before a press
 - **WHEN** the e2e opens `?run&test` and waits 3 s with no press, then presses Enter on the help card
 - **THEN** before the press, the page has made no `AudioContext`. After it, one context runs. Check: e2e `gloam-downs-run.sound.e2e.mjs`.
+
+#### Scenario: A tap on a phone
+- **WHEN** the e2e opens `?run&test` with touch on a stub `AudioContext` that keeps an iPhone's rules (a context made outside `touchend` or `click` starts suspended, and `resume()` outside them is refused), and taps Begin the run
+- **THEN** no context is made on the touch's `pointerdown`, the context runs after the tap, and the pause panel's Sound line no longer reads "starts on a key or tap". Check: e2e `gloam-downs-run.sound.e2e.mjs`. A real iPhone did not play it.
 
 #### Scenario: A gamepad alone
 - **WHEN** the e2e plays with a mocked gamepad alone for 5 s, opens the pause panel, then taps the screen
@@ -1567,6 +1571,10 @@ The pause panel SHALL have two switches, Sound and Music, each "on" or "off". So
 - **WHEN** the player turns Sound off and Music off
 - **THEN** the context's state is `suspended` within 0.5 s. Turning either on resumes it. Check: e2e `gloam-downs-run.sound.e2e.mjs`.
 
+#### Scenario: Sound off, and the pause panel
+- **WHEN** the e2e lands a cut with Sound off and Music on, and the Node test lays a frame's cues while paused, with Sound off and with the context suspended
+- **THEN** the cut is logged with no `at`, `__gloam.music().fxVoices` is 0 and the score plays; the run's sound lays no effect in any of the three. Check: e2e `gloam-downs-run.sound.e2e.mjs` and Node test `gloam-downs-sound.test.mjs`.
+
 ### Requirement: The sound log
 `__gloam.sounds()` SHALL log every cue with its cue name, its game step and its play step, with sound on or off. A foe's or the boss's cue SHALL carry its `foe` id. A `hit` cue SHALL carry its hit id and the types of the targets hit. A `swing` cue SHALL carry the move's `wind` and `act` steps. When the context runs, each entry SHALL also carry `at`, the context time for which it was laid, and `v`, the variant played.
 
@@ -1592,8 +1600,12 @@ A tell SHALL vary in pitch by no more than ±2%, so the player learns it. A tell
 - **WHEN** the demo renders the `scrape` tell at 2 m in front and at 14 m behind the camera
 - **THEN** the far render's momentary maximum is no more than 10 LU under the near one's. Check: `qa/lab/gloam-downs-music-demo.mjs`, `loudness.json`.
 
+#### Scenario: A tell in a string
+- **WHEN** the demo renders the `scrape` tell 100 ms and 250 ms after a cut 1 and after a finisher, the hit alone and the tell alone
+- **THEN** the tell's band from 1 to 5 kHz in its first 0.3 s, in the mix less the hit alone, is at most 3 dB under the tell alone. Check: `qa/lab/gloam-downs-music-demo.mjs`, `power.json`.
+
 ### Requirement: Swings follow the moves
-A swing's sound SHALL be laid from the move events in the code, not from a fixed delay. The `swing` cue SHALL play the draw-back. The `strike` cue SHALL start the whoosh as the blade leaves the wind-up's top. The whoosh SHALL peak on the first active step, where the `hit` cue is logged. A roll that cancels a wind-up SHALL stop the swing's sound within 2 steps.
+A swing's sound SHALL be laid from the move events in the code, not from a fixed delay. The `swing` cue SHALL play a short press transient and the draw-back. The `strike` cue SHALL start the whoosh as the blade leaves the wind-up's top. The whoosh SHALL peak one step before the first active step, where the `hit` cue is logged, and it SHALL stay under its hit: the hit SHALL take it 18 dB down, so the hit's crunch and tick sit alone on the impact. A whiff SHALL let it ring. A tell SHALL take it 5 dB down. A roll that cancels a wind-up, a hit taken, a death and a fall SHALL stop the swing's sound within 2 steps.
 
 #### Scenario: The strike lands on the hit
 - **WHEN** the player swings the string at a training post
@@ -1601,11 +1613,19 @@ A swing's sound SHALL be laid from the move events in the code, not from a fixed
 
 #### Scenario: A longer wind-up
 - **WHEN** the e2e renders `swing` and then `strike` (2 steps before the wind-up's end) with `wind: 6` and again with `wind: 14` (as a changed animation would give)
-- **THEN** the loudest 10 ms of each render starts within 1 step (17 ms) of its wind-up's end. Check: e2e `gloam-downs-run.sound.e2e.mjs`, which renders the sound module in an `OfflineAudioContext`.
+- **THEN** the loudest 10 ms of each whoosh, read from the strike on and less the delay of the effects' limiter, is one step (17 ms ±6 ms) before its wind-up's end. Check: e2e `gloam-downs-run.sound.e2e.mjs`, which renders the sound module in an `OfflineAudioContext`.
+
+#### Scenario: The whoosh under its hit
+- **WHEN** the demo renders a whole cut 1 and a whole finisher that land, and the same hit alone
+- **THEN** in the 40 ms after the hit, the band from 1 to 4 kHz and the band over 5 kHz are each within 3 dB of the hit alone. The strike's momentary maximum is at least 4 LU under its hit's. Check: `qa/lab/gloam-downs-music-demo.mjs`, `power.json` and `loudness.json`.
+
+#### Scenario: The move ends early
+- **WHEN** the Node test plays a swing and its strike on a fake `AudioContext`, then a cutting roll, a hit taken, a death or a fall
+- **THEN** no `swing` or `strike` voice is left, and a plain roll leaves the whoosh. The landing and a hit taken stop the `drop`. Check: Node test `gloam-downs-sound.test.mjs`.
 
 #### Scenario: A roll cuts a swing
 - **WHEN** the player presses Attack and then Roll 3 steps later
-- **THEN** the swing voice ends within 2 steps of the `roll` cue, and the log has no `hit`. Check: e2e `gloam-downs-run.sound.e2e.mjs`.
+- **THEN** `__gloam.music().fxLive` lists the `swing` voice before the roll and no `swing` or `strike` voice on the roll's step and 2 steps after it, and the log has no `hit`. Check: e2e `gloam-downs-run.sound.e2e.mjs`.
 
 
 ### Requirement: A miss and a fall sound
@@ -1613,7 +1633,7 @@ A cut that meets nothing SHALL play `whiff` as its active time ends. The plunge'
 
 #### Scenario: A cut at nothing, and a plunge
 - **WHEN** the player swings once with no target near, and then plunges from a ledge
-- **THEN** the log has `swing`, `strike`, then `whiff` with `recover` 11 steps after `swing`, and no `hit`; the plunge logs `plunge`, `drop` and `land` in that order. Check: Node test `gloam-downs-run.test.mjs` for the cues; the demo's `cue-swing-cut1-whole.mp3` and `cue-plunge-whole.mp3` for the sound.
+- **THEN** the log has `swing`, `strike`, then `whiff` with `recover` 11 steps after `swing`, and no `hit`; the plunge logs `plunge`, `drop` and `land` in that order. After the landing, the drop's band (1.5 to 3 kHz) is within 1 dB of the landing alone. Check: Node test `gloam-downs-run.test.mjs` for the cues; the demo's `landing` figure in `power.json`, and `cue-swing-cut1-whole.mp3` and `cue-plunge-whole.mp3` for the sound.
 ### Requirement: Hits that feel heavy
 Each hit landed, each foe put out, each hit taken and each boss hit SHALL be three layers that start together: a body with a falling pitch, a crunch and a tick or ring. The heavier the hit, the louder and longer it SHALL be. The finisher, the plunge, a kill and every boss hit SHALL add a sub layer. A hit's crunch SHALL take the target's material.
 
@@ -1625,12 +1645,20 @@ Each hit landed, each foe put out, each hit taken and each boss hit SHALL be thr
 - **WHEN** the demo writes `loudness.json`
 - **THEN** the finisher's momentary maximum is at least 3 LU over cut 1's, and cut 2's is at least cut 1's. A kill and the boss slam are each at least 3 LU over cut 1's. The boss slam is the loudest cue. Check: `qa/lab/gloam-downs-music-demo.mjs`, `loudness.json`.
 
+#### Scenario: The punch is kept
+- **WHEN** the demo renders cut 1, the finisher and the boss slam through the mix and again with no limiter and no clip, aligned by cross-correlation
+- **THEN** the first 10 ms of cut 1 and of the finisher are within 2 dB of the render with no dynamics, the boss slam's within 6 dB, and no tail from 120 to 250 ms is lifted more than 4 dB. In the scripted fight, the limiter takes 2 dB or less on a cut 1 and 5 dB or less on a finisher, and the score passes no compressor. Check: `qa/lab/gloam-downs-music-demo.mjs`, `power.json`.
+
 ### Requirement: Hits that vary
-Each hit cue SHALL have 4 variants, played as a shuffle with no variant twice in a row. Each play SHALL move pitch by up to ±4% and level by up to ±1.5 dB, from the run's seed.
+Each hit cue SHALL have 4 variants, played as a shuffle with no variant twice in a row. A variant SHALL change the recipe, not only the pitch: the crunch's centre, the crunch's and the tick's level, the body's decay and the second grain's offset. Each play SHALL move pitch by up to ±4% and level by up to ±1.5 dB, from the run's seed.
 
 #### Scenario: No two the same
 - **WHEN** the Node test plays `hit` for cut 1 40 times with seed 7
 - **THEN** no variant plays twice in a row, each of the 4 plays at least 6 times, and every pitch is within ±4% and every level within ±1.5 dB. Check: Node test `gloam-downs-sound.test.mjs`.
+
+#### Scenario: Four bodies
+- **WHEN** the demo renders the 4 variants of cut 1, cut 2 and the finisher
+- **THEN** for each, the 1 to 4 kHz band or the band over 5 kHz spreads by 1.5 dB or more across the 4 variants. Check: `qa/lab/gloam-downs-music-demo.mjs`.
 
 ### Requirement: The music ducks on big hits
 On a hit landed, a hit taken and a boss hit, the music SHALL duck, and come back after the hit stop. The heavier the hit, the deeper the duck.
@@ -1700,14 +1728,14 @@ A lit beacon, a death and the win SHALL each play a short stinger. The theme SHA
 - **THEN** `__gloam.music().changes` has `sting beacon`, then `lamp`; `sting death`, then `silent`, then `lamp` at least 2 s later; and `sting win`, then `lamp`. Check: e2e `gloam-downs-run.sound.e2e.mjs` (the beacon) and Node test `gloam-downs-sound.test.mjs` (all three).
 
 ### Requirement: The music log
-With `?test`, `__gloam.music()` SHALL return the score's `state` (`place`, `boss`, `lamp`, `sting`, `silent` or `off`), the place or theme, the `layers` that play, the `phase`, the `bpm`, the bar length, and `changes`: the last 32 changes, each with what changed, its game step and its context time `at`. Each change of layers or theme SHALL fall on a bar line of the playing theme, within 5 ms, except a stinger's hit and the stop at a death or a fall.
+With `?test`, `__gloam.music()` SHALL return the score's `state` (`place`, `boss`, `lamp`, `sting`, `silent` or `off`), the place or theme, the `layers` that play, the `phase`, the `bpm`, the bar length, and `changes`: the last 32 changes, each with what changed, its game step and its context time `at`. It SHALL also give `fxLive`, the names of the effect voices that sound, and `lag`: how far ahead of the context's clock the last cue was laid, the delay of the effects' dynamics and the output's latency. The effects SHALL trail the picture by no more than 30 ms plus the output's latency. Each change of layers or theme SHALL fall on a bar line of the playing theme, within 5 ms, except a stinger's hit and the stop at a death or a fall.
 
 #### Scenario: Changes on the bar
 - **WHEN** the e2e plays the Gaol with a spawned Snuffer, a wake of G2 and a beacon
 - **THEN** every layer and theme change in `changes` is on a bar line within 5 ms. Check: e2e `gloam-downs-run.sound.e2e.mjs`.
 
 ### Requirement: The scheduler
-The score SHALL lay its notes on the context clock ahead of time: a timer every 25 ms SHALL lay the notes of the next 150 ms plus the output latency. A note more than 20 ms late SHALL be dropped, never played late. After a stall of more than 1 s, a hidden page or the pause panel, the notes laid ahead SHALL be cancelled, and the score SHALL go on at the next bar line.
+The score SHALL lay its notes on the context clock ahead of time: a timer every 25 ms SHALL lay the notes of the next 150 ms (300 ms on a coarse pointer, so a phone frame that holds the main thread for up to about 0.3 s drops no note) plus the output latency. A note more than 20 ms late SHALL be dropped, never played late. After a stall of more than 1 s, a hidden page or the pause panel, the notes laid ahead SHALL be cancelled, and the score SHALL go on at the next bar line.
 
 #### Scenario: A stall
 - **WHEN** the Node test runs the scheduler on a fake clock and stops its timer for 1.5 s
@@ -1725,11 +1753,13 @@ The music's samples SHALL be FluidR3_GM notes (harp, strings, contrabass, flute,
 - **THEN** the score plays with its voices made in code, `__gloam.music().state` is `place` with the combat layer, and the page shows no error. Check: e2e `gloam-downs-run.sound.e2e.mjs`.
 
 ### Requirement: Loudness
-The mix SHALL keep the music under the effects. On the demo's renders, measured with ffmpeg's `ebur128` filter:
-- the scripted 40 s fight SHALL be −18 ±2 LUFS integrated, with a true peak of −1 dBTP or lower, in the desktop mix and in the phone mix;
+The mix SHALL keep the music under the effects, and no hit SHALL pump the music. On the demo's renders, measured with ffmpeg's `ebur128` filter:
+- the scripted 40 s fight SHALL be −24 ±2 LUFS integrated, with a true peak of −1 dBTP or lower, in the desktop mix and in the phone mix;
 - the music alone in that fight SHALL be at least 8 LU under the effects alone;
-- each place's theme, 8 bars with the combat layer, SHALL be −28 ±3 LUFS integrated;
-- no cue SHALL have a true peak over −1 dBTP.
+- each place's theme, 8 bars with the combat layer, SHALL be −32 ±3 LUFS integrated;
+- no cue SHALL have a true peak over −1 dBTP;
+- a steady tone into each bus SHALL come out at the bus level ±0.5 dB, so no compressor adds its own make-up gain;
+- the scripted fight SHALL render in 12% of its length or less on the desktop that runs the demo.
 
 #### Scenario: Loudness figures
 - **WHEN** `NODE_PATH=/home/user/rouge-warden/qa/browser/node_modules node qa/lab/gloam-downs-music-demo.mjs` runs and writes `loudness.json`
@@ -1740,7 +1770,7 @@ On a coarse pointer, the music SHALL be 3 dB lower, and the master's high-pass S
 
 #### Scenario: A phone
 - **WHEN** the e2e opens `?run&test` with a coarse pointer and starts the sound
-- **THEN** `__gloam.music().mix` is `phone`, the music bus is 3 dB under the desktop mix's, and the master's high-pass reads 90 Hz. Check: e2e `gloam-downs-run.sound.e2e.mjs`.
+- **THEN** `__gloam.music().mix` is `phone`, the music bus is 3 dB under the desktop mix's, the master's high-pass reads 90 Hz, and the score lays its notes 0.3 s ahead. Check: e2e `gloam-downs-run.sound.e2e.mjs`.
 
 ### Requirement: A demo of every sound
 `qa/lab/gloam-downs-music-demo.mjs` SHALL render in Chromium's `OfflineAudioContext` and write an mp3 for each cue (and each of the 4 variants of each hit cue), each place's theme (8 bars of explore, 4 bars of the combat layer coming in and 4 going out), each boss phase, each stinger, the Lamp-room theme and the scripted fight in both mixes, into `DEMO` (the system temp folder by default). It SHALL write `loudness.json` with each file's integrated loudness, momentary maximum and true peak.

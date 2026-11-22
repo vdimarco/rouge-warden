@@ -4,13 +4,15 @@
 // - Grid maths: lineAt, nextLine, nextBeat. A theme plays on a grid of bars from its start time t0.
 // - makeScore({ now, lat, lay, gain, cancel, step }): the conductor. It knows what plays and when it changes, and it lays notes
 //   ahead on the context clock (Chris Wilson, "A Tale of Two Clocks"): tick() from a 25 ms timer lays the notes of the next 150 ms
-//   plus the output latency. A note more than 20 ms late is dropped. After a stall of more than 1 s, or after stop(), the notes laid
+//   (300 ms on a phone, `ahead`) plus the output latency. A note more than 20 ms late is dropped. After a stall of more than 1 s, or after stop(), the notes laid
 //   ahead are cancelled and the score goes on at the next bar line. It makes no sound itself, so a Node test runs it on a fake clock.
 // - createMusic(ctx, { mix, base, fetchFn }): the instruments and the bus. A small FluidR3_GM bank (audio/, loaded after the first
 //   press) and voices made in code (bells, water, wind, drums, drones), and a code voice for each sampled instrument that plays until
 //   the bank has loaded or when it fails. The bus has a 9 kHz low-pass and a short room, for a soft cartridge colour.
 
 export const LOOKAHEAD = 0.15;
+// on a coarse pointer the score lays 300 ms ahead, so a phone frame that holds the main thread for up to about 0.3 s drops no note
+export const PHONE_LOOKAHEAD = 0.3;
 export const TIMER = 0.025;
 export const LATE = 0.02;
 export const STALL = 1;
@@ -37,6 +39,8 @@ const eighths = (n, v, beats = 4, bar = 0) => n.map((x, i) => [bar, i * 0.5, x, 
 /* ---------------- the themes ----------------
    key: the tonic (MIDI) the effects take their chimes from. layers: amb (the sounds made in code that play from the arrival card on),
    explore, combat, guard (a third percussion part for a guard zone). The boss theme's layers come in by phase */
+// the Barrow Reeve's ostinato: a falling tritone back to the tonic and a 3+3+2 accent, its own figure (the Gaol keeps its own)
+const REEVE_ACCENT = [0.6, 0.36, 0.4, 0.6, 0.38, 0.36, 0.58, 0.4];
 export const THEMES = {
   // The Sunken Gaol: D Phrygian, 4/4 at 92. A drone, a chain on beat 1, a motif of four strings notes every 4 bars, a dripping harp
   gaol: {
@@ -127,7 +131,7 @@ export const THEMES = {
     }
   },
   // The Barrow Reeve: B Phrygian, 4/4 at 100. Its layers by phase: the drone of the intro; phase 1 a timpani pulse, a low strings
-  // ostinato and choir chords; phase 2 toms and a harp ostinato, and the strings a fourth up; phase 3 (reeve3, at 112) every layer
+  // ostinato (a tritone and a 3+3+2 accent) and choir chords; phase 2 toms and a harp ostinato, and the strings a fourth up; phase 3 (reeve3, at 112) every layer
   // and the bells
   reeve: {
     name: 'The Barrow Reeve', key: 'B3', bpm: 100, beats: 4,
@@ -136,8 +140,8 @@ export const THEMES = {
       drone: [P('drone', 1, [[0, 0, 'B1', 4, 0.5]])],
       p1: [P('timpani', 1, on([0, 1, 2, 3], 'B2', 1, [0.62, 0.45])),
         P('choir', 2, [[0, 0, 'B3', 4, 0.34], [0, 0, 'D4', 4, 0.3], [0, 0, 'F#4', 4, 0.28], [1, 0, 'C4', 4, 0.34], [1, 0, 'E4', 4, 0.3], [1, 0, 'G4', 4, 0.28]])],
-      low: [P('strings', 1, eighths(['B2', 'B2', 'C3', 'B2', 'D3', 'B2', 'C3', 'A2'], [0.55, 0.42]))],
-      high: [P('strings', 1, eighths(['E3', 'E3', 'F3', 'E3', 'G3', 'E3', 'F3', 'D3'], [0.55, 0.42]))],
+      low: [P('strings', 1, eighths(['B2', 'B2', 'F3', 'B2', 'C3', 'B2', 'A#2', 'B2'], REEVE_ACCENT))],
+      high: [P('strings', 1, eighths(['E3', 'E3', 'Bb3', 'E3', 'F3', 'E3', 'D#3', 'E3'], REEVE_ACCENT))],
       p2: [P('tom', 1, eighths(Array(8).fill('B2'), [0.55, 0.35])), P('harp', 1, eighths(['B4', 'F#4', 'D5', 'F#4', 'C5', 'F#4', 'B4', 'F#4'], [0.36, 0.26]))],
       p3: [P('bell', 2, [[0, 0, 'B5', 1, 0.42], [0, 1, 'C6', 1, 0.4], [0, 2, 'D6', 2, 0.42], [1, 0, 'C6', 2, 0.4], [1, 2, 'B5', 2, 0.38]])]
     }
@@ -187,7 +191,7 @@ export const STINGS = {
    now(): the context time. lat(): the output latency. lay(note, t, play, layer) lays one note and returns a handle with stop(t),
    or null; gain(play, layer, value, at, ramp) moves a layer's gain; step() is the game step for the log. Each `play` is one theme
    on its grid, with the layers that play in it: { theme, g, layers: { name: { from, to } } } */
-export function makeScore({ now, lat = () => 0, lay, gain = () => {}, step = () => 0, themes = THEMES, onStop = () => {} }) {
+export function makeScore({ now, lat = () => 0, lay, gain = () => {}, step = () => 0, themes = THEMES, onStop = () => {}, ahead = LOOKAHEAD }) {
   const S = {
     state: 'silent', place: null, plays: [], laid: 0, last: null, stopped: false, off: false, dropped: 0, notes: 0, changes: [], live: [],
     combat: { want: false, guard: false, on: false, quietAt: -1, outAt: -1 }, phase: 0, stingId: null, after: null
@@ -196,7 +200,7 @@ export function makeScore({ now, lat = () => 0, lay, gain = () => {}, step = () 
     S.changes.push({ what, step: step(), at, ...more });
     if (S.changes.length > 32) S.changes.shift();
   };
-  const head = () => now() + LOOKAHEAD + lat();
+  const head = () => now() + ahead + lat();
   // a state that begins at a time laid ahead: __gloam.music() reads the one before it until then
   const to = (st, at) => { S.prev = S.state; S.state = st; S.since = at; };
   const current = () => S.plays.find(p => !p.ended) || null;
@@ -303,14 +307,14 @@ export function makeScore({ now, lat = () => 0, lay, gain = () => {}, step = () 
     if (S.stopped || (S.last !== null && t - S.last > STALL)) {
       cancel(t);
       const p = current();
-      S.laid = p ? Math.max(t, nextLine(p.g, t + LOOKAHEAD)) : t;
+      S.laid = p ? Math.max(t, nextLine(p.g, t + ahead)) : t;
       for (const q of S.plays) if (q.ended) q.endAt = Math.min(q.endAt, t);
       S.stopped = false;
       log('resume', S.laid);
     }
     S.last = t;
     // the timed changes: a stinger's end, a silence's end
-    if (S.after && t >= S.after.at - LOOKAHEAD) { const a = S.after; S.after = null; a.fn(a.at); }
+    if (S.after && t >= S.after.at - ahead) { const a = S.after; S.after = null; a.fn(a.at); }
     combatRule(t);
     const h = head();
     if (h > S.laid) { layAll(S.laid, h); S.laid = h; }
@@ -449,7 +453,7 @@ const PLAY = {
 };
 export const BUS = { lp: 9000, low: 900, lowDb: -3, pause: 600, pauseDb: -8, wet: 0.2, room: 1.3 };
 
-export function createMusic(ctx, { mix, base = './audio/', fetchFn = null, seed = 1, latency = null } = {}) {
+export function createMusic(ctx, { mix, base = './audio/', fetchFn = null, seed = 1, latency = null, lookahead = LOOKAHEAD } = {}) {
   const input = ctx.createGain(), lp = ctx.createBiquadFilter(), trim = ctx.createGain(), dry = ctx.createGain(), wet = ctx.createGain(), room = ctx.createConvolver();
   lp.type = 'lowpass'; lp.frequency.value = BUS.lp; lp.Q.value = 0.5;
   input.connect(lp); lp.connect(trim); trim.connect(dry); trim.connect(room); room.connect(wet);
@@ -688,7 +692,8 @@ export function createMusic(ctx, { mix, base = './audio/', fetchFn = null, seed 
     if (CODE[n.inst]) return CODE[n.inst](n, t, out);
     return sampled(n, t, out) || fallback(n, t, out);
   }
-  M.score = makeScore({ now: () => ctx.currentTime, lat, lay, gain, step: () => M.step?.() ?? 0 });
+  M.score = makeScore({ now: () => ctx.currentTime, lat, lay, gain, step: () => M.step?.() ?? 0, ahead: lookahead });
+  M.ahead = lookahead;
   // the bus: low health takes the score to 900 Hz and 3 dB down; the pause panel to 600 Hz and 8 dB down
   M.setFilter = (hzTo, dbTo) => {
     if (M.filter === hzTo && M.trimDb === dbTo) return;
@@ -747,7 +752,7 @@ export function createMusic(ctx, { mix, base = './audio/', fetchFn = null, seed 
     out.loopStart = s / sr; out.loopEnd = e / sr;
     return out;
   }
-  M.view = () => ({ ...M.score.view(), filter: M.filter, trim: M.trimDb, voices: M.voices.length, samples: M.loaded, bank: M.failed ? 'failed' : M.done ? 'in' : M.loading ? 'loading' : 'none' });
+  M.view = () => ({ ...M.score.view(), ahead: M.ahead, filter: M.filter, trim: M.trimDb, voices: M.voices.length, samples: M.loaded, bank: M.failed ? 'failed' : M.done ? 'in' : M.loading ? 'loading' : 'none' });
   M.input = input;
   return M;
 }

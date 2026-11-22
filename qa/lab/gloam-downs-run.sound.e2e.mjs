@@ -5,7 +5,9 @@
 //   Lamp-room theme; the Lamp-room's card, focus, buy and refused buy; the pause panel's filter and its Sound and Music switches, both
 //   off suspending the context, and Music off kept over a reload; a hidden page suspended with no new notes; the boss's intro, phases
 //   and fall; the swing's whoosh keyed to the wind-up (rendered offline); the bank failing; the phone mix; no sound in the explorer,
-//   in Wander or in a Lamp-room opened from Wander's Map.
+//   in Wander or in a Lamp-room opened from Wander's Map; the effects' lag behind the picture; Sound off with Music on lays no effect;
+//   a roll that cuts a swing leaves no swing voice; and a phone tap on a browser that only lets touchend or click start sound (an
+//   AudioContext stub that starts suspended and refuses resume() outside those events), which must end with a running context.
 // Software WebGL draws about one frame a second, so the game steps with __gloam.tick. The score runs on the context's own clock, in
 // real time, so the music checks wait in real time.
 // Needs the site served: python3 -m http.server 8841 --bind 127.0.0.1 --directory public
@@ -33,6 +35,7 @@ async function open(url, o = {}) {
   const ctx = await browser.newContext({ viewport: o.viewport || { width: 1280, height: 720 }, hasTouch: !!o.touch, isMobile: !!o.touch });
   await ctx.route('**/api/**', r => r.fulfill({ status: 204, body: '' }));
   if (o.failBank) await ctx.route('**/gloam-downs/audio/**', r => r.fulfill({ status: 404, body: '' }));
+  if (o.strict) await ctx.addInitScript(STRICT);
   await ctx.addInitScript(COUNT);
   const page = await ctx.newPage(), errors = [], audio = [];
   page.on('pageerror', e => errors.push(e.message));
@@ -42,6 +45,26 @@ async function open(url, o = {}) {
   return { ctx, page, errors, audio };
 }
 const ctxs = page => G(page, () => window.__ctxs.map(c => c.state));
+/* an iPhone's rules on a stub AudioContext: a context made outside touchend or click starts suspended, and resume() outside them is
+   refused. The page's own events are read first (this listener is added before the page's) */
+const STRICT = () => {
+  const A = window.AudioContext;
+  window.__gest = null; window.__stub = [];
+  for (const k of ['pointerdown', 'pointerup', 'touchstart', 'touchend', 'mousedown', 'mouseup', 'click', 'keydown']) {
+    window.addEventListener(k, e => { window.__gest = e.type; setTimeout(() => { if (window.__gest === e.type) window.__gest = null; }, 0); }, true);
+  }
+  const ok = () => window.__gest === 'touchend' || window.__gest === 'click';
+  window.AudioContext = class extends A {
+    constructor(...a) { super(...a); this.__st = ok() ? 'running' : 'suspended'; window.__stub.push({ made: window.__gest, state: this.__st }); }
+    get state() { return this.__st === 'running' ? super.state : this.__st; }
+    resume() {
+      if (!ok()) { window.__stub.push({ refused: window.__gest }); return Promise.reject(new DOMException('no gesture', 'NotAllowedError')); }
+      this.__st = 'running'; window.__stub.push({ resumed: window.__gest });
+      return super.resume();
+    }
+    suspend() { this.__st = 'suspended'; return super.suspend(); }
+  };
+};
 const music = page => G(page, () => window.__gloam.music());
 // is t on the grid of the theme now playing (its t0 and bar), within 5 ms
 const onGrid = (m, t, unit = m.bar) => { const k = (t - m.t0) / unit; return Math.abs(k - Math.round(k)) * unit <= 0.005; };
@@ -96,7 +119,11 @@ if (part('run')) {
     assert(hit && hit.hit === 'cut1' && hit.on[0] === 'S' && hit.stop === 3, JSON.stringify(hit));
     assert(hit.step - swing.step === 6, `the hit lands ${hit.step - swing.step} steps after the swing`);
     for (const c of [swing, strike, hit]) assert(Number.isFinite(c.at) && Number.isInteger(c.v), `no at or v: ${JSON.stringify(c)}`);
-    pass('a cut: swing with cut1, wind 6, act 5 on the press; strike at its strike step, lead steps before the hit; hit with on [S] on the first active step; each with at and v', { swing: { step: swing.step, at: swing.at, v: swing.v }, hit: { step: hit.step, at: hit.at, v: hit.v } });
+    // the effects' lag behind the picture: how far ahead the cue was laid and the limiter's pre-delay, under 30 ms (plus the output's
+    // own latency, which the browser adds)
+    const lag = (await music(page)).lag;
+    assert(lag && lag.lead >= 0 && lag.lead + lag.pre <= 0.03, `the effects trail the picture by ${JSON.stringify(lag)}`);
+    pass('a cut: swing with cut1, wind 6, act 5 on the press; strike at its strike step, lead steps before the hit; hit with on [S] on the first active step; each with at and v; the effects trail the picture by under 30 ms plus the output latency', { swing: { step: swing.step, at: swing.at, v: swing.v }, hit: { step: hit.step, at: hit.at, v: hit.v }, lag });
     // the Snuffer goes out (its duck is 5 dB), and the duck comes back before the next check
     await G(page, id => { window.__gloam.out(id); window.__gloam.tick(0.5, {}); }, r.id);
     await wait(1000);
@@ -194,6 +221,17 @@ if (part('run')) {
     await page.waitForFunction(() => window.__ctxs[0].state === 'suspended', null, { timeout: 500 });
     await page.click('#bSound');
     await page.waitForFunction(() => window.__ctxs[0].state === 'running', null, { timeout: 2000 });
+    // the panel is open: a cut stepped under it lays no effect (the game does not step while paused, so the cue is logged by the
+    // test's tick, which steps it anyway)
+    const under = await G(page, () => {
+      const g = window.__gloam, s = g.state(), from = g.sounds().length;
+      g.post(s.x + Math.sin(s.yaw) * 1.1, s.z + Math.cos(s.yaw) * 1.1);
+      g.tick(0.3, { attack: true });
+      g.clearPosts();
+      return { log: g.sounds().slice(from), m: g.music() };
+    });
+    assert(under.log.every(c => c.at === undefined) && under.m.fxVoices === 0, `effects laid under the pause panel: ${JSON.stringify(under.log.filter(c => c.at !== undefined))}`);
+    console.log(`  (under the pause panel the test's tick logged ${under.log.length} cues)`);
     pass('the pause panel low-passes the score to 600 Hz (900 Hz at low health); Music off takes the bus to 0; both off suspend the context, and on again resumes it', { order });
     await page.keyboard.press('Escape');
     await G(page, () => window.__gloam.set({ hp: 200 }));
@@ -208,6 +246,25 @@ if (part('run')) {
     });
     assert(cut.log.some(c => c.cue === 'hit' && Number.isFinite(c.at)), 'the cut is logged and laid with Music off');
     assert.equal(cut.m.state, 'off'); assert(cut.m.buses.fx > 0.5);
+    // Sound off with Music on: a cut is logged, and no effect is laid
+    await page.keyboard.press('p'); await wait(150);
+    await G(page, () => { document.getElementById('bMusic').click(); document.getElementById('bSound').click(); });
+    await page.keyboard.press('Escape'); await wait(300);
+    const mute = await G(page, async () => {
+      const g = window.__gloam, s = g.state();
+      await new Promise(r => setTimeout(r, 1200));
+      g.post(s.x + Math.sin(s.yaw) * 1.1, s.z + Math.cos(s.yaw) * 1.1);
+      const from = g.sounds().length;
+      g.tick(0.4, { attack: true });
+      g.clearPosts();
+      return { log: g.sounds().slice(from), m: g.music(), label: document.getElementById('bSound').textContent };
+    });
+    assert(mute.log.some(c => c.cue === 'hit') && mute.log.every(c => c.at === undefined), `effects laid with Sound off: ${JSON.stringify(mute.log)}`);
+    assert.equal(mute.m.fxVoices, 0); assert.notEqual(mute.m.state, 'off'); assert.equal(mute.label, 'Sound off');
+    // Sound on again, and Music off for the reload below
+    await page.keyboard.press('p'); await wait(150);
+    await G(page, () => { document.getElementById('bSound').click(); document.getElementById('bMusic').click(); });
+    await page.keyboard.press('Escape');
     // a reload keeps Music off
     await page.goto(`${SITE}/lab/gloam-downs/?run&test&seed=7`);
     await page.waitForFunction(() => window.__gloam?.ready(), null, { timeout: 180000 });
@@ -219,7 +276,7 @@ if (part('run')) {
     await G(page, () => document.getElementById('bMusic').click());
     assert.equal(await page.textContent('#bMusic'), 'Music on');
     await page.keyboard.press('Escape');
-    pass('with Music off a cut is still logged and played on the effects bus, and a reload keeps Music off');
+    pass('with Music off a cut is still logged and played on the effects bus; under the pause panel and with Sound off (Music on) a cut lays no effect; a reload keeps Music off');
   }
   { // a hidden page: suspended, and no new notes
     await G(page, () => { const g = window.__gloam; for (let i = 0; i < 400 && !document.getElementById('arrive').classList.contains('off'); i++) g.tick(1 / 60, {}); });
@@ -286,7 +343,8 @@ if (part('boss')) {
 }
 
 if (part('more')) {
-  { // the swing's whoosh (the draw-back on 'swing', the whoosh on 'strike') peaks on the first active step, for a wind-up of 6 steps and of 14
+  { // the swing's whoosh (the draw-back on 'swing', the whoosh on 'strike') peaks one step before the first active step, so it leads
+    // into the hit, for a wind-up of 6 steps and of 14 (read from the strike on, less the delay of the effects' limiter)
     const { ctx, page } = await open('?run&test&fresh&seed=7');
     const r = await G(page, async () => {
       const { createMix, createSound } = await import('./sound.js');
@@ -297,23 +355,32 @@ if (part('more')) {
         fx.play('strike', 0.1 + (wind - 2) / 60, { hit: 'cut1', lead: 2, act: 5 });
         const d = (await c.startRendering()).getChannelData(0), w = 441;
         let best = -1, at = 0;
-        for (let i = 0; i + w < d.length; i += 44) { let e = 0; for (let k = i; k < i + w; k += 2) e += d[k] * d[k]; if (e > best) { best = e; at = i; } }
-        out[wind] = (at + w / 2) / 44100 - 0.1 - wind / 60;
+        for (let i = Math.round((0.1 + (wind - 2) / 60) * 44100); i + w < d.length; i += 44) { let e = 0; for (let k = i; k < i + w; k += 2) e += d[k] * d[k]; if (e > best) { best = e; at = i; } }
+        out[wind] = +((at + w / 2) / 44100 - mix.delay.fx - 0.1 - wind / 60).toFixed(4);
       }
       return out;
     });
-    for (const [w, e] of Object.entries(r)) assert(Math.abs(e) <= 1 / 60 + 0.005, `wind ${w}: the loudest 10 ms is ${e} s from the wind-up's end`);
+    for (const [w, e] of Object.entries(r)) assert(Math.abs(e + 1 / 60) <= 0.006, `wind ${w}: the loudest 10 ms of the whoosh is ${e} s from the wind-up's end, not one step before it`);
     // a roll that cuts a wind-up ends the swing voice within 2 steps
     const cut = await G(page, () => {
       const g = window.__gloam;
       g.close?.();
       document.getElementById('bBegin').click();
       const from = g.sounds().length;
-      g.tick(1 / 60, { attack: true }); g.tick(2 / 60, {}); g.tick(1 / 60, { roll: true }); g.tick(0.6, {});
-      return g.sounds().slice(from).map(c => ({ cue: c.cue, cut: c.cut, step: c.step }));
+      g.tick(1 / 60, { attack: true }); g.tick(2 / 60, {});
+      const before = g.music().fxLive;
+      g.tick(1 / 60, { roll: true });
+      const after = g.music().fxLive;
+      g.tick(2 / 60, {});
+      const later = g.music().fxLive;
+      g.tick(0.6, {});
+      return { log: g.sounds().slice(from).map(c => ({ cue: c.cue, cut: c.cut, step: c.step })), before, after, later, ctx: g.music().ctx };
     });
-    assert(cut.find(c => c.cue === 'roll')?.cut === true && !cut.some(c => c.cue === 'hit'), JSON.stringify(cut));
-    pass('the swing peaks within one step of the wind-up\'s end at a wind-up of 6 and of 14 steps; a roll cuts it and no hit is logged', r);
+    assert(cut.log.find(c => c.cue === 'roll')?.cut === true && !cut.log.some(c => c.cue === 'hit'), JSON.stringify(cut.log));
+    // the swing voice was sounding, and the roll's cut ends it: no swing or strike voice is left 2 steps after it
+    assert(cut.ctx === 'running' && cut.before.includes('swing'), JSON.stringify(cut));
+    assert(!cut.after.some(n => n === 'swing' || n === 'strike') && !cut.later.some(n => n === 'swing' || n === 'strike'), JSON.stringify(cut));
+    pass('the whoosh peaks one step before the wind-up\'s end at a wind-up of 6 and of 14 steps; a roll cuts it, no hit is logged, and no swing voice is left', { r, before: cut.before, after: cut.later });
     await ctx.close();
   }
   { // the bank fails: the code voices play, and the page shows no error
@@ -335,8 +402,23 @@ if (part('more')) {
     await wait(300);
     const m = await music(page);
     assert.equal(m.mix, 'phone'); assert.equal(m.buses.hp, 90);
-    assert(Math.abs(20 * Math.log10(m.buses.music) - -22) < 0.2, `the phone music bus at ${20 * Math.log10(m.buses.music)} dB`);
-    pass('a coarse pointer: the phone mix, the music bus 3 dB lower (−22 dB against −19 dB), the high-pass at 90 Hz', { bus: +(20 * Math.log10(m.buses.music)).toFixed(2) });
+    const { MIX } = await G(page, async () => ({ MIX: (await import('./sound.js')).MIX }));
+    assert(Math.abs(20 * Math.log10(m.buses.music) - (MIX.music + MIX.phoneMusic)) < 0.2, `the phone music bus at ${20 * Math.log10(m.buses.music)} dB`);
+    assert.equal(m.ahead, 0.3, `the phone score lays ${m.ahead} s ahead`);
+    pass('a coarse pointer: the phone mix, the music bus 3 dB lower, the high-pass at 90 Hz, the score laid 300 ms ahead', { bus: +(20 * Math.log10(m.buses.music)).toFixed(2), ahead: m.ahead });
+    await ctx.close();
+  }
+  { // a phone tap on a browser with iPhone rules: the context is made on an activation, and a later event in the same tap resumes it
+    const { ctx, page, errors } = await open('?run&test&fresh&seed=7', { touch: true, strict: true, viewport: { width: 390, height: 844 } });
+    await page.tap('#bBegin');
+    await page.waitForFunction(() => window.__ctxs.length === 1 && window.__ctxs[0].state === 'running', null, { timeout: 5000 });
+    await wait(300);
+    const r = await G(page, () => ({ stub: window.__stub, state: window.__ctxs[0].state, label: document.getElementById('bSound').textContent }));
+    assert(!r.stub.some(x => x.made === 'pointerdown'), `the context was made on a touch's pointerdown: ${JSON.stringify(r.stub)}`);
+    assert.equal(r.state, 'running');
+    assert(!/starts on a key or tap/.test(r.label), r.label);
+    assert(!errors.length, errors.join(' | '));
+    pass('a tap with iPhone rules: no context on the touch\'s pointerdown, and a running context after the tap; the Sound line no longer waits', r.stub);
     await ctx.close();
   }
   { // no sound in the explorer, in Wander or in a Lamp-room opened from Wander's Map

@@ -5,13 +5,18 @@
 //     a tell from behind;
 //   the bar maths of every theme; the scheduler on a fake clock (notes 150 ms ahead, a late note dropped, a stall resumed on a bar
 //     line); the combat layer's enter and leave rules and no flapping; the boss's phases on bar lines; the stingers and the Lamp-room;
-//   the Sound and Music settings in the run's save.
+//   the Sound and Music settings in the run's save;
+//   on a fake AudioContext: the swing's voices that a roll, a hit taken, a death or a fall stop, the drop that the landing stops, the
+//   whoosh that steps aside under its hit and under a tell; the run's sound laying no effect while paused, with Sound off or with the
+//   context suspended, a card cue in a frame that keeps the frame's other cues, and a later press that resumes a suspended context;
+//   the Barrow Reeve's ostinato, which no place's theme shares.
 // Run: node qa/lab/gloam-downs-sound.test.mjs
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CUES, cueAt, CUE_CAP, makeVary, makeGlim, space, PENTA } from '../../public/lab/gloam-downs/sound.js';
+import { CUES, cueAt, CUE_CAP, makeVary, makeGlim, space, PENTA, createMix, createSound, db } from '../../public/lab/gloam-downs/sound.js';
+import { makeRunSound } from '../../public/lab/gloam-downs/run-sound.js';
 import { THEMES, STINGS, PLACES, gridOf, nextLine, nextBeat, onLine, lineAt, makeScore, LOOKAHEAD, LATE } from '../../public/lab/gloam-downs/music.js';
 import { TYPES } from '../../public/lab/gloam-downs/foes.js';
 import { ATTACKS } from '../../public/lab/gloam-downs/boss.js';
@@ -244,5 +249,120 @@ function fake(lat = 0.01) {
   assert(THEMES.bells.layers.explore.some(p => p.inst === 'bell'), 'the Bell Knoll leads with bells');
   assert(THEMES.fen.layers.amb.some(p => p.inst === 'water') && THEMES.fen.layers.explore.some(p => p.inst === 'flute'), 'Lantern Fen has water and a reed');
   pass('a boss slam ducks 6 dB and a phase change 8 dB; each place has its four layers, bells on the Knoll, water and a reed in the Fen');
+}
+
+/* ---------------- a fake AudioContext: the nodes keep their params' calls, and do nothing else ---------------- */
+function fakeCtx() {
+  const PARAMS = ['gain', 'frequency', 'Q', 'pan', 'threshold', 'ratio', 'attack', 'release', 'knee', 'detune', 'playbackRate'];
+  const param = () => {
+    const P = { value: 1, calls: [] };
+    for (const m of ['setValueAtTime', 'linearRampToValueAtTime', 'exponentialRampToValueAtTime', 'setTargetAtTime', 'cancelScheduledValues']) P[m] = (...a) => { P.calls.push([m, ...a]); return P; };
+    return P;
+  };
+  const node = () => {
+    const o = {};
+    return new Proxy(o, {
+      get(t, k) {
+        if (k in t) return t[k];
+        if (PARAMS.includes(k)) return (t[k] = param());
+        if (['connect', 'disconnect', 'start', 'stop'].includes(k)) return (t[k] = () => {});
+        if (k === 'reduction') return 0;
+        return undefined;
+      },
+      set(t, k, v) { t[k] = v; return true; }
+    });
+  };
+  const C = { currentTime: 0, sampleRate: 8000, destination: node(), createBuffer: (ch, n, sr) => ({ length: n, sampleRate: sr, getChannelData: () => new Float32Array(n) }) };
+  for (const m of ['createGain', 'createStereoPanner', 'createBiquadFilter', 'createDynamicsCompressor', 'createWaveShaper', 'createOscillator', 'createBufferSource', 'createConvolver']) C[m] = node;
+  return C;
+}
+const fakeSound = () => { const c = fakeCtx(), mix = createMix(c), S = createSound(c, { mix, seed: 7 }); return { c, S }; };
+const swingAt = (S, t, id = 'cut1') => {
+  S.play('swing', t, { hit: id, wind: 6, act: 5, strike: 4 });
+  S.play('strike', t + 4 / 60, { hit: id, lead: 2, act: 5 });
+};
+{ // the swing's voices end with the move: a roll that cuts the wind-up, a hit taken, a death and a fall stop the draw-back and the whoosh
+  for (const [cue, o] of [['roll', { cut: true }], ['hurt', { dmg: 12 }], ['death', {}], ['fall', {}]]) {
+    const { c, S } = fakeSound();
+    swingAt(S, 0.1);
+    assert.deepEqual(S.liveNames(), ['swing', 'strike']);
+    c.currentTime = 0.13;
+    S.play(cue, 0.14, o);
+    const live = S.liveNames();
+    assert(!live.includes('swing') && !live.includes('strike'), `${cue} leaves ${live}`);
+  }
+  // a roll that does not cut (out of the recovery) leaves a swing that has landed
+  const { S } = fakeSound();
+  swingAt(S, 0.1);
+  S.play('roll', 0.15, {});
+  assert(S.liveNames().includes('strike'), 'a plain roll stopped the whoosh');
+  pass('a roll that cuts the wind-up, a hit taken, a death and a fall stop the swing\'s draw-back and whoosh; a plain roll does not');
+}
+{ // the landing stops the plunge's fall; a hit taken stops it too
+  for (const cue of ['land', 'hurt']) {
+    const { c, S } = fakeSound();
+    S.play('plunge', 0.1, { hang: 5 }); S.play('drop', 0.18, {});
+    c.currentTime = 0.4;
+    S.play(cue, 0.41, cue === 'land' ? { fallen: 2, on: ['S'], stop: 5 } : { dmg: 10 });
+    assert(!S.liveNames().includes('drop'), `${cue} leaves the drop: ${S.liveNames()}`);
+  }
+  pass('the landing and a hit taken stop the drop\'s rush');
+}
+{ // the whoosh steps aside: 18 dB down over about 15 ms at its hit, 5 dB under a tell
+  const dipOf = (S, name) => {
+    const V = S.live.find(v => v.name === name), calls = V.g.gain.calls.filter(x => x[0] === 'setTargetAtTime');
+    return calls.map(([, v, t, tau]) => ({ db: 20 * Math.log10(v / V.g.gain.value), t, tau }));
+  };
+  const { S } = fakeSound();
+  swingAt(S, 0.1);
+  S.play('hit', 0.2, { hit: 'cut1', on: ['S'], stop: 3 });
+  const d = dipOf(S, 'strike');
+  assert(d.length === 1 && Math.abs(d[0].db + 18) < 0.01 && Math.abs(d[0].t - 0.2) < 1e-9 && d[0].tau <= 0.006, JSON.stringify(d));
+  const T = fakeSound();
+  swingAt(T.S, 0.1);
+  T.S.play('scrape', 0.16, { pos: [1, -3] });
+  const e = dipOf(T.S, 'strike');
+  assert(e.length === 1 && Math.abs(e[0].db + 5) < 0.01, JSON.stringify(e));
+  pass('the whoosh falls 18 dB at its hit (in about 15 ms) and 5 dB under a tell', { hit: d[0], tell: e[0] });
+}
+{ // the run's sound: no effect is laid while paused, with Sound off or with the context suspended; a card cue in a frame keeps the
+  // frame's other cues; a later press resumes a suspended context
+  const make = () => {
+    const log = [], rs = { sound: true, music: true }, played = [];
+    let st = 100;
+    const A = makeRunSound({ log, rs, step: () => st });
+    A.ctx = { state: 'running', currentTime: 2, resumed: 0, resume() { this.resumed++; return Promise.resolve(); } };
+    A.mix = { delay: { fx: 0.006 } };
+    A.fx = { play: (n, at) => { played.push(n); return { v: 0, at }; }, setEar() {}, hush() { played.push('hush'); }, voices: () => 0, liveNames: () => [] };
+    return { A, log, rs, played, next: () => ++st };
+  };
+  const cue = (log, name, step) => log.push({ cue: name, step, play: step });
+  { const { A, log, played } = make(); A.pause(true); cue(log, 'hit', 101); A.flush(); assert.deepEqual(played, ['hush']); assert.equal(log[0].at, undefined, 'a cue laid while paused'); }
+  { const { A, log, rs, played } = make(); rs.sound = false; cue(log, 'hit', 101); A.flush(); assert.deepEqual(played, []); assert.equal(log[0].at, undefined, 'a cue laid with Sound off'); }
+  { const { A, log, played } = make(); A.ctx.state = 'suspended'; cue(log, 'hit', 101); A.flush(); assert.deepEqual(played, []); }
+  { const { A, log, played } = make(); cue(log, 'hit', 101); A.flush(); assert.deepEqual(played, ['hit']); assert(Number.isFinite(log[0].at)); }
+  { // a card opens inside a frame that has logged a foe's cue: both are laid, in order
+    const { A, log, played, next } = make();
+    A.begin(); cue(log, 'slam', next()); A.cue('card'); assert.deepEqual(played, [], 'the card cue was laid before the frame ended');
+    A.flush(); assert.deepEqual(played, ['slam', 'card']);
+    // outside a frame a card cue is laid at once
+    A.cue('choice'); assert.deepEqual(played, ['slam', 'card', 'choice']);
+  }
+  { // a later press resumes a context the browser left suspended; not a running one, nor with Sound and Music off
+    const { A, rs } = make();
+    A.wake(); assert.equal(A.ctx.resumed, 0);
+    A.ctx.state = 'suspended'; A.wake(); assert.equal(A.ctx.resumed, 1);
+    rs.sound = rs.music = false; A.wake(); assert.equal(A.ctx.resumed, 1);
+  }
+  pass('the run\'s sound lays nothing while paused, with Sound off or suspended; a card in a frame keeps its cues; a press resumes');
+}
+{ // the Barrow Reeve's ostinato is its own: no place's eighths share its intervals
+  const shape = part => { const m = part.notes.map(n => n.m); return m.slice(1).map((x, i) => x - m[i]).join(','); };
+  const reeve = ['low', 'high'].map(k => shape(THEMES.reeve.layers[k][0]));
+  for (const id of PLACES) for (const [k, parts] of Object.entries(THEMES[id].layers)) for (const p of parts) {
+    if (p.notes.length < 6) continue;
+    assert(!reeve.includes(shape(p)), `${id} ${k} ${p.inst} shares the Reeve's ostinato`);
+  }
+  pass('the Barrow Reeve\'s ostinato shares its intervals with no place\'s theme', reeve);
 }
 console.log(`PASS qa/lab/gloam-downs-sound.test.mjs: ${passed} checks`);

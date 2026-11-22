@@ -345,7 +345,7 @@
 ### Sound and music
 - [x] Copy the six FluidR3_GM instruments (harp, strings, contrabass, flute, choir, timpani) to `public/lab/gloam-downs/audio/`, only the notes the score plays, with the license note in `audio/README.md` and a manifest; 500 KB or less, and a budget check in `gloam-downs-run.test.mjs`
 - [x] `/arcade/quiet.js` as the page's first script; no `AudioContext` in the explorer, Wander or a Lamp-room from Wander's Map
-- [x] `sound.js`: the graph (effects bus, music bus, duck gain, master high-pass, compressor and limiter), the phone mix, the voice limits, the context on the first key, click or tap in a run
+- [x] `sound.js`: the graph (effects bus with its limiter, music bus with no dynamics, duck gain, master high-pass and soft clip), the phone mix, the voice limits, the context on the first key, click or tap in a run
 - [x] Lay the cues of a frame at the frame's time plus 1/60 s a step, capped at 0.25 s; add `at` and `v` to the sound log
 - [x] Carry `wind`, `act` and the hit id on `swing`, the hang on `plunge`, and the target types on `hit`; stop the whoosh when a roll cancels a wind-up
 - [x] After the merge with the swings: the draw-back on `swing` and the whoosh on `strike` (it peaks on the hit step), `whiff` on a miss, a soft `recover`, the plunge's fall on `drop`; a Node check that the strike and the hit come on the steps the cues say, with the blade in front
@@ -364,9 +364,14 @@
 - [x] `__gloam.music()`: the state and the last 32 changes with their bar lines
 - [x] `qa/lab/gloam-downs-sound.test.mjs`: the cue table, the shuffle, the bar maths, the scheduler on a fake clock, the long frame, the combat rules, the save
 - [x] `qa/lab/gloam-downs-music-demo.mjs`: every cue, variant, theme part, phase, stinger and the scripted fight in both mixes to mp3, and `loudness.json`
-- [ ] Listen to every mp3 of the demo, tune the levels and the recipes by ear, and write the measured figures in design.md. Done by measurement only: the levels and the recipes were tuned against the demo's `ebur128` figures, the band energies and the body pitch, and the figures are in design.md "As built". Nobody has listened yet
+- [x] Review fixes, the first press: make the context only on a user activation (never on a touch's `pointerdown`) and resume it on every later press; an e2e tap on a stub `AudioContext` with an iPhone's rules
+- [x] Review fixes, the mix: the score passes no dynamics; the effects pass a limiter alone with its make-up gain taken off; the fight's target −24 ±2 LUFS; the demo's `power` group (the bus gains, the whoosh under its hit, the punch against no dynamics, the tells in a string, the landing) and the limiter and the CPU figure in the fight
+- [x] Review fixes, the swing: the whoosh peaks a step before the hit and stays 6 to 7 LU under it, the hit takes it 18 dB down and a tell 5 dB; a hit taken, a death and a fall stop the swing's sound; a press transient on `swing`
+- [x] Review fixes, the rest: the hit variants change the recipe; the card cues go in the frame's queue; the score lays 300 ms ahead on a coarse pointer; the Barrow Reeve's own ostinato
+- [x] Review fixes, the checks: Node tests on a fake `AudioContext` (the swing's and the drop's voices, the whoosh's dips) and on `run-sound.js` (pause, Sound off, suspended, the card queue, the resume); e2e checks of `fxLive` after a cutting roll, a cut with Sound off and under the pause panel, the lag and the phone's lookahead
+- [ ] Listen to every mp3 of the demo, tune the levels and the recipes by ear, and write the measured figures in design.md. Done by measurement only: the levels and the recipes were tuned against the demo's `ebur128` figures, the band energies, the body pitch and `power.json`, and the figures are in design.md "As built". Nobody has listened yet, on a phone speaker or on headphones. The press transient on `swing` is there so a press is heard at once; a person must still say if it is enough
 - [ ] `qa/lab/gloam-downs-run.sound.e2e.mjs`: the first press, the logs, the swing timing, the duck, the switches, the bank's load and failure, low health and pause are done (the bands and the loudness are in the demo). The gamepad-alone line is still open
-- [x] A `lab/gloam-downs` entry in `PAGES` of `qa/arcade/quiet.mjs`, with `music: true`, and its run (32 of 35 checks pass; the three that fail are the sound coming back after a show, which this loaded machine takes longer than 8 s to do; see design.md "Not checked")
+- [x] A `lab/gloam-downs` entry in `PAGES` of `qa/arcade/quiet.mjs`, with `music: true`, and its run (32 of 35 checks pass, 33 of 35 after the review's fixes; the ones that fail are the sound coming back after a show, which this loaded machine takes longer than 8 s to do; see design.md "Not checked")
 - [x] The Gloam Downs line in `AGENTS.md`: the sound test, e2e and demo commands
 - [x] Report that no speakers, headphones or phone played the sound, if none could
 
