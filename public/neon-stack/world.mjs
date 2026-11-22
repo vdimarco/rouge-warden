@@ -184,6 +184,14 @@ function boxFace(x, z, w, h) {
   if (z === h - 1) return PZ;
   return UP;
 }
+function wallFace(x, z, w, h) {
+  const edge = 4;
+  if (x < edge) return NX;
+  if (x >= w - edge) return PX;
+  if (z < edge) return NZ;
+  if (z >= h - edge) return PZ;
+  return UP;
+}
 
 function slice(x, z, y, hx, hz, uv, kind, sign, bid, low, orient) {
   return { x, z, y, hx, hz, uv, kind, sign, bid, low, orient: orient || 0 };
@@ -237,7 +245,7 @@ export function pathfind(blocked, x0, y0, x1, y1) {
 export function build(seed) {
   const rng = mulberry32(Number(seed) || 1);
   const pack = atlas();
-  const bands = [INK, BASE, MID, SMOG].map((col, i) => pack.put(solidRect(22, 22, col, 40 + i * 60, boxFace), 22, 22));
+  const bands = [INK, BASE, MID, SMOG].map((col, i) => pack.put(solidRect(22, 22, col, 40 + i * 60, wallFace), 22, 22));
   const inkUv = pack.put(solidRect(1, 1, INK, 20, () => UP), 1, 1);
   const slices = [];
   const buildings = [];
@@ -255,8 +263,6 @@ export function build(seed) {
     const s = cells[i]; cells[i] = cells[j]; cells[j] = s;
   }
   const spots = [...reserved, ...cells.slice(0, 6)];
-  // The middle of the crossing is a short stack, so the centre of the block is not bare street.
-  for (let s = 0; s < 12; s++) slices.push(slice(96, 100, 0.6 + s, 14, 14, bands[2], 0, 0, -1, true));
   const heights = spots.map(() => 16 + Math.floor(rng() * 25));
 
   spots.forEach(([tx, ty], i) => {

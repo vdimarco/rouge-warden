@@ -421,23 +421,82 @@ async function visible(width, height, dpr) {
     const around = readAt(body.x, body.y, 9);
     const ochre = around.filter((c) => near(c, OCHRE, 6)).length;
     const allGround = around.every(isGround);
-    const corners = [[0, 0], [6, 0], [0, 6], [6, 6]].map(([x, y]) => __test.project(x, y, 0));
-    const ax = corners.reduce((s, p) => s + p.x, 0) / 4;
-    const ay = corners.reduce((s, p) => s + p.y, 0) / 4;
-    const v = __test.view();
-    const midX = rect.left + (v.ox + ax * v.scale) * rect.width / v.backW;
-    const midY = rect.top + (v.backH - (v.oy + (v.artH - ay) * v.scale)) * rect.height / v.backH;
-    const centre = readAt(midX, midY, 1)[0];
-    return { ochre, allGround, centre, n: around.length, body, errs: null };
+    const HX = 11 / 32;
+    const lights = st.lights.filter((l) => l.type === "neon");
+    const buildings = __test.buildings();
+    let pick = null;
+    lights.forEach((s, i) => {
+      buildings.forEach((b) => {
+        const cx = b.x + 0.5, cz = b.y + 0.5;
+        const faces = [
+          { n: [1, 0], x: cx + HX, z: cz },
+          { n: [-1, 0], x: cx - HX, z: cz },
+          { n: [0, 1], x: cx, z: cz + HX },
+          { n: [0, -1], x: cx, z: cz - HX },
+        ];
+        faces.forEach((f) => {
+          const dx = s.x - f.x, dz = s.y - f.z;
+          const dist = Math.hypot(dx, dz);
+          const toward = f.n[0] * dx + f.n[1] * dz;
+          if (dist < 1 || dist > 3 || toward / dist < 0.7) return;
+          if (!pick || dist < pick.dist) pick = { i, colour: s.colour, z: s.z, dist, face: f };
+        });
+      });
+    });
+    return { ochre, allGround, pick };
   });
   check(!sample.allGround, width + " runner window is not all ground");
   check(sample.ochre >= 20, width + " shows " + sample.ochre + " ochre pixels in the 9x9 around the runner");
-  const centreGround = [[0x2b, 0x2a, 0x33], [0x1a, 0x1a, 0x22]].some((g) =>
-    Math.abs(sample.centre[0] - g[0]) <= 6 && Math.abs(sample.centre[1] - g[1]) <= 6 && Math.abs(sample.centre[2] - g[2]) <= 6);
-  check(!centreGround, width + " block centre is not plain ground (" + sample.centre.join(",") + ")");
-  check(errs.length === 0, width + " visible check stays quiet");
-  console.log("  nums  " + width + " ochre=" + sample.ochre + "/81 centre=" + sample.centre.join(","));
+  check(!!sample.pick, width + " has a wall face 1 to 3 tiles from a sign");
   await page.screenshot({ path: OUT + "/" + width + "-visible.png" });
+  const wall = await page.evaluate(async (pick) => {
+    const canvas = document.querySelector("canvas");
+    const gl = canvas.getContext("webgl2");
+    const yaw = Math.atan2(pick.face.n[0], pick.face.n[1]) * 180 / Math.PI;
+    const side = [-pick.face.n[1], pick.face.n[0]];
+    let sx = pick.face.x + pick.face.n[0] * 0.7 + side[0] * 0.45;
+    let sz = pick.face.z + pick.face.n[1] * 0.7 + side[1] * 0.45;
+    if (__test.solid(sx, sz)) { sx += pick.face.n[0]; sz += pick.face.n[1]; }
+    __test.moveTo(sx, sz);
+    __test.setYaw(yaw);
+    __test.setTilt(32);
+    for (let i = 0; i < 5; i++) __test.setSign(i, null);
+    await new Promise((r) => setTimeout(r, 280));
+    const readAt = (clientX, clientY) => {
+      const rect = canvas.getBoundingClientRect();
+      const fx = (clientX - rect.left) * (canvas.width / rect.width);
+      const fy = (clientY - rect.top) * (canvas.height / rect.height);
+      const cx = Math.round(fx);
+      const cy = Math.round(canvas.height - fy);
+      const x0 = Math.min(canvas.width - 9, Math.max(0, cx - 4));
+      const y0 = Math.min(canvas.height - 9, Math.max(0, cy - 4));
+      const buf = new Uint8Array(9 * 9 * 4);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.readPixels(x0, y0, 9, 9, gl.RGBA, gl.UNSIGNED_BYTE, buf);
+      const px = [];
+      for (let i = 0; i < 81; i++) px.push([buf[i * 4], buf[i * 4 + 1], buf[i * 4 + 2]]);
+      return px;
+    };
+    const spot = __test.client(pick.face.x, pick.face.z, pick.z);
+    const on = readAt(spot.x, spot.y);
+    for (let i = 0; i < 5; i++) __test.setSign(i, false);
+    await new Promise((r) => setTimeout(r, 400));
+    const off = readAt(spot.x, spot.y);
+    const dom = (c) => (c[0] >= c[1] && c[0] >= c[2] ? 0 : c[1] >= c[2] ? 1 : 2);
+    const lum = (c) => c[0] + c[1] + c[2];
+    const signDom = dom([parseInt(pick.colour.slice(1, 3), 16), parseInt(pick.colour.slice(3, 5), 16), parseInt(pick.colour.slice(5, 7), 16)]);
+    let hue = 0;
+    for (let i = 0; i < on.length; i++) {
+      if (dom(on[i]) === signDom && lum(on[i]) > lum(off[i])) hue++;
+    }
+    const onLum = on.reduce((s, c) => s + lum(c), 0);
+    const offLum = off.reduce((s, c) => s + lum(c), 0);
+    return { hue, onLum, offLum, colour: pick.colour, dist: pick.dist, signDom };
+  }, sample.pick);
+  check(wall.hue >= 20, width + " lit wall has " + wall.hue + " hue pixels (" + wall.colour + ")");
+  check(wall.onLum > wall.offLum * 1.15, width + " signs on are brighter (" + wall.onLum + " vs " + wall.offLum + ")");
+  check(errs.length === 0, width + " visible check stays quiet");
+  console.log("  nums  " + width + " ochre=" + sample.ochre + "/81 wall=" + wall.hue + "/81 onLum=" + wall.onLum + " offLum=" + wall.offLum + " " + wall.colour);
   await ctx.close();
   return sample;
 }
