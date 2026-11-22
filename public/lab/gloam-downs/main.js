@@ -18,6 +18,7 @@ import * as cards from './cards.js';
 import { makePool } from './pool.js';
 import { figures, poolFor, lineup, LINEUP } from './figures.js';
 import { findVeils, makeVeils } from './veil.js';
+import { makeCut, CUT } from './cut.js';
 import { makeFight, SPARKS } from './fight.js';
 
 const $ = id => document.getElementById(id);
@@ -46,7 +47,7 @@ let renderer = null, place = null, walk = null, body = null, cam = null, world =
 let mode = 'loading', paused = false, lost = false, last = 0, time = 0, frames = 0, acc = 0, steps = 0;
 let artTarget = TARGET[q.get('q')] || (coarse ? 46000 : TARGET.mid), adapt = !q.has('q');
 let art = { w: 320, h: 200, s: 1 };
-let lampFade = null, pendingRows = new Set(), fogNear = 10, beaconLit = false, arriveTimer = 0, toastTimer = 0, slowFor = 0, pool = null, slots = null, veils = null;
+let cut = null, lampFade = null, pendingRows = new Set(), fogNear = 10, beaconLit = false, arriveTimer = 0, toastTimer = 0, slowFor = 0, pool = null, slots = null, veils = null;
 const intervals = [];
 // the run: the sound cues logged across places, the effects' flags (each can be turned off with __gloam.fx), what the effects give
 // this frame, training posts (?test), the fight in this place (fight.js) and the foes' targets
@@ -652,6 +653,7 @@ async function go(id) {
   cards.shut(loading);
   // a place left with the lamplighter thinned out gets its densities back (a place is loaded once and kept)
   lampFade?.set(0);
+  cut?.reset();
   ({ meta, world } = place);
   walk = makeWalk(meta.walk, place.walk);
   // a run's moves drive the body through its own copy of PARAMS
@@ -676,6 +678,9 @@ async function go(id) {
   // in a run, the mist and haze sheets that lie in front of an awake figure fade out (veil.js); the beacon and the wisps are left alone
   const pack = c => ((c >> 16) & 255) + ((c >> 8) & 255) * 256 + (c & 255) * 65536;
   veils = RUN ? makeVeils(world, findVeils(world, { count: placeCount, skip: [...meta.beacon.fire, ...meta.wisps.map(w => w.ids)], shared: meta.pal.slice(32).map(pack) })) : null;
+  // in a nook under a roof the camera stands behind the wall and the splats between are left out (cut.js); the veils, the lamplighter,
+  // the wisps and the beacon's fire are never cut
+  cut = makeCut(world.data, { count: placeCount, skip: [[meta.bones.first, meta.bones.end], ...meta.beacon.fire, ...meta.wisps.map(w => w.ids)], except: veils ? new Set(veils.list.map(v => v.i)) : null });
   saved.clear();
   pendingRows = new Set();
   if (RUN) {
@@ -763,6 +768,7 @@ function update() {
   view = cam.follow(body.s, STEP, input, combat && mode === 'play' ? combat.turn : null);
   input.dyaw = input.dpitch = 0;
   for (const r of lampFade.set(fadeOf(eyeOf(view), body.s))) pendingRows.add(r);
+  for (const r of cut.step(view.cut ? eyeOf(view) : null, [body.s.x, body.s.y + CUT.mid, body.s.z], STEP)) pendingRows.add(r);
   if (veils) unveil();
 }
 // the veils over the awake figures fade out, seen from where the eye is now: nine points on each figure, at its feet, middle and head,
@@ -871,6 +877,9 @@ window.__gloam = {
     cam: cam ? { yaw: cam.c.yaw, dist: cam.c.dist, pitch: cam.c.pitch, want: cam.c.want, fov: cam.c.fov, aim: cam.c.aim, lift: cam.c.lift, view: view ? view.pitch : null, foe: combat?.foe?.id ?? null, turning: cam.c.turning, idle: cam.c.idle } : null,
     // the near fade's share now (play.js fadeOf: 0 to 1, or NEAR_FADE.all with the whole figure left out)
     fade: lampFade?.k ?? 0,
+    // the cutaway: on (the view stands behind the wall), how many of the place's splats are left out or easing back now, and the
+    // view's own distance and pitch (cam.dist is the follow camera's under it)
+    cut: { on: !!view?.cut, splats: cut?.size ?? 0, dist: view?.dist ?? null, pitch: view?.pitch ?? null },
     // the mouse: taken now, the page can take it now, the browser refused it a moment ago, the hint shows, and its words
     mouse: { locked: inp.locked, lockable: inp.lockable, waiting: inp.waiting, hint: !hintEl.hidden, text: hintEl.textContent }
   }),

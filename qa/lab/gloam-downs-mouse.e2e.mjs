@@ -285,7 +285,8 @@ try {
      In the cell where the first wisp hangs, the framed shot leans the view toward the mouth. At 8 yaws of the mouse (45° apart) and at
      both sizes, a press of forward moves the figure up the screen, as drawn from the view of that step (both points projected with the
      same view), and the picture has turned with the mouse. Once the mouse stops, nothing turns the view for 1.5 s (the mouse is taken),
-     and then the eye stands 2.5 m back or the near fade leaves out the whole figure, its lantern and blade too ("it zooms in too much").
+     and then the view stands 2.5 m back with the figure drawn whole (the cutaway: "it zooms in too much"; in 19b99dd8 the eye came to
+     about 1 m there and the near fade left out the whole figure).
      The framed shot of 100a12c4 showed the cell from a yaw up to 180° from the mouse's: there a press of back went up the screen at one
      yaw and down at another, and the picture stood still across 90° of turn. That of 1974d668 turned the view by itself once the mouse
      stopped, and left the eye about 1 m back with the lantern and the blade over the view */
@@ -304,7 +305,7 @@ try {
         const s0 = g.state(), s1 = g.tick(0.15, { mz: 1, mouse: true });
         const a = g.project([s0.x, s0.y + 0.9, s0.z]), b = g.project([s1.x, s1.y + 0.9, s1.z]);
         const dx = b[0] - a[0], dy = b[1] - a[1];
-        out.push({ turn, shown: +(Math.atan2(Math.sin(y1 - y0), Math.cos(y1 - y0)) * 180 / Math.PI).toFixed(0), cell: s0.y < -1, moved: +Math.hypot(s1.x - s0.x, s1.z - s0.z).toFixed(2), dx: Math.round(dx), dy: Math.round(dy), off: +(Math.abs(Math.atan2(dx, -dy)) * 180 / Math.PI).toFixed(0), self: +(Math.abs(still.cam.yaw - y1) * 180 / Math.PI).toFixed(3), dist: +still.cam.dist.toFixed(2), fade: still.fade });
+        out.push({ turn, shown: +(Math.atan2(Math.sin(y1 - y0), Math.cos(y1 - y0)) * 180 / Math.PI).toFixed(0), cell: s0.y < -1, moved: +Math.hypot(s1.x - s0.x, s1.z - s0.z).toFixed(2), dx: Math.round(dx), dy: Math.round(dy), off: +(Math.abs(Math.atan2(dx, -dy)) * 180 / Math.PI).toFixed(0), self: +(Math.abs(still.cam.yaw - y1) * 180 / Math.PI).toFixed(3), dist: +still.cut.dist.toFixed(2), cut: still.cut.on, fade: still.fade });
       }
       return out;
     });
@@ -315,9 +316,10 @@ try {
       const want = r.turn > 180 ? r.turn - 360 : r.turn;
       assert(Math.abs(r.shown - want) <= 0.2 * Math.abs(want) + 1, `${w}x${h}: a mouse turn of ${r.turn}° turned the picture ${r.shown}°`);
       assert.equal(r.self, 0, `${w}x${h} at ${r.turn}°: the view turned by itself by ${r.self}° after the mouse stopped`);
-      assert(r.dist >= 2.5 || r.fade === 2, `${w}x${h} at ${r.turn}°: 1.5 s after the mouse stopped the eye stands ${r.dist} m back with a fade of ${r.fade}`);
+      // the view's own distance (the cutaway stands 3.2 m back where the walls would bring the follow eye in), and the figure drawn whole
+      assert(r.dist >= 2.5 && r.fade === 0, `${w}x${h} at ${r.turn}°: 1.5 s after the mouse stopped the eye stands ${r.dist} m back with a fade of ${r.fade}`);
     }
-    pass(`the torn cell at ${w}x${h}: at 8 yaws of the mouse the picture turns with it, stays still when it stops, the figure is out of the way, and forward moves the figure up the screen`, rows.map(r => [r.turn, r.shown, r.dx, r.dy, r.off, r.dist, r.fade]));
+    pass(`the torn cell at ${w}x${h}: at 8 yaws of the mouse the picture turns with it, stays still when it stops, the view stands back with the figure in it, and forward moves the figure up the screen`, rows.map(r => [r.turn, r.shown, r.dx, r.dy, r.off, r.dist, r.cut, r.fade]));
     if (errors.length) throw new Error(errors.join('\n'));
     await ctx.close();
   }

@@ -16,7 +16,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
-import { makeWalk, makeBody, makeCamera, pose, reachable, touches, atBeacon, JUMP, PARAMS, makeFade, held, NEAR_FADE } from '../../public/lab/gloam-downs/play.js';
+import { makeCut, CUT } from '../../public/lab/gloam-downs/cut.js';
+import { makeWalk, makeBody, makeCamera, pose, reachable, touches, atBeacon, JUMP, PARAMS, makeFade, held, NEAR_FADE, TIGHT } from '../../public/lab/gloam-downs/play.js';
 import { clean, fresh, ORDER, wispCount } from '../../public/lab/gloam-downs/save.js';
 import { closeCracks } from '../../games/gloam-downs/lib/cracks.mjs';
 import { byBeacon, closeWalk, controllerOut, fillTraps, findTraps, standsIn } from '../../games/gloam-downs/lib/traps.mjs';
@@ -1215,7 +1216,7 @@ const lowestNear = (W2, [cx, cy, cz], r, from = 1.6) => {
   pass('the lamplighter walks under an arch at every frame step and speed');
 }
 { /* the camera rises over a wall between it and the lamplighter and stays back; only where no rise clears the wall (a 3 m wall less
-     0.4 m behind) does the follow eye come in (the framed shot finds no clear yaw within 60° of a straight wall). Its eye stays out of the wall, and it sees the head */
+     0.4 m behind) does the cutaway take over (the framed shot finds no clear yaw within 60° of a straight wall). Its eye stays out of the wall, and it sees the head or cuts the wall away */
   const eyeOf = v => {
     const cp = Math.cos(v.pitch);
     return [v.target[0] + v.dist * Math.sin(v.yaw) * cp, v.target[1] + v.dist * Math.sin(v.pitch), v.target[2] + v.dist * Math.cos(v.yaw) * cp];
@@ -1229,13 +1230,15 @@ const lowestNear = (W2, [cx, cy, cz], r, from = 1.6) => {
     const cam = makeCamera(W, { yaw: Math.PI / 2, dist: 8.5, auto: false });
     cam.snap(b.s, Math.PI / 2);
     for (let i = 0; i < 120; i++) { v = cam.follow(b.s, 1 / 60, {}); assert(clear(v) > 0.1, `body at x ${x}, frame ${i}: the eye ${eyeOf(v).map(n => n.toFixed(2))} is in the wall`); }
-    assert(sight(v, b.s), `body at x ${x}: the eye sees the head`);
+    // (or the cutaway leaves out the wall's splats between: cut.js, checked through the splats in gloam-downs-camera.test.mjs)
+    assert(v.cut || sight(v, b.s), `body at x ${x}: the eye sees the head`);
     if (x <= 3.4) assert(near(v.dist, 8.5, 0.05) && v.pitch > 0.5, `body at x ${x}: it rose over the wall and stayed back (dist ${v.dist}, pitch ${v.pitch})`);
-    /* (no rise clears the wall: the framed shot would lean the view to a clear yaw, but along a straight wall 0.4 m behind none is
-       within its 60°, so the view stays where it was and the eye comes in, out of the wall, with the near fade: play.js makeCamera) */
+    /* (no rise clears the wall 0.4 m behind: the lamplighter stands, so the cutaway keeps the yaw, stands 3.2 m back with the eye
+       raised over the wall's top, and leaves out the wall between: play.js makeCamera, cut.js. Before, the eye came in to under 2.5 m
+       with the near fade) */
     else {
       const turned = Math.abs(Math.atan2(Math.sin(cam.c.yaw - Math.PI / 2), Math.cos(cam.c.yaw - Math.PI / 2)));
-      assert(v.dist < 2.5 && turned <= Math.PI / 3 + 1e-6, `body at x ${x}: no rise clears the wall, the view turned ${(turned * 180 / Math.PI).toFixed(0)}° and stands ${v.dist} back`);
+      assert(v.cut && near(v.dist, TIGHT.dist, 0.05) && turned < 1e-9, `body at x ${x}: no rise clears the wall, the view turned ${(turned * 180 / Math.PI).toFixed(0)}° and stands ${v.dist} back (cutaway ${v.cut})`);
     }
     seen.push([x, +v.dist.toFixed(2), +v.pitch.toFixed(2)]);
   }
@@ -1407,4 +1410,29 @@ const lowestNear = (W2, [cx, cy, cz], r, from = 1.6) => {
   pass('the loader refuses a walk file that does not hold the layers its JSON names');
 }
 if (missing.length) { console.log(`FAIL not baked: ${missing.join(', ')} (node games/gloam-downs/bake.mjs)`); process.exitCode = 1; }
+{ /* the cutaway's splats (cut.js): a wall of splats 1.5 m in front of an eye 3.2 m from the figure, and others beside it, behind the
+     figure, wider than CUT.spread (the sky) and in a skipped range (the figure's own). In the cone they ease out over CUT.in s (gone
+     in 9 steps at 60 Hz, not in 1), back over CUT.out s (15 steps) once the eye goes; the rest never change; reset brings back every
+     density as baked */
+  const pts = [], add = (x, y, z, a = 1, v = 0.004) => pts.push([x, y, z, a, v]);
+  for (let i = -3; i <= 3; i++) for (let j = 0; j <= 6; j++) add(i * 0.15, 0.6 + j * 0.15, 1.7);   // the wall between, 49 splats
+  add(2.5, 1, 1.7); add(0, 1, -1); add(0, 1, 1.7, 1, 4); add(0.1, 1, 1.6);                         // beside, behind, the sky, skipped
+  const data = new Float32Array(pts.length * 16);
+  pts.forEach(([x, y, z, a, v], i) => { data.set([x, y, z, a, v, 0, 0, 0, v, 0, v], i * 16); });
+  const own = data.filter((_, k) => k % 16 === 3), cut = makeCut(data, { count: pts.length, skip: [[pts.length - 1, pts.length]] });
+  const eye = [0, 1.2, 3.2], at = [0, 0.9, 0], dens = () => pts.map((_, i) => data[i * 16 + 3]);
+  let rows = cut.step(eye, at, 1 / 60);
+  assert(rows.size === 1 && dens().slice(0, 49).every(d => d > 0.8 && d < 1), `one step takes a share out of the wall: ${dens()[0]}`);
+  let steps = 1;
+  while (dens()[0] > 0 && steps < 60) { cut.step(eye, at, 1 / 60); steps++; }
+  assert(steps >= 8 && steps <= 10 && dens().slice(0, 49).every(d => d === 0), `the wall eased out in ${steps} steps`);
+  assert.deepEqual(dens().slice(49), Array.from(own.slice(49)), 'beside it, behind the figure, the sky and the figure are kept');
+  let back = 0;
+  while (dens()[0] < 1 && back < 60) { cut.step(null, at, 1 / 60); back++; }
+  assert(back >= 14 && back <= 16 && cut.size === 0, `the wall eased back in ${back} steps`);
+  cut.step(eye, at, 1 / 60); cut.step(eye, at, 1 / 60);
+  cut.reset();
+  assert.deepEqual(dens(), Array.from(own), 'reset brings back every density');
+  pass('the cutaway leaves out the splats between the eye and the figure, eased out and back, and keeps the rest', { out: steps, back, cone: [CUT.near, CUT.far] });
+}
 console.log(`${n} checks passed`);

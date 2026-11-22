@@ -16,6 +16,7 @@ import fs from 'node:fs';
 import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 import { makeWalk, makeBody, makeCamera, camLayout, VIEW, zoomFov, ZOOM, fadeOf, makeFade, pose, NEAR_FADE } from '../../public/lab/gloam-downs/play.js';
+import { makeCut, showing, CUT } from '../../public/lab/gloam-downs/cut.js';
 import { makeCombat, makeMoveLock, makeBossCam, projector, frameClear, bossLeast, yawDiff, asFoes, COMBAT, BOSS } from '../../public/lab/gloam-downs/cameras.js';
 import { clearLine, makePost } from '../../public/lab/gloam-downs/moves.js';
 import { ORDER } from '../../public/lab/gloam-downs/save.js';
@@ -390,7 +391,8 @@ if (!skipWorlds) {
           const v = cam.follow(b.s, STEP, i < 60 ? { mouse: true } : { dyaw: 2 * Math.PI / 360, mouse: true });
           if (i === 59) {
             const e = eyeOf(v);
-            assert(clearLine(walk, e[0], e[1], e[2], b.s.x, b.s.y + 1.3, b.s.z), `${name} ${id} at ${x.toFixed(1)}, ${z.toFixed(1)}: the settled eye does not see the head`);
+            // or the cutaway leaves out what stands between (the splats themselves are checked in the cutaway's sweep below)
+            assert(v.cut || clearLine(walk, e[0], e[1], e[2], b.s.x, b.s.y + 1.3, b.s.z), `${name} ${id} at ${x.toFixed(1)}, ${z.toFixed(1)}: the settled eye does not see the head`);
           }
           if (i < 60) continue;
           n++; all++;
@@ -409,6 +411,76 @@ if (!skipWorlds) {
       rows.push({ name, spots: spots.length, back: r2(back / all), between: +(mid / all).toFixed(3), worstBetween: r2(worstMid), least: r2(worstLeast), cover: r2(worstCover) });
     }
     pass('a sweep of the mouse in the torn cell and at every wisp: the eye stands back or the figure is left out, it sees the head, and the figure never fills the view', rows);
+  }
+  /* The cutaway ("it zooms in too much"; the review of 19b99dd8: in the torn cell, with the mouse looking away from the mouth, the eye
+     came to about 1 m and the near fade hid the figure, a blurry close view of walls). A full turn of the mouse in 6 s, 1° a step, at
+     the same 28 spots (three in the torn cell, the 25 wisps), at 1280x720 and 390x844, with the place's own splats cut away as the page
+     does (cut.js, stepped with each view). The eye stands at least 2.5 m back on 85% of the steps at each spot and 95% over all; the
+     figure shows (its head or its chest at least half seen through the splats at their densities now, each splat counted as round as
+     it is wide, so flat ones seen edge on count against it) on 93% of all steps, and on 98% of the steps where the cutaway is whole;
+     at a spot the share may fall to 75% (posts and lanterns the camera looks past by design, thin in the walk map, stand between at
+     8.5 m); it covers at most 25% of the view; the picture turns by 80 to 120% of each 1° step, and in the cutaway by the whole step;
+     and the cutaway, once off, does not come on again within 0.25 s. Before (19b99dd8) the eye stood 2.5 m back on 70% (1280x720)
+     and 74% (390x844) of all steps, and on 7 to 28% at the three spots in the torn cell (the rest nearer, the figure left out by the
+     near fade) */
+  {
+    const CUTPASS = { back: 0.85, all: 0.95, seen: 0.75, seenAll: 0.93, seenCut: 0.98, cover: 0.25 };
+    const SplatCodec = new Function(fs.readFileSync(DIR + 'ink/splat-codec.js', 'utf8') + '\nreturn SplatCodec;')();
+    const splats = {};
+    const splatsOf = id => {
+      if (splats[id]) return splats[id];
+      const { meta } = place(id), { data, count } = SplatCodec.decode(new Uint8Array(zlib.gunzipSync(fs.readFileSync(`${DIR}worlds/${id}.bin.gz`))), { maxRows: 1_000_000 });
+      return (splats[id] = { data, cut: makeCut(data, { count, skip: [[meta.bones.first, meta.bones.end], ...meta.beacon.fire, ...meta.wisps.map(w => w.ids)] }) });
+    };
+    const rows = [], spots = [['gaol', 1.6, -1.6], ['gaol', 1.6, -2.1], ['gaol', 1.6, -0.9]];
+    for (const id of ORDER) for (const wp of place(id).meta.wisps) spots.push([id, wp.p[0], wp.p[2], wp.p[1]]);
+    for (const name of ['1280x720', '390x844']) {
+      const [w, h] = LAYOUTS[name];
+      let all = 0, back = 0, cutSteps = 0, seenAll = 0, cutSeen = 0, cutFull = 0, worstBack = 1, worstSeen = 1, worstCover = 0, lo = Infinity, hi = 0, flick = 0, worstAt = '';
+      for (const [id, x, z, wy] of spots) {
+        const { walk } = place(id), { data, cut } = splatsOf(id), y = wy === undefined ? walk.floor(x, z) : walk.support(x, z, wy + 0.5) ?? walk.floor(x, z);
+        const b = stand(walk, x, z, Math.PI, y), cam = cameraFor(walk, name, 0);
+        cam.snap(b.s, 0);
+        const grid = (e, p) => cut.around(e, p, 0.6);
+        let n = 0, nb = 0, seen = 0, cover = 0, prev = null, offAt = -99, was = false, cutRun = 0;
+        for (let i = 0; i < 420; i++) {
+          b.step(STEP, {}, cam.c.yaw);
+          const v = cam.follow(b.s, STEP, i < 60 ? { mouse: true } : { dyaw: DEG, mouse: true });
+          cut.step(v.cut ? eyeOf(v) : null, [b.s.x, b.s.y + CUT.mid, b.s.z], STEP);
+          if (i >= 60) {
+            n++; all++;
+            if (v.dist >= 2.5) { nb++; back++; }
+            if (v.cut) cutSteps++;
+            const r = wrap(v.yaw - prev) / DEG;
+            lo = Math.min(lo, r); hi = Math.max(hi, r);
+            if (v.cut) assert(Math.abs(r - 1) < 1e-6, `${name} ${id} at ${x.toFixed(1)}, ${z.toFixed(1)}: in the cutaway a 1° step turned the picture by ${r.toFixed(3)}°`);
+            const e = eyeOf(v), shows = Math.max(showing(data, grid, e, [b.s.x, b.s.y + 1.3, b.s.z]), showing(data, grid, e, [b.s.x, b.s.y + 0.8, b.s.z]));
+            if (shows >= 0.5) { seen++; seenAll++; }
+            // the cutaway whole (eased in over CUT.in s): the splats between are out, so the figure shows
+            if (v.cut && cam.c.cut && (cutRun += STEP) > CUT.in + STEP) { cutFull++; if (shows >= 0.5) cutSeen++; }
+            if (!cam.c.cut) cutRun = 0;
+            if (i % 3 === 0) cover = Math.max(cover, covers(v, b.s, w, h));
+            if (v.cut && !was && i - offAt < 15) flick++;
+            if (!v.cut && was) offAt = i;
+          }
+          was = v.cut; prev = v.yaw;
+        }
+        cut.reset();
+        const tag = `${name} ${id} at ${x.toFixed(1)}, ${z.toFixed(1)}`;
+        if (nb / n < worstBack) worstAt = tag;
+        assert(nb / n >= CUTPASS.back, `${tag}: the eye stood 2.5 m back on ${(nb / n).toFixed(2)} of a sweep`);
+        assert(seen / n >= CUTPASS.seen, `${tag}: the figure showed on ${(seen / n).toFixed(2)} of a sweep`);
+        assert(cover <= CUTPASS.cover, `${tag}: the figure covered ${(cover * 100).toFixed(0)}% of the view`);
+        worstBack = Math.min(worstBack, nb / n); worstSeen = Math.min(worstSeen, seen / n); worstCover = Math.max(worstCover, cover);
+      }
+      assert(back / all >= CUTPASS.all, `${name}: the eye stood 2.5 m back on ${(back / all).toFixed(3)} of all sweeps`);
+      assert(lo >= 0.8 && hi <= 1.2, `${name}: a 1° step turned the picture by ${lo.toFixed(2)} to ${hi.toFixed(2)}°`);
+      assert(seenAll / all >= CUTPASS.seenAll, `${name}: the figure showed on ${(seenAll / all).toFixed(3)} of all sweeps`);
+      assert(cutSeen / cutFull >= CUTPASS.seenCut, `${name}: in the cutaway the figure showed on ${(cutSeen / cutFull).toFixed(3)} of its steps`);
+      assert.equal(flick, 0, `${name}: the cutaway went off and on again within 0.25 s ${flick} times`);
+      rows.push({ name, spots: spots.length, back: +(back / all).toFixed(3), worstBack: r2(worstBack), worstAt, seen: r2(worstSeen), seenAll: +(seenAll / all).toFixed(3), seenCut: +(cutSeen / cutFull).toFixed(3), cover: r2(worstCover), cut: +(cutSteps / all).toFixed(3), turn: [r2(lo), r2(hi)] });
+    }
+    pass('the cutaway: a sweep of the mouse in the torn cell and at every wisp keeps the eye 2.5 m back, the figure in sight and the turn the player\'s', rows);
   }
   /* The mouse stops in a nook ("it zooms in too much"; "mouse feels good"). At three spots in the torn cell and at the Gaol's wisp at
      (7.6, -2.2), at 1280x720 and 390x844, the mouse turns the view from the mouth by 0 to 315° (8 yaws, 1° a step) and then stops.

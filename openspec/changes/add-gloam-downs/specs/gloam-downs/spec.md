@@ -225,7 +225,7 @@ Where the scenery is close round the lamplighter, the camera SHALL keep it and t
 - **THEN** the camera stands at 8 m or more inside the passage, its eye under the roof. Check: Node test `gloam-downs-camera.test.mjs`.
 
 ### Requirement: The framed shot
-In a nook (the room at the view's yaw under 2 m, the lamplighter at 3 m/s or less), the view SHALL lean toward the nearest yaw where the eye stands 3 m back and sees the head and the chest. The lean SHALL turn the view itself, so the picture and the moves read one yaw. It SHALL add or take away at most 15% of each step of a player's turn, and stay within 60° of the player's own turns. Where it may not turn, or no clear yaw is that near, the eye SHALL come in with the near fade.
+In a nook (the room at the view's yaw under 2 m, the lamplighter at 3 m/s or less), the view SHALL lean toward the nearest yaw where the eye stands 3 m back and sees the head and the chest. The lean SHALL turn the view itself, so the picture and the moves read one yaw. It SHALL add or take away at most 15% of each step of a player's turn, and stay within 60° of the player's own turns. Where it may not turn, or no clear yaw is that near, "The cutaway" SHALL apply, else the near fade.
 
 #### Scenario: Turn round in a nook
 - **WHEN** the player turns the view a full turn with the mouse in 6 s, standing at three spots in the torn cell and at each of the 25 wisps, at 1280 by 720 and 390 by 844
@@ -242,6 +242,28 @@ In a nook (the room at the view's yaw under 2 m, the lamplighter at 3 m/s or les
 #### Scenario: Turn against a wall
 - **WHEN** the player turns the view into a long wall 1 or 2 m behind the lamplighter and back, at 1.2, 3 and 6 rad/s, and at each spawn and wisp at 1.2 rad/s each way
 - **THEN** the eye is never in the wall, the eye comes in eased (no step over 1 m), and in the sweeps of the five places at most 10 steps come in through a wall, each under 2.2 m. Check: Node test `gloam-downs-mouse.test.mjs`.
+
+### Requirement: The cutaway
+In a nook (a roof over the head, or walls nearer than 2.5 m at 5 of 8 yaws round), or anywhere with the lamplighter standing (1 m/s or less), where the best rise still leaves the eye nearer than 2.5 m, the camera SHALL keep the player's yaw and stand 3.2 m back. Its pitch SHALL rise to the least that puts that eye in the open (over the roof, into the next cell), up to 1.15 rad, or stay where none does. A camera still coming in from far SHALL come in as before, never faster.
+
+#### Scenario: Look round the torn cell
+- **WHEN** the player turns the view a full turn with the mouse in 6 s, 1° a step, at three spots in the torn cell and at each of the 25 wisps, at 1280 by 720 and 390 by 844, with the place's splats cut away as the page does
+- **THEN** the eye stands at least 2.5 m back on 85% of the steps at each spot and 95% over all (measured: 90% and 97.7% at 1280 by 720, 98% and 99.9% on a phone); the figure shows through the splats as drawn on 93% of all steps (measured 97.9% and 96.7%) and on 98% of the steps where the cutaway is whole (measured 99.6% and 100%); it covers at most 25% of the view (measured 9% and 17%); each 1° step turns the picture by 80 to 120%, and in the cutaway by exactly 1°; and the cutaway does not come back on within 0.25 s of going off. Before (19b99dd8): the eye stood 2.5 m back on 70% and 74% of all steps and on 7 to 28% of the steps in the torn cell, the rest nearer, with the near fade hiding the figure. Check: Node test `gloam-downs-camera.test.mjs`.
+
+#### Scenario: The mouse stops in the torn cell
+- **WHEN** in the torn cell the mouse turns the view from the mouth by 0 to 315° (8 yaws, 45° apart) and stops, at 1280 by 720 and 390 by 844, in the browser
+- **THEN** 1 s later the yaw is the mouse's exactly, the view stands at least 2.5 m back, the near fade leaves the figure whole, the cutaway is on wherever the view looks away from the mouth, and in the drawn picture the lamplighter's cloak fills at least 4% of a box round its projected body. Screenshots at each yaw at both sizes. Check: browser test `gloam-downs-cutaway.e2e.mjs`.
+
+#### Scenario: A pillar beside an open yard
+- **WHEN** the lamplighter walks at 3 or 6 m/s past a tall pillar 1 to 3 m behind it, with the mouse taken
+- **THEN** there is no cutaway (it is not a nook and the lamplighter is moving), and the eye is never in the pillar. Check: Node test `gloam-downs-mouse.test.mjs`.
+
+### Requirement: The cutaway's splats and turn
+While the cutaway is on, the place's splats between its eye and the figure SHALL be left out, and come back once they no longer stand between, each easing out over about 0.15 s and back over about 0.25 s. The view SHALL ease into the cutaway over about 0.15 s and out over about 0.25 s, and go out only once the room has stood 2.9 m back for 0.2 s. The player's turn SHALL be the whole turn of the picture: no lean, no wall holding it back, and with the mouse taken no turn by itself.
+
+#### Scenario: A wall eased out and back
+- **WHEN** an eye 3.2 m from the figure has a wall of splats between, with others beside, behind the figure, the sky and the figure's own, and the eye then goes
+- **THEN** the wall eases out in 9 steps at 60 Hz and back in 15, the rest never change, and a reset brings back every density. Check: Node test `gloam-downs.test.mjs`.
 
 ### Requirement: The framed shot with the view still
 With no look input the lean is a turn by itself. It SHALL turn the view only as "A calm camera" allows (never while the mouse is taken or with reduced motion, only after 2 s with no look input), never while a run's combat or boss camera has the yaw, and at no more than 0.5 rad/s. While it turns, a held move SHALL keep its world direction.
