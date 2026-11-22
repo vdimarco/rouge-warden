@@ -25,6 +25,8 @@ export function makeRunSound({ log, rs, phone = false, step = () => 0, ear = () 
     if (A.ctx || A.failed) return !!A.ctx;
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) { A.failed = 'no AudioContext'; return false; }
+    // an iPhone mutes web audio when its side switch is on silent; a 'playback' session plays like a video does (Safari 16.4+)
+    try { if (navigator.audioSession && navigator.audioSession.type !== 'playback') navigator.audioSession.type = 'playback'; } catch {}
     try {
       A.ctx = new AC({ latencyHint: 'interactive' });
     } catch (e) { A.failed = String(e.message || e); return false; }
