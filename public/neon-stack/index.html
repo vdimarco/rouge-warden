@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0E1020">
+<meta name="robots" content="noindex">
+<title>Neon Stack · Cottage Arcade</title>
+<link rel="icon" href="data:,">
+<style>
+  html, body { margin: 0; height: 100%; background: #0E1020; overflow: hidden; }
+  canvas { position: fixed; left: 0; top: 0; touch-action: none; image-rendering: pixelated; image-rendering: crisp-edges; }
+  a.home, button.games { position: fixed; z-index: 3; top: 8px; min-width: 44px; min-height: 44px; display: grid; place-items: center; padding: 0 10px; background: #1A1A22; color: #F3E9D6; border: 0; text-decoration: none; font: 12px/1 ui-monospace, monospace; }
+  a.home { left: 8px; }
+  button.games { right: 8px; }
+</style>
+</head>
+<body>
+<canvas id="view" aria-label="Neon Stack, a rainy night block"></canvas>
+<a class="home" href="/">Arcade</a>
+<button class="games" type="button" data-switch>Games</button>
+<script type="module" src="game.mjs"></script>
+<script src="/arcade/switch.js"></script>
+</body>
+</html>
