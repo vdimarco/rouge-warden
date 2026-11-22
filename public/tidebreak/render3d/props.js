@@ -246,8 +246,8 @@ export class Props {
           const inView = x + r > view.x0 && x - r < view.x1 && z + r - Math.min(0, base) * .7 > view.y0 && z - r - Math.max(0, h + base) * .7 < view.y1;
           const shadowIn = mesh.castShadow && Math.max(x, sx) + r > view.x0 && Math.min(x, sx) - r < view.x1 && Math.max(z, sz) + r > view.y0 && Math.min(z, sz) - r < view.y1;
           if (!inView && !shadowIn) continue;
-          // Software WebGL fills every leaf card. Keep a stable quarter of the instances so the shore still reads as planted.
-          if (graphicsSupport().software && (j & 3) !== 0) continue;
+          // Trees, caves, cliffs, crags and boulders stay whole. Software WebGL only thins the small shrubs.
+          if (graphicsSupport().software && (mesh.name === 'bush' || mesh.name === 'shrub') && (j & 3) !== 0) continue;
           dst.set(matrices.subarray(j * 16, j * 16 + 16), c * 16); cdst[c * 3] = colors[j * 3]; cdst[c * 3 + 1] = colors[j * 3 + 1]; cdst[c * 3 + 2] = colors[j * 3 + 2]; c++;
         }
         mesh.count = c; mesh.instanceMatrix.clearUpdateRanges(); mesh.instanceMatrix.addUpdateRange(0, c * 16); mesh.instanceMatrix.needsUpdate = true;
@@ -385,6 +385,7 @@ export class Props {
     const fit = Math.min(1, MAX_TUFTS / ((cx1 - cx0 + 1) * (cz1 - cz0 + 1) * .9)) * detail;
     let n = 0;
     for (let cz = cz0; cz <= cz1; cz++) for (let cx = cx0; cx <= cx1; cx++) for (let k = 0; k < 2 && n < MAX_TUFTS; k++) {
+      if (graphicsSupport().software && ((cx + cz * 3 + k) & 3) !== 0) continue; // a quarter of the tufts on software WebGL
       // Patches: a soft wave over the cells thins the tufts out between clumps.
       const patchy = Math.sin(cx * .37 + Math.sin(cz * .21) * 2) * Math.cos(cz * .29 + Math.sin(cx * .17) * 2);
       if (hash(cx, cz, k + 5) > (.25 + patchy * .5) * fit) continue;
