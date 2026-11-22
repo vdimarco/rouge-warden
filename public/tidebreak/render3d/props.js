@@ -4,6 +4,7 @@
 // grows in about a second. Cover blocks (they stop movement and sight) fill their whole footprint, so they read solid.
 import * as THREE from 'three';
 import { withWorld, fowAtEnd, worldMapped, SEE_GLSL, seeUniforms } from './materials.js';
+import { graphicsSupport } from './choice.js';
 import { foliageAtlas, broadleafGeometry, pineGeometry, cypressGeometry, bushGeometry, tuftGeometry, foliagePatch, foliageUniforms } from './foliage.js';
 import { geologySites, cliffGeometry, caveGeometry, rockHeightAt, caveApproachOverlaps } from '../geology.js';
 import { TERRAIN_HEIGHT_GLSL } from '../relief.js';
@@ -75,6 +76,17 @@ function reedGeometry() {
 // heroes and soldiers in view (screen-door, so no sorting and the shadows stay whole).
 export const propUniforms = { uTime: { value: 0 }, uSway: { value: 1 } };
 function patch(material, grow, { sway = 0, see = true, key, foliage = false }) {
+  // A standard shader on every rock and wall is most of a software frame. Keep the texture and the world-space
+  // projection; drop the physical lighting. GPU machines keep the standard material.
+  if (graphicsSupport().software && material.isMeshStandardMaterial) {
+    const basic = new THREE.MeshBasicMaterial({
+      map: material.map || null, color: material.color, alphaTest: material.alphaTest || 0, alphaToCoverage: material.alphaToCoverage,
+      side: material.side, transparent: material.transparent, opacity: material.opacity, vertexColors: material.vertexColors,
+      name: material.name, flatShading: material.flatShading,
+    });
+    if (Object.hasOwn(material, 'onBeforeCompile')) { basic.onBeforeCompile = material.onBeforeCompile; basic.customProgramCacheKey = material.customProgramCacheKey; }
+    material = basic;
+  }
   const uniforms = { ...propUniforms, ...seeUniforms, uGrow: grow };
   // A material that already has its own patch (worldMapped: world-space texture mapping) keeps it; that patch also adds
   // the world position and the fog of war.
@@ -113,7 +125,13 @@ export class Props {
     this.scene = scene; this.heightAt = heightAt; this.root = new THREE.Group(); this.root.name = 'props'; scene.add(this.root);
     const w = assets.world; this.grow = [{ value: 1 }, { value: 0 }, { value: 1 }];
     this.atlas = foliageAtlas();
-    const leafy = sway => set => patch(new THREE.MeshStandardMaterial({ map: this.atlas, alphaTest: coverage ? .42 : .5, alphaToCoverage: coverage, side: THREE.DoubleSide, roughness: .8, metalness: 0 }), this.grow[set], { sway, key: 'foliage', foliage: true });
+    // Alpha-tested cards with a full standard shader are the slow part of a software frame. Draw them unlit there;
+    // the atlas, the cut-out and the instance tint stay.
+    const leafy = sway => set => {
+      const cutout = { map: this.atlas, alphaTest: coverage ? .42 : .5, alphaToCoverage: coverage, side: coverage ? THREE.DoubleSide : THREE.FrontSide };
+      const m = coverage ? new THREE.MeshStandardMaterial({ ...cutout, roughness: .8, metalness: 0 }) : new THREE.MeshBasicMaterial(cutout);
+      return patch(m, this.grow[set], { sway, key: coverage ? 'foliage' : 'foliage-soft', foliage: true });
+    };
     const solid = (m, sway = 0) => set => patch(m.clone(), this.grow[set], { sway, key: 'tree' });
     const built = (tex, color, scale) => set => patch(worldMapped(tex, { color, scale, key: `built-${scale}` }), this.grow[set], { key: 'built' });
     const geology = (color, key) => set => {
@@ -228,6 +246,8 @@ export class Props {
           const inView = x + r > view.x0 && x - r < view.x1 && z + r - Math.min(0, base) * .7 > view.y0 && z - r - Math.max(0, h + base) * .7 < view.y1;
           const shadowIn = mesh.castShadow && Math.max(x, sx) + r > view.x0 && Math.min(x, sx) - r < view.x1 && Math.max(z, sz) + r > view.y0 && Math.min(z, sz) - r < view.y1;
           if (!inView && !shadowIn) continue;
+          // Software WebGL fills every leaf card. Keep a stable quarter of the instances so the shore still reads as planted.
+          if (graphicsSupport().software && (j & 3) !== 0) continue;
           dst.set(matrices.subarray(j * 16, j * 16 + 16), c * 16); cdst[c * 3] = colors[j * 3]; cdst[c * 3 + 1] = colors[j * 3 + 1]; cdst[c * 3 + 2] = colors[j * 3 + 2]; c++;
         }
         mesh.count = c; mesh.instanceMatrix.clearUpdateRanges(); mesh.instanceMatrix.addUpdateRange(0, c * 16); mesh.instanceMatrix.needsUpdate = true;
