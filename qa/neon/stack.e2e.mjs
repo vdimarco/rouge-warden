@@ -261,11 +261,52 @@ async function proof(width, height, dpr, tag) {
   page.on("console", (m) => { if (m.type() === "error") errs.push(m.text()); });
   await page.goto(GAME + "?seed=4", { waitUntil: "domcontentloaded" });
   await page.waitForFunction(() => window.__test && __test.ready());
+  await page.waitForTimeout(180);
+  const attract = await page.evaluate(() => {
+    const v = __test.view();
+    return [[0, 0], [6, 0], [0, 6], [6, 6]].every(([x, y]) => {
+      const p = __test.project(x, y, 0);
+      return p.x >= -0.5 && p.y >= -0.5 && p.x <= v.artW + 0.5 && p.y <= v.artH + 0.5;
+    });
+  });
+  check(attract, tag + " attract keeps the whole block in frame");
+  await page.screenshot({ path: OUT + "/" + tag + "-open.png" });
   await page.evaluate(() => { __test.enter(); __test.moveTo(2.5, 2.5); __test.forceCutaway(false); __test.setTilt(55); __test.setYaw(20); });
   await page.waitForTimeout(220);
   const view = await page.evaluate(() => __test.view());
   check(view.artW >= 256 && view.artW <= 320, tag + " art width " + view.artW + " stays in 256..320");
   check(view.ratio <= 2, tag + " buffer ratio " + view.ratio + " is at most 2");
+  const framed = await page.evaluate(() => {
+    const v = __test.view();
+    const box = document.querySelector("canvas").getBoundingClientRect();
+    const corners = [[0, 0], [6, 0], [0, 6], [6, 6]].map(([x, y]) => {
+      const p = __test.project(x, y, 0);
+      return { x: p.x, y: p.y };
+    });
+    const inside = corners.every((p) => p.x >= -0.5 && p.y >= -0.5 && p.x <= v.artW + 0.5 && p.y <= v.artH + 0.5);
+    const st = __test.state();
+    const rp = __test.project(st.player.x, st.player.y, 16);
+    let minx = 1e9, miny = 1e9, maxx = -1, maxy = -1, n = 0;
+    const x0 = Math.max(0, Math.floor(rp.x - 14)), x1 = Math.min(v.artW, Math.ceil(rp.x + 14));
+    const y0 = Math.max(0, Math.floor(rp.y - 28)), y1 = Math.min(v.artH, Math.ceil(rp.y + 22));
+    for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
+      const c = __test.pixel(x, y);
+      const ochre = c[0] > 110 && c[0] < 215 && c[1] > 55 && c[1] < 170 && c[2] < 100 && c[0] > c[2] + 40;
+      if (!ochre) continue;
+      n++;
+      if (x < minx) minx = x;
+      if (y < miny) miny = y;
+      if (x > maxx) maxx = x;
+      if (y > maxy) maxy = y;
+    }
+    return {
+      inside, corners, n, w: maxx - minx + 1, h: maxy - miny + 1,
+      cssW: box.width, cssH: box.height, vw: innerWidth, vh: innerHeight, ox: v.ox, oy: v.oy,
+    };
+  });
+  check(framed.inside, tag + " block corners stay inside at tilt 55 (" + framed.corners.map((p) => Math.round(p.x) + "," + Math.round(p.y)).join(" ") + ")");
+  check(framed.cssW >= width * 0.95 && framed.cssH >= height * 0.95, tag + " canvas fills the viewport (" + Math.round(framed.cssW) + "x" + Math.round(framed.cssH) + " of " + framed.vw + "x" + framed.vh + ")");
+  check(framed.n > 4 && framed.h > framed.w, tag + " runner is taller than wide (" + framed.w + "x" + framed.h + ", " + framed.n + " px)");
   await page.screenshot({ path: OUT + "/" + tag + "-block55.png" });
   await page.evaluate(() => __test.setTilt(20));
   await page.waitForTimeout(160);
@@ -309,26 +350,30 @@ async function proof(width, height, dpr, tag) {
   await page.screenshot({ path: OUT + "/" + tag + "-signs-on.png" });
 
   const sil = await page.evaluate(async () => {
-    __test.moveTo(4.5, 1.5);
+    __test.moveTo(4.5, 2.5);
     __test.setYaw(0);
     __test.setTilt(55);
-    __test.forceCutaway(true);
+    __test.forceCutaway(false);
     await new Promise((r) => setTimeout(r, 300));
     const st = __test.state();
-    const p = __test.project(st.player.x, st.player.y, 8);
+    const p = __test.project(st.player.x, st.player.y, 18);
     const v = __test.view();
-    let near = 0;
-    for (let y = Math.max(0, Math.floor(p.y - 24)); y < Math.min(v.artH, p.y + 24); y++) {
-      for (let x = Math.max(0, Math.floor(p.x - 16)); x < Math.min(v.artW, p.x + 16); x++) {
+    let near = 0, minx = 1e9, miny = 1e9, maxx = -1, maxy = -1;
+    for (let y = Math.max(0, Math.floor(p.y - 36)); y < Math.min(v.artH, p.y + 36); y++) {
+      for (let x = Math.max(0, Math.floor(p.x - 24)); x < Math.min(v.artW, p.x + 24); x++) {
         const c = __test.pixel(x, y);
-        if (c[0] > 220 && c[1] > 210 && c[2] > 190) near++;
+        if (c[0] > 220 && c[1] > 210 && c[2] > 190) {
+          near++;
+          if (x < minx) minx = x;
+          if (y < miny) miny = y;
+          if (x > maxx) maxx = x;
+          if (y > maxy) maxy = y;
+        }
       }
     }
-    __test.forceCutaway(false);
-    await new Promise((r) => setTimeout(r, 250));
-    return { near, slices: st.slices, full: __test.state().slices, p };
+    return { near, w: maxx - minx + 1, h: maxy - miny + 1, p };
   });
-  check(sil.slices < sil.full && sil.near > 8, tag + " paper silhouette sits on the runner (" + sil.near + " px, slices " + sil.slices + " vs " + sil.full + ")");
+  check(sil.near > 8 && sil.h > sil.w, tag + " paper figure covers the runner (" + sil.near + " px, " + sil.w + "x" + sil.h + ")");
   await page.screenshot({ path: OUT + "/" + tag + "-silhouette.png" });
   const nums = await page.evaluate(() => __test.state());
   console.log("  nums  " + tag + " drawCalls=" + nums.drawCalls + " slices=" + nums.slices + " frameMs=" + nums.frameMs.toFixed(1) + " fps=" + nums.fps.toFixed(1) + " art=" + view.artW + " ratio=" + view.ratio);

@@ -57,6 +57,10 @@ vec3 pal(float id) { return texture(uPal, vec2((id + 0.5) / 16.0, 0.5)).rgb; }
 void main() {
   vec4 t = texture(uAtlas, vUV);
   if (t.a < 0.5) discard;
+  if (uPass > 0.5) {
+    o = vec4(pal(9.0), 1.0);
+    return;
+  }
   float face = t.g * 255.0;
   float id = t.r * 255.0;
   float fade = fadeOf(vSign);
@@ -76,7 +80,6 @@ void main() {
   float isNeon = step(4.5, id) * step(id, 8.5);
   col = mix(col, base, isNeon);
   float runner = step(abs(vKind - 1.0), 0.25);
-  col = mix(col, pal(9.0), runner * side * step(0.55, dot(n.xz, uRim)));
   col = mix(col, pal(1.0), step(abs(vKind - 2.0), 0.25));
   col = mix(col, uHaze, clamp(vW.y / 48.0, 0.0, 1.0) * 0.28 * (1.0 - isNeon) * (1.0 - runner));
   float wall = step(side, 0.0);
@@ -104,8 +107,6 @@ precision highp float;
 uniform sampler2D uAlb;
 uniform vec2 uDrop[60];
 uniform vec3 uSmog;
-uniform vec3 uPaper;
-uniform vec4 uSil;
 uniform vec4 uHalo[8];
 uniform vec4 uHaloC[8];
 uniform highp float uTime;
@@ -125,9 +126,6 @@ void main() {
     float ring = step(abs(distance(pix, uHalo[i].xy) - 5.0), 0.5) * step(0.2, uHalo[i].z) * dither;
     col = mix(col, uHaloC[i].rgb, ring);
   }
-  vec2 box = abs(pix - uSil.xy);
-  float sil = step(box.x, uSil.z) * step(box.y, uSil.z * 1.7) * step(0.5, uSil.w);
-  col = mix(col, uPaper, sil);
   o = vec4(col, 1.0);
 }`;
 
@@ -135,8 +133,9 @@ const FULL = `#version 300 es
 precision highp float;
 out vec2 vUV;
 void main() {
+  // p is 0 or 2. The visible half of this triangle is UV 0..1, so vUV stays p.
   vec2 p = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2));
-  vUV = p * 0.5;
+  vUV = p;
   gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0);
 }`;
 
@@ -372,27 +371,22 @@ export function createRenderer(canvas, atlas, palette) {
     api.drawCalls++;
     api.slices += count;
   }
-  api.resize = (backW, backH, cssW, cssH, dpr) => {
+  api.resize = (cssW, cssH, dpr, ratio) => {
     const ref = Math.min(dpr || 1, 2);
-    const targetW = Math.max(1, (cssW || backW) * ref);
-    const targetH = Math.max(1, (cssH || backH) * ref);
-    let scale = Math.max(1, Math.ceil(targetW / 320));
-    let artW = Math.floor(targetW / scale);
-    let artH = Math.max(2, Math.floor(targetH / scale));
-    while (artW > 320 && scale < 32) {
-      scale++;
-      artW = Math.floor(targetW / scale);
-      artH = Math.max(2, Math.floor(targetH / scale));
+    const targetW = Math.max(1, cssW * ref);
+    let step = Math.max(1, Math.ceil(targetW / 320));
+    let artW = Math.floor(targetW / step);
+    while (artW > 320 && step < 32) {
+      step++;
+      artW = Math.floor(targetW / step);
     }
-    if (artW < 256) {
-      artW = 256;
-      artH = Math.max(2, Math.round((cssH || backH) * (artW / Math.max(1, cssW || backW))));
-    }
-    const blit = Math.max(1, Math.floor(Math.min(backW / artW, backH / artH)));
-    const ox = Math.floor((backW - artW * blit) / 2);
-    const oy = Math.floor((backH - artH * blit) / 2);
-    api.view = { artW, artH, scale: blit, ox, oy, backW, backH, cssW: cssW || backW, cssH: cssH || backH };
-    ensure(artW, artH, (cssW || backW) < 800);
+    if (artW < 256) artW = 256;
+    const artH = Math.max(2, Math.round(artW * cssH / Math.max(1, cssW)));
+    const blit = Math.max(1, Math.floor((cssW * (ratio || 1)) / artW));
+    const backW = artW * blit;
+    const backH = artH * blit;
+    api.view = { artW, artH, scale: blit, ox: 0, oy: 0, backW, backH, cssW, cssH, ratio: ratio || 1 };
+    ensure(artW, artH, cssW < 800);
   };
   api.draw = (scene) => {
     if (lost || !alb) return;
@@ -418,6 +412,18 @@ export function createRenderer(canvas, atlas, palette) {
     gl.clearColor(14 / 255, 16 / 255, 32 / 255, 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     drawStack(0, count);
+    if (scene.runnerPaper && scene.runnerCount > 0) {
+      gl.depthFunc(gl.GREATER);
+      gl.depthMask(false);
+      gl.enable(gl.POLYGON_OFFSET_FILL);
+      gl.polygonOffset(-2, -2);
+      const kept = api.slices;
+      drawStack(1, scene.runnerCount);
+      api.slices = kept;
+      gl.disable(gl.POLYGON_OFFSET_FILL);
+      gl.depthFunc(gl.LESS);
+      gl.depthMask(true);
+    }
     gl.disable(gl.DEPTH_TEST);
     gl.bindFramebuffer(gl.FRAMEBUFFER, comp.fb);
     gl.viewport(0, 0, artW, artH);
@@ -427,8 +433,6 @@ export function createRenderer(canvas, atlas, palette) {
     gl.uniform1i(gl.getUniformLocation(compProg, "uAlb"), 0);
     gl.uniform2fv(gl.getUniformLocation(compProg, "uDrop"), scene.drops);
     gl.uniform3fv(gl.getUniformLocation(compProg, "uSmog"), scene.smog);
-    gl.uniform3fv(gl.getUniformLocation(compProg, "uPaper"), scene.paper);
-    gl.uniform4fv(gl.getUniformLocation(compProg, "uSil"), scene.sil);
     gl.uniform4fv(gl.getUniformLocation(compProg, "uHalo"), scene.halo);
     gl.uniform4fv(gl.getUniformLocation(compProg, "uHaloC"), scene.haloColor);
     gl.uniform1f(gl.getUniformLocation(compProg, "uTime"), scene.time);
@@ -490,7 +494,7 @@ export function createRenderer(canvas, atlas, palette) {
     lost = false;
     alb = light = comp = null;
     boot();
-    api.resize(api.view.backW, api.view.backH, api.view.cssW, api.view.cssH, window.devicePixelRatio || 1);
+    api.resize(api.view.cssW, api.view.cssH, window.devicePixelRatio || 1, api.view.ratio || 1);
   });
   api.lost = () => lost;
   return api;

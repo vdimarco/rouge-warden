@@ -3,7 +3,8 @@ import { TILE, PALETTE, build, pathfind } from "./world.mjs";
 import { createRenderer, lookAt, perspective, mul } from "./render.mjs";
 
 const FOV = 26 * Math.PI / 180;
-const VIS_W = 16 * TILE;
+// Ground span that keeps the 6x6 block inside the frame, with about a tile of margin, at any yaw.
+const SPAN = 10 * TILE;
 const SUN = norm([0.48, 0.84, 0.26]);
 const HAZE = [0x1f / 255, 0x2a / 255, 0x3a / 255];
 const SMOG = [0x8a / 255, 0x83 / 255, 0x78 / 255];
@@ -79,8 +80,13 @@ let lastCam = [0, 0, 0];
 function camera() {
   const tr = tilt * Math.PI / 180;
   const yr = yaw * Math.PI / 180;
-  const focus = [player.x * TILE, 6, player.y * TILE];
-  const dist = (renderer.view.artH / renderer.view.artW) * VIS_W / (2 * Math.tan(FOV / 2));
+  const aspect = renderer.view.artW / Math.max(1, renderer.view.artH);
+  const tan = Math.tan(FOV / 2);
+  const dist = Math.max(SPAN / (2 * tan * aspect), (SPAN * Math.sin(tr)) / (2 * tan));
+  const cx = (attract ? 3 : player.x) * TILE;
+  const cz = (attract ? 3 : player.y) * TILE;
+  const shift = TILE * 0.5;
+  const focus = [cx + Math.sin(yr) * shift, 4, cz + Math.cos(yr) * shift];
   const cam = [
     focus[0] + Math.cos(tr) * Math.sin(yr) * dist,
     focus[1] + Math.sin(tr) * dist,
@@ -104,15 +110,14 @@ function camera() {
 }
 function fit() {
   const cssW = window.innerWidth, cssH = window.innerHeight;
-  const bw = Math.max(2, Math.floor(cssW * ratio));
-  const bh = Math.max(2, Math.floor(cssH * ratio));
   const dpr = window.devicePixelRatio || 1;
-  if (canvas.width !== bw || canvas.height !== bh || renderer.view.cssW !== cssW) {
-    canvas.width = bw;
-    canvas.height = bh;
-    canvas.style.width = cssW + "px";
-    canvas.style.height = cssH + "px";
-    renderer.resize(bw, bh, cssW, cssH, dpr);
+  canvas.style.width = cssW + "px";
+  canvas.style.height = cssH + "px";
+  renderer.resize(cssW, cssH, dpr, ratio);
+  const { backW, backH } = renderer.view;
+  if (canvas.width !== backW || canvas.height !== backH) {
+    canvas.width = backW;
+    canvas.height = backH;
   }
 }
 function planes(dist) {
@@ -201,16 +206,14 @@ function scene() {
   const rl = Math.hypot(rimx, rimz) || 1;
   const vp = mul(proj, view);
   renderer.vp = vp;
-  const runnerP = renderer.project([rx, 8, rz]);
   lights.forEach((l, i) => {
     const p = renderer.project(l._world);
     halo[i * 4] = p.x;
     halo[i * 4 + 1] = renderer.view.artH - p.y;
   });
   return {
-    vp, slices: runner.concat(rest), runnerCount: runner.length,
-    sun: SUN, haze: HAZE, smog: SMOG, paper: [0xf3 / 255, 0xe9 / 255, 0xd6 / 255],
-    sil: [runnerP.x, renderer.view.artH - runnerP.y, 7, cuts.size ? 1 : 0],
+    vp, slices: runner.concat(rest), runnerCount: runner.length, runnerPaper: true,
+    sun: SUN, haze: HAZE, smog: SMOG,
     rim: [rimx / rl, rimz / rl],
     fade: fadeU, lights: uL, lightColor: uC, intensity: uI,
     drops, halo, haloColor: haloC, time, lightsApi: lights,

@@ -392,14 +392,17 @@ export function build(seed) {
 
   for (let s = 0; s < RUNNER.length; s++) {
     const row = RUNNER[s];
-    const pix = new Uint8Array(8 * 8 * 4);
+    const pix = new Uint8Array(8 * 6 * 4);
+    let ink = 0;
     for (let x = 0; x < 8; x++) {
       const ch = row[x];
       if (ch === ".") continue;
+      ink++;
       const col = ch === "#" ? OCHRE : ch === "+" ? PAPER : INK;
-      for (let z = 0; z < 8; z++) stamp(pix, 8, x, z, col, boxFace(x, z, 8, 8), 40 + s * 8);
+      for (let z = 0; z < 6; z++) stamp(pix, 8, x, z, col, boxFace(x, z, 8, 6), 50 + s * 6);
     }
-    slices.push(slice(0, 0, 0.4 + s * 0.72, 4, 4, pack.put(pix, 8, 8), 1, 0, -1, true));
+    if (!ink) continue;
+    slices.push(slice(0, 0, 0.5 + s * 1.45, 4.2, 2.4, pack.put(pix, 8, 6), 1, 0, -1, true));
   }
 
   return {
