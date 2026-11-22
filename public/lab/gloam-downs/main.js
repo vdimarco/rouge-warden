@@ -8,7 +8,8 @@ import { makeCamera as viewCamera } from './ink/webgl/view.mjs';
 import { loadPlace } from './world.js';
 import { makeWalk, makeBody, makeCamera, camLayout, pose, touches, atBeacon, autoTurn, PARAMS, makeFade, fadeOf, eyeOf } from './play.js';
 import { makeCombat, makeMoveLock, asFoes, makeBossCam, yawDiff } from './cameras.js';
-import { ORDER, load, store, wispCount, fresh } from './save.js';
+import { ORDER, LATTICE, load, store, wispCount, fresh } from './save.js';
+import { placeName, nextOf, mapGroups, mapLine, arriveLine, hintOf, startPlace } from './places.js';
 import * as RS from './run-save.js';
 import { STEP, stepCount, startRun, reload, goTo, chooseWick, buy, maxOf, flasksOf, makeRunner, newSeed, WICKS } from './run.js';
 import { nearest, faceYaw, makePost, HITS, clearLine } from './moves.js';
@@ -277,8 +278,7 @@ function updateHud() {
   const got = save.wisps[meta.id]?.length || 0;
   $('where').textContent = meta.name;
   $('count').innerHTML = `<b>◆ ${got}/5</b> wisps · <i>${beaconLit ? 'beacon lit' : 'beacon dark'}</i>`;
-  const others = meta.id === ORDER.at(-1) && ORDER.some(id => !save.lit[id]); // the last place lit before the rest
-  $('hint').textContent = !beaconLit ? meta.hint || 'Light the beacon on the summit.' : others ? 'Other beacons are still dark. Use the map.' : 'The way is open. Use the map, or walk on.';
+  $('hint').textContent = hintOf(save, meta.id, meta.hint, beaconLit);
 }
 // the run's HUD: the health bar with its number and a pip for each flask, then the wisps of this place and the glim carried
 function updateRunHud() {
@@ -317,8 +317,7 @@ function toast(html, ms = 1800) {
   if (RUN) { placeToast(); toastLeft = stepsOf(ms); } else toastTimer = setTimeout(() => t.classList.remove('on'), ms);
 }
 function arrive() {
-  const i = ORDER.indexOf(meta.id);
-  $('arriveN').textContent = `${NUMERAL[i]} · ${['The first place', 'The second place', 'The third place', 'The fourth place', 'The last place'][i]}`;
+  $('arriveN').textContent = arriveLine(meta.id);
   $('arriveName').textContent = meta.name;
   $('arriveSub').textContent = meta.sub || '';
   const a = $('arrive');
@@ -376,26 +375,30 @@ function closePanels() {
   if (was && mode !== 'loading') { mode = 'play'; inp.swallowAll(); canvas.focus?.(); retake(); }
 }
 function openMap() {
-  const box = $('places');
-  box.textContent = '';
-  ORDER.forEach((id, i) => {
-    const open = save.reached.includes(id);
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.disabled = !open;
-    if (meta && id === meta.id) b.setAttribute('aria-current', 'true');
-    const name = NAMES[id];
-    b.innerHTML = `<span class="n">${NUMERAL[i]}</span><b></b><em></em><small></small>`;
-    b.querySelector('b').textContent = open ? name : 'Locked';
-    b.querySelector('small').textContent = open ? (save.lit[id] ? 'Beacon lit' : 'Beacon dark') : 'Light the beacon before it';
-    b.querySelector('em').textContent = open ? `◆ ${save.wisps[id]?.length || 0}/5` : '';
-    b.addEventListener('click', () => { closePanels(); if (id !== meta.id) go(id); });
-    box.appendChild(b);
-  });
-  $('mapLine').textContent = `Wisps found: ${wispCount(save)} of 25.`;
+  // two groups (places.js mapGroups): the downs in #places, then the Gilt Lattice in #lattice, each under its heading; the focus order
+  // follows the page
+  for (const g of mapGroups(save, meta?.id)) {
+    const list = $(g.set === 'downs' ? 'places' : 'lattice');
+    list.textContent = '';
+    $(g.set === 'downs' ? 'downsT' : 'latticeT').textContent = g.title;
+    for (const r of g.rows) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.disabled = !r.open;
+      b.dataset.place = r.id;
+      if (r.current) b.setAttribute('aria-current', 'true');
+      b.innerHTML = `<span class="n">${r.n}</span><b></b><em></em><small></small>`;
+      b.querySelector('b').textContent = r.name;
+      b.querySelector('small').textContent = r.note;
+      b.querySelector('em').textContent = r.wisps;
+      b.addEventListener('click', () => { closePanels(); if (r.id !== meta.id) go(r.id); });
+      list.appendChild(b);
+    }
+  }
+  $('mapLine').textContent = mapLine(save);
   $('map').hidden = false;
   mode = 'map';
-  showCard({ el: $('map'), main: () => box.querySelector('[aria-current="true"]') });
+  showCard({ el: $('map'), main: () => $('map').querySelector('[aria-current="true"]') });
 }
 $('bMap').addEventListener('click', () => {
   if (RUN) { if (mode === 'play') openPause(); else if (mode === 'pause' && !asking) resume(); return; }
@@ -405,7 +408,8 @@ $('bMapClose').addEventListener('click', closePanels);
 $('bLook').addEventListener('click', face);
 $('bStart').addEventListener('click', closePanels);
 $('bEndStay').addEventListener('click', closePanels);
-$('bAgain').addEventListener('click', () => { closePanels(); save.lit = {}; save.time = 0; save.at = 'gaol'; store(disk, save); go('gaol'); });
+// Walk again puts out the five beacons of the downs only: the Lattice keeps its beacons
+$('bAgain').addEventListener('click', () => { closePanels(); for (const id of ORDER) delete save.lit[id]; save.time = 0; save.at = 'gaol'; store(disk, save); go('gaol'); });
 for (const p of panels) $(p).addEventListener('pointerdown', e => { if (e.target === $(p) && p !== 'help') closePanels(); });
 
 /* ---------------- the run's cards ----------------
@@ -682,7 +686,21 @@ function lightBeacon() {
   if (beaconLit) return;
   beaconLit = true;
   setLit(meta.beacon.fire, true);
-  const id = meta.id, next = ORDER[ORDER.indexOf(id) + 1];
+  const id = meta.id;
+  // a Lattice beacon opens the next Lattice place, or tells that the Lattice is lit; the downs' end card, time and best do not change
+  if (LATTICE.includes(id)) {
+    save.lit[id] = true;
+    store(disk, save);
+    updateHud();
+    clearTimeout(beaconTimer);
+    const nx = nextOf(id);
+    if (nx) {
+      toast(`The way opens to <b>${placeName(nx)}</b>`, 2600);
+      beaconTimer = setTimeout(() => { if (meta.id === id && mode === 'play') go(nx); }, 2800);
+    } else toast('Every beacon of the Lattice burns', 2600);
+    return;
+  }
+  const next = ORDER[ORDER.indexOf(id) + 1];
   save.lit[id] = true;
   if (next && !save.reached.includes(next)) save.reached.push(next);
   // the walk ends when all five burn, whatever the order: after Walk again the map still opens every place reached
@@ -864,13 +882,13 @@ async function go(id) {
   $('veil').classList.add('on');
   await new Promise(r => setTimeout(r, still ? 0 : 450));
   loading.classList.remove('done');
-  loadLine.textContent = `Walking to ${NAMES[id]}…`;
+  loadLine.textContent = `Walking to ${placeName(id)}…`;
   $('bRetry').hidden = true;
   progress(0);
   try {
     place = await loadPlace('./worlds/', id, progress);
   } catch (err) {
-    loadLine.textContent = `Could not load ${NAMES[id]} (${err.message}).`;
+    loadLine.textContent = `Could not load ${placeName(id)} (${err.message}).`;
     const r = $('bRetry');
     r.hidden = false;
     r.onclick = () => go(id);
@@ -962,7 +980,7 @@ async function go(id) {
     beaconLit = !!save.lit[id];
     if (!beaconLit) setLit(meta.beacon.fire, false);
     save.at = id;
-    if (!save.reached.includes(id)) save.reached.push(id);
+    if (ORDER.includes(id) && !save.reached.includes(id)) save.reached.push(id);
     store(disk, save);
   }
   pendingRows = new Set(); // the whole world is uploaded on its first frame anyway
@@ -1023,7 +1041,8 @@ function update() {
       else openSummary();
     }
   } else if (mode === 'play') {
-    save.time += STEP;
+    // the walk's time counts on the downs only
+    if (ORDER.includes(meta.id)) save.time += STEP;
     body.step(STEP, input, held.yaw(input, cam.c));
     const s = body.s;
     meta.wisps.forEach((w, i) => { if (!(save.wisps[meta.id] || []).includes(i) && touches(s, w.p)) takeWisp(i); });
@@ -1342,6 +1361,5 @@ window.__gloam = {
     // a reload on the win card shows it over the place that was won, with its beacon burning
     return go(rs.run?.place || (rs.ended?.won && ORDER.includes(rs.ended.place) ? rs.ended.place : ORDER[0]));
   }
-  const start = q.get('place');
-  await go(ORDER.includes(start) && save.reached.includes(start) ? start : save.at || 'gaol');
+  await go(startPlace(q, save));
 })();

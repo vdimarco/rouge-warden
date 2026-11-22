@@ -47,8 +47,25 @@ export function checkPlace({ meta, walk, world, reach }, { gzBytes, frame, world
     ok(L.mean < BUDGET.meanLuma && L.mean > BUDGET.meanMin, `dark but not black: mean luminance ${L.mean.toFixed(3)} in ${BUDGET.meanMin}..${BUDGET.meanLuma}`);
     ok(L.bright >= BUDGET.brightMin && L.bright <= BUDGET.brightMax, `bright accents: ${(L.bright * 100).toFixed(2)}% of pixels over ${BUDGET.brightLuma}`);
   }
+  if (meta.set === 'lattice') for (const r of latticeChecks(meta)) out.push(r);
   // with the foe files baked: this place with its pool, and with the foe files, against the run's budgets
   if (worlds) for (const r of placeChecks(worlds)) if (r.what.startsWith(`${meta.id}:`)) out.push(r);
+  return out;
+}
+/* ---------------- the Gilt Lattice ----------------
+   Two more rules for a place with set: 'lattice' (its JSON is enough: meta.pal, and meta.digital, the slots of its grid or neon ramp):
+   no own colour (slots 1..31) is within an RGB distance of 60 of the wisp colours (slots 39 and 40), so a wisp stays a wisp; and every
+   colour of the digital ramp has a luminance under 0.55, so the grid lines do not pass the bright rule as fire does */
+export const LATTICE_RULES = { wisps: [0x8cf0cc, 0xeefff6], wispDist: 60, digitalLuma: 0.55 };
+const rgbDist = (a, b) => Math.hypot(((a >> 16) & 255) - ((b >> 16) & 255), ((a >> 8) & 255) - ((b >> 8) & 255), (a & 255) - (b & 255));
+export function latticeChecks(meta) {
+  const out = [], pal = meta.pal, R = LATTICE_RULES;
+  const near = [];
+  for (let i = 1; i < 32; i++) for (const w of R.wisps) { const d = rgbDist(pal[i], w); if (d < R.wispDist) near.push(`${i}:${pal[i].toString(16).padStart(6, '0')} (${d.toFixed(0)})`); }
+  out.push({ ok: !near.length, what: `own colours (slots 1..31) ${R.wispDist} or more from the wisp colours${near.length ? `: ${[...new Set(near)].join(' ')}` : ''}` });
+  const dig = Array.isArray(meta.digital) ? meta.digital : [];
+  const hot = dig.filter(i => luma(pal[i]) >= R.digitalLuma).map(i => `${i}:${luma(pal[i]).toFixed(2)}`);
+  out.push({ ok: dig.length > 0 && !hot.length, what: dig.length ? `digital ramp (slots ${dig.join(',')}) under luminance ${R.digitalLuma}${hot.length ? `: ${hot.join(' ')}` : ''}` : 'the place names a grid or neon ramp' });
   return out;
 }
 /* ---------------- the checks of the figure files ---------------- */

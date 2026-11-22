@@ -1,5 +1,6 @@
 // Bake the Gloam Downs places into public/lab/gloam-downs/worlds/.
-//   node bake.mjs                 every place
+//   node bake.mjs                 the five places of the downs (ORDER)
+//   node bake.mjs lattice         the three places of the Gilt Lattice (LATTICE);  node bake.mjs all  all eight
 //   node bake.mjs gaol fen        only these
 //   node bake.mjs gaol --preview  also draw CPU previews (from the start point and from above) into --out (default ./preview)
 //   --out DIR  --w 640 --h 360
@@ -20,6 +21,9 @@ import { zonesOf, zoneOf, zoneJson } from './lib/zones.mjs';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const OUT = path.resolve(HERE, '../../public/lab/gloam-downs/worlds');
 export const ORDER = ['gaol', 'ramparts', 'fen', 'bells', 'barrows'];
+/* The Gilt Lattice: three explorer places, not in the combat run. Their biomes say `run: false` and `set: 'lattice'`: they have no zones
+   (lib/zones.mjs is the run's table), and their JSON has `set` and `digital` (the slots of the grid or neon ramp, for lib/check.mjs) */
+export const LATTICE = ['piazza', 'cupola', 'orrery'];
 
 export async function loadPlace(id) {
   return (await import(`./biomes/${id}.mjs`)).default;
@@ -75,7 +79,10 @@ function scenery(def) {
     // a zone of the combat run, from lib/zones.mjs: it adds nothing to the scenery, only to <id>.json
     // a flight of steps: the walked line from its foot to its head ([x, z] points) and its width, for the stairs check (meta.stairs)
     stair: (line, width) => { marks.stairs.push({ line: line.map(p => [+p[0].toFixed(2), +p[1].toFixed(2)]), width: +width.toFixed(2) }); },
-    zone: zid => { const z = zoneOf(def.id, zid); if (!marks.zones.includes(z)) marks.zones.push(z); return z; },
+    zone: zid => {
+      if (def.run === false) throw new Error(`${def.id}: explorer places have no zones (ctx.zone('${zid}'))`);
+      const z = zoneOf(def.id, zid); if (!marks.zones.includes(z)) marks.zones.push(z); return z;
+    },
     later: (fn) => marks.late.push(fn), // solids that must not block the feet: added after the walk map, baked with the scenery
     glow: (fn) => marks.glow.push(fn) // emissive extras (motes, sky, moon): added after every bake
   };
@@ -84,7 +91,7 @@ function scenery(def) {
   if (process.env.GLOAM_COUNT) { const prev = S.emit; S.emit = (pr, n0, n1) => { if (prev) prev(pr, n0, n1); if (pr) per.set(pr, (per.get(pr) || 0) + n1 - n0); }; }
   def.build(ctx);
   if (!marks.spawn || !marks.beacon || marks.wisps.length !== 5) throw new Error(`${def.id}: needs a spawn, a beacon and five wisps`);
-  const missing = zonesOf(def.id).filter(z => !marks.zones.includes(z)).map(z => z.id);
+  const missing = (def.run === false ? [] : zonesOf(def.id)).filter(z => !marks.zones.includes(z)).map(z => z.id);
   if (missing.length) throw new Error(`${def.id}: lib/zones.mjs has zones the place does not place: ${missing.join(' ')}`);
   return { P, B, S0, S, L, h, marks, ctx, per, warm };
 }
@@ -175,7 +182,13 @@ export function build(def, { zones = true } = {}) {
     stairs: marks.stairs
   };
   // in the module's order, so the JSON's zones equal the module's
-  if (zones) meta.zones = zonesOf(def.id).map(zoneJson);
+  if (zones && def.run !== false) meta.zones = zonesOf(def.id).map(zoneJson);
+  // a place of a second set says so; the five places of the downs write no `set`, so their JSON does not change
+  if (def.set) {
+    meta.set = def.set;
+    const dig = P.at.grid || P.at.neon;
+    if (dig) meta.digital = dig.slice();
+  }
   const stats = {
     splats: world.count, build: Math.round(t1 - t0), walk: Math.round(t2 - t1), reach: Math.round(t2r - t2), bake: Math.round(t3 - t2r),
     avatar: Math.round(t4 - t3), finish: Math.round(t5 - t4), gaps: walk.gaps, cracks: walk.cracks, traps: walk.traps.length, boned: boned.length,
@@ -241,7 +254,7 @@ async function main() {
   const opt = k => { const i = args.indexOf('--' + k); return i >= 0 ? args[i + 1] : undefined; };
   const VAL = new Set(['--out', '--w', '--h', '--worlds']); // the options that take a value; --check, --preview and --no-zones do not
   const ids = args.filter((a, i) => !a.startsWith('--') && !(i > 0 && VAL.has(args[i - 1])));
-  const list = ids.length ? ids : ORDER;
+  const list = (ids.length ? ids : ['downs']).flatMap(id => (id === 'downs' ? ORDER : id === 'lattice' ? LATTICE : id === 'all' ? [...ORDER, ...LATTICE] : [id]));
   const prev = args.includes('--preview'), out = opt('out') || path.join(HERE, 'preview');
   const worlds = opt('worlds') ? path.resolve(opt('worlds')) : OUT;
   for (const id of list) {

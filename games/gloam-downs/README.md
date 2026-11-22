@@ -5,6 +5,7 @@ The five places of `/lab/gloam-downs/` are sculpted and baked here with [Ink Stu
 ```sh
 npm ci --prefix games/gloam-downs
 node games/gloam-downs/bake.mjs                         # bake all five into public/lab/gloam-downs/worlds/
+node games/gloam-downs/bake.mjs lattice                 # bake the three places of the Gilt Lattice (all: the eight)
 node games/gloam-downs/bake.mjs fen --check             # bake one place and check it against the spec
 node games/gloam-downs/bake.mjs fen --check --preview --out /tmp/fen   # also draw CPU pictures: start, wide, beacon, top
 GLOAM_COUNT=1 node games/gloam-downs/bake.mjs fen       # list the heaviest solids (to stay in budget)
@@ -102,6 +103,18 @@ export default {
   - **No trap:** every place that the lamplighter gets to must lead back to the start or to the beacon. To find those places, the reach check also makes wide jumps from each place near a step: on 16 headings, as far as the run carries the jump, over anything lower than the jump's top and under any roof that the feet can pass under. A step across a corner goes through one of the two cells beside it. Wide jumps are more open than the controller, so they find a pocket that only a running jump over a thin wall gets into. They do not count for the beacon and the wisps. A place leads back by the reach check's own walks and jumps. A place that only the controller leaves, on at least 4 of 16 headings at 30 Hz and at 60 Hz, also leads back. Knockback is not tried. The bake fills a trap the size of a crack: a drop of more than 0.6 from the cell beside it, in a hole at most 2 cells across. It comes up to the floor of that cell, or to the lowest floor beside it that is not a drop. The bake prints each cell that it fills, and the number as `traps`. A wider trap, or one that only a jump gets into, fails the bake with its place, because the scenery must give it a way out, such as steps or a ramp. After each search the crack pass runs again for the places that the search now reaches, and the bake prints each crack that it closes then. The bake fails after 4 rounds. `--check` prints `no trap: every reached cell can get back` with the number of trap cells left.
   - The walk file is three `Int16` layers in centimetres, gzipped: the top, the floor under a gap (the top where there is none), and the gap's underside (0 where there is no gap). The JSON names them in `walk.layers`. Each walk file is 102 to 132 KB, and it counts in the 1.5 MB.
 
+## The Gilt Lattice: three explorer places
+
+`piazza`, `cupola` and `orrery` are a second set of places, the Gilt Lattice (`LATTICE` in `bake.mjs` and in `public/lab/gloam-downs/save.js`). The explorer's Map shows them as a second group. The combat run does not have them: they are not in `ORDER`, `lib/zones.mjs`, `music.js` or `run.js`.
+
+- A Lattice biome says `run: false` and `set: 'lattice'`. The bake asks `lib/zones.mjs` for no zones, and `ctx.zone()` stops the bake with "explorer places have no zones".
+- Its JSON has `set: 'lattice'` and `digital`, the palette slots of its `grid` ramp (or `neon` when it has no `grid`), and no `zones`. The five places of the downs write no `set`, so their JSON does not change.
+- `--check` holds a Lattice place to every rule above, and to two more (`latticeChecks()` in `lib/check.mjs`):
+  - no own colour (slots 1..31) is within an RGB distance of 60 of the wisp colours 0x8cf0cc and 0xeefff6 (slots 39 and 40);
+  - every colour of the `digital` ramp has a luminance under 0.55, so the grid lines are not counted as fire by the bright rule.
+- The pools and the figure colour checks are for the five places only (`PLACES` in `lib/check.mjs`).
+- In the page, `places.js` gives the names, the Map's rows and the choice of `?place=`. The first Lattice place is always open. A lit Lattice beacon opens the next Lattice place. The walk's time, best time and end card count the downs only.
+
 ## The combat run: zones, foes and the boss
 
 The page plays the combat run with `?run`. Without it, the page is the explorer. Stage 1 of the run baked these files and data, and stage 2 made the foes fight back, fixed the camera and built the run's HUD and cards. `openspec/changes/add-gloam-downs/design.md` ("The combat run") has the numbers.
@@ -141,6 +154,7 @@ These modules have no DOM unless the list says so, so the Node tests use them as
 - `node qa/lab/gloam-downs-boss.test.mjs`: the Barrow Reeve's mind (`boss.js`): phases, the choice by position, timings at four frame rates, damage, the turn limit, ring, slice and lane hits, the fall and the stored states, and the boss camera over the whole arena (its distance, the boss and the shard rings in view), and the yew that fades in front of a shard ring.
 - `node qa/lab/gloam-downs-boss.sim.mjs [bots] [tries] [seed]`: a boss bot that fights the Barrow Reeve on Barrow Crown's walk map with the game's own moves, runner and boss mind, at skills 0.3, 0.5, 0.7 and 0.9; it prints wins, tries to the first win, fight length and the hits each attack lands (200 bots in about 20 s). `REACT=0.5 SKILLS=1` is a bot with no mistake and a fixed reaction time; `BHP`, `GAP` and `DSWEEP` try the boss's health, gaps and the double sweep's second wind-up. design.md "Measured in stage 3a" has the results.
 - `node qa/lab/gloam-downs-camera.test.mjs`: the follow camera's framing at 14 windows and on the five routes, the Gaol's torn cell and a mouse sweep at every wisp (tight spaces, the framed shot, what the figure covers of the view), the near fade, the combat camera and the boss camera.
+- `node qa/lab/gloam-downs-lattice.test.mjs`: the Gilt Lattice's save rules, the Map's rows, the `?place=` choice and the two colour rules; with the three places baked, their budgets and palettes (`GLOAM_WORLDS=0` skips the baked places).
 - `node qa/lab/gloam-downs-stairs.test.mjs [place ...]`: every flight of steps listed in the places' JSON, walked by the controller in the explorer and the run; no stop may be stuck (`GLOAM_WALKS=<dir>` walks other walk maps; about a minute).
 - `node qa/lab/gloam-downs-foes.test.mjs`: the figures, their clips and poses, the pool, the colours, the budgets, the zones on the baked walk maps, and the bake of the Gaol with and without its zones (`GLOAM_BAKE=0` skips that bake).
 - `node qa/lab/gloam-downs-zones.mjs`: the zones on the walk maps: the wake rule, the guard rule, the cap of 6, the pool slots, the routes, the Ironback walls and the beacon distances.

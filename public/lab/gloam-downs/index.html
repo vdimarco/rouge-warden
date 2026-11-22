@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#05060c">
 <title>Gloam Downs · Cottage Arcade Lab</title>
-<meta name="description" content="Five dark places on rolling hills, sculpted and baked into pixel-art Gaussian splats with Ink Studio. Walk them as a small lamplighter: find the wisps and light the beacon on each summit.">
+<meta name="description" content="Five dark places on rolling hills and three in the Gilt Lattice, sculpted and baked into pixel-art Gaussian splats with Ink Studio. Walk them as a small lamplighter: find the wisps and light the beacon on each summit.">
 <script src="/arcade/quiet.js"></script>
 <link rel="icon" href="/favicon.ico">
 <link rel="stylesheet" href="/lab/kit/lab.css">
@@ -67,6 +67,31 @@
   .places button[aria-current="true"] { border-color: var(--emberd); }
   .places button:disabled { opacity: 0.45; cursor: default; }
   .places button:disabled b { color: var(--ash); }
+  /* the Map's two groups: the downs and the Gilt Lattice, one over the other, side by side in a wide window */
+  .groups { display: grid; gap: 4px 16px; margin: 6px 0 12px; }
+  .groups .group { min-width: 0; }
+  .groups .places { margin: 6px 0 0; }
+  .groups h3 { margin: 4px 0 0; font: 700 13px/1.2 var(--body); letter-spacing: 0.16em; text-transform: uppercase; color: var(--ember); }
+  .groups .lattice h3 { color: #ffd77a; }
+  @media (min-width: 760px) {
+    #map .box { width: min(760px, calc(100vw - 24px)); }
+    .groups { grid-template-columns: 1fr 1fr; }
+  }
+  /* a short window: rows 44 px high with the beacon line beside the wisps, so eight rows and Close fit 320x640 with no scroll */
+  @media (max-height: 700px) {
+    #map { box-sizing: border-box; padding: calc(var(--sat) + 60px) 0 calc(var(--sab) + 6px); }
+    #map .box { padding: 10px 12px; max-height: 100%; }
+    #map h2 { font-size: 20px; }
+    #map p { margin: 2px 0 4px; font-size: 13px; line-height: 1.3; }
+    .groups { margin: 2px 0 8px; gap: 2px 16px; }
+    .groups h3 { margin: 2px 0 0; font-size: 11px; }
+    .groups .places { margin: 3px 0 0; gap: 4px; }
+    #map .places button { grid-template-columns: auto minmax(0, 1fr) auto auto; height: 44px; padding: 0 10px; gap: 0 8px; }
+    #map .places button .n { grid-row: auto; font-size: 15px; }
+    #map .places button b { font-size: 13px; line-height: 1.1; }
+    #map .places button em { grid-row: auto; }
+    #map .places button small { grid-column: auto; font-size: 11px; line-height: 1.1; max-width: 6.5em; }
+  }
   dl.score { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 6px 0 16px; }
   dl.score dt { color: var(--ash); } dl.score dd { margin: 0; text-align: right; font-weight: 700; }
   /* loading */
@@ -206,7 +231,7 @@
 </div>
 <div class="tools" id="tools" hidden>
   <button type="button" id="bLook" title="Turn the view behind the lamplighter (R)">Look</button>
-  <button type="button" id="bMap" title="The five places (M)">Map</button>
+  <button type="button" id="bMap" title="The places (M)">Map</button>
 </div>
 <button type="button" class="jump" id="bJump" hidden>JUMP</button>
 <button type="button" class="act attack" id="bAttack" hidden aria-label="Attack">ATTACK</button>
@@ -234,13 +259,17 @@
     <li>Drag on the right half to look round.</li>
     <li>Press JUMP to jump. Hold it to jump higher.</li>
   </ul>
+  <p id="helpLattice">The map also opens the Gilt Lattice: three more places of marble, gold and light. Its first place is open now.</p>
   <div class="row"><button type="button" class="go" id="bStart">Walk</button></div>
 </div></div>
 
 <div class="panel" id="map" hidden><div class="box" role="dialog" aria-labelledby="mapT">
-  <h2 id="mapT">The downs</h2>
+  <h2 id="mapT">The map</h2>
   <p id="mapLine">Light a beacon to open the way to the next place.</p>
-  <div class="places" id="places"></div>
+  <div class="groups">
+    <section class="group" aria-labelledby="downsT"><h3 id="downsT">The downs</h3><div class="places" id="places"></div></section>
+    <section class="group lattice" aria-labelledby="latticeT"><h3 id="latticeT">The Gilt Lattice</h3><div class="places" id="lattice"></div></section>
+  </div>
   <div class="row"><button type="button" id="bMapClose">Close</button></div>
 </div></div>
 

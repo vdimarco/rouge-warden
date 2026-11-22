@@ -21,7 +21,11 @@ const DIR = fileURLToPath(new URL('../../public/lab/gloam-downs/worlds/', import
 const WALKS = process.env.GLOAM_WALKS ? process.env.GLOAM_WALKS.replace(/\/?$/, '/') : DIR;
 const PLACES = process.argv.slice(2).length ? process.argv.slice(2) : ['gaol', 'ramparts', 'fen', 'bells', 'barrows'];
 // how many flights each place has (the ctx.stair() calls in games/gloam-downs/biomes/), so a flight left out of the JSON is noticed
-const FLIGHTS = { gaol: 3, ramparts: 4, fen: 8, bells: 2, barrows: 1 };
+// The three of the Gilt Lattice are counted from the design (openspec/changes/add-gloam-downs-renaissance/design.md): the Piazza's grand
+// stair, its arcade roof stair and its three terrace stairs; the Cupola's drum ramp and rib stair; the Isles' spiral and straight stairs
+// up from the grid sea. Match each to its biome's ctx.stair() calls after the bake.
+// Run the Lattice alone: node qa/lab/gloam-downs-stairs.test.mjs piazza cupola orrery
+const FLIGHTS = { gaol: 3, ramparts: 4, fen: 8, bells: 2, barrows: 1, piazza: 5, cupola: 2, orrery: 2 };
 let n = 0;
 const pass = (name, data) => { n++; console.log('PASS ' + name + (data ? ' ' + JSON.stringify(data) : '')); };
 if (process.env.GLOAM_WORLDS === '0') { console.log('skipped (GLOAM_WORLDS=0)'); process.exit(0); }
