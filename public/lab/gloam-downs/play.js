@@ -532,8 +532,8 @@ export function makeCamera(walk, o = {}) {
     c.target[0] += (want[0] - c.target[0]) * k;
     c.target[2] += (want[2] - c.target[2]) * k;
     c.target[1] += (want[1] - c.target[1]) * ky;
-    // in a nook, the view leans toward a clear yaw (the framed shot, below)
-    lean(s, dt, wrap(c.yaw - yaw0), looked, sp);
+    // in a nook, the view leans toward a clear yaw (the framed shot, below); a run's camera that has the yaw (ran) leads
+    const leant = lean(s, dt, wrap(c.yaw - yaw0), looked, sp, ran, was);
     // the rise it needs now, and for where the aim and the yaw will be a moment ahead: the larger
     const [tx, ty, tz] = c.target, spin = dt > 0 ? wrap(c.yaw - yaw0) / dt : 0;
     const head = [s.x, s.y + HEAD, s.z], now = solve(tx, ty, tz, c.yaw, head);
@@ -656,6 +656,8 @@ export function makeCamera(walk, o = {}) {
           if (at(most)) { lo = most; if (d < d1) v = 0; } else d = d1;
         }
         at(lo);
+        // the lean held back with the rest of the step's turn: c.off keeps only the share of it on screen
+        c.off -= leant * (1 - lo);
         pitch = Math.min(TOP, c.pitch + c.lift);
       } else {
         at(1);
@@ -675,10 +677,13 @@ export function makeCamera(walk, o = {}) {
      in) and as its ClearShot picks the camera with the best shot. The lean is a turn of c.yaw, so the picture, the way a move goes and
      the fight's bearings stay one yaw. It never takes the view more than SHOT.most from where the player's own turns put it (c.off is
      the lean so far, forgotten once the eye stands at its full distance again). While the player turns the view (the mouse, a stick, a
-     drag), the lean of a step is at most SHOT.share of that step's turn, so every turn shows on screen (85 to 115% of it); with the view
-     still it turns at up to SHOT.turn rad/s, eased. Where no clear yaw is that near, the view stays where the player put it, and the
-     eye comes in with the near fade. */
-  const SHOT = { in: 2, out: 3, clear: 3, step: 15 * Math.PI / 180, most: 60 * Math.PI / 180, share: 0.15, turn: 1.5, run: 3 };
+     drag), the lean of a step is at most SHOT.share of that step's turn, so every turn shows on screen (85 to 115% of it). With the view
+     still the lean would be a turn by itself, so it goes only where the calm camera allows one (autoTurn: the mouse free, motion not
+     reduced, no move held across the view, AUTO.wait s with no look input) and no run camera has the yaw, at up to SHOT.turn rad/s,
+     eased, and it sets c.turning so a held move keeps its world direction. Where the lean may not turn the view, or no clear yaw is
+     that near, the view stays where the player put it, and the eye comes in with the near fade, which leaves the whole figure out
+     from NEAR_FADE.hold in. A wall that holds back part of a step's turn holds back the same part of its lean (c.off keeps the rest). */
+  const SHOT = { in: 2, out: 3, clear: 3, step: 15 * Math.PI / 180, most: 60 * Math.PI / 180, share: 0.15, turn: 0.5, run: 3 };
   // the nearest clear yaw to c.yaw, no more than SHOT.most from the player's own yaw (c.yaw less the lean so far) -> yaw or null
   function clearYaw(x, y, z, head) {
     const chest = [head[0], head[1] - HEAD + CHEST, head[2]], need = Math.min(SHOT.clear, c.want - 0.05);
@@ -695,17 +700,25 @@ export function makeCamera(walk, o = {}) {
     }
     return null;
   }
-  // the lean of this step; turned: the turn of the view so far this step, looked: the player turned it
-  function lean(s, dt, turned, looked, sp) {
-    if (dt <= 0) return;
+  /* the lean of this step; turned: the turn of the view so far this step, looked: the player turned it, took: a run's camera (combat,
+     boss) has the yaw this step, was: the view turned by itself on the step before -> the lean, rad */
+  function lean(s, dt, turned, looked, sp, took, was) {
+    if (dt <= 0) return 0;
     const [x, y, z] = c.target, room = reach(x, y, z, c.yaw, Math.min(TOP, c.pitch + c.lift), c.want);
     c.framing = sp <= SHOT.run && (c.framing ? c.dist < SHOT.out : room < SHOT.in);
-    if (!c.framing) { if (c.dist >= c.want - 0.05) c.off = 0; return; }
+    if (!c.framing) { if (c.dist >= c.want - 0.05) c.off = 0; return 0; }
+    /* with the view still, the lean is a turn by itself: only as the calm camera allows one (autoTurn: not while the mouse is taken,
+       never with reduced motion, nor while a move across the view is held, and only after AUTO.wait with no look input), and never
+       while a run's camera has the yaw or turns it */
+    if (!looked && (took || c.turning || !autoTurn(c))) return 0;
     const goal = clearYaw(x, y, z, [s.x, s.y + HEAD, s.z]);
-    if (goal === null) return;
+    if (goal === null) return 0;
     const lim = looked ? SHOT.share * Math.abs(turned) : SHOT.turn * dt;
     const by = clamp(wrap(goal - c.yaw) * Math.min(1, 8 * dt), -lim, lim);
+    // a lean by itself is a camera that turns by itself: a held move keeps its world direction (cameras.js makeMoveLock)
+    if (!looked && by) { if (!was && !c.turning) c.from = c.yaw; c.turning = true; }
     c.yaw += by; c.off += by;
+    return by;
   }
   function snap(s, yaw) {
     c.off = 0; c.framing = false;
@@ -727,11 +740,15 @@ export function makeCamera(walk, o = {}) {
    its splats is left out, more the nearer the eye, in four steps, and all of them from NEAR_FADE.near in: a screen-door (dithered) fade
    by splat, as Super Mario Odyssey dots Mario out when the camera comes close, and as the gameplay-camera plugins' dithering ("Dither
    Owner") fades the character. A splat near the eye is drawn large, so a figure thinned by a share still covers the view; only one
-   left out whole lets the eye see the floor and the way out. What the player holds stays: the blade and the lantern (the splats on
-   either arm's bone more than 0.3 m from its pivot). eye: the eye's point. -> the share, 0 to 1 */
-export const NEAR_FADE = { near: 0.9, far: 2.2, most: 1, steps: 4 };
+   left out whole lets the eye see the floor and the way out. What the player holds (the blade and the lantern: the splats on either
+   arm's bone more than 0.3 m from its pivot) stays until the eye is within NEAR_FADE.hold of the body, and from there it goes too
+   (share NEAR_FADE.all): seen from closer, the lantern and the blade alone fill the view (in the Gaol's torn cell, an eye 1 m back
+   looking out of the cell showed a lantern and a blade over much of the screen). eye: the eye's point. -> the share, 0 to 1, or
+   NEAR_FADE.all */
+export const NEAR_FADE = { near: 0.9, far: 2.2, most: 1, steps: 4, hold: 1.6, all: 2 };
 export function fadeOf(eye, s) {
   const dy = clamp(eye[1] - s.y, 0.3, 1.3), d = Math.hypot(eye[0] - s.x, eye[1] - s.y - dy, eye[2] - s.z);
+  if (d <= NEAR_FADE.hold) return NEAR_FADE.all;
   const k = clamp((NEAR_FADE.far - d) / (NEAR_FADE.far - NEAR_FADE.near), 0, 1);
   return Math.ceil(k * NEAR_FADE.steps - 1e-9) / NEAR_FADE.steps * NEAR_FADE.most;
 }
@@ -739,7 +756,7 @@ export function fadeOf(eye, s) {
 export const eyeOf = v => { const cp = Math.cos(v.pitch); return [v.target[0] + v.dist * Math.sin(v.yaw) * cp, v.target[1] + v.dist * Math.sin(v.pitch), v.target[2] + v.dist * Math.cos(v.yaw) * cp]; };
 /* the lamplighter's splats that a fade of share k leaves out, in a place's data: a fixed share of each part by a hash of the splat's
    number, so the figure thins evenly; what it holds (the splats on either arm's bone more than 0.3 m from its pivot: the blade and the
-   lantern) stays. Returns set(k): writes the densities (0, or each splat's own) and returns the 512-splat rows it changed (about 14),
+   lantern) stays, but for k = NEAR_FADE.all, which leaves out every splat of the figure. Returns set(k): writes the densities (0, or each splat's own) and returns the 512-splat rows it changed (about 14),
    or none when k is as before */
 export const held = (data, bones, i) => {
   const b = data[i * 16 + 12], name = bones.names[b], pv = bones.pivots[b];
@@ -760,7 +777,8 @@ export function makeFade(data, bones) {
     set(k) {
       if (k === at) return [];
       at = k;
-      for (let i = first; i < end; i++) data[i * 16 + 3] = !keep[i - first] && rank[i - first] < k ? 0 : own[i - first];
+      const all = k >= NEAR_FADE.all;
+      for (let i = first; i < end; i++) data[i * 16 + 3] = all || (!keep[i - first] && rank[i - first] < k) ? 0 : own[i - first];
       const rows = [];
       for (let r = first >> 9; r <= (end - 1) >> 9; r++) rows.push(r);
       return rows;

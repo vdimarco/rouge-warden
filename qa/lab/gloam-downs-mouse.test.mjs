@@ -16,7 +16,7 @@ import fs from 'node:fs';
 import zlib from 'node:zlib';
 import { mouseLook, mouseAct, MOUSE } from '../../public/lab/gloam-downs/input.js';
 import { makeWalk, makeBody, makeCamera, camLayout, across, autoTurn, AUTO } from '../../public/lab/gloam-downs/play.js';
-import { makeCombat, makeBossCam, yawDiff, COMBAT, BOSS } from '../../public/lab/gloam-downs/cameras.js';
+import { makeCombat, makeBossCam, makeMoveLock, yawDiff, COMBAT, BOSS } from '../../public/lab/gloam-downs/cameras.js';
 import { ORDER } from '../../public/lab/gloam-downs/save.js';
 
 const DIR = new URL('../../public/lab/gloam-downs/', import.meta.url);
@@ -327,11 +327,10 @@ if (process.env.GLOAM_WORLDS !== '0') {
 if (process.env.GLOAM_WORLDS !== '0') {
   /* "mouse feels good", in a nook too. A full turn in 6 s, 1° a step, at three spots in the Gaol's torn cell and at every wisp of the
      five places (the camera test's 28 spots), at 1280x720 and 390x844: each way with the mouse, and one way with a stick (0.4 of its
-     2.6 rad/s), then 1.5 s still. On every step the picture turns by 80 to 120% of the player's turn, and the yaw the picture is shown
-     from is the camera's own yaw (cam.c.yaw), which the moves, the soft aim and the fight's bearings read (main.js, run.js, fight.js),
-     so a move goes the way the screen shows. The framed shot's lean never takes it more than 60° from the player's own turns. With
-     the yaws the sweeps show while the framed shot leans, a move held forward, back, left and right goes up, down, left and right on
-     screen, within 15°. The framed shot of 100a12c4 showed the picture from a yaw up to 180° from the mouse's: in the cell it stood
+     2.6 rad/s), then 1.5 s still. On every step the picture turns by 80 to 120% of the player's turn, and the framed shot's lean never
+     takes it more than 60° from the player's own turns; the 1.5 s still never turns it (the lean only goes with a turn the player
+     makes). follow() returns cam.c.yaw itself, which the moves, the soft aim and the fight's bearings read (main.js, run.js, fight.js),
+     so there is one yaw. The framed shot of 100a12c4 showed the picture from a yaw up to 180° from the mouse's: in the cell it stood
      still (under 0.1° of a 1° step) on 68 to 92% of the steps, and a move went up to 180° off the way the screen showed */
   const place = id => {
     const meta = JSON.parse(fs.readFileSync(new URL(`worlds/${id}.json`, DIR), 'utf8'));
@@ -342,18 +341,10 @@ if (process.env.GLOAM_WORLDS !== '0') {
   const spots = [['gaol', 1.6, -1.6], ['gaol', 1.6, -2.1], ['gaol', 1.6, -0.9]];
   for (const id of ORDER) for (const wp of places[id].meta.wisps) spots.push([id, wp.p[0], wp.p[2], wp.p[1]]);
   const wrap = a => Math.atan2(Math.sin(a), Math.cos(a)), ONE = DEG;
-  // the way a move held at (mx, mz) goes, for a view from `yaw`, on open ground: the angle from the screen's own way, in degrees
-  const offScreen = (yaw, mx, mz) => {
-    const b = stand(OPEN, 0, 0);
-    for (let i = 0; i < 20; i++) b.step(STEP, { mx, mz }, yaw);
-    // on screen, up is away from the eye, (-sin yaw, -cos yaw); right is (cos yaw, -sin yaw)
-    const want = [mx * Math.cos(yaw) - mz * Math.sin(yaw), -mx * Math.sin(yaw) - mz * Math.cos(yaw)];
-    return Math.abs(wrap(Math.atan2(b.s.x, b.s.z) - Math.atan2(want[0], want[1]))) / DEG;
-  };
   const rows = [];
-  let leanYaws = [];
+  let leaned = 0;
   for (const [w, h] of [[1280, 720], [390, 844]]) for (const how of ['mouse+', 'mouse-', 'stick']) {
-    let lo = Infinity, hi = 0, off = 0, steps = 0, still = 0, framed = 0, own = 0;
+    let lo = Infinity, hi = 0, off = 0, steps = 0, still = 0, framed = 0, after = 0;
     for (const [id, x, z, wy] of spots) {
       const { walk } = places[id], y = wy === undefined ? walk.floor(x, z) : walk.support(x, z, wy + 0.5) ?? walk.floor(x, z);
       const b = makeBody(walk, { p: [x, y + 0.5, z], yaw: Math.PI }, 38), cam = makeCamera(walk, { yaw: 0, ...camLayout(w, h) });
@@ -364,8 +355,8 @@ if (process.env.GLOAM_WORLDS !== '0') {
         b.step(STEP, {}, cam.c.yaw);
         const turning = i >= 60 && i < 420, inp = !turning ? { mouse: how !== 'stick' } : how === 'stick' ? { ox } : { dyaw: turn, mouse: true };
         const v = cam.follow(b.s, STEP, inp);
-        if (v.yaw !== cam.c.yaw) own++;
         if (i < 60) { prev = v.yaw; mine = v.yaw; continue; }
+        if (i >= 420) after = Math.max(after, Math.abs(wrap(v.yaw - prev)));
         if (turning) {
           mine += turn;
           const r = wrap(v.yaw - prev) / turn;
@@ -373,21 +364,19 @@ if (process.env.GLOAM_WORLDS !== '0') {
           if (Math.abs(wrap(v.yaw - prev)) < 0.1 * DEG) still++;
         }
         off = Math.max(off, Math.abs(wrap(v.yaw - mine)));
-        if (cam.c.framing && Math.abs(cam.c.off) > 0.02) { framed++; if (i % 15 === 0) leanYaws.push(v.yaw); }
+        if (cam.c.framing && Math.abs(cam.c.off) > 0.02) framed++;
         prev = v.yaw;
       }
     }
     const tag = `${w}x${h} ${how}`;
-    assert.equal(own, 0, `${tag}: the picture was shown from another yaw than the camera's on ${own} steps`);
+    assert.equal(after, 0, `${tag}: the view turned by itself after the turn, by up to ${(after / DEG).toFixed(2)}° a step`);
     assert(lo >= 0.8 && hi <= 1.2, `${tag}: a step of the player's turn turned the picture by ${(lo * 100).toFixed(0)} to ${(hi * 100).toFixed(0)}%`);
     assert.equal(still, 0, `${tag}: the picture stood still on ${still} steps of the turn`);
     assert(off <= 60 * DEG + 1e-6, `${tag}: the view stood ${(off / DEG).toFixed(1)}° from the player's own turns`);
     rows.push({ tag, least: r3(lo), most: r3(hi), off: +(off / DEG).toFixed(1), framed });
+    leaned += framed;
   }
-  assert(leanYaws.length >= 20, `the framed shot leaned on only ${leanYaws.length} sampled steps`);
-  let worst = 0;
-  for (const yaw of leanYaws) for (const [mx, mz] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) worst = Math.max(worst, offScreen(yaw, mx, mz));
-  assert(worst <= 15, `a move went ${worst.toFixed(1)}° off the way the screen shows`);
+  assert(leaned >= 20, `the framed shot leaned on only ${leaned} steps`);
   // in the open the mouse is as it was: the view turns by the mouse's turn exactly, and the framed shot never leans
   {
     const b = stand(OPEN, 0, 0), cam = makeCamera(OPEN, { yaw: 0, ...camLayout(1280, 720) });
@@ -402,6 +391,86 @@ if (process.env.GLOAM_WORLDS !== '0') {
     }
     assert(err < 1e-9 && lean === 0, `in the open the view stood ${err} from the mouse's turns, and leaned on ${lean} steps`);
   }
-  pass('a turn in a nook: the picture turns with the mouse and the stick on every step, the view stays within 60° of the player\'s turns, and a move goes the way the screen shows', { rows, sampled: leanYaws.length, moveOff: +worst.toFixed(1) });
+  pass('a turn in a nook: the picture turns with the mouse and the stick on every step, the view stays within 60° of the player\'s turns, and it is still once the turn ends', { rows, leaned });
+
+  /* The lean's own count (c.off) is the lean on screen. Where a wall holds back part of a step's turn (a camera orbiting against a
+     wall), it holds back the same part of that step's lean, so c.off changes by no more than the lean's share of what the step showed:
+     at most 0.15 / 0.85 of the step's turn on screen. A fast turn of the mouse (6 and 3 rad/s, each way) at the same 28 spots, at both
+     sizes, where the wall holds turns back most. In the build of 1974d668 c.off took the whole lean even where the wall held it back */
+  {
+    let steps = 0, worst = 0, held = 0;
+    for (const [w, h] of [[1280, 720], [390, 844]]) for (const rate of [6, -6, 3, -3]) for (const [id, x, z, wy] of spots) {
+      const { walk } = places[id], y = wy === undefined ? walk.floor(x, z) : walk.support(x, z, wy + 0.5) ?? walk.floor(x, z);
+      const b = makeBody(walk, { p: [x, y + 0.5, z], yaw: Math.PI }, 38), cam = makeCamera(walk, { yaw: 0, ...camLayout(w, h) });
+      cam.snap(b.s, 0);
+      for (let i = 0; i < 30; i++) { b.step(STEP, {}, cam.c.yaw); cam.follow(b.s, STEP, { mouse: true }); }
+      let prev = cam.c.yaw, off = cam.c.off;
+      for (let i = 0; i < 240; i++) {
+        b.step(STEP, {}, cam.c.yaw);
+        cam.follow(b.s, STEP, { dyaw: rate * STEP, mouse: true });
+        const shown = Math.abs(wrap(cam.c.yaw - prev)), d = Math.abs(cam.c.off - off);
+        if (cam.c.off !== 0 || cam.c.framing) {
+          steps++;
+          if (shown < 0.85 * Math.abs(rate * STEP)) held++;
+          const over = d - (0.15 / 0.85) * shown;
+          worst = Math.max(worst, over);
+          assert(over <= 1e-9, `${w}x${h} ${id} at ${x.toFixed(1)}, ${z.toFixed(1)}, ${rate} rad/s, step ${i}: c.off changed by ${(d / DEG).toFixed(2)}° on a step that showed ${(shown / DEG).toFixed(2)}°`);
+        }
+        prev = cam.c.yaw; off = cam.c.off;
+      }
+    }
+    pass('a fast turn in a nook: the lean\'s count keeps only the share of the lean that a wall left on screen', { steps, held, worst: r3(worst / DEG) });
+  }
+
+  /* No look input in a nook: the view never turns by itself while the mouse is taken or with reduced motion (spec "A calm camera"). At
+     the same 28 spots, from 24 start yaws (15° apart), at 1280x720 and 390x844: the player sets the yaw with the mouse (1 s of small
+     turns) and then gives no look input for 3 s, with the mouse taken; and again with reduced motion (auto off) and the mouse free; and
+     with the mouse taken and forward held. The yaw does not change at all. With a stick and the mouse free, nothing turns it for
+     AUTO.wait s; after that the lean may turn it at no more than 0.5 rad/s (the figure at 1 m/s or less, so the swing does not), and while it does, a held move keeps its world direction
+     (cameras.js makeMoveLock, which the explorer and the run both use): the yaw the move reads stays where the lean started. The build of
+     1974d668 turned the view by itself in 47 of 672 cases at 1280x720 (up to 43°) with the mouse taken, the same with reduced motion,
+     and a move held forward through the lean curved by up to 37° */
+  {
+    const out = {};
+    for (const [w, h] of [[1280, 720], [390, 844]]) {
+      let cases = 0, turned = 0, worst = 0, leanCases = 0, curve = 0, padRate = 0, early = 0;
+      for (const [id, x, z, wy] of spots) for (let y0 = 0; y0 < 360; y0 += 15) for (const how of ['mouse', 'still', 'mouseW', 'stickW']) {
+        const { walk } = places[id], y = wy === undefined ? walk.floor(x, z) : walk.support(x, z, wy + 0.5) ?? walk.floor(x, z);
+        const b = makeBody(walk, { p: [x, y + 0.5, z], yaw: Math.PI }, 38), cam = makeCamera(walk, { yaw: y0 * DEG, ...camLayout(w, h), auto: how !== 'still' });
+        const lock = makeMoveLock();
+        cam.snap(b.s, y0 * DEG);
+        const mouse = how === 'mouse' || how === 'mouseW';
+        for (let i = 0; i < 60; i++) { b.step(STEP, {}, cam.c.yaw); cam.follow(b.s, STEP, { mouse, dyaw: (i % 2 ? -1 : 1) * 0.2 * DEG }); }
+        const ya = cam.c.yaw, mv = how.endsWith('W') ? { mz: 1 } : {};
+        let most = 0, from = null, prev = cam.c.yaw;
+        for (let i = 0; i < (how === 'stickW' ? 300 : 180); i++) {
+          const read = lock.yaw(mv, cam.c);
+          b.step(STEP, mv, read);
+          cam.follow(b.s, STEP, { mouse, ...mv });
+          const t = i * STEP;
+          if (how !== 'stickW' || t < AUTO.wait - STEP) most = Math.max(most, Math.abs(wrap(cam.c.yaw - ya)));
+          if (how === 'stickW') {
+            // (at over 1 m/s the swing and the turn out of a lane may turn it too, at their own rates)
+            const r = Math.abs(wrap(cam.c.yaw - prev)) / STEP;
+            if (Math.hypot(b.s.vx, b.s.vz) <= 1) padRate = Math.max(padRate, r);
+            if (r > 0 && cam.c.idle <= AUTO.wait) early++;
+            // while the lean turns the view (on this step and the one before), the move reads the same yaw
+            if (cam.c.turning && from !== null) { curve = Math.max(curve, Math.abs(wrap(read - from))); leanCases++; }
+            from = cam.c.turning ? read : null;
+          }
+          prev = cam.c.yaw;
+        }
+        cases++;
+        if (most > 0) turned++;
+        worst = Math.max(worst, most);
+      }
+      const tag = `${w}x${h}`;
+      assert.equal(turned, 0, `${tag}: with no look input the view turned by itself in ${turned} of ${cases} cases, by up to ${(worst / DEG).toFixed(1)}°`);
+      assert(padRate <= 0.5 + 1e-6 && early === 0, `${tag}: with a stick the lean turned at up to ${padRate.toFixed(2)} rad/s, on ${early} steps before the wait`);
+      assert(curve < 1e-9, `${tag}: a held move turned by ${(curve / DEG).toFixed(1)}° while the lean turned the view`);
+      out[tag] = { cases, turned, stickRate: r3(padRate), leanSteps: leanCases, curve: r3(curve / DEG) };
+    }
+    pass('no look input in a nook: the view does not turn by itself with the mouse taken or with reduced motion, and a held move keeps its way through the lean', out);
+  }
 }
 console.log(`${n} checks passed`);

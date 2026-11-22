@@ -660,7 +660,8 @@ async function go(id) {
   cam.snap(body.s, meta.spawn.yaw + Math.PI);
   // in a run, the combat camera turns the view toward the foes (cameras.js); reduced motion keeps it still
   combat = RUN ? makeCombat({ foes: awake, still }) : null;
-  held = RUN ? makeMoveLock() : null;
+  // a held move keeps its world direction while a camera turns by itself: a run's cameras, and the framed shot's lean (play.js)
+  held = makeMoveLock();
   // the fog: the bake set it for a camera 9 back; keep it at the same depths whatever the distance
   fogNear = meta.fog.start * 2 * (meta.fogFar - 9) + 2 * 9 - meta.fogFar;
   // the lamplighter's splats ride bones that the page writes every frame
@@ -753,7 +754,7 @@ function update() {
     }
   } else if (mode === 'play') {
     save.time += STEP;
-    body.step(STEP, input, cam.c.yaw);
+    body.step(STEP, input, held.yaw(input, cam.c));
     const s = body.s;
     meta.wisps.forEach((w, i) => { if (!(save.wisps[meta.id] || []).includes(i) && touches(s, w.p)) takeWisp(i); });
     if (!beaconLit && atBeacon(s, meta.beacon)) lightBeacon();
@@ -868,6 +869,8 @@ window.__gloam = {
     reached: save.reached.slice(),
     // pitch is the player's; view is what is drawn (with the rise over walls), want the layout's distance, foe the combat camera's
     cam: cam ? { yaw: cam.c.yaw, dist: cam.c.dist, pitch: cam.c.pitch, want: cam.c.want, fov: cam.c.fov, aim: cam.c.aim, lift: cam.c.lift, view: view ? view.pitch : null, foe: combat?.foe?.id ?? null, turning: cam.c.turning, idle: cam.c.idle } : null,
+    // the near fade's share now (play.js fadeOf: 0 to 1, or NEAR_FADE.all with the whole figure left out)
+    fade: lampFade?.k ?? 0,
     // the mouse: taken now, the page can take it now, the browser refused it a moment ago, the hint shows, and its words
     mouse: { locked: inp.locked, lockable: inp.lockable, waiting: inp.waiting, hint: !hintEl.hidden, text: hintEl.textContent }
   }),

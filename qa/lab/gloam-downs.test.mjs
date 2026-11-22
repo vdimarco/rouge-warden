@@ -16,7 +16,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
-import { makeWalk, makeBody, makeCamera, pose, reachable, touches, atBeacon, JUMP, PARAMS, makeFade, held } from '../../public/lab/gloam-downs/play.js';
+import { makeWalk, makeBody, makeCamera, pose, reachable, touches, atBeacon, JUMP, PARAMS, makeFade, held, NEAR_FADE } from '../../public/lab/gloam-downs/play.js';
 import { clean, fresh, ORDER, wispCount } from '../../public/lab/gloam-downs/save.js';
 import { closeCracks } from '../../games/gloam-downs/lib/cracks.mjs';
 import { byBeacon, closeWalk, controllerOut, fillTraps, findTraps, standsIn } from '../../games/gloam-downs/lib/traps.mjs';
@@ -81,6 +81,9 @@ for (const id of skipWorlds ? [] : ORDER) {
       }
       assert(bladeLeft >= 150 && lamp >= 30 && Math.abs(gone / rest - k) < 0.03, `${id}: the fade of ${k} left out ${gone} of ${rest} (kept: blade ${bladeLeft}, lantern ${lamp})`);
     }
+    // and at NEAR_FADE.all (the eye within 1.6 m of the body) it leaves out every splat of the figure, the blade and the lantern too
+    fade.set(NEAR_FADE.all);
+    for (let i = B.first; i < B.end; i++) assert.equal(data[i * 16 + 3], 0, `${id}: the whole fade kept splat ${i}`);
     fade.set(0);
     for (let i = B.first; i < B.end; i++) assert.equal(data[i * 16 + 3], before[(i - B.first) * 16 + 3]);
     /* the blade stays over the floor in every pose: at rest, through the walk and run cycle, and through each phase of every move of a
