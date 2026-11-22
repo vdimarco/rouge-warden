@@ -54,7 +54,7 @@ const intervals = [];
 // the run: the sound cues logged across places, the effects' flags (each can be turned off with __gloam.fx), what the effects give
 // this frame, training posts (?test), the fight in this place (fight.js) and the foes' targets
 const cues = [];
-const fx = { stop: true, flash: true, kick: true, zoom: true, grade: true, shake: true };
+const fx = { stop: true, flash: true, kick: true, zoom: true, grade: true, shake: true, trail: true };
 const fxNow = { kick: [0, 0, 0], zoom: 1, bars: 0 };
 const posts = [];
 let foeTargets = () => [], fight = null;
@@ -1147,6 +1147,9 @@ let lookWas = false;
 window.__gloam = {
   state: () => ({
     mode, place: meta?.id, x: body?.s.x, y: body?.s.y, z: body?.s.z, ground: body?.s.ground, yaw: body?.s.yaw,
+    // the move the pose shows (moves.js): its id, phase, share of the phase and steps since it began, or null; trails: swing steps
+    // that laid a trail (fight.js)
+    act: body?.s.act ? { move: body.s.act.move, ph: body.s.act.ph, k: body.s.act.k, t: body.s.act.t } : null, trails: fight?.trails ?? 0,
     wisps: meta ? (RUN ? runner?.wisps.size ?? 0 : save.wisps[meta.id]?.length || 0) : 0, lit: beaconLit, frames, art: { ...art }, target: artTarget, count: world?.count,
     reached: save.reached.slice(),
     // pitch is the player's; view is what is drawn (with the rise over walls), want the layout's distance, foe the combat camera's
@@ -1240,7 +1243,7 @@ window.__gloam = {
     storeRun();
     return runState();
   },
-  fx: (flags = {}) => { for (const k of ['stop', 'flash', 'kick', 'zoom', 'grade', 'shake']) if (k in flags) fx[k] = !!flags[k]; return { ...fx }; },
+  fx: (flags = {}) => { for (const k of ['stop', 'flash', 'kick', 'zoom', 'grade', 'shake', 'trail']) if (k in flags) fx[k] = !!flags[k]; return { ...fx }; },
   sounds: () => cues.map(c => ({ ...c })),
   // the score's state (run-sound.js view): state, place, theme, layers, phase, bpm, bar, the last 32 changes, the mix and the buses
   music: () => (audio ? audio.view() : null),

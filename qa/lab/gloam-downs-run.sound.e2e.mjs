@@ -88,12 +88,15 @@ if (part('run')) {
       g.hold(sp.id, null);
       return { log: g.sounds().slice(from), id: sp.id };
     });
-    const swing = r.log.find(c => c.cue === 'swing'), hit = r.log.find(c => c.cue === 'hit');
-    assert(swing && swing.hit === 'cut1' && swing.wind === 6 && swing.act === 5, JSON.stringify(swing));
+    const swing = r.log.find(c => c.cue === 'swing'), strike = r.log.find(c => c.cue === 'strike'), hit = r.log.find(c => c.cue === 'hit');
+    assert(swing && swing.hit === 'cut1' && swing.wind === 6 && swing.act === 5 && swing.strike === 4, JSON.stringify(swing));
+    // the whoosh is keyed to the move's strike event, and peaks lead steps on, on the hit's own step
+    assert(strike && strike.hit === 'cut1' && strike.step - swing.step === swing.strike && strike.step + strike.lead === hit.step, JSON.stringify([swing, strike, hit]));
+    assert(hit.at >= strike.at && strike.at >= swing.at, `laid out of order: ${swing.at} ${strike.at} ${hit.at}`);
     assert(hit && hit.hit === 'cut1' && hit.on[0] === 'S' && hit.stop === 3, JSON.stringify(hit));
     assert(hit.step - swing.step === 6, `the hit lands ${hit.step - swing.step} steps after the swing`);
-    for (const c of [swing, hit]) assert(Number.isFinite(c.at) && Number.isInteger(c.v), `no at or v: ${JSON.stringify(c)}`);
-    pass('a cut: swing with cut1, wind 6, act 5 on the press; hit with on [S] on the first active step; each with at and v', { swing: { step: swing.step, at: swing.at, v: swing.v }, hit: { step: hit.step, at: hit.at, v: hit.v } });
+    for (const c of [swing, strike, hit]) assert(Number.isFinite(c.at) && Number.isInteger(c.v), `no at or v: ${JSON.stringify(c)}`);
+    pass('a cut: swing with cut1, wind 6, act 5 on the press; strike at its strike step, lead steps before the hit; hit with on [S] on the first active step; each with at and v', { swing: { step: swing.step, at: swing.at, v: swing.v }, hit: { step: hit.step, at: hit.at, v: hit.v } });
     // the Snuffer goes out (its duck is 5 dB), and the duck comes back before the next check
     await G(page, id => { window.__gloam.out(id); window.__gloam.tick(0.5, {}); }, r.id);
     await wait(1000);
@@ -283,14 +286,15 @@ if (part('boss')) {
 }
 
 if (part('more')) {
-  { // the swing's whoosh peaks on the first active step, for a wind-up of 6 steps and of 14
+  { // the swing's whoosh (the draw-back on 'swing', the whoosh on 'strike') peaks on the first active step, for a wind-up of 6 steps and of 14
     const { ctx, page } = await open('?run&test&fresh&seed=7');
     const r = await G(page, async () => {
       const { createMix, createSound } = await import('./sound.js');
       const out = {};
       for (const wind of [6, 14]) {
         const c = new OfflineAudioContext(1, 44100, 44100), mix = createMix(c), fx = createSound(c, { mix });
-        fx.play('swing', 0.1, { hit: 'cut1', wind, act: 5 });
+        fx.play('swing', 0.1, { hit: 'cut1', wind, act: 5, strike: wind - 2 });
+        fx.play('strike', 0.1 + (wind - 2) / 60, { hit: 'cut1', lead: 2, act: 5 });
         const d = (await c.startRendering()).getChannelData(0), w = 441;
         let best = -1, at = 0;
         for (let i = 0; i + w < d.length; i += 44) { let e = 0; for (let k = i; k < i + w; k += 2) e += d[k] * d[k]; if (e > best) { best = e; at = i; } }

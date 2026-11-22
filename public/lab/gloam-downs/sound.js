@@ -18,7 +18,8 @@ const STEP = 1 / 60;
    hit stop; a cue's own `stop` wins). hit: one of the layered hits. */
 export const CUES = {
   // the lamplighter
-  swing: { rank: 1 }, hit: { rank: 3, hit: true }, roll: { rank: 1 }, miss: { rank: 2 }, plunge: { rank: 1 },
+  swing: { rank: 1 }, strike: { rank: 2 }, whiff: { rank: 1 }, recover: { rank: 0 }, hit: { rank: 3, hit: true }, roll: { rank: 1 },
+  miss: { rank: 2 }, plunge: { rank: 1 }, drop: { rank: 1 },
   land: { rank: 3, hit: true, duck: [4, 5] }, drink: { rank: 1 }, heal: { rank: 1 }, hurt: { rank: 3, hit: true, duck: [5, 5] },
   fall: { rank: 3, duck: [9, 9] }, death: { rank: 3 }, heart: { rank: 2 },
   // pickups and the beacon
@@ -145,7 +146,9 @@ export function createMix(ctx, { phone = false } = {}) {
 /* ---------------- the cues ---------------- */
 export function createSound(ctx, { mix, seed = 1, key = 50 } = {}) {
   const vary = makeVary(seed), glimStep = makeGlim(), r = rng(seed ^ 0x51ed);
-  const S = { key, live: [], swing: null, ear: null, played: 0 };
+  // swing: the voices of the swing now sounding (the draw-back and the strike's whoosh), which a roll that cuts the wind-up stops;
+  // dive: the plunge's fall, which the landing stops
+  const S = { key, live: [], swing: [], dive: null, ear: null, played: 0 };
   // two seconds of seeded white noise, shared by every cue (each read starts at its own offset)
   const SR = ctx.sampleRate, noise = ctx.createBuffer(1, Math.round(SR * 2), SR);
   { const d = noise.getChannelData(0), n = rng(seed ^ 0xbeef); for (let i = 0; i < d.length; i++) d[i] = n() * 2 - 1; }
@@ -307,16 +310,49 @@ export function createSound(ctx, { mix, seed = 1, key = 50 } = {}) {
      A recipe returns the voice's length in seconds */
   const R = {
     swing(V, t, o, x) {
-      // the whoosh rises over the wind-up, peaks on the first active step and falls over the active time and a little after
-      const wind = (o.wind || 6) * STEP, act = (o.act || 5) * STEP, fin = o.hit === 'fin';
-      const peak = t + wind, f0 = (fin ? 400 : 600) * x, f1 = (fin ? 2000 : 3000) * x;
+      // the draw-back over the wind-up: a short low rush of cloth and air as the blade goes back, which fades by the wind-up's top
+      // (the strike step). The whoosh is the 'strike' cue's, so each part lands on its own move event (moves.js, play.js SWINGS)
+      const fin = o.hit === 'fin', up = Math.max(2, o.strike ?? Math.max(2, (o.wind || 6) - 2)) * STEP;
       hiss(V, t, {
-        f: f0, f1, q: fin ? 0.9 : 1.4, dur: wind + act + 0.12, glide: wind, tail: 0.05,
-        shape: (g, t0) => { g.setValueAtTime(0.0001, t0); g.exponentialRampToValueAtTime(fin ? 0.75 : 0.6, peak); g.exponentialRampToValueAtTime(0.001, peak + act + 0.1); }
+        f: (fin ? 380 : 520) * x, f1: (fin ? 760 : 1100) * x, q: 1.1, dur: up + 0.04, glide: up,
+        shape: (g, t0) => { g.setValueAtTime(0.0001, t0); g.exponentialRampToValueAtTime(fin ? 0.3 : 0.22, t0 + up * 0.6); g.exponentialRampToValueAtTime(0.001, t0 + up + 0.03); }
       });
-      if (fin) hiss(V, t, { f: 300, q: 0.8, dur: 0.08, gain: 0.35, type: 'lowpass' });
-      S.swing = { V, peak };
-      return wind + act + 0.2;
+      S.swing = [{ V, peak: t + up }];
+      return up + 0.1;
+    },
+    strike(V, t, o, x) {
+      // the whoosh: it starts as the blade leaves the wind-up's top, rises fast and peaks on the first active step (lead steps on),
+      // where the hit lands, then falls over the active time. A bright edge of air sits on the peak; the finisher adds a low push
+      const lead = Math.max(1, o.lead ?? 2) * STEP, act = (o.act || 5) * STEP, fin = o.hit === 'fin', back = o.hit === 'cut2';
+      const peak = t + lead, f0 = (fin ? 450 : back ? 800 : 650) * x, f1 = (fin ? 2200 : back ? 3600 : 3000) * x;
+      hiss(V, t, {
+        f: f0, f1, q: fin ? 0.9 : 1.3, dur: lead + act + 0.12, glide: lead, tail: 0.05,
+        shape: (g, t0) => { g.setValueAtTime(0.0001, t0); g.exponentialRampToValueAtTime(fin ? 0.85 : 0.7, peak); g.exponentialRampToValueAtTime(0.001, peak + act + 0.1); }
+      });
+      hiss(V, t, {
+        f: 6500 * x, q: 2.2, dur: lead + act * 0.6, tail: 0.03,
+        shape: (g, t0) => { g.setValueAtTime(0.0001, t0); g.exponentialRampToValueAtTime(fin ? 0.3 : 0.25, peak); g.exponentialRampToValueAtTime(0.001, peak + act * 0.6); }
+      });
+      if (fin) hiss(V, t, {
+        f: 320, q: 0.8, dur: lead + 0.1, type: 'lowpass',
+        shape: (g, t0) => { g.setValueAtTime(0.0001, t0); g.exponentialRampToValueAtTime(0.5, peak); g.exponentialRampToValueAtTime(0.001, peak + 0.09); }
+      });
+      S.swing.push({ V, peak });
+      return lead + act + 0.2;
+    },
+    whiff(V, t, o, x) {
+      // the blade met nothing: the air closes behind it, a soft falling rush (longer and lower for the finisher)
+      const fin = o.hit === 'fin';
+      hiss(V, t, { f: (fin ? 1300 : 1900) * x, f1: (fin ? 380 : 600) * x, q: 0.9, dur: fin ? 0.2 : 0.13, gain: fin ? 0.32 : 0.26, attack: 0.008 });
+      return 0.3;
+    },
+    recover(V, t, o, x) {
+      // the settle into the guard: the lantern's chain and the coat, very soft (a heavier settle after the finisher)
+      const fin = o.hit === 'fin';
+      tick(V, t + 0.01, 3400 * x, 0.015, fin ? 0.35 : 0.22);
+      tick(V, t + 0.05, 2900 * x, 0.012, fin ? 0.28 : 0.16);
+      hiss(V, t, { f: 700 * x, q: 0.8, dur: fin ? 0.14 : 0.08, gain: fin ? 0.22 : 0.14, attack: 0.01 });
+      return 0.25;
     },
     hit(V, t, o, x) {
       const spec = HITS[o.hit] || HITS.cut1;
@@ -324,6 +360,7 @@ export function createSound(ctx, { mix, seed = 1, key = 50 } = {}) {
       return 0.4 + (spec.ring ? 0.3 : 0);
     },
     land(V, t, o, x) {
+      if (S.dive) { kill(S.dive, t); S.dive = null; }
       layered(V, t, HITS.plunge, MATERIAL[(o.on || [])[0]] || 'earth', x);
       return 0.5;
     },
@@ -349,7 +386,8 @@ export function createSound(ctx, { mix, seed = 1, key = 50 } = {}) {
       return 0.4;
     },
     roll(V, t, o, x) {
-      if (o.cut && S.swing && S.swing.peak > t) { kill(S.swing.V, t); S.swing = null; }
+      // a roll that cuts the wind-up stops the draw-back and any whoosh that has not peaked
+      if (o.cut) { for (const w of S.swing) if (w.peak > t) kill(w.V, t); S.swing = []; }
       hiss(V, t, { f: 300 * x, f1: 1200 * x, q: 0.7, dur: 0.3, gain: 0.45, attack: 0.06, type: 'bandpass' });
       hiss(V, t + 0.3, { f: 2400, q: 1.5, dur: 0.05, gain: 0.25 });
       return 0.4;
@@ -362,9 +400,19 @@ export function createSound(ctx, { mix, seed = 1, key = 50 } = {}) {
       return 0.5;
     },
     plunge(V, t, o, x) {
+      // the hang: air drawn in over the hang's steps; the 'drop' cue's rush takes over as the fall starts
       const hang = (o.hang || 5) * STEP;
-      hiss(V, t, { f: 800 * x, f1: 3500 * x, q: 1, dur: hang + 0.25, gain: 0.35, attack: hang });
-      return hang + 0.3;
+      hiss(V, t, { f: 800 * x, f1: 3500 * x, q: 1, dur: hang + 0.04, glide: hang, gain: 0.35, attack: hang });
+      return hang + 0.1;
+    },
+    drop(V, t, o, x) {
+      // the fall of the plunge: a rush that swells and rises until the landing, which stops it (0.6 s at most)
+      hiss(V, t, {
+        f: 500 * x, f1: 2400 * x, q: 0.8, dur: 0.6, glide: 0.5, type: 'bandpass',
+        shape: (g, t0) => { g.setValueAtTime(0.0001, t0); g.exponentialRampToValueAtTime(0.5, t0 + 0.25); g.setValueAtTime(0.5, t0 + 0.5); g.exponentialRampToValueAtTime(0.001, t0 + 0.6); }
+      });
+      S.dive = V;
+      return 0.65;
     },
     drink(V, t, o, x) {
       hiss(V, t, { f: 2200, q: 3, dur: 0.03, gain: 0.4 });
@@ -600,7 +648,7 @@ export function createSound(ctx, { mix, seed = 1, key = 50 } = {}) {
   }
   // each cue's level on the effects bus (dB), set by ear and by the demo's loudness figures (design.md "Loudness")
   const LEVEL = {
-    swing: -6, hit: -2, land: 0, out: -2, hurt: 0, roll: -8, miss: -6, plunge: -8, drink: -10, heal: -8, fall: 0, death: -13, heart: -6,
+    swing: -12, strike: -6, whiff: -10, recover: -18, drop: -9, hit: -2, land: 0, out: -2, hurt: 0, roll: -8, miss: -6, plunge: -8, drink: -10, heal: -8, fall: 0, death: -13, heart: -6,
     glim: -14, wisp: -8, beacon: -10, scrape: -6, whistle: -7, hum: -6, paw: -5, rear: -9, coal: -6, pulse: -4, charge: -6, slam: 7,
     clang: -10, cracks: -8, rise: -9, reeve: -14, bossBar: -10, crook: -5, sweep: -1, cage: -5, chime: -6, shards: -7, shard: -6, crouch: -5,
     lunge: -5, stumble: -7, light: -8, card: -12, focus: -14, choice: -10, buy: -10, refuse: -10
@@ -634,7 +682,7 @@ export function createSound(ctx, { mix, seed = 1, key = 50 } = {}) {
     return { v: va.v, at: t, ...(V.glim !== undefined ? { glim: V.glim } : {}) };
   };
   // the pause panel stops the effects: every voice fades out
-  S.hush = (t = ctx.currentTime) => { for (const V of S.live.slice()) kill(V, t); S.swing = null; };
+  S.hush = (t = ctx.currentTime) => { for (const V of S.live.slice()) kill(V, t); S.swing = []; S.dive = null; };
   S.setKey = m => { S.key = m; };
   S.setEar = ear => { S.ear = ear; };
   S.voices = () => { prune(ctx.currentTime); return S.live.length; };

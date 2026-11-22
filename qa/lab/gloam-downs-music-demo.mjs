@@ -194,7 +194,7 @@ const T0 = 0.2;
 // ---- the cues
 if (want('cues')) {
   const O = {
-    swing: { hit: 'cut1', wind: 6, act: 5 }, hit: { hit: 'cut1', on: ['S'], stop: 3 }, land: { fallen: 2, on: ['S'], stop: 5 }, out: { type: 'S' }, hurt: { dmg: 16 },
+    swing: { hit: 'cut1', wind: 6, act: 5, strike: 4 }, strike: { hit: 'cut1', lead: 2, act: 5 }, whiff: { hit: 'cut1' }, recover: { hit: 'fin' }, hit: { hit: 'cut1', on: ['S'], stop: 3 }, land: { fallen: 2, on: ['S'], stop: 5 }, out: { type: 'S' }, hurt: { dmg: 16 },
     slam: { type: 'B', foe: 'reeve' }, fall: {}, miss: { shave: true }, plunge: { hang: 5 }
   };
   for (const name of info.cues) {
@@ -202,8 +202,14 @@ if (want('cues')) {
     await render(`cue-${name}`, { len: 3.8, key: info.keys.gaol - 12, acts: [{ t: T0, cue: name, o: O[name] || {} }] });
   }
   await render('cue-fall-reeve', { len: 4, acts: [{ t: T0, cue: 'fall', o: { foe: 'reeve' } }] });
-  await render('cue-swing-fin', { len: 2, acts: [{ t: T0, cue: 'swing', o: { hit: 'fin', wind: 12, act: 6 } }] });
-  await render('cue-swing-wind14', { len: 2, acts: [{ t: T0, cue: 'swing', o: { hit: 'cut1', wind: 14, act: 5 } }] });
+  // a whole swing as the moves log it: the draw-back, the whoosh from the strike step, and the whiff and recover (the blade meets nothing)
+  const whole = (id, w, act, st) => [{ t: T0, cue: 'swing', o: { hit: id, wind: w, act, strike: st } }, { t: T0 + st / 60, cue: 'strike', o: { hit: id, lead: w - st, act } },
+    { t: T0 + (w + act) / 60, cue: 'whiff', o: { hit: id } }, { t: T0 + (w + act) / 60, cue: 'recover', o: { hit: id } }];
+  await render('cue-swing-cut1-whole', { len: 2, acts: whole('cut1', 6, 5, 4) });
+  await render('cue-swing-fin', { len: 2, acts: whole('fin', 12, 6, 9) });
+  await render('cue-swing-wind14', { len: 2, acts: whole('cut1', 14, 5, 12) });
+  // the plunge as the moves log it: the hang, the drop, and the landing 0.3 s into the fall
+  await render('cue-plunge-whole', { len: 2.5, acts: [{ t: T0, cue: 'plunge', o: { hang: 5 } }, { t: T0 + 5 / 60, cue: 'drop', o: {} }, { t: T0 + 5 / 60 + 0.3, cue: 'land', o: { fallen: 2, on: ['S'], stop: 5 } }] });
   // the hit cues: each of the 4 variants
   const HITS = [
     ['hit-cut1', 'hit', { hit: 'cut1', on: ['S'], stop: 3 }], ['hit-cut2', 'hit', { hit: 'cut2', on: ['S'], stop: 3 }], ['hit-fin', 'hit', { hit: 'fin', on: ['S'], stop: 5 }],
@@ -255,12 +261,15 @@ function fight() {
     at(s + 0.45, 'roll', {}); if (k === 2) at(s + 0.5, 'miss', {});
     for (const [i, id, w, act] of [[0, 'cut1', 6, 5], [1, 'cut2', 6, 5], [2, 'fin', 12, 6]]) {
       const t = s + 1.1 + i * 0.5;
-      at(t, 'swing', { hit: id, wind: w, act });
+      const st = id === 'fin' ? 9 : 4;
+      at(t, 'swing', { hit: id, wind: w, act, strike: st });
+      at(t + st / 60, 'strike', { hit: id, lead: w - st, act });
+      at(t + (w + act) / 60, 'recover', { hit: id });
       at(t + w / 60, 'hit', { hit: id, on: ['S'], stop: id === 'fin' ? 5 : 3 });
     }
     if (k % 2) { at(s + 2.4, 'out', { type: k === 7 ? 'I' : 'S' }); for (let g = 0; g < 5; g++) at(s + 2.8 + g * 0.18, 'glim'); }
     if (k === 3) { at(s + 3, 'rear', { pos: [0, -2] }); at(s + 3.75, 'hurt', { dmg: 20 }); }
-    if (k === 4) { at(s + 3.2, 'plunge', { hang: 5 }); at(s + 3.5, 'land', { fallen: 2, on: ['S'], stop: 5 }); }
+    if (k === 4) { at(s + 3.2, 'plunge', { hang: 5 }); at(s + 3.2 + 5 / 60, 'drop'); at(s + 3.5, 'land', { fallen: 2, on: ['S'], stop: 5 }); }
   }
   at(33, 'drink'); at(33.8, 'heal');
   a.push({ t: 34, score: 'setCombat', args: [false] });

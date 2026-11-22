@@ -10,6 +10,7 @@ import { makeSparks, OVER } from './sparks.js';
 import { makeFeel, gradeFloats, FEEL } from './feel.js';
 import { fitRing, fitLane, WATER } from './markers.js';
 import { writeBone, rotX, rotZ } from './pool.js';
+import { bladeAt, SWINGS } from './play.js';
 
 
 const STEP = 1 / 60;
@@ -27,6 +28,11 @@ export const tellGrow = (view, artH) => {
   return Math.max(1, Math.min(TELL.max, TELL.px / px));
 };
 const NOTCH = { size: 30, gap: 8, most: 3, keepers: 180 };
+/* The trail of a swing: from the step the strike leaves the wind-up's top to two steps after the active time, a smear along the
+   blade's own arc at three points of the blade (from 0.55 of its length to the tip), sampled `sub` times a step at fractional steps
+   of the swing, so each piece follows the curve and not the chord. Lamp colours (slots 46 and 47, the blade's lit edge) for the cuts,
+   and gold (36) at the finisher's tip. A piece shorter than `min` (a slow blade) is left out. Life in seconds, on play steps */
+export const TRAIL = { ks: [0.55, 0.78, 1], cols: [46, 46, 47], fin: [46, 36, 36], sub: 3, min: 0.06, w: { cut1: 0.055, cut2: 0.055, fin: 0.075 }, life: { cut1: 0.1, cut2: 0.1, fin: 0.16 } };
 const mul = (a, b) => [
   a[0] * b[0] + a[1] * b[3] + a[2] * b[6], a[0] * b[1] + a[1] * b[4] + a[2] * b[7], a[0] * b[2] + a[1] * b[5] + a[2] * b[8],
   a[3] * b[0] + a[4] * b[3] + a[5] * b[6], a[3] * b[1] + a[4] * b[4] + a[5] * b[7], a[3] * b[2] + a[4] * b[5] + a[5] * b[8],
@@ -88,7 +94,8 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
     if (boss) { boss.think(ev, play); embers(); }
     const run = rs.run, share = run ? run.hp / Math.max(1, max()) : 1;
     for (const c of feel.tick(share)) { ev.push({ type: 'cue', cue: c }); if (!still) G.beatTo = G.game + 12; }
-    sparks?.update(STEP);
+    if (play) trail();
+    sparks?.update(STEP, play);
     syncSlots();
     if (boss) syncBoss();
   };
@@ -100,6 +107,18 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
     const p = G.cageAt || [boss.x + Math.sin(boss.yaw) * 0.3, boss.y + 2.12, boss.z + Math.cos(boss.yaw) * 0.3], k = g.at / g.n;
     sparks.flash(p[0], p[1], p[2], 36, 0.2 + 0.22 * k, 0.11);
     sparks.sparks(p[0], p[1], p[2], 35, 1 + Math.round(2 * k), 1.4);
+  }
+  function trail() {
+    const s = G.runner?.fighter.body.s, a = s?.act, S = a && SWINGS[a.move];
+    if (!sparks || !S || fx.trail === false || !meta.bones?.pivots || a.t <= S.strike || a.t > S.wind + S.act + 2) return;
+    const cols = a.move === 'fin' ? TRAIL.fin : TRAIL.cols, w = TRAIL.w[a.move], life = TRAIL.life[a.move];
+    let prev = null;
+    for (let j = 0; j <= TRAIL.sub; j++) {
+      const cur = bladeAt(meta.bones, { ...s, hide: false, act: { ...a, t: a.t - 1 + j / TRAIL.sub } }, TRAIL.ks).points;
+      if (prev) cur.forEach((p, i) => { if (Math.hypot(p[0] - prev[i][0], p[1] - prev[i][1], p[2] - prev[i][2]) >= TRAIL.min) sparks.smear(prev[i], p, cols[i], w * (0.6 + 0.4 * TRAIL.ks[i]), life); });
+      prev = cur;
+    }
+    G.trails = (G.trails || 0) + 1;
   }
   // the boss's slot shows while it does (from the intro to its parts), the candles from the intro on, and the light after the fall
   function syncBoss() {
