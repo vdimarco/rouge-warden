@@ -15,7 +15,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
-import { makeWalk, makeBody, makeCamera, camLayout, VIEW, zoomFov, ZOOM, fadeOf, makeFade, pose, NEAR_FADE } from '../../public/lab/gloam-downs/play.js';
+import { makeWalk, makeBody, makeCamera, camLayout, VIEW, zoomFov, ZOOM, fadeOf, makeFade, pose, NEAR_FADE, TIGHT } from '../../public/lab/gloam-downs/play.js';
 import { makeCut, showing, CUT } from '../../public/lab/gloam-downs/cut.js';
 import { makeCombat, makeMoveLock, makeBossCam, projector, frameClear, bossLeast, yawDiff, asFoes, COMBAT, BOSS } from '../../public/lab/gloam-downs/cameras.js';
 import { clearLine, makePost } from '../../public/lab/gloam-downs/moves.js';
@@ -415,16 +415,17 @@ if (!skipWorlds) {
   /* The cutaway ("it zooms in too much"; the review of 19b99dd8: in the torn cell, with the mouse looking away from the mouth, the eye
      came to about 1 m and the near fade hid the figure, a blurry close view of walls). A full turn of the mouse in 6 s, 1° a step, at
      the same 28 spots (three in the torn cell, the 25 wisps), at 1280x720 and 390x844, with the place's own splats cut away as the page
-     does (cut.js, stepped with each view). The eye stands at least 2.5 m back on 85% of the steps at each spot and 95% over all; the
-     figure shows (its head or its chest at least half seen through the splats at their densities now, each splat counted as round as
-     it is wide, so flat ones seen edge on count against it) on 93% of all steps, and on 98% of the steps where the cutaway is whole;
+     does (cut.js, stepped with each view). The eye stands at least 2.5 m back on 98% of the steps at each spot and 99.5% over all,
+     and the near fade never thins the figure; the figure shows (the near fade leaving it whole, and its head or its chest at least
+     half seen through the splats at their densities now, each splat counted as round as it is wide, so flat ones seen edge on count
+     against it) on 93% of all steps, and on 98% of the steps where the cutaway is whole;
      at a spot the share may fall to 75% (posts and lanterns the camera looks past by design, thin in the walk map, stand between at
      8.5 m); it covers at most 25% of the view; the picture turns by 80 to 120% of each 1° step, and in the cutaway by the whole step;
      and the cutaway, once off, does not come on again within 0.25 s. Before (19b99dd8) the eye stood 2.5 m back on 70% (1280x720)
      and 74% (390x844) of all steps, and on 7 to 28% at the three spots in the torn cell (the rest nearer, the figure left out by the
      near fade) */
   {
-    const CUTPASS = { back: 0.85, all: 0.95, seen: 0.75, seenAll: 0.93, seenCut: 0.98, cover: 0.25 };
+    const CUTPASS = { back: 0.98, all: 0.995, seen: 0.75, seenAll: 0.93, seenCut: 0.98, cover: 0.25 };
     const SplatCodec = new Function(fs.readFileSync(DIR + 'ink/splat-codec.js', 'utf8') + '\nreturn SplatCodec;')();
     const splats = {};
     const splatsOf = id => {
@@ -436,7 +437,7 @@ if (!skipWorlds) {
     for (const id of ORDER) for (const wp of place(id).meta.wisps) spots.push([id, wp.p[0], wp.p[2], wp.p[1]]);
     for (const name of ['1280x720', '390x844']) {
       const [w, h] = LAYOUTS[name];
-      let all = 0, back = 0, cutSteps = 0, seenAll = 0, cutSeen = 0, cutFull = 0, worstBack = 1, worstSeen = 1, worstCover = 0, lo = Infinity, hi = 0, flick = 0, worstAt = '';
+      let all = 0, back = 0, faded = 0, cutSteps = 0, seenAll = 0, cutSeen = 0, cutFull = 0, worstBack = 1, worstSeen = 1, worstCover = 0, lo = Infinity, hi = 0, flick = 0, worstAt = '';
       for (const [id, x, z, wy] of spots) {
         const { walk } = place(id), { data, cut } = splatsOf(id), y = wy === undefined ? walk.floor(x, z) : walk.support(x, z, wy + 0.5) ?? walk.floor(x, z);
         const b = stand(walk, x, z, Math.PI, y), cam = cameraFor(walk, name, 0);
@@ -454,7 +455,9 @@ if (!skipWorlds) {
             const r = wrap(v.yaw - prev) / DEG;
             lo = Math.min(lo, r); hi = Math.max(hi, r);
             if (v.cut) assert(Math.abs(r - 1) < 1e-6, `${name} ${id} at ${x.toFixed(1)}, ${z.toFixed(1)}: in the cutaway a 1° step turned the picture by ${r.toFixed(3)}°`);
-            const e = eyeOf(v), shows = Math.max(showing(data, grid, e, [b.s.x, b.s.y + 1.3, b.s.z]), showing(data, grid, e, [b.s.x, b.s.y + 0.8, b.s.z]));
+            // the figure shows only where the near fade leaves it whole too (the review of 8afff94f: a figure faded out counted as seen)
+            const e = eyeOf(v), shows = fadeOf(e, b.s) > 0 ? 0 : Math.max(showing(data, grid, e, [b.s.x, b.s.y + 1.3, b.s.z]), showing(data, grid, e, [b.s.x, b.s.y + 0.8, b.s.z]));
+            if (fadeOf(e, b.s) > 0) faded++;
             if (shows >= 0.5) { seen++; seenAll++; }
             // the cutaway whole (eased in over CUT.in s): the splats between are out, so the figure shows
             if (v.cut && cam.c.cut && (cutRun += STEP) > CUT.in + STEP) { cutFull++; if (shows >= 0.5) cutSeen++; }
@@ -478,9 +481,128 @@ if (!skipWorlds) {
       assert(seenAll / all >= CUTPASS.seenAll, `${name}: the figure showed on ${(seenAll / all).toFixed(3)} of all sweeps`);
       assert(cutSeen / cutFull >= CUTPASS.seenCut, `${name}: in the cutaway the figure showed on ${(cutSeen / cutFull).toFixed(3)} of its steps`);
       assert.equal(flick, 0, `${name}: the cutaway went off and on again within 0.25 s ${flick} times`);
-      rows.push({ name, spots: spots.length, back: +(back / all).toFixed(3), worstBack: r2(worstBack), worstAt, seen: r2(worstSeen), seenAll: +(seenAll / all).toFixed(3), seenCut: +(cutSeen / cutFull).toFixed(3), cover: r2(worstCover), cut: +(cutSteps / all).toFixed(3), turn: [r2(lo), r2(hi)] });
+      assert.equal(faded, 0, `${name}: the near fade thinned the figure on ${faded} steps of the sweeps`);
+      rows.push({ name, spots: spots.length, back: +(back / all).toFixed(3), faded, worstBack: r2(worstBack), worstAt, seen: r2(worstSeen), seenAll: +(seenAll / all).toFixed(3), seenCut: +(cutSeen / cutFull).toFixed(3), cover: r2(worstCover), cut: +(cutSteps / all).toFixed(3), turn: [r2(lo), r2(hi)] });
     }
     pass('the cutaway: a sweep of the mouse in the torn cell and at every wisp keeps the eye 2.5 m back, the figure in sight and the turn the player\'s', rows);
+  }
+  /* A slow pan in from the mouth (the review of 8afff94f: at 1280x720, turning slowly from the mouth into the torn cell, the follow eye
+     came in to 0.8 to 1 m, the near fade hid the whole figure for about 20 steps, and only then did the cutaway come on and ease the
+     eye out to 3.2 m, up to 0.41 m in one step: a pump in, blind, and a pop out). At the three spots in the torn cell and the Gaol's
+     wisp at (7.6, -2.2), at 1280x720 and 390x844, the mouse turns the view from the mouth at 0.5, 1 and 2° a step for a full turn. On
+     every step the view stands at least 2.5 m back and the near fade leaves the figure whole, and while the cutaway is on the view's
+     distance grows by no more than TIGHT.grow m/s up to TIGHT.dist (and by no more than the follow eye's 12 m/s going out). Before, at
+     (1.6, -0.9) at 1280x720, 28 of 360 steps at 1° a step stood nearer than 2.5 m or faded the figure */
+  {
+    const rows = [], spots = [['gaol', 1.6, -1.6], ['gaol', 1.6, -2.1], ['gaol', 1.6, -0.9], ['gaol', 7.6, -2.2, 1.7]];
+    for (const name of ['1280x720', '390x844']) for (const rate of [0.5, 1, 2]) {
+      let steps = 0, least = Infinity, grow = 0, out = 0;
+      for (const [id, x, z, wy] of spots) {
+        const { walk } = place(id), y = wy === undefined ? walk.floor(x, z) : walk.support(x, z, wy + 0.5) ?? walk.floor(x, z);
+        const b = stand(walk, x, z, Math.PI, y), cam = cameraFor(walk, name, 0);
+        cam.snap(b.s, 0);
+        let prev = null;
+        for (let i = 0; i < 60 + Math.ceil(360 / rate); i++) {
+          b.step(STEP, {}, cam.c.yaw);
+          const v = cam.follow(b.s, STEP, i < 60 ? { mouse: true } : { dyaw: rate * DEG, mouse: true });
+          if (i < 60) { prev = v.dist; continue; }
+          steps++;
+          const tag = `${name} ${(rate)}°/step at ${x.toFixed(1)}, ${z.toFixed(1)}, step ${i - 60}`, f = fadeOf(eyeOf(v), b.s);
+          assert(v.dist >= 2.5 && f === 0, `${tag}: the view stands ${v.dist.toFixed(2)} m back with a near fade of ${f} (cutaway ${v.cut})`);
+          least = Math.min(least, v.dist);
+          if (v.cut && v.dist > prev) {
+            const by = (v.dist - prev) / STEP;
+            if (prev < TIGHT.dist - 1e-6) { grow = Math.max(grow, by); assert(by <= TIGHT.grow + 1e-6, `${tag}: in the cutaway the view went out at ${by.toFixed(1)} m/s`); }
+            else { out = Math.max(out, by); assert(by <= 12 + 1e-6, `${tag}: the view went out at ${by.toFixed(1)} m/s`); }
+          }
+          prev = v.dist;
+        }
+      }
+      rows.push({ name, rate, steps, least: r2(least), grow: r2(grow), out: r2(out) });
+    }
+    pass('a slow pan in from the mouth: on every step the view stands 2.5 m back with the figure whole, and the cutaway never pops out', rows);
+  }
+  /* The mouse's pitch in the cutaway (the review of 8afff94f: there the view's pitch was the least that cleared the roof at or over the
+     mouse's, so the mouse down did not move the picture, up barely did until it passed about 1.1 rad, and the mouse's own pitch went on
+     changing out of sight and swung in as the cutaway ended). In the torn cell and at the Gaol's wisp, with the cutaway whole, each
+     step of the mouse's pitch (0.3° and 1°, up and down) moves the view's pitch by just as much as the mouse's own pitch moves: up by
+     the whole step until TIGHT.top, down until the eye would leave the open, where both stop. The view's pitch is never over TIGHT.top
+     (at the wisp the old rise had put it at 1.28 rad, looking almost straight down on the figure) */
+  {
+    const rows = [], spots = [['gaol', 1.6, -1.6, 180], ['gaol', 1.6, -2.1, 180], ['gaol', 1.6, -0.9, 120], ['gaol', 7.6, -2.2, 90, 1.7]];
+    for (const name of ['1280x720', '390x844']) for (const [id, x, z, turn, wy] of spots) {
+      const { walk } = place(id), y = wy === undefined ? walk.floor(x, z) : walk.support(x, z, wy + 0.5) ?? walk.floor(x, z);
+      const b = stand(walk, x, z, Math.PI, y), cam = cameraFor(walk, name, 0);
+      cam.snap(b.s, 0);
+      let v;
+      const st = inp => { b.step(STEP, {}, cam.c.yaw); return (v = cam.follow(b.s, STEP, { mouse: true, ...inp })); };
+      for (let i = 0; i < 60; i++) st({});
+      for (let i = 0; i < turn; i++) st({ dyaw: DEG });
+      for (let i = 0; i < 60; i++) st({});
+      const tag = `${name} at ${x.toFixed(1)}, ${z.toFixed(1)}`;
+      if (!(cam.c.cut && cam.c.cutK === 1)) { rows.push({ tag, cut: false }); assert(name === '390x844' && wy !== undefined, `${tag}: the cutaway is not on`); continue; }
+      const row = { tag, from: r2(v.pitch) };
+      let up = 0, down = 0, stopped = 0;
+      for (const [dp, n] of [[0.3, 20], [-0.3, 40], [1, 40], [-1, 80]]) for (let i = 0; i < n; i++) {
+        const pv = v.pitch, pc = cam.c.pitch;
+        st({ dpitch: dp * DEG });
+        const dv = v.pitch - pv, dc = cam.c.pitch - pc;
+        assert(cam.c.cut && v.pitch <= TIGHT.top + 1e-9, `${tag}: the view's pitch ${v.pitch.toFixed(3)} in the cutaway`);
+        assert(Math.abs(dv - dc) < 2e-3, `${tag}: a mouse step of ${dp}° moved the view by ${(dv / DEG).toFixed(3)}° and the mouse's pitch by ${(dc / DEG).toFixed(3)}°`);
+        // a step moves the view by the whole step, or by part of it where it reaches a limit (and then by none)
+        assert(dv * dp >= -1e-9 && Math.abs(dv) <= Math.abs(dp * DEG) + 2e-3, `${tag}: a mouse step of ${dp}° moved the view by ${(dv / DEG).toFixed(3)}°`);
+        if (Math.abs(dv - dp * DEG) >= 2e-3) { stopped++; assert(dp < 0 || cam.c.pitch >= 1.05 - 1e-9 || v.pitch >= TIGHT.top - 1e-6, `${tag}: a step up stopped at ${v.pitch.toFixed(3)}`); continue; }
+        if (dp > 0) up++; else down++;
+      }
+      assert(up >= 20 && down >= 2, `${tag}: the view answered ${up} steps up and ${down} down`);
+      Object.assign(row, { up, down, stopped, top: r2(v.pitch) });
+      rows.push(row);
+    }
+    // a pitch up from where the cutaway starts reaches TIGHT.top or the mouse's own limit: the steps up that stopped were at the top
+    pass('the mouse\'s pitch in the cutaway moves the view by as much as the mouse\'s own pitch, up to TIGHT.top, and none is left out of sight', rows);
+  }
+  /* Walking and the mouse together (the review of 8afff94f: in play the cutaway came back on 4, 9 and 17 steps after going off, and
+     came on with the follow eye 13 to 15 m away, cutting a 15 m cone through the place). At the 28 spots, at 1280x720 and 390x844, two
+     runs each of 15 s of made-up play: every 0.5 s a new move (none, a walk or a run in any direction, or forward) and a new turn and
+     pitch of the mouse (up to 1.5° and 0.3° a step). Once off, the cutaway never comes back on within 0.25 s unless the follow eye has
+     come within TIGHT.in (where it would otherwise hide the figure); it never comes on with the follow eye farther out than TIGHT.near, but where no rise clears the room and something already
+     stands between; and the
+     near fade thins the figure on under 0.5% of the steps (running through a lane, or walking past a wall in the open, where the
+     cutaway does not come on by design). Before, the fade did on 0.88% */
+  {
+    const spots = [['gaol', 1.6, -1.6], ['gaol', 1.6, -2.1], ['gaol', 1.6, -0.9]];
+    for (const id of ORDER) for (const wp of place(id).meta.wisps) spots.push([id, wp.p[0], wp.p[2], wp.p[1]]);
+    let seed = 7;
+    const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    let steps = 0, faded = 0, again = 0, near = 0, far = 0, easing = 0;
+    for (const name of ['1280x720', '390x844']) for (const [id, x, z, wy] of spots) for (let t = 0; t < 2; t++) {
+      const { walk } = place(id), y = wy === undefined ? walk.floor(x, z) : walk.support(x, z, wy + 0.5) ?? walk.floor(x, z);
+      const b = stand(walk, x, z, Math.PI, y), cam = cameraFor(walk, name, 0);
+      cam.snap(b.s, 0);
+      let mv = {}, look = {}, was = false, offAt = -99;
+      for (let i = 0; i < 900; i++) {
+        if (i % 30 === 0) {
+          const r = rnd();
+          mv = r < 0.3 ? {} : r < 0.6 ? { mx: rnd() * 2 - 1, mz: rnd() * 2 - 1 } : { mz: rnd() < 0.5 ? 0.5 : 0 };
+          look = { dyaw: (rnd() - 0.5) * 3 * DEG, dpitch: (rnd() - 0.5) * 0.6 * DEG, mouse: true };
+        }
+        b.step(STEP, mv, cam.c.yaw);
+        const d0 = cam.c.dist, v = cam.follow(b.s, STEP, look);
+        steps++;
+        if (fadeOf(eyeOf(v), b.s) > 0) faded++;
+        // it comes on farther out only where no rise clears the room and something already stands between (a camera still coming in
+        // from far comes in with the splats between cut)
+        if (v.cut && !was && cam.c.cut && !(cam.c.goal.dist < TIGHT.in && cam.c.hidden > 0)) far = Math.max(far, d0);
+        if (v.cut && !cam.c.cut) easing = Math.max(easing, v.dist);
+        if (v.cut && !was && i - offAt < 15) { if (d0 < TIGHT.in) near++; else again++; }
+        if (!v.cut && was) offAt = i;
+        was = v.cut;
+      }
+    }
+    assert.equal(again, 0, `the cutaway came back on within 0.25 s ${again} times with the follow eye out of the way`);
+    assert(far < TIGHT.near, `the cutaway came on with the follow eye ${far.toFixed(2)} m out`);
+    assert(faded / steps < 0.005, `the near fade thinned the figure on ${(faded / steps * 100).toFixed(2)}% of the steps`);
+    pass('walking and the mouse together: the cutaway does not flicker, comes on only with the follow eye near (or the figure already hidden), and the figure is whole on 99.5% of the steps', { steps, faded: +(faded / steps * 100).toFixed(2), againNear: near, far: r2(far), easing: r2(easing) });
   }
   /* The mouse stops in a nook ("it zooms in too much"; "mouse feels good"). At three spots in the torn cell and at the Gaol's wisp at
      (7.6, -2.2), at 1280x720 and 390x844, the mouse turns the view from the mouth by 0 to 315° (8 yaws, 1° a step) and then stops.

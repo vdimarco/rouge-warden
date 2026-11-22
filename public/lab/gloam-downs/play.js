@@ -382,17 +382,22 @@ export function damp(x, to, v, T, dt) {
    orbits against a wall) rather than the eye jumping in. A
    thin thing in the way (a post, a lantern, a stake: open 0.55 m to both sides of the line and no longer than 0.6 m along it) is looked
    past, but the eye itself is never inside anything. Foes are not in the walk map, so they never move it. */
-/* The cutaway (makeCamera, below; cut.js leaves out the splats between). On where the best rise leaves the eye nearer than `in`, in a
+/* The cutaway (makeCamera, below; cut.js leaves out the splats between). On where the best rise leaves the eye nearer than `in`, or as
+   soon as the follow eye is heading nearer than `in` (its goal this step, which takes in the room at this yaw and the wall a turn will
+   bring in the next 0.45 s) while it is within `near`, in a
    nook (a roof over the head, or walls nearer than `in` at `walls` of 8 yaws round) with the lamplighter at `run` m/s or less, or
-   anywhere at `still` m/s or less (standing by a wall); off once the room and the eye under it stand `out` back for `hold` s. The eye
-   stands `dist` back, its pitch up to `top`, `margin` over the least that clears; in over `ease` s, out over `back` s */
-export const TIGHT = { still: 1, walls: 5, in: 2.5, out: 2.9, hold: 0.2, dist: 3.2, top: 1.15, margin: 0.06, run: 3, ease: 0.15, back: 0.25 };
+   anywhere at `still` m/s or less (standing by a wall); off once the room and the eye under it stand `out` back for `hold` s, and once eased
+   all the way out not on again for `again` s. The view stands `dist` back, and never comes nearer than it was as the cutaway starts: it goes out to
+   `dist` at no more than `grow` m/s. Its pitch is `margin` over the least that clears the roof (from the pitch the cutaway started at),
+   plus what the mouse has turned it since, up to `top`, and down only as far as the eye stays clear (the mouse's own pitch stops there
+   too, so no pitch is held out of sight); in over `ease` s, out over `back` s */
+export const TIGHT = { still: 1, walls: 5, in: 2.5, out: 2.9, near: 4, hold: 0.3, again: 0.4, dist: 3.2, grow: 5, top: 1.15, margin: 0.06, run: 3, ease: 0.15, back: 0.25 };
 export function makeCamera(walk, o = {}) {
   const pitch0 = o.pitch ?? 0.34, dist0 = o.dist ?? 8.5;
   const c = {
     yaw: o.yaw ?? 0, pitch: pitch0, base: pitch0, dist: dist0, want: dist0, fov: o.fov ?? null, asp: o.asp ?? 16 / 9, aim: o.aim ?? 1.15, target: null, idle: 9,
     auto: o.auto !== false, lift: 0, goal: { lift: 0, dist: dist0 }, goals: [], turning: false, from: null, hidden: 0, dv: 0, steer: false, across: false, squeeze: false, off: 0, framing: false,
-    cut: false, cutK: 0, cutP: pitch0, cutV: 0, cutT: 0
+    cut: false, cutK: 0, cutP: pitch0, cutV: 0, cutT: 0, cutD: dist0, cutB: pitch0, cutRef: pitch0, cutOff: 9, vd: dist0, vdv: 0, shown: false
   };
   const NEAR = 0.5, TOP = 1.35, DIP = 0.1, LIFT = 0.08, THIN = 0.55, SHORT = 0.6, AHEAD = 0.25, RISE = 4, GRACE = 0.15, HEAD = 1.3, CHEST = 0.8, IN = 0.15, OUT = 0.25;
   // the most speed coming in, m/s: past something between (PULL) and to keep the eye out of a wall (SQUEEZE);
@@ -400,6 +405,9 @@ export function makeCamera(walk, o = {}) {
   const PULL = 15, SQUEEZE = 33, BACK = 12, ACC = 360, AHEADS = [0.15, 0.3, 0.45];
   // the least share of a player's turn that a wall may leave on screen (the rest it holds back, a camera orbiting against a wall)
   const HOLD = 0.85;
+  /* the cutaway's tail: eased out, the view's distance still coming back to the follow eye's (the splats stay cut while it comes in,
+     or while its eye is in the scenery) */
+  const TAIL = 0.01, JERK = 0.3;
   /* the underside of the gap over (x, z) in a map baked with undersides (U): the lowest of the four corners round it, or null where
      one of them has no gap (the edge of a roof decides by the old rule); with all false, the lowest of those that have one. A room
      taller than the least gap (1.8) lets the eye stand higher in it */
@@ -543,16 +551,14 @@ export function makeCamera(walk, o = {}) {
     // the rise it needs now, and for where the aim and the yaw will be a moment ahead: the larger
     const [tx, ty, tz] = c.target, spin = dt > 0 ? wrap(c.yaw - yaw0) / dt : 0;
     const head = [s.x, s.y + HEAD, s.z], now = solve(tx, ty, tz, c.yaw, head);
-    // the cutaway (below): on where the best rise leaves the eye nearer than TIGHT.in and the lamplighter walks or stands; off from TIGHT.out
-    // (and off only once the room and the eye under it have stood TIGHT.out back for TIGHT.hold s, so it never flickers on and off)
-    if (!c.cut) {
-      c.cut = c.want > TIGHT.out && now.dist < TIGHT.in && (sp <= TIGHT.still || (sp <= TIGHT.run && nook(tx, ty, tz, head))); c.cutT = 0;
-      // a lean the player's turn carried this step is taken back as the cutaway starts: the turn on screen is the player's alone
-      if (c.cut && looked && leant) { c.yaw -= leant; c.off -= leant; leant = 0; }
-    }
+    /* the cutaway (below) goes off once the room and the eye under it have stood TIGHT.out back for TIGHT.hold s, so it never flickers
+       on and off; it comes on further down, from the follow eye's goal of this step */
+    if (!c.cut) c.cutT = 0;
     else if (c.want <= TIGHT.out) c.cut = false;
     else if (now.dist >= TIGHT.out && c.dist >= TIGHT.out - 0.1) { if ((c.cutT += dt) >= TIGHT.hold) c.cut = false; }
     else c.cutT = 0;
+    // the time since the cutaway last eased out (its splats come back from then: below, the tail)
+    c.cutOff = c.shown ? 0 : c.cutOff + dt;
     /* in a lane or round a corner: when the view must rise more than 0.35 or come in, and the lamplighter runs away from the eye or
        across the view (never toward it, as when backing into a wall), when the view may turn by itself (autoTurn) and no run camera
        turns it, the view turns at up to 1.2 rad/s toward the nearest yaw within 60° that is open with 0.25 less rise */
@@ -620,6 +626,20 @@ export function makeCamera(walk, o = {}) {
     const d0 = Math.min(c.dist, to);
     if (looked && Math.abs(sp3) > 0.1) for (const t of AHEADS) ds = Math.min(ds, Math.max(NEAR, reach(tx, ty, tz, c.yaw + sp3 * t, pitch, d0)));
     if (ds < d0 - 0.05) to = Math.max(NEAR, ds);
+    /* the cutaway comes on where the follow eye is heading nearer than TIGHT.in (the best rise cannot clear the room, or the room at this
+       yaw, or a wall the turn will bring), before it gets there: so the view never comes in first and pops back out. Where no rise clears
+       the room it comes on with the eye within TIGHT.near, or farther where something already stands between (a camera still coming
+       in from far comes in with the splats between cut, so the figure stays in sight); for the room at this yaw or a wall ahead, only
+       with the eye within TIGHT.near (so a camera still coming in past a wall does not
+       cut a long cone through the place for what may clear). Not within TIGHT.again of its splats
+       starting back (while they are still cut it may come back on: the picture goes on from where it is), and with the lamplighter standing, or walking in a nook */
+    if (!c.cut && c.want > TIGHT.out && ((now.dist < TIGHT.in && (c.dist < TIGHT.near || c.hidden > 0)) || (to < TIGHT.in && c.dist < TIGHT.near)) && (c.shown || c.cutOff >= TIGHT.again || c.dist < TIGHT.in) && (sp <= TIGHT.still || (sp <= TIGHT.run && nook(tx, ty, tz, head)))) {
+      c.cut = true;
+      // it starts from the view as drawn, and from the pitch it showed
+      if (c.cutK <= 0) { c.cutD = c.vd; c.cutB = Math.min(TIGHT.top, pitch); c.cutRef = c.pitch; c.cutP = Math.min(TIGHT.top, pitch); c.cutV = 0; }
+      // a lean the player's turn carried this step is taken back as the cutaway starts: the turn on screen is the player's alone
+      if (looked && leant) { c.yaw -= leant; c.off -= leant; leant = 0; }
+    }
     c.squeeze = squeeze;
     let [d, v] = damp(c.dist, to, c.dv, to < c.dist ? (squeeze ? IN / 2 : IN) : OUT, dt);
     // the spring never goes past its goal coming in
@@ -683,25 +703,63 @@ export function makeCamera(walk, o = {}) {
     }
     c.dist = Math.max(NEAR, d); c.dv = v;
     // the cutaway: the view stands TIGHT.dist back at the player's yaw, raised over the roof where that clears it
+    const k0 = c.cutK;
     c.cutK = c.cut ? Math.min(1, c.cutK + dt / TIGHT.ease) : Math.max(0, c.cutK - dt / TIGHT.back);
+    // going out, the view's distance comes back to the follow eye's at no more than BACK m/s out (and PULL in), as the follow eye would
+    if (!c.cut && k0 > 0) {
+      c.cutD = c.dist > c.cutD ? Math.min(c.dist, c.cutD + BACK * dt) : Math.max(c.dist, c.cutD - PULL * dt);
+    }
     let vd = c.dist, vp = pitch;
     if (c.cutK > 0) {
-      const D = Math.min(c.want, TIGHT.dist), goal = c.cut ? over(tx, ty, tz, c.yaw, pitch, Math.max(D, c.dist)) : pitch;
-      [c.cutP, c.cutV] = damp(c.cutP, goal, c.cutV, goal > c.cutP ? TIGHT.ease : TIGHT.back, dt);
-      const e = c.cutK * c.cutK * (3 - 2 * c.cutK);
-      // never nearer than the eye already is: a camera still coming in from far comes in as it did, at no more than PULL
-      vd = c.dist >= D ? c.dist : c.dist + (D - c.dist) * e; vp = pitch + (c.cutP - pitch) * e;
-    } else { c.cutP = pitch; c.cutV = 0; }
-    return { target: c.target.slice(), dist: vd, yaw: c.yaw, pitch: vp, cut: c.cutK > 0, ...(c.fov ? { fov: zoomFov(c.fov, vd, c.asp) } : {}) };
+      const D = Math.min(c.want, TIGHT.dist), e = c.cutK * c.cutK * (3 - 2 * c.cutK);
+      if (c.cut) {
+        /* the distance never comes in from where the view was as the cutaway started, and goes out to D at no more than TIGHT.grow
+           m/s; a camera still coming in from farther comes in as it did, down to D, and settles there (at most half the way left a
+           step). It goes no farther out than D while the cutaway is on (so the cone cut through the place stays short) */
+        c.cutD = c.cutD > D ? Math.max(D + (c.cutD - D) / 2, Math.min(c.cutD, c.dist)) : Math.min(D, Math.max(c.dist, c.cutD + TIGHT.grow * dt));
+        // the least pitch that clears the roof at this yaw (from the one the cutaway started at), eased
+        const L = over(tx, ty, tz, c.yaw, c.cutB, c.cutD);
+        [c.cutP, c.cutV] = damp(c.cutP, L, c.cutV, L > c.cutP ? TIGHT.ease : TIGHT.back, dt);
+        /* and the mouse's pitch since it started, at once: up to TIGHT.top, and down only as far as the eye stays clear. The mouse's
+           own pitch stops at the same place, so the view shows all of it and none is left to swing in as the cutaway ends */
+        const F = Math.min(c.cutP, under(tx, ty, tz, c.yaw, L, c.cutD) + (c.cutP - L));
+        const lo = clamp(c.cutRef + F - c.cutP, 0.08, 1.05), hi = clamp(c.cutRef + TIGHT.top - c.cutP, 0.08, 1.05);
+        c.pitch = clamp(c.pitch, Math.min(lo, hi), Math.max(lo, hi));
+        pitch = Math.min(TOP, c.pitch + c.lift);
+      }
+      const cp = Math.min(TIGHT.top, c.cutP + c.pitch - c.cutRef);
+      vd = c.cutD; vp = pitch + (cp - pitch) * e;
+    } else if (k0 > 0) vd = c.cutD;
+    else { c.cutP = c.cutB = Math.min(TIGHT.top, pitch); c.cutRef = c.pitch; c.cutV = 0; c.cutD = c.dist; }
+    /* the view's distance in and round the cutaway moves no faster than the follow eye may with the eye clear, its speed builds as the
+       follow eye's does, and it slows by no more than JERK a step (a camera coming in fast settles at D over a few steps, a view
+       easing out that comes back in turns round gently) */
+    if (c.cutK > 0 || k0 > 0) {
+      // its speed builds by no more than ACC m/s/s, and a view already faster than PULL or BACK slows by JERK a step
+      const a = ACC * dt * dt, l0 = c.vdv - a, h0 = Math.min(c.vdv + JERK, Math.max(0, c.vdv) + a);
+      const lo = Math.min(h0, Math.max(-PULL * dt, l0)), hi = Math.max(lo, Math.min(BACK * dt, h0));
+      const vv = clamp(vd - c.vd, lo, hi);
+      vd = c.vd + vv; c.cutD = vd;
+      // going out, the cutaway is not over until the view's distance is the follow eye's
+      if (!c.cut && Math.abs(vd - c.dist) > 1e-3) c.cutK = Math.max(c.cutK, TAIL);
+    }
+    c.vdv = vd - c.vd; c.vd = vd;
+    /* and through the tail while the view's eye comes in to the follow eye's, or whenever it stands in the scenery (going out along
+       the follow eye's own clear line it is in the open, and the splats come back from there) */
+    c.shown = c.cut || c.cutK > TAIL || (c.cutK > 0 && ((c.shown && vd > c.dist + 1e-3) || !eyeOpen(tx, ty, tz, c.yaw, vp, vd)));
+    return { target: c.target.slice(), dist: vd, yaw: c.yaw, pitch: vp, cut: c.shown, ...(c.fov ? { fov: zoomFov(c.fov, vd, c.asp) } : {}) };
   }
   /* ---- the cutaway ----
      A nook under a roof (the Gaol's torn cell: 1.4 m by 2 m, its roof 2.15 over the floor and 0.55 thick, the moor 2.7 m over the
      floor all round) has no rise that clears it: every eye over the roof or behind a wall is inside the walk map, so reach() brings the
      eye in to about 1 m, and the near fade hides the figure. There the view keeps the player's yaw and stands TIGHT.dist back: at the
-     least pitch from the player's (with its rise) up to TIGHT.top that puts that eye in the open (over the roof, in the next cell),
-     or at the player's pitch where none does, and the place's splats between that eye and the figure are left out (cut.js), as a
-     dollhouse view cuts away its walls. The pitch eases up over TIGHT.ease s and back over TIGHT.back, and the whole cutaway eases in
-     over TIGHT.ease and out over TIGHT.back, so nothing flickers. The yaw is never touched: the player's turn is the whole turn. */
+     least pitch from the one it started at up to TIGHT.top that puts that eye in the open (over the roof, in the next cell), or at
+     that pitch where none does, plus the mouse's pitch since, and the place's splats between that eye and the figure are left out
+     (cut.js), as a dollhouse view cuts away its walls. It comes on from the follow eye's goal, before the eye comes in, and never
+     comes nearer than the view was (the review of 8afff94f: it came on from the best rise only, after the follow eye had come in to
+     0.8 m, and then popped out at 25 m/s). The least pitch eases up over TIGHT.ease s and back over TIGHT.back, the mouse's pitch at
+     once, and the whole cutaway eases in over TIGHT.ease and out over TIGHT.back, so nothing flickers. The yaw is never touched: the
+     player's turn is the whole turn. */
   /* a nook: a roof over the head (a cell, an archway, a fallen bell), or walls nearer than TIGHT.in at TIGHT.walls of 8 yaws round.
      A post or a pillar beside an open yard is neither, and the camera comes in past it as before */
   function nook(x, y, z, head) {
@@ -710,9 +768,18 @@ export function makeCamera(walk, o = {}) {
     for (let k = 0; k < 8; k++) if (reach(x, y, z, k * Math.PI / 4, Math.min(TOP, c.pitch + c.lift), TIGHT.in) < TIGHT.in - 0.05) n++;
     return n >= TIGHT.walls;
   }
+  // the least pitch from p0 (no higher than TIGHT.top) that puts the eye D back in the open, TIGHT.margin over it; p0 where none does
   function over(x, y, z, yaw, p0, D) {
+    p0 = Math.min(TIGHT.top, p0);
     for (let p = p0; p <= TIGHT.top + 1e-6; p += 0.03) if (eyeOpen(x, y, z, yaw, p, D)) return Math.min(TIGHT.top, p + TIGHT.margin);
     return p0;
+  }
+  // how far down from p the eye D back stays in the open (no lower than the mouse's least pitch); p itself where it is not open there
+  function under(x, y, z, yaw, p, D) {
+    if (!eyeOpen(x, y, z, yaw, p, D)) return p;
+    let q = p;
+    while (q - 0.03 >= 0.08 && eyeOpen(x, y, z, yaw, q - 0.03, D)) q -= 0.03;
+    return q;
   }
   /* ---- the framed shot ----
      In a nook (a cell, a fallen bell, a cleft in the fen) the walls bring the eye in at most yaws. Where the room at the view's yaw falls
@@ -775,8 +842,9 @@ export function makeCamera(walk, o = {}) {
     c.lift = c.goal.lift; c.goals = [c.lift]; c.hidden = 0; c.dv = 0;
     c.dist = Math.max(NEAR, reach(c.target[0], c.target[1], c.target[2], yaw, Math.min(TOP, c.pitch + c.lift), c.want));
     // the cutaway starts whole where the place puts the lamplighter
-    c.cut = c.want > TIGHT.out && c.goal.dist < TIGHT.in; c.cutK = c.cut ? 1 : 0; c.cutV = 0;
-    c.cutP = c.cut ? over(c.target[0], c.target[1], c.target[2], yaw, Math.min(TOP, c.pitch + c.lift), Math.min(c.want, TIGHT.dist)) : c.pitch;
+    c.cut = c.want > TIGHT.out && c.goal.dist < TIGHT.in; c.cutK = c.cut ? 1 : 0; c.cutV = 0; c.cutT = 0; c.cutOff = 9;
+    c.cutB = Math.min(TIGHT.top, c.pitch + c.lift); c.cutRef = c.pitch; c.cutD = c.cut ? Math.min(c.want, TIGHT.dist) : c.dist; c.vd = c.cutD; c.vdv = 0; c.shown = c.cut;
+    c.cutP = c.cut ? over(c.target[0], c.target[1], c.target[2], yaw, c.cutB, c.cutD) : c.cutB;
   }
   // a new window: its framing, keeping the pitch the player set relative to the layout's
   function layout(L) {

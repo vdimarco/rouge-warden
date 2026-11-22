@@ -173,7 +173,7 @@ function runSide(inp, sec, turn = null, idle = 0) {
 }
 { /* the pull-in near a wall eases both ways: the view turned into a long wall with the mouse, and back out again. Walls 0.5 and 1 m
      thick, 1 and 2 m behind the lamplighter, turned at 1.2 and 3 rad/s. No step changes the distance by more than 1 m, the change from
-     one step to the next is 0.4 m or less, and the eye is never in the wall. The camera of 09fd360b came in by 4.8 m in one step at
+     one step to the next is 0.4 m or less, and the follow eye is never in the wall (the cutaway's may be, with its splats cut). The camera of 09fd360b came in by 4.8 m in one step at
      390x844 by the wall 0.5 m thick and 1 m away at 1.2 rad/s, and its eye was in that wall at 3 rad/s */
   const out = [];
   for (const [thick, gap] of [[1, 2], [0.5, 1], [1, 1], [0.5, 2]]) {
@@ -181,11 +181,14 @@ function runSide(inp, sec, turn = null, idle = 0) {
     for (const rate of [1.2, 3, 6]) for (const [w, h] of [[1280, 720], [390, 844]]) {
       const b = stand(WALL, 0, 0), cam = makeCamera(WALL, { yaw: -Math.PI / 2, ...camLayout(w, h) });
       cam.snap(b.s, -Math.PI / 2);
-      let last = null, step = 0, jerk = 0, inWall = 0, least = Infinity, d1 = null;
+      let last = null, step = 0, jerk = 0, inWall = 0, cutIn = 0, least = Infinity, d1 = null;
       for (let i = 0; i < 240; i++) {
         const v = cam.follow(b.s, STEP, { dyaw: (i < 120 ? 1 : -1) * rate * STEP, mouse: true });
         const e = eyeOf(v);
-        if (WALL.support(e[0], e[2], e[1]) === null) inWall++;
+        // the follow eye is never in the wall; the cutaway's eye may stand in it, with the splats round it cut (cut.js: from the figure
+        // to CUT.past behind the eye), as it goes out to TIGHT.dist at no more than TIGHT.grow m/s
+        if (WALL.support(e[0], e[2], e[1]) === null) { if (v.cut) cutIn++; else inWall++; }
+        if (v.cut) { const f = eyeOf({ ...v, dist: cam.c.dist, pitch: Math.min(1.35, cam.c.pitch + cam.c.lift) }); if (WALL.support(f[0], f[2], f[1]) === null) inWall++; }
         if (last) { const d = v.dist - last.dist; step = Math.max(step, Math.abs(d)); if (d1 !== null) jerk = Math.max(jerk, Math.abs(d - d1)); d1 = d; }
         least = Math.min(least, cam.c.dist);
         last = v;
@@ -194,7 +197,7 @@ function runSide(inp, sec, turn = null, idle = 0) {
       assert(least < cam.c.want - 1, `${tag}: it came in (${least})`);
       assert(step <= 1 && jerk <= 0.4, `${tag}: the distance changed by ${step} m in one step, and its change by ${jerk} m`);
       assert.equal(inWall, 0, `${tag}: the eye was in the wall on ${inWall} steps`);
-      out.push({ w, thick, gap, rate, step: r3(step), jerk: r3(jerk) });
+      out.push({ w, thick, gap, rate, step: r3(step), jerk: r3(jerk), cutIn });
     }
   }
   /* a tall pillar 0.5 or 1 m thick, 1.5 or 3 m wide, 1 to 3 m behind the lamplighter, which walks past it at 3 and 6 m/s with the mouse
@@ -342,9 +345,9 @@ if (process.env.GLOAM_WORLDS !== '0') {
   for (const id of ORDER) for (const wp of places[id].meta.wisps) spots.push([id, wp.p[0], wp.p[2], wp.p[1]]);
   const wrap = a => Math.atan2(Math.sin(a), Math.cos(a)), ONE = DEG;
   const rows = [];
-  let leaned = 0;
+  let leaned = 0, cutting = 0;
   for (const [w, h] of [[1280, 720], [390, 844]]) for (const how of ['mouse+', 'mouse-', 'stick']) {
-    let lo = Infinity, hi = 0, off = 0, steps = 0, still = 0, framed = 0, after = 0;
+    let lo = Infinity, hi = 0, off = 0, steps = 0, still = 0, framed = 0, cuts = 0, after = 0;
     for (const [id, x, z, wy] of spots) {
       const { walk } = places[id], y = wy === undefined ? walk.floor(x, z) : walk.support(x, z, wy + 0.5) ?? walk.floor(x, z);
       const b = makeBody(walk, { p: [x, y + 0.5, z], yaw: Math.PI }, 38), cam = makeCamera(walk, { yaw: 0, ...camLayout(w, h) });
@@ -365,6 +368,7 @@ if (process.env.GLOAM_WORLDS !== '0') {
         }
         off = Math.max(off, Math.abs(wrap(v.yaw - mine)));
         if (cam.c.framing && Math.abs(cam.c.off) > 0.02) framed++;
+        if (turning && v.cut) cuts++;
         prev = v.yaw;
       }
     }
@@ -373,10 +377,12 @@ if (process.env.GLOAM_WORLDS !== '0') {
     assert(lo >= 0.8 && hi <= 1.2, `${tag}: a step of the player's turn turned the picture by ${(lo * 100).toFixed(0)} to ${(hi * 100).toFixed(0)}%`);
     assert.equal(still, 0, `${tag}: the picture stood still on ${still} steps of the turn`);
     assert(off <= 60 * DEG + 1e-6, `${tag}: the view stood ${(off / DEG).toFixed(1)}° from the player's own turns`);
-    rows.push({ tag, least: r3(lo), most: r3(hi), off: +(off / DEG).toFixed(1), framed });
-    leaned += framed;
+    rows.push({ tag, least: r3(lo), most: r3(hi), off: +(off / DEG).toFixed(1), framed, cuts });
+    leaned += framed; cutting += cuts;
   }
-  assert(leaned >= 20, `the framed shot leaned on only ${leaned} steps`);
+  /* in a nook the view either leans (the framed shot) or, where the follow eye is heading nearer than 2.5 m, cuts away (since the
+     review of 8afff94f the cutaway comes on before the eye comes in, so while the player turns it mostly takes the framed shot's place) */
+  assert(leaned + cutting >= 20, `the framed shot leaned on only ${leaned} steps and the cutaway was on for ${cutting}`);
   // in the open the mouse is as it was: the view turns by the mouse's turn exactly, and the framed shot never leans
   {
     const b = stand(OPEN, 0, 0), cam = makeCamera(OPEN, { yaw: 0, ...camLayout(1280, 720) });

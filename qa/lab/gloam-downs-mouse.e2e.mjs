@@ -313,8 +313,9 @@ try {
       assert(r.cell, `${w}x${h} at ${r.turn}°: the lamplighter stands in the cell`);
       assert(r.moved > 0.05 && r.dy < -2 && r.off <= 30, `${w}x${h} at a mouse turn of ${r.turn}°: forward moved the figure ${r.moved} m, ${r.dx}, ${r.dy} px on screen (${r.off}° from up)`);
       // the picture turned with the mouse, by 80 to 120% of its turn (a turn past 180° reads as one the other way)
-      const want = r.turn > 180 ? r.turn - 360 : r.turn;
-      assert(Math.abs(r.shown - want) <= 0.2 * Math.abs(want) + 1, `${w}x${h}: a mouse turn of ${r.turn}° turned the picture ${r.shown}°`);
+      // (exactly 180° may read as -180°: the difference is taken round the circle)
+      const want = r.turn > 180 ? r.turn - 360 : r.turn, diff = ((r.shown - want) % 360 + 540) % 360 - 180;
+      assert(Math.abs(diff) <= 0.2 * Math.abs(want) + 1, `${w}x${h}: a mouse turn of ${r.turn}° turned the picture ${r.shown}°`);
       assert.equal(r.self, 0, `${w}x${h} at ${r.turn}°: the view turned by itself by ${r.self}° after the mouse stopped`);
       // the view's own distance (the cutaway stands 3.2 m back where the walls would bring the follow eye in), and the figure drawn whole
       assert(r.dist >= 2.5 && r.fade === 0, `${w}x${h} at ${r.turn}°: 1.5 s after the mouse stopped the eye stands ${r.dist} m back with a fade of ${r.fade}`);
