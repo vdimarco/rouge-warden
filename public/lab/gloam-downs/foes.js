@@ -34,7 +34,7 @@ export const TYPES = {
     code: 'I', title: 'Ironback', light: false, r: 0.7, hp: 120, walk: 1.2, close: 1.2, turn: 3, glim: 8, cool: [1.0, 1.6], eye: 1.2, chest: 1.0, stunned: 1.5,
     moves: {
       // the lane follows the aim for its first 0.6 s, growing to 7 m, and stands still for the last 0.3 s before the run
-      charge: { kind: 'melee', min: 3, range: 9, wind: S(0.9), grow: S(0.6), act: S(0.7), rec: S(1.4), dmg: 24, push: 3, v: 10, width: 1.6, len: 7, past: 3, drop: 0.6, stun: S(2.0), cue: 'scrape' },
+      charge: { kind: 'melee', min: 3, range: 9, wind: S(0.9), grow: S(0.6), act: S(0.7), rec: S(1.4), dmg: 24, push: 3, v: 10, width: 1.6, len: 7, past: 3, drop: 0.6, stun: S(2.0), cue: 'paw' },
       slam: { kind: 'melee', range: 2.8, wind: S(0.75), act: S(0.12), rec: S(1.1), dmg: 20, ring: 3.0, ring0: 0, rise: 1.8, cue: 'rear' }
     }
   }
@@ -340,7 +340,6 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
   }
   function charge(f, M, ph, at, s, ev) {
     if (ph === 'wind') {
-      if (f.mt === Math.round(M.wind / 2)) ev.push({ type: 'cue', cue: M.cue, foe: f.id });
       if (f.mt < M.grow) {
         faceLamp(f, s);
         Object.assign(f.lane, { x: f.x, y: f.y, z: f.z, yaw: f.yaw });

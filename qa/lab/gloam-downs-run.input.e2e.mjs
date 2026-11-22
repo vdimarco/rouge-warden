@@ -237,8 +237,8 @@ try {
     await page.keyboard.press('p');
     assert(await page.isVisible('#pause'));
     assert.equal(await active(page), 'bResume');
-    for (let i = 0; i < 4; i++) await page.keyboard.press('Tab');
-    assert.equal(await active(page), 'bResume', "Tab wraps through the panel's four buttons");
+    for (let i = 0; i < 5; i++) await page.keyboard.press('Tab');
+    assert.equal(await active(page), 'bResume', "Tab wraps through the panel's five buttons");
     await page.click('#bEnd');
     assert(await page.isVisible('#askRow'));
     assert.equal(await active(page), 'bNo');
@@ -342,7 +342,7 @@ try {
     const down = async () => { await G(page, () => window.__press(13, true)); await tick(page, 0.05, 'live'); await G(page, () => window.__press(13, false)); await tick(page, 0.05, 'live'); };
     await down();
     assert.equal(await active(page), 'bSound');
-    for (let i = 0; i < 3; i++) await down();
+    for (let i = 0; i < 4; i++) await down();
     assert.equal(await active(page), 'bResume', 'the focus wraps');
     await G(page, () => window.__press(8, true)); await tick(page, 0.05, 'live'); await G(page, () => window.__press(8, false)); await tick(page, 0.05, 'live');
     assert.equal((await run(page)).mode, 'play', "the pad's Back closes the pause panel");
@@ -358,7 +358,7 @@ try {
     assert.equal(await active(page), 'bResume', 'a stick held into the pause panel does not move its focus');
     await stick(0, 0); await tick(page, 0.05, 'live');
     await stick(0, 1); await tick(page, 0.05, 'live'); await stick(0, 0); await tick(page, 0.05, 'live');
-    // the pause panel's buttons are Resume, Sound, Back to the start and End the run: one tilt down from Resume is Sound
+    // the pause panel's buttons are Resume, Sound, Music, Back to the start and End the run: one tilt down from Resume is Sound
     assert.equal(await active(page), 'bSound', 'back to centre, a new tilt moves it');
     await G(page, () => window.__press(1, true)); await tick(page, 0.1, 'live'); await G(page, () => window.__press(1, false)); await tick(page, 0.1, 'live');
     assert.equal((await run(page)).mode, 'play');

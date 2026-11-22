@@ -7,6 +7,7 @@
 <meta name="theme-color" content="#05060c">
 <title>Gloam Downs · Cottage Arcade Lab</title>
 <meta name="description" content="Five dark places on rolling hills, sculpted and baked into pixel-art Gaussian splats with Ink Studio. Walk them as a small lamplighter: find the wisps and light the beacon on each summit.">
+<script src="/arcade/quiet.js"></script>
 <link rel="icon" href="/favicon.ico">
 <link rel="stylesheet" href="/lab/kit/lab.css">
 <style>
@@ -149,7 +150,9 @@
   body.run .panel .row button { white-space: normal; line-height: 1.15; padding: 4px 10px; }
   #pauseRow { display: grid; gap: 8px; }
   #pauseRow[hidden] { display: none; }
-  #bSound[aria-pressed="false"] { color: var(--ash); }
+  #bSound[aria-pressed="false"], #bMusic[aria-pressed="false"] { color: var(--ash); }
+  /* Resume is the widest of the three in its row; the switches share the rest */
+  #pauseRow #bResume { flex: 1.4; }
   .panel .ups { list-style: none; margin: 8px 0 12px; padding: 0; display: grid; gap: 6px; }
   .ups li { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2px 10px; padding: 4px 4px 4px 10px; border-radius: 10px; border: 1px solid var(--edge); }
   .ups li span { font: 600 14px/1.25 var(--body); color: var(--bone); }
@@ -261,7 +264,7 @@
   <p id="pauseLine">Run time 0:00</p>
   <ul id="pauseControls"></ul>
   <div id="pauseRow">
-    <div class="row"><button type="button" class="go" id="bResume">Resume</button><button type="button" id="bSound" aria-pressed="true">Sound on</button></div>
+    <div class="row"><button type="button" class="go" id="bResume">Resume</button><button type="button" id="bSound" aria-pressed="true">Sound on</button><button type="button" id="bMusic" aria-pressed="true">Music on</button></div>
     <div class="row"><button type="button" id="bRestart">Back to the start</button><button type="button" id="bEnd">End the run</button></div>
   </div>
   <div class="row" id="askRow" hidden><p class="ask" id="askLine">End the run? The glim you carry is lost.</p><button type="button" class="go" id="bNo">No</button><button type="button" id="bYes">Yes, end it</button></div>
