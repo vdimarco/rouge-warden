@@ -6,7 +6,7 @@
 import { createRenderer } from './ink/webgl/renderer.mjs';
 import { makeCamera as viewCamera } from './ink/webgl/view.mjs';
 import { loadPlace } from './world.js';
-import { makeWalk, makeBody, makeCamera, camLayout, pose, touches, atBeacon, autoTurn, PARAMS } from './play.js';
+import { makeWalk, makeBody, makeCamera, camLayout, pose, touches, atBeacon, autoTurn, PARAMS, makeFade, fadeOf, eyeOf } from './play.js';
 import { makeCombat, makeMoveLock, asFoes, makeBossCam, yawDiff } from './cameras.js';
 import { ORDER, load, store, wispCount, fresh } from './save.js';
 import * as RS from './run-save.js';
@@ -47,7 +47,7 @@ let renderer = null, place = null, walk = null, body = null, cam = null, world =
 let mode = 'loading', paused = false, lost = false, last = 0, time = 0, frames = 0, acc = 0, steps = 0;
 let artTarget = TARGET[q.get('q')] || (coarse ? 46000 : TARGET.mid), adapt = !q.has('q');
 let art = { w: 320, h: 200, s: 1 };
-let pendingRows = new Set(), fogNear = 10, beaconLit = false, arriveTimer = 0, toastTimer = 0, slowFor = 0, pool = null, slots = null, veils = null;
+let lampFade = null, pendingRows = new Set(), fogNear = 10, beaconLit = false, arriveTimer = 0, toastTimer = 0, slowFor = 0, pool = null, slots = null, veils = null;
 const intervals = [];
 // the run: the sound cues logged across places, the effects' flags (each can be turned off with __gloam.fx), what the effects give
 // this frame, training posts (?test), the fight in this place (fight.js) and the foes' targets
@@ -818,6 +818,8 @@ async function go(id) {
     }
   }
   cards.shut(loading);
+  // a place left with the lamplighter thinned out gets its densities back (a place is loaded once and kept)
+  lampFade?.set(0);
   ({ meta, world } = place);
   walk = makeWalk(meta.walk, place.walk);
   // a run's moves drive the body through its own copy of PARAMS
@@ -832,7 +834,8 @@ async function go(id) {
   cam.snap(body.s, body.s.yaw + Math.PI);
   // in a run, the combat camera turns the view toward the foes (cameras.js); reduced motion keeps it still
   combat = RUN ? makeCombat({ foes: awake, still }) : null;
-  held = RUN ? makeMoveLock() : null;
+  // a held move keeps its world direction while a camera turns by itself: a run's cameras, and the framed shot's lean (play.js)
+  held = makeMoveLock();
   // the fog: the bake set it for a camera 9 back; keep it at the same depths whatever the distance
   fogNear = meta.fog.start * 2 * (meta.fogFar - 9) + 2 * 9 - meta.fogFar;
   // the lamplighter's splats ride bones that the page writes every frame
@@ -841,6 +844,9 @@ async function go(id) {
   const placeCount = world.count;
   // its slots parked (at density 0 and off the bones), and the spark pool's splats after them
   pool = RUN ? makePool(world, meta, slots, { extra: LOOK ? 0 : SPARKS }) : null;
+  // where the walls bring the eye close, the lamplighter thins out (play.js fadeOf), its blade kept; after the pool, which may give
+  // the world a new data array
+  lampFade = makeFade(world.data, meta.bones);
   // in a run, the mist and haze sheets that lie in front of an awake figure fade out (veil.js); the beacon and the wisps are left alone
   const pack = c => ((c >> 16) & 255) + ((c >> 8) & 255) * 256 + (c & 255) * 65536;
   veils = RUN ? makeVeils(world, findVeils(world, { count: placeCount, skip: [...meta.beacon.fire, ...meta.wisps.map(w => w.ids)], shared: meta.pal.slice(32).map(pack) })) : null;
@@ -929,7 +935,7 @@ function update() {
     }
   } else if (mode === 'play') {
     save.time += STEP;
-    body.step(STEP, input, cam.c.yaw);
+    body.step(STEP, input, held.yaw(input, cam.c));
     const s = body.s;
     meta.wisps.forEach((w, i) => { if (!(save.wisps[meta.id] || []).includes(i) && touches(s, w.p)) takeWisp(i); });
     if (!beaconLit && atBeacon(s, meta.beacon)) lightBeacon();
@@ -941,6 +947,7 @@ function update() {
     if (bossCam.b.on && steps % 30 === 0) measureScreen();
   }
   input.dyaw = input.dpitch = 0;
+  for (const r of lampFade.set(fadeOf(eyeOf(view), body.s))) pendingRows.add(r);
   if (veils) unveil();
 }
 // the veils over the awake figures fade out, seen from where the eye is now: nine points on each figure, at its feet, middle and head,
@@ -1048,6 +1055,8 @@ window.__gloam = {
     // pitch is the player's; view is what is drawn (with the rise over walls), want the layout's distance, foe the combat camera's
     cam: cam ? { yaw: cam.c.yaw, dist: cam.c.dist, pitch: cam.c.pitch, want: cam.c.want, fov: cam.c.fov, aim: cam.c.aim, lift: cam.c.lift, view: view ? view.pitch : null, foe: combat?.foe?.id ?? null, turning: cam.c.turning, idle: cam.c.idle,
       boss: bossCam ? { on: bossCam.b.on, w: bossCam.b.w, dist: view?.dist ?? null, aim: view?.target ?? null } : null } : null,
+    // the near fade's share now (play.js fadeOf: 0 to 1, or NEAR_FADE.all with the whole figure left out)
+    fade: lampFade?.k ?? 0,
     // the mouse: taken now, the page can take it now, the browser refused it a moment ago, the hint shows, and its words
     mouse: { locked: inp.locked, lockable: inp.lockable, waiting: inp.waiting, hint: !hintEl.hidden, text: hintEl.textContent }
   }),

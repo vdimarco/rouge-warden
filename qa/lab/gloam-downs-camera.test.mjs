@@ -15,7 +15,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
-import { makeWalk, makeBody, makeCamera, camLayout, VIEW } from '../../public/lab/gloam-downs/play.js';
+import { makeWalk, makeBody, makeCamera, camLayout, VIEW, zoomFov, ZOOM, fadeOf, makeFade, pose, NEAR_FADE } from '../../public/lab/gloam-downs/play.js';
 import { makeCombat, makeMoveLock, makeBossCam, projector, frameClear, bossLeast, yawDiff, asFoes, COMBAT, BOSS } from '../../public/lab/gloam-downs/cameras.js';
 import { clearLine, makePost } from '../../public/lab/gloam-downs/moves.js';
 import { ORDER } from '../../public/lab/gloam-downs/save.js';
@@ -184,8 +184,32 @@ const stand = (walk, x, z, yaw = Math.PI, y = walk.top(x, z)) => makeBody(walk, 
     const e = eyeOf(v);
     assert(ROOF.support(e[0], e[2], e[1]) !== null, 'the eye is inside the roof');
   }
-  assert(v.dist > 2 && v.dist <= 8.5, `under the roof it stands ${v.dist} back`);
+  // (it stands at the full distance inside the passage: the view dips under the roof, which only a dip that reaches the full distance does)
+  assert(v.dist >= 8 && v.dist <= 8.5, `under the roof it stands ${v.dist} back`);
   pass('under a long roof the camera follows inside the passage', { dist: r2(v.dist), pitch: r2(v.pitch) });
+}
+
+{ /* the spring never moves away from its goal: a wall 3 m behind comes between (the eye behind it comes in fast, past it), and is gone
+     again, while the eye still comes in fast. On that step the eye does not go on in (a spring carried on by its speed
+     went on in, past NEAR and through the aim, in the torn cell of 45ffb438); it comes back out, eased */
+  const OPENW = layered(() => 0), WALLED = layered((x, z) => (z >= 3 && z <= 4 ? 14 : 0));
+  let cur = OPENW;
+  const walk = new Proxy({}, { get: (_, k) => cur[k] });
+  const b = stand(OPENW, 0, 0), cam = makeCamera(walk, { yaw: 0, ...camLayout(1280, 720), auto: false });
+  cam.snap(b.s, 0);
+  for (let i = 0; i < 30; i++) cam.follow(b.s, STEP, {});
+  cur = WALLED;
+  // (the eye behind the wall waits GRACE before it comes in, and then builds speed)
+  for (let i = 0; i < 15 && cam.c.dv > -8; i++) cam.follow(b.s, STEP, {});
+  const d0 = cam.c.dist, v0 = cam.c.dv;
+  assert(v0 < -5 && d0 < 8.4, `the eye was coming in fast (${d0.toFixed(2)} m at ${v0.toFixed(1)} m/s)`);
+  cur = OPENW;
+  cam.follow(b.s, STEP, {});
+  assert(cam.c.dist >= d0 - 1e-9, `with its goal gone back out, the eye went on in from ${d0.toFixed(3)} to ${cam.c.dist.toFixed(3)}`);
+  let last = cam.c.dist;
+  for (let i = 0; i < 60; i++) { cam.follow(b.s, STEP, {}); assert(last > 8.45 || cam.c.dist >= last - 1e-9, `step ${i} out: ${last} -> ${cam.c.dist}`); last = cam.c.dist; }
+  assert(near(last, 8.5, 0.05), `and it went back out to ${last}`);
+  pass('the spring never moves away from its goal: a goal that steps back out stops an eye coming in fast', { from: r2(d0), speed: r2(v0) });
 }
 
 /* ---------------- the follow camera on the five baked places ---------------- */
@@ -196,6 +220,40 @@ function place(id) {
   const meta = JSON.parse(fs.readFileSync(`${DIR}worlds/${id}.json`, 'utf8'));
   const raw = zlib.gunzipSync(fs.readFileSync(`${DIR}worlds/${id}.walk.bin.gz`));
   return (places[id] = { meta, walk: makeWalk(meta.walk, new Int16Array(raw.buffer, raw.byteOffset, raw.byteLength >> 1)) });
+}
+/* What the lamplighter covers of the picture: its splats as the page draws them (posed on their bones, the near fade's share left out,
+   the shadow disc not counted), each a disc of 2 sigma projected from the eye, marked on a grid of cells h/36 px across. -> the share of
+   the view's cells it covers. The figure is the same in every place, so the Gaol's is used */
+let FIG = null;
+function figure() {
+  if (FIG) return FIG;
+  const SplatCodec = new Function(fs.readFileSync(DIR + 'ink/splat-codec.js', 'utf8') + '\nreturn SplatCodec;')();
+  const meta = JSON.parse(fs.readFileSync(`${DIR}worlds/gaol.json`, 'utf8')), B = meta.bones;
+  const { data } = SplatCodec.decode(new Uint8Array(zlib.gunzipSync(fs.readFileSync(`${DIR}worlds/gaol.bin.gz`))), { maxRows: 1_000_000 });
+  return (FIG = { data, B, fade: makeFade(data, B), bones: new Float32Array(12 * B.names.length), shadow: B.names.indexOf('shadow') });
+}
+function covers(v, s, w, h, share = fadeOf(eyeOf(v), s)) {
+  const { data, B, fade, bones, shadow } = figure(), P = projector(v, w, h), e = P.eye;
+  fade.set(share);
+  pose(bones, B, s, 0, true);
+  const cell = h / 36, gw = Math.ceil(w / cell), gh = 36, grid = new Uint8Array(gw * gh), f = h / 2 / Math.tan(v.fov / 2);
+  for (let i = B.first; i < B.end; i++) {
+    const o = i * 16, b = data[o + 12];
+    if (data[o + 3] === 0 || b === shadow) continue;
+    const q = 12 * b, x = data[o], y = data[o + 1], z = data[o + 2];
+    const p = [bones[q] * x + bones[q + 1] * y + bones[q + 2] * z + bones[q + 9], bones[q + 3] * x + bones[q + 4] * y + bones[q + 5] * z + bones[q + 10], bones[q + 6] * x + bones[q + 7] * y + bones[q + 8] * z + bones[q + 11]];
+    const sp = P(p);
+    if (!sp) continue;
+    const r = 2 * Math.sqrt(Math.max(data[o + 4], data[o + 8], data[o + 10])) * f / Math.max(0.05, Math.hypot(p[0] - e[0], p[1] - e[1], p[2] - e[2])) / cell;
+    const cx = sp[0] / cell, cy = sp[1] / cell;
+    for (let gy = Math.max(0, Math.floor(cy - r)); gy <= Math.min(gh - 1, Math.floor(cy + r)); gy++)
+      for (let gx = Math.max(0, Math.floor(cx - r)); gx <= Math.min(gw - 1, Math.floor(cx + r)); gx++)
+        if ((gx + 0.5 - cx) ** 2 + (gy + 0.5 - cy) ** 2 <= (r + 0.5) ** 2) grid[gy * gw + gx] = 1;
+  }
+  fade.set(0);
+  let n = 0;
+  for (const g of grid) n += g;
+  return n / grid.length;
 }
 if (!skipWorlds) {
   /* Each route walked at run speed with no look input (the explorer's swing), and the view swept round at each waypoint (8 yaws, 1.5 s
@@ -266,6 +324,157 @@ if (!skipWorlds) {
     assert(row.side >= (tall ? PASS.sideTall : PASS.sideWide), `${name}: a foe 3.5 m to each side was on screen on ${row.side} of steps`);
   }
   pass('the five routes at five layouts: the camera stays back, rises over the scenery, and keeps the ground round the lamplighter in view', rows);
+
+  /* The torn cell of the Gaol, where its first wisp hangs: a cell 1.8 m wide and 1.9 deep under the first tier, its floor 2.2 under a
+     roof, open to the yard through a mouth under a lintel. The player's report: "where the first coin is it zooms in too much".
+     Before 2337588c a phone's camera (aim 1.8) stood 0.5 m from the aim walking in from the yard, its line in the lintel. Now, walking
+     in from the yard, the eye ends out in the yard at the layout's distance from within 20° of square to the mouth, and at least 2 m
+     back from 35° (the aim comes down under the roof). And where the walls bring the eye in, the field of view widens (the follow zoom) */
+  {
+    const { walk } = place('gaol'), cell = [1.6, -1.7], rows = [];
+    for (const name of ['1280x720', '390x844']) {
+      const [w, h] = LAYOUTS[name], L = camLayout(w, h);
+      for (const ang of [0, 20, 35, -35]) {
+        const a = ang * DEG, sx = cell[0] + Math.sin(a) * 6, sz = cell[1] + Math.cos(a) * 6;
+        const b = makeBody(walk, { p: [sx, walk.top(sx, sz) + 0.3, sz], yaw: a + Math.PI }, 34), cam = cameraFor(walk, name, a);
+        cam.snap(b.s, a);
+        let v;
+        for (let i = 0; i < 240; i++) {
+          const dx = cell[0] - b.s.x, dz = cell[1] - b.s.z, dd = Math.hypot(dx, dz), y = cam.c.yaw;
+          const inp = dd > 0.25 ? { mx: (dx * Math.cos(y) - dz * Math.sin(y)) / dd, mz: -(dx * Math.sin(y) + dz * Math.cos(y)) / dd } : {};
+          b.step(STEP, inp, y);
+          v = cam.follow(b.s, STEP, { ...inp, mouse: true });
+        }
+        assert(Math.hypot(b.s.x - cell[0], b.s.z - cell[1]) < 0.5 && b.s.y < -2, `${name} from ${ang}°: the lamplighter walked into the cell (${b.s.x.toFixed(2)}, ${b.s.y.toFixed(2)}, ${b.s.z.toFixed(2)})`);
+        /* from 35° (each way), with the mouse taken, the view may not turn by itself to the mouth, so the walls bring the eye in: it
+           stands 2 m back, or the near fade leaves out the whole figure, the lantern and the blade too (it covers at most 15%) */
+        const least = Math.abs(ang) <= 20 ? L.dist - 0.05 : 2, cover = covers(v, b.s, w, h);
+        assert(v.dist >= least || (Math.abs(ang) > 20 && fadeOf(eyeOf(v), b.s) === NEAR_FADE.all && cover <= 0.15), `${name} from ${ang}°: in the cell the eye stands ${v.dist.toFixed(2)} back, not out in the yard (${least.toFixed(2)}), and the figure covers ${(cover * 100).toFixed(0)}%`);
+        rows.push({ name, from: ang, dist: r2(v.dist), pitch: r2(v.pitch), cover: r2(cover) });
+      }
+    }
+    // the follow zoom itself: none from CLOSE out, the view as tall as from CLOSE nearer in, and its caps
+    const L = camLayout(1280, 720);
+    assert.equal(zoomFov(L.fov, 8.5, L.asp), L.fov);
+    assert.equal(zoomFov(L.fov, ZOOM.close, L.asp), L.fov);
+    assert(near(2 * 2 * Math.tan(zoomFov(L.fov, 2, L.asp) / 2), 2 * ZOOM.close * Math.tan(L.fov / 2), 1e-9), 'from 2 m the view is as tall as from CLOSE');
+    assert(near(2 * Math.atan(Math.tan(zoomFov(L.fov, 0.3, L.asp) / 2) * L.asp), ZOOM.wide, 1e-9), 'across, the view is at most 110°');
+    const T = camLayout(390, 844);
+    assert(near(zoomFov(T.fov, 0.3, T.asp), ZOOM.most, 1e-9), 'upright, the view is at most 90° tall');
+    pass('the Gaol\'s torn cell: walking in, the eye stays out in the yard, and the view widens as it comes in', rows);
+  }
+
+  /* A full turn of the mouse in 6 s, standing at three places in the torn cell and at every wisp of the five places, at 1280x720 and
+     390x844 ("it zooms in too much"; "mouse feels good"). While the mouse turns the view, a nook has walls on most sides, so the eye
+     cannot stand back at every yaw the player turns to: on each step the eye stands at least 2.5 m back, or the near fade leaves the
+     figure out whole (the eye in 0.9 m of it), and never nearer than 0.5; it sees the head as it settles (it never stands over a bell's
+     crown with the figure hidden under it); and on every step the lamplighter as drawn (posed, less the near fade's share) covers at
+     most 35% of the view. The share of steps in between (the eye 0.9 to 2.5 m back, a share of the figure left out) is at most 35% at
+     a spot and 6% over all. Once the mouse stops, the framed shot leans the view (at most 60°) to a clear yaw: in the torn cell the eye
+     stands 2.5 m back again within 1.5 s. The framed shot of 100a12c4 kept the eye 2.5 m back on 91% of the steps by showing the
+     picture from a yaw up to 150° from the mouse's, so the picture stood still while the mouse turned (on 68 to 92% of the steps in
+     the cell), and a move went sideways on screen; the mouse checks are in gloam-downs-mouse.test.mjs */
+  {
+    const rows = [], spots = [['gaol', 1.6, -1.6], ['gaol', 1.6, -2.1], ['gaol', 1.6, -0.9]];
+    for (const id of ORDER) for (const wp of place(id).meta.wisps) spots.push([id, wp.p[0], wp.p[2], wp.p[1]]);
+    for (const name of ['1280x720', '390x844']) {
+      const [w, h] = LAYOUTS[name];
+      let worstMid = 0, worstCover = 0, worstLeast = Infinity, mid = 0, back = 0, all = 0;
+      for (const [k, [id, x, z, wy]] of spots.entries()) {
+        const { walk } = place(id), y = wy === undefined ? walk.floor(x, z) : walk.support(x, z, wy + 0.5) ?? walk.floor(x, z);
+        const b = stand(walk, x, z, Math.PI, y), cam = cameraFor(walk, name, 0);
+        cam.snap(b.s, 0);
+        let n = 0, m = 0, least = Infinity, cover = 0;
+        for (let i = 0; i < 420; i++) {
+          b.step(STEP, {}, cam.c.yaw);
+          const v = cam.follow(b.s, STEP, i < 60 ? { mouse: true } : { dyaw: 2 * Math.PI / 360, mouse: true });
+          if (i === 59) {
+            const e = eyeOf(v);
+            assert(clearLine(walk, e[0], e[1], e[2], b.s.x, b.s.y + 1.3, b.s.z), `${name} ${id} at ${x.toFixed(1)}, ${z.toFixed(1)}: the settled eye does not see the head`);
+          }
+          if (i < 60) continue;
+          n++; all++;
+          if (v.dist >= 2.5) back++;
+          else if (fadeOf(eyeOf(v), b.s) < NEAR_FADE.most) { m++; mid++; }
+          least = Math.min(least, v.dist);
+          if (i % 2 === 0 || v.dist < 2.5) cover = Math.max(cover, covers(v, b.s, w, h));
+        }
+        const tag = `${name} ${id} at ${x.toFixed(1)}, ${z.toFixed(1)}`;
+        assert(m / n <= 0.35, `${tag}: the eye stood 0.9 to 2.5 m back with the figure partly drawn on ${(m / n).toFixed(2)} of a sweep`);
+        assert(least >= 0.5 - 1e-9, `${tag}: a sweep brought the eye ${least.toFixed(2)} from the aim`);
+        assert(cover <= 0.35, `${tag}: the lamplighter covered ${(cover * 100).toFixed(0)}% of the view`);
+        worstMid = Math.max(worstMid, m / n); worstCover = Math.max(worstCover, cover); worstLeast = Math.min(worstLeast, least);
+      }
+      assert(mid / all <= 0.06, `${name}: the eye stood 0.9 to 2.5 m back with the figure partly drawn on ${(mid / all).toFixed(3)} of all sweeps`);
+      rows.push({ name, spots: spots.length, back: r2(back / all), between: +(mid / all).toFixed(3), worstBetween: r2(worstMid), least: r2(worstLeast), cover: r2(worstCover) });
+    }
+    pass('a sweep of the mouse in the torn cell and at every wisp: the eye stands back or the figure is left out, it sees the head, and the figure never fills the view', rows);
+  }
+  /* The mouse stops in a nook ("it zooms in too much"; "mouse feels good"). At three spots in the torn cell and at the Gaol's wisp at
+     (7.6, -2.2), at 1280x720 and 390x844, the mouse turns the view from the mouth by 0 to 315° (8 yaws, 1° a step) and then stops.
+     With the mouse taken, and again with reduced motion, nothing turns the view in the next 1.5 s (the framed shot leans only while the
+     player turns: spec "A calm camera"), and 1.5 s after the mouse stops the eye stands at least 2.5 m back, or no part of the figure
+     (the lantern and the blade included) covers more than 15% of the view. With a stick and the mouse free, the view stays still for
+     AUTO.wait s too, and then the lean may turn it, at no more than SHOT.turn (0.5 rad/s). The build of 1974d668 turned the view by
+     itself by up to 43° in 0.5 s with the mouse taken, and settled the eye 0.95 to 1.3 m back with the lantern and the blade over much
+     of the view */
+  {
+    const rows = [], spots = [['gaol', 1.6, -1.6], ['gaol', 1.6, -2.1], ['gaol', 1.6, -0.9], ['gaol', 7.6, -2.2, 1.7]];
+    for (const name of ['1280x720', '390x844']) {
+      const [w, h] = LAYOUTS[name];
+      let cases = 0, moved = 0, worstCover = 0, near = 0, padMax = 0, padEarly = 0;
+      for (const [id, x, z, wy] of spots) for (let k = 0; k < 8; k++) for (const how of ['mouse', 'still', 'stick']) {
+        const { walk } = place(id), y = wy === undefined ? walk.floor(x, z) : walk.support(x, z, wy + 0.5) ?? walk.floor(x, z);
+        const b = stand(walk, x, z, Math.PI, y), cam = cameraFor(walk, name, 0, { auto: how !== 'still' });
+        cam.snap(b.s, 0);
+        const look = how === 'stick' ? {} : { mouse: true };
+        for (let i = 0; i < 60; i++) { b.step(STEP, {}, cam.c.yaw); cam.follow(b.s, STEP, look); }
+        for (let i = 0; i < k * 45; i++) { b.step(STEP, {}, cam.c.yaw); cam.follow(b.s, STEP, { ...look, dyaw: DEG }); }
+        const y0 = cam.c.yaw;
+        let v, most = 0;
+        for (let i = 0; i < 90; i++) { b.step(STEP, {}, cam.c.yaw); v = cam.follow(b.s, STEP, look); most = Math.max(most, Math.abs(cam.c.yaw - y0)); }
+        const tag = `${name} ${how} at ${x.toFixed(1)}, ${z.toFixed(1)}, turned ${k * 45}°`;
+        cases++;
+        assert.equal(most, 0, `${tag}: the view turned by itself by ${(most / DEG).toFixed(1)}° after the mouse stopped`);
+        if (how === 'stick') {
+          // past the wait the lean may turn the view, never faster than 0.5 rad/s
+          let prev = cam.c.yaw;
+          for (let i = 0; i < 180; i++) {
+            b.step(STEP, {}, cam.c.yaw); v = cam.follow(b.s, STEP, look);
+            const r = Math.abs(Math.atan2(Math.sin(cam.c.yaw - prev), Math.cos(cam.c.yaw - prev))) / STEP;
+            padMax = Math.max(padMax, r);
+            if (r > 0 && cam.c.idle <= 2) padEarly++;
+            prev = cam.c.yaw;
+          }
+          continue;
+        }
+        const cover = v.dist >= 2.5 ? 0 : covers(v, b.s, w, h);
+        if (v.dist < 2.5) near++;
+        assert(cover <= 0.15, `${tag}: 1.5 s after the mouse stopped the eye stands ${v.dist.toFixed(2)} back and the figure covers ${(cover * 100).toFixed(0)}%`);
+        worstCover = Math.max(worstCover, cover);
+        if (most > 0) moved++;
+      }
+      assert(padMax <= 0.5 + 1e-6 && padEarly === 0, `${name}: with a stick the lean turned at up to ${padMax.toFixed(2)} rad/s, ${padEarly} steps before the wait`);
+      rows.push({ name, cases, near, cover: r2(worstCover), stickRate: r2(padMax) });
+    }
+    pass('the mouse stops in a nook: nothing turns the view by itself with the mouse taken or reduced motion, and the eye stands back or the figure (its lantern and blade too) is left out', rows);
+  }
+  /* the near fade itself: an eye 0.5 m behind the hood (as the walls of a nook can leave it, the view widened to 90°). The figure drawn
+     whole covers 30% of the view or more, and thinned by a share of 0.8 (2337588c's most) it covers nearly as much, for each splat left
+     is drawn large; the fade there now leaves out all of it, the blade and the lantern too (within NEAR_FADE.hold, 1.6 m), and covers
+     nothing. Kept, the blade and the lantern alone cover up to 10% from 0.5 m; from 1 to 1.3 m, looking out of the torn cell, they covered
+     much of the view (the review of 1974d668) */
+  {
+    const { walk } = place('gaol'), b = stand(walk, -14.8, 8), out = [];
+    for (const name of ['1280x720', '390x844']) {
+      const [w, h] = LAYOUTS[name], L = camLayout(w, h), v = { target: [b.s.x, b.s.y + 1.15, b.s.z], dist: 0.5, yaw: 0, pitch: 0.3, fov: zoomFov(L.fov, 0.5, L.asp) };
+      const share = fadeOf(eyeOf(v), b.s), whole = covers(v, b.s, w, h, 0), old = covers(v, b.s, w, h, 0.8), kept = covers(v, b.s, w, h, NEAR_FADE.most), now = covers(v, b.s, w, h);
+      assert.equal(share, NEAR_FADE.all);
+      assert(whole >= 0.3 && old >= 0.7 * whole && kept <= 0.1 && now === 0, `${name}: an eye 0.5 m away: whole ${r2(whole)}, at 0.8 ${r2(old)}, held kept ${r2(kept)}, faded ${r2(now)}`);
+      out.push({ name, whole: r2(whole), at08: r2(old), heldKept: r2(kept), faded: r2(now) });
+    }
+    pass('the near fade: from 1.6 m in it leaves out all of the figure, the blade and the lantern too, and the view is clear, as a share of 0.8 did not make it', out);
+  }
 }
 
 /* ---------------- the combat camera ---------------- */
@@ -417,6 +626,35 @@ const around = (s, yaw, d, deg) => {
   assert.equal(m.foe.id, 'post2', 'a post put out: it chooses again');
   assert.deepEqual(asFoes([{ id: 'a', x: 0, y: 0, z: 0, awake: false }, { id: 'b', x: 1, y: 0, z: 1, home: 1, range: Infinity }]), [{ id: 'b', x: 1, y: 0, z: 1, home: true, range: Infinity }]);
   pass('training posts stand in for foes');
+}
+
+if (!skipWorlds) { /* the combat camera in a nook: the framed shot does not fight it. A foe 6 m away in 6 directions, at three spots in the
+     Gaol's torn cell and 6 start yaws, with no look input for 10 s and the mouse free (so both may turn the view by themselves). The yaw
+     changes direction at most once, and the foe ends within COMBAT.stop of the view's forward direction, or the eye stands so near that
+     the near fade leaves the figure out whole. In the build of 1974d668 the lean turned the yaw back toward a clear yaw on the same step
+     as the combat camera turned it toward the foe: in 92 of 432 such cases the yaw reversed more than 50 times, and the foe was left up
+     to 143° off */
+  const { walk } = place('gaol'), out = { cases: 0, reversals: 0, worstOff: 0, faded: 0 };
+  for (const [x, z] of [[1.6, -1.6], [1.6, -2.1], [1.6, -0.9]]) for (let fd = 0; fd < 360; fd += 60) for (let y0 = 0; y0 < 360; y0 += 60) {
+    const b = stand(walk, x, z, Math.PI, walk.floor(x, z)), cam = cameraFor(walk, '1280x720', y0 * DEG);
+    const foe = { id: 'S', x: x + 6 * Math.sin(fd * DEG), y: b.s.y, z: z + 6 * Math.cos(fd * DEG) }, combat = makeCombat({ foes: () => [foe] });
+    cam.snap(b.s, y0 * DEG);
+    let prev = cam.c.yaw, sign = 0, flips = 0, v;
+    for (let i = 0; i < 600; i++) {
+      b.step(STEP, {}, cam.c.yaw);
+      v = stepCam(cam, b.s, combat.turn);
+      const d = wrap(cam.c.yaw - prev), sg = Math.abs(d) > 1e-9 ? Math.sign(d) : 0;
+      if (sg && sign && sg !== sign) flips++;
+      if (sg) sign = sg;
+      prev = cam.c.yaw;
+    }
+    const off = Math.abs(yawDiff(cam.c.yaw, b.s, foe)), faded = fadeOf(eyeOf(v), b.s) === NEAR_FADE.all;
+    const tag = `at ${x}, ${z}, foe at ${fd}°, from ${y0}°`;
+    assert(flips <= 1, `${tag}: the yaw changed direction ${flips} times`);
+    assert(off <= COMBAT.stop + 1e-6 || faded, `${tag}: the foe was left ${(off / DEG).toFixed(0)}° off, the eye ${v.dist.toFixed(2)} back`);
+    out.cases++; out.reversals = Math.max(out.reversals, flips); out.worstOff = Math.max(out.worstOff, +(off / DEG).toFixed(1)); if (faded) out.faded++;
+  }
+  pass('the combat camera in the torn cell: the framed shot does not fight it, and the foe comes into view', out);
 }
 
 /* ---------------- the boss camera, with a stand-in boss ---------------- */

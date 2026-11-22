@@ -160,6 +160,7 @@ export default {
         const low = Math.min(h(x, z), top) - 0.5;
         S.box([x, (top + low) / 2, z], [width / 2, (top - low) / 2, half], mat, { ax: yawAx(yaw), rd: 0.06, res: 0.13 });
       }
+      ctx.stair([a, b], width);
     };
     // a chunky iron cage: a few fat bars, a hoop, a domed lid and a floor
     const cage = (x, yc, z, { r = 0.5, hh = 0.62 } = {}) => {
