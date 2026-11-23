@@ -109,7 +109,7 @@ try {
   check(errors.length === 0, "no page errors during the run" + (errors.length ? ": " + errors[0] : ""));
 
   /* ----- the arcade cabinet reads the save ----- */
-  await page.goto(BASE);
+  await page.goto(BASE + "?machines");
   const line = await page.evaluate(() => { const c = document.querySelector('.cab[data-game="lake-brawl"]'); return c && c.querySelector(".hi").textContent; });
   check(line === "CAMPAIGN CLEARED 1/14", `the cabinet line reads the save: ${line}`);
   await ctx.close();

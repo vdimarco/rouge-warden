@@ -1,7 +1,11 @@
 ## ADDED Requirements
 
 ### Requirement: The Corridor is the default view
-`/corridor/` SHALL serve the Corridor, a walk-through hall with one cabinet per game, and each cabinet SHALL lead to that game's route on the same site. A visitor who opens `/` with no stored choice, no hash and a browser that supports WebGL SHALL arrive at `/corridor/`, and Back SHALL NOT return to `/`. `/#<group>` SHALL keep opening the hall on that group. A browser without WebGL SHALL stay on `/`.
+`/corridor/` SHALL serve the Corridor, a walk-through hall with one cabinet per game, and each cabinet SHALL lead to that game's route on the same site. A visitor who opens `/` with no stored choice and no hash SHALL arrive at `/corridor/`, the same view as `/?view=walk`, and Back SHALL NOT return to `/`. This includes an automated browser and a browser without WebGL. `/#<group>` SHALL keep opening the hall on that group. `/?view=walk` SHALL remain an alias for the Corridor and SHALL clear a stored list choice.
+
+#### Scenario: First visit in a clean browser
+- **WHEN** a visitor opens `/` with no stored choice and no query, including an automated browser
+- **THEN** the address becomes `/corridor/`, the Corridor is drawn, and the leaderboard is not visible
 
 #### Scenario: First visit
 - **WHEN** a visitor opens `/` for the first time in a browser with WebGL
@@ -14,6 +18,17 @@
 #### Scenario: A cabinet opens its game here
 - **WHEN** a visitor opens a cabinet in the Corridor on any deployment and chooses to play
 - **THEN** the game loads from that same deployment
+
+### Requirement: The leaderboard starts closed
+The scoreboard SHALL stay closed on `/` and `/?view=walk`. A Scores control SHALL open it, and `/?view=board` SHALL open it directly without becoming the stored default. X, Esc, and a tap outside the board SHALL each close it. While it is open it SHALL be a panel under the hall sign, and All Games and Scores SHALL remain the top elements at their centres so a normal click on All Games still opens the game list.
+
+#### Scenario: Scores, then All Games
+- **WHEN** a visitor on the Corridor selects Scores, then selects All Games while the board is open
+- **THEN** the board opens under those controls, and All Games opens the game list
+
+#### Scenario: Closing the board
+- **WHEN** the board is open and the visitor selects X, presses Esc, or taps outside the board
+- **THEN** the board closes each time
 
 ### Requirement: Switching views is remembered
 The Corridor SHALL offer an All games control that opens `/` on All Games. That choice SHALL be stored under `arcade.view` and `/` SHALL open All Games on later visits. All Games SHALL offer a Corridor control that opens `/corridor/` and clears the stored choice. Both controls SHALL be on screen at widths 1280, 390 and 320 without sideways scroll, and the All Games bar's controls SHALL NOT cover its title.

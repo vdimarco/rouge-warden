@@ -128,14 +128,53 @@ for (const size of SIZES) {
   check(!hrefs.some((h) => /^https?:\/\/arcade\.uptick\.systems/.test(h)), "no link leaves for the production address");
   await ctx.close();
 
-  // automated checks of the hall keep the hall
-  ctx = await browser.newContext({ viewport: { width: size.width, height: size.height }, hasTouch: size.touch });
-  page = await ctx.newPage();
-  await page.goto(BASE);
-  await settle(page);
-  check(page.url() === BASE && await isHall(page), "an automated browser stays in the hall");
-  await ctx.close();
   check(errors.length === 0, "no page errors" + (errors.length ? ": " + errors.join(" | ") : ""));
+
+  // a clean browser leaves webdriver on and has no stored choice. / is the Alley when WebGL2 is there.
+  ctx = await browser.newContext({ viewport: { width: size.width, height: size.height }, hasTouch: size.touch });
+  await ctx.route("**/worlds/hall/*.spz", (r) => r.fulfill({ contentType: "application/octet-stream", body: SMALL }));
+  page = await ctx.newPage();
+  const cleanErrors = [];
+  page.on("pageerror", (e) => cleanErrors.push(e.message));
+  await page.goto(BASE);
+  await page.waitForURL(ALLEY);
+  check(page.url() === ALLEY, "a clean / opens the Alley");
+  const hit = (sel) => page.evaluate((sel) => {
+    const el = document.querySelector(sel), b = el.getBoundingClientRect();
+    const top = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2);
+    return { self: top === el, id: top && top.id, cls: top && String(top.className || "") };
+  }, sel);
+  const boardUp = () => page.locator(".gsw.scoreboard").isVisible();
+  if (size.width === 390 || size.width === 1280) {
+    await page.goto(BASE + "?view=board");
+    await page.waitForSelector(".gsw.scoreboard:not([hidden]) .board-launch");
+    check(new URL(page.url()).searchParams.get("view") === "board" && await boardUp(), "?view=board opens the leaderboard");
+    const over = await hit(".all-games");
+    check(over.self, `${size.name}: with the board open, All Games is the element at its centre (hit ${over.id || over.cls})`);
+    if (SHOTS && size.width === 390) await page.screenshot({ path: path.join(SHOTS, "clean-390-board.png") });
+
+    await page.getByRole("button", { name: "Close", exact: true }).click();
+    check(!(await boardUp()), "X closes the board");
+    await page.locator("#scores-btn").click();
+    await page.waitForSelector(".gsw.scoreboard:not([hidden])");
+    check(await boardUp(), "Scores opens the board");
+    await page.keyboard.press("Escape");
+    check(!(await boardUp()), "Esc closes the board");
+    await page.locator("#scores-btn").click();
+    await page.waitForSelector(".gsw.scoreboard:not([hidden])");
+    await page.locator(".sign h1").click();
+    check(!(await boardUp()), "a tap outside closes the board");
+    await page.locator("#scores-btn").click();
+    await page.waitForSelector(".gsw.scoreboard:not([hidden]) .board-launch");
+    const still = await hit(".all-games");
+    check(still.self, `${size.name}: All Games stays on top after Scores reopens the board`);
+    const t1 = Date.now();
+    await page.locator(".all-games").click({ timeout: 1000 });
+    await page.waitForSelector(".gsw.scoreboard .board-launch", { timeout: 1000 });
+    check(Date.now() - t1 <= 1000 && await boardUp(), `${size.name}: All Games still opens the list while the board is up (${Date.now() - t1} ms)`);
+  }
+  check(cleanErrors.length === 0, "no page errors on a clean visit" + (cleanErrors.length ? ": " + cleanErrors.join(" | ") : ""));
+  await ctx.close();
 }
 await browser.close();
 console.log(failures ? failures + " failed" : "all passed");

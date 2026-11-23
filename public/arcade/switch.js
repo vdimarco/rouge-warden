@@ -337,7 +337,7 @@
     // on the arcade page itself the list is the ALL GAMES view: no run ends, and there is no arcade to go back to
     box.setAttribute("aria-label", home ? "All games" : "Switch game");
     box.innerHTML = home
-      ? "<div class='gsw-card'><header class='board-head'><h2>COTTAGE ARCADE</h2><div class='board-controls'><div class='board-sort' aria-label='Rank games by'><button type='button' data-metric='featured' aria-pressed='true'>Featured</button><button type='button' data-metric='plays' aria-pressed='false'>Plays</button><button type='button' data-metric='views' aria-pressed='false'>Views</button><button type='button' data-metric='likes' aria-pressed='false'>Likes</button><button type='button' data-metric='active_seconds' aria-pressed='false'>Time</button><button type='button' data-metric='added' aria-pressed='false'>New</button><button type='button' data-metric='updated' aria-pressed='false'>Updated</button></div><input type='search' placeholder='Find a game' aria-label='Find a game'></div><nav class='board-nav' aria-label='Arcade menu'><button type='button' class='room-link machines-link gsw-close'>\u25c0 Old arcade</button><a class='room-link walk-link' href='/?view=corridor'>Corridor \u2197</a><a class='room-link walk-link alley-link' href='/?view=alley'>Alley \u2197</a><a class='room-link' href='/arcade/room/'>3D arcade \u2197</a><details class='board-menu'><summary>Menu</summary><div><button type='button' class='board-refresh'>Refresh activity</button><a class='walk-menu' href='/?view=corridor'>Corridor view</a><a class='walk-menu alley-menu' href='/?view=alley'>Alley view</a><a href='#board-info'>About the counts</a></div></details></nav></header><div class='board-live'><span class='board-status' role='status'>Loading shared activity\u2026</span></div><div class='gsw-list'></div><p class='board-empty' hidden>No games found. Try another name.</p><details class='board-definitions' id='board-info'><summary>Activity / last 30 days</summary><div class='board-stats'></div><div>Featured games are selected picks. New lists the newest games first, by the day each game was first added. Updated lists the games that changed most recently. The day on each card follows that choice. Views: game page visits. Plays: visits with a first player interaction. Likes: one per anonymous visitor per game in the last 30 days. Active time: focused game time within 30 seconds of input, excluding the game switcher. It is an engagement estimate. Rankings use production PostHog events and refresh every few minutes.</div></details></div>"
+      ? "<div class='gsw-card'><header class='board-head'><h2>COTTAGE ARCADE</h2><div class='board-controls'><div class='board-sort' aria-label='Rank games by'><button type='button' data-metric='featured' aria-pressed='true'>Featured</button><button type='button' data-metric='plays' aria-pressed='false'>Plays</button><button type='button' data-metric='views' aria-pressed='false'>Views</button><button type='button' data-metric='likes' aria-pressed='false'>Likes</button><button type='button' data-metric='active_seconds' aria-pressed='false'>Time</button><button type='button' data-metric='added' aria-pressed='false'>New</button><button type='button' data-metric='updated' aria-pressed='false'>Updated</button></div><input type='search' placeholder='Find a game' aria-label='Find a game'></div><nav class='board-nav' aria-label='Arcade menu'><button type='button' class='room-link gsw-close' aria-label='Close'>X</button><button type='button' class='room-link machines-link gsw-close'>\u25c0 Old arcade</button><a class='room-link walk-link' href='/?view=corridor'>Corridor \u2197</a><a class='room-link walk-link alley-link' href='/?view=alley'>Alley \u2197</a><a class='room-link' href='/arcade/room/'>3D arcade \u2197</a><details class='board-menu'><summary>Menu</summary><div><button type='button' class='board-refresh'>Refresh activity</button><a class='walk-menu' href='/?view=corridor'>Corridor view</a><a class='walk-menu alley-menu' href='/?view=alley'>Alley view</a><a href='#board-info'>About the counts</a></div></details></nav></header><div class='board-live'><span class='board-status' role='status'>Loading shared activity\u2026</span></div><div class='gsw-list'></div><p class='board-empty' hidden>No games found. Try another name.</p><details class='board-definitions' id='board-info'><summary>Activity / last 30 days</summary><div class='board-stats'></div><div>Featured games are selected picks. New lists the newest games first, by the day each game was first added. Updated lists the games that changed most recently. The day on each card follows that choice. Views: game page visits. Plays: visits with a first player interaction. Likes: one per anonymous visitor per game in the last 30 days. Active time: focused game time within 30 seconds of input, excluding the game switcher. It is an engagement estimate. Rankings use production PostHog events and refresh every few minutes.</div></details></div>"
       : "<div class='gsw-card'><h2>SWITCH GAME</h2><p>Pick a cabinet. Your current run ends.</p><div class='gsw-list'></div><div class='gsw-row'><a href='/'>◀ Back to the arcade</a><button type='button' class='gsw-close'>Keep playing</button></div></div>";
     // keep the game from seeing clicks and keys meant for the switcher
     for (const ev of ["pointerdown", "mousedown", "click", "touchstart", "keydown", "keyup"]) box.addEventListener(ev, (e) => e.stopPropagation());
@@ -375,12 +375,25 @@
     if (home) await loadDates();
     render();
     if (home) refresh();
+    fitPanel();
     box.hidden = false;
     if (document.pointerLockElement) document.exitPointerLock();
     const first = box.querySelector('.board-launch, .gsw-game:not(.here)');
     first?.focus({ preventScroll: true });
   }
-  function close() { if (box) box.hidden = true; }
+  function fitPanel() {
+    if (!box || !home) return;
+    const sign = document.querySelector(".sign");
+    box.style.top = sign ? Math.ceil(sign.getBoundingClientRect().bottom) + "px" : "";
+  }
+  function close() {
+    if (box) box.hidden = true;
+    if (!home) return;
+    const url = new URL(location.href);
+    if (url.searchParams.get("view") !== "board") return;
+    url.searchParams.delete("view");
+    history.replaceState(null, "", url.pathname + url.search + url.hash);
+  }
   // wire every [data-switch] button; the button's own clicks and keys must not reach the game (no fight starts, no pause resumes)
   function wire() {
     for (const b of document.querySelectorAll("[data-switch]")) {
@@ -390,8 +403,45 @@
       b.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); open(); });
     }
   }
-  // the arcade page opens on All Games, except for ?machines (Old arcade) or a page that asks for its machines (a group in its address)
-  function init() { wire(); if (home && !new URLSearchParams(location.search).has("machines") && !document.documentElement.hasAttribute("data-machines")) open(); }
+  function rememberedList() {
+    try { return localStorage.getItem("arcade.view") === "classic"; } catch { return false; }
+  }
+  // The list stays closed until All Games, Scores, ?view=classic or ?view=board. ?machines and a group link keep the machines.
+  function init() {
+    wire();
+    const scores = document.getElementById("scores-btn");
+    if (scores && !scores.dataset.scoresWired) {
+      scores.dataset.scoresWired = "1";
+      scores.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const url = new URL(location.href);
+        url.searchParams.set("view", "board");
+        history.pushState({ view: "board" }, "", url.pathname + url.search + url.hash);
+        open();
+      });
+    }
+    if (home) {
+      document.addEventListener("click", (e) => {
+        if (!box || box.hidden) return;
+        if (e.target.closest(".gsw, #scores-btn, [data-switch]")) return;
+        close();
+      });
+      const sign = document.querySelector(".sign");
+      if (sign && window.ResizeObserver) new ResizeObserver(() => { if (box && !box.hidden) fitPanel(); }).observe(sign);
+      window.addEventListener("keydown", (e) => {
+        if (e.key !== "Escape" || e.repeat || !box || box.hidden) return;
+        close();
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      }, true);
+    }
+    if (!home) return;
+    const params = new URLSearchParams(location.search);
+    if (params.has("machines") || document.documentElement.hasAttribute("data-machines")) return;
+    const want = params.get("view");
+    if (want === "board" || want === "classic" || (!want && rememberedList())) open();
+  }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
   window.GameSwitch = { open, close, wire, record, count, get isOpen() { return !!box && !box.hidden; }, GAMES, rankGames, validateMetrics, duration, dateLabel };
 })();
