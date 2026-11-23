@@ -1911,8 +1911,8 @@ function sameSpot(a, b) {
   return !!(b && Math.abs(a.x - b.x) < 1.5 && Math.abs(a.y - b.y) < 1.5 && Math.abs(a.z - b.z) < 1.5);
 }
 // Fire-time order: the ring face within 16 body-heights, then the aimed point, then a building, then sky.
-// A blocked line is skipped. The ring face past 16 body-heights is skipped. Sky is capped there.
-// A clear building keeps its real distance. The other hand does not copy the same point.
+// A blocked line is skipped. The ring face is preferred only while it is that close. Sky is capped there.
+// A clear building, including the one the aim already chose, keeps its real distance. The other hand does not copy the same point.
 function clearAnchor(i, h, proposed) {
   const from = handOrigin(i, h), cap = 16 * bodyH(), held = otherAnchor(i);
   const ring = ringFace();
@@ -1922,7 +1922,8 @@ function clearAnchor(i, h, proposed) {
     if (d <= cap + 1e-3 && d > 0.05 && !blocked && !sameSpot(ring, held)) return ring;
   }
   const list = [];
-  if (proposed && proposed.valid && !(ring && proposed.id === ring.id && Math.abs(proposed.x - ring.x) < 1 && Math.abs(proposed.y - ring.y) < 2)) list.push(proposed);
+  // The ring face is preferred above only when it is close. The aimed building keeps its own point, including that tower.
+  if (proposed && proposed.valid) list.push(proposed);
   const near = playerEasy(otherWeb(i), false);
   if (near && !near.sky) list.push(near);
   easyDir();
@@ -1940,7 +1941,7 @@ function clearAnchor(i, h, proposed) {
     if (seen.has(key)) continue;
     seen.add(key);
     const dx = a.x - from.x, dy = a.y - from.y, dz = a.z - from.z, d = Math.hypot(dx, dy, dz);
-    if ((a.sky || (ring && a.id === ring.id)) && d > cap + 1e-3) continue;
+    if (a.sky && d > cap + 1e-3) continue;
     const blocked = d > 1.2 && city.raycast(from.x, from.y, from.z, dx, dy, dz, d - 0.6, LINE);
     if (!blocked) return a;
     if (!clipped) clipped = a;
@@ -2474,7 +2475,11 @@ function ensureWeb() {
   webMesh.renderOrder = 2;
   webMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   webFadeAttr.setUsage(THREE.DynamicDrawUsage);
-  webMesh.onBeforeRender = () => { mat.uniforms.uPix.value = webDrawPx; };
+  webMesh.onBeforeRender = () => {
+    // paintRope sets the width for each pass. A render before that still needs a real line, or the rope is a fraction of a pixel.
+    if (!(webDrawPx > 0)) webDrawPx = webCss() * (webPx() + 2) * 0.5;
+    mat.uniforms.uPix.value = webDrawPx;
+  };
   ropeLayer = new THREE.Scene();
   scene.add(webMesh);
 }
