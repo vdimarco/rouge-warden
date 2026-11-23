@@ -181,6 +181,13 @@ A press of the left or right button on the view in play SHALL always do what the
 - **WHEN** at 1280 by 720 with a fine pointer, and on a coarse 390 by 844 page with a mouse, the browser grants the lock, refuses it (a rejected promise, or pointerlockerror), never answers, or has no pointer lock, and the player clicks Begin the run or Walk and then clicks the view three times
 - **THEN** each click on the view attacks a post 2 m ahead (the explorer: jumps more than 0.3 m), the first one too; the mouse turns the view (taken: a move with no button; free: the right drag, by more than 0.1 rad); Look, Map, Close, Games and every button of the pause panel answer one click; and with an unanswered request the clicks ask no more than once. Before (913f5b4e): with the lock refused, 55 clicks in 12 s made no attack, and the right drag did not turn the view. Check: e2e `gloam-downs-clicks.e2e.mjs`, with real `page.mouse` clicks and `elementFromPoint` at each button.
 
+### Requirement: A way into the run
+The explorer's help card and its map SHALL each have a Fight button, at least 44 px high, beside Walk and Close. Fight SHALL open the combat run at the same address with `run` added, keeping the rest of the query. An address with the hash `#run` SHALL also open the run. A run SHALL not show Fight.
+
+#### Scenario: A player in the explorer wants to fight
+- **WHEN** at 1280 by 720, 390 by 844 and 320 by 640 the player clicks Fight on the help card, or presses M and clicks Fight on the map
+- **THEN** the page loads with `run` added to its query (a share key in the query stays), the run's help card with Begin the run shows, and Fight is not shown in the run; the map still fits with no scroll. Before: a share link that dropped `&run` left the player in the explorer, where a click jumps and no key attacks. Check: e2e `gloam-downs-clicks.e2e.mjs fight`.
+
 ### Requirement: What counts as a mouse
 There is a mouse when the primary pointer is fine, or when a pointer of type mouse has moved or pressed on the page since (any-pointer: fine) last turned on. The page SHALL read this on each event and as those media queries change, so a phone with a mouse plugged in counts. A pen or a touch is not a mouse, and a touch's tap on the view SHALL never act as a click. A touch on the screen SHALL free a taken mouse, and SHALL act where it touched.
 

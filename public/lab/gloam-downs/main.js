@@ -31,7 +31,8 @@ const coarse = matchMedia('(pointer: coarse)').matches;
 const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const TARGET = { low: 30000, mid: 64000, high: 110000 };
 // the combat run is behind ?run until it is finished; ?run&test&lineup gives a pool of one of each figure, to look at them
-const RUN = q.has('run'), LOOK = RUN && q.has('lineup');
+// #run works too: a share link or a redirect that keeps the hash but drops the query still opens the run
+const RUN = q.has('run') || /^#run\b/.test(location.hash), LOOK = RUN && q.has('lineup');
 if (RUN) {
   document.body.classList.add('run');
   // in a run the Map tool is the pause
@@ -428,6 +429,9 @@ $('bMap').addEventListener('click', () => {
 $('bMapClose').addEventListener('click', closePanels);
 $('bLook').addEventListener('click', face);
 $('bStart').addEventListener('click', closePanels);
+/* Fight: the explorer's way into the combat run, on the help card and the map. The address keeps any other query (a share key) */
+function toRun() { location.assign(location.pathname + (location.search ? `${location.search}&run` : '?run')); }
+for (const id of ['bFight', 'bMapFight']) $(id).addEventListener('click', toRun);
 $('bEndStay').addEventListener('click', closePanels);
 // Walk again puts out the five beacons of the downs only: the Lattice keeps its beacons
 $('bAgain').addEventListener('click', () => { closePanels(); for (const id of ORDER) delete save.lit[id]; save.time = 0; save.at = 'gaol'; store(disk, save); go('gaol'); });

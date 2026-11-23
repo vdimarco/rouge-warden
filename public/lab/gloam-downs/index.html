@@ -135,6 +135,8 @@
   .wicks button { width: 100%; text-align: left; padding: 10px 14px; line-height: 1.3; }
   .panel .ask { margin: 4px 0 10px; color: var(--bone); }
   .panel .row[hidden] { display: none; }
+  /* the explorer's way into the combat run; a run has no use for it */
+  body.run .fight { display: none; }
   #askRow { flex-wrap: wrap; }
   #askRow .ask { flex-basis: 100%; }
   @media (max-width: 520px) { .hud .hint { display: none; } .hud p { font-size: 12px; } .tools button { padding: 0 10px; font-size: 13px; } }
@@ -260,7 +262,7 @@
     <li>Press JUMP to jump. Hold it to jump higher.</li>
   </ul>
   <p id="helpLattice">The map also opens the Gilt Lattice: three more places of marble, gold and light. Its first place is open now.</p>
-  <div class="row"><button type="button" class="go" id="bStart">Walk</button></div>
+  <div class="row"><button type="button" class="go" id="bStart">Walk</button><button type="button" class="fight" id="bFight" title="Fight through the five places: attack, roll and heal">Fight</button></div>
 </div></div>
 
 <div class="panel" id="map" hidden><div class="box" role="dialog" aria-labelledby="mapT">
@@ -270,7 +272,7 @@
     <section class="group" aria-labelledby="downsT"><h3 id="downsT">The downs</h3><div class="places" id="places"></div></section>
     <section class="group lattice" aria-labelledby="latticeT"><h3 id="latticeT">The Gilt Lattice</h3><div class="places" id="lattice"></div></section>
   </div>
-  <div class="row"><button type="button" id="bMapClose">Close</button></div>
+  <div class="row"><button type="button" id="bMapClose">Close</button><button type="button" class="fight" id="bMapFight" title="Fight through the five places: attack, roll and heal">Fight</button></div>
 </div></div>
 
 <div class="panel" id="end" hidden><div class="box" role="dialog" aria-labelledby="endT">

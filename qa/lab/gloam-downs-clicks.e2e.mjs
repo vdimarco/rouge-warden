@@ -18,7 +18,7 @@
 //   help box leaves it open.
 // The page runs with ?test and is stepped by __gloam.tick(), because software WebGL takes about a second a frame.
 // Needs the site served: python3 -m http.server 8765 --bind 0.0.0.0 --directory public
-// Run: node qa/lab/gloam-downs-clicks.e2e.mjs [part...]   (parts: run explorer late help cards taps phone; SITE_URL to point elsewhere)
+// Run: node qa/lab/gloam-downs-clicks.e2e.mjs [part...]   (parts: run explorer late help cards taps phone fight; SITE_URL to point elsewhere)
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { existsSync } from 'node:fs';
@@ -394,6 +394,42 @@ try {
       assert.equal((await state(page)).mode, 'play');
       pass(`a coarse 390x844 page with a mouse, lock ${lock}, in the explorer: a touch tap does not jump, a mouse click jumps on the first click, the mouse looks, Map and Close answer`, { turn: +turn.toFixed(2) });
       if (errors.length) throw new Error(errors.join('\n'));
+      await ctx.close();
+    }
+  }
+  // fight: the explorer's Fight button (help card and map) opens the run, keeping the share key; #run opens it too
+  if (want('fight')) {
+    const at = (page, sel) => page.evaluate(s => { const b = document.querySelector(s).getBoundingClientRect(); const top = document.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2); return { x: b.x + b.width / 2, y: b.y + b.height / 2, h: b.height, top: top?.id, bottom: b.bottom, vh: innerHeight }; }, sel);
+    for (const [width, height] of [[1280, 720], [390, 844], [320, 640]]) {
+      const ctx = await browser.newContext({ viewport: { width, height } });
+      await ctx.route('**/api/**', r => r.fulfill({ status: 204, body: '' }));
+      const page = await ctx.newPage();
+      const errors = [];
+      page.on('pageerror', e => errors.push(e.message));
+      await page.goto(`${SITE}/lab/gloam-downs/?test&_vercel_share=key`);
+      await page.waitForSelector('#help:not([hidden])', { timeout: 180000 });
+      let b = await at(page, '#bFight');
+      assert.equal(b.top, 'bFight'); assert.ok(b.h >= 44 && b.bottom <= b.vh, JSON.stringify(b));
+      await page.mouse.click(b.x, b.y);
+      await page.waitForURL(/[?&]run(&|$)/, { timeout: 30000 });
+      assert.match(page.url(), /_vercel_share=key/);
+      await page.waitForSelector('#runHelp:not([hidden])', { timeout: 180000 });
+      assert.equal(await page.evaluate(() => getComputedStyle(document.getElementById('bFight')).display), 'none');
+      await page.goto(`${SITE}/lab/gloam-downs/?test`);
+      await page.waitForSelector('#help:not([hidden])', { timeout: 180000 });
+      await page.click('#bStart'); await page.keyboard.press('m');
+      await page.waitForSelector('#map:not([hidden])', { timeout: 30000 });
+      // Walk asked for the mouse; the map frees it, or gives back a lock that comes late, before a click can reach the card
+      await page.waitForFunction(() => !document.pointerLockElement, null, { timeout: 30000 });
+      b = await at(page, '#bMapFight');
+      assert.equal(b.top, 'bMapFight'); assert.ok(b.h >= 44 && b.bottom <= b.vh, JSON.stringify(b));
+      assert.ok(await page.evaluate(() => { const x = document.querySelector('#map .box'); return x.scrollHeight <= x.clientHeight; }), 'the map fits with no scroll');
+      await page.mouse.click(b.x, b.y);
+      await page.waitForURL(/[?&]run(&|$)/, { timeout: 30000 });
+      await page.goto(`${SITE}/lab/gloam-downs/?test#run`);
+      await page.waitForSelector('#runHelp:not([hidden])', { timeout: 180000 });
+      if (errors.length) throw new Error(errors.join('\n'));
+      pass(`${width}x${height}: Fight on the help card and the map opens the run and keeps the share key; #run opens the run`);
       await ctx.close();
     }
   }
