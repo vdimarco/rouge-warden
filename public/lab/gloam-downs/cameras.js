@@ -30,10 +30,18 @@ export const asFoes = targets => targets.filter(t => t.alive !== false && t.awak
    Its foe is the nearest awake foe in range that is not home and not walking home. It keeps that foe until another is 1.5 m nearer, or
    its foe goes out, goes home or out of range. With no such foe the explorer's swing applies. After 2 s with no look input it turns
    the yaw toward its foe at no more than 0.6 rad/s, and stops at a yaw difference of 20°. Look input wins on the same step, and with
-   reduced motion, while the mouse is taken or while a move across the view is held (play.js autoTurn) it never turns. */
-export const COMBAT = { wait: 2.0, rate: 0.6, stop: 20 * DEG, range: 10, keep: 1.5, held: 20 * DEG };
+   reduced motion, while the mouse is taken or while a move across the view is held (play.js autoTurn) it never turns. The turn eases
+   in and out (John Nesky, "50 Game Camera Mistakes": no camera move starts or stops at full speed): its rate builds at no more than
+   `acc` rad/s², and slows at that rate so it comes to rest at the stop (it went from 0 to 0.6 rad/s in one step, and stopped dead). */
+export const COMBAT = { wait: 2.0, rate: 0.6, stop: 20 * DEG, range: 10, keep: 1.5, held: 20 * DEG, acc: 3 };
+/* the rate of an auto-turn this step: toward `rate`, built at no more than acc rad/s², and no faster than lets it stop at the stop with
+   `left` rad still to turn, a step at a time (v² = 2·acc·left, for steps of dt) */
+export const easeTurn = (v, rate, acc, left, dt) => {
+  const h = acc * dt / 2;
+  return Math.max(0, Math.min(rate, v + acc * dt, Math.sqrt(2 * acc * Math.max(0, left) + h * h) - h));
+};
 export function makeCombat({ foes = () => [], still = false, P = COMBAT } = {}) {
-  const m = { foe: null, turning: false };
+  const m = { foe: null, turning: false, rate: 0 };
   function pick(s) {
     const list = foes().filter(f => !f.home && flat(s, f) <= (f.range ?? P.range));
     if (!list.length) return (m.foe = null);
@@ -46,11 +54,12 @@ export function makeCombat({ foes = () => [], still = false, P = COMBAT } = {}) 
   function turn(c, s, dt, looked) {
     m.turning = false;
     const f = pick(s);
-    if (!f) return false;
-    if (still || looked || !autoTurn({ ...c, auto: true }, P.wait)) return true;
+    if (!f) { m.rate = 0; return false; }
+    if (still || looked || !autoTurn({ ...c, auto: true }, P.wait)) { m.rate = 0; return true; }
     const d = yawDiff(c.yaw, s, f);
-    if (Math.abs(d) <= P.stop) return true;
-    c.yaw += Math.sign(d) * Math.min(P.rate * dt, Math.abs(d) - P.stop);
+    if (Math.abs(d) <= P.stop) { m.rate = 0; return true; }
+    m.rate = easeTurn(m.rate, P.rate, P.acc ?? COMBAT.acc, Math.abs(d) - P.stop, dt);
+    c.yaw += Math.sign(d) * Math.min(m.rate * dt, Math.abs(d) - P.stop);
     m.turning = c.turning = true;
     return true;
   }
@@ -123,9 +132,11 @@ export function frameClear(pr, L, B, screen, ground = () => L.y) {
    line from the lamplighter to the boss, 1.15 m up, and picks the smallest distance (from `least` to 24 m) and the aim nearest the
    lamplighter that keep the frame clear. Its own ease takes it there in 60 steps, and back to the follow camera in 60 steps when it goes
    off. After 0.6 s with no look input it turns toward the boss at up to 1.5 rad/s, and stops at a yaw difference of 15°, but not while
-   the mouse is taken or a move across the view is held (play.js autoTurn). A hill or a wall that would bring it nearer than it chose
-   raises its pitch, eased, by the least that lets it stand at its distance (bossRaise), to a pitch of 1.1. With reduced motion it does not turn, but it still aims and pulls back. */
-export const BOSS = { on: 7.0, held: 16, wait: 0.6, rate: 1.5, stop: 15 * DEG, far: 24, least: 12, steps: 60, up: 1.15, slope: 1.1, rise: 0.05, aims: 0.8 };
+   the mouse is taken or a move across the view is held (play.js autoTurn), eased in and out as the combat camera's turn (BOSS.acc,
+   0.2 s to full rate). A hill or a wall that would bring it nearer than it chose
+   raises its pitch, eased, by the least that lets it stand at its distance (bossRaise), to a pitch of 1.1; what is still in the way
+   brings the eye in at no more than 15 m/s and lets it back out at no more than 12 m/s (at once only to keep the eye out of the scenery). With reduced motion it does not turn, but it still aims and pulls back. */
+export const BOSS = { on: 7.0, held: 16, wait: 0.6, rate: 1.5, stop: 15 * DEG, far: 24, least: 12, steps: 60, up: 1.15, slope: 1.1, rise: 0.05, aims: 0.8, acc: 7.5, pull: 15, back: 12 };
 /* the raise of the pitch over what stands in the way: the least raise (in steps of 0.05, to a pitch of 1.1) at which the eye stands at
    its distance D and sees every point of marks (the boss's chest and feet, and the far points of its marker: a stone beside the eye can
    hide a shard ring without standing between the eye and the aim); failing that, the least at which it stands at D and sees the most of
@@ -160,7 +171,7 @@ export function bossFrame(L, B, yaw, view, screen, ground, least) {
 /* cam: a play.js follow camera; screen as for frameClear; boss(): null, or { x, y, z, up, started, busy, marks } for the boss (a stand-in
    in the tests; busy: an attack under way; marks are the far points of its marker, for the raise). sees(a, b): the sight test of the walk map (moves.js clearLine). centre: the arena's centre. step(s, dt, inp, view) takes the follow camera's view of this step and returns the view to draw */
 export function makeBossCam(cam, { screen, boss = () => null, centre = [18, 0.68, -22], still = false, ground = null, sees = null } = {}) {
-  const b = { on: false, w: 0, goal: null, cur: null, view: null, lift: 0, turning: false, n: 0 };
+  const b = { on: false, w: 0, goal: null, cur: null, view: null, lift: 0, turning: false, n: 0, rate: 0, dist: null };
   const live = s => {
     const B = boss();
     if (!B || !B.started || !B.up) return null;
@@ -171,11 +182,12 @@ export function makeBossCam(cam, { screen, boss = () => null, centre = [18, 0.68
   function turn(c, s, dt, looked) {
     b.turning = false;
     const B = live(s);
-    if (!B) return false;
-    if (still || looked || !autoTurn({ ...c, auto: true }, BOSS.wait)) return true;
+    if (!B) { b.rate = 0; return false; }
+    if (still || looked || !autoTurn({ ...c, auto: true }, BOSS.wait)) { b.rate = 0; return true; }
     const d = yawDiff(c.yaw, s, B);
-    if (Math.abs(d) <= BOSS.stop) return true;
-    c.yaw += Math.sign(d) * Math.min(BOSS.rate * dt, Math.abs(d) - BOSS.stop);
+    if (Math.abs(d) <= BOSS.stop) { b.rate = 0; return true; }
+    b.rate = easeTurn(b.rate, BOSS.rate, BOSS.acc, Math.abs(d) - BOSS.stop, dt);
+    c.yaw += Math.sign(d) * Math.min(b.rate * dt, Math.abs(d) - BOSS.stop);
     b.turning = c.turning = true;
     return true;
   }
@@ -195,7 +207,7 @@ export function makeBossCam(cam, { screen, boss = () => null, centre = [18, 0.68
       b.cur.aim = b.cur.aim.map((v, i) => v + (b.goal.aim[i] - v) * k);
       b.cur.dist += (b.goal.dist - b.cur.dist) * k;
     }
-    if (!b.cur || b.w <= 0) { b.cur = B ? b.cur : null; b.goal = B ? b.goal : null; b.view = view; return view; }
+    if (!b.cur || b.w <= 0) { b.cur = B ? b.cur : null; b.goal = B ? b.goal : null; b.dist = null; b.view = view; return view; }
     /* the walls: a stone or a hill in the way raises the pitch until the eye can stand at its distance (to a pitch of 1.1), and the eye
        comes no nearer than the first thing still in the way. A raise only to 0.55 left the camera 1.9 to 5.7 m from the lamplighter at
        about one point in six of the arena (south and west of it, with the grave stones and the crown's slope behind), and the boss's
@@ -209,13 +221,24 @@ export function makeBossCam(cam, { screen, boss = () => null, centre = [18, 0.68
       if (!b.raise || r.lift > b.raise.lift || b.raise.lift - r.lift > 0.1 + 1e-9) b.raise = r;
     }
     b.lift += (b.raise.lift - b.lift) * Math.min(1, 4 * dt);
-    const dist = Math.min(b.cur.dist, cam.reach(ax, ay, az, c.yaw, c.base + b.lift, b.cur.dist));
+    /* the eye comes no nearer than the first thing in the way, as the follow camera's: in at no more than BOSS.pull m/s and back out at
+       no more than BOSS.back (it went 12 m to 2.6 m and back to 12 m in single steps as a stone passed between), and at once only as
+       far as keeps the eye itself out of the scenery */
+    const p = c.base + b.lift, room = Math.min(b.cur.dist, cam.reach(ax, ay, az, c.yaw, p, b.cur.dist));
+    let dist = b.dist ?? room;
+    if (room < dist) {
+      dist = Math.max(room, dist - BOSS.pull * dt);
+      while (dist > room + 1e-6 && !cam.clear({ target: b.cur.aim, yaw: c.yaw, pitch: p, dist })) dist = Math.max(room, dist - 0.1);
+    } else dist = Math.min(room, dist + BOSS.back * dt);
+    b.dist = dist;
     const e = b.w * b.w * (3 - 2 * b.w), mix = (p, q) => p + (q - p) * e;
     b.view = {
       ...view,
       target: view.target.map((v, i) => mix(v, b.cur.aim[i])),
       dist: mix(view.dist, dist),
-      pitch: mix(view.pitch, c.base + b.lift),
+      pitch: mix(view.pitch, p),
+      // the boss camera sets the pitch: the mouse's pitch drawn between steps (play.js look) is the follow camera's share of it
+      lookPitch: 1 - e,
       // the cutaway (play.js) yields to the boss camera: its eye stands 12 to 24 m back, and a cone cut that far would empty the arena
       cut: false
     };

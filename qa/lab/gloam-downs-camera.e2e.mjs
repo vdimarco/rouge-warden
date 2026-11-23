@@ -3,7 +3,9 @@
 //   the camera's distance against its layout's, its field of view, how much of a 4 m ring round the lamplighter is on screen (through
 //   the page's own __gloam.project), a foe 3.5 m to each side, and the figure's height; in a run on a phone, the combat camera turns to
 //   a training post and stops at 20°, and the lineup's four foes, 4.5 m ahead and up to 2.55 m to the side, are all in view; and the
-//   frame ratio: in one page, the draw time with stage 1's framing against the new one, drawn in turn (__gloam.layout sets the framing).
+//   frame ratio: in one page, the draw time with stage 1's framing against the new one, drawn in turn (__gloam.layout sets the framing);
+//   and the frame between steps: without ?test, main.js frame() handed a 144 Hz display's times, a steady mouse move turns the drawn
+//   view by the same angle on every frame, and the first move once the mouse is taken is held to one frame's spike.
 // The page runs with ?test: the game is stepped by __gloam.tick() and drawn by __gloam.draw(), because software WebGL takes about a
 // second a frame. Needs the site served: python3 -m http.server 8822 --bind 127.0.0.1 --directory public
 // Run: node qa/lab/gloam-downs-camera.e2e.mjs   (SITE_URL to point elsewhere, SHOTS=<dir> to keep pictures)
@@ -174,6 +176,75 @@ try {
       await close();
     }
     pass('the new framing draws no slower than stage 1\'s (in one page, in turn), at the same art size', out);
+  }
+  { /* the frame between steps (design.md "Smooth camera"): the page without ?test, its requestAnimationFrame stubbed so the test hands
+       main.js frame() the times of a 144 Hz display, and the mouse moved 4 px before each frame. Each frame draws (state().frames) and
+       turns the drawn view (state().cam.drawn) by the same 0.504°. Before (a8b46709): 0, 1.008, 0, 0, 1.513, 0, 1.008 ... a frame, the
+       turn waiting for a fixed step */
+    const browser = await chromium.launch({ executablePath, args: GL });
+    browsers.add(browser);
+    const page = await browser.newPage({ viewport: { width: 640, height: 360 } });
+    const errors = [];
+    page.on('pageerror', e => errors.push(e.message));
+    await page.addInitScript(() => {
+      window.__raf = [];
+      window.requestAnimationFrame = cb => { window.__raf.push(cb); return window.__raf.length; };
+      window.__pump = now => { const q = window.__raf.splice(0); for (const cb of q) cb(now); return q.length; };
+    });
+    await page.goto(`${SITE}/lab/gloam-downs/`, { waitUntil: 'domcontentloaded', timeout: 180000 });
+    // (the frames are the test's to hand out, also while the place loads)
+    const hz = 144;
+    let t = 1000;
+    for (let i = 0; i < 360 && !(await G(page, () => !!window.__gloam?.ready?.())); i++) { t += 1000 / hz; await G(page, n => window.__pump(n), t); await page.waitForTimeout(500); }
+    await G(page, () => window.__gloam.close());
+    for (let i = 0; i < 4; i++) { t += 1000 / hz; await G(page, n => window.__pump(n), t); }
+    await page.mouse.move(320, 180);
+    await page.mouse.down({ button: 'right' });
+    const turns = [], drew = [];
+    let x = 320, prev = await G(page, () => window.__gloam.state().cam.drawn.yaw);
+    for (let f = 0; f < 24; f++) {
+      x += 4; await page.mouse.move(x, 180);
+      t += 1000 / hz;
+      const r = await G(page, n => { const f0 = window.__gloam.state().frames; window.__pump(n); const s = window.__gloam.state(); return { yaw: s.cam.drawn.yaw, drew: s.frames - f0 }; }, t);
+      turns.push(Math.abs(r.yaw - prev)); drew.push(r.drew);
+      prev = r.yaw;
+    }
+    await page.mouse.up({ button: 'right' });
+    const lo = Math.min(...turns), hi = Math.max(...turns);
+    assert(drew.every(d => d === 1), `frames drawn: ${drew.join('')}`);
+    assert(lo > 0 && hi / lo <= 1.3, `at 144 Hz a frame turned the drawn view by ${(lo * 180 / Math.PI).toFixed(3)} to ${(hi * 180 / Math.PI).toFixed(3)}°`);
+    assert.deepEqual(errors, []);
+    pass('at 144 Hz a steady mouse move turns the drawn view by the same angle on every frame', { deg: +(turns[0] * 180 / Math.PI).toFixed(3), ratio: +(hi / lo).toFixed(3), frames: turns.length });
+    await browser.close(); browsers.delete(browser);
+  }
+  { /* the first move once the mouse is taken (input.js): a run's Begin takes the mouse for real, 50 ms pass, and Chrome's first locked
+       move is a spike of 5000 px (dispatched by the test). It turns the view by one frame's cap, 120 px, 0.264 rad. (The case this
+       guards, a free cursor move under 0.1 s before the first locked one, which before counted as the time since the last move and let
+       up to 480 px through, does not come here: the lock takes about 250 ms in headless Chrome. This checks the cap on that first move
+       holds; it passed before too) */
+    const browser = await chromium.launch({ executablePath, args: GL });
+    browsers.add(browser);
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+    await ctx.route('**/api/**', r => r.fulfill({ status: 204, body: '' }));
+    const page = await ctx.newPage();
+    const errors = [];
+    page.on('pageerror', e => errors.push(e.message));
+    await page.goto(`${SITE}/lab/gloam-downs/?run&test&fresh&seed=7`);
+    await page.waitForFunction(() => window.__gloam?.ready(), null, { timeout: 180000 });
+    await page.mouse.move(600, 500);
+    await page.click('#bBegin');
+    await page.waitForTimeout(250);
+    assert(await G(page, () => document.pointerLockElement?.id === 'view' && window.__gloam.state().mouse.locked), 'Begin takes the mouse');
+    await G(page, () => window.__gloam.tick(0.1, 'live'));
+    await page.waitForTimeout(50);
+    const yaw0 = await G(page, () => window.__gloam.state().cam.yaw);
+    await G(page, () => document.getElementById('view').dispatchEvent(new PointerEvent('pointermove', { pointerType: 'mouse', movementX: 5000, bubbles: true })));
+    await G(page, () => window.__gloam.tick(0.05, 'live'));
+    const spun = Math.abs(await G(page, () => window.__gloam.state().cam.yaw) - yaw0);
+    assert(spun > 0.2 && spun <= 120 * 0.0022 + 1e-6, `the first locked move turned the view by ${spun.toFixed(3)} rad`);
+    assert.deepEqual(errors, []);
+    pass('the first move once the mouse is taken is held to one frame\'s spike', { rad: +spun.toFixed(4), cap: +(120 * 0.0022).toFixed(4) });
+    await browser.close(); browsers.delete(browser);
   }
 } finally {
   for (const b of browsers) await b.close();

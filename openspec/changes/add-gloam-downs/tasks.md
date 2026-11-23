@@ -283,6 +283,22 @@
 - [x] Review: the 33 m/s limit follows the eye itself (its present distance, its path round for 0.3 s), a nearer goal's crossing only brings the goal in at 15 m/s, and the rise waits where easing down would lower the eye into the scenery; the place sweep runs both ways and reads "eye clear" from the walk map, not from `c.squeeze`
 - [x] Review: Node checks for walls 0.5 and 1 m thick at 1 and 2 m at 1.2, 3 and 6 rad/s, a walk past a pillar, a mouse sweep at each spawn and wisp of the five places, and the boss camera with the mouse taken or a move across held
 
+### Smooth camera (after "the camera is still too jumpy" on a desktop with a mouse)
+- [x] Measure first: the frame loop at 60 to 165 Hz in Node and in the page, and the five routes a step at a time
+- [x] Each frame draws the last two steps blended (`makeBlend`), with the mouse's turn since the last step on top (`cam.look`, as far as the eye stays clear); a snap is drawn whole
+- [x] The rise's rate builds at 40 rad/s² and comes to rest at its goal (at once while the player turns the view fast); a wall's hold no longer takes its rate
+- [x] `reach()` finds the wall's edge to 6 mm; a cut of the follow eye is not a speed for the cutaway; the view never nearer than 0.5 m
+- [x] The aim's height follows with a critically damped spring
+- [x] The combat, boss and intro turns, the swing and the lane turn ease in and out
+- [x] The mouse's spike cap is per 1/60 s, not per event
+- [x] Node checks in `qa/lab/gloam-downs-camera.test.mjs` (frames at 60 to 165 Hz, the five routes, the eased turns, the spike cap); design.md "Smooth camera" and the spec's "Smooth camera"
+- [x] Browser check in `qa/lab/gloam-downs-camera.e2e.mjs`: the real page's frame() at 144 Hz turns the drawn view by the same angle every frame
+- [x] Review fixes: the mouse's pitch between steps only as far as the step's view followed it (the boss camera's pitch and the follow camera's top no longer wobble); a fallback to the step's view holds until the next step; an aim jump over 2 m is not blended; the rise eased for slow mouse turns (160 rad/s² per rad/s); the boss camera's distance eased in and out; the spike cap's first locked move; the routes also with the mouse free, cuts counted over 1 m and squeezes apart
+- [ ] Try it on a real 120 or 144 Hz display with a real mouse (not possible in this session)
+- [ ] Foes, the boss and the fight's effects are still drawn at the step: blend them too if they judder at 144 Hz (needs `fight.js` to keep the last step's places)
+- [ ] The near fade and the cutaway's splat cut are worked out from the step's eye, not the drawn one: work them out in draw() if a splat shows unfaded or uncut for a frame near walls at 144 Hz
+- [ ] Steering with the mouse near walls still jolts at a step much as before (the eye coming in to keep out of a wall the turn brings): look for a way that does not cost the 6 rad/s wall check or the mouse sweep's eased coming in
+
 ### The run's screens
 - [x] HUD: health bar, flask pips, glim; the toast 8 px under the HUD's measured bottom at every width
 - [x] At 520 px wide or less, the health line is one row, with a 12 px number, a 56 × 8 px bar and 6 px pips

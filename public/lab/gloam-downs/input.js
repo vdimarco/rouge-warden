@@ -20,13 +20,16 @@ export const MOVE_KEYS = new Set(['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'a
 // the left stick moves only past this size (moves.js heldDir reads the same): under it the keys or the touch stick win
 export const WALK_MIN = 0.2;
 /* the mouse's look: rad per pixel of movement while the mouse is taken (yaw and pitch), the right-button drag of the fallback at `drag`
-   times that, and the most one event may move (spike): Chrome can report one large jump of movementX when the mouse is first taken */
+   times that, and the most one event may move (spike) per 1/60 s since the last event: Chrome can report one large jump of movementX
+   when the mouse is first taken. Chrome sends one pointermove a frame, so a cap of 120 px an event cut fast turns at 30 fps (720°/s
+   lost 37%) and not at 144 fps; per 1/60 s, up to 4 times that for a slow frame, it cuts the same turn speed at every frame rate */
 export const MOUSE = { yaw: 0.0022, pitch: 0.0018, drag: 2, spike: 120 };
 const clampPx = (v, m) => (v < -m ? -m : v > m ? m : v);
-// a mouse movement (dx, dy px) as a turn of the view: right turns right (the yaw goes down), down tilts the view down (the pitch goes up)
-export function mouseLook(dx, dy, drag = false, P = MOUSE) {
-  const k = drag ? P.drag : 1;
-  return { dyaw: -clampPx(dx || 0, P.spike) * P.yaw * k, dpitch: clampPx(dy || 0, P.spike) * P.pitch * k };
+/* a mouse movement (dx, dy px) as a turn of the view: right turns right (the yaw goes down), down tilts the view down (the pitch goes
+   up). dt: the time since the mouse's last event, s */
+export function mouseLook(dx, dy, drag = false, P = MOUSE, dt = 1 / 60) {
+  const k = drag ? P.drag : 1, m = P.spike * Math.min(4, Math.max(1, (dt || 0) * 60));
+  return { dyaw: -clampPx(dx || 0, m) * P.yaw * k, dpitch: clampPx(dy || 0, m) * P.pitch * k };
 }
 /* what a mouse button does on the view: 'attack', 'roll', 'jump', 'look' (the free mouse's right drag) or null. locked: the mouse is
    taken now. A click never only takes the mouse: what it does is the same whether or not the page also asks for the lock (mouseAsk) */
@@ -113,6 +116,7 @@ export function makeInput(els, { run = () => false, play = () => false, hold = p
   /* the pointer lock: taken now; refusals in a row; no new try before retryAt (a click till then asks again at retryAt: retry is that
      timer, and the click's user activation lasts about 5 s in Chrome, long enough for it); when the player or the browser last freed it, not the page (an Escape that the browser passes on as it frees the mouse must not also close
      the pause panel that opens); ours: the page is freeing it now */
+  let lastMove = 0;
   const lock = { taken: false, refused: 0, retryAt: 0, retry: 0, lostAt: -1e9, trying: false, promised: false, raw: null, ours: false, pending: 0, req: 0, drop: false };
   const now = () => performance.now();
   /* a mouse: the primary pointer is fine, or a mouse has moved or pressed on the page since (any-pointer: fine) last turned on. A pen
@@ -215,6 +219,8 @@ export function makeInput(els, { run = () => false, play = () => false, hold = p
     const was = lock.taken, ours = lock.ours;
     lock.taken = document.pointerLockElement === canvas;
     lock.trying = false;
+    // the first move once the mouse is taken (or let go) is held to one frame's spike (pointermove, below)
+    lastMove = 0;
     clearTimeout(lock.pending); lock.pending = 0;
     lock.ours = false;
     if (lock.taken) {
@@ -280,8 +286,12 @@ export function makeInput(els, { run = () => false, play = () => false, hold = p
     if (late === e.pointerId) { late = null; if (play()) touchDown(e.pointerId, e.clientX, e.clientY); }
     if (e.pointerType === 'mouse') {
       let d = null;
-      if (lock.taken) d = mouseLook(e.movementX, e.movementY);
-      else if (drag) { d = mouseLook(e.clientX - drag.x, e.clientY - drag.y, true); drag.x = e.clientX; drag.y = e.clientY; }
+      /* the time since the last move of the taken mouse (or of the drag); after a pause, and on the first move once the mouse is taken
+         (where Chrome's spike comes: the free cursor's moves on its way to the click do not count), one frame's */
+      const gap = (e.timeStamp - lastMove) / 1000, dt = lastMove && gap > 0 && gap < 0.1 ? gap : 1 / 60;
+      lastMove = lock.taken || drag ? e.timeStamp : 0;
+      if (lock.taken) d = mouseLook(e.movementX, e.movementY, false, MOUSE, dt);
+      else if (drag) { d = mouseLook(e.clientX - drag.x, e.clientY - drag.y, true, MOUSE, dt); drag.x = e.clientX; drag.y = e.clientY; }
       if (d && play()) { input.dyaw += d.dyaw; input.dpitch += d.dpitch; }
     } else if (stick && e.pointerId === stick.id) {
       stick.x = e.clientX; stick.y = e.clientY;
