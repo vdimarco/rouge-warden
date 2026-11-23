@@ -1346,7 +1346,19 @@ window.__gloam = {
   try {
     renderer = createRenderer(canvas, { toolkit: { PixelLook } });
   } catch (err) {
-    loadLine.textContent = 'Gloam Downs needs WebGL 2, and this browser does not have it. Try a recent Chrome, Firefox or Safari.';
+    // no WebGL 2 at all, or a WebGL 2 that refused the renderer (a shader, a limit): say which, with the chip and the error
+    let gl = null;
+    try { gl = document.createElement('canvas').getContext('webgl2'); } catch {}
+    if (!gl) {
+      loadLine.textContent = 'Gloam Downs needs WebGL 2, and this browser does not have it. Try a recent Chrome, Firefox or Safari.';
+    } else {
+      let chip = '';
+      try { const d = gl.getExtension('WEBGL_debug_renderer_info'); chip = String(gl.getParameter(d ? d.UNMASKED_RENDERER_WEBGL : gl.RENDERER) || ''); } catch {}
+      const fu = gl.getParameter(gl.MAX_FRAGMENT_UNIFORM_VECTORS);
+      const why = String(err?.message || err).split('\n').find(l => /error|fail|limit|exceed/i.test(l)) || String(err?.message || err).split('\n')[0];
+      loadLine.textContent = `Gloam Downs could not start its renderer on this graphics chip. Chip: ${chip || 'unknown'} (fragment uniforms ${fu}). Error: ${why.slice(0, 200)}`;
+    }
+    console.error(err);
     return;
   }
   // the places are gzipped, and world.js unzips them with DecompressionStream
