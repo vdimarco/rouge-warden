@@ -664,8 +664,10 @@ export function step(P, h, inp) {
   C.x = pos.x; C.y = pos.y + P.chest; C.z = pos.z;
   for (const r of P.ropes) {
     if (r.state !== "attached") continue;
-    const holding = inp && inp.hands && inp.hands[r.side] && inp.hands[r.side].holding;
-    if (holding) { r.blockedT = 0; continue; }
+    const hand = inp && inp.hands && inp.hands[r.side];
+    // pressed is the button or the finger. A phone tap latches holding so the rope stays out, and that is not a held rope.
+    const down = hand && (hand.pressed != null ? hand.pressed : hand.holding);
+    if (down) { r.blockedT = 0; continue; }
     const ex = r.anchor.x - C.x, ey = r.anchor.y - C.y, ez = r.anchor.z - C.z, d = len3(ex, ey, ez);
     if (d > 1.2 && city.raycast(C.x, C.y, C.z, ex, ey, ez, d - 0.6, HIT)) r.blockedT += h;
     else r.blockedT = 0;

@@ -1147,7 +1147,8 @@ function verseFrame(rdt) {
   // play only: a comic scene has its own look, and the title draws the key art
   if (!flatOn || G.mode !== "desktop" || !gameStarted || G.state !== "play") return null;
   // the play view only: a comic scene and a test shot place the camera themselves
-  camLeaned = !shot && flatcam.post(rdt);
+  // A held test clock steps the world itself. The draw must not lean the camera between those steps, or the next aim depends on the frame rate.
+  camLeaned = !shot && !G.held && flatcam.post(rdt);
   const mode = verseMode();
   if (mode === "off") return null;
   const sp = Math.hypot(P.vel.x, P.vel.y, P.vel.z), h = renderer.getContext().drawingBufferHeight / 1080;
@@ -1541,7 +1542,7 @@ function viewHead(inp) {
 }
 
 /* ---------------- the frame (spec §6, 14 steps) ---------------- */
-const physIn = { move: { x: 0, z: 0 }, climb: { up: 0, x: 0, z: 0 }, jump: false, hands: [0, 1].map(() => ({ pos: { x: 0, y: 0, z: 0 }, velRel: { x: 0, y: 0, z: 0 }, yank: 0, grip: 0, holding: false, reeling: false })) };
+const physIn = { move: { x: 0, z: 0 }, climb: { up: 0, x: 0, z: 0 }, jump: false, hands: [0, 1].map(() => ({ pos: { x: 0, y: 0, z: 0 }, velRel: { x: 0, y: 0, z: 0 }, yank: 0, grip: 0, holding: false, pressed: false, reeling: false })) };
 const lastAim = [null, null], fireWait = [0, 0], hapT = [0, 0], TIPS = [null, null], toggled = [false, false];
 const prevVel = new THREE.Vector3(), accelV = new THREE.Vector3(), comfortIn = { vel: null, speed: 0, accel: 0, yawRate: 0, snapped: false, play: false, ar: false, mode: "xr" };
 const ring = [];
@@ -2027,6 +2028,8 @@ function physics(dt, inp) {
     if (inp.easySwing && src.holding && r.state === "attached" && SPECIAL_TAGS[r.target.tag]) o.yank = Math.max(o.yank, PHONE.pumpYank);
     // the cup of a real press always lands: while it flies the rope stays held, and after it lands the rope follows the button
     o.holding = (!inp.easySwing && settings.hold === "toggle" ? toggled[i] && P.ropes[i].state !== "idle" : src.holding) || resumeGrace > 0 || (latch[i] && r.state === "flying");
+    // Snap cares about the button or the finger, not a phone tap's latch. A tap keeps the rope out (holding) until it lets go by itself, and that rope can still snap.
+    o.pressed = inp.easySwing ? !!(inp.phoneHeld && inp.phoneHeld[i]) : !!src.holding;
     o.reeling = false;
   }
   // flat play: Shift sprints on the ground with no rope out, while the energy lasts; a landing from a dive rolls
