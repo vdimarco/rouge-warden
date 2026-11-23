@@ -410,7 +410,7 @@ Every touch control SHALL be at least 44 px on its shorter side. The page SHALL 
 - **THEN** the Jump, Map and Look controls are at least 44 px and inside the screen, and so are the Lab bar's ◀ Lab and Games. A drag on the left half moves the lamplighter more than 2 m. Check: e2e `gloam-downs.e2e.mjs` through `?wander`.
 
 ### Requirement: Loading and old browsers
-When a place does not load, the loading screen SHALL say so and show Try again. Without WebGL 2 the page SHALL say so in words. Without DecompressionStream, which unpacks the places, the page SHALL also say so in words, and SHALL not show Try again.
+When a place does not load, the loading screen SHALL say so and show Try again. Without WebGL 2 the page SHALL say so in words. The renderer SHALL start on a chip that allows 256 uniform vectors in a stage. When WebGL 2 is there and the renderer still does not start, the page SHALL name the chip and the error. Without DecompressionStream, which unpacks the places, the page SHALL also say so in words, and SHALL not show Try again.
 
 #### Scenario: A place does not load
 - **WHEN** a place's file does not load, and the player presses Space or Enter on the focused Try again
@@ -419,6 +419,14 @@ When a place does not load, the loading screen SHALL say so and show Try again. 
 #### Scenario: An old browser
 - **WHEN** the browser has no WebGL 2, or no DecompressionStream
 - **THEN** the page says in words what the browser does not have, and does not show Try again. Check: e2e `gloam-downs.e2e.mjs` through `?wander`.
+
+#### Scenario: A phone graphics chip with few uniforms
+- **WHEN** the page opens on a phone whose graphics chip allows 256 uniform vectors in a shader stage, such as an Adreno 840 in Chrome on Android
+- **THEN** the renderer starts and draws the place. Each program of the renderer uses 200 or fewer default-block uniform vectors in a stage; the large arrays are in std140 uniform blocks, and each frame is pixel for pixel the same as the frame of the unpatched renderer. Check: Node test `gloam-downs-uniform-blocks.test.mjs`, and with the server, e2e `gloam-downs-uniforms.e2e.mjs`, which counts the vectors of every program and compares each case with Ink Studio's own `resources.mjs`. A check on a real Adreno phone is still needed.
+
+#### Scenario: A renderer that does not start
+- **WHEN** WebGL 2 is there but the renderer does not start
+- **THEN** the page names the graphics chip, its fragment uniform limit and the error line, so a player can report it.
 
 ### Requirement: Size and speed
 Each baked world SHALL have no more than 250,000 splats and no more than 48 palette colors. Its download SHALL be no more than 1.5 MB. The page SHALL draw at a small art size that scales up by a whole number. If frames take too long, the page SHALL draw at a smaller art size.

@@ -50,6 +50,8 @@
 - [ ] Homepage screenshots at 390, 320 and 1280 for the pull request
 - [ ] `openspec validate add-gloam-downs` (or report that the CLI could not run)
 - [ ] Frame rate on a real GPU and on a real phone
+- [x] Phone uniform limit: the large uniform arrays move into std140 blocks through `games/gloam-downs/patch-resources.mjs`, applied by `vendor.mjs`; `node qa/lab/gloam-downs-uniform-blocks.test.mjs` and `node qa/lab/gloam-downs-uniforms.e2e.mjs` pass
+- [ ] Confirm the renderer starts on a real Adreno phone
 
 ## Combat run
 

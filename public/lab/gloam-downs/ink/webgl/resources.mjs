@@ -1,3 +1,5 @@
+import { uniformBlocks } from './uniform-blocks.mjs';
+
 export function createResources(gl) {
   const release = [];
   function allocate(kind) {
@@ -18,6 +20,9 @@ export function createResources(gl) {
   }
 
   function program(vertex, fragment) {
+    const blocks = uniformBlocks(gl, vertex, fragment);
+    vertex = blocks.vertex;
+    fragment = blocks.fragment;
     const p = gl.createProgram();
     if (!p) throw new Error('Could not allocate WebGL program');
     const shaders = [];
@@ -59,11 +64,13 @@ export function createResources(gl) {
         if (method?.startsWith('uniformMatrix')) setters[name] = value => gl[method](location, false, value);
         else if (method) setters[name] = value => gl[method](location, value);
       }
+      blocks.link(p, setters, release);
       release.push(() => gl.deleteProgram(p));
       return {
         p, u,
         set(values) {
           for (const name of Object.keys(values)) setters[name]?.(values[name]);
+          blocks.flush();
         }
       };
     } catch (error) {

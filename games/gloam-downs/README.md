@@ -16,6 +16,28 @@ node games/gloam-downs/vendor.mjs                       # copy Ink Studio's rend
 
 `--check` prints `ok` or `FAIL` for each rule and exits with 1 on a failure. A `--preview` picture is what the page shows to within about half a percent of its pixels: Ink Studio's CPU `colored` render matches its WebGL renderer.
 
+### The renderer on phone GPUs
+
+`vendor.mjs` makes one change to Ink Studio's renderer after it copies it. Many phone GPUs (for example Qualcomm Adreno, in Samsung phones) give only 256 uniform vectors to each shader stage. Ink Studio's resolve program keeps about 560 vectors of arrays in the default uniform block, so it does not link there and the page cannot start. The fix is a patch step in `vendor.mjs`, not an edit of the copy:
+
+- `uniform-blocks.mjs` (in this folder) is copied to `public/lab/gloam-downs/ink/webgl/uniform-blocks.mjs`.
+- `patch-resources.mjs` has the patch: four small changes to `resources.mjs`. Before compilation, each uniform array moves into a std140 uniform block with no instance name, so the GLSL that reads it does not change. Declarations in comments are not read. An array between `#if` and `#endif` stays where it is. Each moved array keeps its precision. After the link, the named setters write those arrays into a buffer at the offsets and strides that the driver gives. A setter marks only the words that change. `set()` sends those words and binds each block. The renderer calls `set()` before each draw.
+- If Ink Studio changes `resources.mjs` so that the patch does not fit, `vendor.mjs` stops with an error. Do not change the package in `node_modules`.
+- Then `vendor.mjs` runs the rewrite on every program that the copy can make (`ink-programs.mjs`), and prints the arrays that it moves and the default-block vectors that are left. It stops when an array stays between `#if` and `#endif`, or when a stage keeps more than 200 vectors. If this list changes after a new commit, run the two checks below.
+
+Now each program uses at most 63 default-block vectors in a stage (the splat program 44, the resolve program 55). The checks:
+
+- `node qa/lab/gloam-downs-uniform-blocks.test.mjs` (Node only): the source rewrite, the std140 writes with a stand-in `gl`, the patch, and the counts of all 15 programs.
+- `node qa/lab/gloam-downs-uniforms.e2e.mjs` (the site served; `SITE_URL` for another port). It counts the default-block vectors of every linked program as a GLES driver packs them, and fails over 200 in a stage. It also checks the pictures: for each case it draws one frame, then loads the same case with Ink Studio's own `resources.mjs` (the patch taken out, served in place of the file), draws the same frame and compares. It fails when more than 0.1% of the pixels differ or one channel differs by more than 1 level. It takes about 12 minutes on software WebGL. `REF=<dir>` compares with the pictures of an earlier `PICS=<dir>` run instead, and `NOREF=1` skips the pictures.
+
+A desktop browser does not refuse a program over 256 vectors, so the count is the guard. No check has run on a real Adreno phone.
+
+Limits to know if this copy is used for more than these places:
+
+- The places use three programs: the resolve with the PixelLook toolkit only, the small clean program, and the splat program. The checks draw only those. The water, sprite, key (patterned look) and damping programs are compiled, counted and given values, but not drawn. The 'simple' resolve in `renderer.mjs` is not exported, so no check builds it. The lamp arrays of the splat program are moved but the game does not set them. If the game starts to use water, sprites or `look.pixel`, add a drawn case for it to the uniforms check.
+- The wet resolve program uses 13 of the 16 fragment samplers that WebGL 2 promises. That leaves little room.
+- The resolve and key fragment shaders say `precision highp float` but not `highp int`, so int is mediump there. The patterned look does 32-bit hashes and texel addresses in int. A GPU that runs mediump int as 16 bits gives wrong patterns. The game does not use that path now. If it turns on `look.pixel`, add `precision highp int;` to those shaders in the same patch step.
+
 ## The look
 
 The user asked for environments "inspired by dead cells but give it a 3d supermarket 64 vibe with rolling hills", and then "make it look gritty and dark".
