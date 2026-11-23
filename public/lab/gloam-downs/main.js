@@ -6,8 +6,8 @@
 import { createRenderer } from './ink/webgl/renderer.mjs';
 import { makeCamera as viewCamera } from './ink/webgl/view.mjs';
 import { loadPlace } from './world.js';
-import { makeWalk, makeBody, makeCamera, camLayout, pose, touches, atBeacon, autoTurn, PARAMS, makeFade, fadeOf, eyeOf } from './play.js';
-import { makeCombat, makeMoveLock, asFoes, makeBossCam, yawDiff } from './cameras.js';
+import { makeWalk, makeBody, makeCamera, makeBlend, camLayout, pose, touches, atBeacon, autoTurn, PARAMS, makeFade, fadeOf, eyeOf } from './play.js';
+import { makeCombat, makeMoveLock, asFoes, makeBossCam, yawDiff, easeTurn, BOSS } from './cameras.js';
 import { ORDER, LATTICE, load, store, wispCount, fresh } from './save.js';
 import { placeName, nextOf, mapGroups, mapLine, arriveLine, hintOf, startPlace } from './places.js';
 import * as RS from './run-save.js';
@@ -128,12 +128,14 @@ const awake = () => [
 // in a run, the camera's turn hook: in the boss fight the boss camera's turn goes before the combat camera's
 const runTurn = (c, s, dt, looked) => (bossCam ? bossCam.turn(c, s, dt, looked) : false) || (combat ? combat.turn(c, s, dt, looked) : false);
 // in the boss intro the view turns toward the boss (no faster than the boss camera, and not with reduced motion); look input wins, and
-// as for the run's cameras it never turns while the mouse is taken or a move across the view is held (play.js autoTurn)
+// as for the run's cameras it never turns while the mouse is taken or a move across the view is held (play.js autoTurn); it eases in and
+// out as the boss camera's turn does (cameras.js easeTurn)
+let introRate = 0;
 const introTurn = (c, s, dt, looked) => {
   const B = fight?.boss;
-  if (still || looked || !B || !autoTurn({ ...c, auto: true }, 0)) return true;
+  if (still || looked || !B || !autoTurn({ ...c, auto: true }, 0)) { introRate = 0; return true; }
   const d = yawDiff(c.yaw, s, B), stop = 10 * Math.PI / 180;
-  if (Math.abs(d) > stop) { c.yaw += Math.sign(d) * Math.min(1.5 * dt, Math.abs(d) - stop); c.turning = true; }
+  if (Math.abs(d) > stop) { introRate = easeTurn(introRate, 1.5, BOSS.acc, Math.abs(d) - stop, dt); c.yaw += Math.sign(d) * Math.min(introRate * dt, Math.abs(d) - stop); c.turning = true; } else introRate = 0;
   return true;
 };
 
@@ -958,6 +960,7 @@ async function go(id) {
   // a run's moves drive the body through its own copy of PARAMS
   body = makeBody(walk, meta.spawn, meta.bounds, RUN ? { ...PARAMS } : PARAMS);
   cam = makeCamera(walk, { yaw: meta.spawn.yaw + Math.PI, auto: !still, ...layoutNow() });
+  blend = makeBlend(cam);
   // a run that goes on after the boss's fall starts at the arena, facing the beacon, with the light at the lantern
   const arena = RUN && rs.run?.bossDown ? meta.zones?.find(z => z.boss) : null;
   if (arena) {
@@ -1089,6 +1092,7 @@ function update() {
     if (bossCam.b.on && steps % 30 === 0) measureScreen();
   }
   input.dyaw = input.dpitch = 0;
+  blend.step(view, body.s);
   for (const r of lampFade.set(fadeOf(eyeOf(view), body.s))) pendingRows.add(r);
   for (const r of cut.step(view.cut ? eyeOf(view) : null, [body.s.x, body.s.y + CUT.mid, body.s.z], STEP)) pendingRows.add(r);
   if (veils) unveil();
@@ -1120,12 +1124,15 @@ function unveil() {
   }
   for (const r of veils.step(c.view, art.h / 2 / c.tangent, figs)) pendingRows.add(r);
 }
-let view = null;
-// o.time draws at that game time (the clips and the flicker); o.pool false parks every foe for this one draw (?test)
+let view = null, blend = null, drawn = null;
+/* o.time draws at that game time (the clips and the flicker); o.pool false parks every foe for this one draw (?test); o.view and o.body
+   are the frame's blend of the last two steps (play.js makeBlend: the loop's frames between steps) */
 function draw(o = {}) {
-  if (!view) view = cam.follow(body.s, 0, input);
-  const t = Number.isFinite(o.time) ? o.time : time;
-  pose(world.anim.bones, meta.bones, body.s, t, still);
+  if (!view) { view = cam.follow(body.s, 0, input); blend.reset(); }
+  const t = Number.isFinite(o.time) ? o.time : time, view0 = view;
+  if (o.view) view = o.view;
+  drawn = view;
+  pose(world.anim.bones, meta.bones, o.body || body.s, t, still);
   if (fight) {
     fight.draw(view, { time: Number.isFinite(o.time) ? o.time : undefined, pool: o.pool, art: art.h });
     fxNow.kick = fight.kick; fxNow.zoom = fight.zoom; fxNow.bars = fight.bars;
@@ -1141,11 +1148,12 @@ function draw(o = {}) {
     pool?.rows.clear();
   } catch (err) {
     // a lost context can throw before its webglcontextlost event arrives: wait for webglcontextrestored, do not stop
-    if (lost || canvas.getContext('webgl2')?.isContextLost()) { lost = true; return; }
+    if (lost || canvas.getContext('webgl2')?.isContextLost()) { lost = true; view = view0; return; }
     console.warn(err); paused = true; loadLine.textContent = `The picture stopped: ${err.message}`; loading.classList.remove('done');
   }
   if (RUN) $('ink').style.opacity = world.anim.grade ? '0' : String(inkNow());
   frames++;
+  view = view0;
 }
 function frame(now) {
   requestAnimationFrame(frame);
@@ -1166,7 +1174,9 @@ function frame(now) {
   for (let i = 0; i < c.n; i++) update();
   if (audio) soundTick();
   if (c.n) inp.consumed();
-  draw();
+  // the frame between two steps: blended by the share of a step since the last one, with the mouse's turn not yet stepped on top
+  const k = acc / STEP;
+  draw({ view: blend.view(k, input.dyaw, input.dpitch) ?? undefined, body: blend.body(body.s, k) });
   if (!RUN && frames % 120 === 0) store(disk, save);
   // slow machine: if frames come slower than 45 ms for two seconds, draw a smaller picture
   if (adapt && dtRaw > 0) {
@@ -1219,7 +1229,8 @@ window.__gloam = {
     wisps: meta ? (RUN ? runner?.wisps.size ?? 0 : save.wisps[meta.id]?.length || 0) : 0, lit: beaconLit, frames, art: { ...art }, target: artTarget, count: world?.count,
     reached: save.reached.slice(),
     // pitch is the player's; view is what is drawn (with the rise over walls), want the layout's distance, foe the combat camera's
-    cam: cam ? { yaw: cam.c.yaw, dist: cam.c.dist, pitch: cam.c.pitch, want: cam.c.want, fov: cam.c.fov, aim: cam.c.aim, lift: cam.c.lift, view: view ? view.pitch : null, foe: combat?.foe?.id ?? null, turning: cam.c.turning, idle: cam.c.idle,
+    // drawn: the view the last frame drew (between steps, the blend of the last two with the mouse's turn since on top)
+    cam: cam ? { drawn: drawn ? { yaw: drawn.yaw, pitch: drawn.pitch, dist: drawn.dist } : null, yaw: cam.c.yaw, dist: cam.c.dist, pitch: cam.c.pitch, want: cam.c.want, fov: cam.c.fov, aim: cam.c.aim, lift: cam.c.lift, view: view ? view.pitch : null, foe: combat?.foe?.id ?? null, turning: cam.c.turning, idle: cam.c.idle,
       boss: bossCam ? { on: bossCam.b.on, w: bossCam.b.w, dist: view?.dist ?? null, aim: view?.target ?? null } : null } : null,
     // the pieces of scenery faded in front of the boss's marker (veil.js makeOccluders), or null away from Barrow Crown's run
     occluded: occluders ? occluders.faded() : null,

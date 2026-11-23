@@ -10,14 +10,22 @@
 //     wins, reduced motion, foes at home or out of range, and training posts as stand-ins;
 //   the boss camera with a stand-in boss: the frame at five layouts, its distance and aim, where it starts and hands back, its turn, a
 //     run round the boss, reduced motion, and the real arena on Barrow Crown's walk map.
+//   the smooth camera (design.md "Smooth camera"): main.js's frame loop at 60, 120, 144 and 165 Hz (and 60 Hz with rAF jitter): a
+//     steady mouse move turns the picture by the frame's own move every frame, and a run or Q moves the eye evenly every frame; on the
+//     five routes at run speed with the mouse taken and free, the rise starts and stops eased, the eye never jolts and the aim's height
+//     is smooth; the combat turn and the swing ease in and out; the mouse's spike cap is the same turn speed at any frame rate; the
+//     mouse's pitch between steps tilts neither the boss camera's view nor a follow view held at its top; and the boss camera's
+//     distance comes in and goes out eased as a pillar passes between.
 // Run: node qa/lab/gloam-downs-camera.test.mjs   (GLOAM_WORLDS=0 to leave out the baked places)
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
-import { makeWalk, makeBody, makeCamera, camLayout, VIEW, zoomFov, ZOOM, fadeOf, makeFade, pose, NEAR_FADE, TIGHT } from '../../public/lab/gloam-downs/play.js';
+import { makeWalk, makeBody, makeCamera, makeBlend, camLayout, VIEW, zoomFov, ZOOM, fadeOf, makeFade, pose, NEAR_FADE, TIGHT, AUTO } from '../../public/lab/gloam-downs/play.js';
+import { stepCount } from '../../public/lab/gloam-downs/run.js';
+import { mouseLook, MOUSE } from '../../public/lab/gloam-downs/input.js';
 import { makeCut, showing, CUT } from '../../public/lab/gloam-downs/cut.js';
-import { makeCombat, makeMoveLock, makeBossCam, projector, frameClear, bossLeast, yawDiff, asFoes, COMBAT, BOSS } from '../../public/lab/gloam-downs/cameras.js';
+import { makeCombat, makeMoveLock, makeBossCam, projector, frameClear, bossLeast, yawDiff, asFoes, COMBAT, BOSS, easeTurn } from '../../public/lab/gloam-downs/cameras.js';
 import { clearLine, makePost } from '../../public/lab/gloam-downs/moves.js';
 import { ORDER } from '../../public/lab/gloam-downs/save.js';
 import { ROUTES } from '../../games/gloam-downs/lib/zones.mjs';
@@ -812,7 +820,8 @@ const around = (s, yaw, d, deg) => {
   const posts = [makePost(OPEN, 4, -3, { id: 'post1' }), makePost(OPEN, -6, -6, { id: 'post2' })];
   const b = stand(OPEN, 0, 0), cam = cameraFor(OPEN, '1280x720', 0), m = makeCombat({ foes: () => asFoes(posts) });
   cam.snap(b.s, 0); cam.c.idle = 0;
-  for (let i = 0; i < 180; i++) stepCam(cam, b.s, m.turn);
+  // 2 s of wait and 1.5 s of turn: the turn eases in and out over 0.2 s at each end (COMBAT.acc), so 1 s no longer quite reaches 33°
+  for (let i = 0; i < 210; i++) stepCam(cam, b.s, m.turn);
   assert.equal(m.foe.id, 'post1');
   assert(Math.abs(yawDiff(cam.c.yaw, b.s, posts[0])) <= 20 * DEG + 1e-9, 'it turned to the nearest post');
   posts[0].alive = false;
@@ -1017,6 +1026,246 @@ if (!skipWorlds) { /* the real arena: 481 pairs of points on Barrow Crown's walk
     assert(ok / pairs.length >= 0.95, `${name}: both chests framed in ${ok} of ${pairs.length} pairs`);
   }
   pass('the boss camera in the real arena frames both chests in 95% of 481 pairs at each layout', out);
+}
+
+/* ---------------- the smooth camera ----------------
+   design.md "Smooth camera". frames() is main.js frame() on flat ground: each frame Chrome hands one pointermove, whole px, which
+   input.js adds to input.dyaw; stepCount gives the frame's fixed steps; each step runs body.step and cam.follow, then input.dyaw = 0
+   and blend.step; the frame draws blend.view(acc / STEP, input.dyaw) and the lamplighter at blend.body. rAF times are rounded to 0.1 ms
+   as Chrome's are, plus `jitter` ms of noise; px: the mouse's move each frame. old: the frame draws the last step's view and body as the
+   page did before (a8b46709) */
+function frames({ hz, px = 0, run = false, keys = 0, jitter = 0, old = false }) {
+  let seed = 7;
+  const rnd = () => ((seed = (seed * 1103515245 + 12345) >>> 0) / 2 ** 32);
+  const gauss = () => { let u = 0; for (let i = 0; i < 6; i++) u += rnd(); return (u - 3) / Math.SQRT2; };
+  const b = stand(OPEN, 0, 30, Math.PI), cam = cameraFor(OPEN, '1280x720', 0), blend = makeBlend(cam);
+  cam.snap(b.s, 0);
+  const input = { mx: 0, mz: run ? 1 : 0, ox: keys, oy: 0, dyaw: 0, dpitch: 0, mouse: !keys };
+  // 1 s first, so a run is at speed
+  for (let i = 0; i < 60; i++) { b.step(STEP, input, cam.c.yaw); blend.step(cam.follow(b.s, STEP, input), b.s); }
+  const rows = [];
+  let acc = 0, last = 0;
+  for (let f = 0; f < Math.round(2 * hz); f++) {
+    const now = Math.round(((0.37 + f + 1) / hz * 1000 + gauss() * jitter) * 10) / 10, dt = f ? (now - last) / 1000 : 1 / hz;
+    last = now;
+    let mine = 0;
+    if (px) { mine = mouseLook(px, 0).dyaw; input.dyaw += mine; }
+    const c = stepCount(acc, dt);
+    acc = c.acc;
+    for (let i = 0; i < c.n; i++) { b.step(STEP, input, cam.c.yaw); const v = cam.follow(b.s, STEP, input); input.dyaw = input.dpitch = 0; blend.step(v, b.s); }
+    const v = old ? blend.view(1) : blend.view(acc / STEP, input.dyaw, input.dpitch), s = old ? b.s : blend.body(b.s, acc / STEP);
+    rows.push({ yaw: v.yaw, eye: eyeOf(v), fig: [s.x, s.y, s.z], mine, n: c.n });
+  }
+  return rows.slice(2);
+}
+// per-frame changes: { max/min, coefficient of variation, frames that stood still }
+const pacing = vals => {
+  const m = vals.reduce((a, b) => a + b, 0) / vals.length, sd = Math.sqrt(vals.reduce((a, b) => a + (b - m) ** 2, 0) / vals.length);
+  const lo = Math.min(...vals), hi = Math.max(...vals);
+  return { ratio: lo > 1e-12 ? +(hi / lo).toFixed(3) : 'still', cv: +(sd / m).toFixed(3), still: vals.filter(v => v < 1e-9).length, frames: vals.length };
+};
+const turns = r => r.slice(1).map((x, i) => Math.abs(wrap(x.yaw - r[i].yaw)));
+const moves = (r, k = 'eye') => r.slice(1).map((x, i) => Math.hypot(x[k][0] - r[i][k][0], x[k][1] - r[i][k][1], x[k][2] - r[i][k][2]));
+{ /* a steady mouse move, 4 px a frame with the mouse taken (as the browser check drags), at 60, 120, 144 and 165 Hz and at 60 Hz with
+     0.1 ms of rAF jitter: every frame turns the picture by exactly that frame's mouse move, so the largest turn of a frame is no more
+     than 1.3 times the least. Before (a8b46709) the turn waited for a step: at 144 Hz 168 of 288 frames stood still and the others
+     turned 2 or 3 frames' worth (1.008 or 1.513°), and at 60 Hz with jitter the steps came 0 or 2 to a frame */
+  const out = {};
+  for (const [hz, jitter] of [[60, 0], [60, 0.1], [120, 0], [144, 0], [165, 0]]) {
+    const r = frames({ hz, px: 4, jitter }), t = turns(r), was = pacing(turns(frames({ hz, px: 4, jitter, old: true })));
+    const off = Math.max(...r.slice(1).map((x, i) => Math.abs(t[i] - Math.abs(x.mine))));
+    const p = pacing(t), tag = `${hz} Hz${jitter ? ' jittered' : ''}`;
+    assert(off < 1e-9, `${tag}: a frame's turn differed from its mouse move by ${off} rad`);
+    assert.equal(p.still, 0, `${tag}: ${p.still} frames of a steady mouse move did not turn`);
+    assert(p.ratio <= 1.3, `${tag}: the turn of a frame ranged ${p.ratio} times`);
+    out[tag] = { ratio: p.ratio, cv: p.cv, before: { ratio: was.ratio, cv: was.cv, still: was.still } };
+  }
+  pass('a steady mouse move turns the picture by the frame\'s own move on every frame at 60 to 165 Hz', out);
+}
+{ /* a run straight ahead (6.4 m/s) and Q held: at 120, 144 and 165 Hz and at 60 Hz with jitter, the eye moves (and the view turns) by the
+     same amount every frame, within 5% (coefficient of variation), and no frame stands still. Before: at 144 Hz the eye moved 0 on 168
+     of 288 frames and 2.4 times its mean on 120 (CV 1.18), and Q turned the same way */
+  const out = {};
+  for (const [hz, jitter] of [[60, 0.1], [120, 0], [144, 0], [165, 0]]) {
+    const tag = `${hz} Hz${jitter ? ' jittered' : ''}`, e = pacing(moves(frames({ hz, run: true, jitter }))), f = pacing(moves(frames({ hz, run: true, jitter }), 'fig'));
+    const q = pacing(turns(frames({ hz, keys: 1, jitter }))), was = pacing(moves(frames({ hz, run: true, jitter, old: true })));
+    for (const [k, p] of [['the eye', e], ['the lamplighter', f], ['Q', q]]) assert(p.still === 0 && p.cv <= 0.05, `${tag}: ${k} moved unevenly (CV ${p.cv}, ${p.still} frames still)`);
+    out[tag] = { eye: e.cv, figure: f.cv, q: q.cv, before: { cv: was.cv, still: was.still } };
+  }
+  pass('a run and a held Q move the eye, the lamplighter and the view evenly on every frame at 60 to 165 Hz', out);
+}
+{ /* a camera snap is never blended: the frame after cam.snap draws the new view whole (a load, a fall, a teleport) */
+  const b = stand(OPEN, 0, 0), cam = cameraFor(OPEN, '1280x720', 0), blend = makeBlend(cam);
+  cam.snap(b.s, 0);
+  blend.step(cam.follow(b.s, STEP, {}), b.s);
+  b.place([10, 0.5, 10], 0); cam.snap(b.s, 2);
+  const v = cam.follow(b.s, STEP, {});
+  blend.step(v, b.s);
+  const d = blend.view(0.2);
+  assert(near(d.yaw, v.yaw, 1e-12) && near(d.target[0], v.target[0], 1e-12) && blend.body(b.s, 0.2).x === b.s.x, 'a snap was blended with the view before it');
+  pass('a snap is drawn whole, not blended with the view before it');
+}
+if (!skipWorlds) {
+  /* each place's route at run speed, 1280x720, a step at a time, with the mouse taken (as the user plays on a laptop or desktop) and
+     with it free (the swing behind a running lamplighter and the lane turn on, near the same hills and walls): the pitch's change from
+     one step to the next (what reads as a jolt) is 2°/step² or less and never turns round by more than 2° (the rise starts and stops
+     eased); the eye's own jolt (its second difference) is 0.35 m/step² or less; the aim's height jolt 0.06 m/step² or less; the eye
+     moves no more than 0.7 m a step more than the lamplighter. A step where the follow eye comes in through a wall from behind (over
+     1 m in one step: a cut, which the frame does not blend through the wall) comes 3 times or fewer a route, each under 2.8 m; a step
+     where it comes in by 0.5 to 1 m (a squeeze: the eye kept out of a wall the view turns into) never comes with the mouse taken, and
+     twice or less with it free. Both are left out of the eye's numbers. Before (a8b46709), the mouse taken: pitch 4.64, 3.66, 3.82,
+     1.10 and 3.42°/step² (Gaol, Ramparts, Fen, Bells, Barrows) with 13, 5, 1, 0 and 8 turns round; the eye 0.57, 0.55, 0.54, 0.16 and
+     0.50 m/step²; the aim 0.082, 0.088, 0.108, 0.072 and 0.037 m/step²; 1 cut of 2.35 m in the Gaol. The mouse free: pitch 4.45, 3.95,
+     3.82, 1.10 and 4.08°/step² with 19, 10, 1, 0 and 6 turns round */
+  const out = {};
+  for (const free of [false, true]) for (const id of ORDER) {
+    const { walk } = place(id), pts = ROUTES[id];
+    const b = makeBody(walk, { p: pts[0], yaw: 0 }, 34), s = b.s, yaw0 = Math.atan2(pts[1][0] - pts[0][0], pts[1][2] - pts[0][2]);
+    const cam = cameraFor(walk, '1280x720', yaw0 + Math.PI);
+    s.yaw = yaw0; cam.snap(s, yaw0 + Math.PI);
+    let seg = 1, stuck = 0, best = Infinity, step = 0, h = [];
+    const m = { pitch: 0, round: 0, eye: 0, rel: 0, aim: 0, cuts: 0, cut: 0, squeezes: 0 };
+    while (seg < pts.length && step++ < 7200) {
+      const T = pts[seg], dx = T[0] - s.x, dz = T[2] - s.z, dd = Math.hypot(dx, dz);
+      if (dd < 0.6) { seg++; best = Infinity; stuck = 0; continue; }
+      if (dd < best - 0.05) { best = dd; stuck = 0; } else stuck++;
+      // (a ledge the walker cannot climb: it jumps, and after 2.5 s it is put on the next waypoint, which starts the measure again)
+      if (stuck > 150) { b.place(T, s.yaw); cam.snap(s, cam.c.yaw); seg++; best = Infinity; stuck = 0; h = []; continue; }
+      const cy = cam.c.yaw, ux = dx / dd, uz = dz / dd, f0 = [s.x, s.y, s.z];
+      const inp = { mx: ux * Math.cos(cy) - uz * Math.sin(cy), mz: -(ux * Math.sin(cy) + uz * Math.cos(cy)), jump: stuck > 10 && stuck % 40 < 20, mouse: !free };
+      b.step(STEP, inp, cy);
+      const v = cam.follow(s, STEP, inp);
+      h.push({ e: eyeOf(v), p: v.pitch / DEG, d: v.dist, ty: v.target[1], f: [s.x - f0[0], s.y - f0[1], s.z - f0[2]] });
+      if (h.length > 3) h.shift();
+      if (h.length < 3) continue;
+      const [a, q, c] = h, jumpIn = Math.abs(c.d - q.d);
+      if (jumpIn > 1) { m.cuts++; m.cut = Math.max(m.cut, jumpIn); } else if (jumpIn > 0.5) m.squeezes++;
+      const jp = Math.abs(c.p - 2 * q.p + a.p);
+      m.pitch = Math.max(m.pitch, jp);
+      if (jp > 2) m.round++;
+      m.aim = Math.max(m.aim, Math.abs(c.ty - 2 * q.ty + a.ty));
+      if (jumpIn <= 0.5 && Math.abs(q.d - a.d) <= 0.5) {
+        m.eye = Math.max(m.eye, Math.hypot(...[0, 1, 2].map(i => c.e[i] - 2 * q.e[i] + a.e[i])));
+        m.rel = Math.max(m.rel, Math.hypot(...[0, 1, 2].map(i => c.e[i] - q.e[i] - c.f[i])));
+      }
+    }
+    for (const k in m) m[k] = +m[k].toFixed(3);
+    const name = `${id}${free ? ' (mouse free)' : ''}`;
+    out[name] = m;
+    assert(m.pitch <= 2 && m.round === 0, `${name}: the pitch jolted by ${m.pitch}°/step², and turned round ${m.round} times`);
+    assert(m.eye <= 0.35 && m.rel <= 0.7, `${name}: the eye jolted by ${m.eye} m/step², and moved ${m.rel} m a step more than the lamplighter`);
+    assert(m.aim <= 0.06, `${name}: the aim's height jolted by ${m.aim} m/step²`);
+    assert(m.cuts <= 3 && m.cut < 2.8, `${name}: the eye came in through a wall ${m.cuts} times, by up to ${m.cut} m`);
+    assert(m.squeezes <= (free ? 2 : 0), `${name}: the eye came in by 0.5 to 1 m in a step ${m.squeezes} times`);
+  }
+  pass('the five routes at run speed, the mouse taken and free: the rise, the eye and the aim never jolt', out);
+}
+{ /* the combat camera's turn eases in and out: its rate builds and falls by no more than COMBAT.acc (3 rad/s²) and ends at rest on the
+     stop, within 10%. Before: 0 to 0.6 rad/s in one step and back to 0 in one, 36 rad/s² */
+  const b = stand(OPEN, 0, 0), cam = cameraFor(OPEN, '390x844', 0), foe = { id: 'S', ...around(b.s, 0, 5, 60) }, combat = makeCombat({ foes: () => [foe] });
+  cam.snap(b.s, 0);
+  let yaw = cam.c.yaw, rate = 0, most = 0, end = 0;
+  for (let i = 0; i < 240; i++) {
+    stepCam(cam, b.s, combat.turn);
+    const r = Math.abs(wrap(cam.c.yaw - yaw)) / STEP;
+    most = Math.max(most, Math.abs(r - rate) / STEP);
+    if (r === 0 && rate > 0) end = rate;
+    rate = r; yaw = cam.c.yaw;
+  }
+  // (10% over COMBAT.acc for the last step, which turns only what is left to the stop)
+  assert(most <= COMBAT.acc * 1.1 && end <= COMBAT.acc * STEP * 1.5, `the combat turn's rate changed by up to ${most.toFixed(2)} rad/s², and stopped from ${end.toFixed(3)} rad/s`);
+  assert(near(easeTurn(0, 0.6, 3, 1, STEP), 0.05, 1e-12) && easeTurn(0.6, 0.6, 3, 0.001, STEP) < 0.1, 'easeTurn');
+  pass('the combat camera\'s turn eases in and out', { acc: +most.toFixed(2), stopFrom: +end.toFixed(3) });
+}
+{ /* the swing behind a running lamplighter (the mouse free, after 2 s with no look input): its rate builds by no more than 1 rad/s².
+     Before: 0 to 0.19 rad/s in one step, 11.4 rad/s² */
+  const b = stand(OPEN, 0, 0), cam = cameraFor(OPEN, '1280x720', 0);
+  cam.snap(b.s, 0);
+  let yaw = cam.c.yaw, rate = 0, most = 0, turned = 0;
+  for (let i = 0; i < 300; i++) {
+    b.step(STEP, { mx: 0.4, mz: 1 }, cam.c.yaw);
+    cam.follow(b.s, STEP, { mx: 0.4, mz: 1 });
+    const r = wrap(cam.c.yaw - yaw) / STEP;
+    most = Math.max(most, Math.abs(r - rate) / STEP); turned += Math.abs(r) * STEP;
+    rate = r; yaw = cam.c.yaw;
+  }
+  assert(turned > 0.2, `the swing turned the view (${turned})`);
+  assert(most <= 1.001, `the swing's rate changed by up to ${most.toFixed(2)} rad/s²`);
+  pass('the swing behind a running lamplighter eases in', { acc: +most.toFixed(3), turned: +turned.toFixed(2), wait: AUTO.wait });
+}
+{ /* the mouse's spike cap is a turn speed: 120 px per 1/60 s since the last event, so a fast flick at 30 fps keeps its 240 px a frame
+     (it lost 37% at 720°/s), and the first event after a pause is still capped at 120 */
+  const at30 = mouseLook(240, 0, false, MOUSE, 1 / 30), first = mouseLook(5000, 0);
+  assert(near(at30.dyaw, -240 * MOUSE.yaw, 1e-12) && near(first.dyaw, -120 * MOUSE.yaw, 1e-12), 'the spike cap');
+  pass('the mouse\'s spike cap is the same turn speed at any frame rate');
+}
+
+// main.js frame() for any camera at hz: step(input) runs one fixed step and returns the view it draws; mouse(t) -> [px, py] moved
+// before the frame at t s. -> a row a frame: the view drawn and the last step's
+function drive({ hz, cam, body, step, secs, mouse }) {
+  const blend = makeBlend(cam), input = { dyaw: 0, dpitch: 0, mouse: true }, rows = [];
+  let acc = 0, v = null;
+  for (let f = 0; f < Math.round(secs * hz); f++) {
+    const m = mouse(f / hz);
+    if (m) { const d = mouseLook(m[0], m[1]); input.dyaw += d.dyaw; input.dpitch += d.dpitch; }
+    const c = stepCount(acc, 1 / hz);
+    acc = c.acc;
+    for (let i = 0; i < c.n; i++) { v = step(input); input.dyaw = input.dpitch = 0; blend.step(v, body.s); }
+    const d = blend.view(acc / STEP, input.dyaw, input.dpitch);
+    if (d) rows.push({ drawn: d, step: v });
+  }
+  return rows;
+}
+const flipsOf = vals => { let n = 0, ls = 0; for (let i = 1; i < vals.length; i++) { const d = vals[i] - vals[i - 1]; if (Math.abs(d) > 1e-6) { if (ls && Math.sign(d) !== ls) n++; ls = Math.sign(d); } } return n; };
+{ /* the boss camera sets the pitch itself: the mouse moved up and down (1.5 rad/s, turning round every 0.25 s) at 144 Hz with the boss
+     camera on does not tilt the drawn view between steps. Before this check: the drawn pitch went over 2.8° and back, turning round
+     104 times in 300 frames, while the step's held still */
+  const boss = { x: 0, y: 0, z: 0, up: true, started: true }, r = bossRig(OPEN, '1280x720', { x: 0, z: 5 }, boss, { centre: [0, 0, 0] });
+  for (let i = 0; i < 120; i++) r.step({ mouse: true });
+  assert(r.bc.b.w === 1, 'the boss camera is on');
+  const rows = drive({ hz: 144, cam: r.cam, body: r.b, step: inp => r.step(inp), secs: 2, mouse: t => [0, (Math.floor(t / 0.25) % 2 ? -1 : 1) * 1.5 / 144 / MOUSE.pitch] });
+  const ps = rows.map(x => x.drawn.pitch), range = (Math.max(...ps) - Math.min(...ps)) / DEG;
+  assert(range < 0.01, `the drawn pitch moved over ${range.toFixed(3)}°`);
+  pass('with the boss camera on, a vertical mouse move does not tilt the drawn view', { range: +range.toFixed(4), frames: rows.length });
+}
+{ /* a wall 4 m high behind the lamplighter holds the view risen; the mouse moved steadily down (1.2 rad/s) at 144 Hz into the top of
+     the pitch, then up: the drawn pitch never goes over the follow camera's top (1.35), and turns round no more often than the steps'
+     own pitch does (where the rise and the mouse take turns), plus four (as the mouse turns round). Before this check: it went over the top and back once a step (1.3653, 1.3583, 1.3514, 1.3667 ...) */
+  const WALL = layered((x, z) => (z >= 2 && z <= 3 ? 4 : 0));
+  const out = {};
+  for (const name of ['1280x720', '390x844']) {
+    const b = stand(WALL, 0, 0), cam = cameraFor(WALL, name, 0);
+    cam.snap(b.s, 0);
+    for (let i = 0; i < 60; i++) cam.follow(b.s, STEP, { mouse: true });
+    const rows = drive({ hz: 144, cam, body: b, step: inp => cam.follow(b.s, STEP, inp), secs: 3, mouse: t => [0, (t < 1.5 ? 1 : -1) * 1.2 / 144 / MOUSE.pitch] });
+    const ps = rows.map(x => x.drawn.pitch), top = Math.max(...ps), flips = flipsOf(ps), stepFlips = flipsOf(rows.map(x => x.step.pitch));
+    assert(top <= 1.35 + 1e-9, `${name}: the drawn pitch went to ${top.toFixed(4)}`);
+    assert(flips <= stepFlips + 4, `${name}: the drawn pitch turned round ${flips} times, the steps' ${stepFlips}`);
+    out[name] = { top: +top.toFixed(4), flips, stepFlips };
+  }
+  pass('the mouse into the top of the pitch over a wall: the drawn pitch holds at the top and does not saw', out);
+}
+{ /* the boss camera's distance as a pillar passes between: the lamplighter runs round the boss 5 m away, past a pillar 3 m tall. Its
+     distance comes in at no more than 15 m/s and goes back out at no more than 12 m/s, except to keep the eye itself out of the
+     scenery. Before: 12 m to 2.6 m and back to 12 m in single steps (here, 9.78 m in a step with the eye clear) */
+  const PIL = layered((x, z) => (Math.hypot(x - 7.5, z - 0) <= 0.6 ? 3 : 0));
+  const boss = { x: 0, y: 0, z: 0, up: true, started: true }, r = bossRig(PIL, '1280x720', { x: 0, z: 5 }, boss, { centre: [0, 0, 0] });
+  const w = 6.4 / 5, eyeIn = v => { const e = eyeOf(v); return e[1] <= PIL.top(e[0], e[2]) + 0.05; };
+  let most = 0, pressed = 0, prev = null, came = 0;
+  for (let i = 0; i < 900; i++) {
+    const a = w * i * STEP, s = r.b.s;
+    s.x = 5 * Math.sin(a); s.z = 5 * Math.cos(a); s.vx = 6.4 * Math.cos(a); s.vz = -6.4 * Math.sin(a); s.yaw = Math.atan2(s.vx, s.vz);
+    const v = r.step();
+    if (i > 60 && prev !== null && r.bc.b.w === 1) {
+      const d = r.bc.b.dist - prev;
+      if (d < -1e-6) came++;
+      if (d < -15 * STEP - 1e-6 || d > 12 * STEP + 1e-6) { if (!eyeIn({ ...v, dist: prev })) most = Math.max(most, Math.abs(d)); else pressed++; }
+    }
+    prev = r.bc.b.dist;
+  }
+  assert(came > 0, 'the pillar never came between');
+  assert(most === 0, `the boss camera's distance jumped by ${most.toFixed(2)} m in a step with its eye clear`);
+  pass('the boss camera comes in and back out eased as a pillar passes between', { stepsIn: came, pressed });
 }
 
 console.log(`\n${n} passed`);

@@ -427,6 +427,49 @@ When a hill or a wall comes between the eye and the lamplighter's head or chest,
 - **WHEN** a post 0.3 m wide stands between the eye and the lamplighter, or the lamplighter runs past a row of posts, or a wall comes between, or the lamplighter walks under a long roof
 - **THEN** the posts do not move the camera. A wall that comes between turns the view by no more than 4 rad/s, and the eye stays out of it. Under a long roof the camera follows inside the passage. Check: Node test `gloam-downs-camera.test.mjs`.
 
+### Requirement: Smooth camera
+Every frame SHALL draw the camera between its last two fixed steps, blended by the time since the last step, with the mouse's turn since that step on top, so a steady mouse move, a run or a held Q moves the picture by the same amount on every frame at 60 Hz and above. No frame SHALL put the eye in the scenery. The rise over a hill or a wall SHALL start and stop eased. The camera's turns by themselves SHALL ease in and out.
+
+#### Scenario: Turning with the mouse on a fast display
+- **WHEN** the player moves the mouse a steady 4 px a frame with the mouse taken, at 60, 120, 144 and 165 Hz, and at 60 Hz with 0.1 ms of jitter in the frame times
+- **THEN** every frame turns the picture by exactly that frame's move, so the largest turn of a frame is at most 1.3 times the least (measured 1.0). Before: at 144 Hz, 166 of 286 frames did not turn, the others 2 or 3 frames' worth. Check: Node test `gloam-downs-camera.test.mjs`; in the page at 144 Hz, `gloam-downs-camera.e2e.mjs` (0.504° every frame).
+
+#### Scenario: Running on a fast display
+- **WHEN** the lamplighter runs straight at 6.4 m/s, or the player holds Q, at 120, 144 and 165 Hz and at 60 Hz with jitter
+- **THEN** the eye, the lamplighter and the view move on every frame, with a coefficient of variation of 0.05 or less (measured 0.004 to 0.008; before 0.55 to 1.33). Check: Node test `gloam-downs-camera.test.mjs`.
+
+#### Scenario: Running over hills and past walls
+- **WHEN** the lamplighter runs each place's route at 6.4 m/s with the mouse taken, at 1280 by 720
+- **THEN** the pitch's change from step to step is 2°/step² or less and never turns round by more than that; the eye's jolt is 0.35 m/step² or less, the aim's height 0.06; the eye comes in through a wall at most 3 times a route, each under 2.8 m. Measured in the Gaol 1.58, 0 turns, 0.26, 0.033, 2 cuts; before 4.64 with 13 turns round. Check: Node test `gloam-downs-camera.test.mjs`.
+
+#### Scenario: Turns by themselves ease in and out
+- **WHEN** the combat camera turns toward a foe, or the swing turns the view behind a running lamplighter with the mouse free
+- **THEN** the combat turn's rate changes by no more than 3.3 rad/s² and comes to rest at its stop (before: 36 rad/s²), and the swing's by no more than 1 rad/s² (before: 11.4). Check: Node test `gloam-downs-camera.test.mjs`.
+
+#### Scenario: A snap is not blended
+- **WHEN** a fall, a load or a teleport snaps the camera to a new place
+- **THEN** the next frame draws the new view whole, not a blend with the old one. Check: Node test `gloam-downs-camera.test.mjs`.
+
+#### Scenario: Running with the mouse free over hills and past walls
+- **WHEN** the lamplighter runs each place's route at 6.4 m/s with the mouse free, so the swing and the lane turn act, at 1280 by 720
+- **THEN** the same limits hold as with the mouse taken, and the eye comes in by 0.5 to 1 m in a step at most twice a route. Measured in the Gaol 1.27°/step², 0 turns, 0.26 m/step², 2 such steps; before 4.45°/step² with 19 turns round. Check: Node test `gloam-downs-camera.test.mjs`.
+
+#### Scenario: Moving the mouse up and down in the boss fight
+- **WHEN** the boss camera is on and the player moves the mouse up and down at 1.5 rad/s, turning round every 0.25 s, at 144 Hz
+- **THEN** the drawn pitch does not move, because the boss camera sets the pitch (measured 0°; before, 2.8° and back, 104 times in 300 frames). Check: Node test `gloam-downs-camera.test.mjs`.
+
+#### Scenario: Pushing the view past its top limit over a wall
+- **WHEN** a wall 4 m high behind the lamplighter holds the view risen, and the player moves the mouse down at 1.2 rad/s at 144 Hz into the top of the pitch, then up
+- **THEN** the drawn pitch never goes over 1.35 rad, and it turns round no more than 4 times more often than the steps' own pitch (before: over the top and back once a step). Check: Node test `gloam-downs-camera.test.mjs`.
+
+#### Scenario: Something passes between the boss camera and the lamplighter
+- **WHEN** the lamplighter runs round the boss 5 m away and a pillar 3 m tall passes between the boss camera's eye and its aim
+- **THEN** the camera's distance comes in at no more than 15 m/s and goes back out at no more than 12 m/s, except to keep its eye out of the scenery (before: 12 m to 2.6 m and back in single steps). Check: Node test `gloam-downs-camera.test.mjs`.
+
+#### Scenario: The first move after the mouse is taken
+- **WHEN** the page takes the mouse, and Chrome's first locked move reports 5000 px, however soon after the free cursor last moved
+- **THEN** that move turns the view by no more than 120 px, 0.264 rad. Check: browser test `gloam-downs-camera.e2e.mjs` (the lock taken for real; it cannot bring the free move within 0.1 s of the first locked one, so that part is by reading `input.js`: the free cursor's moves and each change of the lock leave no time of a last move).
+
 ### Requirement: Wisps and the beacon
 Each place SHALL have five wisps, glowing motes that float above the ground, and one beacon on its summit. In Wander, a wisp SHALL go out and count when the lamplighter touches it, and the beacon SHALL light when the lamplighter touches it. While another beacon is still dark and the place has a next place, a card SHALL say that the way opens. Then the next place SHALL load. Otherwise the walk SHALL follow The end of the walk. In a run, the run's rules apply instead.
 

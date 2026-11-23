@@ -397,7 +397,10 @@ export function makeCamera(walk, o = {}) {
   const c = {
     yaw: o.yaw ?? 0, pitch: pitch0, base: pitch0, dist: dist0, want: dist0, fov: o.fov ?? null, asp: o.asp ?? 16 / 9, aim: o.aim ?? 1.15, target: null, idle: 9,
     auto: o.auto !== false, lift: 0, goal: { lift: 0, dist: dist0 }, goals: [], turning: false, from: null, hidden: 0, dv: 0, steer: false, across: false, squeeze: false, off: 0, framing: false,
-    cut: false, cutK: 0, cutP: pitch0, cutV: 0, cutT: 0, cutD: dist0, cutB: pitch0, cutRef: pitch0, cutOff: 9, vd: dist0, vdv: 0, shown: false
+    cut: false, cutK: 0, cutP: pitch0, cutV: 0, cutT: 0, cutD: dist0, cutB: pitch0, cutRef: pitch0, cutOff: 9, vd: dist0, vdv: 0, shown: false,
+    // the smooth camera: the rise's rate, the aim's height rate, the swing's and the lane turn's rates, the step's mouse turn, and a
+    // count of snaps (a view after a snap is not blended with the one before)
+    liftV: 0, tyV: 0, swingV: 0, laneV: 0, mouseYaw: 0, mousePitch: 0, snaps: 0
   };
   const NEAR = 0.5, TOP = 1.35, DIP = 0.1, LIFT = 0.08, THIN = 0.55, SHORT = 0.6, AHEAD = 0.25, RISE = 4, GRACE = 0.15, HEAD = 1.3, CHEST = 0.8, IN = 0.15, OUT = 0.25;
   // the most speed coming in, m/s: past something between (PULL) and to keep the eye out of a wall (SQUEEZE);
@@ -408,6 +411,14 @@ export function makeCamera(walk, o = {}) {
   /* the cutaway's tail: eased out, the view's distance still coming back to the follow eye's (the splats stay cut while it comes in,
      or while its eye is in the scenery) */
   const TAIL = 0.01, JERK = 0.3;
+  /* the smooth camera (design.md "Smooth camera"): the rise's rate builds by no more than LIFT_ACC rad/s², and slows to rest at its
+     goal (it went from 0 to RISE in one step on every hill brow, and stopped dead), and faster while the player turns the view; the
+     aim's height follows with a spring of AIM_T s on the ground and twice that in the air (a first-order lag passed each step up a
+     slope on as a kink); the swing behind a running lamplighter builds at no more than SWING_ACC rad/s², and the lane turn at no more
+     than LANE_ACC, and both ease back out the same way */
+  const LIFT_ACC = 40, LIFT_TURN = 160, AIM_T = 0.1, SWING_ACC = 1, LANE_ACC = 6;
+  // a rate eased toward `to`, changing by no more than a·dt this step
+  const ease = (v, to, a, dt) => v + clamp(to - v, -a * dt, a * dt);
   /* the underside of the gap over (x, z) in a map baked with undersides (U): the lowest of the four corners round it, or null where
      one of them has no gap (the edge of a roof decides by the old rule); with all false, the lowest of those that have one. A room
      taller than the least gap (1.8) lets the eye stand higher in it */
@@ -461,8 +472,15 @@ export function makeCamera(walk, o = {}) {
     let d = far;
     run.from = null;
     for (let t = 0.3; t <= far; t += 0.1) {
-      const b = blocked(t, x + ux * t, y + uy * t, z + uz * t, Math.min(0.35, 0.1 + 0.2 * t), thin ? sx : 0, thin ? sz : 0);
+      let b = blocked(t, x + ux * t, y + uy * t, z + uz * t, Math.min(0.35, 0.1 + 0.2 * t), thin ? sx : 0, thin ? sz : 0);
       if (b === null) continue;
+      /* the edge between the last open sample and the first blocked one, found to 6 mm: sampled only every 0.1 m, the room moved in
+         0.1 m stairs as the rise changed, and the camera came in stop-start (-0.1, -0.2, 0, 0, -0.1 m a step in the Gaol) */
+      if (b > 0.3 + 1e-6) {
+        let lo = b - 0.1, hi = b;
+        for (let i = 0; i < 4; i++) { const m = (lo + hi) / 2; if (open(x + ux * m, y + uy * m, z + uz * m, Math.min(0.35, 0.1 + 0.2 * m))) lo = m; else hi = m; }
+        b = hi;
+      }
       d = Math.max(0, b - 0.25);
       break;
     }
@@ -535,17 +553,22 @@ export function makeCamera(walk, o = {}) {
     // swing in behind a running lamplighter
     const sp = Math.hypot(s.vx, s.vz), ran = !!(turn && turn(c, s, dt, looked));
     if (c.turning && !was) c.from = before;
+    let swing = 0;
     if (!ran && autoTurn(c) && sp > 1) {
       const d = wrap(s.yaw + Math.PI - c.yaw);
-      if (Math.abs(d) < 2.6) c.yaw += d * Math.min(1, dt * AUTO.swing * Math.min(1, sp / 5));
+      if (Math.abs(d) < 2.6) swing = dt > 0 ? d * Math.min(1, dt * AUTO.swing * Math.min(1, sp / 5)) / dt : 0;
     }
+    // the swing's rate builds and falls off eased; look input, the mouse taken or a run's camera stop it at once (the player wins)
+    c.swingV = ran || !autoTurn(c) || sp <= 1 ? 0 : ease(c.swingV, swing, SWING_ACC, dt);
+    c.yaw += c.swingV * dt;
     const want = [s.x, s.y + aimAt(s.x, s.y, s.z), s.z];
     if (!c.target) c.target = want.slice();
-    // the aim follows the height at 10/s on the ground (down a steep slope it would lag far above the figure), and at 5/s in a jump
-    const k = 1 - Math.exp(-9 * dt), ky = 1 - Math.exp(-(s.ground ? 10 : 5) * dt);
+    /* the aim follows the height with a spring of AIM_T s on the ground (lagging on a slope as the 10/s it was: down a steep slope more
+       would leave it far above the figure), and twice that in a jump; a first-order lag passed each step up a slope on as a kink */
+    const k = 1 - Math.exp(-9 * dt);
     c.target[0] += (want[0] - c.target[0]) * k;
     c.target[2] += (want[2] - c.target[2]) * k;
-    c.target[1] += (want[1] - c.target[1]) * ky;
+    [c.target[1], c.tyV] = damp(c.target[1], want[1], c.tyV, s.ground ? AIM_T : 2 * AIM_T, dt);
     // in a nook, the view leans toward a clear yaw (the framed shot, below); a run's camera that has the yaw (ran) leads
     let leant = lean(s, dt, wrap(c.yaw - yaw0), looked, sp, ran, was);
     // the rise it needs now, and for where the aim and the yaw will be a moment ahead: the larger
@@ -562,11 +585,16 @@ export function makeCamera(walk, o = {}) {
     /* in a lane or round a corner: when the view must rise more than 0.35 or come in, and the lamplighter runs away from the eye or
        across the view (never toward it, as when backing into a wall), when the view may turn by itself (autoTurn) and no run camera
        turns it, the view turns at up to 1.2 rad/s toward the nearest yaw within 60° that is open with 0.25 less rise */
+    let lane = 0;
     if (autoTurn(c) && !c.turning && sp > 1 && Math.abs(wrap(s.yaw + Math.PI - c.yaw)) < 1.75 && (now.lift > 0.35 || now.dist < c.want - 0.05))
       for (const j of [1, -1, 2, -2, 3, -3]) {
         const g = solve(tx, ty, tz, c.yaw + j * 0.35, head);
-        if (g.dist >= c.want - 0.05 && g.lift <= now.lift - 0.25) { c.yaw += clamp(j * 0.35, -1.2 * dt, 1.2 * dt); break; }
+        if (g.dist >= c.want - 0.05 && g.lift <= now.lift - 0.25) { lane = Math.sign(j) * 1.2; break; }
       }
+    // eased in and out at LANE_ACC rad/s², so it neither starts nor stops at full rate, nor chatters on and off a step at a time
+    // (both stop with the lamplighter, at 1 m/s, as they start: a turn by itself that went on as it stood still is a lean's to make)
+    c.laneV = autoTurn(c) && !c.turning && sp > 1 ? ease(c.laneV, lane, LANE_ACC, dt) : 0;
+    c.yaw += c.laneV * dt;
     // the point ahead stands on the floor there, as the lamplighter will
     const ax = s.x + s.vx * AHEAD, az = s.z + s.vz * AHEAD, af = walk.support(ax, az, s.y + 1.2) ?? s.y;
     const soon = solve(tx + s.vx * AHEAD, Math.max(ty, af + aimAt(ax, af, az)), tz + s.vz * AHEAD, c.yaw + clamp(spin, -3, 3) * AHEAD, [ax, af + HEAD, az]);
@@ -574,9 +602,21 @@ export function makeCamera(walk, o = {}) {
     c.goals.push(Math.max(now.lift, soon.lift));
     if (c.goals.length > 3) c.goals.shift();
     c.goal = { lift: Math.min(...c.goals), dist: now.dist };
-    // up quickly but never faster than RISE, down slowly
-    const up = c.goal.lift > c.lift, cap = c.lift + RISE * dt;
-    c.lift += clamp((c.goal.lift - c.lift) * Math.min(1, (up ? 12 : 2) * dt), -RISE * dt, RISE * dt);
+    /* up quickly (12/s of the way) but never faster than RISE, down slowly (2/s); its rate builds by no more than LIFT_ACC rad/s² and
+       falls by no more than twice that, so a rise starts and stops eased rather than at RISE on its first step. The rise further first
+       (below, cap) keeps to the same rate. While the player turns the view the limit grows by LIFT_TURN rad/s² per rad/s of the turn
+       (no limit at all past 0.5 rad/s, as it was): the eye swung toward a wall needs the rise sooner. At LIFT_ACC alone it came in by
+       0.85 m and then 0.1 m a step at 6 rad/s; at 40 or 80 per rad/s, a 1.2 rad/s mouse sweep in the Gaol came in by 0.29 m and then
+       0.45 m a step, as the eye waited on the rise and then had to keep out of the wall; at 160 the rise reaches RISE in one step
+       from about 1.1 rad/s up, so only slow turns ease it */
+    const A = LIFT_ACC + (looked ? LIFT_TURN * Math.abs(spin) : 0), up = c.goal.lift > c.lift;
+    const cap = c.lift + Math.max(0, Math.min(RISE, c.liftV + A * dt, Math.sqrt(2 * A * Math.max(0, Math.max(c.goal.lift, now.lift) - c.lift)))) * dt;
+    if (dt > 0) {
+      let r = clamp((c.goal.lift - c.lift) * (up ? 12 : 2), c.liftV - 2 * A * dt, c.liftV + A * dt);
+      // going up, no faster than lets it come to rest at its goal (past it, slowing at 2·A: a goal that falls away does not stop it dead)
+      if (r > 0) r = Math.min(r, Math.max(Math.sqrt(2 * A * Math.max(0, c.goal.lift - c.lift)), c.liftV - 2 * A * dt));
+      c.lift += clamp(r, -RISE, RISE) * dt;
+    }
     /* the rise easing down must not lower the eye into the scenery: it holds this step, and the eye starts in (at no more than PULL,
        below) to where the lower view is clear */
     let sink = 0;
@@ -702,6 +742,11 @@ export function makeCamera(walk, o = {}) {
       }
     }
     c.dist = Math.max(NEAR, d); c.dv = v;
+    /* the rise's rate this step, before a wall held back part of the step (a hold that also took the rate fed back: the rise built
+       from nothing again each step and stalled against the wall); and the share of the mouse's turn shown */
+    if (dt > 0) c.liftV = (liftT - lift0) / dt;
+    c.mouseYaw = inp.dyaw ? inp.dyaw * (turnBy ? clamp(wrap(c.yaw - yaw0) / turnBy, 0, 1) : 1) : 0;
+    c.mousePitch = inp.dpitch && Math.sign(c.pitch - pitch0) === Math.sign(inp.dpitch) ? Math.sign(inp.dpitch) * Math.min(Math.abs(inp.dpitch), Math.abs(c.pitch - pitch0)) : 0;
     // the cutaway: the view stands TIGHT.dist back at the player's yaw, raised over the roof where that clears it
     const k0 = c.cutK;
     c.cutK = c.cut ? Math.min(1, c.cutK + dt / TIGHT.ease) : Math.max(0, c.cutK - dt / TIGHT.back);
@@ -739,11 +784,13 @@ export function makeCamera(walk, o = {}) {
       const a = ACC * dt * dt, l0 = c.vdv - a, h0 = Math.min(c.vdv + JERK, Math.max(0, c.vdv) + a);
       const lo = Math.min(h0, Math.max(-PULL * dt, l0)), hi = Math.max(lo, Math.min(BACK * dt, h0));
       const vv = clamp(vd - c.vd, lo, hi);
-      vd = c.vd + vv; c.cutD = vd;
+      vd = Math.max(NEAR, c.vd + vv); c.cutD = vd;
       // going out, the cutaway is not over until the view's distance is the follow eye's
       if (!c.cut && Math.abs(vd - c.dist) > 1e-3) c.cutK = Math.max(c.cutK, TAIL);
     }
-    c.vdv = vd - c.vd; c.vd = vd;
+    /* (a jump of the follow eye through a wall, over 1 m in a step, is a cut and not a speed: a cutaway that came on just after one
+       went on in at the jump's speed, slowing by JERK a step, past NEAR and through the aim, to -13 m in the Gaol) */
+    c.vdv = c.cutK > 0 || k0 > 0 || Math.abs(vd - c.vd) <= 1 ? vd - c.vd : 0; c.vd = vd;
     /* and through the tail while the view's eye comes in to the follow eye's, or whenever it stands in the scenery (going out along
        the follow eye's own clear line it is in the open, and the splats come back from there) */
     c.shown = c.cut || c.cutK > TAIL || (c.cutK > 0 && ((c.shown && vd > c.dist + 1e-3) || !eyeOpen(tx, ty, tz, c.yaw, vp, vd)));
@@ -840,6 +887,7 @@ export function makeCamera(walk, o = {}) {
     c.yaw = yaw; c.target = [s.x, s.y + aimAt(s.x, s.y, s.z), s.z]; c.idle = 9;
     c.goal = solve(c.target[0], c.target[1], c.target[2], yaw, [s.x, s.y + HEAD, s.z]);
     c.lift = c.goal.lift; c.goals = [c.lift]; c.hidden = 0; c.dv = 0;
+    c.liftV = c.tyV = c.swingV = c.laneV = c.mouseYaw = c.mousePitch = 0; c.snaps++;
     c.dist = Math.max(NEAR, reach(c.target[0], c.target[1], c.target[2], yaw, Math.min(TOP, c.pitch + c.lift), c.want));
     // the cutaway starts whole where the place puts the lamplighter
     c.cut = c.want > TIGHT.out && c.goal.dist < TIGHT.in; c.cutK = c.cut ? 1 : 0; c.cutV = 0; c.cutT = 0; c.cutOff = 9;
@@ -851,7 +899,82 @@ export function makeCamera(walk, o = {}) {
     c.want = L.dist; c.fov = L.fov ?? c.fov; c.aim = L.aim ?? c.aim; c.asp = L.asp ?? c.asp;
     if (Number.isFinite(L.pitch)) { c.pitch = clamp(c.pitch + L.pitch - c.base, 0.08, 1.05); c.base = L.pitch; }
   }
-  return { c, follow, snap, layout, reach };
+  /* the mouse's turn not yet taken by a step, drawn on this frame (design.md "Smooth camera"): the view v turned by dyaw, and its pitch
+     by dpitch as follow() would turn it (kept in 0.08 to 1.05), as far as the eye stays clear on its way round, marched every 0.1 m.
+     The next step takes the whole turn and solves the walls for it. Where the eye is not in the open to start with (the cutaway's eye,
+     with the splats round it cut), the whole turn shows */
+  function look(v, dyaw = 0, dpitch = 0) {
+    // a view that sets its pitch itself (the boss camera's, by its weight: v.lookPitch) takes that share of the mouse's pitch
+    dpitch *= v.lookPitch ?? 1;
+    if (!dyaw && !dpitch) return v;
+    const dp = clamp(c.pitch + dpitch, 0.08, 1.05) - c.pitch, top = v.cut ? TIGHT.top : TOP;
+    const p1 = dp > 0 ? Math.max(v.pitch, Math.min(top, v.pitch + dp)) : v.pitch + dp;
+    const [x, y, z] = v.target, at = f => eyeOpen(x, y, z, v.yaw + dyaw * f, v.pitch + (p1 - v.pitch) * f, v.dist);
+    let f = 1;
+    if (at(0)) {
+      const n = Math.max(1, Math.ceil(Math.hypot(dyaw * Math.cos(v.pitch), p1 - v.pitch) * v.dist / 0.1));
+      for (let k = 1; k <= n; k++) if (!at(k / n)) { f = (k - 1) / n; break; }
+    }
+    return { ...v, yaw: v.yaw + dyaw * f, pitch: v.pitch + (p1 - v.pitch) * f };
+  }
+  // is the eye of view v in the open?
+  const clear = v => eyeOpen(v.target[0], v.target[1], v.target[2], v.yaw, v.pitch, v.dist);
+  return { c, follow, snap, layout, reach, look, clear };
+}
+
+/* ---------------- the frame between two steps ----------------
+   The game steps at a fixed 1/60 s, and a display may show 60, 120, 144 or 165 frames a second. Drawn at the last step's state, a
+   144 Hz display showed each step for 2 or 3 frames (the view moved 0, 1 or 2 steps a frame), and at 60 Hz rAF's jitter round the step
+   boundary gave bursts of 0 and 2 steps a frame. So each frame draws the last two steps blended by k, the share of a step the clock has
+   run past the last one (Glenn Fiedler, "Fix Your Timestep": the state one step behind, interpolated), for the view and for the
+   lamplighter's place and facing. The mouse is not blended: the part of its turn of the last step that the view followed shows whole,
+   and its turn since, which no step has taken yet, is drawn on top (cam.look), so a steady mouse move turns the picture by the same
+   angle every frame. A snap of the camera, a jump of the body or the aim over 2 m in a step, or a blended eye in the scenery where the
+   step's own eye is clear draws the step as it is (the last until the next step). step(view, s) after each step's camera; reset() where the page lays a new view; view(k, dyaw, dpitch) and body(s, k) for the
+   frame */
+export function makeBlend(cam) {
+  let prev = null, cur = null, snaps = -1, pb = null, cb = null, mouse = [0, 0], held = false, pshare = 1, share1 = 1;
+  const wrapA = a => Math.atan2(Math.sin(a), Math.cos(a));
+  // the part of the mouse's turn m that the view's own move d of this step followed: the same way, and no more than d (a limit, the
+  // rise or the boss camera's own pitch that took the mouse's move back is not drawn)
+  const followed = (m, d) => (m && d && Math.sign(m) === Math.sign(d) ? Math.sign(m) * Math.min(Math.abs(m), Math.abs(d)) : 0);
+  return {
+    step(v, s) {
+      const fresh = cam.c.snaps !== snaps;
+      snaps = cam.c.snaps;
+      if (fresh) pshare = share1 = 1;
+      // a view whose aim jumped over 2 m in a step (a body moved without a snap) is not blended either
+      prev = fresh || !cur || Math.hypot(...v.target.map((q, i) => q - cur.target[i])) > 2 ? null : cur; cur = v; held = false;
+      const b = { x: s.x, y: s.y, z: s.z, yaw: s.yaw, floor: s.floor };
+      pb = fresh || !cb || Math.hypot(b.x - cb.x, b.y - cb.y, b.z - cb.z) > 2 ? null : cb; cb = b;
+      mouse = prev ? [followed(cam.c.mouseYaw || 0, wrapA(cur.yaw - prev.yaw)), followed(cam.c.mousePitch || 0, cur.pitch - prev.pitch)] : [0, 0];
+      /* and the share of it, for the mouse's pitch drawn before the next step takes it: where the rise or a limit took back part of the
+         last two steps', as much is left out (drawn whole, the pitch went on and came back at every step, against the mouse; and where
+         the rise and the mouse take turns, a step at a time, the share of one step alone does the same) */
+      if (cam.c.mousePitch) { const sh = prev ? Math.abs(mouse[1] / cam.c.mousePitch) : 1; pshare = Math.min(sh, share1); share1 = sh; }
+    },
+    reset() { prev = cur = pb = cb = null; mouse = [0, 0]; held = false; pshare = share1 = 1; },
+    view(k, dyaw = 0, dpitch = 0) {
+      if (!cur) return null;
+      let v = cur;
+      if (prev && k < 1 && !held) {
+        k = clamp(k, 0, 1);
+        const m = (p, q) => p + (q - p) * k, j = 1 - k;
+        v = { ...cur, target: cur.target.map((q, i) => m(prev.target[i], q)), dist: m(prev.dist, cur.dist), pitch: m(prev.pitch, cur.pitch) + mouse[1] * j,
+          yaw: prev.yaw + wrapA(cur.yaw - prev.yaw) * k + mouse[0] * j, ...(prev.fov && cur.fov ? { fov: m(prev.fov, cur.fov) } : {}) };
+        // a blended eye in the scenery where the step's own is clear draws the step, and keeps to it until the next step (it does not
+        // go back and forth between the two)
+        if (!cur.cut && !cam.clear(v) && cam.clear(cur)) { v = cur; held = true; }
+      }
+      return cam.look(v, dyaw, dpitch * pshare);
+    },
+    body(s, k) {
+      if (!pb || !cb || k >= 1) return s;
+      k = clamp(k, 0, 1);
+      const m = (p, q) => p + (q - p) * k;
+      return { ...s, x: m(pb.x, cb.x), y: m(pb.y, cb.y), z: m(pb.z, cb.z), floor: m(pb.floor, cb.floor), yaw: pb.yaw + wrapA(cb.yaw - pb.yaw) * k };
+    }
+  };
 }
 
 /* ---------------- the near fade ----------------
