@@ -2,9 +2,10 @@
 import { TILE, PALETTE, build, pathfind } from "./world.mjs";
 import { createRenderer, lookAt, perspective, mul } from "./render.mjs";
 
-const FOV = 26 * Math.PI / 180;
-// Ground span that keeps the 6x6 block inside the frame, with about a tile of margin, at any yaw.
-const SPAN = 10 * TILE;
+const FOV = 20 * Math.PI / 180;
+// Whole-tile zoom. Ten tiles across is the step that fills a short frame at tilt 55
+// without pushing a ground corner out. Attract sits one tile further back.
+const TILES = 10;
 const SUN = norm([0.48, 0.84, 0.26]);
 const HAZE = [0x1f / 255, 0x2a / 255, 0x3a / 255];
 const SMOG = [0x8a / 255, 0x83 / 255, 0x78 / 255];
@@ -38,8 +39,8 @@ let cool = 0;
 let warmed = 0;
 const drops = new Float32Array(120);
 for (let i = 0; i < 60; i++) {
-  drops[i * 2] = (i * 47) % 320;
-  drops[i * 2 + 1] = (i * 29) % 200;
+  drops[i * 2] = (i * 97) % 311;
+  drops[i * 2 + 1] = (i * 53) % 211;
 }
 const hz = 8 + (world.seed % 5);
 
@@ -82,11 +83,12 @@ function camera() {
   const yr = yaw * Math.PI / 180;
   const aspect = renderer.view.artW / Math.max(1, renderer.view.artH);
   const tan = Math.tan(FOV / 2);
-  const dist = Math.max(SPAN / (2 * tan * aspect), (SPAN * Math.sin(tr)) / (2 * tan));
+  const tiles = attract ? TILES + 1 : TILES;
+  const dist = (tiles * TILE) / (2 * tan * aspect);
   const cx = (attract ? 3 : player.x) * TILE;
   const cz = (attract ? 3 : player.y) * TILE;
-  const shift = TILE * 0.5;
-  const focus = [cx + Math.sin(yr) * shift, 4, cz + Math.cos(yr) * shift];
+  const shift = attract ? 16 : 36;
+  const focus = [cx + Math.sin(yr) * shift, 0, cz + Math.cos(yr) * shift];
   const cam = [
     focus[0] + Math.cos(tr) * Math.sin(yr) * dist,
     focus[1] + Math.sin(tr) * dist,
@@ -107,6 +109,17 @@ function camera() {
   cam[2] -= right[2] * sx + up[2] * sy;
   lastCam = cam;
   return { cam, focus, dist };
+}
+function scatterRain() {
+  const w = renderer.view.artW || 320;
+  const h = renderer.view.artH || 200;
+  if (scatterRain.w === w && scatterRain.h === h) return;
+  scatterRain.w = w;
+  scatterRain.h = h;
+  for (let i = 0; i < 60; i++) {
+    drops[i * 2] = (i * 97) % w;
+    drops[i * 2 + 1] = (i * 53) % h;
+  }
 }
 function fit() {
   const cssW = window.innerWidth, cssH = window.innerHeight;
@@ -181,12 +194,11 @@ function scene() {
   const halo = new Float32Array(32);
   const haloC = new Float32Array(32);
   const fadeU = new Float32Array(8);
-  fadeU[0] = 1;
   let rimx = SUN[0], rimz = SUN[2], best = 0;
   const rx = player.x * TILE, rz = player.y * TILE;
   lights.forEach((l, i) => {
     const x = l.x * TILE, y = l.z, z = l.y * TILE;
-    uL[i * 4] = x; uL[i * 4 + 1] = y; uL[i * 4 + 2] = z; uL[i * 4 + 3] = l.radius;
+    uL[i * 4] = x; uL[i * 4 + 1] = y; uL[i * 4 + 2] = z; uL[i * 4 + 3] = l.sign >= 0 ? l.radius : 0;
     const hex = l.colour;
     const r = parseInt(hex.slice(1, 3), 16) / 255;
     const g = parseInt(hex.slice(3, 5), 16) / 255;
@@ -200,16 +212,29 @@ function scene() {
     if (a > best) { best = a; rimx = dx / d; rimz = dz / d; }
     const onSign = l.sign >= 0 ? (l.intensity ?? 1) : 0;
     halo[i * 4 + 2] = onSign;
-    haloC[i * 4] = r; haloC[i * 4 + 1] = g; haloC[i * 4 + 2] = b; haloC[i * 4 + 3] = 1;
+    haloC[i * 4] = r; haloC[i * 4 + 1] = g; haloC[i * 4 + 2] = b;
+    const gx = l.x * TILE, gz = l.y * TILE;
+    const toCx = 3 * TILE - gx, toCz = 3 * TILE - gz;
+    const span = Math.hypot(toCx, toCz) || 1;
+    const ux = toCx / span, uz = toCz / span;
+    l._ground = [gx - ux * TILE * 16, gz - uz * TILE * 16];
+    l._end = [3 * TILE, 3 * TILE];
     l._world = [x, y, z];
   });
+  let master = 0;
+  for (let i = 1; i <= 5; i++) master = Math.max(master, fadeU[i]);
+  fadeU[0] = master;
   const rl = Math.hypot(rimx, rimz) || 1;
   const vp = mul(proj, view);
   renderer.vp = vp;
   lights.forEach((l, i) => {
-    const p = renderer.project(l._world);
+    const p = renderer.project([l._ground[0], 0.3, l._ground[1]]);
+    const e = renderer.project([l._end[0], 0.3, l._end[1]]);
+    const ah = renderer.view.artH;
     halo[i * 4] = p.x;
-    halo[i * 4 + 1] = renderer.view.artH - p.y;
+    halo[i * 4 + 1] = ah - p.y;
+    halo[i * 4 + 3] = e.x;
+    haloC[i * 4 + 3] = ah - e.y;
   });
   return {
     vp, slices: runner.concat(rest), runnerCount: runner.length, runnerPaper: true,
@@ -243,11 +268,15 @@ function step(dt) {
     if (d <= step) { player.x = tx; player.y = ty; route.shift(); }
     else { player.x += dx / d * step; player.y += dy / d * step; }
   }
+  scatterRain();
   for (let i = 0; i < 60; i++) {
     let x = drops[i * 2] + 28 * dt;
     let y = drops[i * 2 + 1] - 28 * dt;
     const w = renderer.view.artW, h = renderer.view.artH;
-    if (x > w + 2 || y < -2) { x = (i * 53 + time * 40) % w; y = h - (i * 17) % 30; }
+    if (x >= w || y < 0 || x < 0 || y >= h) {
+      x = (i * 97 + Math.floor(time * 13)) % w;
+      y = (i * 53 + Math.floor(time * 29)) % h;
+    }
     drops[i * 2] = Math.floor(x);
     drops[i * 2 + 1] = Math.floor(y);
   }

@@ -5,7 +5,7 @@ export const TILE = 32;
 export const GRID = 6;
 const ATLAS = 1024;
 
-const INK = 1, BASE = 2, MID = 3, SMOG = 4;
+const INK = 1, BASE = 2, MID = 3;
 const MAGENTA = 5, CYAN = 6, ACID = 7, AMBER = 8, PAPER = 9, OCHRE = 10;
 const UP = 0, PX = 1, NX = 2, PZ = 3, NZ = 4;
 
@@ -184,15 +184,6 @@ function boxFace(x, z, w, h) {
   if (z === h - 1) return PZ;
   return UP;
 }
-function wallFace(x, z, w, h) {
-  const edge = 4;
-  if (x < edge) return NX;
-  if (x >= w - edge) return PX;
-  if (z < edge) return NZ;
-  if (z >= h - edge) return PZ;
-  return UP;
-}
-
 function slice(x, z, y, hx, hz, uv, kind, sign, bid, low, orient) {
   return { x, z, y, hx, hz, uv, kind, sign, bid, low, orient: orient || 0 };
 }
@@ -245,7 +236,8 @@ export function pathfind(blocked, x0, y0, x1, y1) {
 export function build(seed) {
   const rng = mulberry32(Number(seed) || 1);
   const pack = atlas();
-  const bands = [INK, BASE, MID, SMOG].map((col, i) => pack.put(solidRect(22, 22, col, 40 + i * 60, wallFace), 22, 22));
+  const base = pack.put(solidRect(22, 22, BASE, 40, boxFace), 22, 22);
+  const mid = pack.put(solidRect(22, 22, MID, 80, boxFace), 22, 22);
   const inkUv = pack.put(solidRect(1, 1, INK, 20, () => UP), 1, 1);
   const slices = [];
   const buildings = [];
@@ -272,31 +264,32 @@ export function build(seed) {
     blocked[tx][ty] = true;
     buildings.push({ tx, ty, h, x: cx, z: cz, hx: 11, hz: 11 });
     for (let s = 0; s < h; s++) {
-      const t = h === 1 ? 1 : s / (h - 1);
-      const band = t < 0.25 ? 0 : t < 0.55 ? 1 : 2;
-      slices.push(slice(cx, cz, 0.6 + s, 11, 11, bands[band], 0, 0, i, s < 6));
+      const tex = s < h * 0.5 ? base : mid;
+      slices.push(slice(cx, cz, 0.6 + s, 11, 11, tex, 0, 0, i, s < 6));
     }
     const lean = 0.55 * h;
     slices.push(slice(cx + lean, cz + lean * 0.45, 0.16, 11, 11, inkUv, 2, 0, i, true));
   });
 
-  const order = reserved.slice();
-  for (let i = order.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    const s = order[i]; order[i] = order[j]; order[j] = s;
-  }
-  const hosts = order.map(([tx, ty]) => buildings.find((b) => b.tx === tx && b.ty === ty));
-
   const lights = [];
   const signMeta = [];
+  const exposed = [];
+  for (let tx = 0; tx < GRID; tx++) {
+    let south = null;
+    for (const b of buildings) if (b.tx === tx && (!south || b.ty > south.ty)) south = b;
+    if (south) exposed.push(south);
+  }
   SIGNS.forEach((def, si) => {
     const w = def.grid[0].length;
     const h = def.grid.length;
     if (def.grid.some((row) => row.length !== w)) throw new Error(def.name + " grid is ragged");
-    const host = hosts[si];
-    const toward = host.tx < 2 ? 1 : -1;
-    const edge = host.x + toward * (host.hx + 0.4);
-    const cz = host.z;
+    // East walls are edge-on from the standing camera, so hang the plate on the
+    // south face that camera can see. A second plate on the same wall sits higher.
+    const wall = exposed[si % exposed.length];
+    const stack = Math.floor(si / exposed.length);
+    const face = { id: PZ };
+    const edgeX = wall.x;
+    const edgeZ = wall.z + wall.hz + 0.4;
     const W = w + 2;
     const H = h + 2;
     const pix = new Uint8Array(W * H * 4);
@@ -305,24 +298,22 @@ export function build(seed) {
       for (let x = 0; x < W; x++) {
         const inside = img > 0 && img < H - 1 && x > 0 && x < W - 1;
         const tube = inside && def.grid[img - 1][x - 1] === "#";
-        const face = toward > 0 ? PX : NX;
-        stamp(pix, W, x, row, tube ? def.col : INK, face, 200);
+        stamp(pix, W, x, row, tube ? def.col : INK, face.id, 200);
       }
     }
     const uv = pack.put(pix, W, H);
-    const lift = 0.6 + 4;
-    slices.push(slice(edge, cz, lift + H / 2, W / 2, H / 2, uv, 3, si + 1, -1, true, 1));
-    const lx = edge / TILE;
-    const ly = cz / TILE;
+    const lift = 0.6 + 4 + stack * 14;
+    slices.push(slice(edgeX, edgeZ, lift + H / 2, W / 2, H / 2, uv, 3, si + 1, -1, true, 2));
+    const lx = edgeX / TILE;
+    const ly = edgeZ / TILE;
     lights.push({
       x: lx, y: ly, z: lift + H / 2, colour: def.colour, type: "neon",
       on: true, sign: si, radius: TILE * 3, buzz: def.buzz, name: def.name,
     });
-    signMeta.push({ name: def.name, colour: def.colour, w, h, tx: host.tx, ty: host.ty, buzz: def.buzz, x: lx, y: ly });
+    signMeta.push({ name: def.name, colour: def.colour, w, h, tx: wall.tx, ty: wall.ty, buzz: def.buzz, x: lx, y: ly });
   });
 
-  const eye = signMeta.find((s) => s.buzz);
-  const barrelHost = signMeta.find((s) => s.ty > 0 && s.ty < 5 && s.name !== "arrow") || eye;
+  const barrelHost = signMeta.find((s) => s.buzz) || signMeta[0];
   const hostB = buildings.find((b) => b.tx === barrelHost.tx && b.ty === barrelHost.ty);
   const barrelX = hostB.x + (hostB.tx < 2 ? 1 : -1) * (hostB.hx + 3);
   const barrelZ = hostB.z;

@@ -304,10 +304,73 @@ async function proof(width, height, dpr, tag) {
       cssW: box.width, cssH: box.height, vw: innerWidth, vh: innerHeight, ox: v.ox, oy: v.oy,
     };
   });
+  const span = Math.max(...framed.corners.map((p) => p.x)) - Math.min(...framed.corners.map((p) => p.x));
+  const blockWidth = span / view.artW;
   check(framed.inside, tag + " block corners stay inside at tilt 55 (" + framed.corners.map((p) => Math.round(p.x) + "," + Math.round(p.y)).join(" ") + ")");
+  check(blockWidth >= 0.75, tag + " block fills " + Math.round(blockWidth * 100) + "% of the canvas width");
   check(framed.cssW >= width * 0.95 && framed.cssH >= height * 0.95, tag + " canvas fills the viewport (" + Math.round(framed.cssW) + "x" + Math.round(framed.cssH) + " of " + framed.vw + "x" + framed.vh + ")");
   check(framed.n > 4 && framed.h > framed.w, tag + " runner is taller than wide (" + framed.w + "x" + framed.h + ", " + framed.n + " px)");
+  await page.screenshot({ path: OUT + "/" + tag + "-tilt55-on.png" });
   await page.screenshot({ path: OUT + "/" + tag + "-block55.png" });
+  const diff = await page.evaluate(async () => {
+    const canvas = document.querySelector("canvas");
+    const gl = canvas.getContext("webgl2");
+    const grab = () => {
+      const buf = new Uint8Array(canvas.width * canvas.height * 4);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, buf);
+      return buf;
+    };
+    const on = grab();
+    const close = (r, g, b, t) => Math.abs(r - t[0]) <= 12 && Math.abs(g - t[1]) <= 12 && Math.abs(b - t[2]) <= 12;
+    let concrete = 0, other = 0;
+    for (let i = 0; i < on.length; i += 4) {
+      const r = on[i], g = on[i + 1], b = on[i + 2], mx = Math.max(r, g, b);
+      if (mx < 40 || mx > 170) continue;
+      if (close(r, g, b, [0x2b, 0x2a, 0x33]) || close(r, g, b, [0x4a, 0x48, 0x52])) concrete++;
+      else other++;
+    }
+    for (let i = 0; i < 5; i++) __test.setSign(i, false);
+    await new Promise((r) => setTimeout(r, 450));
+    const off = grab();
+    let changed = 0;
+    const count = on.length / 4;
+    for (let i = 0; i < on.length; i += 4) {
+      if (Math.abs(on[i] - off[i]) + Math.abs(on[i + 1] - off[i + 1]) + Math.abs(on[i + 2] - off[i + 2]) > 24) changed++;
+    }
+    const hue = (colour, r, g, b) => {
+      if (Math.abs(r - 0xc9) <= 18 && Math.abs(g - 0x8b) <= 18 && Math.abs(b - 0x3c) <= 18) return false;
+      if (colour === "#FF3D8B") return r > g + 45 && b > g + 30 && r > b;
+      if (colour === "#3DE0E8") return g > r + 35 && b > r + 35;
+      if (colour === "#F2A33A") return r > b + 55 && g > b + 35 && r + 8 >= g && b < 110;
+      if (colour === "#B6F23A") return g > r + 45 && g > b + 45;
+      return false;
+    };
+    const lights = __test.state().lights.filter((l) => l.type === "neon");
+    const v = __test.view();
+    let leaked = 0;
+    for (const s of lights) {
+      const p = __test.project(s.x, s.y, 0);
+      const q = __test.project(s.x + 3, s.y, 0);
+      const rad = Math.hypot((q.x - p.x) * v.scale, (q.y - p.y) * v.scale);
+      const gx = v.ox + p.x * v.scale;
+      const gy = v.oy + (v.artH - p.y) * v.scale;
+      const x0 = Math.max(0, Math.floor(gx - rad)), x1 = Math.min(canvas.width - 1, Math.ceil(gx + rad));
+      const y0 = Math.max(0, Math.floor(gy - rad)), y1 = Math.min(canvas.height - 1, Math.ceil(gy + rad));
+      for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+        if ((x - gx) * (x - gx) + (y - gy) * (y - gy) > rad * rad) continue;
+        const i = (y * canvas.width + x) * 4;
+        if (hue(s.colour, off[i], off[i + 1], off[i + 2])) leaked++;
+      }
+    }
+    return { pct: changed / count, concrete, other, leaked };
+  });
+  check(diff.pct >= 0.1, tag + " signs on/off differ by " + Math.round(diff.pct * 100) + "% of pixels");
+  check(diff.leaked === 0, tag + " signs off leave no sign hue within 3 tiles (" + diff.leaked + ")");
+  const concretePct = diff.concrete / Math.max(1, diff.concrete + diff.other);
+  console.log("  nums  " + tag + " diff=" + Math.round(diff.pct * 100) + "% concrete=" + Math.round(concretePct * 100) + "% block=" + Math.round(blockWidth * 100) + "%");
+  await page.screenshot({ path: OUT + "/" + tag + "-tilt55-off.png" });
+  await page.evaluate(() => { for (let i = 0; i < 5; i++) __test.setSign(i, null); });
   await page.evaluate(() => __test.setTilt(20));
   await page.waitForTimeout(160);
   await page.screenshot({ path: OUT + "/" + tag + "-tilt20.png" });
@@ -477,7 +540,7 @@ async function visible(width, height, dpr) {
       for (let i = 0; i < 81; i++) px.push([buf[i * 4], buf[i * 4 + 1], buf[i * 4 + 2]]);
       return px;
     };
-    const spot = __test.client(pick.face.x, pick.face.z, pick.z);
+    const spot = __test.client(pick.face.x, pick.face.z, 4);
     const on = readAt(spot.x, spot.y);
     for (let i = 0; i < 5; i++) __test.setSign(i, false);
     await new Promise((r) => setTimeout(r, 400));

@@ -65,6 +65,7 @@ void main() {
   float id = t.r * 255.0;
   float fade = fadeOf(vSign);
   float neon0 = step(4.5, id) * step(id, 8.5);
+  vec3 tube = pal(id);
   id = mix(id, 3.0, neon0 * (1.0 - fade));
   vec3 base = pal(id);
   float px = step(0.5, face) * step(face, 1.5);
@@ -77,14 +78,12 @@ void main() {
   lam = clamp(lam * (0.55 + t.b * 0.45), 0.0, 1.0);
   lam = floor(clamp(lam, 0.0, 0.999) * 4.0) / 3.0;
   vec3 col = mix(pal(1.0), base, lam);
-  float isNeon = step(4.5, id) * step(id, 8.5);
-  col = mix(col, base, isNeon);
   float runner = step(abs(vKind - 1.0), 0.25);
   col = mix(col, pal(1.0), step(abs(vKind - 2.0), 0.25));
-  col = mix(col, uHaze, clamp(vW.y / 48.0, 0.0, 1.0) * 0.28 * (1.0 - isNeon) * (1.0 - runner));
+  col = mix(col, uHaze, clamp(vW.y / 48.0, 0.0, 1.0) * 0.28 * (1.0 - neon0) * (1.0 - runner));
   float wall = step(side, 0.0);
   wall = 1.0 - wall;
-  wall = wall * (1.0 - isNeon) * (1.0 - runner) * (1.0 - step(abs(vKind - 2.0), 0.25));
+  wall = wall * (1.0 - neon0) * (1.0 - runner) * (1.0 - step(abs(vKind - 2.0), 0.25));
   float lit = 0.0;
   vec3 lcol = pal(4.0);
   for (int i = 0; i < 8; i++) {
@@ -97,8 +96,9 @@ void main() {
     lcol = mix(lcol, uC[i].rgb, win);
   }
   float q = floor(clamp(lit, 0.0, 0.999) * 4.0) / 3.0;
-  col = mix(col, pal(4.0), wall * step(0.05, lit));
-  col = mix(col, lcol, q * wall);
+  col = mix(col, base, wall);
+  col = mix(col, lcol, q * 0.4 * wall);
+  col = mix(col, mix(pal(3.0), tube, fade), neon0);
   col = mix(col, base, runner);
   o = vec4(col, 1.0);
 }`;
@@ -122,10 +122,18 @@ void main() {
     rain = max(rain, step(0.0, d.x) * step(d.x, 2.01) * step(abs(d.y + d.x), 0.1));
   }
   col = mix(col, uSmog, rain * 0.4);
-  float dither = step(0.5, fract(pix.x + pix.y + step(0.5, fract(uTime))));
+  float dither = step(0.28, fract(pix.x * 0.5 + pix.y * 0.37 + uTime));
+  float mx = max(col.r, max(col.g, col.b));
+  float mn = min(col.r, min(col.g, col.b));
+  float street = step(mx, 0.24) * step(mx - mn, 0.1);
   for (int i = 0; i < 8; i++) {
-    float ring = step(abs(distance(pix, uHalo[i].xy) - 5.0), 0.5) * step(0.2, uHalo[i].z) * dither;
-    col = mix(col, uHaloC[i].rgb, ring);
+    vec2 a = uHalo[i].xy;
+    vec2 b = vec2(uHalo[i].w, uHaloC[i].w);
+    vec2 ab = b - a;
+    float span = dot(ab, ab);
+    float along = span < 1.0 ? 0.0 : clamp(dot(pix - a, ab) / span, 0.0, 1.0);
+    float streak = step(length(pix - (a + ab * along)), 16.0) * step(0.2, uHalo[i].z) * step(16.0, span);
+    col = mix(col, uHaloC[i].rgb, streak * street * dither * 0.9);
   }
   o = vec4(col, 1.0);
 }`;
