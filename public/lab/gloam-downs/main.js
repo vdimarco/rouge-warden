@@ -152,18 +152,23 @@ const jumpBtn = $('bJump'), stickEl = $('stick'), actBtns = [$('bAttack'), $('bR
    card that opens frees it, so its buttons can be clicked, and a button that goes back to play takes it again (the click is the
    gesture the browser asks for) */
 const inp = makeInput({ canvas, stick: stickEl, jump: jumpBtn, attack: $('bAttack'), roll: $('bRoll'), heal: $('bHeal') }, {
-  run: () => RUN, play: () => mode === 'play', fine: !coarse,
-  onLock: (taken, ours) => { if (!taken && !ours && RUN && mode === 'play' && rs.run) openPause(); mouseHint(); }
+  run: () => RUN, play: () => mode === 'play', hold: () => mode === 'play' || mode === 'loading',
+  onLock: (taken, ours) => { if (!taken && !ours && RUN && mode === 'play' && rs.run) openPause(); mouseHint(); },
+  onState: () => mouseHint(),
+  /* a mouse found or lost (one plugged into a phone): the help, the controls and the hint follow it. Found by a move, at once; found or
+     lost by a press (a finger on a phone that has seen a mouse), not under an open card (freshLines) */
+  onMouse: press => { if (press) freshLines(); else setLines(); mouseHint(); }
 });
 // a button that goes back to play takes the mouse again, when the press is a gesture the browser counts (not a gamepad's A)
 const retake = () => { if (navigator.userActivation ? navigator.userActivation.isActive : true) inp.take(); mouseHint(); };
-/* "Click to look with the mouse": over the view in play while the mouse is not taken, on a desktop that can take it. Just after the
-   browser refused it (a click on Resume too soon after Escape), "Click again to look with the mouse" */
+/* "Click to look with the mouse": over the view in play while the mouse is not taken, where the page can take it. Once the browser has
+   refused it (or not answered), the free mouse's way to look: "Hold the right button and drag to look" (a click still acts, and asks
+   again once the wait is over) */
 const hintEl = $('mouseHint');
 function mouseHint() {
   const on = mode === 'play' && !!place && inp.canLock && !inp.locked;
   if (hintEl.hidden === on) hintEl.hidden = !on;
-  const text = inp.waiting ? 'Click again to look with the mouse' : 'Click to look with the mouse';
+  const text = inp.waiting || inp.refused ? 'Hold the right button and drag to look' : 'Click to look with the mouse';
   if (on && hintEl.textContent !== text) hintEl.textContent = text;
 }
 const input = inp.input;
@@ -188,7 +193,7 @@ const nav = { dir: 0, t: 0 };
 let padWas = { a: false, b: false, start: false, back: false, face: false, pause: false }, padSeen = false;
 // a card or the loading screen takes over: a way the d-pad or the stick already holds moves nothing until it comes back to centre
 const holdNav = () => heldNav(nav, readPads(navigator.getGamepads?.() || [], RUN).nav);
-function showCard(card) { holdNav(); inp.free(); mouseHint(); return cards.show(card); }
+function showCard(card) { holdNav(); inp.free(); mouseHint(); if (linesStale) setLines(); return cards.show(card); }
 function padCheck() {
   const any = [...(navigator.getGamepads?.() || [])].some(p => p && p.connected);
   if (any && !padSeen) { padSeen = true; showControls(); return true; }
@@ -358,12 +363,27 @@ const CONTROLS = {
   pad: ['Left stick: move. A light tilt walks. Right stick: look.', '<kbd>A</kbd> jump · <kbd>X</kbd> attack · <kbd>B</kbd> roll · <kbd>Y</kbd> heal',
     '<kbd>RB</kbd> face the foe · <kbd>Start</kbd> pause']
 };
-const controlsKind = () => (padSeen ? 'pad' : coarse ? 'touch' : inp.canLock ? 'keys' : 'drag');
+// a phone with a mouse plugged in shows the mouse's lines
+const controlsKind = () => (padSeen ? 'pad' : coarse && !inp.mouse ? 'touch' : inp.canLock ? 'keys' : 'drag');
+// the explorer's help card: the keys and the mouse on a desktop or a phone with a mouse, the touch lines on a touch screen
+function helpLines() {
+  $('helpKeys').hidden = coarse && !inp.mouse;
+  $('helpMouse').hidden = !inp.canLock;
+  $('helpDrag').hidden = inp.canLock;
+  $('helpTouch').hidden = !coarse;
+}
 function showControls() {
   if (!RUN) return;
   const html = CONTROLS[controlsKind()].map(l => `<li>${l}</li>`).join('');
   for (const id of ['runControls', 'pauseControls']) $(id).innerHTML = html;
 }
+/* a mouse found or lost changes the mouse lines, and so the height of the card they are on. Under an open card a change in the press
+   that switched the input (a finger's pointerdown on a phone that has seen a mouse, or a mouse's first press with no move before it)
+   would move the buttons under it, and Chrome would send the click to what is there now. So that change waits while a card is open,
+   and is laid when the next card opens or play comes back. A mouse found by a move changes the lines at once, before any press */
+let linesStale = false;
+function setLines() { linesStale = false; helpLines(); showControls(); }
+function freshLines() { if (cards.current()) linesStale = true; else setLines(); }
 
 /* ---------------- the explorer's dialogs ---------------- */
 const panels = ['help', 'map', 'end'];
@@ -372,6 +392,7 @@ function closePanels() {
   if (!$('help').hidden) { save.seen = true; store(disk, save); }
   let was = false;
   for (const p of panels) if (!$(p).hidden) { $(p).hidden = true; was = true; cards.shut($(p)); }
+  if (linesStale) setLines();
   if (was && mode !== 'loading') { mode = 'play'; inp.swallowAll(); canvas.focus?.(); retake(); }
 }
 function openMap() {
@@ -411,10 +432,15 @@ $('bEndStay').addEventListener('click', closePanels);
 // Walk again puts out the five beacons of the downs only: the Lattice keeps its beacons
 $('bAgain').addEventListener('click', () => { closePanels(); for (const id of ORDER) delete save.lit[id]; save.time = 0; save.at = 'gaol'; store(disk, save); go('gaol'); });
 for (const p of panels) $(p).addEventListener('pointerdown', e => { if (e.target === $(p) && p !== 'help') closePanels(); });
+/* the help says to click the view, which shows round its box: a mouse click there walks, as Walk does (a click, so it is a gesture).
+   A tap there does not: a stray finger outside the box on a phone leaves the first-visit help open */
+const mouseClick = e => !e.pointerType || e.pointerType === 'mouse';
+$('help').addEventListener('click', e => { if (e.target === $('help') && mouseClick(e)) closePanels(); });
 
 /* ---------------- the run's cards ----------------
    The help card, the beacon card (the wick choice, then Spend glim and Walk on), the Lamp-room, the pause panel and the run summary;
-   screens.js gives what each shows. In a run a press outside a card's box does nothing, but on the pause panel, where it resumes. B
+   screens.js gives what each shows. In a run a press outside a card's box does nothing, but on the pause panel, where it resumes, and
+   on the help card, where a click begins the run (the help says to click the view). B
    and Escape go back where a card has a back action: Resume, No, Back to the beacon and Back to Wander. Before a wick is chosen, only
    a wick button closes the beacon card */
 let asking = null, placeFresh = true, deadAt = -1;
@@ -434,7 +460,7 @@ document.addEventListener('focusin', e => {
   if (!audio || quietFocus || !(e.target instanceof HTMLButtonElement) || !cards.current()?.el.contains(e.target)) return;
   audio.cue('focus');
 });
-function hideCard(id) { $(id).hidden = true; cards.shut($(id)); }
+function hideCard(id) { $(id).hidden = true; cards.shut($(id)); if (linesStale && !cards.current()) setLines(); }
 function closeCard(id) {
   hideCard(id);
   const was = mode;
@@ -460,6 +486,8 @@ function beginRun(card) {
   updateHud();
 }
 $('bBegin').addEventListener('click', () => beginRun('runHelp'));
+// the run's help says to click the view: a click round its box begins the run, as Begin the run does
+$('runHelp').addEventListener('click', e => { if (e.target === $('runHelp') && mode === 'help' && mouseClick(e)) beginRun('runHelp'); });
 const seed = () => (q.has('seed') ? Number(q.get('seed')) >>> 0 || 1 : newSeed(rs.runs));
 
 // the pause panel: the run's places, its time, Resume, the sound switch (stage 3 makes the sound), Back to the start and End the run
@@ -1003,10 +1031,7 @@ async function go(id) {
     // the boss files come while The Bell Knoll plays, or once play starts in Barrow Crown; never after the boss's fall
     if (!LOOK && rs.run && (id === 'bells' || id === 'barrows') && !rs.run.bossDown) fetchBoss();
   } else if (!save.seen) {
-    $('helpKeys').hidden = coarse;
-    $('helpMouse').hidden = !inp.canLock;
-    $('helpDrag').hidden = inp.canLock;
-    $('helpTouch').hidden = !coarse;
+    helpLines();
     $('help').hidden = false;
     mode = 'help';
     showCard({ el: $('help'), main: () => $('bStart') });

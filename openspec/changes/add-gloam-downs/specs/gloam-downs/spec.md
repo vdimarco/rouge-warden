@@ -168,18 +168,43 @@ Q and E, the right stick, the mouse (see "Mouse look") or a touch drag on the ri
 - **THEN** the camera turns around the lamplighter. Check: Node test `gloam-downs-camera.test.mjs`: E held for 1 s turns the yaw by 2.6 rad, ±0.1 (2.60). The e2e `gloam-downs.e2e.mjs` checks that a drag on the right half turns the yaw by more than 0.2 rad.
 
 ### Requirement: Mouse look
-On a desktop with a fine pointer, a click on the view SHALL take the mouse with the Pointer Lock API, with raw movement where the browser offers it. That click SHALL do nothing else. While the mouse is taken, a move of the mouse with no button held SHALL turn the view: 0.0022 rad for each pixel across and 0.0018 rad for each pixel down, with no more than 120 px from one event. The pitch SHALL stay between 0.08 and 1.05 rad. No click SHALL turn the view while the mouse is taken.
+Where there is a mouse (see "What counts as a mouse"), a click on the view SHALL take the mouse with the Pointer Lock API, with raw movement where the browser offers it, and SHALL also do what its button does. While the mouse is taken, a move with no button held SHALL turn the view: 0.0022 rad per px across and 0.0018 rad per px down, at most 120 px from one event. The pitch SHALL stay between 0.08 and 1.05 rad. No click SHALL turn the view while the mouse is taken.
 
 #### Scenario: Look with the mouse
 - **WHEN** the player moves the mouse 100 px right and 50 px down with the mouse taken
 - **THEN** the yaw goes down by 0.22 rad and the pitch goes up by 0.09 rad. A spike of 5000 px counts as 120 px. Check: Node test `gloam-downs-mouse.test.mjs`.
 
+### Requirement: Every click acts
+A press of the left or right button on the view in play SHALL always do what the button does, whether the mouse is taken, asked for, refused or unanswered, or the browser has no pointer lock. The left button SHALL jump (in a run, attack) on the first click, and while the mouse is free the right button held and dragged SHALL turn the view. A click while a lock request is still out SHALL not ask again.
+
+#### Scenario: Clicks with the lock granted, refused, unanswered and missing
+- **WHEN** at 1280 by 720 with a fine pointer, and on a coarse 390 by 844 page with a mouse, the browser grants the lock, refuses it (a rejected promise, or pointerlockerror), never answers, or has no pointer lock, and the player clicks Begin the run or Walk and then clicks the view three times
+- **THEN** each click on the view attacks a post 2 m ahead (the explorer: jumps more than 0.3 m), the first one too; the mouse turns the view (taken: a move with no button; free: the right drag, by more than 0.1 rad); Look, Map, Close, Games and every button of the pause panel answer one click; and with an unanswered request the clicks ask no more than once. Before (913f5b4e): with the lock refused, 55 clicks in 12 s made no attack, and the right drag did not turn the view. Check: e2e `gloam-downs-clicks.e2e.mjs`, with real `page.mouse` clicks and `elementFromPoint` at each button.
+
+### Requirement: What counts as a mouse
+There is a mouse when the primary pointer is fine, or when a pointer of type mouse has moved or pressed on the page since (any-pointer: fine) last turned on. The page SHALL read this on each event and as those media queries change, so a phone with a mouse plugged in counts. A pen or a touch is not a mouse, and a touch's tap on the view SHALL never act as a click. A touch on the screen SHALL free a taken mouse, and SHALL act where it touched.
+
+#### Scenario: A touch is not a click
+- **WHEN** on a 390 by 844 touch screen the player taps the view (not a touch button)
+- **THEN** the lamplighter does not jump and the page does not ask for the mouse. Before (913f5b4e): the browser's copy of the tap as a mousedown jumped. Check: e2e `gloam-downs-clicks.e2e.mjs`.
+
+#### Scenario: A thumb after the mouse
+- **WHEN** on a coarse 390 by 844 page the mouse is taken and the player puts a thumb on the left half of the view at (90, 640)
+- **THEN** the mouse is freed and the stick shows under the thumb. Before this change's first build: the touch got the taken mouse's place and looked instead. Check: e2e `gloam-downs-clicks.e2e.mjs` and `gloam-downs.e2e.mjs` (the phone part).
+
+### Requirement: Page buttons answer the mouse
+Every page button SHALL answer one click of the mouse. The button itself SHALL be what is on top at its centre, and it SHALL be at least 44 px on its shorter side.
+
+#### Scenario: Every button, one click
+- **WHEN** at 1280 by 720 and on a coarse 390 by 844 page with a mouse, the player clicks Walk, Look, Map, Close, Games, Begin the run, Pause, Sound, Music, End the run, No, Back to the start, Resume, a wick, Spend glim, Back to the beacon, Walk on, To the Lamp-room and the Lamp-room's Begin the run with the real mouse
+- **THEN** at each button's centre `elementFromPoint` finds the button, and one click does what the button says. Check: e2e `gloam-downs-clicks.e2e.mjs`.
+
 ### Requirement: The mouse in the explorer
 In the explorer, while the mouse is taken, the left button SHALL jump, and a held left button SHALL jump higher, as Space does. The right button SHALL do nothing. Escape, or the browser, SHALL free the mouse, and the walk SHALL go on. A card that opens (the help card, the Map, the end card) SHALL free the mouse, so its buttons can be clicked. A button that goes back to play SHALL take the mouse again.
 
-#### Scenario: Walk takes the mouse, the click that takes it does not jump
+#### Scenario: Walk takes the mouse, the click that takes it jumps too
 - **WHEN** at 1280 by 720 the player clicks Walk on the help card, presses Escape, and then clicks the view twice
-- **THEN** Walk takes the mouse, Escape frees it and the hint shows, the first click takes the mouse again with no jump, and the second click jumps more than 0.3 m (measured 1.38 m). Check: e2e `gloam-downs-mouse.e2e.mjs`.
+- **THEN** Walk takes the mouse, Escape frees it and the hint shows, the first click takes the mouse again and jumps, and the second click jumps more than 0.3 m (measured 1.38 m). Before (913f5b4e): the first click only took the mouse. Check: e2e `gloam-downs-mouse.e2e.mjs`.
 
 ### Requirement: The mouse without pointer lock
 Where the browser has no pointer lock, a move with the right button held SHALL turn the view at twice the speed of "Mouse look", and the left button SHALL jump (in a run, attack). The left button SHALL never turn the view.
@@ -189,18 +214,36 @@ Where the browser has no pointer lock, a move with the right button held SHALL t
 - **THEN** the right drag turns the view, the left drag does not turn it, and the hint does not show. Check: e2e `gloam-downs-mouse.e2e.mjs` (in a run) and Node test `gloam-downs-mouse.test.mjs` (which button does what in the explorer).
 
 ### Requirement: A refused pointer lock
-A refusal of the pointer lock SHALL keep the page from asking again for 1.5 s, and for 5 s after a second refusal in a row. In that wait a click on the view SHALL do nothing but ask again when the wait is over, and it SHALL never swing, roll or jump. After a first refusal the page SHALL ask again by itself when the wait is over. In the wait the hint SHALL say "Click again to look with the mouse".
+A refusal of the pointer lock, or a request with no answer in 2 s, SHALL keep the page from asking again for 1.5 s, and for 5 s after a second refusal in a row. After a first refusal the page SHALL ask again by itself when the wait is over; after later ones a click asks once the wait is over. The free mouse SHALL work all the while. Until the mouse is taken, the hint SHALL then say "Hold the right button and drag to look".
 
 #### Scenario: The browser refuses the mouse once
 - **WHEN** in a run at 1280 by 720 the player presses Escape, the browser refuses the mouse once when the player clicks Resume, and the player then clicks the view with a training post 2 m ahead
-- **THEN** play goes on with no pause panel, the hint says "Click again to look with the mouse", the click does not hit the post or roll, and within 1.5 s the page takes the mouse and the hint hides. Check: e2e `gloam-downs-mouse.e2e.mjs` (it makes `requestPointerLock` reject once). The build before swung at the post on that click.
+- **THEN** play goes on with no pause panel, the hint says "Hold the right button and drag to look", the click hits the post and does not roll, and within 1.5 s the page takes the mouse and the hint hides. Before (913f5b4e): the click did nothing, and while the browser kept refusing no click ever acted. Check: e2e `gloam-downs-mouse.e2e.mjs` (it makes `requestPointerLock` reject once).
 
-### Requirement: The mouse hint and help
-While the mouse is not taken in play, on a desktop that can take it, a small hint "Click to look with the mouse" SHALL show low in the middle of the view. It SHALL hide once the mouse is taken, and SHALL not show over a card or on a touch screen. The help card SHALL say "Click the view to take the mouse. Move the mouse to look round. Left click jumps. Esc frees the mouse." Without pointer lock it SHALL say "Hold the right button and drag the view to look round. Left click jumps."
+### Requirement: A late pointer lock
+A lock that the browser grants after a card has opened SHALL be given back at once, so the cursor shows over the card and its buttons take one click.
+
+#### Scenario: The lock comes after the pause panel
+- **WHEN** at 1280 by 720 the browser answers the lock 1.5 s late, and the player clicks Begin the run and presses P at once
+- **THEN** 2 s later the pause panel shows with the mouse free, and one click on Resume plays. Before (913f5b4e): the late lock hid the cursor over the pause panel and clicks on Resume did nothing. Check: e2e `gloam-downs-clicks.e2e.mjs`.
+
+### Requirement: The mouse hint
+While the mouse is not taken in play, where the page can take it, a small hint "Click to look with the mouse" SHALL show low in the middle of the view. It SHALL hide once the mouse is taken, and SHALL not show over a card or on a touch screen with no mouse.
 
 #### Scenario: The hint
 - **WHEN** at 1280 by 720 the explorer's help card shows, and then the player frees the mouse in play with Escape
 - **THEN** the help card says how the mouse works, and the hint shows at the bottom middle of the view, clear of the HUD and the tools. It hides when a click takes the mouse. Check: e2e `gloam-downs-mouse.e2e.mjs`, with screenshots of the help card and the hint.
+
+### Requirement: The help's mouse lines
+The help card SHALL say "Click the view to take the mouse. Move the mouse to look round. Left click jumps. Esc frees the mouse." Without pointer lock it SHALL say "Hold the right button and drag the view to look round. Left click jumps." On a touch screen with a mouse it SHALL show these lines as well as the touch lines. A switch made by a press SHALL wait for the next card, so no button moves under it. A mouse click on the view round its box SHALL walk, as Walk does; a tap there SHALL not.
+
+#### Scenario: A click round the help card
+- **WHEN** at 1280 by 720 the help card shows on a first visit and the player clicks the view to its left (30, 360)
+- **THEN** the help card closes and play starts. Before (913f5b4e): the click did nothing. Check: e2e `gloam-downs-clicks.e2e.mjs`.
+
+#### Scenario: A tap after a mouse on a phone
+- **WHEN** at 390 by 844 on a touch screen the mouse has moved, and the player taps Walk, Begin the run, Resume, Sound, Music, End the run or Back to the start
+- **THEN** that same button is pressed: a card that shows does not change its height under the tap. A tap round the help box leaves it open. Check: e2e `gloam-downs-clicks.e2e.mjs taps`.
 
 ### Requirement: A calm camera
 The camera SHALL turn by itself (the swing behind a running lamplighter, the turn out of a blocked lane, and a run's combat and boss cameras) only after 2 s with no look input. It SHALL never turn by itself while the mouse is taken, or while the player holds a move more than 35° from straight ahead or straight back. The swing SHALL ease at 0.5 per second, times the speed up to 5 m/s. With reduced motion it SHALL never turn by itself. R and the Look tool SHALL still turn the view at once.

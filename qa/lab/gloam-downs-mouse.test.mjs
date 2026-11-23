@@ -14,7 +14,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import zlib from 'node:zlib';
-import { mouseLook, mouseAct, MOUSE } from '../../public/lab/gloam-downs/input.js';
+import { mouseLook, mouseAct, mouseAsk, MOUSE } from '../../public/lab/gloam-downs/input.js';
 import { makeWalk, makeBody, makeCamera, camLayout, across, autoTurn, AUTO } from '../../public/lab/gloam-downs/play.js';
 import { makeCombat, makeBossCam, makeMoveLock, yawDiff, COMBAT, BOSS } from '../../public/lab/gloam-downs/cameras.js';
 import { ORDER } from '../../public/lab/gloam-downs/save.js';
@@ -62,8 +62,19 @@ const eyeOf = v => { const cp = Math.cos(v.pitch); return [v.target[0] + v.dist 
 }
 { // which button does what
   const T = (b, o) => mouseAct(b, o);
-  // the mouse not taken, and the page can take it: the click takes it and does nothing else
-  for (const run of [true, false]) for (const b of [0, 2]) assert.equal(T(b, { run, locked: false, lockable: true }), 'take');
+  // the mouse not taken: a click acts whether or not the page also asks for the lock (no click only takes the mouse)
+  for (const run of [true, false]) for (const lockable of [true, false]) {
+    assert.equal(T(0, { run, locked: false, lockable }), run ? 'attack' : 'jump');
+    assert.equal(T(2, { run, locked: false, lockable }), 'look');
+  }
+  // the click asks for the lock only while the mouse is free, the page may ask, and no request is out
+  for (const b of [0, 2]) {
+    assert.equal(mouseAsk(b, { locked: false, lockable: true }), true);
+    assert.equal(mouseAsk(b, { locked: true, lockable: true }), false);
+    assert.equal(mouseAsk(b, { locked: false, lockable: false }), false);
+    assert.equal(mouseAsk(b, { locked: false, lockable: true, trying: true }), false);
+  }
+  for (const b of [1, 3, 4]) assert.equal(mouseAsk(b, { locked: false, lockable: true }), false);
   // taken: in a run the left attacks and the right rolls; in the explorer the left jumps and the right does nothing
   assert.equal(T(0, { run: true, locked: true }), 'attack');
   assert.equal(T(2, { run: true, locked: true }), 'roll');
@@ -77,7 +88,7 @@ const eyeOf = v => { const cp = Math.cos(v.pitch); return [v.target[0] + v.dist 
   // the middle button and the side buttons do nothing; no button turns the view while the mouse is taken
   for (const b of [1, 3, 4]) assert.equal(T(b, { run: true, locked: true }), null);
   for (const b of [0, 1, 2, 3, 4]) assert.notEqual(T(b, { run: true, locked: true }), 'look');
-  pass('the buttons: a click that takes the mouse does nothing else; taken, left attacks or jumps and right rolls; the fallback drags with the right');
+  pass('the buttons: a click acts and also asks for the mouse where it may; taken, left attacks or jumps and right rolls; the fallback drags with the right');
 }
 { // a move across the view: more than 35° from straight ahead or back, past the stick's dead size
   assert(!across(0, 1) && !across(0, -1) && !across(0.5, 1) && !across(0.1, 0.05), 'ahead, back, 27° and a light tilt are not across');

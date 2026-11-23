@@ -3,12 +3,14 @@
 // from it on the play steps (moves.js). A press that comes and goes between two reads is kept by a latch until a step has run. An action
 // key or a pad button that was down when a card's button was pressed is swallowed: it does nothing in play until it is let go. The keys
 // that move and look stay live through a card, so a held W walks on after Resume.
-// The mouse: on a desktop a click on the view takes it (the Pointer Lock API), and that click does nothing else. While it is taken,
-// moving it turns the view with no button held; the left button attacks (in the explorer, jumps) and the right button rolls. Escape, or
-// the browser, frees it. Where the browser has no pointer lock, the right button held and dragged turns the view and the left button
-// attacks or jumps. Where it refuses the lock for a moment, a click asks again as soon as it may, and does nothing else. No click ever
-// turns the view, and no mouse movement ever swings.
-// readPads, navStep, heldNav, pickMove, mouseLook and mouseAct are pure, so Node tests use them.
+// The mouse: a click on the view always acts: the left button attacks (in the explorer, jumps), and while the mouse is free the right
+// button held and dragged turns the view. Where the page can take the mouse (a mouse, and the Pointer Lock API), a click while it is
+// free also asks the browser for it. While it is taken, moving it turns the view with no button held, and the right button rolls.
+// Escape, or the browser, frees it. A refused lock, or one that never comes, leaves the free mouse as it is: clicks act and the right
+// drag looks, and a click asks again once the wait is over. No click ever turns the view, and no mouse movement ever swings.
+// Whether there is a mouse is read on each event (pointerType 'mouse') and from (pointer: fine) and (any-pointer: fine) as they change,
+// so a phone with a mouse plugged in (Samsung DeX) takes it too. A touch's tap is never a click of the mouse.
+// readPads, navStep, heldNav, pickMove, mouseLook, mouseAct and mouseAsk are pure, so Node tests use them.
 
 export const PAD = { A: 0, B: 1, X: 2, Y: 3, LB: 4, RB: 5, LT: 6, RT: 7, BACK: 8, START: 9, UP: 12, DOWN: 13, LEFT: 14, RIGHT: 15 };
 // the keys of a run's moves; M, P, Escape and R are the page's own (main.js)
@@ -26,15 +28,17 @@ export function mouseLook(dx, dy, drag = false, P = MOUSE) {
   const k = drag ? P.drag : 1;
   return { dyaw: -clampPx(dx || 0, P.spike) * P.yaw * k, dpitch: clampPx(dy || 0, P.spike) * P.pitch * k };
 }
-/* what a mouse button does on the view: 'take' (the click that takes the mouse: nothing else), 'attack', 'roll', 'jump', 'look' (the
-   fallback's right drag) or null. locked: the mouse is taken now; lockable: the page can take the mouse at all (a fine pointer and the
-   Pointer Lock API). While the browser has just refused the lock and the page waits to ask again, the page is still lockable: a click
-   then only asks again, and never swings */
-export function mouseAct(button, { run = false, locked = false, lockable = false } = {}) {
+/* what a mouse button does on the view: 'attack', 'roll', 'jump', 'look' (the free mouse's right drag) or null. locked: the mouse is
+   taken now. A click never only takes the mouse: what it does is the same whether or not the page also asks for the lock (mouseAsk) */
+export function mouseAct(button, { run = false, locked = false } = {}) {
   if (button !== 0 && button !== 2) return null;
-  if (!locked && lockable) return 'take';
   if (button === 0) return run ? 'attack' : 'jump';
   return locked ? (run ? 'roll' : null) : 'look';
+}
+/* whether a press of the left or right button on the view also asks the browser for the mouse: not while it is taken, not where the
+   page cannot take it or waits after a refusal (lockable is false then), and not while an earlier request is still out (trying) */
+export function mouseAsk(button, { locked = false, lockable = false, trying = false } = {}) {
+  return (button === 0 || button === 2) && !locked && lockable && !trying;
 }
 
 /* what the pads hold, all pads together: a button counts when any pad presses it, so two pads holding Start make one press. The
@@ -92,9 +96,12 @@ export function pickMove(own, pad) {
 }
 
 /* the page's inputs. els: { canvas, stick (the ring that shows under the thumb), jump, attack, roll, heal (the touch buttons) }.
-   run() and play() say what the page is doing now. onLock(taken, ours) runs when the mouse is taken or freed (ours: the page freed
-   it). fine: the page has a fine pointer (a mouse), so it may take the mouse */
-export function makeInput(els, { run = () => false, play = () => false, onLock = () => {}, fine = matchMedia('(pointer: fine)').matches } = {}) {
+   run() and play() say what the page is doing now; hold() says the page may keep the mouse taken now (play, and the loading screen
+   that a button sends to play): a lock that the browser grants later than that is given back at once, so it never hides the cursor
+   over a card. onLock(taken, ours) runs when the mouse is taken or freed (ours: the page freed it); onState() when a request goes out
+   or has had no answer, so the hint can change. onMouse(press) runs when the page finds a mouse, or loses it (press: a press did it). fine: true or false fixes
+   whether there is a mouse (a test); by default the page reads it */
+export function makeInput(els, { run = () => false, play = () => false, hold = play, onLock = () => {}, onState = () => {}, onMouse = () => {}, fine } = {}) {
   const { canvas, stick: stickEl } = els;
   const input = { mx: 0, mz: 0, slow: false, jump: false, ox: 0, oy: 0, dyaw: 0, dpitch: 0, attack: false, roll: false, heal: false, mouse: false };
   const keys = new Set(), swallowed = new Set(), padSwallowed = new Set();
@@ -106,9 +113,28 @@ export function makeInput(els, { run = () => false, play = () => false, onLock =
   /* the pointer lock: taken now; refusals in a row; no new try before retryAt (a click till then asks again at retryAt: retry is that
      timer, and the click's user activation lasts about 5 s in Chrome, long enough for it); when the player or the browser last freed it, not the page (an Escape that the browser passes on as it frees the mouse must not also close
      the pause panel that opens); ours: the page is freeing it now */
-  const lock = { taken: false, refused: 0, retryAt: 0, retry: 0, lostAt: -1e9, trying: false, promised: false, raw: null, ours: false };
+  const lock = { taken: false, refused: 0, retryAt: 0, retry: 0, lostAt: -1e9, trying: false, promised: false, raw: null, ours: false, pending: 0, req: 0, drop: false };
   const now = () => performance.now();
-  const canLock = () => fine && typeof canvas.requestPointerLock === 'function';
+  /* a mouse: the primary pointer is fine, or a mouse has moved or pressed on the page since (any-pointer: fine) last turned on. A pen
+     or a touch is not a mouse. When (any-pointer: fine) turns off (the mouse unplugged), only the primary pointer counts again */
+  const mq = q => (typeof matchMedia === 'function' ? matchMedia(q) : { matches: false });
+  const primary = mq('(pointer: fine)'), any = mq('(any-pointer: fine)');
+  let seen = false;
+  const hasMouse = () => (typeof fine === 'boolean' ? fine : primary.matches || seen);
+  const mouseChanged = () => { letGo(); onMouse(); };
+  any.addEventListener?.('change', () => { if (!any.matches) seen = false; mouseChanged(); });
+  primary.addEventListener?.('change', mouseChanged);
+  // onMouse(press): press is true when a press found or lost the mouse (its target is already chosen, so the page should not move it)
+  const sawMouse = (e, press = false) => { if (e.pointerType === 'mouse' && !seen && !primary.matches) { seen = true; onMouse(press); } };
+  /* a finger or a pen on the screen: the player plays by touch now, so a mouse seen before no longer counts (the touch lines come
+     back), and a taken mouse is freed, so the touch reaches the view */
+  addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse') return sawMouse(e, true);
+    if (lock.taken) free();
+    if (seen) { seen = false; onMouse(true); }
+  }, true);
+  addEventListener('pointermove', e => sawMouse(e), true);
+  const canLock = () => hasMouse() && typeof canvas.requestPointerLock === 'function';
   const lockable = () => canLock() && now() >= lock.retryAt;
   const typing = e => e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement;
   addEventListener('keydown', e => {
@@ -144,9 +170,13 @@ export function makeInput(els, { run = () => false, play = () => false, onLock =
   /* take the mouse: raw movement where the browser offers it (unadjustedMovement), else the plain lock. A refusal waits 1.5 s, and the
      next refusals in a row 5 s each (Chrome also refuses too many requests in a short time). A browser whose request gives a promise
      says no through it (it also fires pointerlockerror, even for the first try that falls back); an older one only through
-     pointerlockerror */
-  function refuse() {
-    if (!lock.trying) return;
+     pointerlockerror. A request that has had no answer in 2 s counts as refused, so a lock that never comes does not hold up the
+     next ask. The free mouse acts all the while */
+  // id: the request this answers; an answer to an older request (one that timed out) does not count against the newer one
+  function refuse(id = lock.req) {
+    if (!lock.trying || id !== lock.req) return;
+    lock.drop = false;
+    clearTimeout(lock.pending); lock.pending = 0;
     lock.trying = false; lock.refused++; lock.retryAt = now() + (lock.refused >= 2 ? 5000 : 1500);
     // a first refusal asks again by itself when the wait is over (the click that asked is still the gesture then); later ones wait
     // for a click
@@ -163,33 +193,57 @@ export function makeInput(els, { run = () => false, play = () => false, onLock =
   }
   function take() {
     if (lock.taken || !canLock()) return false;
+    // a take while a request is out wants that request's answer again, even after a free() in the wait
+    if (lock.trying) { lock.drop = false; return true; }
     if (!lockable()) { later(); return true; }
-    lock.trying = true;
-    const plain = () => { try { ask()?.catch?.(refuse); } catch { refuse(); } };
+    lock.trying = true; lock.drop = false;
+    const id = ++lock.req, no = () => refuse(id);
+    clearTimeout(lock.pending);
+    lock.pending = setTimeout(() => { lock.pending = 0; no(); onState(); }, 2000);
+    const plain = () => { try { ask()?.catch?.(no); } catch { no(); } };
     // Chrome refuses too many requests in a short time, so a browser that has said no to raw movement once is not asked again
     if (lock.raw === false) { plain(); return true; }
-    try { ask({ unadjustedMovement: true })?.catch?.(err => { if (err?.name === 'NotSupportedError') { lock.raw = false; plain(); } else refuse(); }); } catch { lock.raw = false; plain(); }
+    try { ask({ unadjustedMovement: true })?.catch?.(err => { if (err?.name === 'NotSupportedError') { lock.raw = false; plain(); } else no(); }); } catch { lock.raw = false; plain(); }
     return true;
   }
-  function free() { clearTimeout(lock.retry); lock.retry = 0; if (lock.taken) { lock.ours = true; document.exitPointerLock?.(); } }
+  // a free() while a request is out (Escape, or a card that opens, in the wait) drops that lock when it comes
+  function free() {
+    clearTimeout(lock.retry); lock.retry = 0;
+    if (lock.taken) { lock.ours = true; document.exitPointerLock?.(); } else if (lock.trying) lock.drop = true;
+  }
   document.addEventListener('pointerlockchange', () => {
     const was = lock.taken, ours = lock.ours;
     lock.taken = document.pointerLockElement === canvas;
     lock.trying = false;
+    clearTimeout(lock.pending); lock.pending = 0;
     lock.ours = false;
-    if (lock.taken) lock.refused = 0;
-    else { if (!ours) lock.lostAt = now(); letGo(); }
+    if (lock.taken) {
+      // the free mouse's drag ends: the taken mouse looks with no button
+      drag = null; canvas.classList.remove('drag');
+      lock.refused = 0;
+      /* granted late, over a card (a request made in play, answered after the pause panel opened) or after a free() in the wait: give
+         it back at once. The page never counts it as taken, so the exit that follows changes nothing and calls no onLock */
+      if (!hold() || lock.drop) {
+        lock.drop = false; lock.taken = false; lock.ours = true;
+        document.exitPointerLock?.(); onState(); return;
+      }
+    } else { if (!ours) lock.lostAt = now(); letGo(); }
     canvas.classList.toggle('taken', lock.taken);
     if (was !== lock.taken) onLock(lock.taken, ours);
   });
-  document.addEventListener('pointerlockerror', () => { if (!lock.promised) refuse(); });
+  document.addEventListener('pointerlockerror', () => { if (!lock.promised) refuse(lock.req); });
 
+  // the type of the last pointer pressed on the view: a mousedown that follows a touch or a pen is the browser's copy of a tap
+  let pressed = 'mouse';
   canvas.addEventListener('mousedown', e => {
     if (!play()) return;
-    const act = mouseAct(e.button, { run: run(), locked: lock.taken, lockable: canLock() });
+    if (pressed !== 'mouse' || e.sourceCapabilities?.firesTouchEvents) return;
+    if (!seen && !primary.matches) { seen = true; onMouse(true); }
+    // a click asks for the mouse where the page may, and acts all the same (mouseAct)
+    if (mouseAsk(e.button, { locked: lock.taken, lockable: lockable(), trying: lock.trying })) { take(); onState(); }
+    const act = mouseAct(e.button, { run: run(), locked: lock.taken });
     if (!act) return;
     e.preventDefault();
-    if (act === 'take') { take(); return; }
     if (act === 'look') { drag = { x: e.clientX, y: e.clientY }; canvas.classList.add('drag'); return; }
     held[act] = true;
     latch[act] = true;
@@ -199,17 +253,31 @@ export function makeInput(els, { run = () => false, play = () => false, onLock =
     if (e.button === 2) { held.roll = false; drag = null; canvas.classList.remove('drag'); }
   });
   canvas.addEventListener('pointerdown', e => {
+    pressed = e.pointerType || 'mouse';
     if (!play()) return;
     // a taken mouse cannot be captured (the browser throws)
     if (!lock.taken) try { canvas.setPointerCapture?.(e.pointerId); } catch { /* the pointer is gone already */ }
     if (e.pointerType === 'mouse') return;
-    if (e.clientX < innerWidth * 0.5 && !stick) {
-      stick = { id: e.pointerId, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY };
-      stickEl.style.left = `${e.clientX}px`; stickEl.style.top = `${e.clientY}px`; stickEl.hidden = false;
+    // while the mouse was taken (it is being freed now), the browser gives a touch the taken mouse's place: wait for the true one
+    if (lock.taken) { late = e.pointerId; return; }
+    touchDown(e.pointerId, e.clientX, e.clientY);
+  });
+  // a finger down: the left half holds the stick, the right half looks
+  let late = null;
+  function touchDown(id, x, y) {
+    if (x < innerWidth * 0.5 && !stick) {
+      stick = { id, x0: x, y0: y, x, y };
+      stickEl.style.left = `${x}px`; stickEl.style.top = `${y}px`; stickEl.hidden = false;
       stickEl.firstElementChild.style.transform = '';
-    } else if (!look) look = { id: e.pointerId, x: e.clientX, y: e.clientY };
+    } else if (!look) look = { id, x, y };
+  }
+  canvas.addEventListener('touchstart', e => {
+    const t = e.changedTouches[0];
+    if (late !== null && t && play()) touchDown(late, t.clientX, t.clientY);
+    late = null;
   });
   canvas.addEventListener('pointermove', e => {
+    if (late === e.pointerId) { late = null; if (play()) touchDown(e.pointerId, e.clientX, e.clientY); }
     if (e.pointerType === 'mouse') {
       let d = null;
       if (lock.taken) d = mouseLook(e.movementX, e.movementY);
@@ -278,6 +346,8 @@ export function makeInput(els, { run = () => false, play = () => false, onLock =
        refused it a moment ago and the page waits to ask again */
     get locked() { return lock.taken; }, get lockable() { return lockable(); }, get canLock() { return canLock(); },
     get waiting() { return canLock() && !lock.taken && !lockable(); },
+    // the browser has refused the mouse since it was last taken; a mouse is on the page (as canLock reads it, with or without the API)
+    get refused() { return lock.refused; }, get mouse() { return hasMouse(); },
     // the time the player or the browser last freed the mouse (performance.now)
     get lostAt() { return lock.lostAt; },
     // a step has run on what was read: the latches are spent

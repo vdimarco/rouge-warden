@@ -16,7 +16,7 @@ Gloam Downs SHALL open in a combat run. A run SHALL go through the five places i
 - **THEN** Lantern Fen loads next. The pause panel shows the Gaol and The Crow Wall as passed, and Lantern Fen as the current place. The Bell Knoll and Barrow Crown show as ahead. Check: e2e `gloam-downs-run.screens.e2e.mjs`.
 
 ### Requirement: Controls on the cards
-The help card and the pause panel SHALL show the controls for the input in use. When the page reads a gamepad, they SHALL show the pad's controls. On a touch screen, they SHALL show the touch controls. Otherwise they SHALL show the keys and the mouse.
+The help card and the pause panel SHALL show the controls for the input in use. When the page reads a gamepad, they SHALL show the pad's controls. On a touch screen with no mouse, they SHALL show the touch controls. Otherwise they SHALL show the keys and the mouse.
 
 A browser shows a pad to the page only after its first press. When a pad first shows up while the help card shows, the card SHALL change to the pad's controls. That first press SHALL not press a button of the card.
 
@@ -231,7 +231,7 @@ In a run, each key press SHALL count once, and the keys SHALL do these things:
 - **THEN** within 0.5 s, the yaw difference to the boss is 10° or less. Check: e2e `gloam-downs-run.input.e2e.mjs`.
 
 ### Requirement: Mouse in a run
-In a run, the mouse SHALL work as in the explorer's "Mouse look", with these buttons while it is taken: a left press SHALL attack at once, and holding the left button SHALL go on with the string. A right press SHALL roll. The click that takes the mouse SHALL do nothing else. No mouse movement SHALL swing, and no click SHALL turn the view. Without pointer lock, the left button SHALL attack and the right button held and dragged SHALL turn the view. The context menu SHALL not show on the view.
+In a run, the mouse SHALL work as in the explorer's "Mouse look", with these buttons while it is taken: a left press SHALL attack at once, and holding the left button SHALL go on with the string. A right press SHALL roll. The click that takes the mouse SHALL also attack. No mouse movement SHALL swing, and no click SHALL turn the view. The context menu SHALL not show on the view.
 
 #### Scenario: Click to attack
 - **WHEN** the mouse is taken and the player clicks the left button on the view with a training post 2 m ahead
@@ -245,8 +245,15 @@ In a run, the mouse SHALL work as in the explorer's "Mouse look", with these but
 - **WHEN** the mouse is taken and the player presses the right button
 - **THEN** the lamplighter rolls, and the yaw does not change. Check: e2e `gloam-downs-mouse.e2e.mjs`.
 
+### Requirement: The free mouse in a run
+While the mouse is free in a run (no pointer lock, a refused lock, or one with no answer), the left button SHALL attack on the first click and the right button held and dragged SHALL turn the view.
+
+#### Scenario: The first click attacks, whatever the lock does
+- **WHEN** at 1280 by 720 the browser grants the lock, refuses it every time, never answers, or has no pointer lock, and the player clicks Begin the run and then clicks the view three times with a post 2 m ahead each time
+- **THEN** each of the three clicks hits the post, and after the pause panel and Resume the first click hits it again. Before (913f5b4e): with the lock refused no click ever swung. Check: e2e `gloam-downs-clicks.e2e.mjs`.
+
 ### Requirement: The mouse and the run's cards
-When the mouse is freed in play, by Escape or by the browser, the pause panel SHALL open, and that Escape SHALL not also close it. Any card that opens SHALL free the mouse, so its buttons can be clicked. A button that goes back to play (Begin the run, Resume, Walk on, Go on with the run, Back to the start) SHALL take the mouse again, with its click as the gesture the browser asks for. A gamepad's press is not such a gesture, so the page SHALL not ask then.
+When the mouse is freed in play, by Escape or by the browser, the pause panel SHALL open, and that Escape SHALL not also close it. Any card that opens SHALL free the mouse. A button that goes back to play (Begin the run, Resume, Walk on, Go on with the run, Back to the start) SHALL take the mouse again, with its click as the gesture the browser asks for. A gamepad's press is not such a gesture, so the page SHALL not ask then.
 
 #### Scenario: Escape pauses, Resume takes the mouse
 - **WHEN** the mouse is taken in play, and the player presses Escape, clicks Resume, and then the browser takes the mouse back by itself
@@ -256,9 +263,20 @@ When the mouse is freed in play, by Escape or by the browser, the pause panel SH
 - **WHEN** the browser has no pointer lock, and the player moves the mouse, clicks the left button, and drags with the right button
 - **THEN** the controls say "Hold the right button and drag the view to look", the move does nothing, the left click swings and does not turn the view, and the right drag turns the view by more than 0.3 rad with no swing and no roll (measured 0.53). Check: e2e `gloam-downs-mouse.e2e.mjs`.
 
+#### Scenario: The cards with a mouse, the lock granted or refused
+- **WHEN** at 1280 by 720 with the lock granted, and again refused every time, the player clicks a wick, Spend glim, Back to the beacon, Walk on, and after a death To the Lamp-room and its Begin the run, and clicks the view after each button that goes back to play
+- **THEN** each button answers one click, and the first click on the view after Walk on and after the Lamp-room's Begin the run hits a post 2 m ahead. Check: e2e `gloam-downs-clicks.e2e.mjs`.
+
 #### Scenario: A phone has no mouse hint
 - **WHEN** the run plays at 390 by 844 on a touch screen
 - **THEN** the mouse hint does not show, and the pause panel shows the touch controls. Check: e2e `gloam-downs-mouse.e2e.mjs`.
+
+### Requirement: A click round the run's help card
+The run's help card says to click the view, so a click on the view round its box SHALL begin the run, as Begin the run does.
+
+#### Scenario: A click round the run's help card
+- **WHEN** at 1280 by 720 a new run's help card shows and the player clicks the view to its left (30, 360)
+- **THEN** the card closes and the run plays. Before (913f5b4e): the click did nothing. Check: e2e `gloam-downs-clicks.e2e.mjs`.
 
 ### Requirement: Touch in a run
 On a touch screen in a run, the page SHALL show Attack, Jump, Roll and Heal buttons at the bottom right. The stick on the left half and the look drag on the right half SHALL work as in the explorer. A tap on Attack SHALL aim at the best foe. Holding Attack SHALL go on with the string. Heal SHALL show the number of flasks left, up to 5.

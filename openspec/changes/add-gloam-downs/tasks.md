@@ -259,7 +259,7 @@
 - [x] Node test of the boss camera at 481 pairs of points in the real arena (95%)
 
 ### Mouse look and a calm camera (after play on the preview)
-- [x] A click on the view takes the mouse (Pointer Lock API, raw movement where offered); that click does nothing else
+- [x] A click on the view takes the mouse (Pointer Lock API, raw movement where offered); that click also acts (after "clicks do nothing")
 - [x] Taken: a move with no button turns the view at 0.0022 and 0.0018 rad per px, one event at most 120 px, the pitch in 0.08 to 1.05
 - [x] Taken: in a run the left button attacks and holds the string, the right button rolls; in the explorer the left button jumps
 - [x] Escape or the browser frees the mouse; in play in a run that opens the pause panel, and the same Escape does not close it
@@ -270,8 +270,14 @@
 - [x] No turn by itself while the mouse is taken; after 2 s and slower on touch, keys and pads; never with a move held across the view
 - [x] The pull-in near walls eases both ways with a damped spring, and starts early where the view turns toward a wall
 - [x] Node test `qa/lab/gloam-downs-mouse.test.mjs` and e2e `qa/lab/gloam-downs-mouse.e2e.mjs`; the old left-drag steps in the input e2e
+- [x] Every click on the view acts with the lock granted, refused, unanswered or missing; a click asks no more while a request is out
+- [x] A request with no answer in 2 s counts as refused; a lock granted over a card is given back
+- [x] A mouse read per event and from (pointer: fine) and (any-pointer: fine); a touch's tap is not a click
+- [x] A click round the help card walks or begins the run
+- [x] e2e `qa/lab/gloam-downs-clicks.e2e.mjs`: every button and the view with the real mouse at 1280x720 and on a coarse 390x844 page
+- [x] Review of the clicks fix: a switch between the mouse and touch made by a press waits under an open card, so a tap on Resume or Begin the run on a phone that has seen a mouse presses that button (e2e part `taps` at 390x844 and 884x1104); a tap round the help box no longer walks; a free() while a lock request is out gives the late lock back; a late answer to a timed-out request no longer counts against the next one
 - [ ] Try the mouse look on a real desktop browser with a real mouse (Chrome, Firefox, Safari), and tune the speed by feel
-- [x] Review: a refusal of the lock is a wait, not the fallback: a click in the wait asks again and never swings, the hint says "Click again to look with the mouse", and the page asks again by itself after a first refusal (e2e step with a `requestPointerLock` that rejects once)
+- [x] Review: a refusal of the lock is a wait, not the fallback: a click in the wait asks again and never swings, the hint says "Click again to look with the mouse", and the page asks again by itself after a first refusal (e2e step with a `requestPointerLock` that rejects once). Superseded by "Clicks do nothing": a click in the wait acts, the right drag looks, and the hint says "Hold the right button and drag to look"; only the page's own ask again after a first refusal stays
 - [x] Review: the pull-in has speed limits (15 m/s past something between, 33 m/s to keep the eye out of a wall, 12 m/s out, 360 m/s²), an early start for the line of sight as the player turns, and a turn held back for a step where the eye would go into a wall; the eye check uses the room from before the grace rule
 - [x] Review: the line-of-sight look-ahead starts the camera in at 15 m/s, not 33 m/s; only the eye's look-ahead (its whole path for 0.3 s) allows 33 m/s, and the turn is held back where the eye would pass through a wall; the place sweep checks 15 m/s with the eye clear and 360 m/s²
 - [x] Review: the 33 m/s limit follows the eye itself (its present distance, its path round for 0.3 s), a nearer goal's crossing only brings the goal in at 15 m/s, and the rise waits where easing down would lower the eye into the scenery; the place sweep runs both ways and reads "eye clear" from the walk map, not from `c.squeeze`

@@ -3,10 +3,10 @@
 // requestPointerLock (an init script takes it away).
 //   In a run at 1280x720: the hint shows while the mouse is free, Begin the run takes it, a move turns the view with no button, a left
 //   click attacks and does not turn, a right click rolls, Escape frees it and opens the pause panel, Resume takes it again; when the
-//   browser refuses the mouse once, the hint says to click again, a click on the view does not swing, and the page takes the mouse
-//   after the wait; the pause key and the Lamp-room free it, and in 5 s of running past a foe with the mouse taken the view does not turn by itself.
-//   In the explorer: Walk takes the mouse, Escape frees it and the hint shows, the click that takes it does not jump, and then a left
-//   click jumps.
+//   browser refuses the mouse once, the hint says to drag with the right button, a click on the view still swings, and the page takes
+//   the mouse after the wait; the pause key and the Lamp-room free it, and in 5 s of running past a foe with the mouse taken the view does not turn by itself.
+//   In the explorer: Walk takes the mouse, Escape frees it and the hint shows, the click that takes it jumps as well, and so does the
+//   next left click. (gloam-downs-clicks.e2e.mjs clicks every button and the view with the lock granted, refused and missing.)
 //   The fallback: the controls say to drag with the right button, the right drag turns the view, and a left click attacks only.
 //   The Gaol's torn cell at 1280x720 and 390x844: at 8 yaws of the mouse the picture turns with it and forward moves the figure up the screen.
 // The page runs with ?test: the game is stepped by __gloam.tick(), because software WebGL takes about a second a frame.
@@ -113,7 +113,7 @@ try {
     assert(await locked(page), 'Resume takes the mouse again');
     assert.equal((await run(page)).mode, 'play');
     /* the browser refuses the mouse once (Chrome does, for a Resume clicked soon after Escape): the page waits 1.5 s before it asks
-       again. In that wait the hint says to click again, and a click on the view only asks again: it does not swing */
+       again. In that wait the hint says how the free mouse looks, and a click on the view swings as it always does */
     await page.keyboard.press('Escape');
     await settle(page);
     assert.equal((await run(page)).mode, 'pause');
@@ -127,7 +127,7 @@ try {
     await tick(page, 0.05, 'live');
     let m = (await state(page)).mouse;
     assert(!m.locked && m.waiting && m.hint, `after a refusal the hint shows (${JSON.stringify(m)})`);
-    assert.equal(m.text, 'Click again to look with the mouse');
+    assert.equal(m.text, 'Hold the right button and drag to look');
     assert.equal((await run(page)).mode, 'play', 'the refusal does not pause the run');
     await shot(page, 'hint-again-1280');
     await postAhead(page, 2.0);
@@ -135,7 +135,7 @@ try {
     const before = await hits(page);
     await page.mouse.click(640, 300);
     await tick(page, 0.8, 'live');
-    assert.equal(await hits(page), before, 'a click in the wait does not swing');
+    assert(await hits(page) > before, 'a click in the wait swings at the post');
     assert.notEqual((await run(page)).move, 'roll', 'and does not roll');
     // when the wait is over the page asks again by itself, and takes the mouse
     await page.waitForTimeout(1500);
@@ -213,22 +213,25 @@ try {
     await G(page, () => window.__gloam.draw());
     await shot(page, 'hint-1280');
     const hb = await page.locator('#mouseHint').boundingBox();
-    // the click that takes the mouse does nothing else: no jump
+    // the click that takes the mouse also jumps: no click is spent on taking the mouse only
     const y0 = (await state(page)).y;
     await page.mouse.click(640, 300);
     await settle(page);
     let top = y0;
     for (let i = 0; i < 6; i++) top = Math.max(top, (await tick(page, 0.05, 'live')).y);
     assert(await locked(page), 'a click on the view takes the mouse');
-    assert(top < y0 + 0.05, `the click that took the mouse did not jump (${y0} to ${top})`);
+    assert(top > y0 + 0.3, `the click that took the mouse jumped (${y0} to ${top})`);
     assert(!(await page.isVisible('#mouseHint')), 'the hint hides');
-    // then a left click jumps
+    await tick(page, 1.2, 'live');
+    // and the next left click jumps
+    const y1 = (await state(page)).y;
+    top = y1;
     await page.mouse.down();
     for (let i = 0; i < 6; i++) top = Math.max(top, (await tick(page, 0.05, 'live')).y);
     await page.mouse.up();
     await tick(page, 1.2, 'live');
-    assert(top > y0 + 0.3, `a left click with the mouse taken jumps (${top - y0} m)`);
-    pass('the explorer: Walk takes the mouse, Escape frees it and the hint shows, the taking click does not jump, a left click jumps', { hint: [hb.x, hb.y, hb.width, hb.height].map(Math.round), jump: +(top - y0).toFixed(2) });
+    assert(top > y1 + 0.3, `a left click with the mouse taken jumps (${top - y1} m)`);
+    pass('the explorer: Walk takes the mouse, Escape frees it and the hint shows, the taking click jumps, and so does the next', { hint: [hb.x, hb.y, hb.width, hb.height].map(Math.round), jump: +(top - y1).toFixed(2) });
     if (errors.length) throw new Error(errors.join('\n'));
     await ctx.close();
   }
