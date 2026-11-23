@@ -191,7 +191,7 @@ try {
       window.requestAnimationFrame = cb => { window.__raf.push(cb); return window.__raf.length; };
       window.__pump = now => { const q = window.__raf.splice(0); for (const cb of q) cb(now); return q.length; };
     });
-    await page.goto(`${SITE}/lab/gloam-downs/`, { waitUntil: 'domcontentloaded', timeout: 180000 });
+    await page.goto(`${SITE}/lab/gloam-downs/?explore`, { waitUntil: 'domcontentloaded', timeout: 180000 });
     // (the frames are the test's to hand out, also while the place loads)
     const hz = 144;
     let t = 1000;
