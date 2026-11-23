@@ -381,10 +381,10 @@ const PAGES = [
   // of the "real" and "freeze" runs) goes on to the walk-through at /corridor/, which makes no sound
   // Riftwalk makes its sound with Web Audio from the press on Enter the alley. ?world=none skips the 3 MB world file.
   { id: "riftwalk", path: "/lab/riftwalk/?world=none", boot: () => { const b = document.querySelector("#go"); return !!b && !b.disabled; }, start: click("#go"), sound: "ctx", music: true },
-  // Gloam Downs makes its context on the first press in a run (?run): Enter on the help card presses Begin the run, which has the
-  // focus. A key, not a click: software WebGL draws a frame of the place in about a second, too slow for Playwright's click checks.
+  // Gloam Downs makes its context on the first press in a run, the page's default (?run still means the run): Enter on the help card
+  // presses Begin the run, which has the focus. A key, not a click: software WebGL draws a frame of the place in about a second, too slow for Playwright's click checks.
   // The explorer makes no sound.
-  { id: "lab/gloam-downs", path: "/lab/gloam-downs/?run&fresh", backMs: 40000, boot: () => { try { return !!window.__gloam?.ready() && !document.querySelector("#runHelp").hidden; } catch (e) { return false; } }, start: (t) => t.key("Enter"), sound: "ctx", music: true, slow: true },
+  { id: "lab/gloam-downs", path: "/lab/gloam-downs/?fresh", backMs: 40000, boot: () => { try { return !!window.__gloam?.ready() && !document.querySelector("#runHelp").hidden; } catch (e) { return false; } }, start: (t) => t.key("Enter"), sound: "ctx", music: true, slow: true },
   { id: "arcade", path: "/?view=classic", start: (t) => t.tap(5, 5), sound: "ctx", music: true },
   { id: "fall", path: "/fall/", start: (t) => t.key("Enter"), sound: "ctx", music: true },
   { id: "wild", path: "/wild/", boot: () => document.querySelector("#title") && !document.querySelector("#title").hidden && !document.querySelector("#tpress").hidden, start: (t) => t.key("Enter"), sound: "ctx", music: true, slow: true },

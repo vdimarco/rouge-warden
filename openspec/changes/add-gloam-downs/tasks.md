@@ -416,7 +416,7 @@
 - [ ] The look e2e: the tell and marker counts in fire slots 34 to 37, the notches, low health and reduced motion
 - [ ] `qa/lab/gloam-downs-run.perf.e2e.mjs`: the frame ratio in The Bell Knoll against Wander (1.30)
 - [ ] Time each e2e file, aim for about 6 minutes each, and list the five files in `AGENTS.md`
-- [ ] `qa/lab/gloam-downs.e2e.mjs` through `?wander`
+- [ ] `qa/lab/gloam-downs.e2e.mjs` through `?explore`
 - [ ] Add the explorer checks that its spec names and its tests lack
 - [x] One of them: E held for 1 s turns the yaw by 2.6 rad, ±0.1
 - [ ] `NODE_PATH=/opt/node22/lib/node_modules node qa/arcade/quiet.mjs --only=lab/gloam-downs` with the site served
@@ -436,3 +436,14 @@
 - [ ] `openspec archive add-gloam-downs`, then review `openspec/specs/gloam-downs/spec.md` and `openspec/specs/gloam-downs-run/spec.md` against the build
 - [ ] Frame time on a real phone at 46k art pixels with 6 foes awake (or report that it could not run)
 - [ ] Frame time on a real GPU (or report that it could not run)
+
+## The fight by default
+
+- [x] A plain `/lab/gloam-downs/` opens the run; `?explore` (and `?wander`) open the explorer; `?run` and `#run` still open the run (`screens.js` `isRun`)
+- [x] Explore on the run's first card, beside Begin the run, with one line that says it walks the places with no foes; the address keeps the rest of the query (`modeHref`)
+- [x] Fight in the explorer drops `explore` and `wander` from the address and keeps the rest
+- [x] The cabinet, switcher, Lab card, Corridor and `quiet.mjs` links checked: none passes a mode that now means something else
+- [x] The tests that opened the explorer with no mode ask for `?explore`
+- [x] Node test of the modes in `gloam-downs-run.test.mjs`; the `fight` part of `gloam-downs-clicks.e2e.mjs` checks the plain address, Explore, Fight, `?run`, `#run`, `?explore` and the first card at five sizes
+- [x] Explore in the Lamp-room until Wander opens, so a returning player can reach the explorer; checked at five sizes in `gloam-downs-clicks.e2e.mjs fight`
+- [x] The Lab card, the switcher line, the cabinet's label and the Corridor text describe the fight; `quiet.mjs` opens the plain address

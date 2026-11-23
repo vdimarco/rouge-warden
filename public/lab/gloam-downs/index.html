@@ -180,6 +180,9 @@
   #bSound[aria-pressed="false"], #bMusic[aria-pressed="false"] { color: var(--ash); }
   /* Resume is the widest of the three in its row; the switches share the rest */
   #pauseRow #bResume { flex: 1.4; }
+  /* the run's first card: Begin the run is the main button and the widest; Explore, the walk with no foes, is the second choice */
+  #runHelp #bBegin { flex: 1.6; }
+  #runHelp #exploreLine { margin-bottom: 8px; font-size: 14px; }
   .panel .ups { list-style: none; margin: 8px 0 12px; padding: 0; display: grid; gap: 6px; }
   .ups li { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2px 10px; padding: 4px 4px 4px 10px; border-radius: 10px; border: 1px solid var(--edge); }
   .ups li span { font: 600 14px/1.25 var(--body); color: var(--bone); }
@@ -286,7 +289,8 @@
   <h2 id="runHelpT">Gloam Downs</h2>
   <p>A run through five dark places, with a blade, a roll and two flasks. Put out each beacon's keepers, then light it. A lit beacon banks the glim you carry. Spend it in the Lamp-room, on upgrades that last.</p>
   <ul id="runControls"></ul>
-  <div class="row"><button type="button" class="go" id="bBegin">Begin the run</button></div>
+  <p id="exploreLine">Explore walks the places with no foes.</p>
+  <div class="row"><button type="button" class="go" id="bBegin">Begin the run</button><button type="button" id="bExplore" title="Walk the five places with no foes">Explore</button></div>
 </div></div>
 
 <div class="panel" id="pause" hidden><div class="box" role="dialog" aria-labelledby="pauseT">
@@ -313,7 +317,7 @@
   <h2 id="lampT">The Lamp-room</h2>
   <p id="lampLine">Banked: 0 glim. What you buy here lasts for every run.</p>
   <ul class="ups" id="ups"></ul>
-  <div class="row" id="lampRow"><button type="button" class="go" id="bLampBack" hidden>Back to the beacon</button><button type="button" class="go" id="bLampBegin" hidden>Begin the run</button><button type="button" class="go" id="bLampGoOn" hidden>Go on with the run</button><button type="button" id="bLampWander" hidden>Wander</button><button type="button" id="bLampToWander" hidden>Back to Wander</button></div>
+  <div class="row" id="lampRow"><button type="button" class="go" id="bLampBack" hidden>Back to the beacon</button><button type="button" class="go" id="bLampBegin" hidden>Begin the run</button><button type="button" class="go" id="bLampGoOn" hidden>Go on with the run</button><button type="button" id="bLampWander" hidden>Wander</button><button type="button" id="bLampToWander" hidden>Back to Wander</button><button type="button" id="bLampExplore" hidden>Explore</button></div>
 </div></div>
 
 <div class="panel" id="winCard" hidden><div class="box" role="dialog" aria-labelledby="winT">

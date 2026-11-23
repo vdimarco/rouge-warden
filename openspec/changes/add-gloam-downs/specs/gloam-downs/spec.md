@@ -4,8 +4,8 @@
 Gloam Downs SHALL have five places, in this order: The Sunken Gaol, The Crow Wall, Lantern Fen, The Bell Knoll and Barrow Crown. Each place SHALL be a world of Ink Studio splats on rolling hills, sculpted and baked offline, with its own palette, sky, fog and landmark. The landmark with the beacon SHALL stand on a summit that the player can see from the start point.
 
 #### Scenario: Open the piece
-- **WHEN** a first-time visitor opens `/lab/gloam-downs/?wander`
-- **THEN** a progress bar shows while the world loads. Then The Sunken Gaol shows with the lamplighter at the start point and the summit beacon in view. Check: e2e `gloam-downs.e2e.mjs` through `?wander`: the picture has more than 6 colours.
+- **WHEN** a first-time visitor opens `/lab/gloam-downs/?explore`
+- **THEN** a progress bar shows while the world loads. Then The Sunken Gaol shows with the lamplighter at the start point and the summit beacon in view. Check: e2e `gloam-downs.e2e.mjs` through `?explore`: the picture has more than 6 colours.
 
 #### Scenario: Each place is different
 - **WHEN** the visitor goes to each of the five places
@@ -16,14 +16,14 @@ Every place SHALL be at dusk or at night. Most of the screen SHALL be dark: shad
 
 #### Scenario: Measure the dark
 - **WHEN** the test takes a picture of each place from the start point
-- **THEN** the mean luminance of the picture is between 0.05 and 0.32, where 0 is black and 1 is white. Between 0.05% and 12% of its pixels are brighter than 0.55. Check: e2e `gloam-downs.e2e.mjs` through `?wander`.
+- **THEN** the mean luminance of the picture is between 0.05 and 0.32, where 0 is black and 1 is white. Between 0.05% and 12% of its pixels are brighter than 0.55. Check: e2e `gloam-downs.e2e.mjs` through `?explore`.
 
 ### Requirement: The lamplighter
 The player SHALL be a round hooded lamplighter with a lantern in its left hand and a blade in its right. The blade SHALL be plainly visible from the follow camera at rest and in a swing: broad and chunky, held out to the side, grey iron with a thin lit edge, never brighter than the fire. In no pose SHALL it go into the floor. The figure SHALL swing its legs and arms when it walks, lean when it runs and squash when it lands. It SHALL cast a round shadow on the ground under it.
 
 #### Scenario: Walk
 - **WHEN** the visitor holds W or the up arrow
-- **THEN** the lamplighter walks away from the camera with its legs swinging, and its shadow stays on the ground under it. Check: e2e `gloam-downs.e2e.mjs` through `?wander`: W moves it more than 2 m, away from the camera. The Node test checks that the shadow lies on the floor under the body.
+- **THEN** the lamplighter walks away from the camera with its legs swinging, and its shadow stays on the ground under it. Check: e2e `gloam-downs.e2e.mjs` through `?explore`: W moves it more than 2 m, away from the camera. The Node test checks that the shadow lies on the floor under the body.
 
 #### Scenario: See the blade
 - **WHEN** the run or the explorer starts at 1280 by 720 or 390 by 844, and the player swings
@@ -182,11 +182,19 @@ A press of the left or right button on the view in play SHALL always do what the
 - **THEN** each click on the view attacks a post 2 m ahead (the explorer: jumps more than 0.3 m), the first one too; the mouse turns the view (taken: a move with no button; free: the right drag, by more than 0.1 rad); Look, Map, Close, Games and every button of the pause panel answer one click; and with an unanswered request the clicks ask no more than once. Before (913f5b4e): with the lock refused, 55 clicks in 12 s made no attack, and the right drag did not turn the view. Check: e2e `gloam-downs-clicks.e2e.mjs`, with real `page.mouse` clicks and `elementFromPoint` at each button.
 
 ### Requirement: A way into the run
-The explorer's help card and its map SHALL each have a Fight button, at least 44 px high, beside Walk and Close. Fight SHALL open the combat run at the same address with `run` added, keeping the rest of the query. An address with the hash `#run` SHALL also open the run. A run SHALL not show Fight.
+The page with no mode in its address SHALL open the combat run, because a player expects a click to attack. `?run` and `#run` SHALL also open the run. `?explore` SHALL open the explorer, and so SHALL `?wander`. The explorer's help card and map SHALL each have a Fight button, at least 44 px high. Fight SHALL open the run's address: `explore` and `wander` leave the query, and the rest of it stays. A run SHALL not show Fight.
+
+#### Scenario: A plain address opens the fight
+- **WHEN** at 1280 by 720 a first-time visitor opens `/lab/gloam-downs/?test`, clicks Begin the run with the real mouse, then clicks the view
+- **THEN** the run's help card shows with Begin the run focused, and the click on the view attacks a post 2 m ahead. Before: the plain address opened the explorer, where a click jumps. Check: e2e `gloam-downs-clicks.e2e.mjs fight`.
 
 #### Scenario: A player in the explorer wants to fight
-- **WHEN** at 1280 by 720, 390 by 844 and 320 by 640 the player clicks Fight on the help card, or presses M and clicks Fight on the map
-- **THEN** the page loads with `run` added to its query (a share key in the query stays), the run's help card with Begin the run shows, and Fight is not shown in the run; the map still fits with no scroll. Before: a share link that dropped `&run` left the player in the explorer, where a click jumps and no key attacks. Check: e2e `gloam-downs-clicks.e2e.mjs fight`.
+- **WHEN** at 1280 by 720, 390 by 844 and 320 by 640 the player opens `?explore&test&_vercel_share=key`, clicks Fight on the help card, or presses M and clicks Fight on the map
+- **THEN** the page loads with no `explore` in its query and the share key kept. The run's help card shows, and Fight is not shown. The map still fits with no scroll. Check: e2e `gloam-downs-clicks.e2e.mjs fight`.
+
+#### Scenario: Old addresses keep their meaning
+- **WHEN** the e2e opens `?run&test`, `?test#run` and `?explore&test`, and the Node test reads the modes of 15 addresses
+- **THEN** the first two open the run's help card, and `?explore` opens the explorer with no run. `?wander` is the explorer too. Check: e2e `gloam-downs-clicks.e2e.mjs fight` and Node test `gloam-downs-run.test.mjs`.
 
 ### Requirement: What counts as a mouse
 There is a mouse when the primary pointer is fine, or when a pointer of type mouse has moved or pressed on the page since (any-pointer: fine) last turned on. The page SHALL read this on each event and as those media queries change, so a phone with a mouse plugged in counts. A pen or a touch is not a mouse, and a touch's tap on the view SHALL never act as a click. A touch on the screen SHALL free a taken mouse, and SHALL act where it touched.
@@ -424,29 +432,29 @@ Each place SHALL have five wisps, glowing motes that float above the ground, and
 
 #### Scenario: Wisp
 - **WHEN** the lamplighter touches a wisp in Wander
-- **THEN** the wisp goes out and the count goes up by one. Check: e2e `gloam-downs.e2e.mjs` through `?wander`: the count shows 1/5, and the toast says "Wisp 1 of 5".
+- **THEN** the wisp goes out and the count goes up by one. Check: e2e `gloam-downs.e2e.mjs` through `?explore`: the count shows 1/5, and the toast says "Wisp 1 of 5".
 
 #### Scenario: Beacon
 - **WHEN** the lamplighter touches the beacon of The Sunken Gaol in Wander
-- **THEN** the beacon lights, a card shows, and then The Crow Wall loads. Check: e2e `gloam-downs.e2e.mjs` through `?wander`: The Crow Wall is in the places reached.
+- **THEN** the beacon lights, a card shows, and then The Crow Wall loads. Check: e2e `gloam-downs.e2e.mjs` through `?explore`: The Crow Wall is in the places reached.
 
 ### Requirement: The end of the walk
 In Wander, when all five beacons burn, in any order, an end card SHALL show. It SHALL show the time, the wisps found and the best time, with a button to walk again. Walk again SHALL put out every beacon, start the time again at zero and go back to The Sunken Gaol. The places reached SHALL stay open. While a beacon is still dark, the walk SHALL not end. If the beacon of Barrow Crown lights then, a card SHALL say how many beacons are still dark.
 
 #### Scenario: The last beacon
 - **WHEN** four beacons burn in Wander and the lamplighter lights the fifth
-- **THEN** the end card shows the time, the wisps found and the best time. Check: e2e `gloam-downs.e2e.mjs` through `?wander`: with a walk of 100 s, the best time shows 1:40.
+- **THEN** the end card shows the time, the wisps found and the best time. Check: e2e `gloam-downs.e2e.mjs` through `?explore`: with a walk of 100 s, the best time shows 1:40.
 
 #### Scenario: Walk again
 - **WHEN** the player chooses Walk again on the end card in Wander, goes to Barrow Crown on the Map and lights only its beacon
-- **THEN** the Map shows all five places open, and a card says that 4 beacons are still dark. No end card shows, and the best time does not change. Check: e2e `gloam-downs.e2e.mjs` through `?wander`.
+- **THEN** the Map shows all five places open, and a card says that 4 beacons are still dark. No end card shows, and the best time does not change. Check: e2e `gloam-downs.e2e.mjs` through `?explore`.
 
 ### Requirement: Map and saved progress
 In Wander, the Map control and the M key SHALL show the five places. A place the player has reached SHALL be open, and the others SHALL be locked. The page SHALL save the places reached and the wisps found in the browser, under the explorer's own key. It SHALL check each saved field, so a bad save cannot break the page. The run SHALL keep its own save, under another key.
 
 #### Scenario: Come back
 - **WHEN** the visitor reaches The Crow Wall in Wander, reloads the page and opens the Map
-- **THEN** the first two places are open and the other three are locked, and the wisps found before are still counted. Check: e2e `gloam-downs.e2e.mjs` through `?wander`.
+- **THEN** the first two places are open and the other three are locked, and the wisps found before are still counted. Check: e2e `gloam-downs.e2e.mjs` through `?explore`.
 
 #### Scenario: Bad save
 - **WHEN** the saved data holds wrong types or values
@@ -457,18 +465,18 @@ Every touch control SHALL be at least 44 px on its shorter side. The page SHALL 
 
 #### Scenario: Phone
 - **WHEN** the piece opens at 390 by 844 on a touch screen
-- **THEN** the Jump, Map and Look controls are at least 44 px and inside the screen, and so are the Lab bar's ◀ Lab and Games. A drag on the left half moves the lamplighter more than 2 m. Check: e2e `gloam-downs.e2e.mjs` through `?wander`.
+- **THEN** the Jump, Map and Look controls are at least 44 px and inside the screen, and so are the Lab bar's ◀ Lab and Games. A drag on the left half moves the lamplighter more than 2 m. Check: e2e `gloam-downs.e2e.mjs` through `?explore`.
 
 ### Requirement: Loading and old browsers
 When a place does not load, the loading screen SHALL say so and show Try again. Without WebGL 2 the page SHALL say so in words. The renderer SHALL start on a chip that allows 256 uniform vectors in a stage. When WebGL 2 is there and the renderer still does not start, the page SHALL name the chip and the error. Without DecompressionStream, which unpacks the places, the page SHALL also say so in words, and SHALL not show Try again.
 
 #### Scenario: A place does not load
 - **WHEN** a place's file does not load, and the player presses Space or Enter on the focused Try again
-- **THEN** the page asks for the place again, and the place shows when its file loads. Check: e2e `gloam-downs.e2e.mjs` through `?wander`: Try again has the focus, and Space and Enter each ask for the place once more.
+- **THEN** the page asks for the place again, and the place shows when its file loads. Check: e2e `gloam-downs.e2e.mjs` through `?explore`: Try again has the focus, and Space and Enter each ask for the place once more.
 
 #### Scenario: An old browser
 - **WHEN** the browser has no WebGL 2, or no DecompressionStream
-- **THEN** the page says in words what the browser does not have, and does not show Try again. Check: e2e `gloam-downs.e2e.mjs` through `?wander`.
+- **THEN** the page says in words what the browser does not have, and does not show Try again. Check: e2e `gloam-downs.e2e.mjs` through `?explore`.
 
 #### Scenario: A phone graphics chip with few uniforms
 - **WHEN** the page opens on a phone whose graphics chip allows 256 uniform vectors in a shader stage, such as an Adreno 840 in Chrome on Android

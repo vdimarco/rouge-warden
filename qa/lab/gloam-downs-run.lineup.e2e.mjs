@@ -156,7 +156,7 @@ try {
     await ctx.close();
   }
   {
-    const { ctx, page, errors } = await open({ viewport: { width: 960, height: 540 } }, '?fresh&test');
+    const { ctx, page, errors } = await open({ viewport: { width: 960, height: 540 } }, '?explore&fresh&test');
     await ready(page);
     assert.equal(await G(page, () => window.__gloam.pool()), null, 'the explorer has no pool');
     assert.equal((await G(page, () => window.__gloam.state())).count, 241782);

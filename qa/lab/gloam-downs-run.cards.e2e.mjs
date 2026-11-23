@@ -286,7 +286,7 @@ try {
     await page.keyboard.press('Enter');
     await ready(page, 'lamp');
     assert.equal((await stored(page)).ended, null, 'closing the summary clears the ended run');
-    assert.deepEqual(await lampBtns(), ['bLampBegin']);
+    assert.deepEqual(await lampBtns(), ['bLampBegin', 'bLampExplore'], 'Explore beside Begin the run until Wander opens');
     assert.equal(await active(page), 'bLampBegin');
     const rows = () => page.$$eval('#ups li', ls => ls.map(li => [li.querySelector('span').textContent, li.querySelector('button').hidden ? null : li.querySelector('button').textContent, li.querySelector('button').getAttribute('aria-disabled')]));
     assert.deepEqual(await rows(), [
@@ -297,6 +297,8 @@ try {
     assert.deepEqual(await faults(page, 'lamp'), []);
     await shot(page, 'keys-lamp-1280x720');
     await page.keyboard.press('Tab');
+    assert.equal(await active(page), 'bLampExplore', 'Tab goes from Begin the run to Explore');
+    await page.keyboard.press('Tab');
     assert.equal(await G(page, () => document.activeElement.closest('li')?.dataset.up), 'mantle', 'Tab wraps to the first Buy');
     await page.keyboard.press(' ');
     let s = await stored(page);
@@ -306,6 +308,8 @@ try {
     await page.keyboard.press('Enter');
     await page.keyboard.press(' ');
     assert.equal((await stored(page)).bank, 4, 'a Buy button that is off does nothing, on Enter or Space');
+    await page.keyboard.press('Shift+Tab');
+    assert.equal(await active(page), 'bLampExplore', 'Shift+Tab wraps back to Explore');
     await page.keyboard.press('Shift+Tab');
     assert.equal(await active(page), 'bLampBegin');
     await page.keyboard.press('Enter');

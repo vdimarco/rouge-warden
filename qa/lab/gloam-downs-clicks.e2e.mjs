@@ -16,6 +16,9 @@
 //   a thumb on the screen while the mouse is taken frees it and holds the stick where it touched. On a phone that has seen a mouse, a
 //   finger's tap on each card button presses that button (the switch to touch does not move the card under it), and a tap round the
 //   help box leaves it open.
+//   fight: a plain address opens the run's first card, with Begin the run focused and Explore beside it; Explore opens the explorer
+//   and keeps a share key; the explorer's Fight (help card and map) comes back to the run; ?run, #run and ?explore keep their
+//   meaning; the first card fits with no scroll at 1280x720, 390x844, 320x640, 360x640 and 800x600.
 // The page runs with ?test and is stepped by __gloam.tick(), because software WebGL takes about a second a frame.
 // Needs the site served: python3 -m http.server 8765 --bind 0.0.0.0 --directory public
 // Run: node qa/lab/gloam-downs-clicks.e2e.mjs [part...]   (parts: run explorer late help cards taps phone fight; SITE_URL to point elsewhere)
@@ -185,7 +188,7 @@ try {
   }
   /* ---------------- the explorer at 1280x720 ---------------- */
   if (want('explorer')) for (const lock of LOCKS) {
-    const { ctx, page, errors } = await open(DESK, '?fresh&test', lock);
+    const { ctx, page, errors } = await open(DESK, '?explore&fresh&test', lock);
     assert(await page.isVisible('#help'), 'the help card shows');
     await click(page, '#bStart', 'Walk');
     await settle(page);
@@ -236,7 +239,7 @@ try {
   }
   /* ---------------- a click round the help card ---------------- */
   if (want('help')) {
-    for (const [query, id] of [['?fresh&test', 'help'], ['?run&test&fresh&seed=7', 'runHelp']]) {
+    for (const [query, id] of [['?explore&fresh&test', 'help'], ['?run&test&fresh&seed=7', 'runHelp']]) {
       const { ctx, page, errors } = await open(DESK, query, 'grant');
       assert(await page.isVisible(`#${id}`));
       assert.equal(await topAt(page, 30, 360), id, `the backdrop of #${id} is on top at the left`);
@@ -309,7 +312,7 @@ try {
       await ctx.close();
     }
     {
-      const { ctx, page, errors } = await open(opts, '?fresh&test', 'grant');
+      const { ctx, page, errors } = await open(opts, '?explore&fresh&test', 'grant');
       assert(await page.isVisible('#help'), 'the help shows');
       await page.mouse.move(20, 20); await page.mouse.move(25, 22);
       // a tap round the help box leaves it open (a mouse click there walks)
@@ -359,7 +362,7 @@ try {
       await ctx.close();
     }
     {
-      const { ctx, page, errors } = await open(PHONE, '?fresh&test', lock);
+      const { ctx, page, errors } = await open(PHONE, '?explore&fresh&test', lock);
       // a touch tap on the view is not a mouse click: it does not jump and does not ask for the mouse
       await page.touchscreen.tap(195, 120);
       await settle(page);
@@ -397,9 +400,61 @@ try {
       await ctx.close();
     }
   }
-  // fight: the explorer's Fight button (help card and map) opens the run, keeping the share key; #run opens it too
+  /* fight: the page opens the run by default. Its first card has Begin the run (focused) and Explore; Explore opens the explorer and
+     keeps the share key; the explorer's Fight (help card and map) comes back to the run; ?run, #run and ?explore keep their meaning */
   if (want('fight')) {
-    const at = (page, sel) => page.evaluate(s => { const b = document.querySelector(s).getBoundingClientRect(); const top = document.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2); return { x: b.x + b.width / 2, y: b.y + b.height / 2, h: b.height, top: top?.id, bottom: b.bottom, vh: innerHeight }; }, sel);
+    const at = (page, sel) => page.evaluate(s => {
+      const el = document.querySelector(s), b = el.getBoundingClientRect(), top = document.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2);
+      return { x: b.x + b.width / 2, y: b.y + b.height / 2, w: b.width, h: b.height, top: top?.closest('button')?.id || top?.id, bottom: b.bottom, right: b.right, vh: innerHeight, vw: innerWidth };
+    }, sel);
+    const onTop = async (page, sel) => {
+      const b = await at(page, sel);
+      assert.equal(b.top, sel.slice(1), `${sel} is on top at its centre (${JSON.stringify(b)})`);
+      assert.ok(Math.min(b.w, b.h) >= 44 && b.bottom <= b.vh && b.right <= b.vw, `${sel} is 44 px or more and in the window (${JSON.stringify(b)})`);
+      return b;
+    };
+    const fits = (page, id) => page.evaluate(id => { const x = document.querySelector(`#${id} .box`), r = x.getBoundingClientRect(); return x.scrollHeight <= x.clientHeight + 1 && r.bottom <= innerHeight && r.top >= 0 && document.scrollingElement.scrollHeight <= innerHeight; }, id);
+    const shown = (page, id) => page.waitForSelector(`#${id}:not([hidden])`, { timeout: 180000 });
+    // a plain address at 1280x720: the run's first card; a real click on Begin the run, then a click on the view attacks
+    {
+      const { ctx, page, errors } = await open(DESK, '?test&fresh&seed=7', 'grant');
+      assert(await page.isVisible('#runHelp'), 'a plain address opens the run\'s first card');
+      assert(!(await page.isVisible('#help')), 'and not the explorer\'s help');
+      assert.equal(await G(page, () => document.activeElement?.id), 'bBegin', 'Begin the run has the focus');
+      assert.match(await page.textContent('#runHelp'), /Explore walks the places with no foes/);
+      await onTop(page, '#bExplore');
+      await click(page, '#bBegin', 'Begin the run');
+      await settle(page);
+      await tick(page, 0.2);
+      assert.equal((await run(page)).mode, 'play', 'Begin the run plays');
+      assert(await viewClick(page, DESK_AT, true), 'the first click on the view after Begin attacks');
+      pass('a plain /lab/gloam-downs/: the run\'s first card, Begin focused, Explore beside it; a click on Begin then on the view attacks');
+      if (errors.length) throw new Error(errors.join('\n'));
+      await ctx.close();
+    }
+    // Explore from the run's first card: the explorer, with the share key, where a click jumps; its Map's Fight comes back to the run
+    {
+      const { ctx, page, errors } = await open(DESK, '?test&_vercel_share=key', 'grant');
+      await click(page, '#bExplore', 'Explore');
+      await page.waitForURL(/[?&]explore(&|$)/, { timeout: 30000 });
+      assert.match(page.url(), /_vercel_share=key/, 'Explore keeps the share key');
+      await ready(page);
+      assert(await page.isVisible('#help'), 'Explore opens the explorer\'s help');
+      assert.equal(await G(page, () => window.__gloam.run()), null, 'the explorer has no run');
+      await click(page, '#bStart', 'Walk');
+      await settle(page);
+      await tick(page, 0.2);
+      assert(await viewClick(page, DESK_AT, false), 'in the explorer a click jumps');
+      if (await locked(page)) { await page.keyboard.press('Escape'); await settle(page); }
+      await click(page, '#bMap', 'Map');
+      await click(page, '#bMapFight', 'Fight on the map');
+      await page.waitForURL(u => !/[?&]explore(&|=|$)/.test(u.search) && /_vercel_share=key/.test(u.search), { timeout: 30000 });
+      await ready(page);
+      assert(await page.isVisible('#runHelp'), 'Fight on the map opens the run\'s first card');
+      pass('Explore keeps the share key and opens the explorer, where a click jumps; Fight on its map comes back to the run with the key');
+      if (errors.length) throw new Error(errors.join('\n'));
+      await ctx.close();
+    }
     for (const [width, height] of [[1280, 720], [390, 844], [320, 640]]) {
       const ctx = await browser.newContext({ viewport: { width, height } });
       await ctx.route('**/api/**', r => r.fulfill({ status: 204, body: '' }));
@@ -407,29 +462,83 @@ try {
       const errors = [];
       page.on('pageerror', e => errors.push(e.message));
       await page.goto(`${SITE}/lab/gloam-downs/?test&_vercel_share=key`);
-      await page.waitForSelector('#help:not([hidden])', { timeout: 180000 });
-      let b = await at(page, '#bFight');
-      assert.equal(b.top, 'bFight'); assert.ok(b.h >= 44 && b.bottom <= b.vh, JSON.stringify(b));
+      await shown(page, 'runHelp');
+      let b = await onTop(page, '#bExplore');
       await page.mouse.click(b.x, b.y);
-      await page.waitForURL(/[?&]run(&|$)/, { timeout: 30000 });
+      await page.waitForURL(/[?&]explore(&|$)/, { timeout: 30000 });
       assert.match(page.url(), /_vercel_share=key/);
-      await page.waitForSelector('#runHelp:not([hidden])', { timeout: 180000 });
+      await shown(page, 'help');
+      b = await onTop(page, '#bFight');
+      await page.mouse.click(b.x, b.y);
+      await page.waitForURL(u => !/[?&]explore(&|=|$)/.test(u.search), { timeout: 30000 });
+      assert.match(page.url(), /_vercel_share=key/, 'Fight keeps the share key');
+      await shown(page, 'runHelp');
       assert.equal(await page.evaluate(() => getComputedStyle(document.getElementById('bFight')).display), 'none');
-      await page.goto(`${SITE}/lab/gloam-downs/?test`);
-      await page.waitForSelector('#help:not([hidden])', { timeout: 180000 });
+      await page.goto(`${SITE}/lab/gloam-downs/?explore&test`);
+      await shown(page, 'help');
       await page.click('#bStart'); await page.keyboard.press('m');
-      await page.waitForSelector('#map:not([hidden])', { timeout: 30000 });
+      await shown(page, 'map');
       // Walk asked for the mouse; the map frees it, or gives back a lock that comes late, before a click can reach the card
       await page.waitForFunction(() => !document.pointerLockElement, null, { timeout: 30000 });
-      b = await at(page, '#bMapFight');
-      assert.equal(b.top, 'bMapFight'); assert.ok(b.h >= 44 && b.bottom <= b.vh, JSON.stringify(b));
+      b = await onTop(page, '#bMapFight');
       assert.ok(await page.evaluate(() => { const x = document.querySelector('#map .box'); return x.scrollHeight <= x.clientHeight; }), 'the map fits with no scroll');
       await page.mouse.click(b.x, b.y);
-      await page.waitForURL(/[?&]run(&|$)/, { timeout: 30000 });
-      await page.goto(`${SITE}/lab/gloam-downs/?test#run`);
-      await page.waitForSelector('#runHelp:not([hidden])', { timeout: 180000 });
+      await page.waitForURL(u => !/[?&]explore(&|=|$)/.test(u.search), { timeout: 30000 });
+      await shown(page, 'runHelp');
+      for (const q of ['?test#run', '?run&test']) {
+        await page.goto(`${SITE}/lab/gloam-downs/${q}`);
+        await shown(page, 'runHelp');
+      }
+      // the explorer's help shows once (Walk was pressed above), so the explorer is told by its state: no run and no run card
+      await page.goto(`${SITE}/lab/gloam-downs/?explore&test`);
+      await ready(page);
+      assert.equal(await G(page, () => window.__gloam.run()), null, '?explore opens the explorer, not the run');
+      assert(!(await page.isVisible('#runHelp')), '?explore shows no run card');
       if (errors.length) throw new Error(errors.join('\n'));
-      pass(`${width}x${height}: Fight on the help card and the map opens the run and keeps the share key; #run opens the run`);
+      pass(`${width}x${height}: Explore opens the explorer with the share key; Fight on its help card and map comes back to the run; ?run and #run open the run; ?explore the explorer`);
+      await ctx.close();
+    }
+    // the run's first card fits with no scroll at five sizes, with a fine pointer and (the narrow ones) a touch screen
+    const sizes = [[1280, 720], [390, 844], [320, 640], [360, 640], [800, 600]];
+    for (const [width, height] of sizes) for (const touch of width < 400 ? [false, true] : [false]) {
+      const ctx = await browser.newContext({ viewport: { width, height }, ...(touch ? { hasTouch: true, isMobile: true, deviceScaleFactor: 2 } : {}) });
+      await ctx.route('**/api/**', r => r.fulfill({ status: 204, body: '' }));
+      const page = await ctx.newPage();
+      const errors = [];
+      page.on('pageerror', e => errors.push(e.message));
+      await page.goto(`${SITE}/lab/gloam-downs/?test`);
+      await shown(page, 'runHelp');
+      await settle(page, 500);
+      assert(await fits(page, 'runHelp'), `${width}x${height}${touch ? ' touch' : ''}: the run's first card fits with no scroll`);
+      const bb = await onTop(page, '#bBegin'), be = await onTop(page, '#bExplore');
+      assert(bb.w > be.w, `Begin the run is the wider button (${bb.w} and ${be.w})`);
+      if (errors.length) throw new Error(errors.join('\n'));
+      pass(`${width}x${height}${touch ? ' touch' : ''}: the run's first card fits with no scroll, Begin the run and Explore 44 px or more and on top`, { begin: [bb.w, bb.h], explore: [be.w, be.h] });
+      await ctx.close();
+    }
+    // a returning player with no run and Wander not open: the Lamp-room, with Explore beside Begin the run; Explore keeps the key.
+    // The save goes in before each load, since a page that closes stores its own run save
+    for (const [width, height] of sizes) for (const touch of width < 400 ? [false, true] : [false]) {
+      const ctx = await browser.newContext({ viewport: { width, height }, ...(touch ? { hasTouch: true, isMobile: true, deviceScaleFactor: 2 } : {}) });
+      await ctx.route('**/api/**', r => r.fulfill({ status: 204, body: '' }));
+      await ctx.addInitScript(() => { try { localStorage.setItem('gloam-downs.run.v1', JSON.stringify({ seen: true })); } catch {} });
+      const page = await ctx.newPage();
+      const errors = [];
+      page.on('pageerror', e => errors.push(e.message));
+      await page.goto(`${SITE}/lab/gloam-downs/?test&_vercel_share=key`);
+      await shown(page, 'lamp');
+      await settle(page, 500);
+      assert.deepEqual(await page.$$eval('#lampRow button', bs => bs.filter(b => !b.hidden).map(b => b.id)), ['bLampBegin', 'bLampExplore']);
+      assert.equal(await G(page, () => document.activeElement?.id), 'bLampBegin', 'Begin the run keeps the focus in the Lamp-room');
+      assert(await fits(page, 'lamp'), `${width}x${height}${touch ? ' touch' : ''}: the Lamp-room fits with no scroll`);
+      await onTop(page, '#bLampBegin');
+      const le = await onTop(page, '#bLampExplore');
+      await page.mouse.click(le.x, le.y);
+      await page.waitForURL(/[?&]explore(&|$)/, { timeout: 30000 });
+      assert.match(page.url(), /_vercel_share=key/, 'Explore in the Lamp-room keeps the share key');
+      await shown(page, 'help');
+      if (errors.length) throw new Error(errors.join('\n'));
+      pass(`${width}x${height}${touch ? ' touch' : ''}: a returning player's Lamp-room shows Explore beside Begin the run, 44 px or more; Explore keeps the key`);
       await ctx.close();
     }
   }

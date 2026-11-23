@@ -22,7 +22,7 @@ let n = 0;
 const pass = (name, data) => { n++; console.log('PASS ' + name + (data ? ' ' + JSON.stringify(data) : '')); };
 
 const browser = await chromium.launch({ executablePath, args: GL });
-async function open(ctxOpts, query = '?fresh&test', init) {
+async function open(ctxOpts, query = '?explore&fresh&test', init) {
   const ctx = await browser.newContext(ctxOpts);
   await ctx.route('**/api/**', r => r.fulfill({ status: 204, body: '' }));
   if (init) await ctx.addInitScript(init);
@@ -40,7 +40,7 @@ const KEY = 'gloam-downs.save.v1';
 const saved = page => page.evaluate(k => JSON.parse(localStorage.getItem(k)), KEY);
 // reload with a save set by the test: a string is written as it is, an object is laid over the stored save. The page is left first,
 // for a plain file of the same site, because its pagehide stores the save it holds and would write over this one.
-async function reloadWith(page, edit, query = '?test') {
+async function reloadWith(page, edit, query = '?explore&test') {
   await page.goto(`${SITE}/lab/gloam-downs/worlds/gaol.json`);
   await page.evaluate(([k, e]) => localStorage.setItem(k, typeof e === 'string' ? e : JSON.stringify({ ...JSON.parse(localStorage.getItem(k) || '{}'), ...e })), [KEY, edit]);
   await page.goto(`${SITE}/lab/gloam-downs/${query}`);
@@ -141,7 +141,7 @@ try {
     pass('the beacon lights and The Crow Wall loads');
   }
   { // reload: the save comes back
-    await page.goto(`${SITE}/lab/gloam-downs/?test`);
+    await page.goto(`${SITE}/lab/gloam-downs/?explore&test`);
     await page.waitForFunction(() => window.__gloam?.ready(), null, { timeout: 120000 });
     const s = await state(page);
     assert.equal(s.place, 'ramparts', 'it opens where you were');
@@ -191,7 +191,7 @@ try {
 
   { // site data blocked: even reading localStorage throws (Chrome with cookies blocked), and the page still plays
     const deny = () => Object.defineProperty(window, 'localStorage', { configurable: true, get() { throw new DOMException('Access is denied for this document.', 'SecurityError'); } });
-    const { ctx: bc, page: p, errors: be } = await open({ viewport: { width: 960, height: 540 } }, '?test', deny);
+    const { ctx: bc, page: p, errors: be } = await open({ viewport: { width: 960, height: 540 } }, '?explore&test', deny);
     assert(await p.isVisible('#help'), 'a fresh walk');
     await p.keyboard.press('Escape');
     assert.equal((await state(p)).mode, 'play');
@@ -208,7 +208,7 @@ try {
     const p = await fc.newPage();
     const fe = [];
     p.on('pageerror', e => fe.push(e.message));
-    await p.goto(`${SITE}/lab/gloam-downs/?fresh&test`);
+    await p.goto(`${SITE}/lab/gloam-downs/?explore&fresh&test`);
     await p.waitForSelector('#bRetry', { state: 'visible', timeout: 60000 });
     assert.match(await p.textContent('#loadLine'), /Could not load The Sunken Gaol/);
     assert.equal(asked, 1);
@@ -294,7 +294,7 @@ try {
   { // without WebGL the page says so
     const b2 = await chromium.launch({ executablePath, args: ['--disable-webgl', '--disable-3d-apis'] });
     const p = await b2.newPage();
-    await p.goto(`${SITE}/lab/gloam-downs/?fresh&test`);
+    await p.goto(`${SITE}/lab/gloam-downs/?explore&fresh&test`);
     await p.waitForFunction(() => /WebGL 2/.test(document.getElementById('loadLine').textContent), null, { timeout: 30000 });
     assert(!(await p.isVisible('#bRetry')));
     await b2.close();
@@ -304,7 +304,7 @@ try {
     const c = await browser.newContext();
     await c.addInitScript(() => { delete window.DecompressionStream; });
     const p = await c.newPage();
-    await p.goto(`${SITE}/lab/gloam-downs/?fresh&test`);
+    await p.goto(`${SITE}/lab/gloam-downs/?explore&fresh&test`);
     await p.waitForFunction(() => /newer browser/.test(document.getElementById('loadLine').textContent), null, { timeout: 30000 });
     assert(!(await p.isVisible('#bRetry')));
     await c.close();

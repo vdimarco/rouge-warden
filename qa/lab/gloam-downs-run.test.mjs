@@ -32,7 +32,7 @@ import {
 import { HITS, MOVES, clearLine, sees, makePost, makeFighter, nearest, faceYaw, dealt, yawFor } from '../../public/lab/gloam-downs/moves.js';
 import * as RS from '../../public/lab/gloam-downs/run-save.js';
 import { readPads, navStep, heldNav, pickMove, PAD, WALK_MIN } from '../../public/lab/gloam-downs/input.js';
-import { wickLine, upgradeRow, lampButtons, LAMP_LABELS, hudOf, summaryOf, routeOf, ASKS, stepsOf, INK, inkAt, TIMED, cardOnLoad } from '../../public/lab/gloam-downs/screens.js';
+import { wickLine, upgradeRow, lampButtons, LAMP_LABELS, hudOf, summaryOf, routeOf, ASKS, stepsOf, INK, inkAt, TIMED, cardOnLoad, isRun, modeHref } from '../../public/lab/gloam-downs/screens.js';
 
 const DIR = fileURLToPath(new URL('../../public/lab/gloam-downs/', import.meta.url));
 let n = 0;
@@ -1066,14 +1066,15 @@ function runFor(R, count, inp = {}, camYaw = 0) {
 { // the Lamp-room's own buttons: from a beacon card Back to the beacon alone; with a run in progress Go on with the run; from Wander's
   // Map Back to Wander as its back action; Wander once it is open, but never from a beacon card
   const rs = RS.fresh();
-  assert.deepEqual(lampButtons(rs), { list: ['begin'], main: 'begin', back: null });
+  assert.deepEqual(lampButtons(rs), { list: ['begin', 'explore'], main: 'begin', back: null });
   assert.deepEqual(lampButtons(rs, null, true).list, ['begin', 'wander']);
   startRun(rs, 2);
   assert.deepEqual(lampButtons(rs, 'beacon', true), { list: ['back'], main: 'back', back: 'back' });
   assert.deepEqual(lampButtons(rs, 'wander', true), { list: ['goon', 'toWander'], main: 'goon', back: 'toWander' });
-  assert.deepEqual(lampButtons(rs).list, ['goon']);
-  assert.deepEqual(Object.values(LAMP_LABELS), ['Back to the beacon', 'Begin the run', 'Go on with the run', 'Back to Wander', 'Wander']);
-  pass('the Lamp-room shows Back to the beacon, Begin the run or Go on with the run, and Back to Wander, as the spec says');
+  assert.deepEqual(lampButtons(rs).list, ['goon', 'explore']);
+  assert.deepEqual(lampButtons(rs, null, true).list, ['goon', 'wander']);
+  assert.deepEqual(Object.values(LAMP_LABELS), ['Back to the beacon', 'Begin the run', 'Go on with the run', 'Back to Wander', 'Wander', 'Explore']);
+  pass('the Lamp-room shows Back to the beacon, Begin the run or Go on with the run, Back to Wander, and Explore until Wander opens, as the spec says');
 }
 { // the HUD: "74/100" beside a bar filled 74% with one full pip and one empty; the widest HUD; the fire edge below 30%
   const rs = RS.fresh();
@@ -1431,5 +1432,26 @@ if (!skipWorlds && ORDER.every(id => fs.existsSync(`${DIR}worlds/${id}.json`))) 
     assert.deepEqual([rs.bank, rs.run.carried, rs.run.place], [20, 0, 'ramparts']);
     pass('a run through the Gaol: five wisps give 20 glim and a flask, and the beacon banks it and offers two wicks', { offer: lit.offer });
   }
+}
+{ // the page's two modes (screens.js isRun, modeHref): the run by default, the explorer with ?explore or ?wander, ?run and #run always the run
+  for (const [search, hash, want] of [['', '', true], ['?test', '', true], ['?_vercel_share=key', '', true], ['?run', '', true], ['?run&test', '', true],
+    ['', '#run', true], ['?test', '#run', true], ['?explore', '', false], ['?explore&test', '', false], ['?test&explore', '', false], ['?wander', '', false],
+    ['?fresh&test&place=gaol', '', true], ['?explore&run', '', true], ['?explore', '#run', true], ['?explore', '#runes', false]]) {
+    assert.equal(isRun(search, hash), want, `${search}${hash}`);
+  }
+  const P = '/lab/gloam-downs/';
+  assert.equal(modeHref(P, '', 'explore'), `${P}?explore`);
+  assert.equal(modeHref(P, '?test&_vercel_share=key', 'explore'), `${P}?explore&test&_vercel_share=key`);
+  assert.equal(modeHref(P, '?explore&test&_vercel_share=key', 'run'), `${P}?test&_vercel_share=key`);
+  assert.equal(modeHref(P, '?test&explore', 'run'), `${P}?test`);
+  assert.equal(modeHref(P, '?explore', 'run'), P);
+  assert.equal(modeHref(P, '?run&_vercel_share=a%3Db', 'wander'), `${P}?wander&_vercel_share=a%3Db`);
+  assert.equal(modeHref(P, '?wander&seed=7', 'explore'), `${P}?explore&seed=7`);
+  for (const s of ['', '?test', '?explore&test&_vercel_share=key']) {
+    assert.equal(isRun(modeHref(P, s, 'run').slice(P.length)), true, `Fight from ${s} opens the run`);
+    assert.equal(isRun(modeHref(P, s, 'explore').slice(P.length)), false, `Explore from ${s} opens the explorer`);
+    assert.equal(isRun(modeHref(P, s, 'wander').slice(P.length)), false, `Wander from ${s} opens the explorer`);
+  }
+  pass('the page\'s modes: the run by default, ?explore and ?wander the explorer, ?run and #run the run; a change of mode keeps the share key');
 }
 console.log(`${n} checks passed`);

@@ -37,7 +37,7 @@ for (const [w, h, touch] of LAYOUTS) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, hasTouch: touch, isMobile: touch, deviceScaleFactor: touch ? 2 : 1 });
   await ctx.route('**/api/**', r => r.fulfill({ status: 204, body: '' }));
   const p = await ctx.newPage();
-  await p.goto(`${SITE}/lab/gloam-downs/?fresh&test`);
+  await p.goto(`${SITE}/lab/gloam-downs/?explore&fresh&test`);
   await p.waitForFunction(() => /WebGL 2/.test(document.getElementById('loadLine').textContent), null, { timeout: 30000 });
   const box = sel => p.evaluate(s => { const e = document.querySelector(s); if (!e || e.hidden || getComputedStyle(e).display === 'none') return null; const r = e.getBoundingClientRect(); return { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) }; }, sel);
   // the page as it plays: loading gone, HUD, tools and (touch) Jump shown, a toast up, the hint as in the Gaol

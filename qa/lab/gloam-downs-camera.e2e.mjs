@@ -79,7 +79,7 @@ try {
   /* ---------------- each layout, each place ---------------- */
   const table = [];
   for (const L of LAYOUTS) {
-    const { page, errors, close } = await open(SITE, L, `?fresh&test${NODRAW}`);
+    const { page, errors, close } = await open(SITE, L, `?explore&fresh&test${NODRAW}`);
     await G(page, () => window.__gloam.close());
     const tag = `${L[0]}x${L[1]}`, rows = [];
     for (const id of ORDER) {
@@ -152,7 +152,7 @@ try {
   {
     const OLD = { fov: 38 * Math.PI / 180, pitch: 0.34, aim: 1.15 }, out = {};
     for (const L of [[1280, 720], [390, 844]]) {
-      const { page, errors, close } = await open(SITE, L, '?fresh&test&nodraw');
+      const { page, errors, close } = await open(SITE, L, '?explore&fresh&test&nodraw');
       const r = await G(page, ([old, w, h]) => {
         const g = window.__gloam, sp = g.points().spawn.p, ts = { old: [], now: [] };
         g.close();

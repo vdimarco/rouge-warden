@@ -196,7 +196,7 @@ try {
   }
   /* ---------------- the explorer ---------------- */
   {
-    const { ctx, page, errors } = await open({ viewport: { width: 1280, height: 720 } }, '?fresh&test');
+    const { ctx, page, errors } = await open({ viewport: { width: 1280, height: 720 } }, '?explore&fresh&test');
     assert(await page.isVisible('#help'), 'the help card shows on a first visit');
     assert.match(await page.textContent('#helpKeys'), /Click the view to take the mouse\. Move the mouse to look round\. Left click jumps\. Esc frees the mouse\./);
     await shot(page, 'help-1280');

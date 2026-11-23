@@ -422,12 +422,12 @@ if (part('more')) {
     await ctx.close();
   }
   { // no sound in the explorer, in Wander or in a Lamp-room opened from Wander's Map
-    for (const url of ['', '?wander']) {
-      const { ctx, page } = await open(url + (url ? '&' : '?') + 'test&fresh');
+    for (const url of ['?explore', '?wander']) {
+      const { ctx, page } = await open(url + '&test&fresh');
       await page.mouse.click(640, 360); await page.keyboard.press('Enter');
       await G(page, () => { const g = window.__gloam; g.close(); g.wisp(0); g.light(); });
       await page.keyboard.press('ArrowUp'); await wait(500);
-      assert.deepEqual(await ctxs(page), [], `${url || 'the explorer'} made an AudioContext`);
+      assert.deepEqual(await ctxs(page), [], `${url === '?explore' ? 'the explorer' : url} made an AudioContext`);
       assert.deepEqual(await G(page, () => window.__gloam.sounds()), []);
       await ctx.close();
     }

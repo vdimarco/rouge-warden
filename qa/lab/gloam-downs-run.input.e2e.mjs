@@ -417,7 +417,7 @@ try {
       // three places reached, so the Map has three buttons to move between
       localStorage.setItem('gloam-downs.save.v1', JSON.stringify({ v: 1, reached: ['gaol', 'ramparts', 'fen'], at: 'gaol', wisps: {}, lit: { gaol: true, ramparts: true }, seen: true }));
     };
-    const { ctx, page, errors } = await open({ viewport: { width: 960, height: 540 } }, '?test', mock);
+    const { ctx, page, errors } = await open({ viewport: { width: 960, height: 540 } }, '?explore&test', mock);
     const press = async i => { await G(page, i => window.__press(i, true), i); await tick(page, 0.1, 'live'); await G(page, i => window.__press(i, false), i); await tick(page, 0.1, 'live'); };
     await tick(page, 0.3, 'live');
     assert.equal((await state(page)).mode, 'play');

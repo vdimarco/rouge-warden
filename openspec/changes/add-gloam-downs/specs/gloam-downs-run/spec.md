@@ -5,11 +5,11 @@ Gloam Downs SHALL open in a combat run. A run SHALL go through the five places i
 
 #### Scenario: First visit
 - **WHEN** a visitor opens `/lab/gloam-downs/` for the first time
-- **THEN** the help card shows the run's controls. After Begin the run, the lamplighter stands at the start of The Sunken Gaol with 100 health and 2 flasks. Check: e2e `gloam-downs-run.screens.e2e.mjs`.
+- **THEN** the help card shows the run's controls. After Begin the run, the lamplighter stands at the start of The Sunken Gaol with 100 health and 2 flasks. Check: e2e `gloam-downs-run.screens.e2e.mjs`, and `gloam-downs-clicks.e2e.mjs fight` with no mode in the address.
 
 #### Scenario: Later visit
 - **WHEN** a visitor who was not in Wander, and has no run in progress, opens the page
-- **THEN** the Lamp-room shows over the start view of The Sunken Gaol. Check: e2e `gloam-downs-run.screens.e2e.mjs`.
+- **THEN** the Lamp-room shows over the start view of The Sunken Gaol, with Begin the run focused and Explore beside it until Wander opens. Check: e2e `gloam-downs-run.screens.e2e.mjs`, and `gloam-downs-clicks.e2e.mjs fight`.
 
 #### Scenario: The order holds
 - **WHEN** the lamplighter lights the beacon of The Crow Wall and chooses Walk on
@@ -871,7 +871,7 @@ With Ash pocket, a death SHALL bank 30% of the glim carried, rounded down. The s
 - **THEN** the summary shows 6 glim banked and 14 lost, and the bank goes up by 6. Check: Node test `gloam-downs-run.test.mjs`.
 
 ### Requirement: The Lamp-room
-The Lamp-room SHALL show the glim banked and five lasting upgrades. Each upgrade SHALL show its level and the cost of the next level. A Buy button SHALL spend the cost and raise the level. A Buy button SHALL be off when the bank holds less than the cost, and SHALL say how much more is needed. A Buy button that is off SHALL stay focusable (`aria-disabled="true"`), so the focus stays on it after a buy. Begin the run SHALL start a new run. Wander SHALL show once it is open.
+The Lamp-room SHALL show the glim banked and five lasting upgrades. Each upgrade SHALL show its level and the next level's cost. Buy SHALL spend the cost and raise the level. Buy SHALL be off when the bank holds less, and SHALL say how much more is needed. A Buy button that is off SHALL stay focusable (`aria-disabled="true"`), so the focus stays on it after a buy. Begin the run SHALL start a new run. Wander SHALL show once it is open. Until then, Explore SHALL show in its place.
 
 #### Scenario: Buy an upgrade
 - **WHEN** the bank holds 50 glim and the player buys Mantle
@@ -1178,8 +1178,23 @@ Choosing a wick or buying an upgrade in a run SHALL raise the entry values by th
 - **WHEN** the lamplighter has 60 of 100 health, the player buys Mantle through the beacon card's Spend glim, presses Walk on and reloads
 - **THEN** the run goes on with 75 of 115 health. Check: Node test `gloam-downs-run.test.mjs`.
 
+### Requirement: Explore from the run's first card
+The run's help card SHALL have two buttons: Begin the run, the main button, with the focus and the most width, and Explore. Explore SHALL open the explorer: `explore` goes into the query, and the rest of it stays. One short line on the card SHALL say that Explore walks the places with no foes. The card SHALL fit the window with no scroll.
+
+#### Scenario: A player who wants to walk
+- **WHEN** at 1280 by 720 the player opens `?test&_vercel_share=key` and clicks Explore with the real mouse, then Walk, then the view
+- **THEN** the page loads with `explore` and the share key in its query. The explorer's help card shows, and the click on the view jumps. Check: e2e `gloam-downs-clicks.e2e.mjs fight`.
+
+#### Scenario: The first card in each layout
+- **WHEN** the run's help card shows at 1280 by 720, 390 by 844, 320 by 640, 360 by 640 and 800 by 600, with a fine pointer, and at the three narrow sizes with touch too
+- **THEN** the card fits with no scroll. Begin the run and Explore are each at least 44 px, inside the window and on top at their centres (`elementFromPoint`). Begin the run is the wider. Check: e2e `gloam-downs-clicks.e2e.mjs fight`.
+
+#### Scenario: A returning player who wants to walk
+- **WHEN** at the same sizes a player who has seen the first card, with no run and Wander not open, opens `?test&_vercel_share=key` and clicks Explore in the Lamp-room with the real mouse
+- **THEN** the Lamp-room fits with no scroll, Begin the run has the focus, and both buttons are at least 44 px and on top. The page loads with `explore` and the share key in its query. Check: e2e `gloam-downs-clicks.e2e.mjs fight`.
+
 ### Requirement: Wander
-Wander SHALL be the explorer as it was before the run, with no foes, no health and no glim. It SHALL have Map travel, the end card, Walk again and the explorer's save. Wander SHALL open from the Lamp-room after the first win, or when the explorer's save shows a finished walk. `?wander` SHALL open it. A reload in Wander SHALL open Wander again, until the player begins a run or goes on with one. Wander's Map SHALL have a way back to the Lamp-room.
+Wander SHALL be the explorer as it was before the run, with no foes, no health and no glim. It SHALL have Map travel, the end card, Walk again and the explorer's save. Wander SHALL open from the Lamp-room after the first win, or when the explorer's save shows a finished walk. `?wander` SHALL open it, as `?explore` opens the explorer. A reload in Wander SHALL open Wander again, until the player begins a run or goes on with one. Wander's Map SHALL have a way back to the Lamp-room.
 
 #### Scenario: A walker from before
 - **WHEN** a visitor whose explorer save has one finished walk opens the page for the first time since the run came. The visitor closes the help card.

@@ -62,14 +62,35 @@ export const upgradeRows = rs => UPGRADES.map(u => upgradeRow(rs, u.id));
 /* The Lamp-room's own buttons, in their order, and the main one (it takes the focus) and the back one (B and Escape):
    - from a beacon card: Back to the beacon alone, as main and back;
    - else Begin the run, or Go on with the run while a run is in progress;
-   - from Wander's Map, Back to Wander beside it, as the back action; elsewhere Wander once it is open (stage 3 opens it) */
+   - from Wander's Map, Back to Wander beside it, as the back action; elsewhere Wander once it is open (stage 3 opens it), and before
+     that Explore, so a player who has seen the run's first card can still reach the explorer, with no foes */
 export function lampButtons(rs, from = null, wanderOpen = false) {
   if (from === 'beacon') return { list: ['back'], main: 'back', back: 'back' };
   const go = rs.run ? 'goon' : 'begin';
   if (from === 'wander') return { list: [go, 'toWander'], main: go, back: 'toWander' };
-  return { list: wanderOpen ? [go, 'wander'] : [go], main: go, back: null };
+  return { list: [go, wanderOpen ? 'wander' : 'explore'], main: go, back: null };
 }
-export const LAMP_LABELS = { back: 'Back to the beacon', begin: 'Begin the run', goon: 'Go on with the run', toWander: 'Back to Wander', wander: 'Wander' };
+export const LAMP_LABELS = { back: 'Back to the beacon', begin: 'Begin the run', goon: 'Go on with the run', toWander: 'Back to Wander', wander: 'Wander', explore: 'Explore' };
+
+/* ---------------- the page's two modes ----------------
+   The page opens the combat run by default, because a player expects a click to attack. ?explore opens the explorer, with no foes;
+   ?wander (Wander, still to be built) opens it too. ?run and #run always mean the run, so old links keep working */
+const EXPLORE = ['explore', 'wander'];
+export function isRun(search = '', hash = '') {
+  const q = new URLSearchParams(search);
+  if (q.has('run') || /^#run\b/.test(hash)) return true;
+  return !EXPLORE.some(k => q.has(k));
+}
+/* the address of the other mode: the mode words come out of the query and the rest stays (a share key such as _vercel_share, ?test).
+   'run' needs no word, since the run is the default; 'explore' and 'wander' put their own word first. The hash is dropped, so a #run
+   does not keep a player in the run */
+export function modeHref(path, search, mode) {
+  const q = new URLSearchParams(search);
+  for (const k of ['run', ...EXPLORE]) q.delete(k);
+  const rest = q.toString().replace(/=(?=&|$)/g, '');
+  const parts = [mode === 'run' ? '' : mode, rest].filter(Boolean);
+  return path + (parts.length ? `?${parts.join('&')}` : '');
+}
 
 /* ---------------- the run summary ---------------- */
 export function summaryOf(e) {

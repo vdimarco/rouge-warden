@@ -1,7 +1,7 @@
 // Gloam Downs: the page. It loads a baked place, draws it with Ink Studio's own WebGL renderer, and walks the lamplighter through it.
 // Everything here is the frame loop, the HUD and the dialogs; the inputs are in input.js and cards.js, the rules of movement in
-// play.js, and a run's rules and moves in run.js and moves.js. With ?run the page plays the combat run (behind a flag while it is
-// built); without it, it is the explorer.
+// play.js, and a run's rules and moves in run.js and moves.js. The page plays the combat run by default (also with ?run or #run);
+// with ?explore (or ?wander) it is the explorer, with no foes.
 /* global PixelLook */
 import { createRenderer } from './ink/webgl/renderer.mjs';
 import { makeCamera as viewCamera } from './ink/webgl/view.mjs';
@@ -13,7 +13,7 @@ import { placeName, nextOf, mapGroups, mapLine, arriveLine, hintOf, startPlace }
 import * as RS from './run-save.js';
 import { STEP, stepCount, startRun, reload, goTo, chooseWick, buy, maxOf, flasksOf, makeRunner, newSeed, WICKS } from './run.js';
 import { nearest, faceYaw, makePost, HITS, clearLine } from './moves.js';
-import { NUMERAL, NAMES, fmt, stepsOf, INK, inkAt, TIMED, hudOf, wickLine, wickName, upgradeRows, lampButtons, summaryOf, winOf, routeOf, ASKS, cardOnLoad } from './screens.js';
+import { NUMERAL, NAMES, fmt, stepsOf, INK, inkAt, TIMED, hudOf, wickLine, wickName, upgradeRows, lampButtons, summaryOf, winOf, routeOf, ASKS, cardOnLoad, isRun, modeHref } from './screens.js';
 import { makeInput, navStep, readPads, heldNav } from './input.js';
 import * as cards from './cards.js';
 import { makePool } from './pool.js';
@@ -30,9 +30,11 @@ const q = new URLSearchParams(location.search);
 const coarse = matchMedia('(pointer: coarse)').matches;
 const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const TARGET = { low: 30000, mid: 64000, high: 110000 };
-// the combat run is behind ?run until it is finished; ?run&test&lineup gives a pool of one of each figure, to look at them
-// #run works too: a share link or a redirect that keeps the hash but drops the query still opens the run
-const RUN = q.has('run') || /^#run\b/.test(location.hash), LOOK = RUN && q.has('lineup');
+// the combat run is the default (screens.js isRun): ?explore or ?wander opens the explorer. ?run and #run still mean the run, so a
+// share link or a redirect that keeps the hash but drops the query opens it. ?run&test&lineup gives a pool of one of each figure
+const RUN = isRun(location.search, location.hash), LOOK = RUN && q.has('lineup');
+// the address of the other mode keeps the rest of the query (a share key such as _vercel_share)
+const toMode = mode => location.assign(modeHref(location.pathname, location.search, mode));
 if (RUN) {
   document.body.classList.add('run');
   // in a run the Map tool is the pause
@@ -429,9 +431,8 @@ $('bMap').addEventListener('click', () => {
 $('bMapClose').addEventListener('click', closePanels);
 $('bLook').addEventListener('click', face);
 $('bStart').addEventListener('click', closePanels);
-/* Fight: the explorer's way into the combat run, on the help card and the map. The address keeps any other query (a share key) */
-function toRun() { location.assign(location.pathname + (location.search ? `${location.search}&run` : '?run')); }
-for (const id of ['bFight', 'bMapFight']) $(id).addEventListener('click', toRun);
+/* Fight: the explorer's way back to the combat run, on the help card and the map. The address drops ?explore and keeps the rest */
+for (const id of ['bFight', 'bMapFight']) $(id).addEventListener('click', () => toMode('run'));
 $('bEndStay').addEventListener('click', closePanels);
 // Walk again puts out the five beacons of the downs only: the Lattice keeps its beacons
 $('bAgain').addEventListener('click', () => { closePanels(); for (const id of ORDER) delete save.lit[id]; save.time = 0; save.at = 'gaol'; store(disk, save); go('gaol'); });
@@ -490,6 +491,8 @@ function beginRun(card) {
   updateHud();
 }
 $('bBegin').addEventListener('click', () => beginRun('runHelp'));
+// Explore: the run's first card also opens the explorer, the places with no foes
+$('bExplore').addEventListener('click', () => toMode('explore'));
 // the run's help says to click the view: a click round its box begins the run, as Begin the run does
 $('runHelp').addEventListener('click', e => { if (e.target === $('runHelp') && mode === 'help' && mouseClick(e)) beginRun('runHelp'); });
 const seed = () => (q.has('seed') ? Number(q.get('seed')) >>> 0 || 1 : newSeed(rs.runs));
@@ -579,10 +582,10 @@ $('bSpend').addEventListener('click', () => { hideCard('beaconCard'); openLamp('
 
 /* the Lamp-room: the bank, the five lasting upgrades with Buy, and Begin the run. From a beacon card it shows Back to the beacon in
    place of Begin the run and Wander; with a run in progress, Go on with the run. A buy stores the run at once */
-const LAMP = { back: 'bLampBack', begin: 'bLampBegin', goon: 'bLampGoOn', wander: 'bLampWander', toWander: 'bLampToWander' };
+const LAMP = { back: 'bLampBack', begin: 'bLampBegin', goon: 'bLampGoOn', wander: 'bLampWander', toWander: 'bLampToWander', explore: 'bLampExplore' };
 // Wander opens after the first win, or for a player whose explorer save shows a finished walk (Wander itself is built behind ?wander)
 const wanderOpen = () => rs.wins > 0 || save.done >= 1;
-const toWander = () => location.assign('./?wander');
+const toWander = () => toMode('wander');
 function openLamp(from = null) {
   lampFromWander = from === 'wander';
   if (!lampFromWander) audio?.setScene('lamp');
@@ -635,6 +638,8 @@ $('bLampBegin').addEventListener('click', () => beginRun('lamp'));
 $('bLampGoOn').addEventListener('click', () => { lampFromWander = false; soundPress(); audio?.cue('choice'); reload(rs.run); storeRun(); hideCard('lamp'); retake(); go(rs.run.place); });
 $('bLampWander').addEventListener('click', toWander);
 $('bLampToWander').addEventListener('click', toWander);
+// before Wander opens, Explore leads to the explorer, with the rest of the query kept
+$('bLampExplore').addEventListener('click', () => toMode('explore'));
 
 // the run summary: the place reached, the time, the foes put out, the glim lost and banked. Closing it clears the ended run, and the
 // Lamp-room follows over the Gaol, where the next run starts with every foe back

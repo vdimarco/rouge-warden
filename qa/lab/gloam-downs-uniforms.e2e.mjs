@@ -89,13 +89,13 @@ function watch(cap) {
 }
 
 const CASES = [
-  ...['gaol', 'ramparts', 'fen', 'bells', 'barrows', 'piazza', 'cupola', 'orrery'].map(id => ({ name: `explore-${id}`, query: `?fresh&test&place=${id}`, place: id })),
+  ...['gaol', 'ramparts', 'fen', 'bells', 'barrows', 'piazza', 'cupola', 'orrery'].map(id => ({ name: `explore-${id}`, query: `?explore&fresh&test&place=${id}`, place: id })),
   { name: 'run-gaol', query: '?run&test&fresh&seed=7', run: true },
   { name: 'run-lineup', query: '?run&test&fresh&seed=7&lineup', run: true, lineup: true },
   { name: 'run-low', query: '?run&test&fresh&seed=7', run: true, low: true },
   { name: 'run-boss', query: '?run&test&fresh&seed=7', run: true, boss: true },
   // every program that Ink Studio can make, also the ones that these places do not use (water, sprites, the key, the damping)
-  { name: 'all-programs', query: '?fresh&test&place=gaol', place: 'gaol', compile: true }
+  { name: 'all-programs', query: '?explore&fresh&test&place=gaol', place: 'gaol', compile: true }
 ].filter(c => !process.env.ONLY || process.env.ONLY.split(',').includes(c.name));
 
 // draw the frame and read it back: { w, h, b64 } with RGBA rows bottom first, and a PNG data URL of the same pixels
