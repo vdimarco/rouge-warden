@@ -1,6 +1,7 @@
 # Tasks
 - [x] Write `public/corridor/index.html` with `scripts/import-corridor.py`
 - [x] Send `/` to `/corridor/` by default, keeping `?view=classic`, hashes, automated browsers and browsers without WebGL on the hall
+- [x] A clean `/`, including an automated browser, opens the Corridor the same way as `/?view=walk`. The scoreboard stays closed until Scores or `/?view=board`, and it does not cover All Games or Scores
 - [x] Add All games to the Corridor: top bar on wide screens, category strip at 760px and narrower
 - [x] Add Corridor to All Games: the bar above 480px, Menu at 480px and narrower
 - [x] Check the default, both controls, persistence, group links and same-site game links at 1280, 390 and 320 with `qa/arcade/default-view.e2e.mjs`

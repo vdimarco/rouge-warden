@@ -18,13 +18,13 @@
 <meta name="twitter:image" content="https://arcade.uptick.systems/og.jpg">
 <script src="/arcade/quiet.js"></script>
 <script>
-// The home has three views. The Alley (/lab/riftwalk/), a neon street whose storefronts are portals, is the default.
-// The Corridor (/corridor/) and this hall, All Games, are the other two. ?view=classic keeps this hall and
-// ?view=corridor (or the older ?view=walk) keeps the Corridor, both remembered; ?view=alley forgets the choice.
-// This hall also stays for a group link such as #cottage, for automated browsers, and for browsers without WebGL.
-// The Alley needs WebGL2: a browser with the older WebGL only gets the Corridor.
+// The home has three views. The Alley (/lab/riftwalk/) is the default. The Corridor and this hall are the other two.
+// ?view=classic keeps this hall (remembered). ?view=corridor and ?view=walk keep the Corridor (remembered).
+// ?view=alley forgets the choice. ?view=board and ?machines stay here. A group link such as #cottage stays here.
+// The Alley needs WebGL2: a browser with only the older WebGL gets the Corridor. A browser with no WebGL stays here.
 (() => {
-  const want = new URLSearchParams(location.search).get("view");
+  const params = new URLSearchParams(location.search);
+  const want = params.get("view");
   let kept = null;
   try {
     if (want === "classic") localStorage.setItem("arcade.view", "classic");
@@ -33,7 +33,7 @@
     kept = localStorage.getItem("arcade.view");
   } catch (e) { /* storage off */ }
   const asked = want === "corridor" || want === "walk" || want === "alley";
-  if (!asked && (want === "classic" || kept === "classic" || location.hash.length > 1 || navigator.webdriver)) return;
+  if (!asked && (want === "classic" || want === "board" || kept === "classic" || location.hash.length > 1 || params.has("machines"))) return;
   let gl = 0;
   try {
     const c = document.createElement("canvas");
@@ -84,7 +84,7 @@ button { font: inherit; color: inherit; }
 .floor::after { content: ""; position: absolute; inset: 0; background: linear-gradient(#07050f 0%, rgba(7, 5, 15, 0.15) 40%, rgba(7, 5, 15, 0.7) 100%); }
 
 /* the neon sign */
-.sign { position: relative; z-index: 2; text-align: center; padding: calc(var(--sat) + 1.2vh) 12px 0; }
+.sign { position: relative; z-index: 2147483001; text-align: center; padding: calc(var(--sat) + 1.2vh) 12px 0; }
 .sign h1 { margin: 0; font-family: var(--neon); font-weight: 400; font-size: clamp(26px, 6.2vw, 64px); letter-spacing: 0.06em; line-height: 1.1; color: #ffe6f4;
   text-shadow: 0 0 4px #fff, 0 0 12px var(--pink), 0 0 26px var(--pink), 0 0 52px var(--pink); }
 .sign h1 .dead { animation: flick 7s infinite steps(1); }
@@ -369,6 +369,7 @@ button { font: inherit; color: inherit; }
       <button type="button" data-section="gta">GTA</button>
       <a href="/lab/">LAB ↗</a>
       <button type="button" class="all-games" data-switch>ALL GAMES ▦</button>
+      <button type="button" id="scores-btn">SCORES</button>
     </nav>
   </header>
 

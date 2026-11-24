@@ -82,7 +82,7 @@ try {
     await page.getByRole('button',{name:'Start run',exact:true}).click();await page.getByRole('dialog',{name:'Run complete'}).waitFor({timeout:12000});
     await page.getByRole('button',{name:'Switch game',exact:true}).click();await page.getByRole('dialog',{name:'Switch game'}).waitFor();await page.getByRole('button',{name:'Keep playing'}).click();
     await page.evaluate(()=>localStorage.setItem('river-rush-best',JSON.stringify({version:2,score:2102})));
-    await page.goto(base,{waitUntil:'domcontentloaded'});assert.match(await page.locator('.cab[data-game="river-rush"] .hi').textContent(),/BEST 2,102 PTS/);
+    await page.goto(base+'?machines',{waitUntil:'domcontentloaded'});assert.match(await page.locator('.cab[data-game="river-rush"] .hi').textContent(),/BEST 2,102 PTS/);
     const option=await page.locator('#machinePicker option').evaluateAll(options=>options.find(o=>o.textContent==='RIVER RUSH')?.value);assert.ok(option);
     await page.locator('#machinePicker').selectOption(option);await page.waitForTimeout(650);assert.equal(await page.locator('.cab.on').getAttribute('data-game'),'river-rush');
     await page.screenshot({path:`${out}/cabinet-${name}.png`});
@@ -92,7 +92,7 @@ try {
   const fallback=await browser.newPage({viewport:{width:390,height:844}});attach(fallback);
   await fallback.route('**/menu-loop.mp4',r=>r.abort());await fallback.goto(new URL('river-rush/',base).href,{waitUntil:'networkidle'});await fallback.waitForFunction(()=>!document.querySelector('video'));
   await fallback.getByRole('button',{name:'Start run',exact:true}).click();await fallback.locator('canvas').waitFor();await fallback.close();
-  const saves=await browser.newPage();attach(saves);await saves.goto(base);
+  const saves=await browser.newPage();attach(saves);await saves.goto(base+'?machines');
   for(const value of ['broken','null','{}','{"score":0}','{"score":-2}','{"score":"2102"}','{"score":1e999}']){await saves.evaluate(v=>localStorage.setItem('river-rush-best',v),value);await saves.reload();assert.equal(await saves.locator('.cab[data-game="river-rush"] .hi').textContent(),'DODGE · JUMP · DUCK');}
   await saves.goto(new URL('river-rush/',base).href);await saves.getByRole('button',{name:'Start run',exact:true}).waitFor();await saves.close();
   assert.deepEqual(errors,[]);assert.deepEqual(failed,[]);console.log(JSON.stringify({passed:true,results,errors,failed,screenshots:out}));
