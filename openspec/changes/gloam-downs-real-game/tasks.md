@@ -3,19 +3,19 @@
 Three builders work in parallel. design.md "Who builds what" names the files each one owns and the hooks each may add. Each builder runs its own checks before it hands over. The merge pass (section 4) runs every check.
 
 ## 0. Shared start (each builder, first)
-- [ ] 0.1 Create `public/lab/gloam-downs/bus.js` with exactly the text in design.md "The event bus", if it is not there yet. Do not change it in a branch. A change goes through the merge pass.
+- [x] 0.1 Create `public/lab/gloam-downs/bus.js` with exactly the text in design.md "The event bus", if it is not there yet. Do not change it in a branch. A change goes through the merge pass.
 
 ## 1. Builder A: music
-- [ ] 1.1 `qa/lab/gloam-downs-synth.mjs`: render cello, gurdy, drum-lo and drum-mid offline in Node, as design.md "The new instruments, made offline" says. Encode them with ffmpeg to `games/gloam-downs/audio-src/`. Note the sizes in design.md.
-- [ ] 1.2 Listen to each instrument over its range, on headphones if you can. Write one line for each in design.md. If no listening could happen, say so.
-- [ ] 1.3 `qa/lab/gloam-downs-bank.mjs`: read both sources, keep only the notes in use, and set the limit to 800 KB with 100 KB for each new instrument. Update `audio/README.md` with how the four were made. Rebuild the bank.
-- [ ] 1.4 `music.js`: split `combat` into `drums` and `strings`; add `elite`; every layer change on the next bar line; keep `setCombat` as a wrapper. Add the cello and gurdy parts to each theme (design.md "Layers and their changes"). Add the code voices for the new instruments, as the fallback.
-- [ ] 1.5 `music.js`: the boss's six levels by health share, with the Ember 5 line at 40%; `level` in `view()`; `STINGS.fall`.
-- [ ] 1.6 `run-sound.js`: subscribe to every event in `EVENTS`; the strings come in on the first tell or hit cue after `foes-alert`.
-- [ ] 1.7 `main.js` hooks only: the `emit` import, the existing `audio` lines as emits, and `emit('boss-health', ...)` in `fillBossBar()`.
-- [ ] 1.8 `gloam-downs-sound.test.mjs`: layers on bar lines, no flapping, the elite layer, six boss levels, the fall sting, a throwing listener.
-- [ ] 1.9 `gloam-downs-run.sound.e2e.mjs`: the scenarios of "Layers on the bar", "Strings when the fight starts", "The elite's drone", "The boss music builds", "The fall sting", "The combat layer" and "The sampled bank".
-- [ ] 1.10 `gloam-downs-music-demo.mjs`: the `layers` group; every loudness target still holds. `CHROMIUM_PATH=/opt/pw-browsers/chromium node qa/arcade/quiet.mjs --only=lab/gloam-downs` passes.
+- [x] 1.1 `qa/lab/gloam-downs-synth.mjs`: render cello, gurdy, drum-lo and drum-mid offline in Node, as design.md "The new instruments, made offline" says. Encode them with ffmpeg to `games/gloam-downs/audio-src/`. Note the sizes in design.md.
+- [x] 1.2 Listen to each instrument over its range, on headphones if you can. Write one line for each in design.md. If no listening could happen, say so.
+- [x] 1.3 `qa/lab/gloam-downs-bank.mjs`: read both sources, keep only the notes in use, and set the limit to 800 KB with 100 KB for each new instrument. Update `audio/README.md` with how the four were made. Rebuild the bank.
+- [x] 1.4 `music.js`: split `combat` into `drums` and `strings`; add `elite`; every layer change on the next bar line; keep `setCombat` as a wrapper. Add the cello and gurdy parts to each theme (design.md "Layers and their changes"). Add the code voices for the new instruments, as the fallback.
+- [x] 1.5 `music.js`: the boss's six levels by health share, with the Ember 5 line at 40%; `level` in `view()`; `STINGS.fall`.
+- [x] 1.6 `run-sound.js`: subscribe to every event in `EVENTS`; the strings come in on the first tell or hit cue after `foes-alert`.
+- [x] 1.7 `main.js` hooks only: the `emit` import, the existing `audio` lines as emits, and `emit('boss-health', ...)` in `fillBossBar()`.
+- [x] 1.8 `gloam-downs-sound.test.mjs`: layers on bar lines, no flapping, the elite layer, six boss levels, the fall sting, a throwing listener.
+- [x] 1.9 `gloam-downs-run.sound.e2e.mjs`: the scenarios of "Layers on the bar", "Strings when the fight starts", "The elite's drone", "The boss music builds", "The fall sting", "The combat layer" and "The sampled bank". (Builder A checks the elite's drone with `elite-alert` and `elite-fall` sent on the page's own bus; the real Wardmother waking it is checked in 4.3, after BC's `elites.js` is merged.)
+- [x] 1.10 `gloam-downs-music-demo.mjs`: the `layers` group; every loudness target still holds. `CHROMIUM_PATH=/opt/pw-browsers/chromium node qa/arcade/quiet.mjs --only=lab/gloam-downs` passes.
 
 ## 2. Builder BC: relics, builds, lasting upgrades, Ember
 - [ ] 2.1 `run.js`: Cinders (25%, or 55% with Ash pocket); the third Flask level; `UNLOCKS`; the three new wicks in the offers once bought; `run.route`, `run.ember`, `run.relics`, `run.elitesDown`; the Ember glim factor; Last ember.

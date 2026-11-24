@@ -4,7 +4,10 @@
 //   the shuffle of the 4 variants, with its pitch and level moves; the cue times of a frame of many steps; the glim's rising scale;
 //     a tell from behind;
 //   the bar maths of every theme; the scheduler on a fake clock (notes 150 ms ahead, a late note dropped, a stall resumed on a bar
-//     line); the combat layer's enter and leave rules and no flapping; the boss's phases on bar lines; the stingers and the Lamp-room;
+//     line); through the bus (bus.js): the drums on the next bar line after foes-alert, with the tom pickup, the strings on the bar
+//     after the first tell in the cue log, both out 2 s after the calm over one bar, no flapping, the guard part, the elite's drone;
+//     the boss's six levels on bar lines as its health falls and the Ember 5 line; the fall sting and the light; a listener that
+//     throws; each place's six layers with a cello, the gurdies, and the bank of the four instruments made offline; the stingers;
 //   the Sound and Music settings in the run's save;
 //   on a fake AudioContext: the swing's voices that a roll, a hit taken, a death or a fall stop, the drop that the landing stops, the
 //   whoosh that steps aside under its hit and under a tell; the run's sound laying no effect while paused, with Sound off or with the
@@ -17,7 +20,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CUES, cueAt, CUE_CAP, makeVary, makeGlim, space, PENTA, createMix, createSound, db } from '../../public/lab/gloam-downs/sound.js';
 import { makeRunSound } from '../../public/lab/gloam-downs/run-sound.js';
-import { THEMES, STINGS, PLACES, gridOf, nextLine, nextBeat, onLine, lineAt, makeScore, LOOKAHEAD, LATE } from '../../public/lab/gloam-downs/music.js';
+import { THEMES, STINGS, PLACES, BANK, SYNTH, gridOf, nextLine, nextBeat, onLine, lineAt, makeScore, levelOf, LOOKAHEAD, LATE } from '../../public/lab/gloam-downs/music.js';
+import { emit, on as busOn, EVENTS } from '../../public/lab/gloam-downs/bus.js';
 import { TYPES } from '../../public/lab/gloam-downs/foes.js';
 import { ATTACKS } from '../../public/lab/gloam-downs/boss.js';
 import * as RS from '../../public/lab/gloam-downs/run-save.js';
@@ -140,63 +144,207 @@ function fake(lat = 0.01) {
   assert(late.S.dropped > 0 && late.notes.every(n => n.t >= n.laidAt - LATE - 1e-9));
   pass('the scheduler lays notes 150 ms ahead, drops late ones, and resumes on a bar line after a stall', { notes: F.notes.length, first: +first.toFixed(3), dropped: late.S.dropped });
 }
-{ // the combat layer: in on a beat within one beat of the wake, full on the next bar line, out on the first bar line 2 s or more after
-  const F = fake();
-  F.S.arrive('gaol'); F.run(0.3); F.S.placeTheme('gaol'); F.run(5);
-  const wake = F.T;
-  F.S.setCombat(true); F.run(0.05);
-  const v = F.S.view(), g = { t0: v.t0, bar: v.bar, beat: v.bar / 4 };
-  const cin = v.changes.find(c => c.what === 'combat in'), full = v.changes.find(c => c.what === 'combat full');
-  assert(cin && full, JSON.stringify(v.changes));
-  assert(cin.at >= wake - 1e-9 && cin.at - wake <= g.beat + 1e-6, `combat in at ${cin.at}, wake ${wake}`);
-  assert(Math.abs(((cin.at - g.t0) / g.beat) - Math.round((cin.at - g.t0) / g.beat)) < 1e-6, 'combat in on a beat');
-  assert(onLine(g, full.at), 'combat full on a bar line');
-  F.run(4);
-  const quiet = F.T;
-  F.S.setCombat(false); F.run(6);
-  const out = F.S.view().changes.find(c => c.what === 'combat out');
-  assert(out && onLine(g, out.at) && out.at >= quiet + 2 - 1e-6 && out.at - (quiet + 2) <= g.bar + 0.2, `combat out ${JSON.stringify(out)}, quiet ${quiet}`);
-  assert(F.notes.filter(n => n.layer === 'combat' && n.t > out.end + 1e-6 && !n.stopped).length === 0, 'no combat note after its fade');
-  // no flapping: a zone wakes, empties, and another wakes 1.5 s later
-  const G = fake();
-  G.S.arrive('ramparts'); G.run(0.3); G.S.placeTheme('ramparts'); G.run(3);
-  G.S.setCombat(true); G.run(4); G.S.setCombat(false); G.run(1.5); G.S.setCombat(true); G.run(6);
-  assert(!G.S.view().changes.some(c => c.what === 'combat out'), 'the combat layer flapped');
-  // a guard zone adds its third percussion part
-  const H = fake();
-  H.S.arrive('gaol'); H.run(0.3); H.S.placeTheme('gaol'); H.run(2); H.S.setCombat(true, true); H.run(6);
-  assert(H.S.view().layers.includes('guard') && H.notes.some(n => n.layer === 'guard'));
-  pass('combat in on the beat, full on the bar, out on the bar 2 s after, no flapping, and the guard part', { in: +(cin.at - wake).toFixed(3), out: +(out.at - quiet).toFixed(3) });
+// a run sound whose score is a fake-clock score, with the bus wired: events go through bus.js as the page sends them
+function busRun(F) {
+  const log = [], rs = { sound: true, music: true };
+  const A = makeRunSound({ log, rs, step: () => F.step });
+  A.music = { score: F.S, view: () => F.S.view(), setFilter() {} };
+  return { A, log };
 }
-{ // the boss: the intro's silence, phases on bar lines, phase 3 faster, the fall's 2.5 s of silence
-  const F = fake();
+const lineOf = (F, at) => { const v = F.S.view(); return onLine({ t0: v.t0, bar: v.bar }, at, 0.005); };
+const whats = F => F.S.view().changes.map(c => c.what);
+{ // drums on the bar: foes-alert 0.4 s after a bar line of the Gaol's theme brings the drums in on the next bar line, 2.21 s later
+  const F = fake(), { A } = busRun(F);
+  F.S.arrive('gaol'); F.run(0.3); F.S.placeTheme('gaol'); F.run(4);
+  const v0 = F.S.view(), g = { t0: v0.t0, bar: v0.bar }, k = Math.ceil((F.T - g.t0) / g.bar) + 1;
+  F.run(lineAt(g, k) + 0.4 - F.T);
+  const sent = F.T;
+  emit('foes-alert', { zone: 'G2', guard: false, elite: false });
+  F.run(0.05);
+  const din = F.S.view().changes.find(c => c.what === 'drums in');
+  assert(din && Math.abs(din.at - lineAt(g, k + 1)) < 0.005 && Math.abs(din.at - sent - (g.bar - 0.4)) < 0.03, `drums in ${JSON.stringify(din)} for an alert at ${sent} (bar ${g.bar})`);
+  assert(F.S.view().layers.includes('drums') && !F.S.view().layers.includes('strings') && !F.S.view().layers.includes('combat'), JSON.stringify(F.S.view().layers));
+  // the tom fill is the pickup on the last beat before that line
+  const fill = F.notes.filter(n => n.inst === 'fill');
+  assert(fill.length === 1 && Math.abs(fill[0].t - (din.at - g.bar / 4)) < 1e-6, `the pickup ${JSON.stringify(fill)}`);
+  F.run(3);
+  assert(F.notes.some(n => n.layer === 'drums' && n.inst === 'drum-lo'), 'the low drum plays on 1');
+  A.off();
+  pass('foes-alert brings the drums in on the next bar line (0.4 s after a line: 2.21 s later), with the tom pickup on the beat before', { wait: +(din.at - sent).toFixed(3) });
+}
+{ // the strings come in on the next bar line after the first tell or hit of the fight in the cue log, not on the wake
+  const F = fake(), { A, log } = busRun(F);
+  F.S.arrive('gaol'); F.run(0.3); F.S.placeTheme('gaol'); F.run(3);
+  emit('foes-alert', { zone: 'G2' });
+  // a hit on a training post before the wake does not count; here the foes walk with no attack for 4 s
+  F.run(4); A.flush();
+  assert(F.S.view().layers.includes('drums') && !F.S.view().layers.includes('strings'), 'a wake with no attack: drums and no strings');
+  log.push({ cue: 'scrape', step: F.step, play: F.step });
+  const told = F.T;
+  A.flush(); F.run(0.05);
+  const sin = F.S.view().changes.find(c => c.what === 'strings in');
+  assert(sin && lineOf(F, sin.at) && sin.at >= told && sin.at - told <= F.S.view().bar + 0.03, `strings in ${JSON.stringify(sin)} for a tell at ${told}`);
+  F.run(3);
+  assert(F.notes.some(n => n.layer === 'strings' && n.inst === 'cello') && F.notes.some(n => n.layer === 'strings' && n.inst === 'strings'), 'the strings with the cello');
+  // the cello an octave down: the Gaol's strings start on D3 (50) and its cello on D2 (38)
+  const cs = THEMES.gaol.layers.strings;
+  assert.equal(cs.find(p => p.inst === 'strings').notes[0].m - cs.find(p => p.inst === 'cello').notes[0].m, 12);
+  // the calm: drums and strings wait 2 s, then leave on a bar line over one bar
+  emit('fight-calm');
+  const calm = F.T;
+  F.run(6);
+  const dout = F.S.view().changes.find(c => c.what === 'drums out'), sout = F.S.view().changes.find(c => c.what === 'strings out');
+  assert(dout && sout && dout.at === sout.at && lineOf(F, dout.at) && dout.at >= calm + 2 - 1e-6 && dout.at - (calm + 2) <= F.S.view().bar + 0.2, `out ${JSON.stringify([dout, sout])}, calm at ${calm}`);
+  assert(Math.abs(dout.end - dout.at - F.S.view().bar) < 1e-6, 'the fade is one bar');
+  assert(F.notes.filter(n => ['drums', 'strings'].includes(n.layer) && n.t > dout.end + 1e-6 && !n.stopped).length === 0, 'no fight note after its fade');
+  assert.deepEqual(F.S.view().layers, ['explore']);
+  // a tell after the calm brings nothing: no foe is awake
+  log.push({ cue: 'scrape', step: F.step, play: F.step }); A.flush(); F.run(3);
+  assert.deepEqual(F.S.view().layers, ['explore']);
+  A.off();
+  pass('the strings come in on the bar after the first tell, with the cello an octave down; after the calm drums and strings leave together, 2 s on, over one bar', { strings: +(sin.at - told).toFixed(3), out: +(dout.at - calm).toFixed(3) });
+}
+{ // no flapping: fight-calm and then foes-alert 1.5 s later keeps the drums
+  const F = fake(), { A } = busRun(F);
+  F.S.arrive('ramparts'); F.run(0.3); F.S.placeTheme('ramparts'); F.run(3);
+  emit('foes-alert', {}); F.run(4); emit('fight-calm'); F.run(1.5); emit('foes-alert', {}); F.run(6);
+  assert(!whats(F).includes('drums out'), `the drums flapped: ${whats(F)}`);
+  assert(F.S.view().layers.includes('drums'));
+  // a guard zone adds its part on the next bar line
+  emit('foes-alert', { guard: true }); F.run(0.05);
+  const gin = F.S.view().changes.find(c => c.what === 'guard in');
+  assert(gin && lineOf(F, gin.at), JSON.stringify(gin));
+  F.run(3);
+  assert(F.S.view().layers.includes('guard') && F.notes.some(n => n.layer === 'guard'));
+  A.off();
+  pass('no flapping: a calm and a wake 1.5 s later keep the drums; a guard zone adds its part on the bar');
+}
+{ // the elite's drone: in on the next bar line after elite-alert, out on the next bar line after elite-fall (and after fight-calm)
+  const F = fake(), { A } = busRun(F);
+  F.S.arrive('gaol'); F.run(0.3); F.S.placeTheme('gaol'); F.run(3);
+  emit('foes-alert', { zone: 'G3' }); emit('elite-alert', { place: 'gaol', type: 'S', name: 'Wardmother' }); F.run(0.05);
+  const ein = F.S.view().changes.find(c => c.what === 'elite in');
+  assert(ein && lineOf(F, ein.at), JSON.stringify(ein));
+  F.run(4);
+  const ns = F.notes.filter(n => n.layer === 'elite');
+  assert(ns.some(n => n.inst === 'gurdy' && n.m === 50) && ns.some(n => n.inst === 'gurdy' && n.m === 57), 'the gurdy on the tonic (D3) and the fifth (A3)');
+  const buzz = ns.filter(n => n.inst === 'gurdy-buzz'), beat = F.S.view().bar / 4;
+  assert(buzz.length >= 4 && buzz.every(n => Math.abs((n.t - F.S.view().t0) / beat - Math.round((n.t - F.S.view().t0) / beat)) < 1e-6), 'a buzz on each beat');
+  emit('elite-fall', { place: 'gaol', relic: 'x' });
+  const fell = F.T;
+  F.run(0.05);
+  const eout = F.S.view().changes.find(c => c.what === 'elite out');
+  assert(eout && lineOf(F, eout.at) && eout.at - fell <= F.S.view().bar + 0.03, JSON.stringify(eout));
+  assert(F.S.view().layers.includes('drums'), 'the drums stay while other foes are awake');
+  // a second elite, then the calm: it leaves on the next bar line, without the 2 s wait
+  emit('elite-alert', {}); F.run(3); emit('fight-calm'); const calm = F.T; F.run(0.05);
+  const e2 = F.S.view().changes.filter(c => c.what === 'elite out').at(-1);
+  assert(e2 && e2.at - calm <= F.S.view().bar + 0.03 && lineOf(F, e2.at), JSON.stringify(e2));
+  A.off();
+  pass('the elite\'s drone: the gurdy on the tonic and the fifth with a buzz on each beat, in on the bar after elite-alert, out on the bar after elite-fall or the calm', { in: ein.at, out: eout.at });
+}
+{ // the boss music builds: six levels on bar lines as the health falls, never back, faster from level 5; the Ember 5 line at 40%
+  const F = fake(), { A } = busRun(F);
   F.S.arrive('barrows'); F.run(0.3); F.S.placeTheme('barrows'); F.run(3);
-  F.S.bossIntro(); F.run(3);
-  const p0 = F.S.view();
-  assert.equal(p0.state, 'boss'); assert.equal(p0.phase, 0);
-  const silence = p0.changes.find(c => c.what === 'boss 0');
+  emit('boss-intro'); F.run(3);
+  // the intro: one bar of silence, then the drone
+  const p0 = F.S.view(), silence = p0.changes.find(c => c.what === 'boss 0');
+  assert.equal(p0.state, 'boss'); assert.equal(p0.level, 0);
   assert(Math.abs(silence.at - silence.silence - gridOf('reeve').bar) < 1e-6, 'one bar of silence before the drone');
-  const bpm = [];
-  for (const ph of [1, 2, 3]) {
-    F.S.bossPhase(ph);
-    const v = F.S.view(), c = v.changes.at(-1);
+  emit('boss-phase', { phase: 1 }); emit('boss-health', { share: 1, phase: 1 }); F.run(3);
+  assert.equal(F.S.view().level, 1);
+  const seen = [{ level: 1, bpm: F.S.view().bpm, phase: 1 }];
+  for (const [share, phase] of [[0.85, 1], [0.61, 2], [0.44, 2], [0.26, 3], [0.11, 3]]) {
+    const t = F.T;
+    emit('boss-health', { share, phase });
+    // the boss's own phase event follows its health in the same step
+    if (phase !== seen.at(-1).phase) emit('boss-phase', { phase });
+    F.run(0.05);
+    const c = F.S.view().changes.filter(x => x.what.startsWith('level ')).at(-1);
     F.run(3);
-    const g = { t0: F.S.view().t0, bar: F.S.view().bar };
-    assert.equal(c.what, `boss ${ph}`);
-    assert(onLine(g, c.at), `phase ${ph} at ${c.at} is not on a bar line`);
-    // phase 1 starts with the boss bar, on the drone's next bar line; phases 2 and 3 start inside the 2.0 s stumble
-    if (ph >= 2) assert(c.at - F.T + 3 <= 2.0 + 1e-6, `phase ${ph} starts ${c.at - (F.T - 3)} s after the phase change`);
-    bpm.push(F.S.view().bpm);
+    const v = F.S.view();
+    assert(onLine({ t0: v.t0, bar: v.bar }, c.at, 0.005), `${c.what} at ${c.at} is not on a bar line`);
+    assert(c.at - t <= 2.0 + 0.2 || !['level 3', 'level 5'].includes(c.what), `${c.what} starts ${c.at - t} s after the phase`);
+    seen.push({ level: v.level, bpm: v.bpm, phase, after: +(c.at - t).toFixed(3) });
   }
-  assert(bpm[2] > bpm[1]);
-  F.S.bossFall();
-  const t = F.T;
+  assert.deepEqual(seen.map(x => x.level), [1, 2, 3, 4, 5, 6]);
+  assert(seen[4].bpm > seen[3].bpm && seen[5].bpm === seen[4].bpm, JSON.stringify(seen));
+  // the layers of level 6, and a level never goes back
+  assert(['top', 'p3', 'cello', 'pulse'].every(n => F.S.view().layers.includes(n)), JSON.stringify(F.S.view().layers));
+  emit('boss-health', { share: 0.9, phase: 3 }); F.run(1);
+  assert.equal(F.S.view().level, 6);
+  // the boss phase changes still log `boss 2` and `boss 3`
+  assert(whats(F).includes('boss 2') && whats(F).includes('boss 3'));
+  // the lines: 85, 61.5, 45, 26.9 and 12%; at Ember 5 level 5 at 40%
+  assert.deepEqual([1, 0.86, 0.85, 0.616, 0.615, 0.451, 0.45, 0.27, 0.269, 0.121, 0.12].map(s => levelOf(s)), [1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6]);
+  assert.equal(levelOf(800 / 1300), 2); assert.equal(levelOf(799 / 1300), 3); assert.equal(levelOf(350 / 1300), 4); assert.equal(levelOf(349 / 1300), 5);
+  assert.equal(levelOf(0.4, 5), 5); assert.equal(levelOf(0.4, 4), 4); assert.equal(levelOf(0.41, 5), 4);
+  A.off();
+  pass('the boss music builds in six levels on bar lines (3 and 5 inside the stumble), faster from 5, never back; level 5 at 40% at Ember 5', seen);
+}
+{ // the Ember 5 line in play: place-enter carries the Ember level to the score
+  const F = fake(), { A } = busRun(F);
+  emit('place-enter', { id: 'barrows', index: 4, ember: 5 });
+  F.S.arrive('barrows'); F.run(0.3); F.S.placeTheme('barrows'); F.run(2);
+  emit('boss-intro'); F.run(3); emit('boss-phase', { phase: 1 }); F.run(3);
+  emit('boss-health', { share: 0.4, phase: 2 }); F.run(3);
+  assert.equal(F.S.view().level, 5);
+  assert.equal(F.S.view().theme, 'reeve3');
+  A.off();
+  pass('at Ember 5 the boss\'s level 5 (the faster theme) starts at 40% health');
+}
+{ // the fall sting: at once, 2.2 s, then the light 2.5 s after the fall
+  const F = fake(), { A } = busRun(F);
+  F.S.arrive('barrows'); F.run(0.3); F.S.placeTheme('barrows'); F.run(2);
+  emit('boss-intro'); F.run(3); emit('boss-phase', { phase: 1 }); F.run(3); emit('boss-health', { share: 0.05, phase: 3 }); emit('boss-phase', { phase: 3 }); F.run(3);
+  const before = F.notes.length, t = F.T;
+  emit('boss-fall');
+  const sf = F.S.view().changes.find(c => c.what === 'sting fall');
+  assert(sf && sf.at - t >= 0 && sf.at - t <= 0.02, `sting fall at ${sf?.at}, the fall at ${t}`);
   F.run(2.4);
-  assert.equal(F.S.view().state, 'silent');
-  assert(!F.notes.some(n => n.t > t + 0.05 && n.t < t + 2.4 && !n.stopped), 'a note in the silence after the fall');
+  const sting = F.notes.slice(before).filter(n => n.theme === 'sting');
+  assert(sting.some(n => n.inst === 'drum-lo') && sting.some(n => n.inst === 'cello') && sting.some(n => n.inst === 'choir'), 'a low drum, the cello and the choir');
+  const cello = sting.filter(n => n.inst === 'cello').map(n => n.m);
+  assert.equal(cello[0] - cello.at(-1), 12, 'the cello falls an octave');
+  const choir = sting.filter(n => n.inst === 'choir').map(n => n.m).sort((a, b) => a - b);
+  assert.equal(choir[1] - choir[0], 7, 'an open fifth in the choir');
+  assert.equal(cello[0] % 12, 11, 'in B');
+  assert.equal(STINGS.fall.len, 2.2);
+  assert(!F.notes.slice(before).some(n => n.theme !== 'sting' && n.t > t + 0.05 && n.t < t + 2.4 && !n.stopped), 'only the sting sounds after the fall');
   F.run(1);
+  const light = F.S.view().changes.find(c => c.what === 'light');
+  assert(light && Math.abs(light.at - t - 2.5) <= 0.1, `light at ${light?.at}, the fall at ${t}`);
   assert.equal(F.S.view().theme, 'light');
-  pass('the boss: a bar of silence, phases on bar lines within the stumble, phase 3 faster, 2.5 s of silence after the fall', { bpm });
+  A.off();
+  pass('the fall sting plays at once (a low drum, the cello falling an octave, an open fifth in the choir, in B), and the light 2.5 s after', { sting: +(sf.at - t).toFixed(3), light: +(light.at - t).toFixed(3) });
+}
+{ // the beacon, death and win events play their stingers through the bus; the Lamp-room event its theme
+  const F = fake(), { A } = busRun(F);
+  F.S.arrive('gaol'); F.run(0.3); F.S.placeTheme('gaol'); F.run(3);
+  emit('beacon-lit', { place: 'gaol' }); F.run(1); emit('lamp-room', { wait: 0 }); F.run(3);
+  assert(whats(F).includes('sting beacon') && F.S.view().state === 'lamp');
+  emit('run-death'); F.run(1);
+  assert(whats(F).includes('sting death'));
+  emit('run-win', { ember: 0 }); F.run(1);
+  assert(whats(F).includes('sting win'));
+  A.off();
+  pass('beacon-lit, run-death and run-win play their stingers, and lamp-room the Lamp-room theme');
+}
+{ // the bus: every event is known, a listener that throws does not stop the next one, and the run's sound hears every event
+  const got = [];
+  const err = console.error;
+  console.error = () => {};
+  const a = busOn('foes-alert', () => { throw new Error('a listener that throws'); }), b = busOn('foes-alert', d => got.push(d));
+  emit('foes-alert', { zone: 'G1' });
+  console.error = err;
+  a(); b();
+  assert.deepEqual(got, [{ zone: 'G1' }]);
+  assert.equal(EVENTS.length, 15);
+  const F = fake(), { A } = busRun(F);
+  for (const e of EVENTS) emit(e, {});
+  assert.deepEqual(A.view().events.length ? EVENTS.filter(e => !A.heardEvents.includes(e)) : ['none'], []);
+  A.off();
+  pass('the bus: a listener that throws does not stop the next one; the run\'s sound subscribes to all 15 events', { events: EVENTS.length });
 }
 { // the stingers: beacon then the Lamp-room, death then silence and the Lamp-room 2 s or more later
   const F = fake();
@@ -229,6 +377,22 @@ function fake(lat = 0.01) {
   assert(onLine(g, first));
   pass('Music off lays no notes, and Music on goes on at a bar line');
 }
+{ // the bank: the four instruments made offline are in it, each 100 KB or less, and the whole bank 800 KB or less
+  const man = JSON.parse(fs.readFileSync(path.join(DIR, 'audio/manifest.json'), 'utf8'));
+  assert.deepEqual(Object.keys(man.instruments), BANK);
+  let all = 0;
+  const kb = {};
+  for (const [inst, e] of Object.entries(man.instruments)) {
+    let b = 0;
+    for (const f of Object.values(e.notes)) b += fs.statSync(path.join(DIR, 'audio', f)).size;
+    all += b; kb[inst] = +(b / 1024).toFixed(1);
+    if (SYNTH.includes(inst)) assert(b <= 100 * 1024 && b > 0, `${inst} is ${b} bytes`);
+  }
+  assert(all <= 800 * 1024, `the bank is ${all} bytes`);
+  const readme = fs.readFileSync(path.join(DIR, 'audio/README.md'), 'utf8');
+  assert(/gloam-downs-synth\.mjs/.test(readme) && /Frank Wen/.test(readme), 'the README says how the four were made and keeps the license note');
+  pass('the bank holds cello, gurdy, drum-lo and drum-mid made offline, each 100 KB or less, and is 800 KB or less', { kb, total: +(all / 1024).toFixed(0) });
+}
 { // the switches in the run's save
   const s = RS.fresh();
   assert.equal(s.sound, true); assert.equal(s.music, true);
@@ -245,10 +409,25 @@ function fake(lat = 0.01) {
 }
 { // the duck depths and the themes' layers
   assert.equal(CUES.slam.duck[0], 6); assert.equal(CUES.stumble.duck[0], 8);
-  for (const id of PLACES) for (const k of ['amb', 'explore', 'combat', 'guard']) assert(THEMES[id].layers[k]?.length, `${id} has no ${k} layer`);
+  for (const id of PLACES) {
+    assert.deepEqual(Object.keys(THEMES[id].layers), ['amb', 'explore', 'drums', 'strings', 'guard', 'elite'], `${id}'s layers`);
+    for (const k of Object.keys(THEMES[id].layers)) assert(THEMES[id].layers[k].length, `${id} has no ${k} part`);
+    assert(THEMES[id].layers.explore.some(p => p.inst === 'cello'), `${id}: no cello in its explore layer`);
+    assert(THEMES[id].layers.drums.some(p => p.inst === 'drum-lo' && p.notes.some(n => n.bar === 0 && n.beat === 0)), `${id}: no low drum on 1`);
+    assert(THEMES[id].layers.drums.some(p => p.inst === 'drum-mid'), `${id}: no frame drum`);
+    assert(THEMES[id].layers.strings.some(p => p.inst === 'cello'), `${id}: no cello in its strings`);
+    assert(THEMES[id].layers.elite.some(p => p.inst === 'gurdy') && THEMES[id].layers.elite.some(p => p.inst === 'gurdy-buzz'), `${id}: the elite layer`);
+  }
+  for (const id of ['ramparts', 'barrows']) assert(THEMES[id].layers.explore.some(p => p.inst === 'gurdy'), `${id} has no hurdy-gurdy`);
+  assert(THEMES.lamp.layers.explore.some(p => p.inst === 'cello') && THEMES.lamp.layers.explore.some(p => p.inst === 'harp'), 'the Lamp-room: harp and cello');
   assert(THEMES.bells.layers.explore.some(p => p.inst === 'bell'), 'the Bell Knoll leads with bells');
   assert(THEMES.fen.layers.amb.some(p => p.inst === 'water') && THEMES.fen.layers.explore.some(p => p.inst === 'flute'), 'Lantern Fen has water and a reed');
-  pass('a boss slam ducks 6 dB and a phase change 8 dB; each place has its four layers, bells on the Knoll, water and a reed in the Fen');
+  // every note of a sampled instrument is within the bank's reach of a sample: cello C2 to A4, gurdy D3 to D5
+  for (const T of Object.values(THEMES)) for (const parts of Object.values(T.layers || {})) for (const p of parts) {
+    if (p.inst === 'cello') for (const n of p.notes) assert(n.m >= 36 && n.m <= 69, `a cello note ${n.m}`);
+    if (p.inst === 'gurdy') for (const n of p.notes) assert(n.m >= 50 && n.m <= 74, `a gurdy note ${n.m}`);
+  }
+  pass('a boss slam ducks 6 dB and a phase change 8 dB; each place has amb, explore, drums, strings, guard and elite, a cello in explore, gurdies on the Wall and the Crown, bells on the Knoll, water and a reed in the Fen');
 }
 
 /* ---------------- a fake AudioContext: the nodes keep their params' calls, and do nothing else ---------------- */
@@ -385,7 +564,7 @@ const swingAt = (S, t, id = 'cut1') => {
   for (const id of PLACES) for (const [k, parts] of Object.entries(THEMES[id].layers)) for (const p of parts) {
     if (p.notes.length < 6) continue;
     const m = ms(p);
-    if (id === 'gaol' && k === 'combat' && p.inst === 'strings') gaolPedal = pedal(m);
+    if (id === 'gaol' && k === 'strings' && p.inst === 'strings') gaolPedal = pedal(m);
     for (const r of reeve) {
       assert(steps(m) !== steps(r), `${id} ${k} ${p.inst} has the Reeve's steps`);
       assert(from(m) !== from(r), `${id} ${k} ${p.inst} has the Reeve's notes in another key`);

@@ -23,6 +23,7 @@ import { makeCut, CUT } from './cut.js';
 import { makeFight, SPARKS } from './fight.js';
 import { REEVE, REEVE_TEXT } from './boss.js';
 import { makeRunSound } from './run-sound.js';
+import { emit } from './bus.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('view'), loading = $('loading'), loadLine = $('loadLine'), barFill = $('barFill'), bar = $('bar');
@@ -259,6 +260,8 @@ function placeBossBar() {
 function fillBossBar() {
   const B = fight?.boss;
   if (B) $('bossFill').style.width = `${((B.hp / B.max) * 100).toFixed(1)}%`;
+  // the boss music builds with the share of health left, while the bar shows
+  if (B && !$('bossBar').hidden) emit('boss-health', { share: B.hp / B.max, phase: B.phase });
 }
 function bossBar(on) {
   if (!RUN) return;
@@ -575,7 +578,7 @@ function openBeacon() {
   $('beaconBank').innerHTML = `Banked: <b class="bank">${rs.bank} glim</b>. Spend it in the Lamp-room, or walk on.`;
   $('beaconBank').hidden = $('beaconRow').hidden = !!offer;
   // before the wick is chosen only a wick button closes the card: it has no back action. The Lamp-room theme follows the stinger
-  audio?.setScene('lamp');
+  emit('lamp-room', { wait: 0 });
   openCard('beaconCard', 'beacon', () => (rs.run?.offer ? box.querySelector('button') : $('bWalkOn')));
 }
 // Walk on loads the next place; after a reload at the card, the card already shows over it
@@ -590,7 +593,7 @@ const wanderOpen = () => rs.wins > 0 || save.done >= 1;
 const toWander = () => toMode('wander');
 function openLamp(from = null) {
   lampFromWander = from === 'wander';
-  if (!lampFromWander) audio?.setScene('lamp');
+  if (!lampFromWander) emit('lamp-room', { wait: 0 });
   const b = lampButtons(rs, from, wanderOpen());
   for (const [k, id] of Object.entries(LAMP)) $(id).hidden = !b.list.includes(k);
   fillLamp();
@@ -647,7 +650,7 @@ $('bLampExplore').addEventListener('click', () => toMode('explore'));
 // Lamp-room follows over the Gaol, where the next run starts with every foe back
 function openSummary() {
   // the run summary plays the Lamp-room theme after 2 s of silence
-  audio?.setScene('lamp', { wait: 2 });
+  emit('lamp-room', { wait: 2 });
   const s = summaryOf(rs.ended), dds = $('summary').querySelectorAll('dd');
   $('sumT').textContent = s.title;
   s.rows.forEach(([, v], i) => { dds[i].textContent = v; });
@@ -662,7 +665,7 @@ $('bSumLamp').addEventListener('click', () => {
 /* the win card: the time, the best winning time, the glim banked in this run, the runs and the deaths. It opens the Lamp-room, where
    Wander shows from the first win, or Wander. The win is stored already, so a reload before it closes shows it again */
 function openWin() {
-  audio?.setScene('lamp');
+  emit('lamp-room', { wait: 0 });
   const w = winOf(rs), dds = $('winCard').querySelectorAll('dd');
   w.rows.forEach(([, v], i) => { dds[i].textContent = v; });
   $('bWinWander').hidden = !wanderOpen();
@@ -796,7 +799,7 @@ function runEvent(e) {
       toast(`<b>◆</b> Wisp ${e.n} of 5 · +4 glim${e.n === 5 ? ' · a flask fills' : ''}`);
       break;
     case 'beacon':
-      audio?.sting('beacon');
+      emit('beacon-lit', { place: meta.id });
       beaconLit = true;
       setLit(meta.beacon.fire, true);
       toast('The beacon burns. Its glim is banked, and the flasks are full.', 2400);
@@ -804,7 +807,7 @@ function runEvent(e) {
       mode = 'lit';
       break;
     case 'win':
-      audio?.sting('win');
+      emit('run-win', { ember: rs.run?.ember ?? rs.ended?.ember ?? 0 });
       // the run clock stops, the win is stored at once (run.js win and the store that follows), and the win card shows 1.8 s later
       beaconLit = true;
       setLit(meta.beacon.fire, true);
@@ -817,7 +820,7 @@ function runEvent(e) {
     case 'toast': toast(e.what === 'full' ? 'Health is full' : 'No flask left. A lit beacon fills the flasks.', 2200); break;
     case 'fall': cam.snap(body.s, body.s.yaw + Math.PI); toast('A fall · −10 health'); break;
     // the fade to ink over 72 steps, then the summary; the ended run is already stored
-    case 'dead': audio?.sting('death'); endAt = steps + INK; deadAt = steps; mode = 'dying'; arriveLeft = 0; $('arrive').classList.add('off'); break;
+    case 'dead': emit('run-death'); endAt = steps + INK; deadAt = steps; mode = 'dying'; arriveLeft = 0; $('arrive').classList.add('off'); break;
     case 'store': storeRun(); break;
   }
   if (['wisp', 'drink', 'hurt', 'fall', 'beacon', 'win', 'store', 'glim', 'foeOut'].includes(e.type)) updateHud();
@@ -826,10 +829,10 @@ function runEvent(e) {
    shows and the fight starts; at the fall the bar goes, and when the light comes to the lantern a toast says where to take it */
 function bossEvent(e) {
   switch (e.what) {
-    case 'intro': mode = 'intro'; arriveBoss(); audio?.boss('intro'); break;
-    case 'start': if (mode === 'intro') mode = 'play'; bossBar(true); audio?.boss('phase', 1); break;
-    case 'phase': audio?.boss('phase', e.phase); break;
-    case 'fall': bossBar(false); audio?.boss('fall'); break;
+    case 'intro': mode = 'intro'; arriveBoss(); emit('boss-intro'); break;
+    case 'start': if (mode === 'intro') mode = 'play'; bossBar(true); emit('boss-phase', { phase: 1 }); break;
+    case 'phase': emit('boss-phase', { phase: e.phase }); break;
+    case 'fall': bossBar(false); emit('boss-fall'); break;
     case 'light': toast(REEVE_TEXT.carry, 2600); break;
     case 'hp': fillBossBar(); break;
   }
@@ -1034,7 +1037,7 @@ async function go(id) {
   showHud(true);
   bossCard = false;
   arrive();
-  audio?.setScene('arrive', { id });
+  audio?.setScene('arrive', { id }); emit('place-enter', { id, index: ORDER.indexOf(id), ember: rs.run?.ember ?? 0 });
   if (manual && !nodraw) draw();
   if (RUN) {
     if (!rs.run && rs.ended?.won && rs.ended.place === id) { beaconLit = true; setLit(meta.beacon.fire, true); }
@@ -1098,11 +1101,15 @@ function update() {
   if (veils) unveil();
   if (occluders) clearMarker();
 }
-/* after the steps of a frame (or of a test's tick): the combat layer follows the awake foes (a guard zone adds its part), low health
-   takes the score down, and the frame's cues are laid on the context clock */
+/* after the steps of a frame (or of a test's tick): the bus hears foes-alert when foes wake (and again when a guard zone wakes) and
+   fight-calm when none is awake, low health takes the score down, and the frame's cues are laid on the context clock */
+let alertWas = { awake: false, guard: false };
 function soundTick() {
-  const awakeNow = fight ? fight.foes.awake().length > 0 : false;
-  audio.combat(awakeNow && mode !== 'dying', awakeNow && !!fight?.foes.zones?.some(Z => Z.awake && Z.guard));
+  const awakeNow = fight ? fight.foes.awake().length > 0 && mode !== 'dying' : false;
+  const guardZ = awakeNow ? fight?.foes.zones?.find(Z => Z.awake && Z.guard) : null;
+  if (awakeNow && (!alertWas.awake || (guardZ && !alertWas.guard))) emit('foes-alert', { zone: guardZ?.id ?? fight.foes.zones?.find(Z => Z.awake)?.id ?? null, guard: !!guardZ, elite: false });
+  else if (!awakeNow && alertWas.awake) emit('fight-calm');
+  alertWas = { awake: awakeNow, guard: !!guardZ };
   audio.setLow(!!fight?.feel.low && !!rs.run);
   audio.flush();
 }

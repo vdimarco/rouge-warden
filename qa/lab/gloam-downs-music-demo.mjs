@@ -4,13 +4,16 @@
 //   cue-<name>.mp3          every cue alone (the hit cues: each of their 4 variants, cue-hit-cut1-v0.mp3 and so on)
 //   tell-scrape-near/far    the Snuffer's tell at 2 m in front and at 14 m behind the camera
 //   theme-<place>.mp3       8 bars of explore, the combat layer coming in for 4 bars, and 4 bars of it going out
-//   combat-<place>.mp3      8 bars with the combat layer on (the loudness target of a theme)
+//   combat-<place>.mp3      8 bars with every layer on: drums, strings, guard and elite (the loudness target of a theme)
+//   layers-<place>.mp3      the layers group: 4 bars of explore, 4 with the drums (foes see you), 4 with the strings (the fight
+//                           begins), then the calm and the fade; boss-levels.mp3 the boss's six levels as its health falls, then
+//                           the fall sting and the light; inst-<name>.mp3 each instrument made offline over its range
 //   boss.mp3, boss-<n>.mp3  the boss theme: the intro's silence and drone, then phases 1, 2 and 3; and each phase alone
 //   sting-<id>.mp3          the beacon, death and win stingers; lamp.mp3 the Lamp-room theme; light.mp3 the light after the fall
 //   fight-desktop/phone     the scripted 40 s fight in the Gaol, in both mixes, and fight-fx / fight-music (each bus alone)
 // Then it measures each file with ffmpeg's ebur128 filter (integrated, momentary maximum, true peak) and, for the hits, the energy
 // of the three layers in the first 120 ms, writes loudness.json and index.txt, and exits with an error when a target is missed.
-//   NODE_PATH=qa/browser/node_modules node qa/lab/gloam-downs-music-demo.mjs [cues themes boss stings fight]
+//   NODE_PATH=qa/browser/node_modules node qa/lab/gloam-downs-music-demo.mjs [cues power themes layers boss stings fight]
 // Environment: DEMO (the folder; default <system temp>/gloam-downs-sound), PORT (default 8842; it serves public/ itself when nothing
 // answers), KBPS (default 160), FFMPEG (default /usr/bin/ffmpeg), CHROMIUM_PATH (default /opt/pw-browsers/chromium).
 import fs from 'node:fs';
@@ -90,6 +93,7 @@ await page.evaluate(() => {
         const a = acts[ai++];
         if (a.cue) { const r = fx.play(a.cue, Math.max(a.t, c.currentTime), a.o || {}); plays.push({ cue: a.cue, t: a.t, v: r?.v }); }
         else if (a.score) m.score[a.score](...(a.args || []));
+        else if (a.note) m.note(a.note, Math.max(a.t, c.currentTime));
         else if (a.filter) m.setFilter(...a.filter);
       }
       if (!spec.tone) m.score.tick();
@@ -231,7 +235,7 @@ const T0 = 0.2;
    time budget (a share of real time on this desktop). The fight is at -20 LUFS: a browser game plays on a laptop or a phone, near
    the portable -18 of ASWG, and the user asked for power; the hits' own shapers keep the peaks near their loudness (design.md
    "Loudness") */
-const FIGHT_LUFS = -20, PHONE_LUFS = -20, THEME_LUFS = -29, LIM = 3, PUNCH = 2, CPU = 0.12;
+const FIGHT_LUFS = -20, PHONE_LUFS = -20, THEME_LUFS = -29, BOSS_LUFS = -25.7, LIM = 3, PUNCH = 2, CPU = 0.12;
 
 // ---- the cues
 if (want('cues')) {
@@ -356,10 +360,35 @@ if (want('themes')) {
     const bar = info.bars[id], t0 = 0.3;
     await render(`theme-${id}`, { len: t0 + 18 * bar + 3, acts: [{ t: 0, score: 'arrive', args: [id] }, { t: t0, score: 'placeTheme', args: [id] },
       { t: t0 + 8 * bar, score: 'setCombat', args: [true] }, { t: t0 + 12 * bar, score: 'setCombat', args: [false] }] }, 'explore from 0:00, combat in at bar 9, out from bar 13');
-    await render(`combat-${id}`, { len: t0 + 9 * bar, bus: 'music', acts: [{ t: 0, score: 'arrive', args: [id] }, { t: 0.01, score: 'placeTheme', args: [id] }, { t: 0.02, score: 'setCombat', args: [true] }] }, 'combat on, 8 bars');
+    await render(`combat-${id}`, { len: t0 + 9 * bar, bus: 'music', acts: [{ t: 0, score: 'arrive', args: [id] }, { t: 0.01, score: 'placeTheme', args: [id] },
+      { t: 0.02, score: 'setFight', args: [{ awake: true, strings: true, guard: true, elite: true }] }] }, 'every layer on, 8 bars');
   }
   await render('lamp', { len: 10 * info.bars.lamp, acts: [{ t: 0, score: 'lamp', args: [] }] });
   await render('light', { len: 12, acts: [{ t: 0, score: 'light', args: [] }] });
+}
+// ---- the layers group (design.md of gloam-downs-real-game, "The new instruments, made offline"): each place's fight as the bus
+// sends it, the boss's six levels, and each instrument made offline alone
+if (want('layers')) {
+  for (const id of info.places) {
+    const bar = info.bars[id], t0 = 0.3;
+    await render(`layers-${id}`, { len: t0 + 17 * bar + 3, acts: [{ t: 0, score: 'arrive', args: [id] }, { t: t0, score: 'placeTheme', args: [id] },
+      { t: t0 + 4 * bar + 0.4, score: 'setFight', args: [{ awake: true }] }, { t: t0 + 8 * bar + 0.4, score: 'setFight', args: [{ strings: true }] },
+      { t: t0 + 12 * bar + 0.4, score: 'setFight', args: [{ awake: false }] }] }, 'explore 4 bars, drums at bar 6, strings at bar 10, the calm from bar 13');
+  }
+  const b = info.bars.reeve, b3 = info.bars.reeve3, L = 2 * b + 4 * b;
+  // the levels 4 bars apart (levels 5 and 6 on the faster grid), then the fall
+  const hp = [[L, 0.85], [L + 4 * b, 0.6], [L + 8 * b, 0.44], [L + 12 * b, 0.26], [L + 12 * b + 4 * b3, 0.11]];
+  const fall = L + 12 * b + 8 * b3;
+  await render('boss-levels', { len: fall + 6, acts: [{ t: 0, score: 'bossIntro' }, { t: 2 * b, score: 'bossPhase', args: [1] },
+    ...hp.map(([t, s]) => ({ t, score: 'bossHealth', args: [s] })), { t: L + 4 * b + 0.01, score: 'bossPhase', args: [2] }, { t: L + 12 * b + 0.01, score: 'bossPhase', args: [3] },
+    { t: fall, score: 'bossFall' }] }, 'the drone, level 1 at bar 3, then levels 2 to 6 every 4 bars, the fall sting and the light');
+  for (const [lvl, s] of [[4, 0.44], [6, 0.11]]) await render(`boss-level${lvl}`, { len: 9 * (lvl >= 5 ? b3 : b), bus: 'music', acts: [{ t: 0, score: 'bossIntro' }, { t: 0.01, score: 'bossPhase', args: [1] }, { t: 0.02, score: 'bossHealth', args: [s] }] });
+  const RANGE = { cello: [36, 69, 'C2 to A4'], gurdy: [50, 74, 'D3 to D5'], 'drum-lo': [29, 43, '±7 around C2'], 'drum-mid': [43, 57, '±7 around D3'] };
+  for (const [inst, [lo, hi, note]] of Object.entries(RANGE)) {
+    const drum = inst.startsWith('drum'), step = drum ? 7 : 3, d = drum ? 0.9 : 1.6, acts = [];
+    for (let m = lo, t = 0.2; m <= hi; m += step, t += d + 0.15) acts.push({ t, note: { inst, m, v: 0.6, d: drum ? 0.5 : d } });
+    await render(`inst-${inst}`, { len: acts.at(-1).t + d + 1.5, bus: 'music', acts }, `${inst} over its range, ${note}`);
+  }
 }
 if (want('boss')) {
   const b = info.bars.reeve, b3 = info.bars.reeve3;
@@ -437,6 +466,9 @@ if (all['fight-desktop']) {
   if (all['fight-phone-fx']) need(all['fight-phone-fx'].I - all['fight-phone-music'].I >= 8, `phone mix: the music is ${(all['fight-phone-fx'].I - all['fight-phone-music'].I).toFixed(1)} LU under the effects, not 8`);
 }
 for (const id of info.places) if (all[`combat-${id}`]) need(Math.abs(all[`combat-${id}`].I - THEME_LUFS) <= 3, `combat-${id}: ${all[`combat-${id}`].I} LUFS, not ${THEME_LUFS} ±3`);
+/* the boss's levels add parts but not much loudness: its top level is no more than 0.5 LU over the boss in phase 3 before the
+   levels (-25.7 LUFS, add-gloam-downs design.md "What was measured"), and over the place themes with every layer on */
+for (const k of ['boss-level4', 'boss-level6']) if (all[k]) need(all[k].I <= BOSS_LUFS + 0.5 && all[k].I >= THEME_LUFS, `${k}: ${all[k].I} LUFS, not between ${THEME_LUFS} and ${BOSS_LUFS + 0.5}`);
 const mm = k => Math.max(...[0, 1, 2, 3].map(v => all[`cue-${k}-v${v}`]?.M ?? -99));
 if (all['cue-hit-cut1-v0']) {
   const cut1 = mm('hit-cut1');

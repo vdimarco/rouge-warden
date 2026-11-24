@@ -6,9 +6,12 @@
 //   ahead on the context clock (Chris Wilson, "A Tale of Two Clocks"): tick() from a 25 ms timer lays the notes of the next 150 ms
 //   (300 ms on a phone, `ahead`) plus the output latency. A note more than 20 ms late is dropped. After a stall of more than 1 s, or after stop(), the notes laid
 //   ahead are cancelled and the score goes on at the next bar line. It makes no sound itself, so a Node test runs it on a fake clock.
-// - createMusic(ctx, { mix, base, fetchFn }): the instruments and the bus. A small FluidR3_GM bank (audio/, loaded after the first
-//   press) and voices made in code (bells, water, wind, drums, drones), and a code voice for each sampled instrument that plays until
-//   the bank has loaded or when it fails. The bus has a 9 kHz low-pass and a short room, for a soft cartridge colour.
+// - createMusic(ctx, { mix, base, fetchFn }): the instruments and the bus. A small bank (audio/, loaded after the first press) of
+//   FluidR3_GM notes and four instruments made offline (cello, gurdy, drum-lo, drum-mid: qa/lab/gloam-downs-synth.mjs), voices made
+//   in code (bells, water, wind, drums, drones, the gurdy's buzz), and a code voice for each sampled instrument that plays until the
+//   bank has loaded or when it fails. The bus has a 9 kHz low-pass and a short room, for a soft cartridge colour.
+// - The layers change on bar lines with the fight (setFight, from the run's bus events), and the boss's theme builds in six levels
+//   with its health (bossHealth, BOSS_LEVELS); the boss's fall plays the fall sting.
 
 export const LOOKAHEAD = 0.15;
 // on a coarse pointer the score lays 300 ms ahead, so a phone frame that holds the main thread for up to about 0.3 s drops no note
@@ -37,48 +40,69 @@ const on = (beats, n, d, v, bar = 0) => beats.map((b, i) => [bar, b, Array.isArr
 const eighths = (n, v, beats = 4, bar = 0) => n.map((x, i) => [bar, i * 0.5, x, 0.5, Array.isArray(v) ? v[i % v.length] : v]).filter(x => x[1] < beats);
 
 /* ---------------- the themes ----------------
-   key: the tonic (MIDI) the effects take their chimes from. layers: amb (the sounds made in code that play from the arrival card on),
-   explore, combat, guard (a third percussion part for a guard zone). The boss theme's layers come in by phase */
+   key: the tonic (MIDI) the effects take their chimes from. layers (design.md of gloam-downs-real-game, "Layers and their changes"):
+   amb (the sounds made in code that play from the arrival card on), explore, drums (when foes see the lamplighter: a low drum on 1,
+   a frame drum in the place's metre, and the old toms and timpani), strings (when the fight starts: the old combat strings, with a
+   cello an octave down), guard (a third percussion part for a guard zone) and elite (a hurdy-gurdy drone on the tonic and the fifth,
+   with a buzz on each beat, while an elite is awake). The boss theme's layers come in by level */
 /* the Barrow Reeve's ostinato, its own figure: it climbs by steps from the tonic to the tritone (B C D F), falls back by steps
    (E C A#) and lands on the tonic, accented 3+3+2. It has no pedal note: the tonic sounds only at its two ends. The Gaol's combat
    strings are a pedal figure (D on every other eighth), so the two do not share a shape */
 const REEVE_ACCENT = [0.6, 0.36, 0.4, 0.6, 0.38, 0.36, 0.58, 0.4];
+// the elite's drone: the gurdy on the tonic and the fifth for the whole bar, and its buzz on each beat
+const eliteOf = (tonic, fifth, beats) => [P('gurdy', 1, [[0, 0, tonic, beats, 0.34], [0, 0, fifth, beats, 0.28]]),
+  P('gurdy-buzz', 1, on(Array.from({ length: beats }, (_, i) => i), tonic, 0.1, [0.5, ...Array(beats - 1).fill(0.32)]))];
 export const THEMES = {
-  // The Sunken Gaol: D Phrygian, 4/4 at 92. A drone, a chain on beat 1, a motif of four strings notes every 4 bars, a dripping harp
+  // The Sunken Gaol: D Phrygian, 4/4 at 92. A drone, a chain on beat 1, the cello's motif of four notes every 4 bars, a dripping harp
   gaol: {
     name: 'The Sunken Gaol', key: 'D4', bpm: 92, beats: 4,
     layers: {
       amb: [P('wind', 1, [[0, 0, 'D3', 4.4, 0.22]], { low: true }), P('drip', 4, [[0, 1.5, 'A6', 0.2, 0.3], [1, 3.25, 'D7', 0.2, 0.25], [2, 0.75, 'F6', 0.2, 0.3], [3, 2.5, 'C7', 0.2, 0.22]])],
       explore: [
         P('contrabass', 1, [[0, 0, 'D2', 4, 0.5]]), P('chain', 1, [[0, 0, 0, 0.5, 0.45]]),
-        P('strings', 4, [[1, 0, 'A3', 2, 0.5], [1, 2, 'Bb3', 1.5, 0.52], [1, 3.5, 'A3', 0.5, 0.42], [2, 0, 'F3', 4, 0.44]]),
+        P('cello', 4, [[1, 0, 'A3', 2, 0.5], [1, 2, 'Bb3', 1.5, 0.52], [1, 3.5, 'A3', 0.5, 0.42], [2, 0, 'F3', 4, 0.44]]),
         P('harp', 2, [[0, 2.5, 'D5', 2, 0.3], [1, 1.5, 'A4', 2, 0.26]])
       ],
-      combat: [
+      drums: [
+        P('drum-lo', 1, [[0, 0, 'D2', 1, 0.62]]),
+        P('drum-mid', 1, on([1, 2.5, 3], 'D3', 0.4, [0.42, 0.34, 0.4])),
         P('tom', 1, on([0.5, 1.5, 2.5, 3.5], 'D3', 0.5, [0.55, 0.7])),
-        P('strings', 1, eighths(['D3', 'D3', 'Eb3', 'D3', 'F3', 'D3', 'Eb3', 'C3'], [0.55, 0.4])),
         P('timpani', 1, [[0, 0, 'D3', 1, 0.7], [0, 2, 'A2', 1, 0.6]])
       ],
-      guard: [P('shaker', 1, eighths(Array(8).fill('D3'), [0.5, 0.3]))]
+      strings: [
+        P('strings', 1, eighths(['D3', 'D3', 'Eb3', 'D3', 'F3', 'D3', 'Eb3', 'C3'], [0.55, 0.4])),
+        P('cello', 1, on([0, 1, 2, 3], ['D2', 'Eb2', 'F2', 'Eb2'], 1, [0.5, 0.4]))
+      ],
+      guard: [P('shaker', 1, eighths(Array(8).fill('D3'), [0.5, 0.3]))],
+      elite: eliteOf('D3', 'A3', 4)
     }
   },
-  // The Crow Wall: E Aeolian, 3/4 at 94. Wind, a strings drone on E and B, a harp figure in fourths
+  // The Crow Wall: E Aeolian, 3/4 at 94. Wind, a strings drone on E and B with the cello under it, a hurdy-gurdy tune, a harp figure
+  // in fourths, and a soft frame drum gallop every other bar
   ramparts: {
     name: 'The Crow Wall', key: 'E4', bpm: 94, beats: 3,
     layers: {
       amb: [P('wind', 1, [[0, 0, 'E4', 3.4, 0.4]])],
       explore: [
-        P('strings', 2, [[0, 0, 'E3', 6, 0.34], [0, 0, 'B3', 6, 0.3]]), P('contrabass', 2, [[0, 0, 'E2', 6, 0.36]]),
-        P('harp', 2, [[0, 0, 'B3', 1, 0.36], [0, 1, 'E4', 1, 0.34], [0, 2, 'A4', 1, 0.32], [1, 0, 'D5', 1.5, 0.32], [1, 1.5, 'A4', 1.5, 0.28]])
+        P('strings', 2, [[0, 0, 'E3', 6, 0.3], [0, 0, 'B3', 6, 0.26]]), P('cello', 2, [[0, 0, 'E2', 6, 0.36]]),
+        P('gurdy', 4, [[1, 0, 'B3', 1, 0.3], [1, 1, 'D4', 1, 0.3], [1, 2, 'E4', 1, 0.32], [2, 0, 'G4', 2, 0.3], [2, 2, 'F#4', 1, 0.28], [3, 0, 'E4', 3, 0.28]]),
+        P('harp', 2, [[0, 0, 'B3', 1, 0.34], [0, 1, 'E4', 1, 0.32], [0, 2, 'A4', 1, 0.3], [1, 0, 'D5', 1.5, 0.3], [1, 1.5, 'A4', 1.5, 0.26]]),
+        P('drum-mid', 2, on([0, 0.66, 1, 2], 'E3', 0.3, [0.34, 0.2, 0.26, 0.24], 1))
       ],
-      combat: [
-        P('frame', 1, on([0, 0.66, 1, 1.66, 2], 'E3', 0.3, [0.8, 0.4, 0.6, 0.4, 0.6])),
-        P('strings', 2, [...on([0, 1, 2], ['E2', 'E2', 'G2'], 1, 0.46), ...on([0, 1, 2], ['C3', 'B2', 'B2'], 1, 0.44, 1)])
+      drums: [
+        P('drum-lo', 1, [[0, 0, 'E2', 1, 0.62]]),
+        P('drum-mid', 1, on([0, 0.66, 1, 1.66, 2], 'E3', 0.3, [0.8, 0.4, 0.6, 0.4, 0.6]))
       ],
-      guard: [P('shaker', 1, eighths(Array(6).fill('E3'), [0.5, 0.3], 3))]
+      strings: [
+        P('strings', 2, [...on([0, 1, 2], ['E3', 'E3', 'G3'], 1, 0.44), ...on([0, 1, 2], ['C4', 'B3', 'B3'], 1, 0.42, 1)]),
+        P('cello', 2, [...on([0, 1, 2], ['E2', 'E2', 'G2'], 1, 0.46), ...on([0, 1, 2], ['C3', 'B2', 'B2'], 1, 0.44, 1)])
+      ],
+      guard: [P('shaker', 1, eighths(Array(6).fill('E3'), [0.5, 0.3], 3))],
+      elite: eliteOf('E3', 'B3', 3)
     }
   },
-  // Lantern Fen: C# Dorian, 4/4 at 84. Water, the reed (a flute played low and breathy), a harp pluck
+  // Lantern Fen: C# Dorian, 4/4 at 84. Water, the reed (a flute played low and breathy) that the cello answers, a harp pluck, and a
+  // low drum every other bar
   fen: {
     name: 'Lantern Fen', key: 'C#4', bpm: 84, beats: 4,
     layers: {
@@ -86,17 +110,26 @@ export const THEMES = {
       explore: [
         P('flute', 4, [[0, 0, 'G#4', 2, 0.42], [0, 2, 'F#4', 1, 0.4], [0, 3, 'E4', 1, 0.38], [1, 0, 'C#4', 4, 0.4],
           [2, 0, 'D#4', 1.5, 0.38], [2, 1.5, 'E4', 1.5, 0.38], [2, 3, 'F#4', 1, 0.36], [3, 0, 'G#4', 4, 0.38]]),
-        P('harp', 2, [[0, 2, 'C#5', 2, 0.26], [1, 2, 'A#4', 2, 0.24]])
+        P('cello', 4, [[1, 1, 'E3', 1, 0.36], [1, 2, 'F#3', 1, 0.34], [1, 3, 'G#3', 1, 0.34], [3, 1, 'B3', 1.5, 0.34], [3, 2.5, 'G#3', 1.5, 0.32]]),
+        P('harp', 2, [[0, 2, 'C#5', 2, 0.26], [1, 2, 'A#4', 2, 0.24]]),
+        P('drum-lo', 2, [[0, 0, 'C#2', 1.5, 0.4]])
       ],
-      combat: [
-        P('hand', 1, on([0, 1.5, 2, 3, 3.5], 'C#3', 0.3, [0.9, 0.5, 0.75, 0.5, 0.6])),
+      drums: [
+        P('drum-lo', 1, [[0, 0, 'C#2', 1, 0.6]]),
+        P('drum-mid', 1, on([2, 3.5], 'C#3', 0.4, [0.42, 0.3])),
+        P('hand', 1, on([0, 1.5, 2, 3, 3.5], 'C#3', 0.3, [0.9, 0.5, 0.75, 0.5, 0.6]))
+      ],
+      strings: [
         P('harp', 1, eighths(['C#4', 'G#4', 'E4', 'G#4', 'B4', 'G#4', 'E4', 'G#4'], [0.52, 0.38])),
-        P('contrabass', 1, on([0, 1, 2, 3], 'C#2', 0.9, [0.65, 0.5]))
+        P('contrabass', 1, on([0, 1, 2, 3], 'C#2', 0.9, [0.65, 0.5])),
+        P('cello', 1, on([0, 1, 2, 3], ['C#3', 'G#3', 'E3', 'G#3'], 1, [0.46, 0.36]))
       ],
-      guard: [P('shaker', 1, eighths(Array(8).fill('C#3'), [0.5, 0.3]))]
+      guard: [P('shaker', 1, eighths(Array(8).fill('C#3'), [0.5, 0.3]))],
+      elite: eliteOf('C#4', 'G#3', 4)
     }
   },
-  // The Bell Knoll: F Aeolian, 3/4 at 72. Bells made in code as the lead, a toll on bar 1 of every 4, a strings pad
+  // The Bell Knoll: F Aeolian, 3/4 at 72. Bells made in code as the lead, a toll on bar 1 of every 4, a strings pad and the cello's
+  // pad under the bells
   bells: {
     name: 'The Bell Knoll', key: 'F4', bpm: 72, beats: 3,
     layers: {
@@ -105,36 +138,53 @@ export const THEMES = {
         P('bell', 4, [[0, 0, 'F5', 1, 0.5], [0, 1, 'Ab5', 1, 0.45], [0, 2, 'C6', 1, 0.5], [1, 0, 'Bb5', 2, 0.45], [1, 2, 'Ab5', 1, 0.4],
           [2, 0, 'G5', 1.5, 0.45], [2, 1.5, 'Eb5', 1.5, 0.4], [3, 0, 'F5', 3, 0.5]]),
         P('toll', 4, [[0, 0, 'F2', 3, 0.6]]),
-        P('strings', 2, [[0, 0, 'F3', 6, 0.3], [0, 0, 'C4', 6, 0.26], [0, 0, 'Ab3', 6, 0.26]])
+        P('strings', 2, [[0, 0, 'C4', 6, 0.24], [0, 0, 'Ab3', 6, 0.24]]),
+        P('cello', 2, [[0, 0, 'F2', 6, 0.34], [0, 0, 'C3', 6, 0.26], [1, 0, 'Db3', 3, 0.26]])
       ],
-      combat: [
+      drums: [
+        P('drum-lo', 1, [[0, 0, 'F2', 1, 0.62]]),
+        P('drum-mid', 1, on([1, 2], 'F3', 0.4, [0.36, 0.42])),
         P('timpani', 1, [[0, 0, 'F2', 1, 0.7], [0, 2, 'C3', 1, 0.5]]),
-        P('tom', 1, on([1, 1.5, 2.5], 'F3', 0.4, [0.5, 0.4, 0.5])),
-        P('strings', 1, Array.from({ length: 12 }, (_, i) => [0, i * 0.25, i % 2 ? 'Ab3' : 'F3', 0.25, i % 4 ? 0.28 : 0.38]))
+        P('tom', 1, on([1, 1.5, 2.5], 'F3', 0.4, [0.5, 0.4, 0.5]))
       ],
-      guard: [P('shaker', 1, eighths(Array(6).fill('F3'), [0.5, 0.3], 3))]
+      strings: [
+        P('strings', 1, Array.from({ length: 12 }, (_, i) => [0, i * 0.25, i % 2 ? 'Ab3' : 'F3', 0.25, i % 4 ? 0.28 : 0.38])),
+        P('cello', 1, on([0, 1, 2], ['F2', 'Ab2', 'F2'], 1, [0.46, 0.36]))
+      ],
+      guard: [P('shaker', 1, eighths(Array(6).fill('F3'), [0.5, 0.3], 3))],
+      elite: eliteOf('F3', 'C4', 3)
     }
   },
-  // Barrow Crown: A Locrian, 4/4 at 80. A choir pad, a low drone, wind and a sparse harp
+  // Barrow Crown: A Locrian, 4/4 at 80. A choir pad over a hurdy-gurdy drone, a low drone, wind, a sparse harp, and the cello's slow line
   barrows: {
     name: 'Barrow Crown', key: 'A3', bpm: 80, beats: 4,
     layers: {
       amb: [P('wind', 1, [[0, 0, 'A3', 4.4, 0.34]])],
       explore: [
         P('choir', 4, [[0, 0, 'A3', 8, 0.36], [0, 0, 'C4', 8, 0.3], [0, 0, 'Eb4', 8, 0.28], [2, 0, 'G3', 8, 0.34], [2, 0, 'Bb3', 8, 0.3], [2, 0, 'D4', 8, 0.28]]),
+        P('gurdy', 2, [[0, 0, 'A3', 8, 0.2]]),
         P('drone', 1, [[0, 0, 'A1', 4, 0.42]]),
+        P('cello', 4, [[1, 0, 'C3', 2, 0.32], [1, 2, 'Bb2', 2, 0.3], [3, 0, 'Eb3', 3, 0.32], [3, 3, 'D3', 1, 0.28]]),
         P('harp', 4, [[1, 1, 'Eb5', 2, 0.22], [3, 2.5, 'A4', 2, 0.2]])
       ],
-      combat: [
+      drums: [
+        P('drum-lo', 1, [[0, 0, 'A1', 1, 0.62]]),
+        P('drum-mid', 1, on([2, 3.5], 'A2', 0.4, [0.4, 0.3])),
         P('tom', 1, on([1, 3, 3.5], 'A2', 0.5, [0.55, 0.5, 0.4])),
         P('timpani', 1, [[0, 0, 'A2', 1, 0.66], [0, 2, 'A2', 1, 0.5]])
       ],
-      guard: [P('shaker', 1, eighths(Array(8).fill('A3'), [0.5, 0.3]))]
+      strings: [
+        P('strings', 1, eighths(['A3', 'Bb3', 'A3', 'C4', 'A3', 'Bb3', 'Eb4', 'A3'], [0.46, 0.34])),
+        P('cello', 1, on([0, 1, 2, 3], ['A2', 'A2', 'Bb2', 'Eb3'], 1, [0.46, 0.36]))
+      ],
+      guard: [P('shaker', 1, eighths(Array(8).fill('A3'), [0.5, 0.3]))],
+      elite: eliteOf('A3', 'Eb4', 4)
     }
   },
-  // The Barrow Reeve: B Phrygian, 4/4 at 100. Its layers by phase: the drone of the intro; phase 1 a timpani pulse, a low strings
-  // ostinato (a climb to the tritone and back, accented 3+3+2) and choir chords; phase 2 toms and a harp ostinato, and the strings a fourth up; phase 3 (reeve3, at 112) every layer
-  // and the bells
+  /* The Barrow Reeve: B Phrygian, 4/4 at 100. It builds in six levels with the boss's health (BOSS_LEVELS): the drone of the intro;
+     level 1 a timpani pulse, a low strings ostinato (a climb to the tritone and back, accented 3+3+2) and choir chords; level 2 a low
+     drum on 1 and 3; level 3 (phase 2) toms and a harp ostinato, and the strings a fourth up; level 4 the cello an octave under the
+     strings; level 5 (phase 3, reeve3 at 112) the bells; level 6 the hurdy-gurdy's buzz and the high choir */
   reeve: {
     name: 'The Barrow Reeve', key: 'B3', bpm: 100, beats: 4,
     phases: [['drone'], ['drone', 'p1', 'low'], ['drone', 'p1', 'p2', 'high']],
@@ -145,25 +195,49 @@ export const THEMES = {
       low: [P('strings', 1, eighths(['B2', 'C3', 'D3', 'F3', 'E3', 'C3', 'A#2', 'B2'], REEVE_ACCENT))],
       high: [P('strings', 1, eighths(['E3', 'F3', 'G3', 'Bb3', 'A3', 'F3', 'D#3', 'E3'], REEVE_ACCENT))],
       p2: [P('tom', 1, eighths(Array(8).fill('B2'), [0.55, 0.35])), P('harp', 1, eighths(['B4', 'F#4', 'D5', 'F#4', 'C5', 'F#4', 'B4', 'F#4'], [0.36, 0.26]))],
-      p3: [P('bell', 2, [[0, 0, 'B5', 1, 0.42], [0, 1, 'C6', 1, 0.4], [0, 2, 'D6', 2, 0.42], [1, 0, 'C6', 2, 0.4], [1, 2, 'B5', 2, 0.38]])]
+      p3: [P('bell', 2, [[0, 0, 'B5', 1, 0.42], [0, 1, 'C6', 1, 0.4], [0, 2, 'D6', 2, 0.42], [1, 0, 'C6', 2, 0.4], [1, 2, 'B5', 2, 0.38]])],
+      pulse: [P('drum-lo', 1, [[0, 0, 'B1', 1, 0.5], [0, 2, 'B1', 1, 0.4]])],
+      cello: [P('cello', 1, eighths(['E2', 'F2', 'G2', 'Bb2', 'A2', 'F2', 'D#2', 'E2'], REEVE_ACCENT.map(v => +(v * 0.7).toFixed(3))))],
+      top: [P('gurdy', 1, [[0, 0, 'B3', 4, 0.26], [0, 0, 'F#4', 4, 0.2]]), P('gurdy-buzz', 1, on([0, 1, 2, 3], 'B3', 0.1, [0.45, 0.3])),
+        P('choir', 2, [[0, 0, 'B4', 4, 0.24], [0, 0, 'D5', 4, 0.2], [1, 0, 'C5', 4, 0.24], [1, 0, 'G4', 4, 0.2]])]
     }
   },
   reeve3: { name: 'The Barrow Reeve', key: 'B3', bpm: 112, beats: 4, phases: [null, null, null, ['drone', 'p1', 'p2', 'high', 'p3']], layers: null },
   // after the fall: a quiet choir drone while the light is carried
   light: { name: 'The light', key: 'A3', bpm: 60, beats: 4, layers: { explore: [P('choir', 2, [[0, 0, 'A3', 8, 0.4], [0, 0, 'E4', 8, 0.33]])] } },
-  // the Lamp-room: D Dorian, 3/4 at 60. A warm harp and low strings, quiet
+  // the Lamp-room: D Dorian, 3/4 at 60. A warm harp and the cello low, quiet
   lamp: {
     name: 'The Lamp-room', key: 'D4', bpm: 60, beats: 3,
     layers: {
       explore: [
         P('harp', 4, [[0, 0, 'D3', 1, 0.53], [0, 1, 'A3', 1, 0.46], [0, 2, 'F4', 1, 0.46], [1, 0, 'C3', 1, 0.49], [1, 1, 'G3', 1, 0.46], [1, 2, 'E4', 1, 0.46],
           [2, 0, 'G2', 1, 0.49], [2, 1, 'D3', 1, 0.46], [2, 2, 'B3', 1, 0.46], [3, 0, 'A2', 1, 0.49], [3, 1, 'E3', 1, 0.46], [3, 2, 'C4', 1, 0.49]]),
-        P('strings', 2, [[0, 0, 'D2', 6, 0.43], [0, 0, 'A2', 6, 0.33]])
+        P('cello', 2, [[0, 0, 'D2', 6, 0.42], [0, 0, 'A2', 6, 0.32]])
       ]
     }
   }
 };
 THEMES.reeve3.layers = THEMES.reeve.layers;
+/* the boss's six levels: the theme and the layers that play at each, and the health share (of its maximum) at or under which each
+   starts. Level 1 starts with the fight; levels 3 and 5 are the boss's phases 2 and 3 (800 and 350 of 1300 health) and start the
+   theme again; at Ember 5 level 5 starts at 40% */
+export const BOSS_LEVELS = [
+  null,
+  { theme: 'reeve', layers: ['drone', 'p1', 'low'] },
+  { theme: 'reeve', layers: ['drone', 'p1', 'low', 'pulse'], share: 0.85 },
+  { theme: 'reeve', layers: ['drone', 'p1', 'p2', 'high', 'pulse'], share: 0.615 },
+  { theme: 'reeve', layers: ['drone', 'p1', 'p2', 'high', 'pulse', 'cello'], share: 0.45 },
+  { theme: 'reeve3', layers: ['drone', 'p1', 'p2', 'high', 'p3', 'pulse', 'cello'], share: 0.269, ember5: 0.4 },
+  { theme: 'reeve3', layers: ['drone', 'p1', 'p2', 'high', 'p3', 'pulse', 'cello', 'top'], share: 0.12 }
+];
+// the level for a health share: 1, and one more for each line the share is at or under
+export const levelOf = (share, ember = 0) => {
+  let L = 1;
+  for (let k = 2; k <= 6; k++) { const B = BOSS_LEVELS[k], line = ember >= 5 && B.ember5 ? B.ember5 : B.share; if (share <= line + 1e-9) L = k; }
+  return L;
+};
+// the first level of each of the boss's phases
+export const PHASE_LEVEL = [0, 1, 3, 5];
 export const PLACES = ['gaol', 'ramparts', 'fen', 'bells', 'barrows'];
 export const keyOf = id => midi(THEMES[id]?.key || 'D4');
 // the grid of a theme: the length of a beat and of a bar, in seconds
@@ -186,8 +260,15 @@ export const STINGS = {
   // bells and choir, and the score's first major chord: the light is home
   win: { len: 6, then: 'lamp', notes: [['bell', 0, 12, 2, 0.75], ['bell', 0.3, 16, 2, 0.72], ['bell', 0.6, 19, 2, 0.72], ['bell', 0.9, 24, 3, 0.75],
     ['choir', 0.2, 0, 5, 0.54], ['choir', 0.2, 4, 5, 0.48], ['choir', 0.2, 7, 5, 0.48], ['harp', 0.2, -12, 3, 0.6], ['harp', 0.4, -5, 3, 0.57],
-    ['contrabass', 0.2, -24, 5, 0.68], ['bell', 2.4, 12, 3, 0.63], ['bell', 2.6, 19, 3, 0.6]] }
+    ['contrabass', 0.2, -24, 5, 0.68], ['bell', 2.4, 12, 3, 0.63], ['bell', 2.6, 19, 3, 0.6]] },
+  // the boss's fall, in B (the Reeve's key): one low drum hit, the cello falling an octave, and an open fifth in the choir. 2.5 s
+  // after the fall the light's quiet choir starts (bossFall)
+  fall: { len: 2.2, key: 'reeve', then: 'light', notes: [['drum-lo', 0, -24, 1.4, 0.85], ['timpani', 0, -12, 1.2, 0.5],
+    ['cello', 0.02, 0, 0.32, 0.6], ['cello', 0.34, -1, 0.32, 0.56], ['cello', 0.66, -5, 0.4, 0.54], ['cello', 1.06, -12, 1.1, 0.56],
+    ['choir', 0.3, 0, 1.9, 0.5], ['choir', 0.3, 7, 1.9, 0.44], ['contrabass', 1.06, -24, 1.1, 0.6]] }
 };
+// the key a stinger plays in: its own (the fall's), the Lamp-room's (the win's), or the playing place's
+export const stingKey = (id, place) => keyOf(STINGS[id]?.key || (id === 'win' ? 'lamp' : place || 'gaol'));
 
 /* ---------------- the conductor ----------------
    now(): the context time. lat(): the output latency. lay(note, t, play, layer) lays one note and returns a handle with stop(t),
@@ -196,7 +277,8 @@ export const STINGS = {
 export function makeScore({ now, lat = () => 0, lay, gain = () => {}, step = () => 0, themes = THEMES, onStop = () => {}, ahead = LOOKAHEAD }) {
   const S = {
     state: 'silent', place: null, plays: [], laid: 0, last: null, stopped: false, off: false, dropped: 0, notes: 0, changes: [], live: [],
-    combat: { want: false, guard: false, on: false, quietAt: -1, outAt: -1 }, phase: 0, stingId: null, after: null
+    // the fight as the run's sound sees it: foes awake, a guard zone awake, the fight begun (a tell or a hit), an elite awake
+    fight: { awake: false, guard: false, strings: false, elite: false, quietAt: -1 }, phase: 0, level: 0, levelAt: 0, ember: 0, stingId: null, after: null
   };
   const log = (what, at, more = {}) => {
     S.changes.push({ what, step: step(), at, ...more });
@@ -270,35 +352,51 @@ export function makeScore({ now, lat = () => 0, lay, gain = () => {}, step = () 
     for (const p of S.plays) for (const n of Object.keys(p.layers)) layRange(p, n, from, to);
     S.plays = S.plays.filter(p => !p.ended || p.endAt > now() - 1);
   }
-  /* ---- the rules that change what plays ---- */
-  // the combat layer: in on the next beat (with a pickup) and full on the next bar line; out 2 s after the fight ends, over one bar
-  // from the next bar line. A wake in the wait keeps it
-  function combatRule(t) {
-    const c = S.combat, p = current();
-    if (!p || S.state !== 'place' || !p.theme.layers.combat) return;
-    if (c.want && !c.on) {
-      const b = nextBeat(p.g, Math.max(t, now() + 0.005)), full = nextLine(p.g, b);
-      c.on = true; c.quietAt = -1;
-      enter(p, 'combat', b, Math.max(0.01, full - b), 0.5);
-      p.pickup = b;
-      const f = lay({ inst: 'fill', m: 50, v: 0.6, d: p.g.beat }, b, p, 'combat');
-      if (f) S.live.push({ t: b, end: b + p.g.beat, h: f });
-      log('combat in', b, { full });
-      log('combat full', full);
-    }
-    if (c.on && c.want && c.guard && !(p.layers.guard && p.layers.guard.to === Infinity)) {
-      enter(p, 'guard', nextLine(p.g, now() + 0.005), 0.01);
-    }
-    if (c.on && !c.want) {
-      if (c.quietAt < 0) c.quietAt = t;
-      if (t - c.quietAt >= 2 - EPS) {
-        const at = nextLine(p.g, Math.max(t, head()));
-        leave(p, 'combat', at, p.g.bar);
-        if (p.layers.guard) leave(p, 'guard', at, p.g.bar);
-        c.on = false; c.quietAt = -1;
-        log('combat out', at, { end: at + p.g.bar });
+  /* ---- the rules that change what plays ----
+     the fight's layers (design.md "Layers and their changes"): every change starts on a bar line of the playing theme. drums on the
+     next bar line when foes see the lamplighter (with the tom fill as the pickup on the beat before it, when that line is more than
+     a beat away); strings on the next bar line after the fight begins; guard on the next bar line after a guard zone wakes; elite on
+     the next bar line after an elite wakes, and out on the next bar line after it falls or the fight is calm. When no foe is awake,
+     drums, strings and guard wait 2 s, then fade out over one bar from the next bar line; a wake in the wait keeps them */
+  const playing = (p, n) => p.layers[n]?.to === Infinity;
+  // the next bar line far enough ahead for its first notes to be laid in time
+  const lineAhead = p => nextLine(p.g, now() + 0.02);
+  function layerIn(p, name, why = '') {
+    const at = lineAhead(p);
+    enter(p, name, at, 0.01);
+    log(`${name} in`, at, why ? { why } : {});
+    return at;
+  }
+  function layerOut(p, name, at) {
+    leave(p, name, at, p.g.bar);
+    log(`${name} out`, at, { end: at + p.g.bar });
+  }
+  function fightRule(t) {
+    const F = S.fight, p = current();
+    if (!p || S.state !== 'place' || !p.theme.layers.drums) return;
+    if (F.awake) {
+      F.quietAt = -1;
+      if (!playing(p, 'drums')) {
+        const at = layerIn(p, 'drums');
+        // the pickup: four toms over the last beat before the bar line
+        if (at - p.g.beat > now() + 0.02) {
+          const f = lay({ inst: 'fill', m: 50, v: 0.6, d: p.g.beat }, at - p.g.beat, p, 'fill');
+          if (f) S.live.push({ t: at - p.g.beat, end: at, h: f });
+        }
       }
-    } else c.quietAt = -1;
+      if (F.strings && !playing(p, 'strings')) layerIn(p, 'strings');
+      if (F.guard && !playing(p, 'guard')) layerIn(p, 'guard');
+    }
+    if (F.awake && F.elite) { if (!playing(p, 'elite')) layerIn(p, 'elite'); }
+    else if (playing(p, 'elite')) layerOut(p, 'elite', lineAhead(p));
+    if (!F.awake && ['drums', 'strings', 'guard'].some(n => playing(p, n))) {
+      if (F.quietAt < 0) F.quietAt = t;
+      if (t - F.quietAt >= 2 - EPS) {
+        const at = nextLine(p.g, Math.max(t, head()));
+        for (const n of ['drums', 'strings', 'guard']) if (playing(p, n)) layerOut(p, n, at);
+        F.quietAt = -1;
+      }
+    } else if (F.awake) F.quietAt = -1;
   }
 
   /* ---- the main loop: the 25 ms timer calls tick() ---- */
@@ -317,7 +415,7 @@ export function makeScore({ now, lat = () => 0, lay, gain = () => {}, step = () 
     S.last = t;
     // the timed changes: a stinger's end, a silence's end
     if (S.after && t >= S.after.at - ahead) { const a = S.after; S.after = null; a.fn(a.at); }
-    combatRule(t);
+    fightRule(t);
     const h = head();
     if (h > S.laid) { layAll(S.laid, h); S.laid = h; }
   };
@@ -337,7 +435,7 @@ export function makeScore({ now, lat = () => 0, lay, gain = () => {}, step = () 
     const t0 = fresh();
     endAll(Math.max(now(), t0 - 0.05), 0.6);
     S.after = null; S.phase = 0;
-    S.since = 0; S.state = 'silent'; S.place = id; S.combat.on = false;
+    S.since = 0; S.state = 'silent'; S.place = id;
     startPlay(id, t0, ['amb'], 0.8);
     log('silent', t0, { place: id });
   };
@@ -347,48 +445,78 @@ export function makeScore({ now, lat = () => 0, lay, gain = () => {}, step = () 
     let p = current();
     if (!p || p.id !== id) { const t0 = fresh(); endAll(t0, 0.4); p = startPlay(id, t0, ['amb'], 0.5); }
     const at = nextLine(p.g, head());
-    S.since = 0; S.state = 'place'; S.place = id; S.after = null; S.combat.on = false;
+    S.since = 0; S.state = 'place'; S.place = id; S.after = null;
     enter(p, 'explore', at, 0.01);
     log('place', at, { place: id });
     return at;
   };
-  S.setCombat = (want, guard = false) => { S.combat.want = !!want; S.combat.guard = !!guard; };
+  /* the fight: { awake, guard, strings, elite }, as the run's sound reads it from the bus and the cue log. Only the fields given
+     change; a fight that ends (awake false) ends the fight's strings and its elite too */
+  S.setFight = (o = {}) => {
+    const F = S.fight;
+    for (const k of ['awake', 'guard', 'strings', 'elite']) if (k in o) F[k] = !!o[k];
+    if (!F.awake) F.guard = F.strings = F.elite = false;
+  };
+  // the old switch, kept for one release (the demo's themes and older checks): foes awake brings drums and strings together
+  S.setCombat = (want, guard = false) => S.setFight({ awake: want, guard: want && guard, strings: want });
+  S.setEmber = e => { S.ember = Number.isFinite(e) ? e : 0; };
   // the boss intro: the place's theme stops, one bar of silence under the card, then the drone
   S.bossIntro = () => {
     const t0 = fresh();
     endAll(now() + 0.02, 0.4);
-    S.after = null; S.combat.on = false;
+    S.after = null;
     const g = gridOf('reeve', t0);
     const p = startPlay('reeve', t0, [], 0);
     enter(p, 'drone', t0 + g.bar, 0.6);
-    S.since = 0; S.state = 'boss'; S.place = 'barrows'; S.phase = 0;
+    S.since = 0; S.state = 'boss'; S.place = 'barrows'; S.phase = 0; S.level = 0;
     log('boss 0', t0 + g.bar, { silence: t0 });
   };
-  /* a phase: the boss theme's bar (2.4 s) is longer than the stumble (2.0 s), so a phase starts the theme again from the next beat,
-     with that phase's layers: its first bar line is that beat, inside the stumble. Phase 3 starts the faster theme there. The first
-     phase after the intro waits for the drone's next bar line */
-  S.bossPhase = ph => {
+  /* the boss's levels (BOSS_LEVELS). A level never goes back. Level 1 starts on the drone's next bar line after the boss bar shows.
+     Levels 3 and 5 are the boss's phases 2 and 3: the boss theme's bar (2.4 s) is longer than the stumble (2.0 s), so they start the
+     theme again from the next beat, with that level's layers: its first bar line is that beat, inside the stumble; level 5 starts
+     the faster theme there. Levels 2, 4 and 6 add their layer on the next bar line of the playing theme */
+  function bossLevel(L) {
+    if (!(L >= 1) || L <= S.level) return S.levelAt;
     let p = current();
     if (!p || (p.id !== 'reeve' && p.id !== 'reeve3')) { S.bossIntro(); p = current(); }
-    const at = ph <= 1 ? nextLine(p.g, head()) : nextBeat(p.g, head());
-    S.phase = ph; S.since = 0; S.state = 'boss';
-    const id = ph >= 3 ? 'reeve3' : 'reeve', want = themes[id].phases[Math.min(3, ph)] || [];
-    if (ph <= 1) {
+    const from = S.level, B = BOSS_LEVELS[Math.min(6, L)], want = B.layers;
+    let at;
+    if (from < 1) {
+      at = nextLine(p.g, head());
       for (const n of want) enter(p, n, at, 0.01);
       for (const n of Object.keys(p.layers)) if (!want.includes(n)) leave(p, n, at, 0.2);
-    } else {
+    } else if ((from < 3 && L >= 3) || (from < 5 && L >= 5)) {
+      at = nextBeat(p.g, head());
       endPlay(p, at, 0.04);
-      startPlay(id, at, want, 0.01);
+      startPlay(B.theme, at, want, 0.01);
+    } else {
+      at = nextLine(p.g, now() + 0.02);
+      for (const n of want) if (!playing(p, n)) enter(p, n, at, 0.01);
     }
+    S.level = L; S.levelAt = at; S.since = 0; S.state = 'boss';
+    log(`level ${L}`, at, { bpm: themes[B.theme].bpm });
+    return at;
+  }
+  // a phase of the boss (its 'start' and 'phase' events): the first level of that phase, if the health has not brought it already
+  S.bossPhase = ph => {
+    if (!Number.isFinite(ph)) return;
+    const at = bossLevel(PHASE_LEVEL[Math.min(3, Math.max(1, ph))]);
+    S.phase = ph;
+    const id = current()?.id || 'reeve';
     log(`boss ${ph}`, at, { bpm: themes[id].bpm });
   };
-  // the fall: the score stops, then 2.5 s of silence, then the light's quiet choir
+  // the boss's health share (0 to 1), from each change of the boss bar: the level of that share, once the fight has started
+  S.bossHealth = share => {
+    if (S.state !== 'boss' || S.level < 1 || !Number.isFinite(share)) return;
+    bossLevel(levelOf(share, S.ember));
+  };
+  // the fall: the score stops and the fall sting plays at once; 2.5 s after the fall the light's quiet choir starts
   S.bossFall = () => {
     const t = now();
     endAll(t, 0.12);
     cancel(t + 0.02);
-    S.since = 0; S.state = 'silent'; S.phase = 0;
-    log('silent', t, { fall: true });
+    S.phase = 0; S.level = 0;
+    playSting('fall', t + 0.01);
     S.after = { at: t + 2.5, fn: at => S.light(at) };
   };
   // the light carried after the fall: a quiet choir drone
@@ -398,11 +526,9 @@ export function makeScore({ now, lat = () => 0, lay, gain = () => {}, step = () 
     to('place', at); S.place = 'barrows'; S.after = null;
     log('light', at);
   };
-  // a stinger over the theme, which fades out under it; then what follows it (the Lamp-room theme, or silence)
-  S.sting = (id, then = STINGS[id].then) => {
-    const Z = STINGS[id], t0 = head(), key = keyOf(id === 'win' ? 'lamp' : placeOf() || 'gaol');
-    if (id === 'death') { endAll(now(), 0.25); cancel(t0); } else endAll(now(), 1.2);
-    S.after = null;
+  // lay a stinger's notes from t0, in its key
+  function playSting(id, t0) {
+    const Z = STINGS[id], key = stingKey(id, placeOf());
     const p = { theme: { layers: {} }, id: 'sting', g: gridOf('gaol', t0), layers: {}, ended: true, endAt: t0 + Z.len };
     for (const [inst, at, n, d, v] of Z.notes) {
       const h = lay({ inst, m: key + n, v, d, key, sting: true }, t0 + at, p, 'sting');
@@ -410,7 +536,14 @@ export function makeScore({ now, lat = () => 0, lay, gain = () => {}, step = () 
     }
     S.since = 0; S.state = 'sting'; S.stingId = id;
     log(`sting ${id}`, t0);
-    S.after = { at: t0 + Z.len, fn: at => (then === 'lamp' ? S.lamp(0, at) : S.silence(at)) };
+  }
+  // a stinger over the theme, which fades out under it; then what follows it (the Lamp-room theme, or silence)
+  S.sting = (id, then = STINGS[id].then) => {
+    const Z = STINGS[id], t0 = head();
+    if (id === 'death') { endAll(now(), 0.25); cancel(t0); } else endAll(now(), 1.2);
+    S.after = null;
+    playSting(id, t0);
+    S.after = { at: t0 + Z.len, fn: at => (then === 'lamp' ? S.lamp(0, at) : then === 'light' ? S.light(at) : S.silence(at)) };
   };
   // the Lamp-room theme, after `wait` s of silence
   S.lamp = (wait = 0, at = null) => {
@@ -435,7 +568,7 @@ export function makeScore({ now, lat = () => 0, lay, gain = () => {}, step = () 
     const layers = p ? Object.entries(p.layers).filter(([n, L]) => L.to === Infinity && n !== 'amb').map(([n]) => n) : [];
     return {
       state: S.off ? 'off' : now() < (S.since ?? 0) - 1e-6 ? S.prev : S.state, place: S.place, theme: p?.id ?? null, layers, amb: !!p?.layers.amb && p.layers.amb.to === Infinity,
-      phase: S.phase, bpm: p ? themes[p.id].bpm : null, bar: p ? p.g.bar : null, t0: p ? p.g.t0 : null, dropped: S.dropped, notes: S.notes,
+      phase: S.phase, level: S.level, ember: S.ember, fight: { ...S.fight, quietAt: undefined }, bpm: p ? themes[p.id].bpm : null, bar: p ? p.g.bar : null, t0: p ? p.g.t0 : null, dropped: S.dropped, notes: S.notes,
       changes: S.changes.map(c => ({ ...c }))
     };
   };
@@ -443,15 +576,22 @@ export function makeScore({ now, lat = () => 0, lay, gain = () => {}, step = () 
 }
 
 /* ---------------- the instruments and the bus ---------------- */
-// the bank: one sample every 4 semitones of the range the score plays (manifest.json in audio/)
-export const BANK = ['harp', 'strings', 'contrabass', 'flute', 'choir', 'timpani'];
+/* the bank: one sample every 4 semitones of the range the score plays (manifest.json in audio/). The first six are FluidR3_GM notes;
+   SYNTH are the four made offline by qa/lab/gloam-downs-synth.mjs. A drum has one note, moved up to 7 semitones (REACH) */
+export const SYNTH = ['cello', 'gurdy', 'drum-lo', 'drum-mid'];
+export const BANK = ['harp', 'strings', 'contrabass', 'flute', 'choir', 'timpani', ...SYNTH];
+export const REACH = { 'drum-lo': 7, 'drum-mid': 7 };
 const PLAY = {
   harp: { attack: 0.004, release: 0.5, ring: 1.6, level: 0.9 },
   strings: { attack: 0.12, release: 0.35, sustain: true, level: 0.62 },
   contrabass: { attack: 0.08, release: 0.3, sustain: true, level: 0.8 },
   flute: { attack: 0.09, release: 0.3, sustain: true, level: 0.62, breath: true },
   choir: { attack: 0.4, release: 0.6, sustain: true, level: 0.55 },
-  timpani: { attack: 0.003, release: 0.6, ring: 1.4, level: 0.85 }
+  timpani: { attack: 0.003, release: 0.6, ring: 1.4, level: 0.85 },
+  cello: { attack: 0.06, release: 0.3, sustain: true, level: 0.62 },
+  gurdy: { attack: 0.03, release: 0.22, sustain: true, level: 0.5 },
+  'drum-lo': { attack: 0.002, release: 0.5, ring: 1.4, level: 0.9 },
+  'drum-mid': { attack: 0.002, release: 0.2, ring: 0.5, level: 0.7 }
 };
 export const BUS = { lp: 9000, low: 900, lowDb: -3, pause: 600, pauseDb: -8, wet: 0.2, room: 1.3 };
 
@@ -518,7 +658,7 @@ export function createMusic(ctx, { mix, base = './audio/', fetchFn = null, seed 
   }
   const velGain = v => Math.pow(clamp(v, 0, 1), 1.4) * 1.6;
 
-  /* the sampled bank: the nearest sample, moved by playbackRate (never more than 2 semitones); a sustained note longer than its
+  /* the sampled bank: the nearest sample, moved by playbackRate (never more than 2 semitones, or 7 for a drum); a sustained note longer than its
      sample loops its middle */
   function sampled(n, t, out) {
     const set = M.samples[n.inst];
@@ -610,6 +750,15 @@ export function createMusic(ctx, { mix, base = './audio/', fetchFn = null, seed 
       for (let i = 0; i < 4; i++) hs.push(CODE.tom({ m: n.m - 7 + i * 3, v: 0.35 + i * 0.08 }, t - n.d + (i * n.d) / 4 + n.d, out));
       return { stop: at => hs.forEach(h => h?.stop(at)) };
     },
+    // the hurdy-gurdy's buzz (its "dog" bridge): a 40 ms burst of a noisy pulse at each turn of the wheel, which the score lays on its beats
+    'gurdy-buzz'(n, t, out) {
+      const f = hz(n.m), g = ctx.createGain(), fl = filt('bandpass', 1500, 1.2, null), pk = 0.3 * velGain(n.v);
+      fl.connect(g); g.connect(out);
+      const o = osc('square', f, t, t + 0.06, fl), o2 = osc('square', f * 2, t, t + 0.06, fl, 9);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(pk, t + 0.003); g.gain.setValueAtTime(pk, t + 0.025); g.gain.exponentialRampToValueAtTime(1e-4, t + 0.045);
+      const h = hissV(t, 0.04, 2400, 1.5, 'bandpass', pk * 0.5, out);
+      return voice(out, [o, o2, h.s], [o, o2, fl, g, ...h.nodes], t, t + 0.06);
+    },
     shaker(n, t, out) { const h = hissV(t, 0.035, 6500, 0.7, 'highpass', 0.18 * velGain(n.v), out, 0.004); return voice(out, [h.s], h.nodes, t, t + 0.05); },
     // a chain clank: a few metal clicks and a short ring
     chain(n, t, out) {
@@ -660,13 +809,28 @@ export function createMusic(ctx, { mix, base = './audio/', fetchFn = null, seed 
       return voice(out, [a, b, c], [a, b, c, fl, g], t, t + dur);
     }
   };
-  /* the code voice for a sampled instrument, while the bank loads or when it fails: a filtered saw for strings, a decaying triangle
-     for harp, sines for choir, a pitched noise burst for timpani */
+  /* the code voice for a sampled instrument, while the bank loads or when it fails: a filtered saw for strings and the cello, a
+     decaying triangle for harp, sines for choir, a pitched noise burst for timpani, a saw through a nasal peak for the gurdy, and a
+     falling sine with a slap for the drums */
   function fallback(n, t, out) {
     const f = hz(n.m), g = ctx.createGain(), P = PLAY[n.inst], pk = velGain(n.v) * P.level * 0.5;
     const nodes = [g], srcs = [];
     let end;
-    if (n.inst === 'harp') {
+    if (n.inst === 'drum-lo' || n.inst === 'drum-mid') {
+      const lo = n.inst === 'drum-lo', dur = lo ? 1.2 : 0.4;
+      g.connect(out);
+      const o = osc('sine', f, t, t + dur, g);
+      o.frequency.setValueAtTime(f * 2.2, t); o.frequency.exponentialRampToValueAtTime(f, t + 0.06);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(pk * 1.6, t + 0.002); g.gain.exponentialRampToValueAtTime(1e-4, t + dur);
+      const h = hissV(t, lo ? 0.02 : 0.03, lo ? 700 : 1600, 0.9, 'bandpass', pk * (lo ? 0.4 : 0.7), out);
+      srcs.push(o, h.s); nodes.push(...h.nodes);
+      end = t + dur;
+    } else if (n.inst === 'gurdy') {
+      const fl = filt('bandpass', 1200, 2.5, g), lp = filt('lowpass', 2400, 0.7, g);
+      g.connect(out); nodes.push(fl, lp);
+      srcs.push(osc('sawtooth', f, t, t + n.d + P.release + 0.1, fl, -3), osc('sawtooth', f, t, t + n.d + P.release + 0.1, lp, 3));
+      end = env(g.gain, t, pk * 0.45, P.attack, t + n.d, P.release);
+    } else if (n.inst === 'harp') {
       g.connect(out);
       srcs.push(osc('triangle', f, t, t + 1.4, g));
       g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(pk, t + 0.003); g.gain.exponentialRampToValueAtTime(1e-4, t + 1.3);
@@ -679,7 +843,7 @@ export function createMusic(ctx, { mix, base = './audio/', fetchFn = null, seed 
       srcs.push(h.s); nodes.push(...h.nodes);
       end = t + 1.2;
     } else {
-      const fl = filt('lowpass', n.inst === 'contrabass' ? 420 : n.inst === 'choir' ? 1600 : 1400, 0.7, g);
+      const fl = filt('lowpass', n.inst === 'contrabass' ? 420 : n.inst === 'cello' ? 900 : n.inst === 'choir' ? 1600 : 1400, 0.7, g);
       g.connect(out); nodes.push(fl);
       const type = n.inst === 'choir' || n.inst === 'flute' ? 'triangle' : 'sawtooth';
       srcs.push(osc(type, f, t, t + n.d + P.release + 0.1, fl, -5), osc(type, f, t, t + n.d + P.release + 0.1, fl, 5));
@@ -689,7 +853,8 @@ export function createMusic(ctx, { mix, base = './audio/', fetchFn = null, seed 
     return voice(out, srcs, nodes, t, end);
   }
   function lay(n, t, p, layer) {
-    const out = layer === 'sting' ? input : layerNode(p, layer);
+    // a stinger and the drums' pickup go straight to the bus; every layer has its own gain
+    const out = layer === 'sting' || layer === 'fill' ? input : layerNode(p, layer);
     if (n.sting && !(t >= ctx.currentTime - LATE)) return null;
     if (CODE[n.inst]) return CODE[n.inst](n, t, out);
     return sampled(n, t, out) || fallback(n, t, out);
@@ -754,6 +919,8 @@ export function createMusic(ctx, { mix, base = './audio/', fetchFn = null, seed 
     out.loopStart = s / sr; out.loopEnd = e / sr;
     return out;
   }
+  // one note straight to the bus, outside the score (the demo plays each instrument over its range with it)
+  M.note = (n, t) => lay({ v: 0.6, d: 1, ...n, sting: true }, t, null, 'sting');
   M.view = () => ({ ...M.score.view(), ahead: M.ahead, filter: M.filter, trim: M.trimDb, voices: M.voices.length, samples: M.loaded, bank: M.failed ? 'failed' : M.done ? 'in' : M.loading ? 'loading' : 'none' });
   M.input = input;
   return M;

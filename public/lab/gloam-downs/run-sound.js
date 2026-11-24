@@ -1,12 +1,19 @@
 // Gloam Downs: the run's sound on the page. It makes the AudioContext on the first key, click or tap in a run (never in the explorer
 // or Wander), builds the mix (sound.js) and the score (music.js), lays the logged cues of each frame on the context clock, follows the
 // run's scene for the score, and keeps the Sound and Music switches. Before the context exists every call is cheap and silent, and
-// the scene is kept, so the score starts in the right place.
+// the scene is kept, so the score starts in the right place. It listens to the run's events on the bus (bus.js): the place, the
+// foes that see the lamplighter and the calm after, the elite, the boss's intro, health, phases and fall, the beacon, death, the win
+// and the Lamp-room. The fight's strings start on the first tell or hit of a fight, read from the cue log.
 import { createMix, createSound, cueAt, CUES } from './sound.js';
 import { createMusic, TIMER, keyOf, THEMES, LOOKAHEAD, PHONE_LOOKAHEAD } from './music.js';
+import { on, EVENTS } from './bus.js';
 
+// the cues that begin a fight as a hit does: a hit given, a plunge's landing, a hit taken
+const FIGHT_CUES = new Set(['hit', 'land', 'hurt']);
 export function makeRunSound({ log, rs, phone = false, step = () => 0, ear = () => null, foe = () => null, base = './audio/', fetchFn = null, seed = 1 }) {
-  const A = { ctx: null, mix: null, fx: null, music: null, heard: 0, timer: 0, scene: { kind: 'silent' }, paused: false, low: false, frame: null, failed: null, lead: null };
+  const A = { ctx: null, mix: null, fx: null, music: null, heard: 0, timer: 0, scene: { kind: 'silent' }, paused: false, low: false, frame: null, failed: null, lead: null,
+    // the fight as the score follows it (kept before the context exists), the Ember level, and the events heard
+    fight: { awake: false, guard: false, strings: false, elite: false }, ember: 0, heardEvents: [] };
   // the scene the score follows: arrive (the arrival card), place, boss, lamp or silent. Kept before the context exists
   A.setScene = (kind, o = {}) => {
     const was = A.scene;
@@ -45,7 +52,13 @@ export function makeRunSound({ log, rs, phone = false, step = () => 0, ear = () 
     // the scene so far
     const sc = A.scene;
     A.scene = { kind: 'silent' };
-    if (sc.kind === 'boss') { A.music.score.bossIntro(); if (sc.phase) A.music.score.bossPhase(sc.phase); A.scene = sc; } else A.setScene(sc.kind, sc);
+    A.music.score.setEmber(A.ember);
+    if (sc.kind === 'boss') {
+      A.music.score.bossIntro();
+      if (sc.phase) { A.music.score.bossPhase(sc.phase); if (Number.isFinite(sc.share)) A.music.score.bossHealth(sc.share); }
+      A.scene = sc;
+    } else A.setScene(sc.kind, sc);
+    A.music.score.setFight(A.fight);
     return true;
   };
   /* every later press: a context that a browser made suspended (a touch whose first event was no user activation, an iPhone that
@@ -71,6 +84,8 @@ export function makeRunSound({ log, rs, phone = false, step = () => 0, ear = () 
     if (A.ctx && !fr.t) fr = { ...fr, t: A.ctx.currentTime + 0.005 };
     for (; A.heard < log.length; A.heard++) {
       const c = log[A.heard];
+      // the fight begins on its first tell (a foe's wind-up) or its first hit, given or taken: the strings come in
+      if (A.fight.awake && !A.fight.strings && (CUES[c.cue]?.tell || FIGHT_CUES.has(c.cue))) A.setFight({ strings: true });
       if (!A.ctx || !rs.sound || A.paused || A.ctx.state !== 'running') continue;
       lay(c, cueAt(fr.t, fr.base, c.step));
     }
@@ -106,19 +121,50 @@ export function makeRunSound({ log, rs, phone = false, step = () => 0, ear = () 
     else if (A.low) A.music.setFilter(900, -3);
     else A.music.setFilter(9000, 0);
   };
-  A.combat = (want, guard) => { A.music?.score.setCombat(want, guard); };
-  A.boss = (what, phase) => {
+  // the fight's state for the score: only the fields given change; a calm fight ends its strings and its elite too
+  A.setFight = (o = {}) => {
+    const F = A.fight;
+    for (const k of ['awake', 'guard', 'strings', 'elite']) if (k in o) F[k] = !!o[k];
+    if (!F.awake) F.guard = F.strings = F.elite = false;
+    A.music?.score.setFight(F);
+  };
+  // the old switch (one release): foes awake, and a guard zone among them
+  A.combat = (want, guard) => A.setFight(want ? { awake: true, guard: !!guard } : { awake: false });
+  A.boss = (what, phase, share) => {
     if (what === 'intro') { A.scene = { kind: 'boss', phase: 0 }; A.music?.score.bossIntro(); }
-    else if (what === 'phase') { A.scene = { kind: 'boss', phase }; A.music?.score.bossPhase(phase); }
+    else if (what === 'phase') { A.scene = { kind: 'boss', phase, share: A.scene.share }; A.music?.score.bossPhase(phase); }
+    else if (what === 'health') { if (A.scene.kind === 'boss') A.scene = { ...A.scene, share }; A.music?.score.bossHealth(share); }
     else if (what === 'fall') { A.scene = { kind: 'light', id: 'barrows' }; A.music?.score.bossFall(); }
   };
   A.sting = id => { A.music?.score.sting(id); if (id === 'death') A.scene = { kind: 'silent' }; else A.scene = { kind: 'lamp' }; };
+  /* the run's events on the bus. Each handler only moves the score; one that throws is caught by the bus, so the game goes on.
+     relic-take and combo-tier are heard (the score may answer them later) and change nothing yet */
+  const HANDLERS = {
+    'place-enter': d => { if (Number.isFinite(d.ember)) { A.ember = d.ember; A.music?.score.setEmber(d.ember); } A.setFight({ awake: false }); },
+    'foes-alert': d => A.setFight({ awake: true, ...(d.guard ? { guard: true } : {}), ...(d.elite ? { elite: true } : {}) }),
+    'fight-calm': () => A.setFight({ awake: false }),
+    'elite-alert': () => A.setFight({ awake: true, elite: true }),
+    'elite-fall': () => A.setFight({ elite: false }),
+    'relic-take': () => {},
+    'boss-intro': () => A.boss('intro'),
+    'boss-phase': d => A.boss('phase', d.phase),
+    'boss-health': d => A.boss('health', null, d.share),
+    'boss-fall': () => A.boss('fall'),
+    'beacon-lit': () => A.sting('beacon'),
+    'run-death': () => { A.setFight({ awake: false }); A.sting('death'); },
+    'run-win': () => A.sting('win'),
+    'lamp-room': d => A.setScene('lamp', { wait: d.wait || 0 }),
+    'combo-tier': () => {}
+  };
+  const offs = EVENTS.map(name => on(name, d => { A.heardEvents.push(name); if (A.heardEvents.length > 32) A.heardEvents.shift(); HANDLERS[name]?.(d || {}); }));
+  // stop listening (a test that makes more than one run sound)
+  A.off = () => { for (const f of offs) f(); };
   // __gloam.music(): the score's state, and the mix
   A.view = () => {
     const v = A.music ? A.music.view() : { state: A.scene.kind === 'arrive' ? 'silent' : 'none', place: A.scene.id ?? null, layers: [], changes: [] };
     if (A.ctx && !rs.music) v.state = 'off';
     return {
-      ...v, ctx: A.ctx ? A.ctx.state : null, mix: phone ? 'phone' : 'desktop', scene: { ...A.scene },
+      ...v, fight: { ...A.fight }, events: A.heardEvents.slice(-8), ctx: A.ctx ? A.ctx.state : null, mix: phone ? 'phone' : 'desktop', scene: { ...A.scene },
       buses: A.mix ? { fx: A.mix.fx.gain.value, music: A.mix.music.gain.value, duck: +A.mix.duckDb().toFixed(2), hp: A.mix.hp.frequency.value } : null,
       fxVoices: A.fx ? A.fx.voices() : 0, fxLive: A.fx ? A.fx.liveNames() : [], time: A.ctx ? A.ctx.currentTime : null, failed: A.failed,
       reduction: A.mix ? A.mix.reduction() : null,
