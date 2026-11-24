@@ -15,7 +15,8 @@
 //     five routes at run speed with the mouse taken and free, the rise starts and stops eased, the eye never jolts and the aim's height
 //     is smooth; the combat turn and the swing ease in and out; the mouse's spike cap is the same turn speed at any frame rate; the
 //     mouse's pitch between steps tilts neither the boss camera's view nor a follow view held at its top; and the boss camera's
-//     distance comes in and goes out eased as a pillar passes between.
+//     distance comes in and goes out eased as a pillar passes between; and at 120 Hz near walls and roofs, the eye comes in smoothly,
+//     never in the scenery, and a mouse turn beside a wall or under an overhang, from rest or walking, starts and stops without a jump.
 // Run: node qa/lab/gloam-downs-camera.test.mjs   (GLOAM_WORLDS=0 to leave out the baked places)
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -1273,7 +1274,7 @@ const flipsOf = vals => { let n = 0, ls = 0; for (let i = 1; i < vals.length; i+
    (rAF jitter of ±0.25 ms, seeded) with the mouse taken, at the measured spots in four places (design.md "Smooth camera", "Walls and
    ceilings"), each spot a few hand moves: strafing, walking in and back, a mouse turn from rest, a mouse pitch, a pitch up and a turn
    while backing up. Per drawn frame (blend.view, as frame() draws it): the eye, the distance, the pitch, the mouse's pitch that frame */
-function walls120(id, [x, y, z, camYaw], move, T = 3.5) {
+function walls120(id, [x, y, z, camYaw], move, T = 3.5, hz = 120, before = {}) {
   const { walk, meta } = place(id);
   const b = makeBody(walk, { p: [x, y + 0.3, z], yaw: camYaw - Math.PI }, meta.bounds), cam = cameraFor(walk, '1280x720', camYaw, { auto: true }), blend = makeBlend(cam);
   cam.snap(b.s, camYaw);
@@ -1281,10 +1282,10 @@ function walls120(id, [x, y, z, camYaw], move, T = 3.5) {
   const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
   const input = { dyaw: 0, dpitch: 0, mx: 0, mz: 0, ox: 0, oy: 0, mouse: true };
   const rows = [];
-  for (let f = 0; f < Math.round((T + 0.5) * 120); f++) {
-    const dt = f ? 1 / 120 + (rnd() - 0.5) * 0.0005 : 0;
+  for (let f = 0; f < Math.round((T + 0.5) * hz); f++) {
+    const dt = f ? 1 / hz + (rnd() - 0.5) * 0.0005 : 0;
     t += dt;
-    const k = t < 0.5 ? {} : move(t - 0.5, dt);
+    const k = t < 0.5 ? before : move(t - 0.5, dt);
     let mp = 0;
     if (k.px || k.py) { const m = mouseLook(k.px || 0, k.py || 0, false, MOUSE, Math.max(t - lastEv, 0.001)); lastEv = t; input.dyaw += m.dyaw; input.dpitch += m.dpitch; mp = m.dpitch; }
     input.mx = k.mx || 0; input.mz = k.mz || 0;
@@ -1411,6 +1412,97 @@ if (!skipWorlds) {
     assert(tog <= { 'N3 inOut': 1, 'B2 inOut': 2, 'B3 inOut': 3 }[name], `${name}: the cutaway turned on or off ${tog} times walking in and back`);
   }
   pass('walls at 120 Hz, the review: no dive while the eye is clear, no snap as the mouse lowers the view, and the cutaway on and off less in doorways', out);
+}
+// the nearest the eye came outside the cutaway at 663fade6 in the runs of "turning by walls", part 4, below
+const NEAR_WAS = { f2_120: 7.28, f2_60: 6.67, r1_60: 3.99 };
+if (!skipWorlds) {
+  /* Turning by walls (the user report after 663fade6: "much smoother now, still a small jump turning by walls"; design.md "Smooth
+     camera", "Turning by walls"). At 11 spots (the Barrows wall 0.2 m beside the eye and its overhang, the Bells' overhang and fallen
+     bell, the Ramparts' overhang and doorway, the Fen's canopies, the Gaol's archway and lintelled doorway both ways). Per drawn frame
+     outside the cutaway: the distance's step in, the change of its rate (the jolt), the change of the pitch's step (the pitch's
+     jolt), the frames drawn as the step and held, and the frames with the eye inside the scenery. Figures are 663fade6 -> now.
+     1. At 120 Hz, the view still for 0.5 s and then turned with the mouse at 0.3, 0.6 and 1.2 rad/s each way for 2 s (66 turns).
+        Frames in by over 0.15 m 36 -> 8 (limit 12); jolts over 10 m/s 30 -> 28 (limit 30); held frames 12 -> 0 (limit 0); inside
+        0 -> 0. The largest step in 0.57 -> 0.60 m and the largest jolt 70 -> 74 m/s: the eye passing the Fen canopy's margin where
+        no eye between is clear, still open (limits 0.65 m and 80 m/s). The pitch's jolt 0.034 -> 0.040 rad, and 127 -> 129 frames
+        over 0.006 rad (limits 0.045 and 135): a little worse here, where a 1.2 rad/s turn at the Fen canopy needs the rise at once
+        and the rise starts at its full rate (eased, it came late and the eye came in for it, part 4).
+     2. At 120 Hz, walking forward from the start and turning from 0.5 s: the Ramparts overhang at 1.2 rad/s left and the Barrows
+        overhang at 3 rad/s right. The largest step in 0.33 -> 0.17 m and the largest jolt 39 -> 13 m/s (limits 0.25 m and 25 m/s).
+        The first version of this fix made them 0.40 m and 49 m/s (an eye coming in that slowed by no more than 720 m/s/s, then
+        squeezed on the next step).
+     3. At 60 Hz, the Fen canopy turned at 0.6 rad/s left from rest, and at 0.8 rad/s left while the mouse raised the eye. The largest
+        step in 0.22 -> 0.23 m, and 2 -> 0 frames with the eye inside the scenery (limits 0.35 m and none). The first version of this
+        fix came in by 0.57 m in one step here.
+     4. The rise does not come late and leave the eye to come in for it: the nearest the eye comes outside the cutaway is no more than
+        1 m nearer than at 663fade6 (NEAR_WAS), for the mouse lowering the eye under the Fen canopy at 120 and 60 Hz (the first
+        version of this fix: 4.82 and 5.64 m, an eased rise), and for the Ramparts walk and turn at 60 Hz */
+  const SPOTS = { W3: ['barrows', [1.3, 0.78, -1.28, 3.142]], W1: ['barrows', [3, 0.52, 0.75, 3.142]], B1: ['bells', [0.75, 0.03, 7.5, 2.356]], B3: ['bells', [1.5, 4.5, -8.25, 0]],
+    R1: ['ramparts', [3, -0.04, 17.25, 5.498]], N5: ['ramparts', [-1.75, 1.96, 23.25, 1.571]], F1: ['fen', [-0.75, -0.49, -3.75, 4.712]], F2: ['fen', [3, -0.49, 3, 1.571]],
+    G5: ['gaol', [3.4, 4.1, -17.8, 0]], N3: ['gaol', [6.75, 0.46, -2.75, 0]], N7: ['gaol', [6.75, 0.46, -2.75, 3.142]] };
+  const blank = () => ({ frames: 0, inMax: 0, in15: 0, pjMax: 0, pj6: 0, jolt: 0, j10: 0, held: 0, inside: 0, near: 9, at: '', pjAt: '' });
+  const judge = (r, m, tag) => {
+    let pdp = null, pr = null;
+    for (let i = 1; i < r.length; i++) {
+      const a = r[i - 1], c = r[i], dt = c.t - a.t;
+      if (c.held) m.held++;
+      if (!c.cut && !c.clear) m.inside++;
+      if (!c.cut) m.near = Math.min(m.near, c.dist);
+      if (a.cut || c.cut || !(dt > 0)) { pdp = pr = null; continue; }
+      m.frames++;
+      const dIn = a.dist - c.dist, dp = c.pitch - a.pitch, rr = (c.dist - a.dist) / dt;
+      if (dIn > 0.15) m.in15++;
+      if (dIn > m.inMax) { m.inMax = dIn; m.at = `${tag} at ${c.t.toFixed(2)} s`; }
+      if (pdp !== null) {
+        const pj = Math.abs(dp - pdp), j = Math.abs(rr - pr);
+        if (pj > m.pjMax) { m.pjMax = pj; m.pjAt = `${tag} at ${c.t.toFixed(2)} s`; }
+        if (pj > 0.006) m.pj6++;
+        m.jolt = Math.max(m.jolt, j);
+        if (j > 10) m.j10++;
+      }
+      pdp = dp; pr = rr;
+    }
+    return m;
+  };
+  const turn = (rate, dir, extra = {}) => (t, dt) => ({ ...extra, px: dir * rate / MOUSE.yaw * dt });
+  const show = m => ({ frames: m.frames, inMax: r2(m.inMax), in15: m.in15, pjMax: +m.pjMax.toFixed(4), pj6: m.pj6, jolt: +m.jolt.toFixed(1), j10: m.j10, held: m.held, inside: m.inside });
+  // 1. from rest at 120 Hz
+  const m = blank();
+  for (const [name, [id, spot]] of Object.entries(SPOTS)) for (const rate of [0.3, 0.6, 1.2]) for (const dir of [1, -1])
+    judge(walls120(id, spot, turn(rate, dir), 2).rows, m, `${name} ${rate} rad/s ${dir > 0 ? 'right' : 'left'}`);
+  assert.equal(m.inside, 0, `the eye was drawn inside the scenery on ${m.inside} frames`);
+  assert.equal(m.held, 0, `${m.held} frames drew the step as it is and held it`);
+  assert(m.in15 <= 12, `${m.in15} frames brought the eye in by over 0.15 m (worst ${m.inMax.toFixed(2)} m, ${m.at})`);
+  assert(m.pjMax <= 0.045, `the pitch's step changed by ${m.pjMax.toFixed(3)} rad from one frame to the next (${m.pjAt})`);
+  assert(m.pj6 <= 135, `the pitch's step changed by over 0.006 rad on ${m.pj6} frames`);
+  assert(m.j10 <= 30, `the distance's rate changed by over 10 m/s on ${m.j10} frames`);
+  assert(m.inMax <= 0.65 && m.jolt <= 80, `the eye came in by ${m.inMax.toFixed(2)} m in one frame (${m.at}), and its rate changed by up to ${m.jolt.toFixed(1)} m/s`);
+  // 2. walking while turning at 120 Hz
+  const w = blank();
+  for (const [name, rate, dir] of [['R1', 1.2, -1], ['W1', 3, 1]]) {
+    const [id, spot] = SPOTS[name];
+    judge(walls120(id, spot, turn(rate, dir, { mz: 1 }), 2, 120, { mz: 1 }).rows, w, `${name} walking, ${rate} rad/s ${dir > 0 ? 'right' : 'left'}`);
+  }
+  assert.equal(w.inside, 0, `walking and turning, the eye was drawn inside the scenery on ${w.inside} frames`);
+  assert(w.inMax <= 0.25 && w.jolt <= 25, `walking and turning, the eye came in by ${w.inMax.toFixed(2)} m in one frame (${w.at}), and its rate changed by up to ${w.jolt.toFixed(1)} m/s`);
+  // 3. the Fen canopy at 60 Hz
+  const s60 = blank();
+  judge(walls120('fen', SPOTS.F2[1], turn(0.6, -1), 2, 60).rows, s60, 'F2 0.6 rad/s left at 60 Hz');
+  judge(walls120('fen', SPOTS.F2[1], (t, dt) => ({ px: -0.8 / MOUSE.yaw * dt, py: 0.4 / MOUSE.pitch * dt }), 2, 60).rows, s60, 'F2 turning left and raising the eye at 60 Hz');
+  assert.equal(s60.inside, 0, `at 60 Hz the eye was drawn inside the scenery on ${s60.inside} frames`);
+  assert(s60.inMax <= 0.35, `at 60 Hz the eye came in by ${s60.inMax.toFixed(2)} m in one frame (${s60.at})`);
+  // 4. the nearest the eye comes, against 663fade6
+  const nearest = {};
+  for (const [key, id, spot, move, hz, was] of [
+    ['F2 lowering the eye 120 Hz', 'fen', SPOTS.F2[1], (t, dt) => (t < 1.5 ? { py: -0.8 / MOUSE.pitch * dt } : {}), 120, NEAR_WAS.f2_120],
+    ['F2 lowering the eye 60 Hz', 'fen', SPOTS.F2[1], (t, dt) => (t < 1.5 ? { py: -0.8 / MOUSE.pitch * dt } : {}), 60, NEAR_WAS.f2_60],
+    ['R1 walking and turning 60 Hz', 'ramparts', SPOTS.R1[1], (t, dt) => ({ mz: 1, px: 0.8 / MOUSE.yaw * dt }), 60, NEAR_WAS.r1_60]]) {
+    const n = judge(walls120(id, spot, move, 3, hz).rows, blank(), key).near;
+    nearest[key] = r2(n);
+    assert(n >= was - 1, `${key}: the eye came in to ${n.toFixed(2)} m outside the cutaway (at 663fade6, ${was} m)`);
+  }
+  pass('turning by walls: a mouse turn from rest at 120 Hz, walking and turning, and the Fen canopy at 60 Hz come in without a jump and with no frame held or inside the scenery, and the rise does not leave the eye to come in for it',
+    { rest: show(m), walking: show(w), at60: show(s60), nearest });
 }
 {
   /* A doorway into a roofed room, and a wall that comes between: the figure is never left hidden. A wall 6 or 14 m high and 0.5, 1 or

@@ -312,7 +312,7 @@
 - [x] The near fade and the cut from the drawn eye (`seen()` in main.js; `?test` keeps the step's); `state().cam.drawn` gives the drawn aim, cut and body, `state().seen` the cost
 - [x] Node checks "walls and ceilings at 120 Hz" and "the ceiling check" in `gloam-downs-camera.test.mjs` (both fail on 7c7d55b7); browser check at 120 Hz in `gloam-downs-camera.e2e.mjs` (fails on 7c7d55b7: 3.66 m in one frame)
 - [ ] Try it on a real 120 Hz display with a real mouse (not possible in this session)
-- [ ] A turn from rest beside a wall still squeezes in at up to 0.55 m a step: a smoother ramp needs more than the 360 m/s² the mouse test allows
+- [x] A turn from rest beside a wall still squeezes in at up to 0.55 m a step: see "Turning by walls" below (the squeeze comes in only as fast as it needs, and a turn held back by a wall pulls the eye in by no more than 0.8 m a step; the forced passes at a near face remain)
 - [x] Review of the walls fix: the look-ahead no longer lowers the goal while the eye is clear (no dive from 8.5 to 0.5 m backing up or strafing)
 - [x] Review: the rise held for a mouse pitch goes on where the held rise would let the eye sink into the scenery now or in 0.1 s, or once the figure has been hidden for 0.15 s (no 3.2 m snap as the mouse lowers the view)
 - [x] Review: the near-face stop has a way out: after 0.35 s hidden the cutaway comes on within its rules, or farther out the eye goes on through in one step; the rise's underside check counts only real undersides, not a wall's face
@@ -321,6 +321,24 @@
 - [x] Review: the cut's cone query about once a step in `frame()`, from the frame's drawn eye (the fade still every frame); `state().cam.drawn.body` is a copy
 - [x] Review checks: "walls at 120 Hz, the review" and "a doorway into a roofed room" in `gloam-downs-camera.test.mjs` (both pass on 7c7d55b7, and fail 13 times on the first version of the fix)
 - [ ] The cutaway still turns on and off more than before the fix (218 against 160 in the 384 scenario runs), mostly where it now stands in for a jump of the eye through a wall
+
+### Turning by walls (after "much smoother now, still a small jump turning by walls")
+- [x] Measure first: mouse turns at 0.3, 0.6, 1.2 and 3 rad/s from rest and walking, both ways, at 17 spots at 120 Hz in Node (272 runs), with the camera's branch for each jump
+- [x] The rise's acceleration changes by no more than 3,000 rad/s³ (four times that slowing down), so a turn by a wall no longer starts the rise at 4 rad/s in one step
+- [x] The frame between steps draws the nearest clear share of the step ahead instead of drawing and holding the whole step
+- [x] A spring going out stops when its goal comes in
+- [x] The turn's look-ahead lowers the goal only when it said so on two steps in a row
+- [x] A squeeze comes in only as fast as it needs to clear the wall before its path meets it (15 to 33 m/s)
+- [x] Browser checks `gloam-downs-camera.e2e.mjs`, `gloam-downs-mouse.e2e.mjs` and `gloam-downs-cutaway.e2e.mjs` at the new code
+- [x] Review: the rise's jerk limit holds only while the rise is not needed to keep the eye out (figure in sight, room as far out as the eye, no wall coming with the turn); eased everywhere, the eye came in from 8.4 to 4.8 m as the mouse lowered the eye under the Fen's canopy
+- [x] Review: the eye coming in that slowed by no more than 720 m/s² (`DEC`) is gone (it made 0.79 m and 93 m/s in one frame walking and turning under the Ramparts' overhang)
+- [x] Review: the frame between steps may draw the rise ahead of the turn, and come in to 0.25 m nearer than the nearer step's, so no frame is held in the turn runs
+- [x] Review: the pull-in for a turn held back by a wall is no more than 0.8 m a step (was 0.9 m); the last margin check comes in at no more than 15 m/s first, then goes back out, then holds the turn, and only then comes in the whole 0.3 m (no frame inside the scenery at 60 Hz by the Fen's canopy or walking in the Barrows)
+- [x] Review: Node check "turning by walls" in `gloam-downs-camera.test.mjs`: turns from rest at 120 Hz, walking and turning at 120 Hz, the Fen's canopy at 60 Hz, and the nearest distance against 663fade6 (fails on 663fade6 and on the first version of this fix)
+- [ ] Where the eye stands at the near face of an overhang or a canopy and no eye between is clear, it still passes the margin in one step (Fen F2 0.61 m at 120 Hz), farther out than the cutaway may come on
+- [ ] A 1.2 rad/s turn from rest at the Fen's canopy needs the rise at once: the pitch's step changes by 0.040 rad between two frames (663fade6: 0.034)
+- [ ] In 3 of the 384 review runs at 120 Hz (2 at 60 Hz) the eye still comes over 1 m nearer than at 663fade6, at a cutaway's edge (the look-ahead's two-step agreement; the same with the rise's limit off)
+- [ ] Try it on a real 120 Hz display with a real mouse (not possible in this session)
 
 ### The run's screens
 - [x] HUD: health bar, flask pips, glim; the toast 8 px under the HUD's measured bottom at every width

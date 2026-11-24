@@ -400,7 +400,7 @@ export function makeCamera(walk, o = {}) {
     cut: false, cutK: 0, cutP: pitch0, cutV: 0, cutT: 0, cutD: dist0, cutB: pitch0, cutRef: pitch0, cutOff: 9, vd: dist0, vdv: 0, shown: false,
     // the smooth camera: the rise's rate, the aim's height rate, the swing's and the lane turn's rates, the step's mouse turn, and a
     // count of snaps (a view after a snap is not blended with the one before)
-    liftV: 0, tyV: 0, swingV: 0, laneV: 0, mouseYaw: 0, mousePitch: 0, snaps: 0, pitchT: 9, prate: 0, cross: false
+    liftV: 0, tyV: 0, swingV: 0, laneV: 0, mouseYaw: 0, mousePitch: 0, snaps: 0, pitchT: 9, prate: 0, cross: false, liftA: 0, ahead: false
   };
   const NEAR = 0.5, TOP = 1.35, DIP = 0.1, LIFT = 0.08, THIN = 0.55, SHORT = 0.6, AHEAD = 0.25, RISE = 4, GRACE = 0.15, HEAD = 1.3, CHEST = 0.8, IN = 0.15, OUT = 0.25;
   // the most speed coming in, m/s: past something between (PULL) and to keep the eye out of a wall (SQUEEZE);
@@ -416,7 +416,7 @@ export function makeCamera(walk, o = {}) {
      aim's height follows with a spring of AIM_T s on the ground and twice that in the air (a first-order lag passed each step up a
      slope on as a kink); the swing behind a running lamplighter builds at no more than SWING_ACC rad/s², and the lane turn at no more
      than LANE_ACC, and both ease back out the same way */
-  const LIFT_ACC = 40, LIFT_TURN = 160, AIM_T = 0.1, SWING_ACC = 1, LANE_ACC = 6, PITCH_HOLD = 0.25, PITCH_RATE = 0.25;
+  const LIFT_ACC = 40, LIFT_TURN = 160, LIFT_JERK = 3000, AIM_T = 0.1, SWING_ACC = 1, LANE_ACC = 6, PITCH_HOLD = 0.25, PITCH_RATE = 0.25;
   // a rate eased toward `to`, changing by no more than a·dt this step
   const ease = (v, to, a, dt) => v + clamp(to - v, -a * dt, a * dt);
   /* the underside of the gap over (x, z) in a map baked with undersides (U): the lowest of the four corners round it, or null where
@@ -490,14 +490,16 @@ export function makeCamera(walk, o = {}) {
   const eyeOpen = (x, y, z, yaw, pitch, d) => open(x + Math.sin(yaw) * Math.cos(pitch) * d, y + Math.sin(pitch) * d, z + Math.cos(yaw) * Math.cos(pitch) * d);
   /* is the eye at d clear all the way round as the yaw turns by `by` (and the pitch by `bp`)? A sample every 0.25 m of its path, so no
      wall is stepped over */
-  const arcOpen = (x, y, z, yaw, by, pitch, d, bp = 0, mv = null) => {
+  const arcHit = (x, y, z, yaw, by, pitch, d, bp = 0, mv = null) => {
     const m = mv ? Math.hypot(mv[0], mv[1], mv[2]) : 0, n = Math.ceil((Math.hypot(by * Math.cos(pitch), bp) * d + m) / 0.25);
     for (let k = 0; k <= n; k++) {
       const f = n ? k / n : 0;
-      if (!eyeOpen(x + (m ? mv[0] * f : 0), y + (m ? mv[1] * f : 0), z + (m ? mv[2] * f : 0), yaw + by * f, Math.min(TOP, pitch + bp * f), d)) return false;
+      if (!eyeOpen(x + (m ? mv[0] * f : 0), y + (m ? mv[1] * f : 0), z + (m ? mv[2] * f : 0), yaw + by * f, Math.min(TOP, pitch + bp * f), d)) return f;
     }
-    return true;
+    return -1;
   };
+  // (the share of the way round where it first is not, or -1 where it is clear all the way)
+  const arcOpen = (...a) => arcHit(...a) < 0;
   // is the eye at d clear, and some eye between a and d on the same line not (the way in from d passes through the scenery)?
   const crosses = (x, y, z, yaw, pitch, a, d) => {
     if (!eyeOpen(x, y, z, yaw, pitch, d)) return false;
@@ -619,7 +621,15 @@ export function makeCamera(walk, o = {}) {
        0.45 m a step, as the eye waited on the rise and then had to keep out of the wall; at 160 the rise reaches RISE in one step
        from about 1.1 rad/s up, so only slow turns ease it */
     const A = LIFT_ACC + (looked ? LIFT_TURN * Math.abs(spin) : 0), up = c.goal.lift > c.lift;
-    const cap = c.lift + Math.max(0, Math.min(RISE, c.liftV + A * dt, Math.sqrt(2 * A * Math.max(0, Math.max(c.goal.lift, now.lift) - c.lift)))) * dt;
+    /* and the rise's acceleration itself changes by no more than LIFT_JERK rad/s³ (four times that slowing down): at A alone a turn by
+       a wall took the rise from still to RISE in one step, 0.067 rad, and the blend drew it in one frame. Only while the rise is not
+       what keeps the eye out: the figure in sight, the room at this rise as far out as the eye, and no wall coming with the turn (the
+       look-ahead below, c.ahead, from the step before). Where it is, the acceleration goes to A at once, as before: eased there, the
+       rise came late and the eye came in for it instead (2.5 m in and back out as the mouse lowered the view under the Fen's canopy,
+       and up to 1.5 m more in a turn while walking back or sideways) */
+    const easeA = c.hidden <= 0 && !c.ahead && reach(tx, ty, tz, c.yaw, Math.min(TOP, c.pitch + c.lift), c.want) >= c.dist - 0.05;
+    const aHi = easeA ? Math.min(A, c.liftA + LIFT_JERK * dt) : A, aLo = easeA ? Math.min(aHi, Math.max(-2 * A, c.liftA - 4 * LIFT_JERK * dt)) : -2 * A;
+    const cap = c.lift + Math.max(0, Math.min(RISE, c.liftV + aHi * dt, Math.sqrt(2 * A * Math.max(0, Math.max(c.goal.lift, now.lift) - c.lift)))) * dt;
     /* while the player pitches the view faster than PITCH_RATE rad/s (the mouse, a stick, a drag; eased over 0.1 s) and for PITCH_HOLD s
        after, the rise holds where it is: the pitch on screen is the player's. It took turns with the mouse a step at a time near walls
        and overhangs (its goal steps by 0.08 rad), so a steady move down drew 0, then twice the move, then 0, or went against it. A
@@ -637,9 +647,9 @@ export function makeCamera(walk, o = {}) {
     const held = c.pitchT < PITCH_HOLD && c.hidden <= GRACE && arcOpen(tx, ty, tz, c.yaw, 0, Math.min(TOP, c.pitch + c.lift), c.dist, clamp((c.pitch - pitch0) * 6, -0.3, 0.3));
     const against = () => held;
     if (dt > 0) {
-      let r = clamp((c.goal.lift - c.lift) * (up ? 12 : 2), c.liftV - 2 * A * dt, c.liftV + A * dt);
+      let r = clamp((c.goal.lift - c.lift) * (up ? 12 : 2), c.liftV + aLo * dt, c.liftV + aHi * dt);
       // going up, no faster than lets it come to rest at its goal (past it, slowing at 2·A: a goal that falls away does not stop it dead)
-      if (r > 0) r = Math.min(r, Math.max(Math.sqrt(2 * A * Math.max(0, c.goal.lift - c.lift)), c.liftV - 2 * A * dt));
+      if (r > 0) r = Math.min(r, Math.max(Math.sqrt(2 * A * Math.max(0, c.goal.lift - c.lift)), c.liftV + aLo * dt));
       if (!against()) c.lift += clamp(r, -RISE, RISE) * dt;
     }
     /* the rise easing down must not lower the eye into the scenery: it holds this step, and the eye starts in (at no more than PULL,
@@ -699,7 +709,7 @@ export function makeCamera(walk, o = {}) {
        turn and the rise, below, and for the aim's height alone while the lamplighter is in the air: a jump moves the aim fast, and a
        walker bouncing in a pit was squeezed by 0.8 m in a step without it) */
     const mv = dt > 0 ? [clamp(s.vx, -8, 8) * 0.3, clamp(c.tyV, -4, 4) * 0.3, clamp(s.vz, -8, 8) * 0.3] : null;
-    const squeeze = !arcOpen(tx, ty, tz, yaw0, by, pitch, c.dist, 0, mv);
+    const hit = arcHit(tx, ty, tz, yaw0, by, pitch, c.dist, 0, mv), squeeze = hit >= 0;
     /* the rise easing down (or up) also moves the eye: where that will bring it into the scenery in 0.3 s while the turn alone does
        not, it starts in too, but at no more than PULL */
     const bp = dt > 0 ? clamp((sink || pitch - Math.min(TOP, pitch0 + lift0)) / dt, -2, 2) * 0.3 : 0;
@@ -713,6 +723,10 @@ export function makeCamera(walk, o = {}) {
     /* a nearer goal whose own path round crosses something only lowers the goal, and the eye comes in to it at no more than PULL: the
        eye is clear, so there is time */
     while (ds > NEAR && !round(ds)) ds -= 0.1;
+    /* a squeeze comes in no faster than it needs: half as fast again as the way in to that goal over the time until the eye's path
+       meets the scenery, from PULL to SQUEEZE (at SQUEEZE for any wall 0.3 s ahead, a slow mouse turn by a wall brought the eye in at
+       up to 33 m/s, 0.28 m a frame) */
+    const sqv = squeeze ? clamp(1.5 * (c.dist - ds) / Math.max(0.3 * hit, 2 * dt), PULL, SQUEEZE) : PULL;
     /* the eye also keeps RADIUS clear to either side (Cinemachine's camera radius, the probe size of Unreal's spring arm): where a wall
        stands nearer than that beside the eye, it eases in (at no more than PULL) until both sides are clear, so a turn toward that wall
        starts with room to squeeze in (an eye left 0.2 m beside a wall came in by 1 to 1.5 m on the first step of any turn toward it).
@@ -732,7 +746,13 @@ export function makeCamera(walk, o = {}) {
        wall's near side now, at no more than PULL, before the wall comes between: an eye left behind a wall can only come in through
        it with a jump */
     const d0 = Math.min(c.dist, to);
-    if (looked && Math.abs(sp3) > 0.1) for (const t of AHEADS) ds = Math.min(ds, Math.max(NEAR, reach(tx, ty, tz, c.yaw + sp3 * t, pitch, d0)));
+    /* (only where it said so on the step before too: its room changes with the rise, and a goal that went from 0.5 to 8.5 m and back
+       on every other step stopped the eye dead and started it again, or with the eye eased carried it on in to the cutaway) */
+    let dsA = ds;
+    if (looked && Math.abs(sp3) > 0.1) for (const t of AHEADS) dsA = Math.min(dsA, Math.max(NEAR, reach(tx, ty, tz, c.yaw + sp3 * t, pitch, d0)));
+    const soon2 = dsA < d0 - 0.05;
+    if (soon2 && c.ahead) ds = dsA;
+    c.ahead = soon2;
     if (ds < d0 - 0.05) to = Math.max(NEAR, ds);
     /* the cutaway comes on where the follow eye is heading nearer than TIGHT.in (the best rise cannot clear the room, or the room at this
        yaw, or a wall the turn will bring), before it gets there: so the view never comes in first and pops back out. Where no rise clears
@@ -771,10 +791,13 @@ export function makeCamera(walk, o = {}) {
     if (to < c.dist && d < to) { d = to; v = 0; }
     // nor moves away from it: a spring still coming in fast when its goal moves out would carry on in, past NEAR and through the aim
     else if (to >= c.dist && d < c.dist) { d = c.dist; v = 0; }
+    // and the other way: a spring still going out when its goal comes in nearer stops there (carried on out, it went into the margin
+    // of a wall behind and was pulled back in by 0.12 m in one step)
+    else if (to < c.dist && d > c.dist) { d = c.dist; v = 0; }
     /* coming in is never a dive: at most PULL m/s while the eye is clear and only something between hides the figure (a tree trunk),
        and SQUEEZE m/s where the eye must come in to stay out of a wall, each reached at no more than ACC m/s/s */
     if (dt > 0 && d < c.dist) {
-      const vin = Math.max((d - c.dist) / dt, -(squeeze ? SQUEEZE : PULL), Math.min(0, c.dv) - ACC * dt);
+      const vin = Math.max((d - c.dist) / dt, -sqv, Math.min(0, c.dv) - ACC * dt);
       d = c.dist + vin * dt; v = vin;
     } else if (dt > 0 && d > c.dist) {
       // and back out at no more than BACK m/s
@@ -823,11 +846,13 @@ export function makeCamera(walk, o = {}) {
         let lo = 0, hi = 1;
         for (let i = 0; i < 8; i++) { const m = (lo + hi) / 2; if (at(m)) lo = m; else hi = m; }
         /* but a turn the player makes shows on screen: at least HOLD of it. Where the wall would hold it back more, the eye comes in
-           until that much of the turn is clear, by no more than 0.9 m this step and to no nearer than the room at this yaw (a fast
-           flick, 6 rad/s, may still be held back, rather than the eye jump in) */
+           until that much of the turn is clear, by no more than 0.8 m this step and to no nearer than the room at this yaw (a fast
+           flick, 6 rad/s, may still be held back, rather than the eye jump in; at 0.9 m, a mouse turn raising the eye on the Ramparts
+           brought the eye in by 0.99 m in one step; at a squeeze's step, 0.55 m, a 6 rad/s flick back at a wall 1 m away left the
+           cutaway's tail going out and then came in at once, a change of 0.64 m from one step to the next) */
         const most = looked && turnBy * mine > 0 ? Math.min(1, HOLD * Math.abs(mine) / Math.abs(turnBy)) : 0;
         if (lo < most) {
-          const d1 = d, lim = Math.max(room0, c.dist - 0.9);
+          const d1 = d, lim = Math.max(room0, c.dist - 0.8);
           while (d > lim + 1e-6 && !at(most)) d = Math.max(lim, d - 0.05);
           if (at(most)) { lo = most; if (d < d1) v = 0; } else d = d1;
         }
@@ -842,14 +867,30 @@ export function makeCamera(walk, o = {}) {
       }
     }
     /* last, the eye this step ends on is clear by the full 0.35: an eye a few cm inside the margin (an eased eye nearer than the room,
-       taken as clear, under an overhang's edge) comes in until it is, by no more than 0.3 m (not in or round the cutaway, whose view is
-       drawn instead) */
+       taken as clear, under an overhang's edge) comes in until it is, by no more than 0.3 m, and first with the step's own move in to
+       no more than PULL·dt (added to the spring's step, it came in by 0.78 m in one 60 Hz step at the Fen's canopy). Where that does
+       not clear it, it goes back out by up to 0.3 m (the eye risen into the margin over a canopy's top, which the room's march steps
+       over); where that does not either, the step's turn goes only as far as keeps it clear, as above (the eye stood inside for a
+       frame or two in a 3 rad/s turn while walking in the Barrows); and only where no part of the turn is clear does it come in the
+       whole 0.3 m. Not in or round the cutaway, whose view is drawn instead */
     {
-      const pe = Math.min(TOP, c.pitch + c.lift);
-      if (!c.cut && !c.cutK && !eyeOpen(tx, ty, tz, c.yaw, pe, d)) {
+      const pe = Math.min(TOP, c.pitch + c.lift), ok = e => eyeOpen(tx, ty, tz, c.yaw, pe, e);
+      if (!c.cut && !c.cutK && !ok(d)) {
         let e = d;
-        while (e > Math.max(NEAR, d - 0.3) && !eyeOpen(tx, ty, tz, c.yaw, pe, e)) e -= 0.02;
-        if (eyeOpen(tx, ty, tz, c.yaw, pe, e)) { if (dt > 0) v = Math.min(v, (e - c.dist) / dt); d = e; }
+        while (e > Math.max(NEAR, d - 0.3, Math.min(d, c.dist - PULL * dt)) && !ok(e)) e -= 0.02;
+        if (!ok(e)) { let f = d; while (f < Math.min(c.want, d + 0.3) && !ok(f)) f += 0.02; if (ok(f)) e = f; }
+        // (the turn held at this distance, or else at the distance the step began from)
+        const d1 = d;
+        if (!ok(e) && !at(0)) { d = c.dist; if (!at(0)) d = d1; else v = 0; }
+        if (!ok(e) && at(0)) {
+          let lo = 0, hi = 1;
+          for (let i = 0; i < 8; i++) { const m = (lo + hi) / 2; if (at(m)) lo = m; else hi = m; }
+          c.off -= leant * (1 - lo); at(lo); pitch = Math.min(TOP, c.pitch + c.lift);
+        } else {
+          if (!ok(e)) { e = d; while (e > Math.max(NEAR, d - 0.3) && !ok(e)) e -= 0.02; }
+          if (ok(e) && dt > 0) v = e < d ? Math.min(v, (e - c.dist) / dt) : (e - c.dist) / dt;
+          if (ok(e)) d = e;
+        }
       }
     }
     /* and a step that would still take the eye in through the scenery by more than a squeeze's step (a turn whose way round crosses a
@@ -866,7 +907,7 @@ export function makeCamera(walk, o = {}) {
     c.dist = Math.max(NEAR, d); c.dv = v;
     /* the rise's rate this step, before a wall held back part of the step (a hold that also took the rate fed back: the rise built
        from nothing again each step and stalled against the wall); and the share of the mouse's turn shown */
-    if (dt > 0) c.liftV = (liftT - lift0) / dt;
+    if (dt > 0) { const lv = (liftT - lift0) / dt; c.liftA = clamp((lv - c.liftV) / dt, -2 * A, A); c.liftV = lv; }
     c.mouseYaw = inp.dyaw ? inp.dyaw * (turnBy ? clamp(wrap(c.yaw - yaw0) / turnBy, 0, 1) : 1) : 0;
     c.mousePitch = inp.dpitch && Math.sign(c.pitch - pitch0) === Math.sign(inp.dpitch) ? Math.sign(inp.dpitch) * Math.min(Math.abs(inp.dpitch), Math.abs(c.pitch - pitch0)) : 0;
     // the cutaway: the view stands TIGHT.dist back at the player's yaw, raised over the roof where that clears it
@@ -1009,7 +1050,7 @@ export function makeCamera(walk, o = {}) {
     c.yaw = yaw; c.target = [s.x, s.y + aimAt(s.x, s.y, s.z), s.z]; c.idle = 9;
     c.goal = solve(c.target[0], c.target[1], c.target[2], yaw, [s.x, s.y + HEAD, s.z]);
     c.lift = c.goal.lift; c.goals = [c.lift]; c.hidden = 0; c.dv = 0;
-    c.liftV = c.tyV = c.swingV = c.laneV = c.mouseYaw = c.mousePitch = c.prate = 0; c.pitchT = 9; c.cross = false; c.snaps++;
+    c.liftV = c.tyV = c.swingV = c.laneV = c.mouseYaw = c.mousePitch = c.prate = c.liftA = 0; c.pitchT = 9; c.cross = c.ahead = false; c.snaps++;
     c.dist = Math.max(NEAR, reach(c.target[0], c.target[1], c.target[2], yaw, Math.min(TOP, c.pitch + c.lift), c.want));
     // the cutaway starts whole where the place puts the lamplighter
     c.cut = c.want > TIGHT.out && c.goal.dist < TIGHT.in; c.cutK = c.cut ? 1 : 0; c.cutV = 0; c.cutT = 0; c.cutOff = 9;
@@ -1056,7 +1097,7 @@ export function makeCamera(walk, o = {}) {
    until the next step). step(view, s) after each step's camera; reset() where the page lays a new view; view(k, dyaw, dpitch) and body(s, k) for the
    frame */
 export function makeBlend(cam) {
-  let prev = null, cur = null, snaps = -1, pb = null, cb = null, mouse = [0, 0], held = false, pshare = 1, share1 = 1;
+  let prev = null, cur = null, snaps = -1, pb = null, cb = null, mouse = [0, 0], held = false, ahead = 0, aheadP = 0, pshare = 1, share1 = 1;
   const wrapA = a => Math.atan2(Math.sin(a), Math.cos(a));
   // the part of the mouse's turn m that the view's own move d of this step followed: the same way, and no more than d (a limit, the
   // rise or the boss camera's own pitch that took the mouse's move back is not drawn)
@@ -1067,7 +1108,7 @@ export function makeBlend(cam) {
       snaps = cam.c.snaps;
       if (fresh) pshare = share1 = 1;
       // a view whose aim jumped over 2 m in a step (a body moved without a snap) is not blended either
-      prev = fresh || !cur || Math.hypot(...v.target.map((q, i) => q - cur.target[i])) > 2 ? null : cur; cur = v; held = false;
+      prev = fresh || !cur || Math.hypot(...v.target.map((q, i) => q - cur.target[i])) > 2 ? null : cur; cur = v; held = false; ahead = aheadP = 0;
       const b = { x: s.x, y: s.y, z: s.z, yaw: s.yaw, floor: s.floor };
       pb = fresh || !cb || Math.hypot(b.x - cb.x, b.y - cb.y, b.z - cb.z) > 2 ? null : cb; cb = b;
       mouse = prev ? [followed(cam.c.mouseYaw || 0, wrapA(cur.yaw - prev.yaw)), followed(cam.c.mousePitch || 0, cur.pitch - prev.pitch)] : [0, 0];
@@ -1077,27 +1118,46 @@ export function makeBlend(cam) {
       if (cam.c.mousePitch) { const sh = prev ? Math.abs(mouse[1] / cam.c.mousePitch) : 1; pshare = Math.min(sh, share1); share1 = sh; }
     },
     // (for checks: the frame's state)
-    get dbg() { return { prev, cur, held, mouse: mouse.slice(), pshare }; },
-    reset() { prev = cur = pb = cb = null; mouse = [0, 0]; held = false; pshare = share1 = 1; },
+    get dbg() { return { prev, cur, held, ahead, aheadP, mouse: mouse.slice(), pshare }; },
+    reset() { prev = cur = pb = cb = null; mouse = [0, 0]; held = false; ahead = aheadP = 0; pshare = share1 = 1; },
     view(k, dyaw = 0, dpitch = 0) {
       if (!cur) return null;
       let v = cur;
       if (prev && k < 1 && !held) {
-        k = clamp(k, 0, 1);
-        const m = (p, q) => p + (q - p) * k, j = 1 - k;
-        v = { ...cur, target: cur.target.map((q, i) => m(prev.target[i], q)), dist: m(prev.dist, cur.dist), pitch: m(prev.pitch, cur.pitch) + mouse[1] * j,
-          yaw: prev.yaw + wrapA(cur.yaw - prev.yaw) * k + mouse[0] * j, ...(prev.fov && cur.fov ? { fov: m(prev.fov, cur.fov) } : {}) };
+        const at = (k, p = k) => {
+          const m = (a, b) => a + (b - a) * k, j = 1 - k;
+          return { ...cur, target: cur.target.map((q, i) => m(prev.target[i], q)), dist: m(prev.dist, cur.dist), pitch: prev.pitch + (cur.pitch - prev.pitch) * p + mouse[1] * (1 - p),
+            yaw: prev.yaw + wrapA(cur.yaw - prev.yaw) * k + mouse[0] * j, ...(prev.fov && cur.fov ? { fov: m(prev.fov, cur.fov) } : {}) };
+        };
         /* a blended eye in the scenery where the step's own is clear (a straight blend of two clear eyes can cut through a corner)
-           comes in, at the blended angles, only as far as it must to be clear: the frame then still moves between the two steps (drawn
-           as the step and held, the whole step showed in one frame and the next did not move). Only where no distance down to the
-           nearer step's is clear does it draw the step, and keep to it until the next step (it does not go back and forth) */
+           comes in, at the blended angles, only as far as it must to be clear, to 0.25 m nearer than the nearer step's at most: the
+           frame then still moves between the two steps (drawn as the step and held, the whole step showed in one frame and the next
+           did not move) */
+        const fix = v => {
+          if (cam.clear(v)) return v;
+          const lo = { ...v, dist: Math.max(0.5, Math.min(prev.dist, cur.dist) - 0.25) };
+          if (!(lo.dist < v.dist && cam.clear(lo))) return null;
+          let a = lo.dist, b = v.dist;
+          for (let i = 0; i < 6; i++) { const mid = (a + b) / 2; if (cam.clear({ ...v, dist: mid })) a = mid; else b = mid; }
+          return { ...v, dist: a };
+        };
+        /* it may also draw a share of the step ahead (in eighths), and the pitch's share ahead of the rest (the rise before the turn),
+           and keeps to at least those shares until the next step, so it does not go back: of these, and the eye come in at this share,
+           the frame draws the clear eye nearest the blended one (come in at the share alone, it drew a whole step's 0.5 m in one frame
+           in a 3 rad/s turn by a wall). Only where none is clear does it draw the step itself and hold it (a turn from rest by a wall
+           drew the whole step, its rise of 0.06 rad, in one frame and then stood still) */
+        k = Math.max(clamp(k, 0, 1), ahead);
+        const kp = Math.max(k, aheadP);
+        v = at(k, kp);
         if (!cur.cut && !cam.clear(v) && cam.clear(cur)) {
-          const lo = { ...v, dist: Math.min(prev.dist, cur.dist) };
-          if (lo.dist < v.dist && cam.clear(lo)) {
-            let a = lo.dist, b = v.dist;
-            for (let i = 0; i < 6; i++) { const mid = (a + b) / 2; if (cam.clear({ ...v, dist: mid })) a = mid; else b = mid; }
-            v = { ...v, dist: a };
-          } else { v = cur; held = true; }
+          const e0 = eyeOf(v), off = w => Math.hypot(...eyeOf(w).map((q, i) => q - e0[i]));
+          let w = fix(v), best = w ? off(w) : Infinity, bq = k, bp = kp;
+          for (let q = k; q < 1 - 1e-9; q = Math.floor(q * 8 + 1) / 8) for (let p = Math.max(q, kp); p <= 1 + 1e-9; p = Math.floor(p * 8 + 1) / 8) {
+            if (q === k && p === kp) continue;
+            const u = fix(at(q, Math.min(1, p)));
+            if (u && off(u) < best - 1e-6) { w = u; best = off(u); bq = q; bp = Math.min(1, p); }
+          }
+          if (w) { v = w; ahead = bq; aheadP = bp; } else { v = cur; held = true; }
         }
       }
       return cam.look(v, dyaw, dpitch * pshare);

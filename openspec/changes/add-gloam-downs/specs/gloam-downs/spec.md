@@ -471,7 +471,7 @@ Every frame SHALL draw the camera between its last two fixed steps, blended by t
 - **THEN** that move turns the view by no more than 120 px, 0.264 rad. Check: browser test `gloam-downs-camera.e2e.mjs` (the lock taken for real; it cannot bring the free move within 0.1 s of the first locked one, so that part is by reading `input.js`: the free cursor's moves and each change of the lock leave no time of a last move).
 
 ### Requirement: Camera near walls and ceilings
-Near walls and under roofs, overhangs, arches and beams, the camera SHALL change its distance and height smoothly on every drawn frame at 120 Hz. It SHALL not draw the eye inside the scenery, nor move it through a roof or a wall between frames by more than a few cm at an edge; where coming in would pass through one, the cutaway SHALL cut the splats between. A clear eye SHALL not come in. The rise SHALL not lift the eye into an underside. The near fade SHALL follow the drawn eye.
+Near walls and under roofs, overhangs, arches and beams, the camera SHALL change its distance and height smoothly on every drawn frame at 120 Hz, as a turn starts too. It SHALL not draw the eye inside the scenery, nor move it through a roof or a wall between frames by more than a few cm; where coming in would pass through one, the cutaway SHALL cut the splats between. A clear eye SHALL not come in. The rise SHALL not lift the eye into an underside. The near fade SHALL follow the drawn eye.
 
 #### Scenario: Walking and strafing beside a wall or under a roof
 - **WHEN** the lamplighter strafes, walks in and backs out in the Gaol's torn cell, with the eye risen over its roof, or the player turns the view with the mouse from rest with a wall 0.2 m beside the eye, at 120 Hz
@@ -492,6 +492,14 @@ Near walls and under roofs, overhangs, arches and beams, the camera SHALL change
 #### Scenario: A doorway, or a wall that comes between
 - **WHEN** the lamplighter walks through a doorway in a wall 6 or 14 m high into a room with or without a roof and strafes along it, or a tall wall comes between the eye and the figure
 - **THEN** the figure is never hidden behind the wall for more than 0.5 s outside the cutaway, and a tall wall that only runs alongside the line of sight does not bring the eye in. Check: Node test `gloam-downs-camera.test.mjs` ("a doorway into a roofed room").
+
+#### Scenario: A mouse turn beside a wall, from rest or walking
+- **WHEN** the view is still beside a wall, under an overhang or a canopy, or in a doorway (11 spots in four places), and the player turns it with the mouse at 0.3, 0.6 or 1.2 rad/s either way at 120 Hz; or walks forward while turning under the Ramparts' overhang at 1.2 rad/s or the Barrows' at 3 rad/s at 120 Hz; or turns by the Fen's canopy at 60 Hz
+- **THEN** the eye's pull-in and the rise start and stop without a jump, no frame is held, and none draws the eye inside the scenery. Turning from rest: no more than 12 frames come in by over 0.15 m, no more than 30 frames change the distance's rate by over 10 m/s, and the pitch's step changes by no more than 0.045 rad between two frames (135 frames or fewer over 0.006 rad). Walking and turning: no frame comes in by over 0.25 m or changes the rate by over 25 m/s. At 60 Hz: no frame comes in by over 0.35 m. At 663fade6: 36 frames over 0.15 m, 12 held, and 0.33 m and 39 m/s walking. Check: Node test `gloam-downs-camera.test.mjs` ("turning by walls", parts 1 to 3); scratch `camerawalls/turn/turns.mjs` for the 272 runs at four rates, from rest and walking.
+
+#### Scenario: The rise keeps up as the view turns or lowers under a canopy
+- **WHEN** the player lowers the eye with the mouse under the Fen's canopy at 120 or 60 Hz, or walks and turns under the Ramparts' overhang at 60 Hz
+- **THEN** the rise starts at once where it keeps the eye out, so the eye comes no more than 1 m nearer than at 663fade6 outside the cutaway (7.28, 6.67 and 3.99 m there). An eased rise brought the eye from 8.4 to 4.8 m and back out. Check: Node test `gloam-downs-camera.test.mjs` ("turning by walls", part 4); scratch `camerawalls/fx/dives.mjs` for the 384 review runs at 120 and 60 Hz.
 
 #### Scenario: The near fade on a fast display
 - **WHEN** the lamplighter walks into the torn cell and back, or backs up and turns by the Barrows wall beside the eye so the eye comes near the figure, at 120 Hz
