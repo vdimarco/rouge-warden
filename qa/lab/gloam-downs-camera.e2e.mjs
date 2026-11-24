@@ -15,7 +15,7 @@ import zlib from 'node:zlib';
 import { createRequire } from 'node:module';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { makeWalk } from '../../public/lab/gloam-downs/play.js';
+import { makeWalk, makeCamera, camLayout, fadeOf, eyeOf } from '../../public/lab/gloam-downs/play.js';
 import { ROUTES } from '../../games/gloam-downs/lib/zones.mjs';
 const { chromium } = createRequire(new URL('../browser/x.mjs', import.meta.url))('playwright');
 const SITE = (process.env.SITE_URL || 'http://127.0.0.1:8822').replace(/\/$/, '');
@@ -25,6 +25,8 @@ const DIR = fileURLToPath(new URL('../../public/lab/gloam-downs/', import.meta.u
 const ORDER = ['gaol', 'ramparts', 'fen', 'bells', 'barrows'];
 const executablePath = existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined;
 const GL = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'];
+// the mouse's pitch per pixel (input.js MOUSE.pitch); a right drag of the free mouse turns at twice that
+const MOUSE_PITCH = 0.0018, MOUSE_YAW = 0.0022;
 const LAYOUTS = [[1280, 720], [800, 600], [390, 844], [360, 640], [320, 640]];
 const phone = ([w, h]) => w < h;
 let n = 0;
@@ -215,6 +217,87 @@ try {
     assert(lo > 0 && hi / lo <= 1.3, `at 144 Hz a frame turned the drawn view by ${(lo * 180 / Math.PI).toFixed(3)} to ${(hi * 180 / Math.PI).toFixed(3)}°`);
     assert.deepEqual(errors, []);
     pass('at 144 Hz a steady mouse move turns the drawn view by the same angle on every frame', { deg: +(turns[0] * 180 / Math.PI).toFixed(3), ratio: +(hi / lo).toFixed(3), frames: turns.length });
+    await browser.close(); browsers.delete(browser);
+  }
+  { /* walls and ceilings at 120 Hz (design.md "Smooth camera", "Walls and ceilings"; the report after 7c7d55b7: "it's 120hz, still a
+       bit jumpy near walls and things on ceilings"): the page without ?test, its requestAnimationFrame stubbed with a 120 Hz display's
+       times (±0.25 ms), and the GPU's draws skipped once the place is loaded, so main.js frame(), the blend and the near fade run as
+       they are. In the Gaol's torn cell, the eye risen over the roof, the lamplighter strafes left then right (A, D), and walks in and back out (W, then S); under the
+       overhang by the Gaol's yard the mouse drags the view up and down. On every frame: the drawn distance comes in by no more than
+       0.6 m (before, 6.21 -> 2.55 m in one frame and then still), the drawn eye is clear of the scenery (outside the cutaway), and the
+       near fade is the one for the eye and the lamplighter that frame drew (before, it was set from the step's eye and went to 2 a
+       frame before the eye came in). The fade is also checked backing up and turning by the Barrows wall beside the eye, where the eye
+       comes near the figure: walking in and back in the torn cell no longer brings it near (the cutaway takes the view over the roof) */
+    const browser = await chromium.launch({ executablePath, args: GL });
+    browsers.add(browser);
+    const page = await browser.newPage({ viewport: { width: 480, height: 270 } });
+    const errors = [];
+    page.on('pageerror', e => errors.push(e.message));
+    await page.addInitScript(() => {
+      window.__raf = [];
+      window.requestAnimationFrame = cb => { window.__raf.push(cb); return window.__raf.length; };
+      for (const m of ['drawArrays', 'drawElements', 'drawArraysInstanced', 'drawElementsInstanced', 'clear', 'readPixels']) {
+        const f = WebGL2RenderingContext.prototype[m];
+        WebGL2RenderingContext.prototype[m] = function (...a) { return window.__skip ? undefined : f.apply(this, a); };
+      }
+      window.__pump = now => { const q = window.__raf.splice(0); for (const cb of q) cb(now); return q.length; };
+    });
+    await page.goto(`${SITE}/lab/gloam-downs/?explore&fresh&q=low`, { waitUntil: 'domcontentloaded', timeout: 180000 });
+    let t = 1000, seed = 7;
+    const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
+    const pump = () => { t += 1000 / 120 + (rnd() - 0.5) * 0.5; return G(page, n => window.__pump(n), t); };
+    for (let i = 0; i < 400 && !(await G(page, () => !!window.__gloam?.ready?.())); i++) { await pump(); await page.waitForTimeout(300); }
+    await G(page, () => { window.__skip = true; window.__gloam.close(); });
+    if (await G(page, () => window.__gloam.state().place) !== 'gaol') {
+      await G(page, () => window.__gloam.go('gaol'));
+      for (let i = 0; i < 400 && !(await G(page, () => window.__gloam.ready() && window.__gloam.state().place === 'gaol')); i++) { await pump(); await page.waitForTimeout(300); }
+      await G(page, () => window.__gloam.close());
+    }
+    const out = [];
+    for (const [name, id, [x, y, z, camYaw], frames, act] of [
+      ['torn cell, strafing', 'gaol', [9.0, -2.2, -1.5, 3.927], 420, f => ({ key: f < 180 ? 'KeyA' : 'KeyD' })],
+      ['torn cell, walking in and back', 'gaol', [9.0, -2.2, -1.5, 3.927], 420, f => ({ key: f < 180 ? 'KeyW' : 'KeyS' })],
+      ['under the overhang, the mouse pitching', 'gaol', [6, -2.19, 12, 0.785], 300, f => ({ dy: (Math.floor(f / 48) % 2 ? -1 : 1) * 1.6 / (MOUSE_PITCH * 2) / 120 })],
+      ['the Barrows, backing up and turning by the wall', 'barrows', [1.3, 0.78, -1.28, 3.142], 480, f => ({ key: 'KeyS', dx: -(f < 180 ? 1 : -1) * 0.6 / (MOUSE_YAW * 2) / 120 })]
+    ]) {
+      if (await G(page, () => window.__gloam.state().place) !== id) {
+        await G(page, id => window.__gloam.go(id), id);
+        for (let i = 0; i < 400 && !(await G(page, id => window.__gloam.ready() && window.__gloam.state().place === id, id)); i++) { await pump(); await page.waitForTimeout(300); }
+        await G(page, () => { window.__skip = true; window.__gloam.close(); });
+      }
+      const probe = makeCamera(walks[id], { yaw: 0, ...camLayout(480, 270) });
+      await G(page, ([x, y, z, by]) => window.__gloam.teleport(x, z, by, y + 0.3), [x, y, z, camYaw - Math.PI]);
+      for (let i = 0; i < 60; i++) await pump();
+      await page.mouse.move(240, 135);
+      let mx = 240, my = 135, down = false, key = null, last = null, worst = 0, inside = 0, fadeWrong = 0, fadeSeen = 0, at = '';
+      const s0 = await G(page, () => window.__gloam.state().seen);
+      for (let f = 0; f < frames; f++) {
+        const a = act(f);
+        if (a.key !== key) { if (key) await page.keyboard.up(key); if (a.key) await page.keyboard.down(a.key); key = a.key; }
+        if (a.dy || a.dx) { if (!down) { await page.mouse.down({ button: 'right' }); down = true; } my += a.dy || 0; mx += a.dx || 0; await page.mouse.move(mx, my); }
+        await pump();
+        const s = await G(page, () => { const s = window.__gloam.state(); return { d: s.cam.drawn, fade: s.fade }; });
+        const v = s.d;
+        if (last && !v.cut && !last.cut && last.dist - v.dist > worst) { worst = last.dist - v.dist; at = `frame ${f}: ${last.dist.toFixed(2)} -> ${v.dist.toFixed(2)} m`; }
+        if (!v.cut && !probe.clear(v)) inside++;
+        const want = fadeOf(eyeOf(v), v.body);
+        if (s.fade !== want) fadeWrong++;
+        if (want > 0) fadeSeen++;
+        last = v;
+      }
+      if (key) await page.keyboard.up(key);
+      if (down) await page.mouse.up({ button: 'right' });
+      const s1 = await G(page, () => window.__gloam.state().seen);
+      const cost = (s1.ms - s0.ms) / Math.max(1, s1.n - s0.n);
+      assert(worst <= 0.6, `${name}: the drawn distance came in by ${worst.toFixed(2)} m in one frame (${at})`);
+      assert.equal(inside, 0, `${name}: the drawn eye was inside the scenery on ${inside} frames`);
+      assert.equal(fadeWrong, 0, `${name}: the near fade was not the drawn eye's on ${fadeWrong} frames`);
+      // (backing up to the wall the eye comes near the figure, so the fade has bands to get wrong)
+      if (name.includes('backing')) assert(fadeSeen > 0, `${name}: the near fade never thinned the figure, so the check saw nothing`);
+      out.push({ name, frames, worstIn: +worst.toFixed(3), fadedFrames: fadeSeen, seenMs: +cost.toFixed(3) });
+    }
+    assert.deepEqual(errors, []);
+    pass('walls and ceilings at 120 Hz: the drawn eye comes in smoothly and stays clear, and the near fade is the drawn eye\'s', out);
     await browser.close(); browsers.delete(browser);
   }
   { /* the first move once the mouse is taken (input.js): a run's Begin takes the mouse for real, 50 ms pass, and Chrome's first locked

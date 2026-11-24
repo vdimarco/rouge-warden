@@ -400,14 +400,14 @@ export function makeCamera(walk, o = {}) {
     cut: false, cutK: 0, cutP: pitch0, cutV: 0, cutT: 0, cutD: dist0, cutB: pitch0, cutRef: pitch0, cutOff: 9, vd: dist0, vdv: 0, shown: false,
     // the smooth camera: the rise's rate, the aim's height rate, the swing's and the lane turn's rates, the step's mouse turn, and a
     // count of snaps (a view after a snap is not blended with the one before)
-    liftV: 0, tyV: 0, swingV: 0, laneV: 0, mouseYaw: 0, mousePitch: 0, snaps: 0
+    liftV: 0, tyV: 0, swingV: 0, laneV: 0, mouseYaw: 0, mousePitch: 0, snaps: 0, pitchT: 9, prate: 0, cross: false
   };
   const NEAR = 0.5, TOP = 1.35, DIP = 0.1, LIFT = 0.08, THIN = 0.55, SHORT = 0.6, AHEAD = 0.25, RISE = 4, GRACE = 0.15, HEAD = 1.3, CHEST = 0.8, IN = 0.15, OUT = 0.25;
   // the most speed coming in, m/s: past something between (PULL) and to keep the eye out of a wall (SQUEEZE);
   // the most going back out (BACK); and how fast each builds
   const PULL = 15, SQUEEZE = 33, BACK = 12, ACC = 360, AHEADS = [0.15, 0.3, 0.45];
   // the least share of a player's turn that a wall may leave on screen (the rest it holds back, a camera orbiting against a wall)
-  const HOLD = 0.85;
+  const HOLD = 0.85, RADIUS = 0.3, RADIUS_IN = 2, ESCAPE = 0.2;
   /* the cutaway's tail: eased out, the view's distance still coming back to the follow eye's (the splats stay cut while it comes in,
      or while its eye is in the scenery) */
   const TAIL = 0.01, JERK = 0.3;
@@ -416,7 +416,7 @@ export function makeCamera(walk, o = {}) {
      aim's height follows with a spring of AIM_T s on the ground and twice that in the air (a first-order lag passed each step up a
      slope on as a kink); the swing behind a running lamplighter builds at no more than SWING_ACC rad/s², and the lane turn at no more
      than LANE_ACC, and both ease back out the same way */
-  const LIFT_ACC = 40, LIFT_TURN = 160, AIM_T = 0.1, SWING_ACC = 1, LANE_ACC = 6;
+  const LIFT_ACC = 40, LIFT_TURN = 160, AIM_T = 0.1, SWING_ACC = 1, LANE_ACC = 6, PITCH_HOLD = 0.25, PITCH_RATE = 0.25;
   // a rate eased toward `to`, changing by no more than a·dt this step
   const ease = (v, to, a, dt) => v + clamp(to - v, -a * dt, a * dt);
   /* the underside of the gap over (x, z) in a map baked with undersides (U): the lowest of the four corners round it, or null where
@@ -490,10 +490,19 @@ export function makeCamera(walk, o = {}) {
   const eyeOpen = (x, y, z, yaw, pitch, d) => open(x + Math.sin(yaw) * Math.cos(pitch) * d, y + Math.sin(pitch) * d, z + Math.cos(yaw) * Math.cos(pitch) * d);
   /* is the eye at d clear all the way round as the yaw turns by `by` (and the pitch by `bp`)? A sample every 0.25 m of its path, so no
      wall is stepped over */
-  const arcOpen = (x, y, z, yaw, by, pitch, d, bp = 0) => {
-    const n = Math.ceil(Math.hypot(by * Math.cos(pitch), bp) * d / 0.25);
-    for (let k = 0; k <= n; k++) if (!eyeOpen(x, y, z, yaw + (n ? by * k / n : 0), Math.min(TOP, pitch + (n ? bp * k / n : 0)), d)) return false;
+  const arcOpen = (x, y, z, yaw, by, pitch, d, bp = 0, mv = null) => {
+    const m = mv ? Math.hypot(mv[0], mv[1], mv[2]) : 0, n = Math.ceil((Math.hypot(by * Math.cos(pitch), bp) * d + m) / 0.25);
+    for (let k = 0; k <= n; k++) {
+      const f = n ? k / n : 0;
+      if (!eyeOpen(x + (m ? mv[0] * f : 0), y + (m ? mv[1] * f : 0), z + (m ? mv[2] * f : 0), yaw + by * f, Math.min(TOP, pitch + bp * f), d)) return false;
+    }
     return true;
+  };
+  // is the eye at d clear, and some eye between a and d on the same line not (the way in from d passes through the scenery)?
+  const crosses = (x, y, z, yaw, pitch, a, d) => {
+    if (!eyeOpen(x, y, z, yaw, pitch, d)) return false;
+    for (let t = d - 0.1; t > a + 0.05; t -= 0.1) if (!eyeOpen(x, y, z, yaw, pitch, t)) return true;
+    return false;
   };
   /* can an eye at e see the point h on the figure? Thin things do not count; the line may pass close to the ground near the figure, and
      needs 0.3 of clearance from 2.5 m out, for the ground's splats stand above the walk map */
@@ -578,7 +587,7 @@ export function makeCamera(walk, o = {}) {
        on and off; it comes on further down, from the follow eye's goal of this step */
     if (!c.cut) c.cutT = 0;
     else if (c.want <= TIGHT.out) c.cut = false;
-    else if (now.dist >= TIGHT.out && c.dist >= TIGHT.out - 0.1) { if ((c.cutT += dt) >= TIGHT.hold) c.cut = false; }
+    else if (now.dist >= TIGHT.out && c.dist >= TIGHT.out - 0.1 && !c.cross) { if ((c.cutT += dt) >= TIGHT.hold) c.cut = false; }
     else c.cutT = 0;
     // the time since the cutaway last eased out (its splats come back from then: below, the tail)
     c.cutOff = c.shown ? 0 : c.cutOff + dt;
@@ -611,11 +620,27 @@ export function makeCamera(walk, o = {}) {
        from about 1.1 rad/s up, so only slow turns ease it */
     const A = LIFT_ACC + (looked ? LIFT_TURN * Math.abs(spin) : 0), up = c.goal.lift > c.lift;
     const cap = c.lift + Math.max(0, Math.min(RISE, c.liftV + A * dt, Math.sqrt(2 * A * Math.max(0, Math.max(c.goal.lift, now.lift) - c.lift)))) * dt;
+    /* while the player pitches the view faster than PITCH_RATE rad/s (the mouse, a stick, a drag; eased over 0.1 s) and for PITCH_HOLD s
+       after, the rise holds where it is: the pitch on screen is the player's. It took turns with the mouse a step at a time near walls
+       and overhangs (its goal steps by 0.08 rad), so a steady move down drew 0, then twice the move, then 0, or went against it. A
+       slower pitch, a hand's small drift, leaves it working (held on any pitch, the near fade thinned the figure on 0.68% of the steps
+       of the mouse-and-walk mix in gloam-downs-camera.test.mjs, over its 0.5%) */
+    /* (the rate is the pitch the player asks for: pushed on against the pitch's limit, the rise still holds, as the drawn pitch
+       moving down while the mouse pushes up reads as the camera fighting it.) The hold keeps the eye out of the scenery as the yaw's
+       does: where the pitch, with the rise held, would take the eye at its distance into the ground or a canopy behind it now or in
+       the next 0.1 s at this rate, the rise goes on working this step (held there, the step then pulled the eye in by up to 3.2 m in
+       one frame, Fen F2 with the mouse lowering the view). Nor once the figure has stood hidden behind something for GRACE: the rise
+       is what clears it (held, the eye waited at the wall and then went through it) */
+    const pd = (oy * 1.6 * dt || 0) + (inp.dpitch || 0);
+    if (dt > 0) c.prate += (Math.abs(pd) / dt - c.prate) * (1 - Math.exp(-dt / 0.1));
+    if (c.prate > PITCH_RATE) c.pitchT = 0; else c.pitchT += dt;
+    const held = c.pitchT < PITCH_HOLD && c.hidden <= GRACE && arcOpen(tx, ty, tz, c.yaw, 0, Math.min(TOP, c.pitch + c.lift), c.dist, clamp((c.pitch - pitch0) * 6, -0.3, 0.3));
+    const against = () => held;
     if (dt > 0) {
       let r = clamp((c.goal.lift - c.lift) * (up ? 12 : 2), c.liftV - 2 * A * dt, c.liftV + A * dt);
       // going up, no faster than lets it come to rest at its goal (past it, slowing at 2·A: a goal that falls away does not stop it dead)
       if (r > 0) r = Math.min(r, Math.max(Math.sqrt(2 * A * Math.max(0, c.goal.lift - c.lift)), c.liftV - 2 * A * dt));
-      c.lift += clamp(r, -RISE, RISE) * dt;
+      if (!against()) c.lift += clamp(r, -RISE, RISE) * dt;
     }
     /* the rise easing down must not lower the eye into the scenery: it holds this step, and the eye starts in (at no more than PULL,
        below) to where the lower view is clear */
@@ -624,14 +649,35 @@ export function makeCamera(walk, o = {}) {
       const p1 = Math.min(TOP, c.pitch + c.lift), p0 = Math.min(TOP, c.pitch + lift0);
       if (p1 < p0 && !eyeOpen(tx, ty, tz, c.yaw, p1, c.dist) && eyeOpen(tx, ty, tz, c.yaw, p0, c.dist)) { sink = p1 - p0; c.lift = lift0; }
     }
+    /* nor raise it into an underside (a ceiling, an overhang, a beam, an arch: what is over the eye). Where the eased rise would lift
+       the eye at its distance out of the gap under a roof, the rise goes only as far as keeps it clear (found to 1/64 of the step):
+       before, the eye rose into the underside, the room there fell short, and the eye was pulled in, up to 2.6 m under an overhang,
+       and went back out as the view came down (Haigh-Hutchinson's ceiling check, as Unreal's spring arm probes its whole path) */
+    /* (an underside only: the eye risen into the gap under a roof, over its floor and under its top. A wall's face is not one: the
+       raised eye going into a tall wall that comes between is the rise's own business, and counted as an underside it held the rise
+       down and left the eye waiting behind the wall with the figure hidden) */
+    const lifted = l => {
+      const p = Math.min(TOP, c.pitch + l), cp = Math.cos(p), ex = tx + Math.sin(c.yaw) * cp * c.dist, ey = ty + Math.sin(p) * c.dist, ez = tz + Math.cos(c.yaw) * cp * c.dist;
+      if (open(ex, ey, ez)) return true;
+      const t = walk.top(ex, ez), g = walk.floor(ex, ez);
+      return !(g < t - 0.05 && ey > g + 0.35 && ey < t + 0.35);
+    };
+    if (c.lift > lift0 && dt > 0 && !lifted(c.lift) && lifted(lift0)) {
+      let a = lift0, b = c.lift;
+      for (let i = 0; i < 6; i++) { const m = (a + b) / 2; if (lifted(m)) a = m; else b = m; }
+      c.lift = a;
+    }
     let pitch = Math.min(TOP, c.pitch + c.lift), room = reach(tx, ty, tz, c.yaw, pitch, c.want);
-    // where the eased rise would bring the eye in, it rises further first, as far as RISE allows this step
-    if (room < c.dist - 0.05)
+    // where the eased rise would bring the eye in, it rises further first, as far as RISE allows this step (and never into an underside)
+    if (room < c.dist - 0.05 && !against()) {
+      const clear0 = lifted(c.lift);
       for (let l = c.lift + 0.01; l <= Math.min(Math.max(c.goal.lift, now.lift), cap) + 1e-6; l += 0.01) {
+        if (clear0 && !lifted(l)) break;
         const r = reach(tx, ty, tz, c.yaw, Math.min(TOP, c.pitch + l), c.want);
         if (r > room) { c.lift = l; room = r; pitch = Math.min(TOP, c.pitch + l); }
         if (r >= c.dist - 0.05) break;
       }
+    }
     room = Math.max(NEAR, room);
     // the true room, before the grace below may keep the eye back: an eased eye nearer than this is clear
     const room0 = room;
@@ -646,11 +692,18 @@ export function makeCamera(walk, o = {}) {
        0.3 s as the view turns (into a wall), it starts in now, and only then may it come in faster than PULL (SQUEEZE). The whole path
        is marched from where this step began, so a thin wall that the turn crosses is not stepped over */
     const sp3 = clamp(spin, -3, 3), by = sp3 * 0.3;
-    const squeeze = !arcOpen(tx, ty, tz, yaw0, by, pitch, c.dist);
+    /* and as the aim moves (the lamplighter walks, strafes or backs up beside a wall, or the aim rises): where the eye's path over the
+       next 0.3 s, with the aim carried on at the body's speed, meets the scenery, a goal that is coming in anyway may be reached at
+       SQUEEZE. It never lowers the goal itself: that look-ahead does not know the rise, and as a goal it brought a clear eye in from
+       8.5 to 0.5 m and back out while backing up a slope or strafing past a doorway (the goal comes in only for the eye's own path, the
+       turn and the rise, below, and for the aim's height alone while the lamplighter is in the air: a jump moves the aim fast, and a
+       walker bouncing in a pit was squeezed by 0.8 m in a step without it) */
+    const mv = dt > 0 ? [clamp(s.vx, -8, 8) * 0.3, clamp(c.tyV, -4, 4) * 0.3, clamp(s.vz, -8, 8) * 0.3] : null;
+    const squeeze = !arcOpen(tx, ty, tz, yaw0, by, pitch, c.dist, 0, mv);
     /* the rise easing down (or up) also moves the eye: where that will bring it into the scenery in 0.3 s while the turn alone does
        not, it starts in too, but at no more than PULL */
     const bp = dt > 0 ? clamp((sink || pitch - Math.min(TOP, pitch0 + lift0)) / dt, -2, 2) * 0.3 : 0;
-    const round = d => arcOpen(tx, ty, tz, yaw0, by, pitch, d) && (!bp || arcOpen(tx, ty, tz, yaw0, by, pitch, d, bp));
+    const mvy = mv && !s.ground ? [0, mv[1], 0] : null, round = d => arcOpen(tx, ty, tz, yaw0, by, pitch, d, 0, mvy) && (!bp || arcOpen(tx, ty, tz, yaw0, by, pitch, d, bp, mvy));
     let ds = Math.min(c.dist, to);
     if (!round(c.dist)) {
       let de = c.dist;
@@ -660,6 +713,21 @@ export function makeCamera(walk, o = {}) {
     /* a nearer goal whose own path round crosses something only lowers the goal, and the eye comes in to it at no more than PULL: the
        eye is clear, so there is time */
     while (ds > NEAR && !round(ds)) ds -= 0.1;
+    /* the eye also keeps RADIUS clear to either side (Cinemachine's camera radius, the probe size of Unreal's spring arm): where a wall
+       stands nearer than that beside the eye, it eases in (at no more than PULL) until both sides are clear, so a turn toward that wall
+       starts with room to squeeze in (an eye left 0.2 m beside a wall came in by 1 to 1.5 m on the first step of any turn toward it).
+       Only where coming in by RADIUS_IN at most clears both sides (a wall that closes in on the eye, a corner behind it): a wall that
+       only runs alongside the line of sight, as a corridor's, does not move the eye (it brought the eye in from 8.5 to 3.2 m, where
+       Cinemachine's radius keeps the eye off the wall and does not pull it forward) */
+    if (RADIUS > 0) {
+      const side = e => { const a = RADIUS / Math.max(0.5, e * Math.cos(pitch)); return eyeOpen(tx, ty, tz, c.yaw + a, pitch, e) && eyeOpen(tx, ty, tz, c.yaw - a, pitch, e); };
+      let e = Math.min(c.dist, to, ds);
+      if (eyeOpen(tx, ty, tz, c.yaw, pitch, e) && !side(e)) {
+        const e0 = e;
+        while (e > NEAR && e > e0 - RADIUS_IN && !side(e)) e -= 0.1;
+        if (side(e)) ds = Math.min(ds, Math.max(NEAR, e));
+      }
+    }
     /* and where the player turns the view so that a wall will come between in 0.15, 0.3 or 0.45 s (AHEADS), it starts in to that
        wall's near side now, at no more than PULL, before the wall comes between: an eye left behind a wall can only come in through
        it with a jump */
@@ -673,7 +741,24 @@ export function makeCamera(walk, o = {}) {
        with the eye within TIGHT.near (so a camera still coming in past a wall does not
        cut a long cone through the place for what may clear). Not within TIGHT.again of its splats
        starting back (while they are still cut it may come back on: the picture goes on from where it is), and with the lamplighter standing, or walking in a nook */
-    if (!c.cut && c.want > TIGHT.out && ((now.dist < TIGHT.in && (c.dist < TIGHT.near || c.hidden > 0)) || (to < TIGHT.in && c.dist < TIGHT.near)) && (c.shown || c.cutOff >= TIGHT.again || c.dist < TIGHT.in) && (sp <= TIGHT.still || (sp <= TIGHT.run && nook(tx, ty, tz, head)))) {
+    /* or where the eye could come in only through the scenery: it stands clear over a roof or behind a wall, and between it and the
+       room in front of the aim the line passes through that roof or wall (a lamplighter walking in under the torn cell's roof with the
+       eye risen over it: the eye came in along the line into the roof and then jumped by 2 to 4 m to under it in one step). The splats
+       between are cut instead, and the view comes in over the roof as the cutaway's does, at any speed. As the cutaway's own rule, only
+       with the follow eye within TIGHT.near, or where no rise clears the room and the figure is already hidden (so no long cone is cut
+       through the place for what a rise will clear: farther out the eye waits at the near face for the rise), and not for what comes
+       between for less than GRACE (room is still c.dist then: a step's edge by the aim on a stair, a post going past) */
+    /* Only for a way in that is more than 1 m short, and farther out than TIGHT.near only once the figure has been hidden for GRACE,
+       or while the eye's own path or the player's turn takes it into the wall (a doorway post passing for a step or two waits for the
+       rise: each such cutaway came on and off again in open doorways). And once the eye has waited GRACE + ESCAPE at the near face with the figure
+       hidden: no rise has cleared it, and nothing else would free it (it stood outside a doorway's wall for good). Farther out than
+       the cutaway's rule allows (a long cone cut through the place), the eye goes on through instead, below */
+    const cross = c.want > TIGHT.out && to < c.dist - 0.3 && crosses(tx, ty, tz, c.yaw, pitch, to, c.dist);
+    const close = c.dist < TIGHT.near || (now.dist < TIGHT.in && c.hidden > 0), stuck = cross && close && c.hidden > GRACE + ESCAPE;
+    const through = !c.cut && cross && (c.shown || c.cutOff >= TIGHT.again) && ((to < c.dist - 1 && (c.dist < TIGHT.near || (now.dist < TIGHT.in && c.hidden > 0 && (c.hidden > GRACE || squeeze || (looked && Math.abs(sp3) > 0.1))))) || stuck);
+    // (a cutaway does not go off while the follow eye would still have to come in through the scenery: below, c.cross)
+    c.cross = cross;
+    if (!c.cut && c.want > TIGHT.out && (through || (((now.dist < TIGHT.in && (c.dist < TIGHT.near || c.hidden > 0)) || (to < TIGHT.in && c.dist < TIGHT.near)) && (c.shown || c.cutOff >= TIGHT.again || c.dist < TIGHT.in) && (sp <= TIGHT.still || (sp <= TIGHT.run && nook(tx, ty, tz, head)))))) {
       c.cut = true;
       // it starts from the view as drawn, and from the pitch it showed
       if (c.cutK <= 0) { c.cutD = c.vd; c.cutB = Math.min(TIGHT.top, pitch); c.cutRef = c.pitch; c.cutP = Math.min(TIGHT.top, pitch); c.cutV = 0; }
@@ -711,6 +796,21 @@ export function makeCamera(walk, o = {}) {
       }
       return true;
     };
+    /* and never on into the scenery: where the eye is clear now and coming in along its line would take it into a roof or a wall (an
+       eye risen over a roof, the line to the aim through it), it stops at the near face, and the cutaway above cuts the splats between
+       (before, it went on into the roof and the step then jumped it through, 1 to 4 m) */
+    /* Where the eye has waited there GRACE + ESCAPE with the figure hidden and the cutaway may not come on (the eye too far out), it
+       goes on in one step to the first clear eye past the wall, as it did before: the figure is not left hidden */
+    if (d < c.dist && eyeOpen(tx, ty, tz, c.yaw, pitch, c.dist) && !eyeOpen(tx, ty, tz, c.yaw, pitch, d)) {
+      let e = c.dist;
+      while (e - 0.05 > d && eyeOpen(tx, ty, tz, c.yaw, pitch, e - 0.05)) e -= 0.05;
+      if (!c.cut && c.hidden > GRACE + ESCAPE && !close) {
+        let f = d;
+        while (f > NEAR && !eyeOpen(tx, ty, tz, c.yaw, pitch, f)) f -= 0.05;
+        if (eyeOpen(tx, ty, tz, c.yaw, pitch, f)) e = f;
+      }
+      d = e; v = dt > 0 ? (d - c.dist) / dt : 0;
+    }
     if (d > room0 && !at(1)) {
       // the end of the turn is clear, but the way there crosses a wall
       const crossed = eyeOpen(tx, ty, tz, c.yaw, pitch, d);
@@ -740,6 +840,28 @@ export function makeCamera(walk, o = {}) {
         if (dc < d) v = 0;
         d = dc;
       }
+    }
+    /* last, the eye this step ends on is clear by the full 0.35: an eye a few cm inside the margin (an eased eye nearer than the room,
+       taken as clear, under an overhang's edge) comes in until it is, by no more than 0.3 m (not in or round the cutaway, whose view is
+       drawn instead) */
+    {
+      const pe = Math.min(TOP, c.pitch + c.lift);
+      if (!c.cut && !c.cutK && !eyeOpen(tx, ty, tz, c.yaw, pe, d)) {
+        let e = d;
+        while (e > Math.max(NEAR, d - 0.3) && !eyeOpen(tx, ty, tz, c.yaw, pe, e)) e -= 0.02;
+        if (eyeOpen(tx, ty, tz, c.yaw, pe, e)) { if (dt > 0) v = Math.min(v, (e - c.dist) / dt); d = e; }
+      }
+    }
+    /* and a step that would still take the eye in through the scenery by more than a squeeze's step (a turn whose way round crosses a
+       wall with no part of it clear, while the eye waited at a near face) turns the cutaway on instead: its view starts from the eye
+       as drawn, so the jump of the follow eye under it is not seen (Gaol and Bells: 2 m in one step while steering past a wall). As
+       the cutaway's own rule, only with the follow eye within TIGHT.near, or where no rise clears the room and something stands
+       between */
+    if (!c.cut && dt > 0 && c.want > TIGHT.out && close && c.dist - d > SQUEEZE * dt + 0.05 && (c.shown || c.cutOff >= TIGHT.again)) {
+      const pe = Math.min(TOP, c.pitch + c.lift);
+      let thru = false;
+      for (let t = c.dist - 0.1; t > d + 0.05 && !thru; t -= 0.1) thru = !eyeOpen(tx, ty, tz, c.yaw, pe, t);
+      if (thru) { c.cut = true; if (c.cutK <= 0) { c.cutD = c.vd; c.cutB = Math.min(TIGHT.top, pe); c.cutRef = c.pitch; c.cutP = Math.min(TIGHT.top, pe); c.cutV = 0; } }
     }
     c.dist = Math.max(NEAR, d); c.dv = v;
     /* the rise's rate this step, before a wall held back part of the step (a hold that also took the rate fed back: the rise built
@@ -887,7 +1009,7 @@ export function makeCamera(walk, o = {}) {
     c.yaw = yaw; c.target = [s.x, s.y + aimAt(s.x, s.y, s.z), s.z]; c.idle = 9;
     c.goal = solve(c.target[0], c.target[1], c.target[2], yaw, [s.x, s.y + HEAD, s.z]);
     c.lift = c.goal.lift; c.goals = [c.lift]; c.hidden = 0; c.dv = 0;
-    c.liftV = c.tyV = c.swingV = c.laneV = c.mouseYaw = c.mousePitch = 0; c.snaps++;
+    c.liftV = c.tyV = c.swingV = c.laneV = c.mouseYaw = c.mousePitch = c.prate = 0; c.pitchT = 9; c.cross = false; c.snaps++;
     c.dist = Math.max(NEAR, reach(c.target[0], c.target[1], c.target[2], yaw, Math.min(TOP, c.pitch + c.lift), c.want));
     // the cutaway starts whole where the place puts the lamplighter
     c.cut = c.want > TIGHT.out && c.goal.dist < TIGHT.in; c.cutK = c.cut ? 1 : 0; c.cutV = 0; c.cutT = 0; c.cutOff = 9;
@@ -929,8 +1051,9 @@ export function makeCamera(walk, o = {}) {
    run past the last one (Glenn Fiedler, "Fix Your Timestep": the state one step behind, interpolated), for the view and for the
    lamplighter's place and facing. The mouse is not blended: the part of its turn of the last step that the view followed shows whole,
    and its turn since, which no step has taken yet, is drawn on top (cam.look), so a steady mouse move turns the picture by the same
-   angle every frame. A snap of the camera, a jump of the body or the aim over 2 m in a step, or a blended eye in the scenery where the
-   step's own eye is clear draws the step as it is (the last until the next step). step(view, s) after each step's camera; reset() where the page lays a new view; view(k, dyaw, dpitch) and body(s, k) for the
+   angle every frame. A snap of the camera or a jump of the body or the aim over 2 m in a step draws the step as it is; a blended eye in
+   the scenery where the step's own eye is clear comes in as far as it must, and only where that fails is the step drawn (the last
+   until the next step). step(view, s) after each step's camera; reset() where the page lays a new view; view(k, dyaw, dpitch) and body(s, k) for the
    frame */
 export function makeBlend(cam) {
   let prev = null, cur = null, snaps = -1, pb = null, cb = null, mouse = [0, 0], held = false, pshare = 1, share1 = 1;
@@ -953,6 +1076,8 @@ export function makeBlend(cam) {
          the rise and the mouse take turns, a step at a time, the share of one step alone does the same) */
       if (cam.c.mousePitch) { const sh = prev ? Math.abs(mouse[1] / cam.c.mousePitch) : 1; pshare = Math.min(sh, share1); share1 = sh; }
     },
+    // (for checks: the frame's state)
+    get dbg() { return { prev, cur, held, mouse: mouse.slice(), pshare }; },
     reset() { prev = cur = pb = cb = null; mouse = [0, 0]; held = false; pshare = share1 = 1; },
     view(k, dyaw = 0, dpitch = 0) {
       if (!cur) return null;
@@ -962,9 +1087,18 @@ export function makeBlend(cam) {
         const m = (p, q) => p + (q - p) * k, j = 1 - k;
         v = { ...cur, target: cur.target.map((q, i) => m(prev.target[i], q)), dist: m(prev.dist, cur.dist), pitch: m(prev.pitch, cur.pitch) + mouse[1] * j,
           yaw: prev.yaw + wrapA(cur.yaw - prev.yaw) * k + mouse[0] * j, ...(prev.fov && cur.fov ? { fov: m(prev.fov, cur.fov) } : {}) };
-        // a blended eye in the scenery where the step's own is clear draws the step, and keeps to it until the next step (it does not
-        // go back and forth between the two)
-        if (!cur.cut && !cam.clear(v) && cam.clear(cur)) { v = cur; held = true; }
+        /* a blended eye in the scenery where the step's own is clear (a straight blend of two clear eyes can cut through a corner)
+           comes in, at the blended angles, only as far as it must to be clear: the frame then still moves between the two steps (drawn
+           as the step and held, the whole step showed in one frame and the next did not move). Only where no distance down to the
+           nearer step's is clear does it draw the step, and keep to it until the next step (it does not go back and forth) */
+        if (!cur.cut && !cam.clear(v) && cam.clear(cur)) {
+          const lo = { ...v, dist: Math.min(prev.dist, cur.dist) };
+          if (lo.dist < v.dist && cam.clear(lo)) {
+            let a = lo.dist, b = v.dist;
+            for (let i = 0; i < 6; i++) { const mid = (a + b) / 2; if (cam.clear({ ...v, dist: mid })) a = mid; else b = mid; }
+            v = { ...v, dist: a };
+          } else { v = cur; held = true; }
+        }
       }
       return cam.look(v, dyaw, dpitch * pshare);
     },

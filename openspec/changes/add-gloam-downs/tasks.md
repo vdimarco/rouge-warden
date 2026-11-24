@@ -296,8 +296,31 @@
 - [x] Review fixes: the mouse's pitch between steps only as far as the step's view followed it (the boss camera's pitch and the follow camera's top no longer wobble); a fallback to the step's view holds until the next step; an aim jump over 2 m is not blended; the rise eased for slow mouse turns (160 rad/s² per rad/s); the boss camera's distance eased in and out; the spike cap's first locked move; the routes also with the mouse free, cuts counted over 1 m and squeezes apart
 - [ ] Try it on a real 120 or 144 Hz display with a real mouse (not possible in this session)
 - [ ] Foes, the boss and the fight's effects are still drawn at the step: blend them too if they judder at 144 Hz (needs `fight.js` to keep the last step's places)
-- [ ] The near fade and the cutaway's splat cut are worked out from the step's eye, not the drawn one: work them out in draw() if a splat shows unfaded or uncut for a frame near walls at 144 Hz
+- [x] The near fade and the cutaway's splat cut are worked out from the drawn eye in `frame()` (see "Walls and ceilings" below)
 - [ ] Steering with the mouse near walls still jolts at a step much as before (the eye coming in to keep out of a wall the turn brings): look for a way that does not cost the 6 rad/s wall check or the mouse sweep's eased coming in
+- [x] Part of that: the eye keeps 0.3 m clear to its sides, so a turn from rest beside a wall has room (see below)
+
+### Walls and ceilings (after "it's 120hz, still a bit jumpy near walls and things on ceilings")
+- [x] Measure first: main.js's loop at 120 Hz in Node at 17 spots × 14 hand moves, the five routes, and the page at 120 Hz with stubbed frame times
+- [x] The eye never comes in along its line into a roof or a wall; where the way in passes through one, the cutaway comes on (its rules kept) and does not go off while it would
+- [x] The squeeze's look-ahead carries the aim on at the body's speed (after the review: it only lets a goal already coming in be reached at the squeeze's speed, and lowers the goal only for the aim's height in a jump)
+- [x] The eye keeps 0.3 m clear to either side (camera radius)
+- [x] The rise never lifts the eye into an underside, and the "rise further first" stops at one
+- [x] The rise holds while the player pitches the view faster than 0.25 rad/s, and 0.25 s after
+- [x] A blended frame in the scenery comes in as far as it must, instead of drawing and holding the step
+- [x] An eye a few cm inside the 0.35 m margin at the end of a step comes in until clear
+- [x] The near fade and the cut from the drawn eye (`seen()` in main.js; `?test` keeps the step's); `state().cam.drawn` gives the drawn aim, cut and body, `state().seen` the cost
+- [x] Node checks "walls and ceilings at 120 Hz" and "the ceiling check" in `gloam-downs-camera.test.mjs` (both fail on 7c7d55b7); browser check at 120 Hz in `gloam-downs-camera.e2e.mjs` (fails on 7c7d55b7: 3.66 m in one frame)
+- [ ] Try it on a real 120 Hz display with a real mouse (not possible in this session)
+- [ ] A turn from rest beside a wall still squeezes in at up to 0.55 m a step: a smoother ramp needs more than the 360 m/s² the mouse test allows
+- [x] Review of the walls fix: the look-ahead no longer lowers the goal while the eye is clear (no dive from 8.5 to 0.5 m backing up or strafing)
+- [x] Review: the rise held for a mouse pitch goes on where the held rise would let the eye sink into the scenery now or in 0.1 s, or once the figure has been hidden for 0.15 s (no 3.2 m snap as the mouse lowers the view)
+- [x] Review: the near-face stop has a way out: after 0.35 s hidden the cutaway comes on within its rules, or farther out the eye goes on through in one step; the rise's underside check counts only real undersides, not a wall's face
+- [x] Review: the "through" cutaway only for a way in more than 1 m short, and farther out than 4 m only once the figure has been hidden 0.15 s, or the eye's own path or the player's turn takes it into the wall; a step that would still jump the eye through a wall within the cutaway's rules turns it on instead
+- [x] Review: the camera radius only where coming in 2 m or less clears both sides (a corridor wall alongside no longer pulls the eye in)
+- [x] Review: the cut's cone query about once a step in `frame()`, from the frame's drawn eye (the fade still every frame); `state().cam.drawn.body` is a copy
+- [x] Review checks: "walls at 120 Hz, the review" and "a doorway into a roofed room" in `gloam-downs-camera.test.mjs` (both pass on 7c7d55b7, and fail 13 times on the first version of the fix)
+- [ ] The cutaway still turns on and off more than before the fix (218 against 160 in the 384 scenario runs), mostly where it now stands in for a jump of the eye through a wall
 
 ### The run's screens
 - [x] HUD: health bar, flask pips, glim; the toast 8 px under the HUD's measured bottom at every width

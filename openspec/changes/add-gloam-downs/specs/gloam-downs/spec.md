@@ -470,6 +470,33 @@ Every frame SHALL draw the camera between its last two fixed steps, blended by t
 - **WHEN** the page takes the mouse, and Chrome's first locked move reports 5000 px, however soon after the free cursor last moved
 - **THEN** that move turns the view by no more than 120 px, 0.264 rad. Check: browser test `gloam-downs-camera.e2e.mjs` (the lock taken for real; it cannot bring the free move within 0.1 s of the first locked one, so that part is by reading `input.js`: the free cursor's moves and each change of the lock leave no time of a last move).
 
+### Requirement: Camera near walls and ceilings
+Near walls and under roofs, overhangs, arches and beams, the camera SHALL change its distance and height smoothly on every drawn frame at 120 Hz. It SHALL not draw the eye inside the scenery, nor move it through a roof or a wall between frames by more than a few cm at an edge; where coming in would pass through one, the cutaway SHALL cut the splats between. A clear eye SHALL not come in. The rise SHALL not lift the eye into an underside. The near fade SHALL follow the drawn eye.
+
+#### Scenario: Walking and strafing beside a wall or under a roof
+- **WHEN** the lamplighter strafes, walks in and backs out in the Gaol's torn cell, with the eye risen over its roof, or the player turns the view with the mouse from rest with a wall 0.2 m beside the eye, at 120 Hz
+- **THEN** no drawn frame brings the eye in by more than 0.6 m, and none puts it inside the scenery or through a roof or a wall. Before: 6.10 to 2.55 m in one frame, and the next frame still. Check: Node test `gloam-downs-camera.test.mjs` ("walls and ceilings at 120 Hz"); in the page, `gloam-downs-camera.e2e.mjs` (worst 0.13 m; before 3.66 m).
+
+#### Scenario: Under an overhang
+- **WHEN** an overhang or a ceiling is over the eye (the Barrows, the Ramparts, the Bells) and the rise goes up, or the player pitches the view up and down with the mouse at 120 Hz
+- **THEN** the rise never lifts the eye at its distance into the underside, and the drawn pitch goes against the mouse's on no more than 2% of the frames. Before: 6 of 248 rises went into an underside, and 112 of 1,672 frames went against the mouse. Check: Node test `gloam-downs-camera.test.mjs` ("the ceiling check" and "walls and ceilings at 120 Hz").
+
+#### Scenario: Backing up or strafing with nothing between
+- **WHEN** the lamplighter backs up a slope or strafes under the Gaol's overhang, or backs up and turns past its lintelled doorway, with nothing between the eye and the figure, at 120 Hz
+- **THEN** the camera stays back, as far as before the fix: 7.45 m or more backing up, 8.5 m strafing, 7.2 m backing past the doorway. The fix's first version brought it in to 0.5 m and back out. Check: Node test `gloam-downs-camera.test.mjs` ("walls at 120 Hz, the review").
+
+#### Scenario: Lowering the view under a canopy or an overhang
+- **WHEN** the player lowers the view with the mouse at 0.8 rad/s for 1.5 s under the Fen's canopy, a Barrows overhang or the Gaol's doorway lintel, at 120 Hz
+- **THEN** no drawn frame brings the eye in by more than 0.6 m. The fix's first version snapped it in by 3.24 m. Check: Node test `gloam-downs-camera.test.mjs` ("walls at 120 Hz, the review").
+
+#### Scenario: A doorway, or a wall that comes between
+- **WHEN** the lamplighter walks through a doorway in a wall 6 or 14 m high into a room with or without a roof and strafes along it, or a tall wall comes between the eye and the figure
+- **THEN** the figure is never hidden behind the wall for more than 0.5 s outside the cutaway, and a tall wall that only runs alongside the line of sight does not bring the eye in. Check: Node test `gloam-downs-camera.test.mjs` ("a doorway into a roofed room").
+
+#### Scenario: The near fade on a fast display
+- **WHEN** the lamplighter walks into the torn cell and back, or backs up and turns by the Barrows wall beside the eye so the eye comes near the figure, at 120 Hz
+- **THEN** on every frame the near fade is the one for the eye and the lamplighter that frame draws. Before: set from the step's eye, it was wrong on 2 frames of the torn cell walk. Check: browser test `gloam-downs-camera.e2e.mjs` (`state().fade` against `fadeOf` of `state().cam.drawn`).
+
 ### Requirement: Wisps and the beacon
 Each place SHALL have five wisps, glowing motes that float above the ground, and one beacon on its summit. In Wander, a wisp SHALL go out and count when the lamplighter touches it, and the beacon SHALL light when the lamplighter touches it. While another beacon is still dark and the place has a next place, a card SHALL say that the way opens. Then the next place SHALL load. Otherwise the walk SHALL follow The end of the walk. In a run, the run's rules apply instead.
 

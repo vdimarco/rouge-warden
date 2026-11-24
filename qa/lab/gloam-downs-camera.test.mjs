@@ -1268,4 +1268,195 @@ const flipsOf = vals => { let n = 0, ls = 0; for (let i = 1; i < vals.length; i+
   pass('the boss camera comes in and back out eased as a pillar passes between', { stepsIn: came, pressed });
 }
 
+/* ---------------- walls and ceilings at 120 Hz ----------------
+   The user report after 7c7d55b7: "it's 120hz, still a bit jumpy near walls and things on ceilings". main.js's frame loop at 120 Hz
+   (rAF jitter of ±0.25 ms, seeded) with the mouse taken, at the measured spots in four places (design.md "Smooth camera", "Walls and
+   ceilings"), each spot a few hand moves: strafing, walking in and back, a mouse turn from rest, a mouse pitch, a pitch up and a turn
+   while backing up. Per drawn frame (blend.view, as frame() draws it): the eye, the distance, the pitch, the mouse's pitch that frame */
+function walls120(id, [x, y, z, camYaw], move, T = 3.5) {
+  const { walk, meta } = place(id);
+  const b = makeBody(walk, { p: [x, y + 0.3, z], yaw: camYaw - Math.PI }, meta.bounds), cam = cameraFor(walk, '1280x720', camYaw, { auto: true }), blend = makeBlend(cam);
+  cam.snap(b.s, camYaw);
+  let seed = 5, acc = 0, t = 0, lastEv = 0;
+  const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
+  const input = { dyaw: 0, dpitch: 0, mx: 0, mz: 0, ox: 0, oy: 0, mouse: true };
+  const rows = [];
+  for (let f = 0; f < Math.round((T + 0.5) * 120); f++) {
+    const dt = f ? 1 / 120 + (rnd() - 0.5) * 0.0005 : 0;
+    t += dt;
+    const k = t < 0.5 ? {} : move(t - 0.5, dt);
+    let mp = 0;
+    if (k.px || k.py) { const m = mouseLook(k.px || 0, k.py || 0, false, MOUSE, Math.max(t - lastEv, 0.001)); lastEv = t; input.dyaw += m.dyaw; input.dpitch += m.dpitch; mp = m.dpitch; }
+    input.mx = k.mx || 0; input.mz = k.mz || 0;
+    const c = stepCount(acc, dt);
+    acc = c.acc;
+    let v = null;
+    for (let i = 0; i < c.n; i++) { b.step(STEP, input, cam.c.yaw); v = cam.follow(b.s, STEP, input); input.dyaw = input.dpitch = 0; blend.step(v, b.s); }
+    const d = blend.view(acc / STEP, input.dyaw, input.dpitch);
+    if (!d || t < 0.5) continue;
+    rows.push({ t, eye: eyeOf(d), dist: d.dist, pitch: d.pitch, cut: !!d.cut, clear: cam.clear(d), held: !!blend.dbg?.held, mp, n: c.n });
+  }
+  return { rows, walk };
+}
+if (!skipWorlds) {
+  const px = r => r / MOUSE.yaw, py = r => r / MOUSE.pitch;
+  const MOVES = {
+    strafeL: () => ({ mx: -1 }), strafeR: () => ({ mx: 1 }), walkIn: t => ({ mz: t < 1.5 ? 1 : -1 }),
+    turnL: (t, dt) => ({ px: px(0.6) * dt }), turnR: (t, dt) => ({ px: -px(0.6) * dt }), backTurn: (t, dt) => ({ mz: -1, px: px(0.6) * dt * (t < 1.5 ? 1 : -1) }),
+    pitch: (t, dt) => ({ py: (Math.floor(t / 0.6) % 2 ? -1 : 1) * py(0.6) * dt }), pitchUp: (t, dt) => ({ py: (t < 2 ? 1 : -1) * py(0.3) * dt })
+  };
+  // the spots (y the floor; the feet go 0.3 over it) and what each shows
+  const SPOTS = {
+    G3: ['gaol', [9.0, -2.2, -1.5, 3.927], ['strafeL', 'strafeR', 'walkIn']], // the torn cell, the eye risen over its roof
+    G4: ['gaol', [0, 7.38, 25.5, 3.927], ['strafeR', 'walkIn']], // a roof over the head at the start
+    G5: ['gaol', [3.4, 4.1, -17.8, 0], ['strafeL', 'strafeR']], // by the archway
+    R1: ['ramparts', [3, -0.04, 17.25, 5.498], ['turnL', 'turnR', 'pitchUp']], // an overhang over the eye
+    R2: ['ramparts', [-3, -0.77, -5.25, 2.356], ['pitch', 'backTurn']], // an overhang with the eye risen
+    B2: ['bells', [4.5, 2.2, 1.5, 1.571], ['pitch', 'backTurn']], // a wall close behind
+    B3: ['bells', [1.5, 4.5, -8.25, 0], ['walkIn']], // the fallen bell's roof
+    W1: ['barrows', [3, 0.52, 0.75, 3.142], ['pitchUp']], // an overhang 2.2 m over the eye
+    W3: ['barrows', [1.3, 0.78, -1.28, 3.142], ['turnL', 'turnR', 'strafeR']], // a wall 0.2 m beside the eye
+    O1: ['ramparts', [0, 3.7, 27, 3.142], ['backTurn']] // open, but backing up meets a roof's edge
+  };
+  // a point the eye may not be in: inside the walk map's solid (under its top, and not in a gap under an arch)
+  const solid = (walk, [ex, ey, ez]) => walk.support(ex, ez, ey) === null;
+  let frames = 0, jump = 0, jumpMax = 0, jumpAt = '', inside = 0, insideAt = '', popped = 0, popAt = '', held = 0, against = 0, pitched = 0;
+  const rows = [];
+  for (const [name, [id, spot, moves]] of Object.entries(SPOTS)) for (const mv of moves) {
+    const { rows: r, walk } = walls120(id, spot, MOVES[mv]);
+    let j = 0, ins = 0, pop = 0, hd = 0, ag = 0, np = 0;
+    for (let i = 1; i < r.length; i++) {
+      const a = r[i - 1], c = r[i];
+      frames++;
+      // the distance in one drawn frame: walls and ceilings bring it in at no more than SQUEEZE (33 m/s, 0.28 m a frame at 120 Hz)
+      const dd = a.dist - c.dist;
+      if (dd > 0.3 && !c.cut) { j++; if (dd > jumpMax) { jumpMax = dd; jumpAt = `${name} ${mv} at ${c.t.toFixed(2)} s: ${a.dist.toFixed(2)} -> ${c.dist.toFixed(2)} m`; } }
+      if (!c.cut && !c.clear) { ins++; insideAt ||= `${name} ${mv} at ${c.t.toFixed(2)} s`; }
+      // through a roof or a wall from one frame to the next: the line between the two drawn eyes passes through the solid
+      if (!c.cut && !a.cut) for (let q = 1; q < 10; q++) if (solid(walk, a.eye.map((e, k) => e + (c.eye[k] - e) * q / 10))) { pop++; popAt ||= `${name} ${mv} at ${c.t.toFixed(2)} s`; break; }
+      if (c.held) hd++;
+      // a frame of the mouse's pitch that the drawn pitch went against
+      if (Math.abs(c.mp) > 1e-4) { np++; if (Math.sign(c.pitch - a.pitch) !== Math.sign(c.mp) && Math.abs(c.pitch - a.pitch) > 0.001) ag++; }
+    }
+    jump += j; inside += ins; popped += pop; held += hd; against += ag; pitched += np;
+    rows.push([name, mv, j, ins, pop, hd, `${ag}/${np}`]);
+  }
+  /* before (7c7d55b7): 31 frames came in by over 0.3 m (G3 strafing 6.10 -> 2.55 m in one frame, then still), the eye was drawn inside
+     the scenery on frames and went through a roof between frames, 248 frames drew the step and held it, and the drawn pitch went against
+     a steady mouse pitch on 869 of 28,356 frames over the full measure (scratch scen.mjs) */
+  assert(jumpMax <= 0.6, `the drawn distance came in by ${jumpMax.toFixed(2)} m in one frame (${jump} frames over 0.3 m), worst ${jumpAt}`);
+  assert(jump <= 8, `${jump} drawn frames came in by more than 0.3 m, worst ${jumpAt}`);
+  assert.equal(inside, 0, `the eye was drawn inside the scenery on ${inside} frames, first ${insideAt}`);
+  assert.equal(popped, 0, `the drawn eye went through a roof or a wall between frames ${popped} times, first ${popAt}`);
+  assert(held <= 6, `${held} frames drew the step as it is and held it`);
+  assert(against <= 0.02 * pitched, `the drawn pitch went against the mouse's on ${against} of ${pitched} frames`);
+  pass('walls and ceilings at 120 Hz: the eye comes in smoothly, is never drawn in the scenery or through a roof, the frames between steps move, and the pitch is the mouse\'s', { frames, jump, jumpMax: r2(jumpMax), held, against: `${against}/${pitched}`, rows });
+}
+if (!skipWorlds) { /* the ceiling check: an overhang over the eye (Barrows W1, Ramparts R1, Bells B1), the view still and the mouse free. The rise never
+     lifts the eye at its distance into the underside: on every step where the rise went up, the eye at the new pitch is clear. Before,
+     the rise lifted it into the underside and the room there pulled the eye in, by up to 2.6 m under an overhang */
+  let ups = 0, into = 0, at = '';
+  for (const [id, x, y, z, yaw] of [['barrows', 3, 0.52, 0.75, 3.142], ['ramparts', 3, -0.04, 17.25, 5.498], ['bells', 0.75, 0.03, 7.5, 2.356], ['barrows', 1.3, 0.78, -1.28, 3.142], ['bells', 4.5, 2.2, 1.5, 1.571]]) for (const by of [0, 0.01, -0.01]) {
+    const { walk, meta } = place(id), b = makeBody(walk, { p: [x, y + 0.3, z], yaw: yaw - Math.PI }, meta.bounds), cam = cameraFor(walk, '1280x720', yaw, { auto: true });
+    cam.snap(b.s, yaw);
+    for (let i = 0; i < 240; i++) {
+      const l0 = cam.c.lift, d0 = cam.c.dist;
+      b.step(STEP, {}, cam.c.yaw);
+      const v = cam.follow(b.s, STEP, by ? { dyaw: by, mouse: true } : { mouse: true });
+      // a step where the rise went up and the eye at its old distance was clear at the old pitch: is it clear at the new one?
+      const p = Math.min(1.35, cam.c.pitch + cam.c.lift), was = { ...v, dist: d0, pitch: Math.min(1.35, cam.c.pitch + l0) };
+      if (cam.c.lift > l0 + 1e-4 && !v.cut && cam.clear(was)) {
+        ups++;
+        if (!cam.clear({ ...was, pitch: p })) { into++; at ||= `${id} at ${x}, ${z} turning ${by} a step, step ${i}`; }
+      }
+    }
+  }
+  assert(ups > 0, 'the rise went up somewhere');
+  assert.equal(into, 0, `the rise lifted the eye into an underside on ${into} of ${ups} steps, first ${at}`);
+  pass('the ceiling check: the rise never lifts the eye into an underside', { ups });
+}
+
+if (!skipWorlds) {
+  /* the review of the walls-and-ceilings fix (design.md "Walls and ceilings"): moves at 120 Hz where its first version went wrong.
+     (1) No dive while the eye is clear: backing up a slope under the Gaol's overhang (G2), strafing there, and backing up and turning
+     past the Gaol's lintelled doorway (N3) keep the drawn eye out where 7c7d55b7 kept it (7.45, 8.5, 8.5 and 7.2 m least). The first
+     version's look-ahead lowered the goal and brought it in to 0.5 m. (2) The mouse lowering the view at 0.8 rad/s under a canopy or an
+     overhang (Fen F2, Barrows W2, the doorway the other way, N7) never pulls the eye in by over 0.6 m in a frame: the rise held for the
+     mouse let the eye sink into the scenery behind, and the step then snapped it in by 3.24, 1.56 and 1.08 m. (3) Walking in and back
+     through that doorway (N3) the cutaway comes on at most once (the first version turned it on and off 4 times there; 7c7d55b7 never),
+     and by the Bells' walls (B2, B3) no more than once and twice (the first version 3 and 3; 7c7d55b7 never, but jumped the eye 0.3
+     and 2.6 m through the wall instead) */
+  const px = r => r / MOUSE.yaw, py = r => r / MOUSE.pitch;
+  const back = () => ({ mz: -1 }), strafe = t => ({ mx: t < 1.5 ? 1 : -1 }), backTurn = (t, dt) => ({ mz: -1, px: px(0.6) * dt * (t < 1.5 ? 1 : -1) });
+  const down = (t, dt) => (t < 1.5 ? { py: -py(0.8) * dt } : {}), inOut = t => ({ mz: t < 1.5 ? 1 : -1 });
+  const least = { 'G2 back': 7, 'G2 strafe': 8, 'N3 back': 8, 'N3 backTurn': 6.5 }, out = {};
+  for (const [name, id, spot, move] of [['G2 back', 'gaol', [6, -2.19, 12, 0.785], back], ['G2 strafe', 'gaol', [6, -2.19, 12, 0.785], strafe],
+    ['N3 back', 'gaol', [6.75, 0.46, -2.75, 0], back], ['N3 backTurn', 'gaol', [6.75, 0.46, -2.75, 0], backTurn]]) {
+    const { rows } = walls120(id, spot, move), lo = Math.min(...rows.filter(r => !r.cut).map(r => r.dist));
+    out[name] = r2(lo);
+    assert(lo >= least[name], `${name}: the eye came in to ${lo.toFixed(2)} m with nothing between (7c7d55b7 kept it at ${least[name]} m or more)`);
+  }
+  for (const [name, id, spot] of [['F2 down', 'fen', [3, -0.49, 3, 1.571]], ['W2 down', 'barrows', [9.75, 1.43, -8.25, 3.927]], ['N7 down', 'gaol', [6.75, 0.46, -2.75, 3.142]]]) {
+    const { rows } = walls120(id, spot, down);
+    let pop = 0;
+    for (let i = 1; i < rows.length; i++) if (!rows[i].cut && !rows[i - 1].cut) pop = Math.max(pop, rows[i - 1].dist - rows[i].dist);
+    out[name] = r2(pop);
+    assert(pop <= 0.6, `${name}: the mouse lowering the view pulled the eye in by ${pop.toFixed(2)} m in one frame`);
+  }
+  for (const [name, id, spot] of [['N3 inOut', 'gaol', [6.75, 0.46, -2.75, 0]], ['B2 inOut', 'bells', [4.5, 2.2, 1.5, 1.571]], ['B3 inOut', 'bells', [1.5, 4.5, -8.25, 0]]]) {
+    const { rows } = walls120(id, spot, inOut);
+    let tog = 0;
+    for (let i = 1; i < rows.length; i++) if (rows[i].cut !== rows[i - 1].cut) tog++;
+    out[name] = tog;
+    assert(tog <= { 'N3 inOut': 1, 'B2 inOut': 2, 'B3 inOut': 3 }[name], `${name}: the cutaway turned on or off ${tog} times walking in and back`);
+  }
+  pass('walls at 120 Hz, the review: no dive while the eye is clear, no snap as the mouse lowers the view, and the cutaway on and off less in doorways', out);
+}
+{
+  /* A doorway into a roofed room, and a wall that comes between: the figure is never left hidden. A wall 6 or 14 m high and 0.5, 1 or
+     2 m thick across the way, with a door 2.4 m wide, and with or without a roof 3 m up over the room behind; the lamplighter walks in
+     through the door and on, then strafes 3 m along the room and stops, the camera following (both sides, walking and running). Outside
+     the cutaway, the line from the eye to the head is blocked for no more than 0.5 s in a row. The first version of the near-face stop
+     left the eye outside the wall at 4.2 m with the figure hidden to the end of the run in 6 of these 48 cases (11 to 13 s) */
+  const blockedLine = (W, e, h) => { for (let k = 1; k < 60; k++) { const f = k / 60, p = e.map((q, i) => q + (h[i] - q) * f); if (W.support(p[0], p[2], p[1]) === null) return true; } return false; };
+  let worst = 0, at = '';
+  for (const H of [6, 14]) for (const th of [0.5, 1, 2]) for (const side of [1, -1]) for (const roof of [false, true]) for (const run of [1, 0.5]) {
+    const W = layered((x, z) => (z >= -th && z <= 0 && Math.abs(x) > 1.2 ? H : roof && z < -th && z > -8 && Math.abs(x) < 6 ? [H, 0, 3] : 0), 20);
+    const b = makeBody(W, { p: [0, 0.5, 6], yaw: Math.PI }, 38), cam = cameraFor(W, '1280x720', 0, { auto: true });
+    cam.snap(b.s, 0);
+    let hid = 0, phase = 0;
+    for (let i = 0; i < 900; i++) {
+      let inp = {};
+      if (phase === 0) { if (b.s.z > -3) inp = { mz: run }; else phase = 1; }
+      if (phase === 1) { if (Math.abs(b.s.x) < 3) inp = { mx: side * run }; else phase = 2; }
+      b.step(STEP, inp, cam.c.yaw);
+      const v = cam.follow(b.s, STEP, inp);
+      if (!v.cut && blockedLine(W, eyeOf(v), [b.s.x, b.s.y + 1.3, b.s.z])) { if (++hid > worst) { worst = hid; at = `wall ${H} m, ${th} m thick, side ${side}, roof ${roof}, speed ${run}`; } } else hid = 0;
+    }
+  }
+  assert(worst <= 30, `the figure stood hidden behind a wall for ${(worst * STEP).toFixed(2)} s outside the cutaway (${at})`);
+  // a tall wall dropped between the eye and the figure as it stands (the view still): hidden no longer than 0.5 s outside the cutaway
+  let hold = 0;
+  for (const [H, th] of [[14, 1], [6, 1], [14, 2]]) {
+    let cur = OPEN; const walk = new Proxy({}, { get: (_, k) => cur[k] }), W = layered((x, z) => (z >= 3 && z <= 3 + th ? H : 0));
+    const b = makeBody(OPEN, { p: [0, 0.5, 0], yaw: Math.PI }, 38), cam = cameraFor(walk, '1280x720', 0, { auto: false });
+    cam.snap(b.s, 0);
+    for (let i = 0; i < 30; i++) cam.follow(b.s, STEP, {});
+    cur = W;
+    let hid = 0;
+    for (let i = 0; i < 600; i++) { const v = cam.follow(b.s, STEP, {}); if (!v.cut && blockedLine(W, eyeOf(v), [b.s.x, b.s.y + 1.3, b.s.z])) hold = Math.max(hold, ++hid); else hid = 0; }
+  }
+  assert(hold <= 30, `with a wall come between, the figure stood hidden for ${(hold * STEP).toFixed(2)} s outside the cutaway`);
+  /* and a wall that only runs alongside the line of sight (a corridor's, its face 0.05 to 0.25 m beside the eye, 5 or 12 m high) does
+     not move the camera: the 0.3 m camera radius does not pull the eye forward for it (the first version settled it at 3.2 m from 8.5) */
+  let lo = 99;
+  for (const gap of [0.05, 0.15, 0.25]) for (const H of [5, 12]) {
+    const W = layered((x, z) => (x >= gap && x <= gap + 1 && z >= 2 ? H : 0)), b = makeBody(W, { p: [0, 0.5, 0], yaw: Math.PI }, 38), cam = cameraFor(W, '1280x720', 0, { auto: false });
+    cam.snap(b.s, 0);
+    for (let i = 0; i < 300; i++) { b.step(STEP, {}, cam.c.yaw); const v = cam.follow(b.s, STEP, { mouse: true }); if (i > 60) lo = Math.min(lo, v.dist); }
+  }
+  assert(lo >= 8.4, `a wall alongside the line of sight brought the eye in to ${lo.toFixed(2)} m`);
+  pass('a doorway into a roofed room or a wall come between never leaves the figure hidden over 0.5 s, and a wall alongside does not move the eye', { hiddenSteps: worst, between: hold, alongside: r2(lo) });
+}
+
 console.log(`\n${n} passed`);

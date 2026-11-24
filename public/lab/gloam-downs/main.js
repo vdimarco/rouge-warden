@@ -1093,8 +1093,8 @@ function update() {
   }
   input.dyaw = input.dpitch = 0;
   blend.step(view, body.s);
-  for (const r of lampFade.set(fadeOf(eyeOf(view), body.s))) pendingRows.add(r);
-  for (const r of cut.step(view.cut ? eyeOf(view) : null, [body.s.x, body.s.y + CUT.mid, body.s.z], STEP)) pendingRows.add(r);
+  // ?test steps and draws by hand: the near fade and the cutaway's cut follow the step's view (the loop sets them for each frame's)
+  if (manual) seen(view, body.s, STEP);
   if (veils) unveil();
   if (occluders) clearMarker();
 }
@@ -1124,14 +1124,35 @@ function unveil() {
   }
   for (const r of veils.step(c.view, art.h / 2 / c.tangent, figs)) pendingRows.add(r);
 }
-let view = null, blend = null, drawn = null;
+let view = null, blend = null, drawn = null, drawnBody = null;
+/* the near fade and the cutaway's cut, from the eye that is drawn: v the view and b the lamplighter as the frame draws them, dt the
+   time since the last (design.md "Smooth camera": set from the step's eye, at 120 Hz a frame between steps could draw the eye up to
+   0.46 m from the eye they were made for, the figure a band less faded, or a splat at the cone's edge uncut) */
+/* The fade is cheap and is set every frame. The cut's cone query is not (about 1.9 ms in the Bells' low passage on SwiftShader): it
+   runs about once a step, from the eye of the frame it runs on, and at once where the cutaway turns on or off or the drawn eye has
+   moved more than CUT_MOVE since (a fast turn); between, the eased levels carry over and the time is kept for the next run. So at
+   120 Hz it costs what it cost at the step, and the eye it was made for is no more than a frame or CUT_MOVE from the drawn one */
+const seenCost = { ms: 0, n: 0, cuts: 0 }, CUT_MOVE = 0.25;
+let cutOf = null, cutEye = null, cutDt = 0;
+function seen(v, b, dt) {
+  const t0 = performance.now(), e = eyeOf(v);
+  for (const r of lampFade.set(fadeOf(e, b))) pendingRows.add(r);
+  if (cutOf !== cut) { cutOf = cut; cutEye = null; cutDt = 0; }
+  cutDt += dt;
+  const flag = !!v.cut !== !!cutEye, moved = v.cut && cutEye && Math.hypot(e[0] - cutEye[0], e[1] - cutEye[1], e[2] - cutEye[2]) > CUT_MOVE;
+  if (flag || moved || cutDt >= STEP * 0.9) {
+    for (const r of cut.step(v.cut ? e : null, [b.x, b.y + CUT.mid, b.z], cutDt)) pendingRows.add(r);
+    cutEye = v.cut ? e : null; cutDt = 0; seenCost.cuts++;
+  }
+  seenCost.ms += performance.now() - t0; seenCost.n++;
+}
 /* o.time draws at that game time (the clips and the flicker); o.pool false parks every foe for this one draw (?test); o.view and o.body
    are the frame's blend of the last two steps (play.js makeBlend: the loop's frames between steps) */
 function draw(o = {}) {
   if (!view) { view = cam.follow(body.s, 0, input); blend.reset(); }
   const t = Number.isFinite(o.time) ? o.time : time, view0 = view;
   if (o.view) view = o.view;
-  drawn = view;
+  drawn = view; { const db = o.body || body.s; drawnBody = { x: db.x, y: db.y, z: db.z }; }
   pose(world.anim.bones, meta.bones, o.body || body.s, t, still);
   if (fight) {
     fight.draw(view, { time: Number.isFinite(o.time) ? o.time : undefined, pool: o.pool, art: art.h });
@@ -1175,8 +1196,10 @@ function frame(now) {
   if (audio) soundTick();
   if (c.n) inp.consumed();
   // the frame between two steps: blended by the share of a step since the last one, with the mouse's turn not yet stepped on top
-  const k = acc / STEP;
-  draw({ view: blend.view(k, input.dyaw, input.dpitch) ?? undefined, body: blend.body(body.s, k) });
+  const k = acc / STEP, v = blend.view(k, input.dyaw, input.dpitch) ?? view, b = blend.body(body.s, k);
+  // the cut eases by the frame's own time (no more than a slow frame's 15 steps)
+  if (v) seen(v, b, Math.min(dtRaw, 15 * STEP));
+  draw({ view: v ?? undefined, body: b });
   if (!RUN && frames % 120 === 0) store(disk, save);
   // slow machine: if frames come slower than 45 ms for two seconds, draw a smaller picture
   if (adapt && dtRaw > 0) {
@@ -1229,13 +1252,16 @@ window.__gloam = {
     wisps: meta ? (RUN ? runner?.wisps.size ?? 0 : save.wisps[meta.id]?.length || 0) : 0, lit: beaconLit, frames, art: { ...art }, target: artTarget, count: world?.count,
     reached: save.reached.slice(),
     // pitch is the player's; view is what is drawn (with the rise over walls), want the layout's distance, foe the combat camera's
-    // drawn: the view the last frame drew (between steps, the blend of the last two with the mouse's turn since on top)
-    cam: cam ? { drawn: drawn ? { yaw: drawn.yaw, pitch: drawn.pitch, dist: drawn.dist } : null, yaw: cam.c.yaw, dist: cam.c.dist, pitch: cam.c.pitch, want: cam.c.want, fov: cam.c.fov, aim: cam.c.aim, lift: cam.c.lift, view: view ? view.pitch : null, foe: combat?.foe?.id ?? null, turning: cam.c.turning, idle: cam.c.idle,
+    // drawn: the view the last frame drew (between steps, the blend of the last two with the mouse's turn since on top), and where it
+    // drew the lamplighter
+    cam: cam ? { drawn: drawn ? { yaw: drawn.yaw, pitch: drawn.pitch, dist: drawn.dist, target: drawn.target.slice(), cut: !!drawn.cut, body: drawnBody && { ...drawnBody } } : null, yaw: cam.c.yaw, dist: cam.c.dist, pitch: cam.c.pitch, want: cam.c.want, fov: cam.c.fov, aim: cam.c.aim, lift: cam.c.lift, view: view ? view.pitch : null, foe: combat?.foe?.id ?? null, turning: cam.c.turning, idle: cam.c.idle,
       boss: bossCam ? { on: bossCam.b.on, w: bossCam.b.w, dist: view?.dist ?? null, aim: view?.target ?? null } : null } : null,
     // the pieces of scenery faded in front of the boss's marker (veil.js makeOccluders), or null away from Barrow Crown's run
     occluded: occluders ? occluders.faded() : null,
     // the near fade's share now (play.js fadeOf: 0 to 1, or NEAR_FADE.all with the whole figure left out)
     fade: lampFade?.k ?? 0,
+    // the time the near fade and the cut took over the frames so far (ms in all, how many frames, and how many of them ran the cut)
+    seen: { ...seenCost },
     // the cutaway: on (the view stands behind the wall), how many of the place's splats are left out or easing back now, and the
     // view's own distance and pitch (cam.dist is the follow camera's under it)
     cut: { on: !!view?.cut, splats: cut?.size ?? 0, dist: view?.dist ?? null, pitch: view?.pitch ?? null },
