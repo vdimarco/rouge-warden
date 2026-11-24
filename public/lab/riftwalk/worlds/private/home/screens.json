@@ -1,0 +1,136 @@
+{
+ "note": "A private world: a house made from four room scenes (Viggle PINOC), joined as one floor plan with doorways, stairs and a basement. Metric, y up, ground floor at y = 0. Its files are sealed (qa/lab/riftwalk-seal.mjs): the page asks for the password before it loads them. floors are the boxes a visitor walks on; a box with a y pair is a slope along z (the stairs). exit is the portal back to the alley, on the salon's street wall.",
+ "hall": {
+  "scale": 1,
+  "ground": 0,
+  "eye": 1.5,
+  "flip": false,
+  "turn": 0
+ },
+ "start": {
+  "x": 1,
+  "z": 1.4,
+  "facing": 3.1416
+ },
+ "exit": {
+  "centre": [
+   1,
+   1.45,
+   0.18
+  ],
+  "normal": [
+   0,
+   0,
+   1
+  ],
+  "radius": 0.55
+ },
+ "floors": [
+  {
+   "name": "salon",
+   "x": [
+    0.35,
+    8.15
+   ],
+   "z": [
+    0.35,
+    3.45
+   ],
+   "y": 0
+  },
+  {
+   "name": "salon to bedroom",
+   "x": [
+    0.65,
+    1.35
+   ],
+   "z": [
+    3.3,
+    4.45
+   ],
+   "y": 0
+  },
+  {
+   "name": "bedroom",
+   "x": [
+    0.35,
+    5.15
+   ],
+   "z": [
+    4.3,
+    7.2
+   ],
+   "y": 0
+  },
+  {
+   "name": "bedroom to kitchen",
+   "x": [
+    0.65,
+    1.35
+   ],
+   "z": [
+    7.05,
+    8.2
+   ],
+   "y": 0
+  },
+  {
+   "name": "kitchen",
+   "x": [
+    0.35,
+    4.05
+   ],
+   "z": [
+    8.05,
+    10.3
+   ],
+   "y": 0
+  },
+  {
+   "name": "top of the stairs",
+   "x": [
+    5.9,
+    6.6
+   ],
+   "z": [
+    3.3,
+    4.3
+   ],
+   "y": 0
+  },
+  {
+   "name": "stairs",
+   "x": [
+    5.9,
+    6.6
+   ],
+   "z": [
+    4.25,
+    8.15
+   ],
+   "y": [
+    0,
+    -3.05
+   ]
+  },
+  {
+   "name": "basement",
+   "x": [
+    5.9,
+    7.95
+   ],
+   "z": [
+    6.65,
+    8.95
+   ],
+   "y": -3.05
+  }
+ ],
+ "screens": [],
+ "lock": {
+  "kdf": "PBKDF2-SHA256",
+  "iterations": 600000,
+  "salt": "4BhYQ5Ha9XKrtzgI59G9Iw==",
+  "check": "3lLyMLk0eWkx2m+KyvZKmiC9OTAQ2h6rqwBMYyWlxfRMSl+dUugHrW43LCcOj9j7fdE="
+ }
+}

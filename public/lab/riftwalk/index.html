@@ -90,6 +90,12 @@
   /* A short window: the card is one compact block, so it stays under the portal in front. */
   @media (max-height: 640px) { .target { bottom: calc(var(--sab) + 76px); padding: 6px 14px 7px; } .target b { font-size: 17px; } .target span { font-size: 13px; } .target i { display: none; } }
   @media (prefers-reduced-motion: reduce) { .flash { transition: none; } }
+  /* The card a locked door shows: one password field and two buttons, over the view. */
+  .lock { z-index: 9; }
+  .lock input { width: 100%; box-sizing: border-box; height: 48px; margin: 4px 0 10px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--line); background: #0a0612; color: var(--ink); font: 600 18px/1 var(--body); }
+  .lock input:focus-visible { outline: 2px solid var(--zone, var(--gold)); outline-offset: 2px; }
+  .lock .note { min-height: 1.3em; margin: 10px 0 0; color: var(--muted); }
+  .lock button { min-height: 48px; }
 </style>
 <script type="importmap">{"imports":{"three":"/vr/lib/three.module.min.js","three/addons/postprocessing/Pass.js":"/lab/riftwalk/lib/Pass.js","@sparkjsdev/spark":"/lab/riftwalk/lib/spark.module.min.js"}}</script>
 </head>
@@ -137,6 +143,16 @@
   </ul>
   <button class="go" type="button" id="go" disabled>Loading…</button>
   <p class="credit">The alley and the worlds are Gaussian splat worlds made with Marble by World Labs, and their Spark library draws them. The music was made with ElevenLabs Music.</p>
+</section>
+<section class="card lock" id="lock" hidden role="dialog" aria-modal="true" aria-labelledby="lockTitle">
+  <h2 id="lockTitle">Locked</h2>
+  <p class="pitch">This door opens a private world. Type its password to go in.</p>
+  <form id="lockForm" autocomplete="off">
+    <label for="lockPass" class="pitch">Password</label>
+    <input id="lockPass" type="password" autocomplete="current-password" required>
+    <div class="row"><button type="button" class="ghost" id="lockCancel">Cancel</button><button type="submit">Open</button></div>
+    <p class="note" id="lockNote" role="status" aria-live="polite"></p>
+  </form>
 </section>
 <nav class="list" id="list" aria-label="All games, as links"></nav>
 <script src="/arcade/switch.js"></script>

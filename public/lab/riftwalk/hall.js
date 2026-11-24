@@ -31,6 +31,13 @@ export const ZONES = [
   { id: 'lab', label: 'Lab', color: '#4f8dff', groups: ['lab'] },
 ];
 
+// Private worlds: a door on the alley that is not a collection of games. Its world's files are sealed with a password
+// (qa/lab/riftwalk-seal.mjs), and its door asks for the password before it opens. They are not on the zone buttons
+// and not in the list of links. The page adds them after the zones, so a private world's index is ZONES.length + k.
+export const PRIVATE = [
+  { id: 'home', label: 'Home', color: '#ffd9a0', groups: [], locked: true },
+];
+
 const wrap = a => Math.atan2(Math.sin(a), Math.cos(a));
 // A heading is a compass turn in radians: 0 looks along -z and a quarter turn looks along +x.
 export const direction = heading => ({ x: Math.sin(heading), z: -Math.cos(heading) });
@@ -78,6 +85,7 @@ export function ringPlace(ring) {
 // A room is a small world of its own for one zone, with machines around the point the visitor stands on. Its machines
 // take games in order, clockwise: the first game is on the front machine, the next one is to its right, and so on round.
 export function roomSeats(screens) {
+  if (!screens.length) return [];   // a world with no machines (a private world)
   const turn = a => ((a % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
   const front = screens.reduce((best, p) => Math.abs(wrap(p.heading)) < Math.abs(wrap(best.heading)) ? p : best, screens[0]).heading;
   return screens.map((p, i) => ({ i, at: turn(p.heading - front) })).sort((a, b) => a.at - b.at).map(e => e.i);
@@ -119,6 +127,29 @@ export function exitRing(screens, radius = 0.55) {
   });
   const d = direction(heading);
   return { ring: true, heading, distance, centre: [d.x * distance, 1.45, d.z * distance], right: [-d.z, 0, d.x], up: [0, 1, 0], normal: [-d.x, 0, -d.z], width: radius * 2, height: radius * 2 };
+}
+// A world with floors (a house) is walked on boxes in place of a disc. Each box is { x: [a, b], z: [a, b], y } with
+// one floor height, or with y: [at z a, at z b] for a slope along z (stairs). The floor height of a box at a point:
+export function floorAt(box, at) {
+  if (!Array.isArray(box.y)) return box.y;
+  const t = Math.max(0, Math.min(1, (at.z - box.z[0]) / (box.z[1] - box.z[0]))); return box.y[0] + (box.y[1] - box.y[0]) * t;
+}
+// One walk step on the floors: the step ends in the nearest box whose floor at that point is within STEP_UP of the
+// floor the visitor stands on, so a visitor goes down the stairs but never drops through a floor to the room below.
+// Only the boxes the visitor stands in, and the boxes that overlap them, count: two rooms connect only through a box
+// that overlaps both (a doorway), so even a long step cannot pass through a wall. The answer has the floor height as y.
+export const STEP_UP = 0.45;
+const inBox = (p, b, e = 1e-6) => p.x >= b.x[0] - e && p.x <= b.x[1] + e && p.z >= b.z[0] - e && p.z <= b.z[1] + e;
+const overlap = (a, b) => a.x[0] < b.x[1] && b.x[0] < a.x[1] && a.z[0] < b.z[1] && b.z[0] < a.z[1];
+export function walkFloors(from, to, floors) {
+  const here = floors.filter(b => inBox(from, b) && Math.abs(floorAt(b, from) - from.y) <= STEP_UP);
+  const near = here.length ? floors.filter(b => here.includes(b) || here.some(h => overlap(h, b))) : floors;
+  let best = null, least = Infinity;
+  for (const b of near) {
+    const p = clampBox(to, b), y = floorAt(b, p); if (Math.abs(y - from.y) > STEP_UP) continue;
+    const d = Math.hypot(p.x - to.x, p.z - to.z); if (d < least - 1e-9) { least = d; best = { x: p.x, z: p.z, y }; }
+  }
+  return best || { x: from.x, z: from.z, y: from.y };
 }
 // One walk step inside a room: the visitor stays within `reach` metres of the room's middle.
 export function walkRoom(to, reach = 1) { const r = Math.hypot(to.x, to.z); return r <= reach ? to : { x: to.x / r * reach, z: to.z / r * reach }; }

@@ -1,7 +1,10 @@
 // Riftwalk (public/lab/riftwalk/), the arcade as a neon alley with a storefront door for each collection, checked in
 // Chromium with SwiftShader. The check runs with ?world=none: the portals and the page with no splat world, because
 // software WebGL draws a splat world at a frame in seconds. One step loads the real world file.
-// - Enter the alley: it has no machines, and six lit doors, each with a view into its zone's world;
+// - Enter the alley: it has no machines, and seven lit doors: one for each zone, each with a view into its world,
+//   and the locked door of a private world (Home), with no view;
+// - the locked door asks for a password: a wrong one is refused, Esc and Cancel close the card, and the right one
+//   (RIFTWALK_PASSWORD, when it is set) opens a house with floors: the doorways and the stairs down to the basement;
 // - a zone button, a number key and the up and down keys glide the visitor to that zone's station on the street;
 // - a door opens that zone's world, with its games on floating frames in the homepage order, the first game in front,
 //   and the ways back (S, the ring, and the top-left link, which reads Alley inside a world) return to the alley at that
@@ -53,7 +56,7 @@ async function open(options = {}, query = 'world=none&px=1') {
   return { page, errors, moves, state, until, text, hidden, settled, enterAlley, zone, world, front, at, face, key, launched, pressed, games };
 }
 const ZONES = ['Cottage', 'Action', 'ASCII Scenes', 'Strategy', 'GTA', 'Lab'], IDS = ['cottage', 'action', 'ascii', 'strategy', 'gta', 'lab'], COUNTS = [8, 12, 2, 3, 1, 20];
-const door = id => IDS.indexOf(id);   // in the alley the six doors are places 0 to 5, in zone order
+const DOORS = IDS.concat(['home']), door = id => DOORS.indexOf(id);   // in the alley the seven doors are places 0 to 6: the zones in order, then Home
 const named = s => s.aim < s.machines.length ? s.machines[s.aim].title : s.rings[s.aim - s.machines.length].title;
 const station = id => ALLEY.zones[id].station, atStation = (s, id) => Math.hypot(s.place.x - station(id)[0], s.place.z - station(id)[1]) < 1e-6;
 const onStreet = p => ALLEY.hall.bounds.boxes.some(b => p.x >= b.x[0] - 1e-6 && p.x <= b.x[1] + 1e-6 && p.z >= b.z[0] - 1e-6 && p.z <= b.z[1] + 1e-6);
@@ -65,12 +68,12 @@ try {
     await page.waitForFunction(() => !document.getElementById('go').disabled); assert.equal(await t.text('go'), 'Enter the alley');
     let s = await t.enterAlley(); const GAMES = await t.games();
     assert.deepEqual(IDS.map(id => GAMES[id].length), COUNTS, 'the games of each zone');
-    assert.deepEqual(s.machines, [], 'the alley has no machines'); assert.deepEqual(s.rings.map(r => r.to), IDS, 'a door for each zone, in zone order'); assert.deepEqual(s.rings.map(r => r.title), ZONES); assert(s.rings.every(r => r.lit === 1), 'every door is lit'); await t.until(s => s.rings.every(r => r.art), 'each door shows a view into its world'); assert.equal(s.room, null);
+    assert.deepEqual(s.machines, [], 'the alley has no machines'); assert.deepEqual(s.rings.map(r => r.to), DOORS, 'a door for each zone, in zone order, then Home'); assert.deepEqual(s.rings.map(r => r.title), ZONES.concat(['Home'])); assert(s.rings.every(r => r.lit === 1), 'every door is lit'); await t.until(s => s.rings.slice(0, 6).every(r => r.art), 'each zone door shows a view into its world'); assert.equal(s.rings[6].art, false, 'the locked door shows no view'); assert.equal(s.room, null);
     assert.deepEqual(await page.evaluate(() => [...document.querySelectorAll('#groups button')].map(b => b.textContent)), ZONES); assert.equal((await t.pressed()).length, 1, 'the button of the zone the visitor stands in is on');
     assert.equal(s.pages, 1); assert.equal(await t.hidden('kMore'), true, 'no More button in the alley'); assert.equal(await t.hidden('kBack'), true); assert.equal(await t.hidden('kRoom'), false);
     assert(s.motes > 150, 'motes of light drift at the stations and circle the doors: ' + s.motes); assert(onStreet(s.place), 'the visitor starts on a street');
     if (shots) await page.screenshot({ path: join(shots, 'riftwalk-alley.png') });
-    pass('the alley opens with six lit doors, each with its art, and no machines', { doors: s.rings.length, machines: s.machines.length });
+    pass('the alley opens with seven lit doors, the six zone doors with their art, and no machines', { doors: s.rings.length, machines: s.machines.length });
 
     // A number key glides to a zone's station, and the card names the door in front.
     await page.keyboard.press('2'); await t.until(s => s.gliding || s.zone === 'action', 'the 2 key starts a glide'); s = await t.zone('action', 'the visitor arrives at the Action station');
@@ -97,7 +100,7 @@ try {
     await page.keyboard.press('ArrowRight'); s = await t.until(s => !s.turning && s.aim === 1, 'the next frame to the right has the second game'); assert.equal(await t.text('tTitle'), GAMES.action[1].title);
     // The way back is behind the visitor. Esc returns to the alley, at the station of that zone.
     await page.evaluate(() => window.__riftwalk.look(0)); assert.equal(await t.at(s.machines.length), null, 'the way back is behind the visitor');
-    await page.keyboard.press('Escape'); s = await t.zone('action', 'Esc goes back to the alley'); assert(atStation(s, 'action'), 'back at the Action station'); assert.deepEqual(s.machines, []); assert.equal(s.rings.length, 6); assert.equal(await t.hidden('kBack'), true); s = await t.front('a door is in front'); assert.equal(s.aim, door('action'));
+    await page.keyboard.press('Escape'); s = await t.zone('action', 'Esc goes back to the alley'); assert(atStation(s, 'action'), 'back at the Action station'); assert.deepEqual(s.machines, []); assert.equal(s.rings.length, 7); assert.equal(await t.hidden('kBack'), true); s = await t.front('a door is in front'); assert.equal(s.aim, door('action'));
     // Enter at a door opens its world. A number key or a zone button inside a world goes to that zone's world: every
     // zone shows its own games in order, on one frame for each game of the page.
     await page.keyboard.press('1'); await t.zone('cottage', 'the Cottage station'); await t.until(s => s.aim === door('cottage'), 'the Cottage door is in front'); await t.key('Enter'); s = await t.world('cottage', 'Enter at a door opens the Cottage world');
@@ -119,7 +122,7 @@ try {
     // The arrows turn from door to door, round the visitor. Each stop is named on the card.
     await page.keyboard.press('1'); s = await t.zone('cottage', 'the Cottage station'); s = await t.until(s => s.aim === door('cottage'), 'the Cottage door is in front');
     const first = s.aim, seen = [first]; let guard = 0;
-    do { const from = s.aim; await page.keyboard.press('ArrowRight'); s = await t.until(s => !s.turning && s.aim >= 0 && s.aim !== from, '▶ turns to the next door'); assert(s.aim < 6 && s.machines.length === 0, 'the stop is a door'); assert.equal(await t.text('tTitle'), named(s)); if (s.aim !== first) { assert(!seen.includes(s.aim), 'no door twice in one round'); seen.push(s.aim); } } while (s.aim !== first && guard++ < 8);
+    do { const from = s.aim; await page.keyboard.press('ArrowRight'); s = await t.until(s => !s.turning && s.aim >= 0 && s.aim !== from, '▶ turns to the next door'); assert(s.aim < 7 && s.machines.length === 0, 'the stop is a door'); assert.equal(await t.text('tTitle'), named(s)); if (s.aim !== first) { assert(!seen.includes(s.aim), 'no door twice in one round'); seen.push(s.aim); } } while (s.aim !== first && guard++ < 8);
     assert.equal(s.aim, first, '▶ comes round to the first door'); assert(seen.length >= 3, '▶ stops at the doors in reach: ' + seen);
     await page.click('#kNext'); await t.until(s => !s.turning && s.aim === seen[1], 'the ▶ button turns to the next door'); await page.click('#kPrev'); s = await t.until(s => !s.turning && s.aim === first, 'the ◀ button turns back');
     assert(atStation(s, 'cottage'), 'a turn does not move the visitor');
@@ -165,6 +168,40 @@ try {
     assert.deepEqual(t.errors, [], 'no console errors');
     pass('the picture under the pointer flows, and a click on a lit frame launches its game', { game: game.title, url: game.url });
     await page.close();
+  }
+  {
+    // The locked door: Home is on the east wall of the north street. A click asks for its password and nothing loads.
+    // A wrong password is refused; Esc and Cancel close the card. With RIFTWALK_PASSWORD set, the right one opens the
+    // house: the visitor starts in the salon, walks through the two doorways to the kitchen, down the stairs to the
+    // basement and back, and the portal on the salon's street wall leads back to the Home door.
+    const t = await open(), { page } = t; let s = await t.enterAlley(); const loads = []; page.on('request', r => { if (/worlds\/private\/home\/.+\.bin$/.test(r.url())) loads.push(r.url()); });
+    const home = ALLEY.zones.home; await page.evaluate(([x, z]) => window.__riftwalk.goto(x, z), home.station); await page.evaluate(() => window.__riftwalk.face(6));
+    s = await t.until(s => s.aim === door('home'), 'the Home door is in front'); assert.equal(await t.text('tTitle'), 'Home'); assert.equal(await t.text('tSub'), 'Locked · a private world');
+    let at = await t.at(door('home')); await page.mouse.click(at.x, at.y); s = await t.until(s => s.lock, 'the door asks for a password'); assert.equal(s.lock.title, 'Home is locked'); assert.equal(s.room, null);
+    assert.equal(await page.evaluate(() => document.activeElement?.id), 'lockPass', 'the password field has the focus');
+    await page.keyboard.press('w'); s = await t.state(); assert.equal(s.walking, false); 
+    await page.fill('#lockPass', 'not the password'); await page.click('#lockForm button[type=submit]'); s = await t.until(s => s.lock?.note === 'That is not the password.', 'a wrong password is refused', 60000); assert.equal(s.room, null); assert.deepEqual(s.unlocked, []);
+    if (shots) await page.screenshot({ path: join(shots, 'riftwalk-locked.png') });
+    await page.keyboard.press('Escape'); s = await t.until(s => !s.lock, 'Esc closes the card'); assert.equal(s.room, null, 'Esc in the card does not leave the alley either');
+    await t.key('Enter'); await t.until(s => s.lock, 'Enter at the door asks again'); await page.click('#lockCancel'); s = await t.until(s => !s.lock, 'Cancel closes the card');
+    assert.deepEqual(loads, [], 'no world file loads before the password');
+    const pw = process.env.RIFTWALK_PASSWORD;
+    if (pw) {
+      await page.click('#kRoom'); await t.until(s => s.lock, 'the Go in button asks too'); await page.fill('#lockPass', pw); await page.keyboard.press('Enter');
+      s = await t.world('home', 'the right password opens Home'); assert.deepEqual(s.unlocked, ['home']); assert.deepEqual(s.machines, []); assert.deepEqual(s.rings.map(r => r.to), ['hall']);
+      const W = JSON.parse(readFileSync(new URL('../../public/lab/riftwalk/worlds/private/home/screens.json', import.meta.url), 'utf8'));
+      assert(Math.abs(s.place.x - W.start.x) < 1e-6 && Math.abs(s.place.z - W.start.z) < 1e-6 && s.place.y === 0, 'the visitor starts in the salon');
+      const hold = async (k, test, what) => { await page.keyboard.down(k); try { return await t.until(test, what, 60000); } finally { await page.keyboard.up(k); } };
+      await page.evaluate(() => window.__riftwalk.look(Math.PI)); s = await hold('w', s => s.place.z > 9.5, 'W walks through both doorways to the kitchen'); assert.equal(s.place.y, 0);
+      await page.evaluate(([x, z]) => window.__riftwalk.goto(x, z), [6.25, 3.6]); await page.evaluate(() => window.__riftwalk.look(Math.PI));
+      s = await hold('w', s => s.place.y < -3, 'W walks down the stairs to the basement'); assert(s.place.z > 7.5, 'at the foot of the stairs');
+      await page.evaluate(() => window.__riftwalk.look(0)); s = await hold('w', s => s.place.y === 0, 'W walks back up the stairs');
+      if (shots) await page.screenshot({ path: join(shots, 'riftwalk-home.png') });
+      await page.keyboard.press('Escape'); s = await t.zone('home', 'Esc goes back to the Home door'); assert.equal(s.place.y, 0);
+      pass('the right password opens Home: doorways, stairs and the way back');
+    } else console.log('     (RIFTWALK_PASSWORD is not set: the open house is not checked)');
+    assert.deepEqual(t.errors, []); await page.close();
+    pass('the Home door is locked: a password card, a wrong password refused, and no world file before the password');
   }
   {
     // The rim of a door gives way under the mouse pointer: the door answers a pointer on its rim, not one in its
