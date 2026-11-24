@@ -8,5 +8,5 @@
 - [x] Walking on floors (`walkFloors`, `floorAt`) with the wall and stair rules.
 - [x] The password card, the unlock with Web Crypto, the sealed loads, no live window through a locked door.
 - [x] Node check: 7 checks pass, with and without `RIFTWALK_PASSWORD`.
-- [ ] Browser check `qa/lab/riftwalk.e2e.mjs` with `RIFTWALK_PASSWORD`.
+- [x] Browser check `qa/lab/riftwalk.e2e.mjs` with `RIFTWALK_PASSWORD`: 15 checks pass in software WebGL.
 - [ ] Screenshots of the locked card and the house in the pull request.
