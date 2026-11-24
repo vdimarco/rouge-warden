@@ -49,7 +49,7 @@ const tick = (page, sec, held = {}) => G(page, ([s, h]) => window.__gloam.tick(s
 const keepOut = (page, carried) => G(page, c => { const g = window.__gloam; g.out('G5'); g.tick(1.2, {}); g.set({ carried: c - 9 }); }, carried);
 const active = page => G(page, () => document.activeElement?.id || document.activeElement?.textContent);
 const text = (page, sel) => page.textContent(sel).then(t => t.trim());
-const stored = page => G(page, () => JSON.parse(localStorage.getItem('gloam-downs.run.v1')));
+const stored = page => G(page, () => JSON.parse(localStorage.getItem('gloam-downs.run.v2')));
 const shot = async (page, name) => { if (!SHOTS) return; await G(page, () => window.__gloam.draw()); await page.screenshot({ path: `${SHOTS}/${name}.png` }); };
 // the longest toast in the run's data (the keepers by the broken wall, from foes.js) and one of 96 characters
 const KEEPERS = 'The beacon will not catch while its keepers stand by the broken wall below the tower.';
@@ -76,17 +76,23 @@ function cardFaults(id) {
   const out = [], panel = document.getElementById(id), box = panel.querySelector('.box'), b = R(box);
   if (panel.hidden) return ['not shown'];
   if (!inside(b)) out.push(`box outside the screen ${JSON.stringify(b)}`);
-  if (box.scrollHeight > box.clientHeight + 1) out.push(`box scrolls ${box.scrollHeight} > ${box.clientHeight}`);
+  // the Lamp-room, with its unlocks, scrolls inside the card: each button must come into view, clear of the card's own buttons at its foot
+  const scrolls = id === 'lamp';
+  if (!scrolls && box.scrollHeight > box.clientHeight + 1) out.push(`box scrolls ${box.scrollHeight} > ${box.clientHeight}`);
   if (document.scrollingElement.scrollHeight > innerHeight + 1 || document.scrollingElement.scrollWidth > innerWidth + 1) out.push('the page scrolls');
   const lab = [R(document.querySelector('.labbar .back')), R(document.getElementById('menu'))];
   const btns = [...box.querySelectorAll('button')].filter(x => !x.hidden && x.getClientRects().length);
+  const foot = scrolls ? [...document.querySelectorAll('#lampRow button')].filter(x => !x.hidden && x.getClientRects().length) : [];
   btns.forEach((x, i) => {
+    if (scrolls) x.scrollIntoView({ block: 'nearest' });
     const r = R(x), name = x.id || x.textContent.trim();
     if (Math.min(r.width, r.height) < 44 - 0.01) out.push(`${name} is ${r.width.toFixed(1)}x${r.height.toFixed(1)}`);
     if (!inside(r)) out.push(`${name} outside the screen`);
     if (lab.some(l => over(r, l))) out.push(`${name} under the Lab bar`);
-    btns.slice(i + 1).forEach(y => { if (over(r, R(y))) out.push(`${name} over ${y.id || y.textContent.trim()}`); });
+    if (scrolls) { if (!foot.includes(x) && foot.some(y => over(r, R(y)))) out.push(`${name} under the card's own buttons`); }
+    else btns.slice(i + 1).forEach(y => { if (over(r, R(y))) out.push(`${name} over ${y.id || y.textContent.trim()}`); });
   });
+  if (scrolls) box.scrollTop = 0;
   for (const el of box.querySelectorAll('h2, p, li, dt, dd, span')) {
     if (el.hidden || !el.getClientRects().length) continue;
     const r = R(el);
@@ -252,7 +258,7 @@ try {
     r = await run(page);
     assert.equal(r.mode, 'dying');
     // the foes put out are the keep's three Snuffers, put out before the Gaol's beacon
-    assert.deepEqual(r.ended, { won: false, place: 'ramparts', time: r.ended.time, foes: 3, lost: 20, banked: 44 });
+    assert.deepEqual(r.ended, { won: false, place: 'ramparts', time: r.ended.time, foes: 3, lost: 15, banked: 49, ember: 0, opened: null, relics: [], combo: 0 }, 'Cinders keep 5 of the 20 carried');
     await tick(page, 0.5, {});
     await G(page, () => window.__gloam.draw());
     await shot(page, 'keys-fade-1280x720');
@@ -275,12 +281,12 @@ try {
     assert.deepEqual(r.ended, ended, 'a reload in the fade shows the same figures');
     assert.equal(r.place, 'gaol');
     const sum = await page.$$eval('#summary dd', ds => ds.map(d => d.textContent));
-    assert.deepEqual([sum[0], sum[3], sum[4]], ['II · The Crow Wall', '20 glim', '44 glim']);
+    assert.deepEqual([sum[0], sum[3], sum[4]], ['II · The Crow Wall', '15 glim', '49 glim']);
     assert.equal(await text(page, '#sumT'), 'The lamp goes out');
     assert.equal(await active(page), 'bSumLamp');
     assert.deepEqual(await faults(page, 'summary'), []);
     await shot(page, 'keys-summary-1280x720');
-    pass('End the run with keys, a reload 0.5 s into the fade, and the summary: "II · The Crow Wall", 20 glim lost, 44 banked', { sum });
+    pass('End the run with keys, a reload 0.5 s into the fade, and the summary: "II · The Crow Wall", 15 glim lost, 49 banked (Cinders keep 5)', { sum });
 
     // the summary opens the Lamp-room over the Gaol: 44 banked, Mantle bought with the focus kept, Flask off with "16 more glim"
     await page.keyboard.press('Enter');
@@ -290,10 +296,10 @@ try {
     assert.equal(await active(page), 'bLampBegin');
     const rows = () => page.$$eval('#ups li', ls => ls.map(li => [li.querySelector('span').textContent, li.querySelector('button').hidden ? null : li.querySelector('button').textContent, li.querySelector('button').getAttribute('aria-disabled')]));
     assert.deepEqual(await rows(), [
-      ['Mantle 1 · +15 health · 40 glim', 'Buy', 'false'], ['Flask 1 · +1 flask · 60 glim', '16 more glim', 'true'], ['Edge 1 · +12% blade damage · 50 glim', '6 more glim', 'true'],
-      ['Draught 1 · heal 45% · 45 glim', '1 more glim', 'true'], ['Ash pocket · keep 30% of glim · 120 glim', '76 more glim', 'true']
+      ['Mantle 1 · +15 health · 40 glim', 'Buy', 'false'], ['Flask 1 · +1 flask · 60 glim', '11 more glim', 'true'], ['Edge 1 · +12% blade damage · 50 glim', '1 more glim', 'true'],
+      ['Draught 1 · heal 45% · 45 glim', 'Buy', 'false'], ['Ash pocket · keep 55% of glim · 120 glim', '71 more glim', 'true']
     ]);
-    assert.match(await text(page, '#lampLine'), /Banked: 44 glim/);
+    assert.match(await text(page, '#lampLine'), /Banked: 49 glim/);
     assert.deepEqual(await faults(page, 'lamp'), []);
     await shot(page, 'keys-lamp-1280x720');
     await page.keyboard.press('Tab');
@@ -302,12 +308,12 @@ try {
     assert.equal(await G(page, () => document.activeElement.closest('li')?.dataset.up), 'mantle', 'Tab wraps to the first Buy');
     await page.keyboard.press(' ');
     let s = await stored(page);
-    assert.deepEqual([s.bank, s.up.mantle], [4, 1], 'the buy is stored at once');
+    assert.deepEqual([s.bank, s.up.mantle], [9, 1], 'the buy is stored at once');
     assert.equal(await G(page, () => document.activeElement.closest('li')?.dataset.up), 'mantle', 'the focus stays on the Buy button');
-    assert.deepEqual((await rows())[0], ['Mantle 2 · +15 health · 80 glim', '76 more glim', 'true']);
+    assert.deepEqual((await rows())[0], ['Mantle 2 · +15 health · 80 glim', '71 more glim', 'true']);
     await page.keyboard.press('Enter');
     await page.keyboard.press(' ');
-    assert.equal((await stored(page)).bank, 4, 'a Buy button that is off does nothing, on Enter or Space');
+    assert.equal((await stored(page)).bank, 9, 'a Buy button that is off does nothing, on Enter or Space');
     await page.keyboard.press('Shift+Tab');
     assert.equal(await active(page), 'bLampExplore', 'Shift+Tab wraps back to Explore');
     await page.keyboard.press('Shift+Tab');
@@ -315,10 +321,10 @@ try {
     await page.keyboard.press('Enter');
     await ready(page, 'play');
     r = await run(page);
-    assert.deepEqual([r.place, r.hp, r.max, r.bank], ['gaol', 115, 115, 4]);
+    assert.deepEqual([r.place, r.hp, r.max, r.bank], ['gaol', 115, 115, 9]);
     pass('the Lamp-room after the summary: its rows, a buy that keeps the focus, a Buy that says how much more, and a run of 115 health');
 
-    // a death with Ash pocket: the fade is game time, and the summary shows 6 banked and 14 lost after 72 steps
+    // a death with Ash pocket: the fade is game time, and the summary shows 11 banked and 9 lost after 72 steps
     await G(page, () => window.__gloam.set({ up: { ash: 1 }, carried: 20 }));
     await G(page, () => window.__gloam.kill());
     await page.waitForTimeout(1500);
@@ -327,9 +333,9 @@ try {
     await tick(page, 0.02, {});
     assert.equal((await run(page)).mode, 'ended');
     const ash = await page.$$eval('#summary dd', ds => ds.map(d => d.textContent));
-    assert.deepEqual([ash[0], ash[3], ash[4]], ['I · The Sunken Gaol', '14 glim', '6 glim']);
-    assert.equal((await stored(page)).bank, 10);
-    pass('a death with Ash pocket banks 6 of 20; the summary comes after 72 steps of game time');
+    assert.deepEqual([ash[0], ash[3], ash[4]], ['I · The Sunken Gaol', '9 glim', '11 glim']);
+    assert.equal((await stored(page)).bank, 20);
+    pass('a death with Ash pocket banks 11 of 20 (55%); the summary comes after 72 steps of game time');
     assert.deepEqual(errors, []);
     await ctx.close();
   }

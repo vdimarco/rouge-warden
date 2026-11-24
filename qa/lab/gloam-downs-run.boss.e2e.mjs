@@ -230,7 +230,7 @@ async function fight(viewport, touch, tag) {
     const a = await G(page, () => { const g = window.__gloam; g.set({ bossHp: 0 }); g.tick(0.12, {}); const r = g.run(); return { state: g.boss().state, stop: r.stop, bars: r.fx.bars }; });
     await shot(page, `${tag}-fall`);
     assert.equal(a.state, 'fall');
-    const b = await G(page, () => { const g = window.__gloam; g.tick(2.4, {}); const r = g.run(); return { boss: g.boss(), carried: r.carried, down: r.bossDown, bars: r.fx.bars, toast: document.getElementById('toast').textContent, stored: JSON.parse(localStorage.getItem('gloam-downs.run.v1') || 'null') }; });
+    const b = await G(page, () => { const g = window.__gloam; g.tick(2.4, {}); const r = g.run(); return { boss: g.boss(), carried: r.carried, down: r.bossDown, bars: r.fx.bars, toast: document.getElementById('toast').textContent, stored: JSON.parse(localStorage.getItem('gloam-downs.run.v2') || 'null') }; });
     await shot(page, `${tag}-light`);
     assert.equal(b.boss.light.state, 'carried');
     assert.equal(b.carried, before + 30);
@@ -284,7 +284,7 @@ if (part('fight')) {
     assert.equal(r.wander, true, 'the first win opens Wander');
     await shot(page, 'desktop-win');
     const after = await G(page, () => JSON.stringify(localStorage));
-    const count = s => JSON.parse(JSON.parse(s)['gloam-downs.run.v1']).wins;
+    const count = s => JSON.parse(JSON.parse(s)['gloam-downs.run.v2']).wins;
     assert.equal(count(after), 1, 'the wins counted once');
     assert.equal(count(wins), 1);
     pass('the carried light lights the last beacon; the win is stored at once, and a reload before the card shows it again over Barrow Crown with its beacon lit, with Wander', { rows: r.rows, wins: count(after), place: r.place });

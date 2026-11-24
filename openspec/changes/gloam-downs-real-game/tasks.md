@@ -18,15 +18,15 @@ Three builders work in parallel. design.md "Who builds what" names the files eac
 - [ ] 1.10 `gloam-downs-music-demo.mjs`: the `layers` group; every loudness target still holds. `CHROMIUM_PATH=/opt/pw-browsers/chromium node qa/arcade/quiet.mjs --only=lab/gloam-downs` passes.
 
 ## 2. Builder BC: relics, builds, lasting upgrades, Ember
-- [ ] 2.1 `run.js`: Cinders (25%, or 55% with Ash pocket); the third Flask level; `UNLOCKS`; the three new wicks in the offers once bought; `run.route`, `run.ember`, `run.relics`, `run.elitesDown`; the Ember glim factor; Last ember.
-- [ ] 2.2 `run-save.js`: the v2 key, the one-time read of v1, and `clean()` for every new field.
-- [ ] 2.3 `elites.js` (new): the five elites, `makeElite`, `eliteMove`, `dressOf`, and `elite-alert` and `elite-fall` on the bus. In `foes.js`, only the three hooks that design.md names.
-- [ ] 2.4 `relics.js` (new): the eight relics, the kindlings, `groundRelics`, the touch, and `relic-take`. `moves.js`: each relic's change to its move, Rising cut and Ember parry.
-- [ ] 2.5 `screens.js`, `cards.js` and the `main.js` hooks: the Unlocks list, the Ember row, the Wick shelf card, the relic marks on the HUD, "Kindled" on the beacon card, the win card's level and best time, and the help lines for the new moves.
-- [ ] 2.6 `index.html`: `#unlocks`, `#emberRow` and `#relics`, with their CSS. Check them at 320 by 640, 390 by 844, 360 by 640, 800 by 600 and 1280 by 720.
-- [ ] 2.7 `gloam-downs-builds.test.mjs` (new): every scenario of Elites, the five elites, Relics, the relic lists, Kindlings, Unlocks, the wicks from unlocks, Kindled flask, Rising cut, Ember parry, Ember levels and rules, Cinders, Names, and the save.
-- [ ] 2.8 `gloam-downs-run.builds.e2e.mjs` (new): the elite shows in each place, take a relic, buy an unlock, Wick shelf, the Ember row after a win, the Lamp-room in five layouts with keys alone and a pad alone, and the build hooks.
-- [ ] 2.9 `qa/lab/gloam-downs-bot.mjs` (new): add-gloam-downs tasks 454 to 457, with the page's rules, `mix.js`, `elites.js`, `relics.js` and the unlocks. The bot buys in the Lamp-room between runs.
+- [x] 2.1 `run.js`: Cinders (25%, or 55% with Ash pocket); the third Flask level; `UNLOCKS`; the three new wicks in the offers once bought; `run.route`, `run.ember`, `run.relics`, `run.elitesDown`; the Ember glim factor; Last ember.
+- [x] 2.2 `run-save.js`: the v2 key, the one-time read of v1, and `clean()` for every new field.
+- [x] 2.3 `elites.js` (new): the five elites, `makeElite`, `eliteMove`, `dressOf`, and `elite-alert` and `elite-fall` on the bus. In `foes.js`, only the three hooks that design.md names.
+- [x] 2.4 `relics.js` (new): the eight relics, the kindlings, `groundRelics`, the touch, and `relic-take`. `moves.js`: each relic's change to its move, Rising cut and Ember parry.
+- [x] 2.5 `screens.js`, `cards.js` and the `main.js` hooks: the Unlocks list, the Ember row, the Wick shelf card, the relic marks on the HUD, "Kindled" on the beacon card, the win card's level and best time, and the help lines for the new moves.
+- [x] 2.6 `index.html`: `#unlocks`, `#emberRow` and `#relics`, with their CSS. Check them at 320 by 640, 390 by 844, 360 by 640, 800 by 600 and 1280 by 720.
+- [ ] 2.7 `gloam-downs-builds.test.mjs` (new): every scenario of Elites, the five elites, Relics, the relic lists, Kindlings, Unlocks, the wicks from unlocks, Kindled flask, Rising cut, Ember parry, Ember levels and rules, Cinders, Names, and the save. Done but for Ember 4 and 5: the 31 checks cover the rest. Ember 4's special-move share and damage are built but not checked; Ember 5's boss health and phase line are not built (they need boss.js, which no builder owns; see design.md "Builder BC: what was built").
+- [x] 2.8 `gloam-downs-run.builds.e2e.mjs` (new): the elite shows in each place, take a relic, buy an unlock, Wick shelf, the Ember row after a win, the Lamp-room in five layouts with keys alone and a pad alone, and the build hooks.
+- [x] 2.9 `qa/lab/gloam-downs-bot.mjs` (new): add-gloam-downs tasks 454 to 457, with the page's rules, `mix.js`, `elites.js`, `relics.js` and the unlocks. The bot buys in the Lamp-room between runs. Built and run at 0.3, 0.5 and 0.9; the targets miss (design.md "Builder BC: what was built"), which task 4.4 tunes.
 
 ## 3. Builder D: feel and variety
 - [ ] 3.1 `feel.js`: no shake from a cut, the new trauma values, `FEEL.kick` at 2.4, the 0.15 m clamp, and a stagger shock. Run `gloam-downs-camera.test.mjs` and see it pass.

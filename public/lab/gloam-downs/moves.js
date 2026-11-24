@@ -28,6 +28,19 @@ export const HITS = [
   { id: 'cut2', wind: S(0.10), act: S(0.08), rec: S(0.26), dmg: 11, reach: 1.8, arc: 50 * DEG, lunge: 0.45, push: 0.4, knock: 0, stop: 3 },
   { id: 'fin', wind: S(0.20), act: S(0.10), rec: S(0.40), dmg: 22, reach: 2.1, arc: 70 * DEG, lunge: 0.8, push: 1.2, knock: S(0.6), stop: 5, stagger: true }
 ];
+/* Rising cut (an unlock): Attack in the last 0.12 s of a roll or the 0.1 s after it. It plays as the second cut, with 14 damage, and it
+   knocks a light foe down for 0.6 s. Its index is 3, after the string; the string goes on with the second cut */
+export const RISE = { ...HITS[1], id: 'rise', pose: 'cut2', dmg: 14, knock: S(0.6), stagger: true };
+export const hitOf = i => (i === 3 ? RISE : HITS[i]);
+// the relics' changes to the blade (relics.js has the rest), and the two moves from unlocks
+export const BUILD = {
+  rise: { before: S(0.12), after: S(0.1) },
+  parry: { steps: S(0.1), arc: 60 * DEG, near: 0.5, far: 4, stagger: S(1.0), stop: 3 },
+  hooked: { range: 4, to: 1.2, arc: 60 * DEG },
+  bellows: { push: 2.5, knock: S(0.2) },
+  echo: { after: S(0.3), share: 0.5 },
+  tinder: { steps: S(1.0) }
+};
 export const MOVES = {
   buffer: S(0.15), chain: S(0.10), reset: S(0.35),
   aim: { range: 4.5, held: 70 * DEG, free: 100 * DEG, turn: 75 * DEG, keep: 0.75, perRad: 2, eye: 1.2, chest: 0.9, short: 0.25, rise: 1.6 },
@@ -103,8 +116,12 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
   const f = {
     move: null, t: 0, hit: 0, next: 0, since: Infinity, landed: false, target: null, dir: [0, 1], lungeV: 0,
     buf: { attack: 0, roll: 0, heal: 0 }, was: { attack: false, roll: false, heal: false },
-    cool: 0, safe: 0, pushV: 0, shave: 0, top: 0, firm: [s.x, s.y, s.z], firmYaw: s.yaw, firmAge: 0, queue: false, from: null
+    cool: 0, safe: 0, pushV: 0, shave: 0, top: 0, firm: [s.x, s.y, s.z], firmYaw: s.yaw, firmAge: 0, queue: false, from: null,
+    // the builds: the steps since the last roll ended and the play step of the last Attack press (Rising cut), whether the first cut
+    // began on its own and not in a string (Ember parry), Tinder guard's time left, and Echo blade's second hits to come
+    clock: 0, rollEnd: -Infinity, pressAt: -Infinity, alone: false, tinder: 0, echoes: []
   };
+  const holds = (st, k, id) => (st[k] || []).includes(id);
   s.after = null;
   // move the body one step at speed v along (ux, uz), with no stick, no turn and (for the plunge) its own gravity
   function drive(v, ux, uz, gravity = KEEP.gravity) {
@@ -153,7 +170,8 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
   // a move begins from what the pose shows now, so the pose eases from it (play.js BLEND)
   function begin(move) { f.from = snap(shownState(s)); f.move = move; f.t = 0; }
   function startHit(i, act, camYaw, targets, ev) {
-    const h = HITS[i], dir = heldDir(act, camYaw);
+    const h = hitOf(i), dir = heldDir(act, camYaw);
+    f.alone = i === 0 && f.move !== 'hit';
     begin('hit'); f.hit = i; f.landed = false; f.buf.attack = 0; f.queue = false;
     const t = aim(targets, dir);
     // the lunge: its full length over the wind-up, or to 0.25 short of the target's edge; none in the air
@@ -163,7 +181,7 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
     if (s.ground) { s.vx = f.dir[0] * f.lungeV; s.vz = f.dir[1] * f.lungeV; }
     // the swing's sound is keyed to the move: 'swing' is the draw-back over the wind-up (it ends at the strike step), and the
     // 'strike' cue below lays the whoosh that peaks on the first active step, where the hit lands
-    ev.push({ type: 'cue', cue: 'swing', hit: h.id, wind: h.wind, act: h.act, strike: SWINGS[h.id].strike });
+    ev.push({ type: 'cue', cue: 'swing', hit: h.id, wind: h.wind, act: h.act, strike: SWINGS[h.pose || h.id].strike });
   }
   function startRoll(act, camYaw, ev, cut = false) {
     const dir = heldDir(act, camYaw);
@@ -182,14 +200,39 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
     ev.push({ type: 'cue', cue: 'plunge', hang: MOVES.plunge.hang });
   }
   // the blade meets every live target in its reach and arc that it can see, on the first active step that meets any
-  function strike(h, targets, ev, raw) {
+  // the targets the blade meets from a point and a facing: in its reach and arc, and in sight
+  function meets(h, targets, o) {
+    const out = [];
+    for (const t of targets) {
+      if (!t.alive || Math.hypot(t.x - o.x, t.z - o.z) - t.r > h.reach || Math.abs(t.y - o.y) > MOVES.aim.rise) continue;
+      if (Math.hypot(t.x - o.x, t.z - o.z) > 1e-6 && Math.abs(wrap(Math.atan2(t.x - o.x, t.z - o.z) - o.yaw)) > h.arc) continue;
+      if (!clearLine(walk, o.x, o.y + MOVES.aim.eye, o.z, t.x, t.y + MOVES.aim.chest, t.z)) continue;
+      out.push(t);
+    }
+    return out;
+  }
+  /* Hooked cut: the first cut pulls one light foe within 4 m of the edge, in front, to 1.2 m in front of the lamplighter (the target
+     the soft aim chose, or else the nearest), before the blade meets it */
+  function pull(targets) {
+    const B = BUILD.hooked, light = t => t.alive && (t.T ? t.T.light : t.light !== false) && t.pull !== false;
+    const cand = targets.filter(t => light(t) && edge(t) <= B.range && Math.abs(t.y - s.y) <= MOVES.aim.rise && inArc(t, s.yaw, B.arc) && sees(walk, s, t));
+    const t = cand.includes(f.target) ? f.target : cand.sort((a, b) => edge(a) - edge(b))[0];
+    if (!t || edge(t) <= B.to) return null;
+    const d = B.to + t.r, x = s.x + Math.sin(s.yaw) * d, z = s.z + Math.cos(s.yaw) * d;
+    const y = walk.support(x, z, t.y + 1) ?? t.y;
+    if (Math.abs(y - t.y) > 1.2) return null;
+    if (t.body) { t.body.place([x, y + 0.3, z], t.yaw ?? 0); t.x = t.body.s.x; t.y = t.body.s.y; t.z = t.body.s.z; }
+    else { t.x = x; t.z = z; }
+    return t;
+  }
+  function strike(h, targets, ev, raw, st = {}) {
     let any = false;
     const on = [];
-    for (const t of targets) {
-      if (!t.alive || edge(t) > h.reach || Math.abs(t.y - s.y) > MOVES.aim.rise) continue;
-      if (Math.hypot(t.x - s.x, t.z - s.z) > 1e-6 && !inArc(t, s.yaw, h.arc)) continue;
-      if (!sees(walk, s, t)) continue;
-      const dmg = t.hit(raw, { from: [s.x, s.z], push: h.push, knock: h.knock, stagger: !!h.stagger, kind: h.id });
+    if (h.id === 'cut1' && holds(st, 'relics', 'hooked')) { const t = pull(targets); if (t) ev.push({ type: 'relic', what: 'pull', relic: 'hooked', target: t }); }
+    const bellows = h.id === 'cut2' && holds(st, 'relics', 'bellows');
+    for (const t of meets(h, targets, { x: s.x, y: s.y, z: s.z, yaw: s.yaw })) {
+      const how = { from: [s.x, s.z], push: bellows ? BUILD.bellows.push : h.push, knock: bellows ? BUILD.bellows.knock : h.knock, stagger: !!h.stagger, kind: h.id };
+      const dmg = t.hit(raw, how);
       if (dmg === false) continue;
       any = true;
       on.push(t.type || 'post');
@@ -197,6 +240,22 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
     }
     // the hit's sound: the hit id, the hit stop, and the types of the targets hit (the crunch takes the first one's material)
     if (any) { f.landed = true; f.shave = 0; ev.push({ type: 'stop', n: h.stop }, { type: 'cue', cue: 'hit', hit: h.id, on, stop: h.stop }); }
+    // Echo blade: the finisher hits again 0.3 s later, from where it was swung, in the same arc, for half its damage
+    if (any && h.id === 'fin' && holds(st, 'relics', 'echo')) f.echoes.push({ n: BUILD.echo.after, h, o: { x: s.x, y: s.y, z: s.z, yaw: s.yaw }, raw: raw * BUILD.echo.share });
+  }
+  function echoes(targets, ev) {
+    for (const e of f.echoes.slice()) {
+      if (--e.n > 0) continue;
+      f.echoes.splice(f.echoes.indexOf(e), 1);
+      let any = false;
+      for (const t of meets(e.h, targets, e.o)) {
+        const dmg = t.hit(e.raw, { from: [e.o.x, e.o.z], push: 0, knock: 0, kind: 'relic', relic: 'echo' });
+        if (dmg === false) continue;
+        any = true;
+        ev.push({ type: 'hit', kind: 'relic', relic: 'echo', target: t, dmg });
+      }
+      if (any) ev.push({ type: 'stop', n: 2 }, { type: 'cue', cue: 'hit', hit: 'fin', on: ['relic'], stop: 2, relic: 'echo' });
+    }
   }
   const bonusNow = st => (st.bonus || 0) + (f.shave > 0 ? MOVES.shave.bonus : 0);
   // the plunge lands: it meets every target whose edge is within its ring of the landing point
@@ -227,11 +286,23 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
     }
     return true;
   }
+  // the hit after hit i in the string: after the finisher the first cut, after the rising cut the second
+  const nextAfter = i => (i === 3 ? 1 : (i + 1) % 3);
+  /* the hit a press of Attack starts when no move plays: Tinder guard's finisher within 1 s of a near miss; Rising cut when the press
+     came in the last 0.12 s of a roll or in the 0.1 s after it; else the next hit of the string while it holds, or the first cut */
+  function firstHit(st) {
+    if (f.tinder > 0 && holds(st, 'relics', 'tinder')) { f.tinder = 0; return 2; }
+    const R = BUILD.rise;
+    if (s.ground && holds(st, 'unlocks', 'rising') && f.clock - f.rollEnd <= R.after && f.pressAt >= f.rollEnd - R.before) return 3;
+    return s.ground && f.since <= MOVES.reset ? f.next : 0;
+  }
   function step(act, camYaw, targets, ev) {
     const st = stats();
+    f.clock++;
     // press edges, kept 0.15 s; a held Attack or Roll goes on as if pressed again. A press of Attack in a hit is kept until the next
     // hit can start (the string's own buffer), so presses as fast as the player likes give the string at its own pace
     if (act.attack && !f.was.attack && f.move === 'hit') f.queue = true;
+    if (act.attack && !f.was.attack) f.pressAt = f.clock;
     for (const k of ['attack', 'roll', 'heal']) {
       const h = !!act[k];
       f.buf[k] = h && !f.was[k] ? MOVES.buffer : Math.max(0, f.buf[k] - 1);
@@ -241,25 +312,27 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
     if (f.cool > 0) f.cool--;
     if (f.safe > 0) f.safe--;
     if (f.shave > 0) f.shave--;
+    if (f.tinder > 0) f.tinder--;
     f.since++;
+    if (f.echoes.length) echoes(targets, ev);
     const canRoll = () => s.ground && f.cool === 0;
     // a roll cancels a wind-up (the hit is lost), a recovery or a drink, never active time
     if (wantRoll && canRoll()) {
-      const h = f.move === 'hit' ? HITS[f.hit] : null;
+      const h = f.move === 'hit' ? hitOf(f.hit) : null;
       if (!f.move || f.move === 'drink' || (h && (f.t < h.wind || f.t >= h.wind + h.act))) {
-        if (h) { f.since = 0; f.next = f.landed ? (f.hit + 1) % 3 : f.hit; }
+        if (h) { f.since = 0; f.next = f.landed ? nextAfter(f.hit) : f.hit === 3 ? 0 : f.hit; }
         startRoll(act, camYaw, ev, !!h && f.t < h.wind);
       }
     }
     // the next hit can start 0.10 s into the recovery of the hit before
     if (f.move === 'hit' && wantAttack) {
-      const h = HITS[f.hit];
-      if (f.t >= h.wind + h.act + MOVES.chain) startHit((f.hit + 1) % 3, act, camYaw, targets, ev);
+      const h = hitOf(f.hit);
+      if (f.t >= h.wind + h.act + MOVES.chain) startHit(nextAfter(f.hit), act, camYaw, targets, ev);
     }
     if (!f.move) {
       if (wantAttack) {
         if (!s.ground && s.y - s.floor >= MOVES.plunge.high) startPlunge(ev);
-        else startHit(s.ground && f.since <= MOVES.reset ? f.next : 0, act, camYaw, targets, ev);
+        else startHit(firstHit(st), act, camYaw, targets, ev);
       } else if (f.buf.heal > 0) {
         f.buf.heal = 0;
         const can = st.drink ?? 'ok';
@@ -270,17 +343,19 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
     const moving = !!f.move;
     switch (f.move) {
       case 'hit': {
-        const h = HITS[f.hit];
+        const h = hitOf(f.hit);
         // the lunge runs over the wind-up, and stops dead at its end; a cut in the air falls on as it was falling
         if (!s.ground) glide(camYaw);
         else drive(f.t < h.wind ? f.lungeV : 0, ...f.dir);
         // the phases as cues: 'strike' as the blade leaves the wind-up's top, 'hit' on the step it meets a target, 'whiff' and
         // 'recover' as the active time ends (play.js SWINGS; design.md "The swings")
         // lead: the steps from the strike to the first active step, so the whoosh peaks on the hit's own step
-        if (f.t === SWINGS[h.id].strike) ev.push({ type: 'cue', cue: 'strike', hit: h.id, lead: h.wind - f.t, act: h.act });
-        if (f.t >= h.wind && f.t < h.wind + h.act && !f.landed) strike(h, targets, ev, h.dmg * (1 + bonusNow(st)));
+        if (f.t === SWINGS[h.pose || h.id].strike) ev.push({ type: 'cue', cue: 'strike', hit: h.id, lead: h.wind - f.t, act: h.act });
+        // Spark third: the finisher's first active step throws a spark ahead (relics.js flies it)
+        if (f.t === h.wind && h.id === 'fin' && holds(st, 'relics', 'spark')) ev.push({ type: 'relic', what: 'spark', relic: 'spark', x: s.x, y: s.y, z: s.z, yaw: s.yaw });
+        if (f.t >= h.wind && f.t < h.wind + h.act && !f.landed) strike(h, targets, ev, h.dmg * (1 + bonusNow(st)), f.t === h.wind ? st : { ...st, relics: (st.relics || []).filter(r => r !== 'hooked') });
         if (f.t === h.wind + h.act) { if (!f.landed) ev.push({ type: 'cue', cue: 'whiff', hit: h.id }); ev.push({ type: 'cue', cue: 'recover', hit: h.id }); }
-        if (++f.t >= h.wind + h.act + h.rec) { f.move = null; f.since = 0; f.next = (f.hit + 1) % 3; }
+        if (++f.t >= h.wind + h.act + h.rec) { f.move = null; f.since = 0; f.next = nextAfter(f.hit); }
         break;
       }
       case 'roll': {
@@ -291,10 +366,13 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
           for (const a of [0.15, 0.3]) if (walk.floorAt(s.x + f.dir[0] * a, s.z + f.dir[1] * a, s.y + climb, s.y) < s.y - R.drop) { stop = true; break; }
         if (stop) { s.vx = s.vz = 0; drive(0, ...f.dir); }
         else drive(R.v, ...f.dir);
+        // Ember trail: each step of a roll on the ground lays the line of fire (relics.js keeps it)
+        if (s.ground && holds(st, 'relics', 'trail')) ev.push({ type: 'relic', what: 'trail', relic: 'trail', x: s.x, y: s.y, z: s.z, first: f.t === 0 });
         if (++f.t >= R.steps || stop) {
           const v = Math.hypot(s.vx, s.vz);
           if (v > R.end) { s.vx *= R.end / v; s.vz *= R.end / v; }
           f.move = null;
+          f.rollEnd = f.clock;
           f.cool = st.quick ? R.quick : R.cool;
         }
         break;
@@ -345,10 +423,10 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
   function pose() {
     if (!f.move) return null;
     if (f.move === 'hit') {
-      const h = HITS[f.hit], t = f.t;
+      const h = hitOf(f.hit), t = f.t;
       const ph = t < h.wind ? 'wind' : t < h.wind + h.act ? 'act' : 'rec';
       const k = ph === 'wind' ? t / h.wind : ph === 'act' ? (t - h.wind) / h.act : (t - h.wind - h.act) / h.rec;
-      return { move: h.id, ph, k: clamp(k, 0, 1), t, from: f.from };
+      return { move: h.pose || h.id, ph, k: clamp(k, 0, 1), t, from: f.from };
     }
     const n = { roll: MOVES.roll.steps, hang: MOVES.plunge.hang, plunge: 30, land: MOVES.plunge.rec, drink: MOVES.drink.steps, hurt: MOVES.hurt.lock }[f.move];
     return { move: f.move, ph: f.move, k: clamp(f.t / n, 0, 1), t: f.t, from: f.from, back: f.move === 'roll' && f.back };
@@ -375,14 +453,16 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
   // the hit of the string that a press of Attack starts next (0 cut1, 1 cut2, 2 the finisher): the one after the hit that plays, or
   // after the last one while the string holds (0.35 s on the ground), else the first
   function nextHit() {
-    if (f.move === 'hit') return (f.hit + 1) % 3;
+    if (f.move === 'hit') return nextAfter(f.hit);
     return s.ground && f.since <= MOVES.reset ? f.next : 0;
   }
+  // Ember parry: open in the first 0.1 s of a first cut that began on its own, not in a string
+  const parryOpen = () => f.move === 'hit' && f.hit === 0 && f.alone && f.t < BUILD.parry.steps;
   // back on the last firm ground after a fall
   function toFirm() {
     body.place(f.firm, f.firmYaw);
     f.move = null; f.t = 0; f.queue = false;
     s.act = null; s.after = null;
   }
-  return { f, step, knock, safe, nextHit, toFirm, nearMiss: () => { f.shave = MOVES.shave.steps; }, body, walk };
+  return { f, step, knock, safe, nextHit, toFirm, nearMiss: () => { f.shave = MOVES.shave.steps; }, tinder: () => { f.tinder = BUILD.tinder.steps; }, parryOpen, body, walk };
 }

@@ -530,7 +530,8 @@ try {
       await settle(page, 500);
       assert.deepEqual(await page.$$eval('#lampRow button', bs => bs.filter(b => !b.hidden).map(b => b.id)), ['bLampBegin', 'bLampExplore']);
       assert.equal(await G(page, () => document.activeElement?.id), 'bLampBegin', 'Begin the run keeps the focus in the Lamp-room');
-      assert(await fits(page, 'lamp'), `${width}x${height}${touch ? ' touch' : ''}: the Lamp-room fits with no scroll`);
+      // with the unlocks the Lamp-room's lists scroll inside the card; its own buttons stand at its foot, in the screen, and the page does not scroll
+      assert(await page.evaluate(() => { const x = document.querySelector('#lamp .box').getBoundingClientRect(), b = document.getElementById('bLampBegin').getBoundingClientRect(); return x.top >= 0 && x.bottom <= innerHeight && b.bottom <= innerHeight && document.scrollingElement.scrollHeight <= innerHeight; }), `${width}x${height}${touch ? ' touch' : ''}: the Lamp-room and its Begin the run stay in the screen`);
       await onTop(page, '#bLampBegin');
       const le = await onTop(page, '#bLampExplore');
       await page.mouse.click(le.x, le.y);

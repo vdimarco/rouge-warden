@@ -7,6 +7,7 @@
 import { makeBody, PARAMS } from './play.js';
 import { clearLine, dealt, yawFor } from './moves.js';
 import { stream } from './run.js';
+import { eliteKit } from './elites.js';
 
 const S = sec => Math.round(sec * 60);
 const STEP = 1 / 60, DEG = Math.PI / 180;
@@ -215,6 +216,8 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
   function freeSlot(f) { if (f.slot >= 0 && holders[f.slot] === f) holders[f.slot] = null; f.slot = -1; }
   // the slots of a type that are not held and not promised to a foe in the ground, waiting to rise
   const freeOf = type => codes.filter((c, k) => c === type && !holders[k]).length - F.foes.filter(f => f.type === type && f.state === 'cracks' && f.slot < 0).length;
+  // the place's elite (elites.js), in the zone the seed picks, and the Ember rules on every foe
+  const EK = eliteKit(F, { walk, meta, seed, placeId: meta.id || 'place', lamp, mayAttack, strike, groundY, faceLamp, turnTo, towards, inLeash, sees, hookReaches, coolOf, inRing, makeFoe, homeSpots, placeFoe: place, freeOf, putOut });
 
   /* ---------------- the tokens ----------------
    At most 2 melee attacks at once (from the wind-up to the end of the active time), and 1 coal (from the lob's wind-up to the coal's
@@ -400,6 +403,7 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
     return towards(f, ...inLeash(f, s.x + (dx / d) * want, s.z + (dz / d) * want), v);
   }
   function mind(f, ev) {
+    const em = EK.think(f, ev); if (em) return em.want;
     const T = f.T, s = lamp(), c = f.zone.c;
     const d = Math.hypot(s.x - f.x, s.z - f.z), inChase = Math.hypot(s.x - c[0], s.z - c[2]) <= f.zone.leash + RULES.chase;
     if (!f.aware) {
