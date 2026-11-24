@@ -1,0 +1,93 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Gloam Downs sort bench</title>
+<style>html,body{margin:0;background:#000}canvas{image-rendering:pixelated;width:640px}</style></head>
+<body><canvas id="c"></canvas>
+<script src="/lab/gloam-downs/ink/pixel-look.js"></script>
+<script src="/lab/gloam-downs/ink/splat-codec.js"></script>
+<script type="module">
+/* global PixelLook */
+import { createRenderer } from '/lab/gloam-downs/ink/webgl/renderer.mjs';
+import { loadPlace } from '/lab/gloam-downs/world.js';
+import { pose } from '/lab/gloam-downs/play.js';
+const canvas = document.getElementById('c');
+const renderer = createRenderer(canvas, { toolkit: { PixelLook } });
+const gl = canvas.getContext('webgl2');
+const px = new Uint8Array(4);
+const sync = () => gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+
+// a variant: n foes (copies of the lamplighter, each on 7 bones of its own), placed in front of the start camera
+function variant(place, n, { hide = 'none', boss = 0 } = {}) {
+  const { meta, world } = place, NB = meta.bones.names.length, lamp = [];
+  for (let i = meta.bones.first; i < meta.bones.end; i++) lamp.push(i);
+  const figures = n + (boss ? 1 : 0), extra = figures * lamp.length, count = world.count + extra;
+  const data = new Float32Array(Math.ceil(count / 512) * 512 * 16);
+  data.set(world.data.subarray(0, world.count * 16));
+  const boned = lamp.slice();
+  let at = world.count;
+  for (let c = 1; c <= figures; c++) for (const i of lamp) {
+    const o = at * 16;
+    data.set(world.data.subarray(i * 16, i * 16 + 16), o);
+    data[o + 12] += NB * c;
+    if (data[o + 14] > 0) data[o + 13] += NB * c;
+    if (hide === 'density') data[o + 3] = 0;
+    boned.push(at++);
+  }
+  const bones = new Float32Array(12 * NB * (figures + 1));
+  const s0 = meta.spawn, fwd = [Math.sin(s0.yaw), Math.cos(s0.yaw)], right = [Math.cos(s0.yaw), -Math.sin(s0.yaw)];
+  const body = (x, z, yaw, k) => ({ x, y: s0.p[1], z, yaw, phase: 1 + k, moveK: 1, runK: 0.3, landK: 0, landAge: 9, ground: true, vy: 0, floor: s0.p[1] });
+  const W = { ...world, data, count, anim: { bones, boned: Int32Array.from(boned) } };
+  W.poseAll = t => {
+    pose(bones.subarray(0, 12 * NB), meta.bones, body(s0.p[0], s0.p[2], s0.yaw, 0), t);
+    for (let c = 1; c <= figures; c++) {
+      const sub = bones.subarray(12 * NB * c, 12 * NB * (c + 1));
+      const isBoss = boss && c === figures;
+      const a = (c - 1) / Math.max(1, n - 1) - 0.5, d = isBoss ? 7 : 2.5 + (c % 3) * 1.2;
+      const x = s0.p[0] + fwd[0] * d + right[0] * a * 6, z = s0.p[2] + fwd[1] * d + right[1] * a * 6;
+      pose(sub, meta.bones, body(x, z, s0.yaw + Math.PI, c), t);
+      if (hide === 'collapse') for (let b = 0; b < NB; b++) { const k = 12 * b; sub.fill(0, k, k + 9); sub[k + 9] = 0; sub[k + 10] = -60; sub[k + 11] = 0; }
+      if (isBoss) for (let b = 0; b < NB; b++) {   // three times as big about its feet
+        const k = 12 * b;
+        for (let i = 0; i < 9; i++) sub[k + i] *= boss;
+        sub[k + 9] = x + (sub[k + 9] - x) * boss; sub[k + 10] = s0.p[1] + (sub[k + 10] - s0.p[1]) * boss; sub[k + 11] = z + (sub[k + 11] - z) * boss;
+      }
+    }
+  };
+  return W;
+}
+
+window.bench = async (id, configs, sizes, frames = 4) => {
+  const place = await loadPlace('/lab/gloam-downs/worlds/', id);
+  const { meta } = place;
+  const out = [];
+  for (const [w, h] of sizes) for (const cfg of configs) {
+    const W = variant(place, cfg.n, cfg);
+    const cam = { ...meta.cam };
+    W.radius = Math.max(6, meta.fogFar - cam.dist);
+    const times = [], cpu = [];
+    for (let f = 0; f < frames + 1; f++) {
+      W.poseAll(f * 0.1);
+      sync();
+      const t0 = performance.now();
+      renderer.render(W, { width: w, height: h, time: f * 0.1, camera: { ...cam, yaw: cam.yaw + f * 0.002 }, changedRows: f ? [] : undefined, colored: true });
+      const t1 = performance.now();
+      sync();
+      const t2 = performance.now();
+      if (f) { times.push(t2 - t0); cpu.push(t1 - t0); }
+    }
+    times.sort((a, b) => a - b); cpu.sort((a, b) => a - b);
+    const row = { size: `${w}x${h}`, label: cfg.label, splats: W.count, boned: W.anim.boned.length, ms: Math.round(times[times.length >> 1]), cpuMs: +cpu[cpu.length >> 1].toFixed(1), all: times.map(Math.round) };
+    console.log('RESULT ' + JSON.stringify(row));
+    out.push(row);
+  }
+  return out;
+};
+window.shot = async (id, cfg, w, h) => {
+  const place = await loadPlace('/lab/gloam-downs/worlds/', id);
+  const W = variant(place, cfg.n, cfg);
+  W.radius = Math.max(6, place.meta.fogFar - place.meta.cam.dist);
+  W.poseAll(0.3);
+  renderer.render(W, { width: w, height: h, time: 0.3, camera: { ...place.meta.cam }, colored: true });
+  return canvas.toDataURL();
+};
+window.ready = true;
+</script></body></html>

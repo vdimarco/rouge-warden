@@ -55,7 +55,7 @@ async function open(options = {}, query = 'world=none&px=1') {
   const games = async () => { const all = new Map((await page.evaluate(() => window.GameSwitch.GAMES.map(g => ({ id: g.id, title: g.name, url: g.url })))).map(g => [g.id, g])); return Object.fromEntries(GROUPS.map(g => [g.id, g.games.filter(id => id !== SELF).map(id => { assert(all.has(id), id + ' is in the arcade list'); return all.get(id); })])); };
   return { page, errors, moves, state, until, text, hidden, settled, enterAlley, zone, world, front, at, face, key, launched, pressed, games };
 }
-const ZONES = ['Cottage', 'Action', 'ASCII Scenes', 'Strategy', 'GTA', 'Lab'], IDS = ['cottage', 'action', 'ascii', 'strategy', 'gta', 'lab'], COUNTS = [8, 12, 2, 3, 1, 20];
+const ZONES = ['Cottage', 'Action', 'ASCII Scenes', 'Strategy', 'GTA', 'Lab'], IDS = ['cottage', 'action', 'ascii', 'strategy', 'gta', 'lab'], COUNTS = [8, 12, 2, 3, 1, 21];
 const DOORS = IDS.concat(['home']), door = id => DOORS.indexOf(id);   // in the alley the seven doors are places 0 to 6: the zones in order, then Home
 const named = s => s.aim < s.machines.length ? s.machines[s.aim].title : s.rings[s.aim - s.machines.length].title;
 const station = id => ALLEY.zones[id].station, atStation = (s, id) => Math.hypot(s.place.x - station(id)[0], s.place.z - station(id)[1]) < 1e-6;
@@ -143,7 +143,7 @@ try {
     assert.equal(s.room, null); assert.deepEqual(t.moves, [], 'nothing launched yet');
     pass('the arrows turn from door to door, a drag only looks, and W A S D stay on the two streets', { doors: seen.length, steps: path.length });
 
-    // More: the Action world has twelve games on two pages, and the Lab world twenty on three.
+    // More: the Action world has twelve games on two pages, and the Lab world twenty-one on three.
     await page.keyboard.press('2'); await t.zone('action', 'the Action station'); await page.keyboard.press('r'); s = await t.world('action', 'the Action world');
     assert.equal(s.pages, 2); assert.equal(s.page, 0); assert.equal(await t.text('kMore'), 'More 1/2');
     await page.click('#kMore'); await t.until(s => s.page === 1, 'More shows the next page'); s = await t.settled(); assert.equal(await t.text('kMore'), 'More 2/2');
@@ -151,7 +151,7 @@ try {
     await page.keyboard.press('m'); await t.until(s => s.page === 0, 'the M key comes back to the first page'); s = await t.settled(); assert.deepEqual(ids(s), GAMES.action.slice(0, 8).map(g => g.id));
     await page.keyboard.press('6'); s = await t.world('lab', 'the Lab world'); assert.equal(s.pages, 3); const lab = [ids(s)];
     for (let k = 1; k < 3; k++) { await page.keyboard.press('PageDown'); await t.until(s => s.page === k, 'PageDown shows page ' + (k + 1)); s = await t.settled(); assert.equal(await t.text('kMore'), `More ${k + 1}/3`); lab.push(ids(s)); }
-    assert.deepEqual(lab.map(p => p.length), [8, 8, 4]); assert.deepEqual(lab.flat(), GAMES.lab.map(g => g.id), 'the three pages show every Lab game once, in order');
+    assert.deepEqual(lab.map(p => p.length), [8, 8, 5]); assert.deepEqual(lab.flat(), GAMES.lab.map(g => g.id), 'the three pages show every Lab game once, in order');
     await page.keyboard.press('PageDown'); await t.until(s => s.page === 0, 'More comes back to the first page');
     pass('More shows the next games in the Action and Lab worlds', { action: [8, 4], lab: lab.map(p => p.length) });
 
