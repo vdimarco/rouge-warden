@@ -3,7 +3,7 @@
 Three builders work in parallel. design.md "Who builds what" names the files each one owns and the hooks each may add. Each builder runs its own checks before it hands over. The merge pass (section 4) runs every check.
 
 ## 0. Shared start (each builder, first)
-- [ ] 0.1 Create `public/lab/gloam-downs/bus.js` with exactly the text in design.md "The event bus", if it is not there yet. Do not change it in a branch. A change goes through the merge pass.
+- [x] 0.1 Create `public/lab/gloam-downs/bus.js` with exactly the text in design.md "The event bus", if it is not there yet. Do not change it in a branch. A change goes through the merge pass.
 
 ## 1. Builder A: music
 - [ ] 1.1 `qa/lab/gloam-downs-synth.mjs`: render cello, gurdy, drum-lo and drum-mid offline in Node, as design.md "The new instruments, made offline" says. Encode them with ffmpeg to `games/gloam-downs/audio-src/`. Note the sizes in design.md.
@@ -29,17 +29,32 @@ Three builders work in parallel. design.md "Who builds what" names the files eac
 - [ ] 2.9 `qa/lab/gloam-downs-bot.mjs` (new): add-gloam-downs tasks 454 to 457, with the page's rules, `mix.js`, `elites.js`, `relics.js` and the unlocks. The bot buys in the Lamp-room between runs.
 
 ## 3. Builder D: feel and variety
-- [ ] 3.1 `feel.js`: no shake from a cut, the new trauma values, `FEEL.kick` at 2.4, the 0.15 m clamp, and a stagger shock. Run `gloam-downs-camera.test.mjs` and see it pass.
-- [ ] 3.2 The Shake switch: `#bShake`, its listener and label in `main.js`, `fx.kick` from the save's `shake`, and the reduced-motion default.
-- [ ] 3.3 Poise and stagger in `foes.js` (the hit function only), with the crack glow in `fight.js`.
-- [ ] 3.4 `combo.js` (new): counts, tiers, the end rules, `combo-tier` on the bus, and the glim factor on the `foeOut` line in `foes.js`.
+- [x] 3.1 `feel.js`: no shake from a cut, the new trauma values, `FEEL.kick` at 2.4, the 0.15 m clamp, and a stagger shock. Run `gloam-downs-camera.test.mjs` and see it pass.
+- [x] 3.2 The Shake switch: `#bShake`, its listener and label in `main.js`, `fx.kick` from the save's `shake`, and the reduced-motion default.
+- [x] 3.3 Poise and stagger in `foes.js` (the hit function only), with the crack glow in `fight.js`.
+- [x] 3.4 `combo.js` (new): counts, tiers, the end rules, `combo-tier` on the bus, and the glim factor on the `foeOut` line in `foes.js`.
 - [ ] 3.5 `fight.js` and `sparks.js`: the lamp halo, the elite crown and size from `dressOf`, the relic lamps from `groundRelics`, the fire line, the burning rings and the spark. No dab uses slot 37.
-- [ ] 3.6 `#combo` in `index.html` and `updateCombo()`. Check it at 320 by 640, 390 by 844, 360 by 640, 800 by 600 and 1280 by 720.
-- [ ] 3.7 `mix.js` (new): the foe mix, the elite's zone, the route, Ember 3's extra foe, and the guard's second wave; `mixWave` in `foes.js`'s all-out check. Pass `mix` to `makeFight` in `newRunner()`.
-- [ ] 3.8 The seed code in Crockford base 32, `?seed=` for a code or a number, and `#seedLine` in the pause panel and the summary.
-- [ ] 3.9 `gloam-downs-feel.test.mjs` (new): the shake cap, no cut shake, poise, the combo rules and its glim.
-- [ ] 3.10 `gloam-downs-seed.test.mjs` (new): the streams apart, the mix fits for seeds 1 to 200, the elite zones, the route, the same seed giving the same run, and Ember 3. `gloam-downs-foes.test.mjs`: the second wave.
-- [ ] 3.11 `gloam-downs-run.feel.e2e.mjs` (new): Shake under reduced motion, the lamp at tier II, the meter in five layouts, and the pause panel that fits.
+- [x] 3.6 `#combo` in `index.html` and `updateCombo()`. Check it at 320 by 640, 390 by 844, 360 by 640, 800 by 600 and 1280 by 720.
+- [x] 3.7 `mix.js` (new): the foe mix, the elite's zone, the route, Ember 3's extra foe, and the guard's second wave; `mixWave` in `foes.js`'s all-out check. Pass `mix` to `makeFight` in `newRunner()`.
+- [x] 3.8 The seed code in Crockford base 32, `?seed=` for a code or a number, and `#seedLine` in the pause panel and the summary.
+- [x] 3.9 `gloam-downs-feel.test.mjs` (new): the shake cap, no cut shake, poise, the combo rules and its glim.
+- [x] 3.10 `gloam-downs-seed.test.mjs` (new): the streams apart, the mix fits for seeds 1 to 200, the elite zones, the route, the same seed giving the same run, and Ember 3. `gloam-downs-foes.test.mjs`: the second wave.
+- [x] 3.11 `gloam-downs-run.feel.e2e.mjs` (new): Shake under reduced motion, the lamp at tier II, the meter in five layouts, and the pause panel that fits.
+
+Builder D's notes for the merge pass (branch `gloam-real-d`):
+- 3.5 is open. The lamp halo is drawn and checked. The crown, the elite's size and the relic lamps are drawn from `makeFight`'s `dressOf(f)` and `groundRelics(run)` options, which default to nothing because `elites.js` and `relics.js` are not on this branch. In the merge, pass `dressOf` and `groundRelics` in the `makeFight({...})` call in `newRunner()`. The fire line, the burning ring and the thrown spark are drawn from a `{ type: 'relicFx', kind: 'line' | 'ring' | 'spark', ... }` event (see `fight.js`). BC's relics push it into the runner's events. A relic hit is a plain `{ type: 'hit', kind: 'relic', target }` event, so the combo and the kick read it.
+- The seed of a new run is drawn under 2^30, so its code is always six letters. A larger `?seed=` number still works, with a longer code. Six characters in `?seed=` always read as a code.
+- The mix may change every zone that is not a guard, the arena or the Gaol's G1. The elite never stands in a first zone. Each zone's draw takes the pool's slots without putting them back. At Ember 3, when 20 draws with the extra foe fail, 20 more draw without it, and the extra goes in after, where the rules still hold. About 46% of the zones get the extra foe. The pools are small, so that is all the rules allow.
+- With `?test` the foes stand as baked, so the old checks of each place keep their foes. `&mix` turns the seed's mix on in a test.
+- `__gloam.out(zone)` puts a whole zone out with no second wave, so the old checks that light a beacon still work. Putting the foes out one by one brings the wave.
+- `__gloam.run().combo` is now `{ n, tier, left }`. The blade's next hit, which was `combo`, is `next`.
+- The meter has its own row under the glim at every width. At 320 px the glim row has no room for it beside the text.
+- The finisher's kick is very small: 0.05 trauma gives about 5 mm. A hit taken or a boss slam is clearly felt. Tune it in the play test (4.5).
+- Shake sits first in the pause panel's second row, so the first row fits 320 px. The focus order is as the spec says. The focus-order lines in `gloam-downs-run.cards.e2e.mjs`, `gloam-downs-run.input.e2e.mjs` and `gloam-downs-run.sound.e2e.mjs` now include Shake.
+- Hooks outside the named lines: `foes.js` also has the `stagger` state in `stepFoe`, `shown` and `solid`, the second wave in `zones()`, the wave check in `lightable()`, and `elite`, `poise` and `stagger` in `F.list()`. `main.js` also has a seed and best-combo line in `openSummary()` (`#sumSeed`).
+- For BC: `run-save.js` must keep `shake`, `run.combo`, `bestCombo`, and `seed` and `combo` in `ended`. `die()` and `win()` should copy `run.seed` and `run.combo` into `rs.ended`. Until then the summary reads them from the page's memory, so they are lost on a reload.
+- For A: the `stagger` event has no sound cue yet, because `sound.js` has no recipe for one.
+- Checks run on this branch: every Gloam Downs Node test passes, with `gloam-downs-zones.mjs`. The bake and colour checks were skipped, because `games/gloam-downs` has no `npm ci` here. In Chromium on software WebGL these pass: `run.feel`, `run.cards`, `run.fight`, `run.input`, `run.sound`, `run.swing`, `run.lineup`, and `quiet.mjs --only=lab/gloam-downs`. `run.boss` fails at "the boss camera stays out at 12 m or more (8.725)". It fails the same way on `049d82fc`, so this branch did not cause it. Not checked here: a real phone, a real gamepad, listening on speakers, and how the shake feels at 120 Hz.
 
 ## 4. Merge pass (after 1, 2 and 3)
 - [ ] 4.1 Merge in the order A, BC, D. Fix the hook lines in `main.js` and `index.html` where two builders met.

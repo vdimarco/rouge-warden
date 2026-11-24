@@ -237,8 +237,8 @@ try {
     await page.keyboard.press('p');
     assert(await page.isVisible('#pause'));
     assert.equal(await active(page), 'bResume');
-    for (let i = 0; i < 5; i++) await page.keyboard.press('Tab');
-    assert.equal(await active(page), 'bResume', "Tab wraps through the panel's five buttons");
+    for (let i = 0; i < 6; i++) await page.keyboard.press('Tab');
+    assert.equal(await active(page), 'bResume', "Tab wraps through the panel's six buttons");
     await page.click('#bEnd');
     assert(await page.isVisible('#askRow'));
     assert.equal(await active(page), 'bNo');
@@ -342,7 +342,7 @@ try {
     const down = async () => { await G(page, () => window.__press(13, true)); await tick(page, 0.05, 'live'); await G(page, () => window.__press(13, false)); await tick(page, 0.05, 'live'); };
     await down();
     assert.equal(await active(page), 'bSound');
-    for (let i = 0; i < 4; i++) await down();
+    for (let i = 0; i < 5; i++) await down();
     assert.equal(await active(page), 'bResume', 'the focus wraps');
     await G(page, () => window.__press(8, true)); await tick(page, 0.05, 'live'); await G(page, () => window.__press(8, false)); await tick(page, 0.05, 'live');
     assert.equal((await run(page)).mode, 'play', "the pad's Back closes the pause panel");

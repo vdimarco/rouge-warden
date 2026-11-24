@@ -7,6 +7,9 @@
 import { makeBody, PARAMS } from './play.js';
 import { clearLine, dealt, yawFor } from './moves.js';
 import { stream } from './run.js';
+import { mixWave, WAVE } from './mix.js';
+import { STAGGER, poiseOf } from './feel.js';
+import { comboGlim } from './combo.js';
 
 const S = sec => Math.round(sec * 60);
 const STEP = 1 / 60, DEG = Math.PI / 180;
@@ -146,13 +149,13 @@ export const laneAt = (M, mt) => M.len * clamp((mt + 1) / M.grow, 0, 1);
    surface, or undefined: the Mirelight floats over it.
    think(ev, play) runs on every game step after the lamplighter, as the runner's think; ev gets the cues and what the page draws:
    { type: 'cracks', pts }, 'rise', 'burst' (a coal, a pulse, a slam or a charge into a wall), 'foeOut' and 'glim'. */
-export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null, onScreen = () => true, water, place = meta.id || 'place', bounds = meta.bounds ?? 34 }) {
+export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null, onScreen = () => true, water, place = meta.id || 'place', bounds = meta.bounds ?? 34, combo = null }) {
   const rng = stream(seed, `foes/${place}`);
   const codes = [...slots], holders = codes.map(() => null), counts = poolCounts(codes);
   const lim = bounds - 0.6;
   const F = {
     zones: [], foes: [], melee: new Set(), coal: null, coals: [], motes: [], pending: [], step: 0, game: 0, runner, spawned: 0,
-    codes, holders, counts, water
+    codes, holders, counts, water, combo
   };
   const lamp = () => F.runner?.fighter.body.s;
   const coolOf = T => S(T.cool[0] + (T.cool[1] - T.cool[0]) * rng());
@@ -171,6 +174,8 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
   }
   function addZone(z, spawned = false) {
     const Z = { id: z.id, name: z.name, c: z.c.slice(), leash: z.leash, foes: z.foes, guard: !!z.guard, keeper: z.keeper, boss: !!z.boss, awake: false, spawned, members: [] };
+    // the seed's mix (mix.js): the foes as baked, for the guard's second wave, and the index of the elite in this zone's foes
+    Z.baked = z.baked ?? z.foes; Z.elite = Number.isInteger(z.elite) ? z.elite : null;
     if (!Z.boss) {
       const types = foesOf(Z), spots = homeSpots(walk, Z, types.length);
       Z.members = types.map((t, k) => makeFoe(Z, t, k, spots[k]));
@@ -188,8 +193,8 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
   const live = Z => Z.members.filter(f => !gone(f)).map(f => f.type).join('');
   const awakeList = () => F.zones.filter(Z => Z.awake).map(Z => ({ c: Z.c, foes: live(Z), ref: Z }));
   const atHome = f => Math.hypot(f.x - f.home[0], f.z - f.home[2]) < 0.35 && Math.abs(f.y - f.home[1]) < 0.6;
-  const shown = f => ['rise', 'idle', 'chase', 'home', 'move', 'down', 'stun', 'sink', 'dying'].includes(f.state);
-  const solid = f => ['idle', 'chase', 'home', 'move', 'down', 'stun'].includes(f.state);
+  const shown = f => ['rise', 'idle', 'chase', 'home', 'move', 'down', 'stun', 'stagger', 'sink', 'dying'].includes(f.state);
+  const solid = f => ['idle', 'chase', 'home', 'move', 'down', 'stun', 'stagger'].includes(f.state);
   const hittable = f => solid(f) && !f.out && f.state !== 'out';
   const sees = (f, s) => clearLine(walk, f.x, f.y + f.T.eye, f.z, s.x, s.y + 0.9, s.z);
   const towards = (f, x, z, v) => { const dx = x - f.x, dz = z - f.z, d = Math.hypot(dx, dz); return d < 0.05 ? null : [(dx / d) * v * Math.min(1, d * 4), (dz / d) * v * Math.min(1, d * 4)]; };
@@ -516,6 +521,8 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
       case 'dying': if (++f.t >= RULES.dying) { f.state = 'out'; freeSlot(f); } return;
       case 'down': if (!fresh && ++f.t >= f.downFor) { f.state = 'chase'; f.aware = true; f.cool = Math.max(f.cool, S(f.T.cool[0])); } break;
       case 'stun': if (++f.t >= f.T.moves.charge.stun) { f.state = 'chase'; f.stunned = false; f.cool = coolOf(f.T); } break;
+      // a broken poise: it stands where it is for 1.2 s, then fights on
+      case 'stagger': want = { hard: [0, 0] }; if (++f.t >= STAGGER.steps) { f.state = 'chase'; f.aware = true; f.staggerEnd = F.step; f.cool = Math.max(f.cool, S(f.T.cool[0])); } break;
       case 'move': want = runMove(f, ev); break;
       default: want = mind(f, ev);
     }
@@ -559,7 +566,7 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
    its pose. */
   function hitFoe(f, raw, how = {}) {
     if (!hittable(f)) return false;
-    const dmg = dealt(raw, f.stunned ? f.T.stunned : 1);
+    const dmg = dealt(raw, (f.stunned ? f.T.stunned : 1) * (f.state === 'stagger' ? STAGGER.take : 1));
     f.hp = Math.max(0, f.hp - dmg);
     // bright on the step of the hit and the two after it (think counts the game step on after the blade's step)
     f.flashTo = F.game + 1 + RULES.flash;
@@ -568,6 +575,7 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
     const fx = how.from ? f.x - how.from[0] : Math.sin(f.yaw), fz = how.from ? f.z - how.from[1] : Math.cos(f.yaw), fl = Math.hypot(fx, fz) || 1;
     f.shakeDir = [fx / fl, fz / fl];
     if (f.hp <= 0) { kill(f); return dmg; }
+    if (breakPoise(f, dmg)) return dmg;
     if (f.hold || !f.T.light) return dmg;
     const ph = f.state === 'move' ? phaseOf(f.T.moves[f.move], f.mt) : null, winding = ph === 'wind';
     f.hitAt = F.step + 1;
@@ -580,6 +588,24 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
     if (how.push && (how.knock || (ph !== 'wind' && ph !== 'act'))) f.push = { ux: f.shakeDir[0], uz: f.shakeDir[1], v: (how.push * 60) / RULES.pushSteps, n: RULES.pushSteps };
     f.aware = true;
     return dmg;
+  }
+  /* the poise (feel.js STAGGER): the damage comes off it too, and at 0 the foe staggers, its wind-up ended. -> true when the foe is
+     in a stagger now (a hit in a stagger takes 25% more and does nothing else) */
+  function breakPoise(f, dmg) {
+    if (f.state === 'stagger') return true;
+    const max = poiseOf(f);
+    if (!max || f.state === 'stun' || f.state === 'down') return false;
+    if (f.poise === undefined || F.step - (f.poiseAt ?? -1e9) >= STAGGER.refill) f.poise = max;
+    f.poiseAt = F.step;
+    f.poise = Math.max(0, f.poise - dmg);
+    if (f.poise > 0 || F.step < (f.staggerEnd ?? -1e9) + STAGGER.gap) return false;
+    cancelMove(f);
+    f.hold = null; f.push = null; f.flinch = 0;
+    f.state = 'stagger'; f.t = 0; f.poise = max; f.aware = true;
+    f.hitAt = F.step + 1;
+    // the event the fight feels and draws (fight.js); the sound of a stagger is builder A's to give (sound.js has no recipe yet)
+    queue({ type: 'stagger', foe: f.id, x: f.x, y: f.y + f.T.chest, z: f.z });
+    return true;
   }
   // put out: its glim drops (on its last firm ground when it is off its ground or in the air), and its slot frees after its parts fall
   function kill(f, ev = null) {
@@ -597,7 +623,7 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
     if (shown({ state: was }) && was !== 'sink') { f.state = 'dying'; f.t = 0; } else { f.state = 'out'; freeSlot(f); }
     (ev ? e => ev.push(e) : queue)({ type: 'foeOut', foe: f.id, x: f.x, y: f.y, z: f.z });
     (ev ? e => ev.push(e) : queue)({ type: 'cue', cue: 'out', foe: f.id });
-    F.runner?.foeOut(f.T.glim, at);
+    F.runner?.foeOut(comboGlim(f.T.glim, F.combo?.tier ?? 0), at);
   }
 
   /* ---------------- zones ---------------- */
@@ -626,8 +652,30 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
       f.state = 'sink'; f.t = 0; f.sinkTo = 'sleep'; f.alive = false; f.aware = false; f.hold = null;
     }
   }
+  /* the guard's second wave (mix.js mixWave): 1.5 s after its last foe goes out, the wave's foes rise at the first homes of the guard,
+     with the ember cracks first; it keeps the beacon dark until it is put out too */
+  function waves(ev) {
+    for (const Z of F.zones) {
+      if (Z.waveAt !== undefined) { if (F.step >= Z.waveAt) riseWave(Z, ev); continue; }
+      if (!Z.guard || Z.boss || !Z.members.length || !Z.members.every(gone)) continue;
+      const w = mixWave(Z);
+      Z.waved = true;
+      if (w) { Z.wave = w; Z.waveAt = F.step + WAVE.wait; }
+    }
+  }
+  function riseWave(Z, ev) {
+    const types = foesOf({ foes: Z.wave }), homes = Z.members.map(f => f.home), n0 = Z.members.length;
+    delete Z.waveAt;
+    Z.members = types.map((t, k) => makeFoe(Z, t, n0 + k, (homes[k] || homes[0]).slice()));
+    for (const f of Z.members) { f.yaw = Math.atan2((meta.spawn?.p[0] ?? 0) - f.x, (meta.spawn?.p[2] ?? 0) - f.z); f.body && (f.body.s.yaw = f.yaw); }
+    F.foes.push(...Z.members);
+    Z.awake = false;
+    wakeZone(Z, ev);
+    ev.push({ type: 'wave', zone: Z.id, n: types.length });
+  }
   function zones(ev) {
     const s = lamp();
+    if (!F.calm) waves(ev);
     for (const Z of F.zones) {
       if (!Z.awake || Z.spawned || Z.boss || distTo(Z, s.x, s.z) <= RULES.sleep) continue;
       if (Z.members.every(f => gone(f) || f.state === 'asleep' || (f.state === 'idle' && atHome(f)))) sleepZone(Z);
@@ -755,7 +803,7 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
   // the guard rule: the beacon lights only when its guard zone is clear. -> { ok, why, at } (at: where the keepers stand)
   F.lightable = () => {
     const g = F.zones.find(Z => Z.guard && !Z.boss);
-    if (!g || g.members.every(gone)) return { ok: true };
+    if (!g || (g.members.every(gone) && g.waveAt === undefined && !mixWave(g))) return { ok: true };
     return { ok: false, why: keeperLine(g.keeper), at: g.c.slice(), zone: g.id };
   };
   // the awake foes, for the cameras and the notches: home is a foe standing at home, homing one walking home
@@ -773,7 +821,8 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
   // the ?test view of each awake foe: id, type, zone, x, y, z, hp, move (its move, or its state), t (seconds in the move), flash
   F.list = () => F.foes.filter(f => shown(f)).map(f => ({
     ref: f, id: f.id, type: f.type, zone: f.zone.id, x: f.x, y: f.y, z: f.z, yaw: f.yaw, hp: f.hp, state: f.state,
-    move: f.move || f.state, t: (f.move ? f.mt : f.t) / 60, flash: f.flash, held: !!f.hold, stunned: f.stunned, cool: f.cool
+    move: f.move || f.state, t: (f.move ? f.mt : f.t) / 60, flash: f.flash, held: !!f.hold, stunned: f.stunned, cool: f.cool,
+    elite: !!f.elite, poise: poiseOf(f) ? (f.poise ?? poiseOf(f)) : null, stagger: f.state === 'stagger' ? STAGGER.steps - f.t : 0
   }));
 
   /* ---------------- ?test hooks ---------------- */
@@ -825,9 +874,10 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
     f.hold = { move, mt: f.mt };
     return f.id;
   };
-  // put out one foe, or every foe of a zone, as a death does: its glim drops. -> how many went out
+  // put out one foe, or every foe of a zone, as a death does: its glim drops. A zone put out whole has no second wave. -> how many went out
   F.putOut = q => {
     const Z = F.zones.find(z => z.id === q), list = Z ? Z.members : [F.find(q)].filter(Boolean);
+    if (Z) { Z.waved = true; delete Z.waveAt; }
     let n = 0;
     for (const f of list) {
       if (gone(f)) continue;
@@ -853,6 +903,8 @@ export function poseOf(f, time = 0) {
     case 'sink': return { clip: 'rise', t: 0.9 * Math.max(0, 1 - f.t / 36) };
     case 'down': return { clip: T.light ? 'down' : 'rest', t: f.t / 60 };
     case 'stun': return { clip: 'stun', t: f.t / 60 };
+    // a stagger holds a clear pose: the Ironback's stun, a light foe's flinch held at its deepest, rocking a little
+    case 'stagger': return T.light ? { clip: 'hurt', t: 0.12 + 0.03 * Math.sin(f.t * 0.35) } : { clip: 'stun', t: Math.min(f.t, 60) / 60 };
     case 'move': {
       const M = T.moves[f.move], ph = phaseOf(M, f.mt);
       if (ph === 'wind') return { clip: `${f.move}.windup`, t: f.mt / 60 };

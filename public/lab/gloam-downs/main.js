@@ -21,6 +21,7 @@ import { figures, poolFor, lineup, LINEUP } from './figures.js';
 import { findVeils, makeVeils, findOccluders, makeOccluders, VEIL } from './veil.js';
 import { makeCut, CUT } from './cut.js';
 import { makeFight, SPARKS } from './fight.js';
+import { parseSeed, seedCode, smallSeed } from './mix.js';
 import { REEVE, REEVE_TEXT } from './boss.js';
 import { makeRunSound } from './run-sound.js';
 
@@ -60,6 +61,11 @@ const intervals = [];
 const cues = [];
 const fx = { stop: true, flash: true, kick: true, zoom: true, grade: true, shake: true, trail: true };
 const fxNow = { kick: [0, 0, 0], zoom: 1, bars: 0 };
+// the Shake switch (the pause panel): the save's shake, or until the player presses it, off under reduced motion and on otherwise
+const shakeOn = () => (rs?.shake === true || rs?.shake === false ? rs.shake : !still);
+fx.kick = shakeOn(); fx.combo = true; fx.lamp = true;
+// the seed and the best combo of the run in this place, kept for the summary after the run ends
+let lastRun = { seed: 1, combo: 0 };
 const posts = [];
 let foeTargets = () => [], fight = null;
 /* the run's sound (run-sound.js): no AudioContext until the first key, click or tap in a run, and none in the explorer or Wander.
@@ -299,6 +305,7 @@ function updateRunHud() {
   $('count').hidden = !h;
   $('hint').hidden = !h;
   $('hint').textContent = beaconLit ? 'The beacon burns.' : 'Put out the keepers, then light the beacon.';
+  updateCombo();
   if (!h) return;
   $('hpN').textContent = h.text;
   $('hpFill').style.width = `${(h.share * 100).toFixed(1)}%`;
@@ -497,7 +504,8 @@ $('bBegin').addEventListener('click', () => beginRun('runHelp'));
 $('bExplore').addEventListener('click', () => toMode('explore'));
 // the run's help says to click the view: a click round its box begins the run, as Begin the run does
 $('runHelp').addEventListener('click', e => { if (e.target === $('runHelp') && mode === 'help' && mouseClick(e)) beginRun('runHelp'); });
-const seed = () => (q.has('seed') ? Number(q.get('seed')) >>> 0 || 1 : newSeed(rs.runs));
+// ?seed= takes a seed's code or its number (mix.js parseSeed); a new run draws a seed small enough for a code of six letters
+const seed = () => (q.has('seed') && parseSeed(q.get('seed'))) || smallSeed(newSeed(rs.runs));
 
 // the pause panel: the run's places, its time, Resume, the sound switch (stage 3 makes the sound), Back to the start and End the run
 function openPause() {
@@ -505,6 +513,7 @@ function openPause() {
   asking = null;
   $('route').innerHTML = routeOf(rs.run.place).map(p => `<li class="${p.state}"><span>${p.n}</span> ${p.name}<em>${p.state === 'here' ? 'now' : p.state}</em></li>`).join('');
   $('pauseLine').textContent = `Run time ${fmt(rs.run.time)}`;
+  $('seedLine').textContent = `Seed ${seedCode(rs.run.seed)}`;
   soundLabel();
   $('pauseRow').hidden = false;
   $('askRow').hidden = true;
@@ -531,10 +540,13 @@ function soundLabel() {
   $('bSound').setAttribute('aria-pressed', String(rs.sound));
   $('bMusic').textContent = rs.music ? 'Music on' : 'Music off';
   $('bMusic').setAttribute('aria-pressed', String(rs.music));
+  $('bShake').textContent = fx.kick ? 'Shake on' : 'Shake off';
+  $('bShake').setAttribute('aria-pressed', String(!!fx.kick));
 }
 $('bResume').addEventListener('click', resume);
 $('bSound').addEventListener('click', () => { rs.sound = !rs.sound; storeRun(); audio?.switches(); soundLabel(); });
 $('bMusic').addEventListener('click', () => { rs.music = !rs.music; storeRun(); audio?.switches(); soundLabel(); });
+$('bShake').addEventListener('click', () => { rs.shake = !fx.kick; fx.kick = rs.shake; storeRun(); soundLabel(); });
 $('bEnd').addEventListener('click', () => ask('end'));
 $('bRestart').addEventListener('click', () => ask('restart'));
 $('bNo').addEventListener('click', no);
@@ -651,6 +663,7 @@ function openSummary() {
   const s = summaryOf(rs.ended), dds = $('summary').querySelectorAll('dd');
   $('sumT').textContent = s.title;
   s.rows.forEach(([, v], i) => { dds[i].textContent = v; });
+  $('sumSeed').textContent = seedLineOf(rs.ended);
   openCard('summary', 'ended', () => $('bSumLamp'));
 }
 $('bSumLamp').addEventListener('click', () => {
@@ -771,8 +784,10 @@ function lightBeacon() {
 
 /* ---------------- a run in a place ---------------- */
 function newRunner() {
-  // the foes of this place, with the place: every foe back, and the foes put out kept for this place only
-  fight = pool && !LOOK && rs.run ? makeFight({ walk, meta, world, pool, rs, max: () => maxOf(rs), still, fx, project, doc: document }) : null;
+  // the foes of this place, with the place: every foe back, and the foes put out kept for this place only. The seed mixes them
+  // (mix.js); with ?test they stand as baked (the checks of each place rely on them) unless &mix asks for the mix
+  fight = pool && !LOOK && rs.run ? makeFight({ walk, meta, world, pool, rs, max: () => maxOf(rs), still, fx, project, doc: document, mix: q.has('test') && !q.has('mix') ? false : { ember: rs.run.ember ?? 0 } }) : null;
+  lastRun = { seed: rs.run?.seed ?? lastRun.seed, combo: rs.run?.combo ?? 0 };
   foeTargets = fight ? () => fight.targets() : () => [];
   runner = makeRunner({
     walk, meta, body, rs, targets, still, log: cues, fx,
@@ -1228,6 +1243,24 @@ function project([x, y, z]) {
   const r = canvas.getBoundingClientRect();
   return [r.left + (cl(0) / w * 0.5 + 0.5) * r.width, r.top + (0.5 - cl(1) / w * 0.5) * r.height];
 }
+/* ---------------- the feel's HUD and hooks (builder D) ----------------
+   The combo meter: "×N" from 2 hits, a pip for the tier and a bar for the 3 s left; it fades 0.4 s after the combo ends (fight.js
+   showCombo does it each frame). The seed and the best combo of the run that ended, for the summary */
+function updateCombo() {
+  if (rs?.run) lastRun = { seed: rs.run.seed, combo: Math.max(rs.run.combo || 0, fight?.combo.best || 0) };
+  fight ? fight.showCombo(mode === 'play') : ($('combo') && ($('combo').hidden = true));
+}
+function seedLineOf(ended) {
+  const seed = ended?.seed ?? lastRun.seed, best = ended?.combo ?? lastRun.combo;
+  return `Seed ${seedCode(seed)}${best >= 2 ? ` · Best combo ×${best}` : ''}`;
+}
+const feelView = () => {
+  const c = fight?.combo, run = rs?.run;
+  return {
+    combo: c ? c.view() : { n: 0, tier: 0, left: 0 }, bestCombo: Math.max(run?.combo || 0, c?.best || 0), next: runner?.fighter.nextHit() ?? 0,
+    seed: run?.seed ?? null, seedCode: run ? seedCode(run.seed) : null, shake: fx.kick, mix: fight ? fight.zones.filter(z => !z.boss).map(z => ({ id: z.id, foes: z.foes, baked: z.baked, elite: z.elite ?? null })) : null
+  };
+};
 const runState = () => {
   const run = rs?.run, f = runner?.fighter.f, k = runner?.clock;
   return {
@@ -1238,8 +1271,10 @@ const runState = () => {
     move: f?.move ?? null, hit: f?.move === 'hit' ? HITS[f.hit].id : null, t: f ? f.t / 60 : 0, safe: runner?.fighter.safe() ?? null, combo: runner?.fighter.nextHit() ?? 0,
     fx: {
       kick: fxNow.kick.slice(), zoom: fight ? fight.feel.zoom() : fxNow.zoom, bars: fight ? fight.feel.bars() : fxNow.bars, grade: (fight?.cols || meta?.pal || []).slice(), blink: !!body?.s.hide,
-      low: !!fight?.feel.low, beats: fight?.feel.beats ?? 0, tell: fight?.grow ?? 1
-    }
+      low: !!fight?.feel.low, beats: fight?.feel.beats ?? 0, tell: fight?.grow ?? 1,
+      shakes: fight ? fight.feel.shakes() : !!fx.kick, lamp: fight ? fight.lamp ?? 1 : 1, halo: fight ? fight.halo.filter(g => g.kind === 'halo').map(g => g.ci) : []
+    },
+    ...feelView()
   };
 };
 let lookWas = false;
@@ -1338,6 +1373,8 @@ window.__gloam = {
       if (Number.isFinite(o.hp)) run.hp = Math.max(1, Math.min(maxOf(rs), Math.round(o.hp)));
       if (Number.isFinite(o.flasks)) run.flasks = Math.max(0, Math.min(flasksOf(rs), Math.round(o.flasks)));
       if (Number.isFinite(o.carried)) run.carried = Math.max(0, Math.round(o.carried));
+      // the combo now, with the full 3 s left (fight.js combo)
+      if (Number.isFinite(o.combo) && fight) { fight.combo.set(o.combo); run.combo = Math.max(run.combo || 0, fight.combo.best); }
     }
     // the boss's health: the phase of that health at once, with one hit stop of 9 steps and one stumble of 2 s
     if (Number.isFinite(o.bossHp) && fight?.boss) { fight.hooks.bossHp(o.bossHp); fillBossBar(); }
@@ -1346,7 +1383,7 @@ window.__gloam = {
     storeRun();
     return runState();
   },
-  fx: (flags = {}) => { for (const k of ['stop', 'flash', 'kick', 'zoom', 'grade', 'shake', 'trail']) if (k in flags) fx[k] = !!flags[k]; return { ...fx }; },
+  fx: (flags = {}) => { for (const k of ['stop', 'flash', 'kick', 'zoom', 'grade', 'shake', 'trail', 'combo', 'lamp']) if (k in flags) fx[k] = !!flags[k]; return { ...fx }; },
   sounds: () => cues.map(c => ({ ...c })),
   // the score's state (run-sound.js view): state, place, theme, layers, phase, bpm, bar, the last 32 changes, the mix and the buses
   music: () => (audio ? audio.view() : null),
