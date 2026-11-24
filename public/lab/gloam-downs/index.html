@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#05060c">
+<title>Gloam Downs · Cottage Arcade Lab</title>
+<meta name="description" content="Five dark places on rolling hills and three in the Gilt Lattice, sculpted and baked into pixel-art Gaussian splats with Ink Studio. Walk them as a small lamplighter: find the wisps and light the beacon on each summit.">
+<script src="/arcade/quiet.js"></script>
+<link rel="icon" href="/favicon.ico">
+<link rel="stylesheet" href="/lab/kit/lab.css">
+<style>
+  :root { --night: #05060c; --bone: #e8e2d0; --ash: #9a9a9a; --ember: #ff9a32; --emberd: #d2551c; --wisp: #8cf0cc; --panel2: rgba(8, 8, 14, 0.88); --edge: rgba(232, 226, 208, 0.16); }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--night); overscroll-behavior: none; }
+  .view { position: fixed; left: 0; top: 0; display: block; touch-action: none; cursor: pointer; image-rendering: pixelated; background: var(--night); }
+  .view.drag { cursor: grabbing; }
+  .view.taken { cursor: none; }
+  /* "Click to look with the mouse": low in the middle of the view, under every card, and never in the way of a click */
+  .mousehint { position: fixed; left: 50%; bottom: calc(var(--sab) + 22px); transform: translateX(-50%); z-index: 5; margin: 0; padding: 8px 14px; border-radius: 10px; background: var(--panel2); border: 1px solid var(--edge); color: var(--bone); font: 600 14px/1.2 var(--body); pointer-events: none; white-space: nowrap; }
+  .mousehint[hidden] { display: none; }
+  .labbar { z-index: 30; }
+  /* the Lab bar: 44 px tall, so its bottom is at --sat + 52px */
+  .labbar > * { background: var(--panel2); border-color: var(--edge); min-height: 44px; display: inline-flex; align-items: center; }
+  /* where you are: top left, under the bar */
+  .hud { position: fixed; left: 10px; top: calc(var(--sat) + 60px); transform: none; display: grid; gap: 4px; justify-items: start; z-index: 6; pointer-events: none; max-width: calc(100vw - 140px); }
+  .hud p { margin: 0; padding: 5px 10px; border-radius: 8px; background: var(--panel2); color: var(--bone); font: 600 13px/1.25 var(--body); border: 1px solid var(--edge); }
+  .hud .where { font: 700 13px/1.1 var(--title); letter-spacing: 0.12em; text-transform: uppercase; color: #f2d7a6; }
+  .hud .count b { color: var(--wisp); }
+  .hud .count i { font-style: normal; color: var(--ember); }
+  .hud .hint { color: var(--ash); font-weight: 500; }
+  /* Map and Look, top right; Jump bottom right on touch screens */
+  .tools { position: fixed; right: 10px; top: calc(var(--sat) + 60px); display: flex; gap: 6px; z-index: 8; }
+  .tools button, .jump, .panel button, .places button { min-width: 44px; min-height: 44px; box-sizing: border-box; border-radius: 10px; border: 1px solid var(--edge); background: var(--panel2); color: var(--bone); font: 700 14px/1 var(--body); padding: 0 12px; cursor: pointer; }
+  .tools button:focus-visible, .panel button:focus-visible, .places button:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
+  .jump { position: fixed; right: calc(14px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 18px); width: 80px; height: 80px; border-radius: 50%; z-index: 8; font: 800 15px/1 var(--body); letter-spacing: 0.06em; background: rgba(60, 20, 12, 0.72); border: 2px solid var(--emberd); color: #ffd9a8; touch-action: none; }
+  .jump.on { background: rgba(140, 50, 20, 0.85); }
+  .jump[hidden] { display: none; }
+  .stick { position: fixed; width: 112px; height: 112px; margin: -56px 0 0 -56px; border-radius: 50%; border: 2px solid rgba(232, 226, 208, 0.28); background: rgba(8, 8, 14, 0.35); pointer-events: none; z-index: 7; }
+  .stick i { position: absolute; left: 50%; top: 50%; width: 48px; height: 48px; margin: -24px 0 0 -24px; border-radius: 50%; background: rgba(232, 226, 208, 0.35); }
+  .stick[hidden] { display: none; }
+  /* the arrival card: the place's name, large, in the middle, then gone */
+  .arrive { position: fixed; left: 50%; top: 34%; transform: translate(-50%, -50%); z-index: 9; text-align: center; pointer-events: none; width: min(92vw, 640px); transition: opacity 0.6s; }
+  .arrive.off { opacity: 0; }
+  .arrive small { display: block; font: 700 12px/1 var(--body); letter-spacing: 0.32em; color: var(--ember); text-transform: uppercase; margin-bottom: 10px; }
+  .arrive h1 { margin: 0; font: 700 clamp(30px, 8vw, 58px)/1.05 var(--title); color: var(--bone); letter-spacing: 0.04em; text-shadow: 0 3px 0 #000, 0 0 24px rgba(0, 0, 0, 0.9); }
+  .arrive p { margin: 10px 0 0; font: 500 clamp(14px, 3.6vw, 18px)/1.35 var(--body); color: #c9c2ae; text-shadow: 0 2px 0 #000; }
+  .toast { top: calc(var(--sat) + 116px); background: var(--panel2); border-color: var(--edge); color: var(--bone); font-size: 16px; }
+  .toast b { color: var(--wisp); }
+  /* dialogs: map, help, beacon, end */
+  .panel { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; background: rgba(2, 2, 6, 0.6); }
+  .panel[hidden] { display: none; }
+  .panel .box { width: min(440px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow: auto; box-sizing: border-box; padding: 18px; border-radius: 14px; background: rgba(10, 9, 14, 0.97); border: 1px solid #5a3424; box-shadow: 0 16px 50px #000; color: var(--bone); }
+  .panel h2 { margin: 0 0 4px; font: 700 26px/1.1 var(--title); color: #f2d7a6; }
+  .panel p { margin: 6px 0 12px; color: #c9c2ae; font: 500 15px/1.4 var(--body); }
+  .panel ul { margin: 0 0 14px; padding-left: 20px; color: #c9c2ae; font: 500 14px/1.45 var(--body); }
+  .panel kbd { font: 700 12px/1 ui-monospace, monospace; padding: 2px 5px; border-radius: 4px; border: 1px solid var(--edge); color: var(--bone); }
+  .panel .row { display: flex; gap: 8px; }
+  .panel .row button { flex: 1; }
+  .panel button.go { background: #5a2214; border-color: var(--emberd); color: #ffe2bd; }
+  .places { display: grid; gap: 6px; margin: 10px 0 12px; }
+  .places button { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 2px 10px; padding: 8px 12px; text-align: left; width: 100%; }
+  .places button b { font: 700 15px/1.2 var(--title); color: #f2d7a6; }
+  .places button small { grid-column: 2; font: 500 12px/1.3 var(--body); color: var(--ash); }
+  .places button em { grid-row: span 2; font: 700 12px/1 var(--body); font-style: normal; color: var(--wisp); white-space: nowrap; }
+  .places button .n { grid-row: span 2; font: 700 18px/1 var(--title); color: var(--ember); width: 1.4em; text-align: center; }
+  .places button[aria-current="true"] { border-color: var(--emberd); }
+  .places button:disabled { opacity: 0.45; cursor: default; }
+  .places button:disabled b { color: var(--ash); }
+  /* the Map's two groups: the downs and the Gilt Lattice, one over the other, side by side in a wide window */
+  .groups { display: grid; gap: 4px 16px; margin: 6px 0 12px; }
+  .groups .group { min-width: 0; }
+  .groups .places { margin: 6px 0 0; }
+  .groups h3 { margin: 4px 0 0; font: 700 13px/1.2 var(--body); letter-spacing: 0.16em; text-transform: uppercase; color: var(--ember); }
+  .groups .lattice h3 { color: #ffd77a; }
+  @media (min-width: 760px) {
+    #map .box { width: min(760px, calc(100vw - 24px)); }
+    .groups { grid-template-columns: 1fr 1fr; }
+  }
+  /* a short window: rows 44 px high with the beacon line beside the wisps, so eight rows and Close fit 320x640 with no scroll */
+  @media (max-height: 700px) {
+    #map { box-sizing: border-box; padding: calc(var(--sat) + 60px) 0 calc(var(--sab) + 6px); }
+    #map .box { padding: 10px 12px; max-height: 100%; }
+    #map h2 { font-size: 20px; }
+    #map p { margin: 2px 0 4px; font-size: 13px; line-height: 1.3; }
+    .groups { margin: 2px 0 8px; gap: 2px 16px; }
+    .groups h3 { margin: 2px 0 0; font-size: 11px; }
+    .groups .places { margin: 3px 0 0; gap: 4px; }
+    #map .places button { grid-template-columns: auto minmax(0, 1fr) auto auto; height: 44px; padding: 0 10px; gap: 0 8px; }
+    #map .places button .n { grid-row: auto; font-size: 15px; }
+    #map .places button b { font-size: 13px; line-height: 1.1; }
+    #map .places button em { grid-row: auto; }
+    #map .places button small { grid-column: auto; font-size: 11px; line-height: 1.1; max-width: 6.5em; }
+  }
+  dl.score { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 6px 0 16px; }
+  dl.score dt { color: var(--ash); } dl.score dd { margin: 0; text-align: right; font-weight: 700; }
+  /* loading */
+  .loading { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; background: var(--night); transition: opacity 0.5s, visibility 0.5s; }
+  .loading.done { opacity: 0; visibility: hidden; pointer-events: none; }
+  .loading .box { width: min(400px, calc(100vw - 40px)); text-align: center; color: var(--bone); }
+  .loading h1 { margin: 0 0 4px; font: 700 clamp(36px, 11vw, 60px)/1 var(--title); letter-spacing: 0.08em; color: #f2d7a6; text-shadow: 0 3px 0 #3a0f0c; }
+  .loading p { margin: 10px 0; font: 500 14px/1.4 var(--body); color: #c9c2ae; }
+  .loading button { margin-top: 8px; min-height: 44px; padding: 0 18px; border-radius: 10px; border: 1px solid var(--emberd); background: #5a2214; color: #ffe2bd; font: 700 15px/1 var(--body); cursor: pointer; }
+  .loading button[hidden] { display: none; }
+  .bar { height: 8px; background: #140c0c; border: 1px solid #5a3424; }
+  .bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--emberd), var(--ember)); transition: width 0.15s; }
+  .veil { position: fixed; inset: 0; z-index: 25; background: #000; opacity: 0; pointer-events: none; transition: opacity 0.45s; }
+  .veil.on { opacity: 1; }
+  /* the run's touch buttons: a right-thumb group at the bottom right (design.md "HUD and layouts"), small in windows 660 px tall or
+     less. Attack, Roll and Heal show only in a run; Jump takes the run's size there */
+  .act { position: fixed; z-index: 8; box-sizing: border-box; padding: 0; border-radius: 50%; touch-action: none; display: grid; place-items: center; align-content: center; gap: 1px;
+    background: rgba(60, 20, 12, 0.72); border: 2px solid var(--emberd); color: #ffd9a8; font: 800 12px/1 var(--body); letter-spacing: 0.05em; cursor: pointer; }
+  .act.on { background: rgba(140, 50, 20, 0.85); }
+  .act[hidden] { display: none; }
+  .act b { font: 800 13px/1 var(--body); color: #ffe2bd; }
+  .act.attack { width: 76px; height: 76px; right: calc(16px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 84px); font-size: 13px; }
+  .act.roll { width: 60px; height: 60px; right: calc(100px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 18px); background: rgba(20, 18, 30, 0.72); border-color: #6a6478; color: var(--bone); }
+  .act.heal { width: 48px; height: 48px; right: calc(104px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 94px); font-size: 10px; background: rgba(14, 40, 34, 0.72); border-color: #3f8f78; color: #c8f6e6; }
+  body.run .jump { width: 64px; height: 64px; right: calc(16px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 12px); padding: 0; }
+  @media (min-height: 661px) {
+    .act.attack { width: 84px; height: 84px; bottom: calc(var(--sab) + 96px); font-size: 14px; }
+    .act.roll { width: 64px; height: 64px; right: calc(112px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 30px); }
+    .act.heal { width: 52px; height: 52px; right: calc(112px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 110px); }
+    body.run .jump { width: 72px; height: 72px; bottom: calc(var(--sab) + 16px); }
+  }
+  /* the run's cards: the places of the run, the wick choice and the question before End the run */
+  .route { list-style: none; margin: 8px 0 10px; padding: 0; display: grid; gap: 4px; }
+  .route li { display: grid; grid-template-columns: 1.8em 1fr auto; gap: 8px; align-items: center; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--edge); font: 600 14px/1.2 var(--body); color: var(--ash); }
+  .route li span { font: 700 15px/1 var(--title); color: var(--ember); text-align: center; }
+  .route li em { font: 700 11px/1 var(--body); font-style: normal; text-transform: uppercase; letter-spacing: 0.1em; }
+  .route li.here { color: var(--bone); border-color: var(--emberd); }
+  .route li.passed { color: #c9c2ae; }
+  .wicks { display: grid; gap: 8px; margin: 8px 0 12px; }
+  .wicks:empty { display: none; }
+  .wicks button { width: 100%; text-align: left; padding: 10px 14px; line-height: 1.3; }
+  .panel .ask { margin: 4px 0 10px; color: var(--bone); }
+  .panel .row[hidden] { display: none; }
+  /* the explorer's way into the combat run; a run has no use for it */
+  body.run .fight { display: none; }
+  #askRow { flex-wrap: wrap; }
+  #askRow .ask { flex-basis: 100%; }
+  @media (max-width: 520px) { .hud .hint { display: none; } .hud p { font-size: 12px; } .tools button { padding: 0 10px; font-size: 13px; } }
+  /* in a run the second tool reads Pause, a little wider than Map: tighter padding keeps it clear of the HUD at 320 */
+  @media (max-width: 520px) { body.run .tools button { padding: 0 8px; } }
+  /* the run's HUD: under the place, one row of a health bar in ember, its number and a pip for each flask, then the wisps and the glim
+     carried. The row is made of i and b, not span, so the Lab kit's pill style for .hud span stays out of it. At 520 px wide or less
+     the row is 12 px with a 56 x 8 px bar and 6 px pips, so the HUD is at most 88 px tall there; in the boss fight the hint hides */
+  .hud .life { display: none; }
+  body.run .hud .life { display: flex; align-items: center; gap: 6px; }
+  body.run .hud .life[hidden] { display: none; }
+  .hud .life b { font: 700 13px/1 var(--body); color: #ffe2bd; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .hud .hpbar { position: relative; display: block; flex: none; width: 120px; height: 10px; background: #1c0d0b; box-shadow: 0 0 0 1px #5a3424; }
+  .hud .hpbar i { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; background: linear-gradient(90deg, var(--emberd), var(--ember)); }
+  .hud.low .hpbar { box-shadow: 0 0 0 1px var(--ember); }
+  .hud.beat .hpbar { box-shadow: 0 0 0 2px var(--ember), 0 0 8px rgba(210, 85, 28, 0.8); }
+  .hud .pips { display: flex; gap: 2px; flex: none; }
+  .hud .pips i { display: block; width: 8px; height: 8px; box-sizing: border-box; border-radius: 50%; border: 1px solid #3f8f78; }
+  .hud .pips i.on { background: #8cf0cc; border-color: #c8f6e6; }
+  body.run .hud .count em { font-style: normal; color: #ffd77a; }
+  .hud.boss .hint { display: none; }
+  @media (max-width: 520px) {
+    body.run .hud .life { gap: 5px; }
+    .hud .life b { font-size: 12px; }
+    .hud .hpbar { width: 56px; height: 8px; }
+    .hud .pips { gap: 2px; }
+    .hud .pips i { width: 6px; height: 6px; }
+  }
+  /* the fade to ink at death, over the picture and under the HUD (the grade does it when the foes' feel is on: see main.js draw) */
+  .ink { position: fixed; inset: 0; z-index: 1; background: var(--night); opacity: 0; pointer-events: none; }
+  /* in a run the toast sits 8 px under the HUD's measured bottom (main.js sets top), and the toast and the arrival card wait under a card */
+  body.run .toast { top: var(--toastTop, calc(var(--sat) + 116px)); margin: 0; }
+  body.run:has(.panel:not([hidden])) .toast, body.run:has(.panel:not([hidden])) .arrive { visibility: hidden; }
+  body.run:has(.toast.on) .arrive { opacity: 0; }
+  /* the run's cards clear the Lab bar row, so no card button lies under ◀ Lab or Games, and fit the window with no scroll */
+  body.run .panel { box-sizing: border-box; padding: calc(var(--sat) + 60px) 12px calc(var(--sab) + 12px); }
+  body.run .panel .box { max-height: calc(100dvh - var(--sat) - var(--sab) - 72px); }
+  body.run .panel .row button { white-space: normal; line-height: 1.15; padding: 4px 10px; }
+  #pauseRow { display: grid; gap: 8px; }
+  #pauseRow[hidden] { display: none; }
+  #bSound[aria-pressed="false"], #bMusic[aria-pressed="false"] { color: var(--ash); }
+  /* Resume is the widest of the three in its row; the switches share the rest */
+  #pauseRow #bResume { flex: 1.4; }
+  /* the run's first card: Begin the run is the main button and the widest; Explore, the walk with no foes, is the second choice */
+  #runHelp #bBegin { flex: 1.6; }
+  #runHelp #exploreLine { margin-bottom: 8px; font-size: 14px; }
+  .panel .ups { list-style: none; margin: 8px 0 12px; padding: 0; display: grid; gap: 6px; }
+  .ups li { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2px 10px; padding: 4px 4px 4px 10px; border-radius: 10px; border: 1px solid var(--edge); }
+  .ups li span { font: 600 14px/1.25 var(--body); color: var(--bone); }
+  .ups li .lv { grid-column: 1; display: flex; gap: 3px; }
+  .ups li .lv i { width: 7px; height: 7px; border-radius: 50%; border: 1px solid var(--emberd); }
+  .ups li .lv i.on { background: var(--ember); }
+  .ups li button { grid-column: 2; grid-row: 1 / span 2; min-width: 88px; padding: 4px 10px; line-height: 1.15; white-space: normal; }
+  .ups li button[aria-disabled="true"] { color: var(--ash); border-color: var(--edge); background: rgba(20, 18, 26, 0.9); cursor: default; font-weight: 600; font-size: 13px; }
+  .ups li.top span { color: var(--ash); }
+  .panel .bank { color: #ffd77a; font-weight: 700; }
+  /* short windows: smaller titles and padding, so the pause panel and the Lamp-room fit 640 and 600 px with no scroll */
+  @media (max-height: 660px) {
+    body.run .panel .box { padding: 12px 14px; }
+    body.run .panel h2 { font-size: 22px; }
+    body.run .panel p { margin: 4px 0 8px; font-size: 14px; }
+    body.run .panel ul:not(.ups) { margin-bottom: 8px; font-size: 13px; line-height: 1.35; }
+    body.run .route { margin: 4px 0 6px; gap: 3px; }
+    body.run .route li { padding: 4px 10px; font-size: 13px; }
+    .panel .ups { margin: 6px 0 8px; gap: 4px; }
+    .ups li span { font-size: 13px; }
+  }
+  /* the boss bar: a name and a bar in the Lab bar row, between ◀ Lab and Games (main.js placeBossBar sets its left and width); the
+     ticks mark the phases' ends at 800 and 350 of 1,300. It hides while a card shows */
+  .bossbar { position: fixed; top: calc(var(--sat) + 8px); height: 44px; box-sizing: border-box; z-index: 31; display: grid; align-content: center; gap: 5px; padding: 6px 12px;
+    border-radius: 12px; background: var(--panel2); border: 1px solid var(--edge); pointer-events: none; }
+  .bossbar[hidden] { display: none; }
+  .bossbar b { font: 700 12px/1 var(--title); letter-spacing: 0.12em; text-transform: uppercase; color: #f2d7a6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bossbar .bbar { position: relative; display: block; height: 8px; background: #1c0d0b; box-shadow: 0 0 0 1px #5a3424; }
+  .bossbar .bbar i { position: absolute; top: 0; bottom: 0; left: 0; display: block; }
+  .bossbar #bossFill { width: 100%; background: linear-gradient(90deg, #8a2814, var(--emberd)); }
+  .bossbar .tick { width: 2px; margin-left: -1px; background: rgba(5, 6, 12, 0.85); }
+  body.run:has(.panel:not([hidden])) .bossbar { visibility: hidden; }
+  /* in a run the Lab bar stays above the loading screen, so ◀ Lab and Games can be reached while it waits (the boss files) */
+  body.run .labbar { z-index: 41; }
+  .loading .row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  @media (max-height: 420px) { .arrive { top: 40%; } .arrive p { display: none; } }
+  @media (prefers-reduced-motion: reduce) { .arrive, .veil, .loading, .bar i { transition: none; } }
+</style>
+</head>
+<body class="toy">
+<canvas class="view" id="view" aria-label="Gloam Downs: a dark place on rolling hills, drawn as pixel art"></canvas>
+<nav class="labbar"><a class="back" href="/lab/">◀ Lab</a><button type="button" id="menu" data-switch>Games</button></nav>
+<div class="bossbar" id="bossBar" hidden role="img" aria-label="The Barrow Reeve"><b>The Barrow Reeve</b><i class="bbar"><i id="bossFill"></i><i class="tick" style="left: 61.5%"></i><i class="tick" style="left: 26.9%"></i></i></div>
+
+<div class="ink" id="ink" aria-hidden="true"></div>
+<div class="hud" id="hud" hidden>
+  <p class="where" id="where">The Sunken Gaol</p>
+  <p class="life" id="life" aria-label="Health and flasks"><i class="hpbar"><i id="hpFill"></i></i><b id="hpN">100/100</b><i class="pips" id="pips"></i></p>
+  <p class="count" id="count"><b>◆ 0/5</b> wisps · <i>beacon dark</i></p>
+  <p class="hint" id="hint">Climb to the keep. Light the beacon.</p>
+</div>
+<div class="tools" id="tools" hidden>
+  <button type="button" id="bLook" title="Turn the view behind the lamplighter (R)">Look</button>
+  <button type="button" id="bMap" title="The places (M)">Map</button>
+</div>
+<button type="button" class="jump" id="bJump" hidden>JUMP</button>
+<button type="button" class="act attack" id="bAttack" hidden aria-label="Attack">ATTACK</button>
+<button type="button" class="act roll" id="bRoll" hidden aria-label="Roll">ROLL</button>
+<button type="button" class="act heal" id="bHeal" hidden aria-label="Heal">HEAL<b id="healN">2</b></button>
+<div class="stick" id="stick" hidden><i></i></div>
+<p class="mousehint" id="mouseHint" hidden>Click to look with the mouse</p>
+
+<div class="arrive off" id="arrive" aria-live="polite"><small id="arriveN">I · The first place</small><h1 id="arriveName">The Sunken Gaol</h1><p id="arriveSub"></p></div>
+<p class="toast" id="toast" role="status"></p>
+
+<div class="panel" id="help" hidden><div class="box" role="dialog" aria-labelledby="helpT">
+  <h2 id="helpT">Gloam Downs</h2>
+  <p>Five dark places on rolling hills. You are the lamplighter. In each place, find the five wisps and light the beacon on the summit. The beacon opens the way to the next place.</p>
+  <ul id="helpKeys">
+    <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or the arrows move. <kbd>Shift</kbd> walks.</li>
+    <li><kbd>Space</kbd> jumps. Hold it to jump higher.</li>
+    <li id="helpMouse">Click the view to take the mouse. Move the mouse to look round. Left click jumps. <kbd>Esc</kbd> frees the mouse.</li>
+    <li id="helpDrag" hidden>Hold the right button and drag the view to look round. Left click jumps.</li>
+    <li><kbd>Q</kbd> <kbd>E</kbd> also turn the view. <kbd>R</kbd> looks ahead.</li>
+    <li><kbd>M</kbd> opens the map. A gamepad works too.</li>
+  </ul>
+  <ul id="helpTouch" hidden>
+    <li>Drag on the left half of the screen to move.</li>
+    <li>Drag on the right half to look round.</li>
+    <li>Press JUMP to jump. Hold it to jump higher.</li>
+  </ul>
+  <p id="helpLattice">The map also opens the Gilt Lattice: three more places of marble, gold and light. Its first place is open now.</p>
+  <div class="row"><button type="button" class="go" id="bStart">Walk</button><button type="button" class="fight" id="bFight" title="Fight through the five places: attack, roll and heal">Fight</button></div>
+</div></div>
+
+<div class="panel" id="map" hidden><div class="box" role="dialog" aria-labelledby="mapT">
+  <h2 id="mapT">The map</h2>
+  <p id="mapLine">Light a beacon to open the way to the next place.</p>
+  <div class="groups">
+    <section class="group" aria-labelledby="downsT"><h3 id="downsT">The downs</h3><div class="places" id="places"></div></section>
+    <section class="group lattice" aria-labelledby="latticeT"><h3 id="latticeT">The Gilt Lattice</h3><div class="places" id="lattice"></div></section>
+  </div>
+  <div class="row"><button type="button" id="bMapClose">Close</button><button type="button" class="fight" id="bMapFight" title="Fight through the five places: attack, roll and heal">Fight</button></div>
+</div></div>
+
+<div class="panel" id="end" hidden><div class="box" role="dialog" aria-labelledby="endT">
+  <h2 id="endT">The downs are lit</h2>
+  <p>All five beacons burn. The lamplighter can rest.</p>
+  <dl class="score"><dt>Time</dt><dd id="endTime">0:00</dd><dt>Wisps</dt><dd id="endWisps">0/25</dd><dt>Best time</dt><dd id="endBest">–</dd></dl>
+  <div class="row"><button type="button" id="bEndStay">Stay</button><button type="button" class="go" id="bAgain">Walk again</button></div>
+</div></div>
+
+<div class="panel" id="runHelp" hidden><div class="box" role="dialog" aria-labelledby="runHelpT">
+  <h2 id="runHelpT">Gloam Downs</h2>
+  <p>A run through five dark places, with a blade, a roll and two flasks. Put out each beacon's keepers, then light it. A lit beacon banks the glim you carry. Spend it in the Lamp-room, on upgrades that last.</p>
+  <ul id="runControls"></ul>
+  <p id="exploreLine">Explore walks the places with no foes.</p>
+  <div class="row"><button type="button" class="go" id="bBegin">Begin the run</button><button type="button" id="bExplore" title="Walk the five places with no foes">Explore</button></div>
+</div></div>
+
+<div class="panel" id="pause" hidden><div class="box" role="dialog" aria-labelledby="pauseT">
+  <h2 id="pauseT">Paused</h2>
+  <ol class="route" id="route"></ol>
+  <p id="pauseLine">Run time 0:00</p>
+  <ul id="pauseControls"></ul>
+  <div id="pauseRow">
+    <div class="row"><button type="button" class="go" id="bResume">Resume</button><button type="button" id="bSound" aria-pressed="true">Sound on</button><button type="button" id="bMusic" aria-pressed="true">Music on</button></div>
+    <div class="row"><button type="button" id="bRestart">Back to the start</button><button type="button" id="bEnd">End the run</button></div>
+  </div>
+  <div class="row" id="askRow" hidden><p class="ask" id="askLine">End the run? The glim you carry is lost.</p><button type="button" class="go" id="bNo">No</button><button type="button" id="bYes">Yes, end it</button></div>
+</div></div>
+
+<div class="panel" id="beaconCard" hidden><div class="box" role="dialog" aria-labelledby="beaconT">
+  <h2 id="beaconT">The beacon burns</h2>
+  <p id="beaconLine">Choose a wick. It burns for the rest of the run.</p>
+  <div class="wicks" id="wicks"></div>
+  <p id="beaconBank" hidden>Banked: 0 glim. Spend it in the Lamp-room, or walk on.</p>
+  <div class="row" id="beaconRow" hidden><button type="button" id="bSpend">Spend glim</button><button type="button" class="go" id="bWalkOn">Walk on</button></div>
+</div></div>
+
+<div class="panel" id="lamp" hidden><div class="box" role="dialog" aria-labelledby="lampT">
+  <h2 id="lampT">The Lamp-room</h2>
+  <p id="lampLine">Banked: 0 glim. What you buy here lasts for every run.</p>
+  <ul class="ups" id="ups"></ul>
+  <div class="row" id="lampRow"><button type="button" class="go" id="bLampBack" hidden>Back to the beacon</button><button type="button" class="go" id="bLampBegin" hidden>Begin the run</button><button type="button" class="go" id="bLampGoOn" hidden>Go on with the run</button><button type="button" id="bLampWander" hidden>Wander</button><button type="button" id="bLampToWander" hidden>Back to Wander</button><button type="button" id="bLampExplore" hidden>Explore</button></div>
+</div></div>
+
+<div class="panel" id="winCard" hidden><div class="box" role="dialog" aria-labelledby="winT">
+  <h2 id="winT">The downs are lit</h2>
+  <p>The last light of the downs burns over Barrow Crown, and every beacon is lit.</p>
+  <dl class="score"><dt>Time</dt><dd id="winTime"></dd><dt>Best winning time</dt><dd id="winBest"></dd><dt>Glim banked</dt><dd id="winBanked"></dd><dt>Runs</dt><dd id="winRuns"></dd><dt>Deaths</dt><dd id="winDeaths"></dd></dl>
+  <div class="row"><button type="button" class="go" id="bWinLamp">To the Lamp-room</button><button type="button" id="bWinWander" hidden>Wander</button></div>
+</div></div>
+
+<div class="panel" id="summary" hidden><div class="box" role="dialog" aria-labelledby="sumT">
+  <h2 id="sumT">The lamp goes out</h2>
+  <dl class="score"><dt>Reached</dt><dd id="sumPlace"></dd><dt>Time</dt><dd id="sumTime"></dd><dt>Foes put out</dt><dd id="sumFoes"></dd><dt>Glim lost</dt><dd id="sumLost"></dd><dt>Glim banked</dt><dd id="sumBanked"></dd></dl>
+  <div class="row"><button type="button" class="go" id="bSumLamp">To the Lamp-room</button></div>
+</div></div>
+
+<div class="veil" id="veil"></div>
+<div class="loading" id="loading"><div class="box">
+  <h1>GLOAM DOWNS</h1>
+  <p id="loadLine">Loading the place…</p>
+  <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="bar"><i id="barFill"></i></div>
+  <div class="row"><button type="button" id="bRetry" hidden>Try again</button><button type="button" id="bBack" hidden>Step back</button></div>
+</div></div>
+
+<script src="./ink/pixel-look.js"></script>
+<script src="./ink/splat-codec.js"></script>
+<script src="/arcade/switch.js"></script>
+<script type="module" src="./main.js"></script>
+<script src="/arcade/analytics.js" data-game="gloam-downs"></script>
+</body>
+</html>

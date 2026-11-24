@@ -1,0 +1,68 @@
+{
+ "source": "FluidR3_GM by Frank Wen, rendered by gleitz/midi-js-soundfonts",
+ "license": "Files: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/us/), as rendered by gleitz/midi-js-soundfonts. Soundfont: MIT, Copyright (c) 2000-2002, 2008 Frank Wen (see README.md).",
+ "instruments": {
+  "harp": {
+   "notes": {
+    "44": "harp/44.mp3",
+    "48": "harp/48.mp3",
+    "52": "harp/52.mp3",
+    "56": "harp/56.mp3",
+    "60": "harp/60.mp3",
+    "64": "harp/64.mp3",
+    "68": "harp/68.mp3",
+    "72": "harp/72.mp3",
+    "76": "harp/76.mp3"
+   },
+   "gain": 0.818
+  },
+  "strings": {
+   "notes": {
+    "36": "strings/36.mp3",
+    "40": "strings/40.mp3",
+    "44": "strings/44.mp3",
+    "48": "strings/48.mp3",
+    "52": "strings/52.mp3",
+    "56": "strings/56.mp3",
+    "60": "strings/60.mp3",
+    "64": "strings/64.mp3"
+   },
+   "gain": 0.473
+  },
+  "contrabass": {
+   "notes": {
+    "32": "contrabass/32.mp3",
+    "36": "contrabass/36.mp3",
+    "40": "contrabass/40.mp3"
+   },
+   "gain": 0.414
+  },
+  "flute": {
+   "notes": {
+    "60": "flute/60.mp3",
+    "64": "flute/64.mp3",
+    "68": "flute/68.mp3"
+   },
+   "gain": 0.351
+  },
+  "choir": {
+   "notes": {
+    "56": "choir/56.mp3",
+    "60": "choir/60.mp3",
+    "64": "choir/64.mp3",
+    "68": "choir/68.mp3",
+    "72": "choir/72.mp3"
+   },
+   "gain": 0.55
+  },
+  "timpani": {
+   "notes": {
+    "40": "timpani/40.mp3",
+    "44": "timpani/44.mp3",
+    "48": "timpani/48.mp3",
+    "52": "timpani/52.mp3"
+   },
+   "gain": 0.961
+  }
+ }
+}
