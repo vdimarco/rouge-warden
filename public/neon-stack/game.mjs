@@ -84,7 +84,8 @@ function camera() {
   const aspect = renderer.view.artW / Math.max(1, renderer.view.artH);
   const tan = Math.tan(FOV / 2);
   const portrait = renderer.view.artH > renderer.view.artW;
-  const tiles = (attract ? TILES + 1 : TILES) - (portrait ? 1 : 0);
+  const span = Math.abs(Math.cos(yr)) + Math.abs(Math.sin(yr));
+  const tiles = portrait ? (attract ? 8.4 : 7.25) * span : (attract ? TILES + 1 : TILES);
   const dist = (tiles * TILE) / (2 * tan * aspect);
   const cx = (attract ? 3 : player.x) * TILE;
   const cz = (attract ? 3 : player.y) * TILE;
@@ -124,6 +125,7 @@ function scatterRain() {
 }
 function fit() {
   const cssW = window.innerWidth, cssH = window.innerHeight;
+  if (cssW < 2 || cssH < 2) return;
   const dpr = window.devicePixelRatio || 1;
   canvas.style.width = cssW + "px";
   canvas.style.height = cssH + "px";
@@ -154,7 +156,7 @@ function walkAt(clientX, clientY) {
 function lightsNow() {
   const out = world.lights.map((l) => ({ ...l }));
   for (let i = 0; i < 5; i++) {
-    const buzz = world.signs[i].buzz && (time % 3.6) < 0.08;
+    const buzz = override[i] == null && world.signs[i].buzz && (time % 3.6) < 0.08;
     const want = override[i] === false ? 0 : 1;
     const step = Math.min(Math.abs(want - fade[i]), lastDt / 0.15);
     fade[i] += Math.sign(want - fade[i]) * step;
@@ -204,7 +206,7 @@ function scene() {
     const r = parseInt(hex.slice(1, 3), 16) / 255;
     const g = parseInt(hex.slice(3, 5), 16) / 255;
     const b = parseInt(hex.slice(5, 7), 16) / 255;
-    uC[i * 4] = r; uC[i * 4 + 1] = g; uC[i * 4 + 2] = b; uC[i * 4 + 3] = 1;
+    uC[i * 4] = r; uC[i * 4 + 1] = g; uC[i * 4 + 2] = b; uC[i * 4 + 3] = l.half || 1;
     uI[i] = l.intensity ?? 1;
     if (l.sign >= 0) fadeU[l.sign + 1] = l.intensity ?? 1;
     const dx = x - rx, dz = z - rz, dy = y - 8;
@@ -370,7 +372,7 @@ window.__test = {
     drawCalls: renderer.drawCalls,
     frameMs, fps,
     lights: (frame.lights || world.lights).map((l) => ({
-      x: l.x, y: l.y, z: l.z, colour: l.colour, type: l.type, on: !!l.on,
+      x: l.x, y: l.y, z: l.z, colour: l.colour, type: l.type, on: !!l.on, name: l.name,
     })),
   }),
   setTilt: (d) => { tilt = clampTilt(d); attract = false; },

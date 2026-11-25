@@ -279,17 +279,17 @@ export function build(seed) {
     for (const b of buildings) if (b.tx === tx && (!south || b.ty > south.ty)) south = b;
     if (south) exposed.push(south);
   }
+  const openEast = exposed.filter((b) => b.tx + 1 >= GRID || !blocked[b.tx + 1][b.ty]);
   SIGNS.forEach((def, si) => {
     const w = def.grid[0].length;
     const h = def.grid.length;
     if (def.grid.some((row) => row.length !== w)) throw new Error(def.name + " grid is ragged");
-    // East walls are edge-on from the standing camera, so hang the plate on the
-    // south face that camera can see. A second plate on the same wall sits higher.
-    const wall = exposed[si % exposed.length];
-    const stack = Math.floor(si / exposed.length);
-    const face = { id: PZ };
-    const edgeX = wall.x;
-    const edgeZ = wall.z + wall.hz + 0.4;
+    // South faces read at this camera. A sign past the last south face hangs on an open east wall.
+    const south = si < exposed.length;
+    const wall = south ? exposed[si] : openEast[(si - exposed.length) % Math.max(1, openEast.length)];
+    const face = { id: south ? PZ : PX };
+    const edgeX = south ? wall.x : wall.x + wall.hx + 0.4;
+    const edgeZ = south ? wall.z + wall.hz + 0.4 : wall.z;
     const W = w + 2;
     const H = h + 2;
     const pix = new Uint8Array(W * H * 4);
@@ -302,13 +302,14 @@ export function build(seed) {
       }
     }
     const uv = pack.put(pix, W, H);
-    const lift = 0.6 + 4 + stack * 14;
-    slices.push(slice(edgeX, edgeZ, lift + H / 2, W / 2, H / 2, uv, 3, si + 1, -1, true, 2));
+    const lift = 0.6 + 4;
+    slices.push(slice(edgeX, edgeZ, lift + H / 2, W / 2, H / 2, uv, 3, si + 1, -1, true, south ? 2 : 1));
     const lx = edgeX / TILE;
     const ly = edgeZ / TILE;
     lights.push({
       x: lx, y: ly, z: lift + H / 2, colour: def.colour, type: "neon",
       on: true, sign: si, radius: TILE * 3, buzz: def.buzz, name: def.name,
+      half: south ? 12 : -12,
     });
     signMeta.push({ name: def.name, colour: def.colour, w, h, tx: wall.tx, ty: wall.ty, buzz: def.buzz, x: lx, y: ly });
   });

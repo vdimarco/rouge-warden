@@ -271,8 +271,20 @@ async function proof(width, height, dpr, tag) {
   });
   check(attract, tag + " attract keeps the whole block in frame");
   await page.screenshot({ path: OUT + "/" + tag + "-open.png" });
-  await page.evaluate(() => { __test.enter(); __test.moveTo(2.5, 2.5); __test.forceCutaway(false); __test.setTilt(55); __test.setYaw(20); });
-  await page.waitForTimeout(220);
+  await page.evaluate(() => { __test.enter(); __test.moveTo(2.5, 2.5); __test.forceCutaway(false); __test.setTilt(55); __test.setYaw(0); });
+  await page.waitForTimeout(200);
+  const yaw0 = await page.evaluate(() => {
+    const v = __test.view();
+    const corners = [[0, 0], [6, 0], [0, 6], [6, 6]].map(([x, y]) => __test.project(x, y, 0));
+    const inside = corners.every((p) => p.x >= -0.5 && p.y >= -0.5 && p.x <= v.artW + 0.5 && p.y <= v.artH + 0.5);
+    const span = Math.max(...corners.map((p) => p.x)) - Math.min(...corners.map((p) => p.x));
+    return { inside, width: span / v.artW, frameMs: __test.state().frameMs };
+  });
+  check(yaw0.inside, tag + " yaw 0 keeps the corners on screen");
+  if (tag === "390") check(yaw0.width >= 0.8, tag + " yaw 0 block fills " + Math.round(yaw0.width * 100) + "% of the canvas width");
+  console.log("  nums  " + tag + " yaw0 block=" + Math.round(yaw0.width * 100) + "% frameMs=" + yaw0.frameMs.toFixed(1));
+  await page.evaluate(() => __test.setYaw(20));
+  await page.waitForTimeout(200);
   const view = await page.evaluate(() => __test.view());
   check(view.artW >= 256 && view.artW <= 320, tag + " art width " + view.artW + " stays in 256..320");
   check(view.ratio <= 2, tag + " buffer ratio " + view.ratio + " is at most 2");
@@ -310,6 +322,87 @@ async function proof(width, height, dpr, tag) {
   check(blockWidth >= 0.75, tag + " block fills " + Math.round(blockWidth * 100) + "% of the canvas width");
   check(framed.cssW >= width * 0.95 && framed.cssH >= height * 0.95, tag + " canvas fills the viewport (" + Math.round(framed.cssW) + "x" + Math.round(framed.cssH) + " of " + framed.vw + "x" + framed.vh + ")");
   check(framed.n > 4 && framed.h > framed.w, tag + " runner is taller than wide (" + framed.w + "x" + framed.h + ", " + framed.n + " px)");
+  const pools = await page.evaluate(async () => {
+    const canvas = document.querySelector("canvas");
+    const gl = canvas.getContext("webgl2");
+    const grab = () => {
+      const buf = new Uint8Array(canvas.width * canvas.height * 4);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, buf);
+      return buf;
+    };
+    const toScreen = (x, y, z) => {
+      const v = __test.view();
+      const p = __test.project(x / 32, z / 32, y);
+      return { x: v.ox + p.x * v.scale, y: v.oy + (v.artH - p.y) * v.scale };
+    };
+    for (let i = 0; i < 5; i++) __test.setSign(i, true);
+    await new Promise((r) => setTimeout(r, 280));
+    const lights = __test.state().lights.filter((l) => l.type === "neon");
+    const buildings = __test.buildings();
+    const out = [];
+    for (let i = 0; i < lights.length; i++) {
+      const s = lights[i];
+      let host = buildings[0], best = 1e9, east = false;
+      for (const b of buildings) {
+        const dSouth = Math.hypot(s.x - (b.x + 0.5), s.y - (b.y + 0.5 + 11 / 32));
+        const dEast = Math.hypot(s.x - (b.x + 0.5 + 11 / 32), s.y - (b.y + 0.5));
+        const d = Math.min(dSouth, dEast);
+        if (d < best) { best = d; host = b; east = dEast < dSouth; }
+      }
+      const cx = (host.x + 0.5) * 32, cz = (host.y + 0.5) * 32;
+      const sx = s.x * 32, sz = s.y * 32;
+      const world = east
+        ? [
+          [cx + 11, 0.6, cz - 8], [cx + 11, host.h, cz + 8],
+          [sx, 0.2, sz - 8], [Math.min(192, sx + 64), 0.2, sz + 8],
+        ]
+        : [
+          [cx - 11, 0.6, cz + 11], [cx + 11, 0.6, cz + 11],
+          [cx - 11, host.h, cz + 11], [cx + 11, host.h, cz + 11],
+          [sx - 12, 0.2, sz], [sx + 12, 0.2, sz],
+          [sx - 12, 0.2, Math.min(192, sz + 64)], [sx + 12, 0.2, Math.min(192, sz + 64)],
+        ];
+      const sky = (buf, k) => buf[k] < 22 && buf[k + 1] < 24 && buf[k + 2] < 42;
+      let shot = null;
+      for (let attempt = 0; attempt < 3 && !(shot && shot.pct >= 0.5); attempt++) {
+        const v = __test.view();
+        if (v.backW !== canvas.width || v.backH !== canvas.height) {
+          await new Promise((r) => setTimeout(r, 200));
+          continue;
+        }
+        const pts = world.map(([x, y, z]) => toScreen(x, y, z));
+        const pad = 2;
+        const minx = Math.max(0, Math.floor(Math.min(...pts.map((p) => p.x)) - pad));
+        const maxx = Math.min(canvas.width - 1, Math.ceil(Math.max(...pts.map((p) => p.x)) + pad));
+        const miny = Math.max(0, Math.floor(Math.min(...pts.map((p) => p.y)) - pad));
+        const maxy = Math.min(canvas.height - 1, Math.ceil(Math.max(...pts.map((p) => p.y)) + pad));
+        const w = canvas.width, h = canvas.height;
+        const on = grab();
+        __test.setSign(i, false);
+        await new Promise((r) => setTimeout(r, 400));
+        const off = grab();
+        __test.setSign(i, true);
+        await new Promise((r) => setTimeout(r, 280));
+        if (on.length !== w * h * 4 || off.length !== w * h * 4 || canvas.width !== w) continue;
+        let changed = 0, total = 0;
+        for (let y = miny; y <= maxy; y++) for (let x = minx; x <= maxx; x++) {
+          const k = (y * w + x) * 4;
+          if (sky(on, k) && sky(off, k)) continue;
+          total++;
+          if (Math.abs(on[k] - off[k]) + Math.abs(on[k + 1] - off[k + 1]) + Math.abs(on[k + 2] - off[k + 2]) > 12) changed++;
+        }
+        const pct = total ? changed / total : 0;
+        if (!shot || pct > shot.pct) shot = { pct, total };
+      }
+      out.push({ name: s.name || String(i), pct: shot ? shot.pct : 0, total: shot ? shot.total : 0 });
+    }
+    return out;
+  });
+  for (const pool of pools) {
+    check(pool.pct >= 0.5, tag + " " + pool.name + " pool changes " + Math.round(pool.pct * 100) + "% (" + pool.total + " px)");
+  }
+  console.log("  nums  " + tag + " pools " + pools.map((p) => p.name + " " + Math.round(p.pct * 100) + "%").join(", "));
   await page.screenshot({ path: OUT + "/" + tag + "-tilt55-on.png" });
   await page.screenshot({ path: OUT + "/" + tag + "-block55.png" });
   const diff = await page.evaluate(async () => {
