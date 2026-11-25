@@ -58,7 +58,8 @@ export function specialPhase(sp, t) {
 export function eliteZone(zones, place, seed) {
   const def = ELITES[place];
   if (!def || !zones?.length) return -1;
-  const marked = zones.findIndex(z => z.elite);
+  // mix.js marks the zone with the elite's index in its foes, and that index may be 0
+  const marked = zones.findIndex(z => Number.isInteger(z.elite) || z.elite === true);
   if (marked >= 0) return marked;
   const all = zones.map((z, i) => ({ z, i })).filter(({ z }) => !z.guard && !z.boss), ok = all.filter(({ i }) => i > 0);
   const holds = ({ z }) => [...(z.foes || '')].includes(def.type);
@@ -93,7 +94,9 @@ export function eliteKit(F, ctx) {
   const zi = def ? eliteZone(zones.map(Z => ({ id: Z.id, foes: Z.members.map(m => m.type).join(''), guard: Z.guard, boss: Z.boss, elite: (ctx.meta.zones || []).find(z => z.id === Z.id)?.elite })), ctx.placeId, ctx.seed) : -1;
   if (zi >= 0) {
     const Z = zones[zi];
-    let f = Z.members.find(m => m.type === def.type);
+    // the foe mix.js marked, when it is of the elite's type; else the zone's first foe of that type
+    const k = (ctx.meta.zones || []).find(z => z.id === Z.id)?.elite;
+    let f = Number.isInteger(k) && Z.members[k]?.type === def.type ? Z.members[k] : Z.members.find(m => m.type === def.type);
     if (!f) {
       // no foe of its type there: the elite joins the zone, and the zone's homes are laid again for one more
       const spots = ctx.homeSpots(ctx.walk, Z, Z.members.length + 1);

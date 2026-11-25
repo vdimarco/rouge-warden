@@ -53,6 +53,7 @@ function cleanEnded(e, top) {
   return {
     won: e.won === true, place: e.place, time: secs(e.time), foes: count(e.foes, 1e5), lost: count(e.lost), banked: count(e.banked),
     ember: intIn(e.ember, 0, EMBER_TOP, 0), relics: ids(e.relics, RELIC_IDS, RELIC_MAX), combo: count(e.combo, 1e5),
+    seed: Number.isInteger(e.seed) && e.seed > 0 && e.seed < 2 ** 32 ? e.seed : null,
     opened: Number.isInteger(e.opened) && e.opened >= 1 && e.opened <= Math.min(top, EMBER_TOP) ? e.opened : null
   };
 }

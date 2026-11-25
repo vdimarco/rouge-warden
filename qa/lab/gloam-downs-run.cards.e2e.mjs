@@ -222,8 +222,8 @@ try {
     assert.deepEqual(await faults(page, 'pause'), []);
     await shot(page, 'keys-pause-1280x720');
     const order = [];
-    for (let i = 0; i < 5; i++) { await page.keyboard.press('Tab'); order.push(await active(page)); }
-    assert.deepEqual(order, ['bSound', 'bMusic', 'bRestart', 'bEnd', 'bResume'], 'Tab goes through the five buttons and wraps');
+    for (let i = 0; i < 6; i++) { await page.keyboard.press('Tab'); order.push(await active(page)); }
+    assert.deepEqual(order, ['bSound', 'bMusic', 'bShake', 'bRestart', 'bEnd', 'bResume'], 'Tab goes through the six buttons and wraps');
     await page.keyboard.press('Tab');
     await page.keyboard.press('Enter');
     assert.equal(await text(page, '#bSound'), 'Sound off');

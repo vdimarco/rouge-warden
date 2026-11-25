@@ -237,7 +237,7 @@ export function win(rs) {
   const opened = em >= (rs.emberTop | 0) && em < EMBER_TOP;
   if (opened) rs.emberTop = em + 1;
   rs.bestCombo = Math.max(rs.bestCombo | 0, run.combo | 0);
-  rs.ended = { won: true, place: run.place, time: run.time, foes: run.foes, lost: 0, banked: run.banked, ember: em, opened: opened ? em + 1 : null, relics: (run.relics || []).slice(), combo: run.combo | 0 };
+  rs.ended = { won: true, place: run.place, time: run.time, foes: run.foes, lost: 0, banked: run.banked, ember: em, opened: opened ? em + 1 : null, relics: (run.relics || []).slice(), combo: run.combo | 0, seed: run.seed };
   rs.run = null;
   return { won: true };
 }
@@ -248,7 +248,7 @@ export function die(rs) {
   rs.runs += 1;
   rs.deaths += 1;
   rs.bestCombo = Math.max(rs.bestCombo | 0, run.combo | 0);
-  rs.ended = { won: false, place: run.place, time: run.time, foes: run.foes, lost: run.carried - kept, banked: run.banked + kept, ember: emberOf(run), opened: null, relics: (run.relics || []).slice(), combo: run.combo | 0 };
+  rs.ended = { won: false, place: run.place, time: run.time, foes: run.foes, lost: run.carried - kept, banked: run.banked + kept, ember: emberOf(run), opened: null, relics: (run.relics || []).slice(), combo: run.combo | 0, seed: run.seed };
   rs.run = null;
   return rs.ended;
 }

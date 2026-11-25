@@ -514,4 +514,48 @@ if (check) {
     pass('the Gaol baked with and without its zones: the same splat and walk files, the JSON differs only in zones', { s: ((Date.now() - t) / 1000).toFixed(1) });
   }
 }
+{ /* the guard's second wave (mix.js mixWave, foes.js): on the baked Gaol, the lamplighter puts out G5's three Snuffers one by one; 1.5 s
+     (90 play steps) later two Snuffers rise at the keep, cracks first, and the beacon stays dark until they are out too. A zone put out
+     whole by the test hook has no second wave, and the arena has none */
+  const { loadWalk } = await import('./gloam-downs-zones.mjs');
+  const { makeFoes } = await import('../../public/lab/gloam-downs/foes.js');
+  const { startRun, makeRunner } = await import('../../public/lab/gloam-downs/run.js');
+  const RS = await import('../../public/lab/gloam-downs/run-save.js');
+  const { makeBody, PARAMS } = await import('../../public/lab/gloam-downs/play.js');
+  const { meta, walk } = loadWalk('gaol');
+  const rs = RS.fresh();
+  startRun(rs, 3);
+  rs.run.hp = 1e5;
+  const g5 = meta.zones.find(z => z.id === 'G5');
+  const body = makeBody(walk, { p: [g5.c[0], g5.c[1] + 0.5, g5.c[2] + 6], yaw: 0 }, meta.bounds, { ...PARAMS });
+  const F = makeFoes({ walk, meta, slots: POOLS.gaol, seed: 3 });
+  const R = makeRunner({ walk, meta: { wisps: [], beacon: { p: [90, 0, 90], r: 1 } }, body, rs, targets: F.targets, lightable: F.lightable, drop: F.drop, think: F.think, onLight: F.bank });
+  F.bind(R);
+  const run = k => { const all = []; for (let i = 0; i < k; i++) all.push(...R.step({}, 0)); return all; };
+  assert(F.wake('G5').ok);
+  run(60);
+  const Z = F.zones.find(z => z.id === 'G5');
+  for (const f of Z.members.slice()) F.putOut(f.id);
+  assert.equal(F.lightable().ok, false, 'dark while the wave waits');
+  const early = run(88);
+  assert(!early.some(e => e.type === 'wave'), 'not before 1.5 s');
+  const ev = run(4);
+  const wave = Z.members.filter(f => !f.out);
+  assert.equal(wave.length, 2, `${wave.length} foes rose again`);
+  assert(wave.every(f => f.type === 'S'));
+  assert(ev.some(e => e.type === 'cracks' && e.zone === 'G5'), 'the ember cracks come first');
+  assert(ev.some(e => e.type === 'wave' && e.zone === 'G5' && e.n === 2));
+  assert.equal(F.lightable().ok, false, 'the beacon stays dark');
+  run(100);
+  assert(wave.every(f => f.alive), `the wave has risen: ${wave.map(f => f.state)}`);
+  for (const f of wave) F.putOut(f.id);
+  run(200);
+  assert.equal(Z.members.filter(f => !f.out).length, 0, 'no third wave');
+  assert.equal(F.lightable().ok, true, 'the beacon lights once the wave is out');
+  // the test hook putting out a whole zone skips its wave
+  const F2 = makeFoes({ walk, meta, slots: POOLS.gaol, seed: 3 });
+  assert.equal(F2.putOut('G5'), 3);
+  assert.equal(F2.lightable().ok, true);
+  pass('the guard\'s second wave: G5\'s three Snuffers out, two rise 1.5 s later with cracks first, and the beacon waits for them');
+}
 console.log(`${n} checks passed`);

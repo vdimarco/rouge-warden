@@ -96,15 +96,21 @@ export function makeRelics(R) {
           G.fires.push(fire);
         }
         const last = fire.pts.at(-1);
-        if (!last || Math.hypot(e.x - last[0], e.z - last[2]) >= FIRE.trail.gap) fire.pts.push([e.x, e.y, e.z]);
+        if (!last || Math.hypot(e.x - last[0], e.z - last[2]) >= FIRE.trail.gap) {
+          fire.pts.push([e.x, e.y, e.z]);
+          // the page draws the fire as a line of cracks from the last point (fight.js relicFx)
+          if (last) ev.push({ type: 'relicFx', kind: 'line', a: last.slice(), b: [e.x, e.y, e.z], life: fire.life / 60 });
+        }
       } else if (e.type === 'relic' && e.what === 'spark') {
-        G.sparks.push({ x: e.x, y: e.y, z: e.z, ux: Math.sin(e.yaw), uz: Math.cos(e.yaw), gone: 0, hit: new Set(), left: kindled(r, 'spark') ? 2 : 1 });
+        G.sparks.push({ x: e.x, y: e.y, z: e.z, x0: e.x, z0: e.z, ux: Math.sin(e.yaw), uz: Math.cos(e.yaw), gone: 0, hit: new Set(), left: kindled(r, 'spark') ? 2 : 1 });
       } else if (e.type === 'ring' && holds('heel')) {
         const k = kindled(r, 'heel');
-        G.fires.push({ kind: 'ring', x: e.x, y: e.y, z: e.z, r: k ? FIRE.heel.kr : FIRE.heel.r, t: 0, life: k ? FIRE.heel.kindled : FIRE.heel.life });
+        const ring = { kind: 'ring', x: e.x, y: e.y, z: e.z, r: k ? FIRE.heel.kr : FIRE.heel.r, t: 0, life: k ? FIRE.heel.kindled : FIRE.heel.life };
+        G.fires.push(ring);
+        ev.push({ type: 'relicFx', kind: 'ring', x: ring.x, y: ring.y, z: ring.z, r: ring.r, life: ring.life / 60 });
       } else if (e.type === 'drink' && holds('moth') && r.flasks > 0) {
         const p = s(), rr = kindled(r, 'moth') ? FIRE.moth.kr : FIRE.moth.r;
-        ev.push({ type: 'relic', what: 'pulse', relic: 'moth', x: p.x, y: p.y, z: p.z, r: rr });
+        ev.push({ type: 'relic', what: 'pulse', relic: 'moth', x: p.x, y: p.y, z: p.z, r: rr }, { type: 'relicFx', kind: 'ring', x: p.x, y: p.y, z: p.z, r: rr, life: 0.5 });
         for (const t of R.targets()) if (t.alive && Math.hypot(t.x - p.x, t.z - p.z) - t.r <= rr && Math.abs(t.y - p.y) <= 1.8) hitOn(t, FIRE.moth.dmg, [p.x, p.z], ev, 'moth', { push: FIRE.moth.push });
       } else if (e.type === 'hit' && e.kind !== 'relic' && e.kind !== 'plunge' && wick('tongue') && e.target?.alive) {
         // Ember tongue: each blade hit burns for 6 more over 2 s
@@ -141,7 +147,10 @@ export function makeRelics(R) {
         k.hit.add(t);
         if (hitOn(t, FIRE.spark.dmg, [k.x - k.ux, k.z - k.uz], ev, 'spark') !== false && --k.left <= 0) break;
       }
-      if (k.left <= 0 || k.gone >= FIRE.spark.range) G.sparks.splice(G.sparks.indexOf(k), 1);
+      if (k.left <= 0 || k.gone >= FIRE.spark.range) {
+        G.sparks.splice(G.sparks.indexOf(k), 1);
+        ev.push({ type: 'relicFx', kind: 'spark', from: [k.x0, k.y + 0.9, k.z0], to: [k.x, k.y + 0.9, k.z] });
+      }
     }
     for (const b of G.burns.slice()) {
       if (++b.n % FIRE.tongue.every) continue;

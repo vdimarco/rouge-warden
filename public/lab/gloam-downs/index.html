@@ -158,6 +158,22 @@
   .hud .pips i.on { background: #8cf0cc; border-color: #c8f6e6; }
   body.run .hud .count em { font-style: normal; color: #ffd77a; }
   .hud.boss .hint { display: none; }
+  /* the combo meter (fight.js showCombo): a row of its own under the glim, "×N" in a 12 px number, a pip in the tier's colour and a
+     thin bar of the 3 s left, in lamp and ember colours (fire stays brightest); it fades over 0.4 s after the combo ends. The seed's
+     code under the run time (pause panel) and under the summary's rows */
+  .hud .combo { display: flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 8px; background: var(--panel2); border: 1px solid var(--edge); transition: opacity 0.4s linear; }
+  .hud .combo[hidden] { display: none; }
+  .hud .combo.fading { opacity: 0; }
+  .hud .combo b { font: 700 12px/1 var(--body); color: #ffe2bd; font-variant-numeric: tabular-nums; min-width: 2.6em; }
+  .hud .combo #comboPip { display: block; width: 8px; height: 8px; border-radius: 50%; border: 1px solid var(--emberd); box-sizing: border-box; }
+  .hud .combo[data-tier="1"] #comboPip { background: #d2551c; }
+  .hud .combo[data-tier="2"] #comboPip { background: #ff9a32; }
+  .hud .combo[data-tier="3"] #comboPip { background: #ffd77a; border-color: #ffd77a; }
+  .hud .combo .cbar { position: relative; display: block; width: 48px; height: 4px; background: #1c0d0b; box-shadow: 0 0 0 1px #5a3424; }
+  .hud .combo #comboFill { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; background: #d2551c; }
+  .panel p.seed { color: var(--ash); font: 600 13px/1.2 var(--body); letter-spacing: 0.08em; margin: 2px 0 8px; }
+  #bShake[aria-pressed="false"] { color: var(--ash); }
+  @media (prefers-reduced-motion: reduce) { .hud .combo { transition: none; } }
   @media (max-width: 520px) {
     body.run .hud .life { gap: 5px; }
     .hud .life b { font-size: 12px; }
@@ -255,6 +271,7 @@
   <p class="where" id="where">The Sunken Gaol</p>
   <p class="life" id="life" aria-label="Health and flasks"><i class="hpbar"><i id="hpFill"></i></i><b id="hpN">100/100</b><i class="pips" id="pips"></i></p>
   <p class="count" id="count"><b>◆ 0/5</b> wisps · <i>beacon dark</i></p>
+  <div class="combo" id="combo" hidden aria-live="off"><b id="comboN"></b><i id="comboPip"></i><i class="cbar"><i id="comboFill"></i></i></div>
   <p class="hint" id="hint">Climb to the keep. Light the beacon.</p>
   <div class="relics" id="relics" role="img" aria-label="No relics" hidden></div>
 </div>
@@ -321,10 +338,11 @@
   <h2 id="pauseT">Paused</h2>
   <ol class="route" id="route"></ol>
   <p id="pauseLine">Run time 0:00</p>
+  <p class="seed" id="seedLine"></p>
   <ul id="pauseControls"></ul>
   <div id="pauseRow">
     <div class="row"><button type="button" class="go" id="bResume">Resume</button><button type="button" id="bSound" aria-pressed="true">Sound on</button><button type="button" id="bMusic" aria-pressed="true">Music on</button></div>
-    <div class="row"><button type="button" id="bRestart">Back to the start</button><button type="button" id="bEnd">End the run</button></div>
+    <div class="row"><button type="button" id="bShake" aria-pressed="true">Shake on</button><button type="button" id="bRestart">Back to the start</button><button type="button" id="bEnd">End the run</button></div>
   </div>
   <div class="row" id="askRow" hidden><p class="ask" id="askLine">End the run? The glim you carry is lost.</p><button type="button" class="go" id="bNo">No</button><button type="button" id="bYes">Yes, end it</button></div>
 </div></div>
@@ -359,6 +377,7 @@
 <div class="panel" id="summary" hidden><div class="box" role="dialog" aria-labelledby="sumT">
   <h2 id="sumT">The lamp goes out</h2>
   <dl class="score"><dt>Reached</dt><dd id="sumPlace"></dd><dt>Time</dt><dd id="sumTime"></dd><dt>Foes put out</dt><dd id="sumFoes"></dd><dt>Glim lost</dt><dd id="sumLost"></dd><dt>Glim banked</dt><dd id="sumBanked"></dd></dl>
+  <p class="seed" id="sumSeed"></p>
   <div class="row"><button type="button" class="go" id="bSumLamp">To the Lamp-room</button></div>
 </div></div>
 

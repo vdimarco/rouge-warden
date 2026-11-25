@@ -11,6 +11,8 @@ import { makeFeel, gradeFloats, FEEL } from './feel.js';
 import { fitRing, fitLane, WATER } from './markers.js';
 import { writeBone, rotX, rotZ } from './pool.js';
 import { bladeAt, SWINGS } from './play.js';
+import { makeCombo, COMBO } from './combo.js';
+import { mixZones } from './mix.js';
 
 
 const STEP = 1 / 60;
@@ -43,10 +45,18 @@ const mul = (a, b) => [
 ];
 const app = (a, v) => [a[0] * v[0] + a[1] * v[1] + a[2] * v[2], a[3] * v[0] + a[4] * v[1] + a[5] * v[2], a[6] * v[0] + a[7] * v[1] + a[8] * v[2]];
 
-/* makeFight({ walk, meta, world, pool, rs, max, still, fx, project, doc }): max() is the run's maximum health; fx holds the effect
-   flags (stop, flash, kick, zoom, grade, shake); project([x, y, z]) gives the screen point in CSS px or null; doc is the page's
-   document (null in Node: no notches) */
-export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still = false, fx = {}, project = null, doc = null }) {
+/* the lamp's halo at a combo tier (combo.js): its dabs ring the lantern in lamp slots 46 and 47, never fire 37, so fire stays the
+   brightest colour; an elite's crown of 6 dabs in slot 34 circles its head; a relic on the ground is a small lamp of 5 dabs (46, 47).
+   With reduced motion the halo and the crown stand still */
+export const HALO = { r: 0.24, s: 0.028, spin: 1.6, bob: 0.03, crown: 6, crownR: 0.2, crownS: 0.03, relic: 5, relicR: 0.1, relicS: 0.035 };
+
+/* makeFight({ walk, meta, world, pool, rs, max, still, fx, project, doc, mix, emit, dressOf, groundRelics }): max() is the run's
+   maximum health; fx holds the effect flags (stop, flash, kick, zoom, grade, shake; kick is the Shake switch); project([x, y, z])
+   gives the screen point in CSS px or null; doc is the page's document (null in Node: no notches). mix false keeps the baked foes,
+   else the seed mixes them (mix.js) at mix.ember. emit is the bus (bus.js) for combo-tier. dressOf(f) -> { size, crown } or null and
+   groundRelics(run) -> [{ id, x, y, z }] are the builds' (elites.js, relics.js): the fight draws what they give. clipOf(f) -> { clip, t }
+   or null poses an elite in its special move (elites.js eliteClip) */
+export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still = false, fx = {}, project = null, doc = null, mix = { ember: 0 }, emit = null, dressOf = () => null, clipOf = () => null, groundRelics = () => [] }) {
   const water = WATER[meta.id];
   const W = () => (doc ? doc.defaultView.innerWidth : 1280), H = () => (doc ? doc.defaultView.innerHeight : 720);
   const onScreen = (x, y, z) => {
@@ -54,11 +64,15 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
     const q = project([x, y, z]);
     return !!q && q[0] >= 0 && q[0] <= W() && q[1] >= 0 && q[1] <= H();
   };
-  const foes = makeFoes({ walk, meta, slots: pool.slots.map(s => s.code), seed: rs.run?.seed ?? 1, onScreen, water });
+  const codes = pool.slots.map(s => s.code), seed = rs.run?.seed ?? 1;
+  // the seed's foe mix and the elite's zone; the arena and the guard zones stay as baked
+  const zones = mix && meta.zones ? mixZones(meta.id, meta.zones, codes.join(''), seed, mix) : meta.zones;
+  const combo = makeCombo({ emit, best: rs.run?.combo ?? 0 });
+  const foes = makeFoes({ walk, meta: { ...meta, zones }, slots: codes, seed, onScreen, water, combo });
   const sparks = pool.extra && pool.extra.end > pool.extra.first ? makeSparks(world, pool.extra.first, pool.extra.end - pool.extra.first, meta.pal) : null;
   const feel = makeFeel({ pal: meta.pal, still, fx });
   const fits = new Map(); // a foe's marker laid on the ground: its fit, kept while the marker stands where it is
-  const G = { foes, sparks, feel, runner: null, game: 0, keeperTo: -1, keeperAt: null, beatTo: -1, lift: MARK_LIFT, bars: 0 };
+  const G = { foes, sparks, feel, combo, zones, runner: null, game: 0, keeperTo: -1, keeperAt: null, beatTo: -1, lift: MARK_LIFT, bars: 0, halo: [] };
   const slotOf = f => (f.slot >= 0 ? pool.slots[f.slot] : null);
   /* the Barrow Reeve, at Barrow Crown: its slot (from the boss files, reserved until they come in), the candles' slot, and the slot of
      the light carried after the fall (from the foe files, so a reload after the fall needs no boss file) */
@@ -97,6 +111,9 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
     if (boss) { boss.think(ev, play); embers(); }
     const run = rs.run, share = run ? run.hp / Math.max(1, max()) : 1;
     for (const c of feel.tick(share)) { ev.push({ type: 'cue', cue: c }); if (!still) G.beatTo = G.game + 12; }
+    combo.tick(play);
+    if (run && combo.best > (run.combo || 0)) run.combo = combo.best;
+    cracksGlow();
     if (play) trail();
     sparks?.update(STEP, play);
     syncSlots();
@@ -110,6 +127,16 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
     const p = G.cageAt || [boss.x + Math.sin(boss.yaw) * 0.3, boss.y + 2.12, boss.z + Math.cos(boss.yaw) * 0.3], k = g.at / g.n;
     sparks.flash(p[0], p[1], p[2], 36, 0.2 + 0.22 * k, 0.11);
     sparks.sparks(p[0], p[1], p[2], 35, 1 + Math.round(2 * k), 1.4);
+  }
+  // a staggered foe's crack glows ember (slot 33) at its chest, with a few sparks, every 6 steps
+  function cracksGlow() {
+    if (!sparks || G.game % 6) return;
+    for (const f of foes.foes) {
+      if (f.state !== 'stagger') continue;
+      const y = f.y + f.T.chest * (dressOf(f)?.size || 1);
+      sparks.flash(f.x, y, f.z, 33, 0.22 + 0.06 * Math.sin(G.game * 0.4), 0.11);
+      if (G.game % 12 === 0) sparks.sparks(f.x, y, f.z, 34, 2, 1.2);
+    }
   }
   function trail() {
     const s = G.runner?.fighter.body.s, a = s?.act, S = a && SWINGS[a.move];
@@ -187,6 +214,7 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
     switch (e.type) {
       case 'hit': {
         feel.hit(e.kind);
+        if (fx.combo !== false) combo.hit(e.kind === 'relic' ? 'relic' : boss && e.target === boss ? 'boss' : e.kind);
         const t = e.target;
         if (t && sparks) {
           const dx = t.x - s.x, dz = t.z - s.z, l = Math.hypot(dx, dz) || 1;
@@ -196,6 +224,7 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
       }
       case 'hurt':
         feel.hurt(e.dmg);
+        combo.end();
         if (sparks && s) sparks.sparks(s.x, s.y + 0.9, s.z, 34, 8, 3.5);
         break;
       case 'ring': sparks?.ring(e.x, e.y + OVER, e.z, 35, 0.3, e.r, 0.32, 22, 0.05); sparks?.drops(e.x, e.y + OVER, e.z, 33, 6, 2.5, 2.5); break;
@@ -217,6 +246,14 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
         }
         break;
       case 'foeOut': sparks?.drops(e.x, e.y + 0.6, e.z, 33, 10, 1.8, 2.5); break;
+      // a poise broken: a kick of 0.08, and an ember ring at its chest
+      case 'stagger':
+        feel.stagger();
+        if (sparks) { sparks.ring(e.x, e.y, e.z, 33, 0.2, 0.9, 0.3, 14, 0.04); sparks.sparks(e.x, e.y, e.z, 34, 8, 3); }
+        break;
+      /* what a relic does, as the builds send it (relics.js): a line of fire along a roll (kind 'line': a, b, life), a burning ring
+         (kind 'ring': x, y, z, r, life), and a thrown spark (kind 'spark': from, to). Fire slots 34 and 35, under fire 37 */
+      case 'relicFx': relicFx(e); break;
       case 'dark': G.keeperTo = G.game + NOTCH.keepers; G.keeperAt = e.at; break;
     }
   };
@@ -232,13 +269,33 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
         if (sparks) for (let k = 0; k < 4; k++) sparks.cracks(boss.x + Math.sin(k * 1.6) * 0.7, boss.y, boss.z + Math.cos(k * 1.6) * 0.7, (x, z) => walk.support(x, z, boss.y + 0.6));
         break;
       case 'start': feel.barsTo([0, 30]); feel.intro(false); break;
-      case 'phase': case 'slam': feel.shock(e.kick); break;
+      // the slam kicks by 0.22 and a phase change by its own kick, both under the 0.15 m cap (feel.js)
+      case 'phase': feel.shock(e.kick); break;
+      case 'slam': feel.shock(FEEL.add.slam); break;
       case 'fall':
         foes.hush();
         feel.fall();
         feel.barsTo([FEEL.bars, REEVE.stop], [0, 30]);
         if (sparks) { sparks.sparks(e.x, e.y + 1.8, e.z, 36, 14, 4.5); sparks.drops(e.x, e.y + 0.4, e.z, 33, 14, 2.4, 2.5); }
         break;
+    }
+  }
+
+  function relicFx(e) {
+    if (!sparks) return;
+    const ground = (x, z, y) => walk.support(x, z, y + 0.6) ?? y;
+    if (e.kind === 'line' && e.a && e.b) {
+      const n = Math.max(2, Math.round(Math.hypot(e.b[0] - e.a[0], e.b[2] - e.a[2]) / 0.5));
+      for (let i = 0; i <= n; i++) {
+        const x = e.a[0] + ((e.b[0] - e.a[0]) * i) / n, z = e.a[2] + ((e.b[2] - e.a[2]) * i) / n, y = e.a[1] + ((e.b[1] - e.a[1]) * i) / n;
+        sparks.cracks(x, ground(x, z, y), z, (px, pz) => ground(px, pz, y), 3, e.life ?? 1.5);
+      }
+    } else if (e.kind === 'ring') {
+      sparks.ring(e.x, ground(e.x, e.z, e.y) + OVER, e.z, 35, e.r * 0.8, e.r, e.life ?? 2, Math.round(10 + e.r * 8), 0.05);
+      sparks.cracks(e.x, ground(e.x, e.z, e.y), e.z, (px, pz) => ground(px, pz, e.y), 12, e.life ?? 2);
+    } else if (e.kind === 'spark' && e.from && e.to) {
+      sparks.smear(e.from, e.to, 36, 0.05, 0.16);
+      sparks.sparks(e.to[0], e.to[1], e.to[2], 35, 6, 3);
     }
   }
 
@@ -360,8 +417,10 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
       if (o.pool === false) { for (let b = 0; b < s.type.bones.length; b++) writeBone(pool.bones, s.base + b, { A: [0, 0, 0, 0, 0, 0, 0, 0, 0], t: [0, -500, 0] }); return; }
       if (f.state === 'dying') { parts(f, s); return; }
       f.partsFrom = null;
-      const p = poseOf(f, time), clip = s.type.clips[p.clip] ? p.clip : 'rest';
-      pool.pose(s, atOf(f), clip, p.t, grow > 1 ? { grow: { tell: grow, core: grow } } : undefined);
+      const p = clipOf(f) || poseOf(f, time), clip = s.type.clips[p.clip] ? p.clip : 'rest', size = dressOf(f)?.size || 1;
+      const po = grow > 1 ? { grow: { tell: grow, core: grow } } : {};
+      if (size !== 1) po.size = size;
+      pool.pose(s, atOf(f), clip, p.t, Object.keys(po).length ? po : undefined);
       markers(f, s);
     });
     if (o.pool !== false) for (const c of foes.coals) {
@@ -375,14 +434,44 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
       if (o.pool === false) { for (const s of [bossSlot, lightSlot]) if (s?.awake) for (let b = 0; b < s.type.bones.length; b++) writeBone(pool.bones, s.base + b, { A: [0, 0, 0, 0, 0, 0, 0, 0, 0], t: [0, -500, 0] }); }
       else { drawBoss(time, grow); drawLight(); }
     }
+    G.halo = o.pool === false ? [] : glows(time);
     if (sparks && o.pool === false) { sparks.hide(); for (const r of sparks.rows()) pool.rows.add(r); }
-    else if (sparks && sparks.write(foes.motes, time)) for (const r of sparks.rows()) pool.rows.add(r);
+    else if (sparks && sparks.write(foes.motes, time, G.halo)) for (const r of sparks.rows()) pool.rows.add(r);
+    G.lamp = fx.lamp === false ? 1 : combo.lamp();
     G.kick = feel.kick(view.yaw, view.pitch);
     G.zoom = feel.zoom();
     G.bars = feel.bars();
     G.cols = feel.grade();
     world.anim.grade = G.cols ? gradeFloats(G.cols, G.gradeBuf ||= new Float32Array(64 * 3)) : null;
   };
+
+  /* the steady dabs of this draw: the lamp's halo for the combo's tier, each elite's crown, and the relics on the ground. Each is
+     { x, y, z, ci, s, kind } */
+  function glows(time) {
+    const out = [], t = still ? 0 : time, n = fx.lamp === false ? 0 : combo.dabs(), k = combo.lamp();
+    const L = n ? lantern() : null;
+    if (L) for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 + t * HALO.spin, r = HALO.r * k, b = still ? 0 : HALO.bob * Math.sin(t * 5 + i);
+      out.push({ kind: 'halo', x: L[0] + Math.sin(a) * r, y: L[1] + b + (i % 2 ? 0.05 : -0.05), z: L[2] + Math.cos(a) * r, ci: i % 2 ? 47 : 46, s: HALO.s * k });
+    }
+    for (const f of foes.foes) {
+      const d = f.state !== 'dying' && foes.shown(f) ? dressOf(f) : null;
+      if (!d?.crown) continue;
+      const size = d.size || 1, y = f.y + (f.T.chest + 0.55) * size;
+      for (let i = 0; i < HALO.crown; i++) {
+        const a = (i / HALO.crown) * Math.PI * 2 + t * 1.1;
+        out.push({ kind: 'crown', x: f.x + Math.sin(a) * HALO.crownR * size, y, z: f.z + Math.cos(a) * HALO.crownR * size, ci: 34, s: HALO.crownS });
+      }
+    }
+    for (const q of groundRelics(rs.run) || []) {
+      out.push({ kind: 'relic', x: q.x, y: q.y + 0.45, z: q.z, ci: 47, s: HALO.relicS * 1.4 });
+      for (let i = 0; i < HALO.relic - 1; i++) {
+        const a = (i / (HALO.relic - 1)) * Math.PI * 2 + t * 2;
+        out.push({ kind: 'relic', x: q.x + Math.sin(a) * HALO.relicR, y: q.y + 0.45 + (still ? 0 : 0.04 * Math.sin(t * 3)), z: q.z + Math.cos(a) * HALO.relicR, ci: 46, s: HALO.relicS });
+      }
+    }
+    return sparks ? out.slice(0, sparks.glow) : out;
+  }
 
   /* ---------------- notches ----------------
    An ember notch at the screen's edge for each wind-up whose foe's chest is out of the view (the 3 nearest their hit), filling from
@@ -479,14 +568,34 @@ transform-origin:3px 6px;transform:rotate(var(--a)) translateX(14px)}
     });
     // the health bar pulses for 12 steps after each heartbeat (the HUD sets .low itself, below 30% health)
     doc.getElementById('hud')?.classList.toggle('beat', G.game < G.beatTo);
+    G.showCombo(playing);
     G.shown = list;
     return list;
+  };
+
+  /* the combo meter in the HUD (#combo): "×N" from 2 hits, the tier's pip, and the bar of the 3 s left; it fades over 0.4 s after the
+     combo ends. -> what it shows */
+  let meter = null;
+  G.showCombo = (playing = true) => {
+    if (!doc) return null;
+    meter ||= { box: doc.getElementById('combo'), n: doc.getElementById('comboN'), pip: doc.getElementById('comboPip'), fill: doc.getElementById('comboFill') };
+    if (!meter.box) return null;
+    const m = combo.meter(), show = playing && fx.combo !== false && m.show;
+    if (meter.box.hidden === show) meter.box.hidden = !show;
+    if (!show) return m;
+    const txt = `×${m.n}`;
+    if (meter.n.textContent !== txt) meter.n.textContent = txt;
+    meter.box.dataset.tier = String(m.tier);
+    meter.box.classList.toggle('fading', m.fading);
+    meter.box.setAttribute('aria-label', `Combo ${m.n}${m.tier ? `, tier ${m.tier}` : ''}`);
+    meter.fill.style.width = `${(m.left * 100).toFixed(1)}%`;
+    return m;
   };
 
   /* ---------------- ?test ---------------- */
   // __gloam.foes(): each awake foe with its pose's shake
   G.list = () => [
-    ...foes.list().map(({ ref, ...f }) => ({ ...f, shake: shakeOf(ref) })),
+    ...foes.list().map(({ ref, ...f }) => ({ ...f, shake: shakeOf(ref), size: dressOf(ref)?.size || 1 })),
     ...(boss?.shown() ? [{ id: boss.id, type: 'B', zone: 'arena', x: boss.x, y: boss.y, z: boss.z, yaw: boss.yaw, hp: boss.hp, state: boss.state, phase: boss.phase,
       move: boss.move || boss.state, t: (boss.move ? boss.mt : boss.t) / 60, flash: boss.flash, held: !!boss.hold, shake: shakeOf(boss) }] : [])
   ];

@@ -14,11 +14,12 @@ export const AFTER = 1.6;
 export const SPARK_SLOTS = { ember: 33, fire: 34, flame: 35, gold: 36, white: 37, lamp: 46, lampPale: 47 };
 
 /* makeSparks(world, first, n, pal): splats first .. first + n of world.data are the pool (the pool.js reserve). glim is how many of
-   them are kept for glim motes, which the page sets each frame with motes(); the rest take the bursts, oldest first */
-export function makeSparks(world, first, n, pal, { glim = 64, seed = 9 } = {}) {
+   them are kept for glim motes, which the page sets each frame with motes(); glow how many for the steady dabs the page lays each
+   frame (the lamp's halo, an elite's crown, a relic's lamp: fight.js); the rest take the bursts, oldest first */
+export function makeSparks(world, first, n, pal, { glim = 64, glow = 40, seed = 9 } = {}) {
   const D = () => world.data;
   const PK = pal.map(c => ((c >> 16) & 255) + ((c >> 8) & 255) * 256 + (c & 255) * 65536);
-  const N = n - glim, ps = Array.from({ length: N }, () => ({ life: 0 })), rnd0 = mulberry(seed);
+  const G0 = n - glim - glow, N = G0, ps = Array.from({ length: N }, () => ({ life: 0 })), rnd0 = mulberry(seed);
   const rnd = (a, b) => a + (b - a) * rnd0();
   let next = 0, live = 0, dirty = true;
   const get = () => {
@@ -32,7 +33,7 @@ export function makeSparks(world, first, n, pal, { glim = 64, seed = 9 } = {}) {
   };
   const fresh = p => { live++; dirty = true; p.keep = false; p.grow = 0; p.hold = false; return p; };
   const api = {
-    total: n, first,
+    total: n, first, glow,
     // streaks thrown outward; (dx, dz) leans them one way
     sparks(x, y, z, ci, count, speed, dx, dz) {
       for (let i = 0; i < count; i++) {
@@ -98,15 +99,25 @@ export function makeSparks(world, first, n, pal, { glim = 64, seed = 9 } = {}) {
       }
       dirty = true;
     },
-    /* write the pool into the world's data; motes are the glim motes as [{ x, y, z }], each a small lamp-coloured mote that glints.
-       -> true when the rows changed */
-    write(motes = [], time = 0) {
+    /* write the pool into the world's data; motes are the glim motes as [{ x, y, z }], each a small lamp-coloured mote that glints;
+       glows are steady dabs as [{ x, y, z, ci, s }] (colour slot ci, size s in metres), up to the glow count. -> true when the rows
+       changed */
+    write(motes = [], time = 0, glows = []) {
       const d = D();
-      const was = api.moteCount || 0;
-      if (!dirty && !motes.length && !was) return false;
+      const was = api.moteCount || 0, gwas = api.glowCount || 0;
+      if (!dirty && !motes.length && !was && !glows.length && !gwas) return false;
       for (let i = 0; i < N; i++) put(d, (first + i) * 16, ps[i], time);
+      for (let i = 0; i < glow; i++) {
+        const o = (first + G0 + i) * 16, g = glows[i];
+        if (!g) { park(d, o); continue; }
+        const v = g.s * g.s;
+        d[o] = g.x; d[o + 1] = g.y; d[o + 2] = g.z; d[o + 3] = 3;
+        d[o + 4] = d[o + 8] = d[o + 10] = v; d[o + 5] = d[o + 6] = d[o + 9] = 0;
+        d[o + 7] = PK[g.ci]; d[o + 11] = KIND; d[o + 12] = d[o + 13] = d[o + 14] = 0; d[o + 15] = -100;
+      }
+      api.glowCount = Math.min(glow, glows.length);
       for (let i = 0; i < glim; i++) {
-        const o = (first + N + i) * 16, m = motes[i];
+        const o = (first + G0 + glow + i) * 16, m = motes[i];
         if (!m) { park(d, o); continue; }
         const glint = 0.75 + 0.25 * Math.sin(time * 9 + i * 1.7), s = 0.055 * glint;
         d[o] = m.x; d[o + 1] = m.y; d[o + 2] = m.z; d[o + 3] = 3;

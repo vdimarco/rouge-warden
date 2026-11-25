@@ -270,9 +270,9 @@ if (part('run')) {
     const p = await G(page, () => ({ m: window.__gloam.music(), sound: document.getElementById('bSound').textContent, mus: document.getElementById('bMusic').textContent, n: window.__gloam.sounds().length }));
     assert.equal(low, 900); assert.equal(p.m.filter, 600);
     assert.equal(p.sound, 'Sound on'); assert.equal(p.mus, 'Music on');
-    // focus order: Resume, Sound, Music, Back to the start, End the run
+    // focus order: Resume, Sound, Music, Shake, Back to the start, End the run
     const order = await G(page, () => [...document.querySelectorAll('#pauseRow button')].map(b => b.id));
-    assert.deepEqual(order, ['bResume', 'bSound', 'bMusic', 'bRestart', 'bEnd']);
+    assert.deepEqual(order, ['bResume', 'bSound', 'bMusic', 'bShake', 'bRestart', 'bEnd']);
     await page.click('#bMusic');
     await wait(300);
     const off = await music(page);
