@@ -101,24 +101,23 @@ function hits(ax, az, bx, bz, box) {
 }
 let lastCam = [0, 0, 0];
 let shownOutline = { on: 0, colour: [0, 0, 0] };
-function camera() {
-  const tr = tilt * Math.PI / 180;
-  const yr = yaw * Math.PI / 180;
+function frameCamera(px, py, yawDeg, tiltDeg, attractMode) {
+  const tr = tiltDeg * Math.PI / 180;
+  const yr = yawDeg * Math.PI / 180;
   const aspect = renderer.view.artW / Math.max(1, renderer.view.artH);
   const tan = Math.tan(FOV / 2);
   const portrait = renderer.view.artH > renderer.view.artW;
   const span = Math.abs(Math.cos(yr)) + Math.abs(Math.sin(yr));
-  const establishing = !attract && player.y > 4;
+  const establishing = !attractMode && py > 4;
   const tiles = portrait
-    ? (attract ? 8.4 : 7.25) * span
-    : (attract ? TILES + 1 : establishing ? 7.4 : TILES);
+    ? (attractMode ? 8.4 : 7.4) * span
+    : (attractMode ? TILES + 1 : establishing ? 10.1 : TILES);
   const dist = (tiles * TILE) / (2 * tan * aspect);
-  const cx = (attract ? 3 : player.x) * TILE;
-  const cz = (attract ? 3 : player.y) * TILE;
-  // At the spawn, look up the street so the tower and the skyline sit in frame.
-  // Elsewhere keep the closer camera the width checks were built on.
-  const along = attract ? 16 : establishing ? TILE * (portrait ? -0.4 : -0.05) : 36;
-  const lift = establishing ? TILE * (portrait ? 2.4 : 4.2) : 0;
+  const cx = (attractMode ? 3 : px) * TILE;
+  const cz = (attractMode ? 3 : py) * TILE;
+  // At the spawn, sit back and up so the tower top and a skyline strip clear the frame.
+  const along = attractMode ? 16 : establishing ? TILE * (portrait ? -0.55 : -0.35) : 36;
+  const lift = establishing ? TILE * (portrait ? 2.55 : 6.7) : 0;
   const focus = [cx + Math.sin(yr) * along, lift, cz + Math.cos(yr) * along];
   const cam = [
     focus[0] + Math.cos(tr) * Math.sin(yr) * dist,
@@ -138,8 +137,12 @@ function camera() {
   cam[0] -= right[0] * sx + up[0] * sy;
   cam[1] -= right[1] * sx + up[1] * sy;
   cam[2] -= right[2] * sx + up[2] * sy;
-  lastCam = cam;
   return { cam, focus, dist };
+}
+function camera() {
+  const shot = frameCamera(player.x, player.y, yaw, tilt, attract);
+  lastCam = shot.cam;
+  return shot;
 }
 function scatterRain() {
   const w = renderer.view.artW || 320;
@@ -228,6 +231,13 @@ function scene() {
   const lights = lightsNow();
   const runner = [];
   const rest = [];
+  const ref = frameCamera(world.spawn.x, world.spawn.y, 0, 55, false).cam;
+  for (const s of world.slices) {
+    if (s.kind !== 5) continue;
+    if (s.bx == null) { s.bx = s.x; s.bz = s.z; }
+    s.x = s.bx + 0.7 * (cam[0] - ref[0]);
+    s.z = s.bz + 0.7 * (cam[2] - ref[2]);
+  }
   const runName = runnerFrame();
   const runFr = world.frames[runName];
   for (const s of world.slices) {
@@ -319,6 +329,7 @@ function scene() {
     outline, outlineOn,
     frame: [runFr.x / 1024, 1 - (runFr.y + runFr.h) / 1024, (runFr.x + runFr.w) / 1024, 1 - runFr.y / 1024],
     sun: SUN, haze: HAZE, smog: SMOG,
+    cam, runner: [player.x, player.y],
     rim: [rimx / rl, rimz / rl],
     fade: fadeU, lights: uL, lightColor: uC, intensity: uI,
     drops, halo, haloColor: haloC, time, lightsApi: lights,
@@ -492,6 +503,8 @@ window.__test = {
     name: s.name, colour: s.colour, tx: s.tx, ty: s.ty,
     plate: s.plate, light: [s.x, s.y],
   })),
+  exit: () => world.exit,
+  terminal: () => world.terminal,
   solid: (x, y) => solid(Math.floor(x), Math.floor(y)),
   project: (x, y, z) => renderer.project([x * TILE, z, y * TILE]),
   pixel: (x, y) => renderer.pixel(x, y),

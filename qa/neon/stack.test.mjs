@@ -12,9 +12,9 @@ const again = build(4);
 const other = build(9);
 
 assert.equal(a.buildings.length, 16);
-assert.ok(a.buildings.every((b) => b.h >= 1 && b.h <= 7));
-assert.equal(a.buildings.find((b) => b.tx === 0 && b.ty === 0).h, 7);
-assert.ok(a.buildings.filter((b) => !(b.tx === 0 && b.ty === 0)).every((b) => b.h < 7));
+assert.ok(a.buildings.every((b) => b.h >= 1 && b.h <= 6));
+assert.equal(a.buildings.find((b) => b.tx === 0 && b.ty === 0).h, 6);
+assert.ok(a.buildings.filter((b) => !(b.tx === 0 && b.ty === 0)).every((b) => b.h <= 4));
 assert.deepEqual(a.buildings, again.buildings);
 assert.ok(other.buildings.some((b, i) => b.h !== a.buildings[i].h), "seed changes heights");
 assert.deepEqual(other.buildings.map((b) => [b.tx, b.ty]), a.buildings.map((b) => [b.tx, b.ty]));
@@ -29,9 +29,23 @@ for (const seed of [1, 4, 7, 9]) {
   const w = build(seed);
   assert.ok(w.slices.length <= 900, "seed " + seed + " slices " + w.slices.length);
   const hs = w.buildings.map((b) => b.h);
-  assert.equal(w.buildings.filter((b) => b.h === 7).length, 1, "seed " + seed + " one tower");
+  assert.equal(w.buildings.filter((b) => b.h === 6).length, 1, "seed " + seed + " one tower");
   assert.ok(hs.filter((h) => h <= 2).length >= 3, "seed " + seed + " shorts " + hs.join(","));
-  assert.ok(hs.filter((h) => h >= 5).length >= 2, "seed " + seed + " talls " + hs.join(","));
+  const others = w.buildings.filter((b) => !(b.tx === 0 && b.ty === 0)).map((b) => b.h);
+  assert.ok(Math.max(...others) <= 4, "seed " + seed + " cap " + others.join(","));
+  const spawn = w.spawn;
+  let near = 99;
+  for (const l of w.lights) if (l.type === "neon") near = Math.min(near, Math.hypot(l.x - spawn.x, l.y - spawn.y));
+  assert.ok(near > 2.1, "seed " + seed + " nearest sign " + near.toFixed(2));
+  const blocked = (x, y) => w.blocked[x][y];
+  assert.ok(pathfind(blocked, spawn.x, spawn.y, w.exit.x, w.exit.y).length > 1, "seed " + seed + " exit");
+  assert.ok(pathfind(blocked, spawn.x, spawn.y, w.terminal.x, w.terminal.y).length > 1, "seed " + seed + " terminal");
+  for (const s of w.signs) {
+    assert.ok(s.plate.y - s.plate.hz >= -2 && s.plate.y + s.plate.hz <= TILE * 2.5, s.name + " storeys");
+    const host = w.buildings.find((b) => b.tx === s.tx && b.ty === s.ty);
+    const behind = w.signs.some((o) => o.tx === s.tx && o.ty < s.ty);
+    if (!behind) assert.ok(host.h >= 3, s.name + " host " + host.h);
+  }
   const lights = w.lights.filter((l) => l.type === "neon").map((l) => l.x.toFixed(2) + "," + l.y.toFixed(2));
   assert.equal(new Set(lights).size, lights.length, "seed " + seed + " stacked lights");
   const ac = w.buildings.filter((b) => b.prop === "ac_unit").length;

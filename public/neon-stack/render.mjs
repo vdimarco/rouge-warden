@@ -10,11 +10,15 @@ layout(location=3) in vec4 i2;
 uniform mat4 uVP;
 out vec2 vUV;
 out vec3 vW;
+out vec2 vQ;
 flat out float vKind;
 flat out float vSign;
+flat out float vOrient;
 void main() {
   float upright = step(0.5, i2.w);
   float faceZ = step(1.5, i2.w);
+  vQ = aC;
+  vOrient = i2.w;
   vec3 horiz = vec3(i0.x + (aC.x - 0.5) * i0.w * 2.0, i0.z, i0.y + (aC.y - 0.5) * i1.x * 2.0);
   vec3 faceX = vec3(i0.x, i0.z + (aC.y - 0.5) * i1.x * 2.0, i0.y + (aC.x - 0.5) * i0.w * 2.0);
   vec3 faceZv = vec3(i0.x + (aC.x - 0.5) * i0.w * 2.0, i0.z + (aC.y - 0.5) * i1.x * 2.0, i0.y);
@@ -39,10 +43,14 @@ uniform float uFade[8];
 uniform vec4 uL[8];
 uniform vec4 uC[8];
 uniform float uI[8];
+uniform vec3 uCam;
+uniform vec2 uRunner;
 in vec2 vUV;
 in vec3 vW;
+in vec2 vQ;
 flat in float vKind;
 flat in float vSign;
+flat in float vOrient;
 layout(location=0) out vec4 o;
 
 float fadeOf(float s) {
@@ -56,6 +64,17 @@ float fadeOf(float s) {
   return f;
 }
 
+float lotAt(float tx, float tz) {
+  float col = step(0.0, tx) * step(tx, 1.01) + step(4.0, tx) * step(tx, 5.01);
+  float row = step(abs(tz), 0.01) + step(abs(tz - 1.0), 0.01) + step(abs(tz - 3.0), 0.01) + step(abs(tz - 5.0), 0.01);
+  return step(0.5, col) * step(0.5, row);
+}
+float propOval(float gx, float gz, float px, float pz) {
+  vec2 d = vec2(gx - px, gz - pz);
+  float o = dot(d / vec2(0.28, 0.18), d / vec2(0.28, 0.18));
+  return mix(0.80, 1.0, clamp((o - 0.4) / 0.6, 0.0, 1.0));
+}
+
 void main() {
   vec4 t = texture(uAtlas, vUV);
   float runner = step(abs(vKind - 1.0), 0.25);
@@ -65,9 +84,9 @@ void main() {
     vec2 lo = uFrame.xy + one * 0.5;
     vec2 hi = uFrame.zw - one * 0.5;
     float edge = 0.0;
-    for (int y = -1; y <= 1; y++) for (int x = -1; x <= 1; x++) {
+    for (int y = -2; y <= 2; y++) for (int x = -2; x <= 2; x++) {
       int man = (x < 0 ? -x : x) + (y < 0 ? -y : y);
-      if (man != 1) continue;
+      if (man < 1 || man > 2) continue;
       vec2 s = vUV + one * vec2(float(x), float(y));
       if (s.x < lo.x || s.y < lo.y || s.x > hi.x || s.y > hi.y) continue;
       edge = max(edge, texture(uAtlas, s).a);
@@ -78,10 +97,32 @@ void main() {
   }
   if (t.a < 0.5) discard;
   vec3 col = t.rgb;
-  // Window amber stays off the sign amber so a dark sign is not a lit window.
-  if (abs(vKind - 8.0) < 0.25 && col.r > 0.85 && col.g > 0.5 && col.g < 0.78 && col.b < 0.35) {
-    col = vec3(201.0, 133.0, 58.0) / 255.0;
+  vec3 ink = vec3(26.0, 26.0, 34.0) / 255.0;
+  float wall = step(abs(vKind - 8.1), 0.25);
+  float roof = step(abs(vKind - 9.0), 0.25) * step(vOrient, 0.5);
+  float prop = step(abs(vKind - 9.0), 0.25) * step(0.5, vOrient);
+  bool winPx = col.r > 0.85 && col.g > 0.5 && col.g < 0.78 && col.b < 0.35;
+  if (wall > 0.5) {
+    float tint = floor((vKind - 8.0) * 10.0 + 0.5);
+    vec3 face = vOrient > 1.5 ? vec3(43.0, 42.0, 51.0) : vec3(26.0, 26.0, 34.0);
+    face /= 255.0;
+    vec3 hue = tint < 0.5 ? vec3(0.62, 0.30, 0.34) : tint < 1.5 ? vec3(0.30, 0.52, 0.36) : vec3(0.42, 0.44, 0.52);
+    float Lf = dot(face, vec3(0.299, 0.587, 0.114));
+    float Lh = dot(hue, vec3(0.299, 0.587, 0.114));
+    vec3 body = hue * (Lf / Lh);
+    vec2 toCam = uCam.xz - vW.xz;
+    float headOn = vOrient > 1.5 ? step(abs(toCam.x), abs(toCam.y)) : step(abs(toCam.y), abs(toCam.x));
+    if (winPx && headOn > 0.5) body = vec3(201.0, 133.0, 58.0) / 255.0;
+    else if (max(col.r, max(col.g, col.b)) - min(col.r, min(col.g, col.b)) > 0.12) body = col;
+    if (vW.y < uTile) body *= 0.80;
+    col = body;
   }
+  if (roof > 0.5) {
+    col = vec3(74.0, 72.0, 82.0) / 255.0;
+    float lip = min(min(vQ.x, 1.0 - vQ.x), min(vQ.y, 1.0 - vQ.y));
+    if (lip < 1.0 / 16.0) col = vec3(138.0, 131.0, 120.0) / 255.0;
+  }
+  if (prop > 0.5) col *= 0.62;
   float hi = max(col.r, max(col.g, col.b));
   float lo = min(col.r, min(col.g, col.b));
   float neon = step(0.25, hi - lo) * step(0.45, hi);
@@ -89,10 +130,12 @@ void main() {
   if (runner > 0.5) { o = vec4(col, 1.0); return; }
   if (abs(vKind - 5.0) < 0.25) {
     col = mix(col, col * 0.22, neon);
+    col = mix(col, ink, 0.28);
     o = vec4(col, 1.0);
     return;
   }
-  if (abs(vKind - 10.0) < 0.25) { o = vec4(0.102, 0.102, 0.133, 1.0); return; }
+  if (abs(vKind - 10.0) < 0.25) { o = vec4(ink, 1.0); return; }
+  if (abs(vKind - 11.0) < 0.25) { o = vec4(46.0 / 255.0, 80.0 / 255.0, 86.0 / 255.0, 1.0); return; }
   if (abs(vKind - 7.0) < 0.25) {
     int i = int(clamp(vSign - 0.5, 0.0, 6.0));
     col = mix(col, uC[i].rgb, 0.4 * fadeOf(vSign));
@@ -102,21 +145,55 @@ void main() {
   float dim = step(abs(vKind - 4.0), 0.25);
   col = mix(col, col * 0.38, dim);
   if (abs(vKind) < 0.25) {
-    vec3 sum = vec3(0.0);
-    float cover = 0.0;
-    for (int i = 0; i < 8; i++) {
+    float gx = vW.x / uTile;
+    float gz = vW.z / uTile;
+    float shade = 1.0;
+    float here = lotAt(floor(gx), floor(gz));
+    float band = 0.0;
+    band = max(band, lotAt(floor(gx - 0.3), floor(gz)));
+    band = max(band, lotAt(floor(gx + 0.3), floor(gz)));
+    band = max(band, lotAt(floor(gx), floor(gz - 0.3)));
+    band = max(band, lotAt(floor(gx), floor(gz + 0.3)));
+    if (here < 0.5 && band > 0.5) shade *= 0.72;
+    vec2 sun = normalize(vec2(0.48, 0.26));
+    float castSh = lotAt(floor(gx + sun.x * 0.7), floor(gz + sun.y * 0.7));
+    if (here < 0.5 && castSh > 0.5) shade *= 0.85;
+    vec2 rp = vec2(gx, gz) - uRunner;
+    float oval = dot(rp / vec2(0.46, 0.30), rp / vec2(0.46, 0.30));
+    shade *= mix(0.78, 1.0, clamp((oval - 0.45) / 0.6, 0.0, 1.0));
+    shade *= propOval(gx, gz, 1.15, 2.5);
+    shade *= propOval(gx, gz, 1.6, 4.5);
+    shade *= propOval(gx, gz, 2.35, 1.2);
+    shade *= propOval(gx, gz, 3.55, 4.5);
+    float depth = clamp((200.0 - gz * uTile) / 220.0, 0.0, 1.0) * 0.30;
+    col = mix(col * shade, ink, depth);
+    float best = 0.0;
+    vec3 bestC = col;
+    float bestWet = 0.0;
+    vec3 wetC = col;
+    float sheen = clamp(dot(t.rgb, vec3(0.333)) * 4.0, 0.2, 1.0);
+    for (int i = 0; i < 6; i++) {
       float live = step(0.15, uI[i]) * step(0.5, uL[i].w);
-      vec2 d = vW.xz / uTile - uL[i].xz / uTile;
+      vec2 d = vec2(gx, gz) - uL[i].xz / uTile;
       float cheb = max(abs(d.x), abs(d.y));
-      float w = clamp(1.0 - cheb / 0.85, 0.0, 1.0) * live;
-      sum += uC[i].rgb * w;
-      cover += w;
+      float pool = clamp(1.0 - cheb / 2.0, 0.0, 1.0) * live;
+      float take = step(best, pool);
+      best = mix(best, pool, take);
+      bestC = mix(bestC, uC[i].rgb, take);
+      float streak = clamp(1.0 - abs(d.x) / 0.22, 0.0, 1.0) * clamp(d.y, 0.0, 1.0) * clamp(1.0 - d.y / 1.35, 0.0, 1.0);
+      streak *= live * sheen;
+      float wetTake = step(bestWet, streak);
+      bestWet = mix(bestWet, streak, wetTake);
+      wetC = mix(wetC, uC[i].rgb, wetTake);
     }
-    col = mix(col, min(sum, vec3(1.0)), clamp(cover, 0.0, 1.0) * 0.12);
+    col = mix(col, bestC, best * 0.55);
+    col = mix(col, wetC, bestWet * 0.22);
+  } else if (abs(vKind - 3.0) > 0.25) {
+    float depth = clamp((200.0 - vW.z) / 220.0, 0.0, 1.0) * 0.30;
+    col = mix(col, ink, depth * (1.0 - neon));
   }
   float fade = fadeOf(vSign);
   col = mix(col, mix(dark, col, fade), neon * (1.0 - dim));
-  col = mix(col, uHaze, clamp(vW.y / 220.0, 0.0, 1.0) * 0.18 * (1.0 - neon) * (1.0 - runner));
   o = vec4(col, 1.0);
 }`;
 
@@ -332,7 +409,7 @@ export function createRenderer(canvas) {
       for (const name of names) out[name] = gl.getUniformLocation(prog, name);
       return out;
     };
-    stackU = loc(stackProg, ["uVP", "uSun", "uHaze", "uTile", "uOutline", "uFrame", "uOutlineOn", "uFade", "uL", "uC", "uI", "uAtlas"]);
+    stackU = loc(stackProg, ["uVP", "uSun", "uHaze", "uTile", "uOutline", "uFrame", "uOutlineOn", "uFade", "uL", "uC", "uI", "uCam", "uRunner", "uAtlas"]);
     compU = loc(compProg, ["uAlb", "uDrop", "uSmog", "uHalo", "uHaloC", "uTime"]);
     blitU = loc(blitProg, ["uBack", "uArt"]);
   }
@@ -402,6 +479,8 @@ export function createRenderer(canvas) {
     gl.uniform4fv(stackU.uL, api.lights);
     gl.uniform4fv(stackU.uC, api.lightColor);
     gl.uniform1fv(stackU.uI, api.intensity);
+    gl.uniform3fv(stackU.uCam, api.cam || [0, 0, 0]);
+    gl.uniform2fv(stackU.uRunner, api.runner || [0, 0]);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, atlasTex);
     gl.uniform1i(stackU.uAtlas, 0);
@@ -442,6 +521,8 @@ export function createRenderer(canvas) {
     api.lights = scene.lights;
     api.lightColor = scene.lightColor;
     api.intensity = scene.intensity;
+    api.cam = scene.cam;
+    api.runner = scene.runner;
     const { artW, artH, scale, ox, oy, backW, backH } = api.view;
     const count = upload(scene.slices);
     gl.disable(gl.BLEND);
@@ -451,7 +532,7 @@ export function createRenderer(canvas) {
     gl.depthMask(true);
     gl.bindFramebuffer(gl.FRAMEBUFFER, alb.fb);
     gl.viewport(0, 0, artW, artH);
-    gl.clearColor(14 / 255, 16 / 255, 32 / 255, 1);
+    gl.clearColor(26 / 255, 26 / 255, 34 / 255, 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     drawStack(0, count);
     if (scene.runnerPaper && scene.runnerCount > 0) {
@@ -482,7 +563,7 @@ export function createRenderer(canvas) {
     api.drawCalls++;
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.viewport(0, 0, backW, backH);
-    gl.clearColor(14 / 255, 16 / 255, 32 / 255, 1);
+    gl.clearColor(26 / 255, 26 / 255, 34 / 255, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
     const x0 = ox, y0 = oy, x1 = ox + artW * scale, y1 = oy + artH * scale;
     const quadData = new Float32Array([
