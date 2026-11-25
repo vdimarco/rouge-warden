@@ -122,18 +122,15 @@ void main() {
     rain = max(rain, step(0.0, d.x) * step(d.x, 2.01) * step(abs(d.y + d.x), 0.1));
   }
   col = mix(col, uSmog, rain * 0.4);
-  float dither = step(0.28, fract(pix.x * 0.5 + pix.y * 0.37 + uTime));
   float mx = max(col.r, max(col.g, col.b));
-  float mn = min(col.r, min(col.g, col.b));
-  float street = step(mx, 0.24) * step(mx - mn, 0.1);
+  vec3 sky = vec3(14.0, 16.0, 32.0) / 255.0;
+  float ground = step(0.045, length(col - sky)) * step(mx, 0.24);
+  float gap = 1.0 - step(0.5, mod(pix.y, 2.0));
   for (int i = 0; i < 8; i++) {
-    vec2 a = uHalo[i].xy;
-    vec2 b = vec2(uHalo[i].w, uHaloC[i].w);
-    vec2 ab = b - a;
-    float span = dot(ab, ab);
-    float along = span < 1.0 ? 0.0 : clamp(dot(pix - a, ab) / span, 0.0, 1.0);
-    float streak = step(length(pix - (a + ab * along)), 16.0) * step(0.2, uHalo[i].z) * step(16.0, span);
-    col = mix(col, uHaloC[i].rgb, streak * street * dither * 0.9);
+    float y0 = min(uHalo[i].y, uHaloC[i].w);
+    float y1 = max(uHalo[i].y, uHaloC[i].w);
+    float streak = step(abs(pix.x - uHalo[i].x), 0.5) * step(y0, pix.y) * step(pix.y, y1) * gap * step(0.2, uHalo[i].z);
+    col = mix(col, uHaloC[i].rgb, streak * ground * 0.35);
   }
   o = vec4(col, 1.0);
 }`;

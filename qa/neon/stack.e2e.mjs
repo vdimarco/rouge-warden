@@ -363,12 +363,36 @@ async function proof(width, height, dpr, tag) {
         if (hue(s.colour, off[i], off[i + 1], off[i + 2])) leaked++;
       }
     }
-    return { pct: changed / count, concrete, other, leaked };
+    const corners = [[0, 0], [6, 0], [0, 6], [6, 6]].map(([x, y]) => __test.project(x, y, 0));
+    let minx = 1e9, miny = 1e9, maxx = -1e9, maxy = -1e9;
+    for (const p of corners) {
+      if (p.x < minx) minx = p.x;
+      if (p.y < miny) miny = p.y;
+      if (p.x > maxx) maxx = p.x;
+      if (p.y > maxy) maxy = p.y;
+    }
+    const pad = 8;
+    minx -= pad; miny -= pad; maxx += pad; maxy += pad;
+    const neon = (r, g, b) => {
+      if (Math.abs(r - 0xc9) <= 18 && Math.abs(g - 0x8b) <= 18 && Math.abs(b - 0x3c) <= 18) return false;
+      const hi = Math.max(r, g, b), lo = Math.min(r, g, b);
+      return hi - lo > 36 && hi > 70;
+    };
+    let outside = 0;
+    for (let y = 0; y < canvas.height; y++) for (let x = 0; x < canvas.width; x++) {
+      const i = (y * canvas.width + x) * 4;
+      if (!neon(on[i], on[i + 1], on[i + 2])) continue;
+      const ax = (x - v.ox) / v.scale;
+      const ay = v.artH - (y - v.oy) / v.scale;
+      if (ax < minx || ax > maxx || ay < miny || ay > maxy) outside++;
+    }
+    return { pct: changed / count, concrete, other, leaked, outside };
   });
-  check(diff.pct >= 0.1, tag + " signs on/off differ by " + Math.round(diff.pct * 100) + "% of pixels");
+  check(diff.pct >= 0.015, tag + " signs on/off differ by " + Math.round(diff.pct * 100) + "% of pixels");
   check(diff.leaked === 0, tag + " signs off leave no sign hue within 3 tiles (" + diff.leaked + ")");
+  check(diff.outside === 0, tag + " neon pixels outside the block: " + diff.outside);
   const concretePct = diff.concrete / Math.max(1, diff.concrete + diff.other);
-  console.log("  nums  " + tag + " diff=" + Math.round(diff.pct * 100) + "% concrete=" + Math.round(concretePct * 100) + "% block=" + Math.round(blockWidth * 100) + "%");
+  console.log("  nums  " + tag + " diff=" + Math.round(diff.pct * 100) + "% concrete=" + Math.round(concretePct * 100) + "% block=" + Math.round(blockWidth * 100) + "% outside=" + diff.outside);
   await page.screenshot({ path: OUT + "/" + tag + "-tilt55-off.png" });
   await page.evaluate(() => { for (let i = 0; i < 5; i++) __test.setSign(i, null); });
   await page.evaluate(() => __test.setTilt(20));
@@ -540,7 +564,7 @@ async function visible(width, height, dpr) {
       for (let i = 0; i < 81; i++) px.push([buf[i * 4], buf[i * 4 + 1], buf[i * 4 + 2]]);
       return px;
     };
-    const spot = __test.client(pick.face.x, pick.face.z, 4);
+    const spot = __test.client(pick.face.x, pick.face.z, 2);
     const on = readAt(spot.x, spot.y);
     for (let i = 0; i < 5; i++) __test.setSign(i, false);
     await new Promise((r) => setTimeout(r, 400));

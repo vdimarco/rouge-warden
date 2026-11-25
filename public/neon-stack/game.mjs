@@ -83,7 +83,8 @@ function camera() {
   const yr = yaw * Math.PI / 180;
   const aspect = renderer.view.artW / Math.max(1, renderer.view.artH);
   const tan = Math.tan(FOV / 2);
-  const tiles = attract ? TILES + 1 : TILES;
+  const portrait = renderer.view.artH > renderer.view.artW;
+  const tiles = (attract ? TILES + 1 : TILES) - (portrait ? 1 : 0);
   const dist = (tiles * TILE) / (2 * tan * aspect);
   const cx = (attract ? 3 : player.x) * TILE;
   const cz = (attract ? 3 : player.y) * TILE;
@@ -214,11 +215,12 @@ function scene() {
     halo[i * 4 + 2] = onSign;
     haloC[i * 4] = r; haloC[i * 4 + 1] = g; haloC[i * 4 + 2] = b;
     const gx = l.x * TILE, gz = l.y * TILE;
-    const toCx = 3 * TILE - gx, toCz = 3 * TILE - gz;
-    const span = Math.hypot(toCx, toCz) || 1;
-    const ux = toCx / span, uz = toCz / span;
-    l._ground = [gx - ux * TILE * 16, gz - uz * TILE * 16];
-    l._end = [3 * TILE, 3 * TILE];
+    const dirx = Math.sin(yaw * Math.PI / 180), dirz = Math.cos(yaw * Math.PI / 180);
+    const lim = 6 * TILE;
+    const ex = Math.min(lim, Math.max(0, gx + dirx * TILE * 2));
+    const ez = Math.min(lim, Math.max(0, gz + dirz * TILE * 2));
+    l._ground = [gx, gz];
+    l._end = [ex, ez];
     l._world = [x, y, z];
   });
   let master = 0;
