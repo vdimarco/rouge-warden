@@ -219,6 +219,76 @@ await phone.page.waitForTimeout(80);
 const afterDrag = await phone.page.evaluate(() => __test.state());
 check(Math.hypot(afterDrag.player.x - hold.player.x, afterDrag.player.y - hold.player.y) > 0.05, "a phone drag walks (" + afterDrag.player.x.toFixed(2) + "," + afterDrag.player.y.toFixed(2) + ")");
 check(Math.abs(afterDrag.yaw - hold.yaw) < 2, "a phone drag does not turn (" + afterDrag.yaw.toFixed(1) + ")");
+const compass = await phone.page.evaluate(async () => {
+  const dirs = [[0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1]];
+  const unit = (x, y) => { const l = Math.hypot(x, y) || 1; return [x / l, y / l]; };
+  const miss = (got, want) => Math.acos(Math.min(1, Math.max(-1, got[0] * want[0] + got[1] * want[1]))) * 180 / Math.PI;
+  const canvas = document.querySelector("canvas");
+  const box = canvas.getBoundingClientRect();
+  const report = {};
+  __test.enter();
+  __test.moveTo(3, 3);
+  __test.setTilt(30);
+  __test.setYaw(0);
+  await new Promise((r) => setTimeout(r, 250));
+  for (const kind of ["moveInput", "keys", "touch"]) {
+    let fail = 0, worst = 0, n = 0;
+    const bad = [];
+    for (const tilt of [30, 75]) for (const yaw of [0, 45, 90, 180, 270]) {
+      __test.setTilt(tilt);
+      __test.setYaw(yaw);
+      for (const [mx, my] of dirs) {
+        __test.moveTo(3, 3);
+        await new Promise((r) => setTimeout(r, 100));
+        const here = __test.state().player;
+        const yr = __test.state().yaw * Math.PI / 180;
+        const fx = here.x + Math.sin(yr) * (36 / 32);
+        const fy = here.y + Math.cos(yr) * (36 / 32);
+        const o = __test.project(fx, fy, 0);
+        const px = __test.project(fx + 0.3, fy, 0);
+        const py = __test.project(fx, fy + 0.3, 0);
+        const ox = [px.x - o.x, px.y - o.y];
+        const oy = [py.x - o.x, py.y - o.y];
+        const a = here;
+        if (kind === "moveInput") {
+          __test.moveInput(mx, my, 70);
+          await new Promise((r) => setTimeout(r, 90));
+        } else if (kind === "keys") {
+          const keys = [];
+          if (mx < 0) keys.push("a");
+          if (mx > 0) keys.push("d");
+          if (my < 0) keys.push("w");
+          if (my > 0) keys.push("s");
+          for (const k of keys) window.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true }));
+          await new Promise((r) => setTimeout(r, 90));
+          for (const k of keys) window.dispatchEvent(new KeyboardEvent("keyup", { key: k, bubbles: true }));
+        } else {
+          const cx = box.left + box.width / 2, cy = box.top + box.height / 2;
+          const ev = (type, x, y) => canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: y, pointerId: 7, button: 0, buttons: type === "pointerup" ? 0 : 1 }));
+          ev("pointerdown", cx, cy);
+          ev("pointermove", cx + mx * 70, cy + my * 70);
+          await new Promise((r) => setTimeout(r, 90));
+          ev("pointerup", cx + mx * 70, cy + my * 70);
+        }
+        const p = __test.state().player;
+        const wdx = p.x - a.x, wdy = p.y - a.y;
+        const sx = ox[0] * wdx / 0.3 + oy[0] * wdy / 0.3;
+        const sy = ox[1] * wdx / 0.3 + oy[1] * wdy / 0.3;
+        const err = miss(unit(sx, sy), unit(mx, my));
+        n++;
+        if (err > worst) worst = err;
+        if (err > 10) { fail++; if (bad.length < 3) bad.push(tilt + "/" + yaw + " " + mx + "," + my + " " + err.toFixed(1)); }
+        await new Promise((r) => setTimeout(r, 140));
+      }
+    }
+    report[kind] = { n, fail, worst: +worst.toFixed(1), bad };
+  }
+  return report;
+});
+for (const kind of ["moveInput", "keys", "touch"]) {
+  const r = compass[kind];
+  check(r.fail === 0, kind + " stays within 10 deg (" + (r.n - r.fail) + "/" + r.n + ", worst " + r.worst + (r.bad.length ? " " + r.bad.join("; ") : "") + ")");
+}
 await phone.context.close();
 await desk.context.close();
 

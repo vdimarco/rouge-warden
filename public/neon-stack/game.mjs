@@ -69,13 +69,16 @@ function solid(tx, ty) {
 }
 function free(x, y) { return !solid(Math.floor(x), Math.floor(y)); }
 function viewDelta(mx, my) {
+  // A shallow camera squashes screen-up. Stretch that axis by 1/sin(tilt)
+  // before turning it into a ground direction, so a screen diagonal stays one.
   const yr = yaw * Math.PI / 180;
+  const sy = my / Math.max(0.25, Math.sin(tilt * Math.PI / 180));
   const upx = -Math.sin(yr);
   const upz = -Math.cos(yr);
   const rx = -upz;
   const rz = upx;
-  const len = Math.hypot(mx, my) || 1;
-  return [(mx * rx - my * upx) / len, (mx * rz - my * upz) / len];
+  const len = Math.hypot(mx, sy) || 1;
+  return [(mx * rx - sy * upx) / len, (mx * rz - sy * upz) / len];
 }
 function tryMove(dx, dy) {
   const nx = player.x + dx, ny = player.y + dy;
@@ -410,7 +413,7 @@ frame.then = performance.now();
 
 canvas.addEventListener("contextmenu", (e) => e.preventDefault());
 canvas.addEventListener("pointerdown", (e) => {
-  canvas.setPointerCapture?.(e.pointerId);
+  try { canvas.setPointerCapture?.(e.pointerId); } catch (err) { /* already released */ }
   if (attract) { attract = false; eatClick = true; }
   active.set(e.pointerId, { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, btn: e.button, drag: false });
   if (active.size >= 2) { multi = true; dragged = true; }
