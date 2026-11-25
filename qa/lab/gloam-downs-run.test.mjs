@@ -1480,4 +1480,23 @@ if (!skipWorlds && ORDER.every(id => fs.existsSync(`${DIR}worlds/${id}.json`))) 
   }
   pass('the page\'s modes: the run by default, ?explore and ?wander the explorer, ?run and #run the run; a change of mode keeps the share key');
 }
+{ // the ability stream rewinds with a reload: a run starts with abilityRolls 0 in its entry, so Back to the start draws the same lamps
+  const rs = RS.fresh();
+  startRun(rs, 21);
+  assert('abilityRolls' in rs.run.entry && rs.run.entry.abilityRolls === 0, 'the entry has the ability rolls');
+  rs.run.abilityRolls = 5;
+  reload(rs.run);
+  assert.equal(rs.run.abilityRolls, 0, 'a reload rewinds the ability stream');
+  pass('the ability stream: the first entry keeps abilityRolls 0, so a reload rewinds the drops as a page reload does');
+}
+{ // a v2 run keeps slot 1 through the page's first reload (main.js reloads rs.run on load)
+  const storage = new Map(), st = { getItem: k => (storage.has(k) ? storage.get(k) : null), setItem: (k, v) => storage.set(k, v) };
+  st.setItem(RS.V2_KEY, JSON.stringify({ bank: 10, up: {}, run: { seed: 77, place: 'ramparts', hp: 80, flasks: 1, entry: { hp: 80, flasks: 1, carried: 0, foes: 0 } } }));
+  const s = RS.load(st);
+  assert(s.run.abilities[0], 'slot 1 from the seed');
+  assert.deepEqual(s.run.entry.abilities, s.run.abilities, 'and in the entry');
+  reload(s.run);
+  assert(s.run.abilities[0] && s.run.abilities[0].id === s.run.entry.abilities[0].id, 'a reload keeps it');
+  pass('a v2 run: slot 1 from the seed in the run and its entry, kept through a reload', { slot1: s.run.abilities[0].id });
+}
 console.log(`${n} checks passed`);

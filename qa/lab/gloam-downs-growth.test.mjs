@@ -382,7 +382,7 @@ const heard = names => { const got = []; const offs = names.map(k => on(k, d => 
   startRun(rs, 21);
   goTo(rs, 'fen');
   Object.assign(rs.run, { relics: ['trail'], sparks: { flame: 2, ward: 0, gloam: 0 }, abilities: [{ id: 'bomb', bright: true }, null], carriedPatterns: ['rime'], caches: ['fen-ledge-1'], sparkPicks: 1 });
-  rs.run.abilityLamps = [{ id: 'step', bright: false, place: 'fen', x: 1, y: 2, z: 3 }];
+  rs.run.abilityLamps = [{ id: 'step', bright: false, place: 'fen', x: 1, y: 2, z: 3, cool: 120, full: 360 }];
   enter(rs.run);
   RS.store(storage, rs);
   assert(mem.has('gloam-downs.run.v3'));
@@ -391,7 +391,7 @@ const heard = names => { const got = []; const offs = names.map(k => on(k, d => 
     assert.deepEqual(back.run[k], rs.run[k], k);
     assert.deepEqual(back.run.entry[k], rs.run.entry[k], `entry ${k}`);
   }
-  pass('the run in the save: Ember trail, Flame 2, Lantern bomb in slot 1, the Rime lamp carried, a cache and a lamp come back with the entry');
+  pass('the run in the save: Ember trail, Flame 2, Lantern bomb in slot 1, the Rime lamp carried, a cache and a lamp (with the cooldown it lies with) come back with the entry');
 }
 { // From v2: Mantle 3, Ash pocket 1 and 70 banked -> Mantle 3, Ash pocket 2, 70, the four starters kindled, and v3 written
   const mem = new Map(), storage = { getItem: k => mem.get(k) ?? null, setItem: (k, v) => mem.set(k, String(v)) };

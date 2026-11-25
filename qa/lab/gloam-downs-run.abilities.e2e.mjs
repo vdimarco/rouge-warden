@@ -81,11 +81,29 @@ try {
       return out;
     });
     assert.deepEqual(prevented, [true, true], 'back and forward never reach the browser');
-    assert.deepEqual((await used(page)).slice(2), ['bomb', 'flare']);
+    // real input through the DevTools protocol, as a mouse sends it: Chromium sends no mousedown after a pointerdown the page cancels,
+    // so the page reads the side buttons from their pointer events
+    await G(page, () => window.__gloam.set({ cool: [0, 0] }));
+    const cdp = await ctx.newCDPSession(page), url0 = page.url();
+    for (const [button, buttons] of [['back', 8], ['forward', 16]]) {
+      await cdp.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: 640, y: 400, button, buttons, clickCount: 1 });
+      await tick(page, 0.05, 'live');
+      await cdp.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: 640, y: 400, button, buttons: 0, clickCount: 1 });
+      await tick(page, 0.05, 'live');
+    }
+    assert.deepEqual((await used(page)).slice(2), ['bomb', 'flare'], 'real back and forward presses use the two abilities');
+    assert.equal(page.url(), url0, 'and the page stays');
     // the pad: LB slot 1, LT slot 2, and LT no longer rolls
     await G(page, () => window.__gloam.set({ cool: [0, 0] }));
     for (const b of [4, 6]) { await G(page, i => window.__press(i, true), b); await tick(page, 0.05, 'live'); r = await run(page); assert.notEqual(r.move, 'roll', 'LT does not roll'); await G(page, i => window.__press(i, false), b); await tick(page, 0.05, 'live'); }
     assert.deepEqual((await used(page)).slice(4), ['bomb', 'flare']);
+    await G(page, () => window.__gloam.draw());
+    assert.match(await page.textContent('#abilities'), /^LBLantern bomb/, 'a pad press shows the pad\'s labels');
+    // back on the keys: a key press in play gives the labels back to the keys, and the help lines name the mouse's side buttons
+    await page.keyboard.down('w'); await tick(page, 0.05, 'live'); await page.keyboard.up('w'); await tick(page, 0.05, 'live');
+    await G(page, () => window.__gloam.draw());
+    assert.match(await page.textContent('#abilities'), /^FLantern bomb/, 'the keys\' labels come back');
+    assert.match(await page.innerHTML('#runControls'), /Mouse buttons 4 and 5 use the abilities too\. On an ability lamp, an ability's key swaps it\./);
     assert.deepEqual(errors, []);
     pass('inputs: F and G, the side buttons 3 and 4 (with back and forward taken), and the pad\'s LB and LT start the two abilities; LT does not roll');
     await ctx.close();
@@ -105,6 +123,15 @@ try {
     await G(page, ([x, z]) => window.__gloam.teleport(x + 3, z, 0), [s.x, s.z]);
     await tick(page, 0.1, {});
     assert.deepEqual((await run(page)).abilities[1]?.id, 'moth', 'the lamp fills the empty slot');
+    // both slots full: stepping on a lamp shows the swap hint at once, before any press
+    const s2 = await G(page, () => window.__gloam.state());
+    await G(page, ([x, y, z]) => window.__gloam.set({ abilityLamps: [{ id: 'snare', bright: false, x: x + 3, y, z }] }), [s2.x, s2.y, s2.z]);
+    await G(page, ([x, z]) => window.__gloam.teleport(x + 3, z, 0), [s2.x, s2.z]);
+    await tick(page, 0.1, {});
+    await G(page, () => window.__gloam.draw());
+    const toast = await G(page, () => ({ text: document.getElementById('toast').textContent, on: document.getElementById('toast').classList.contains('on') }));
+    assert(toast.on && /press an ability to swap/.test(toast.text), `the hint: ${JSON.stringify(toast)}`);
+    assert.deepEqual((await run(page)).abilities.map(a => a?.id), ['bomb', 'moth'], 'nothing swapped yet');
     assert.deepEqual(errors, []);
     pass('lamps: an ability lamp and the place\'s caches are drawn as dabs, and a touch takes the lamp into the empty slot', r.glows);
     await ctx.close();
@@ -186,6 +213,11 @@ try {
       await G(page, () => window.__gloam.draw());
       const cd = await G(page, () => ['bAb1', 'bAb2'].map(id => +getComputedStyle(document.getElementById(id)).getPropertyValue('--cd')));
       assert(cd[0] > 0.9 && cd[1] === 0, `sweeps ${cd}`);
+      // a cooling button reads at a glance: grey and near black, with the seconds left in large figures; the ready one keeps its name
+      const look = await G(page, () => ['bAb1', 'bAb2'].map(id => { const b = document.getElementById(id), c = getComputedStyle(b); return { cool: b.classList.contains('cool'), text: b.textContent.trim(), bg: c.backgroundColor, size: parseFloat(getComputedStyle(b.querySelector('b')).fontSize) }; }));
+      assert(look[0].cool && /^\d+$/.test(look[0].text) && look[0].size >= 18, `cooling: ${JSON.stringify(look[0])}`);
+      assert(!look[1].cool && look[1].text === 'RIME', `ready: ${JSON.stringify(look[1])}`);
+      assert.notEqual(look[0].bg, look[1].bg, 'a cooling button is darker than a ready one');
     }
     assert.deepEqual(errors, []);
     pass(`layout ${w}x${h}${touch ? ' (touch)' : ''}: ${touch ? 'the two ability buttons, 44 px, clear of the others and inside the screen; a tap uses one' : 'the HUD\'s ability row inside the HUD, clear of the health and count lines'}`);

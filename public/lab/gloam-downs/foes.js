@@ -554,7 +554,9 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
       default: want = mind(f, ev);
     }
     if (f.state === 'out' || f.state === 'dying') return;
+    // a slow also slows a drive that brakes and turns at once: an Ironback's charge through a snare or Rime's cone, a hook's step
     if (st.speed < 1 && Array.isArray(want)) want = [want[0] * st.speed, want[1] * st.speed];
+    else if (st.speed < 1 && want?.hard) want = { ...want, hard: [want.hard[0] * st.speed, want.hard[1] * st.speed] };
     physics(f, want);
     if (f.state === 'out' || f.state === 'dying') return;
     // off the edge: more than 6 m below its zone, or under y -25, it is put out, and its glim drops on its last firm ground
@@ -956,6 +958,8 @@ export function poseOf(f, time = 0) {
       return { clip: `${f.move}.recover`, t: (f.mt - M.wind - M.act) / 60 };
     }
     default:
+      // stunned by a Flare or held by a snare (status.js): it stands in a stagger's pose, rocking a little, until the state ends
+      if (f.status && (f.status.stun > 0 || f.status.hold > 0)) return T.light ? { clip: 'hurt', t: 0.12 + 0.03 * Math.sin(time * 6) } : { clip: 'stun', t: 0.5 };
       if (f.flinch > 0 && T.light) return { clip: 'hurt', t: (RULES.flinch - f.flinch) / 60 };
       return f.walking > 0.3 ? { clip: 'walk', t: time } : { clip: 'rest', t: time + f.k * 0.7 };
   }

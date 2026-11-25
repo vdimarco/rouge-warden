@@ -209,26 +209,34 @@ addEventListener('keydown', e => {
     return;
   }
   if (mode === 'play' && k === 'r') face();
+  if (mode === 'play') padOff();
 });
 
 /* the pads, read on every frame in every mode: in a card or on the loading screen the d-pad and the left stick move the focus, A
    presses, B goes back, and Start and Back do what the card allows. A pad that first shows up changes the cards' controls, and that
    press presses nothing */
 const nav = { dir: 0, t: 0 };
-let padWas = { a: false, b: false, start: false, back: false, face: false, pause: false }, padSeen = false;
+/* padSeen: the pad is the input in use (its labels on the HUD and its lines on the cards); padFound: a pad has shown up once. A key
+   or a mouse press in play gives the labels back to the keys and the mouse, and the next pad press takes them again */
+let padWas = { a: false, b: false, start: false, back: false, face: false, pause: false }, padSeen = false, padFound = false;
+function padOff() { if (!padSeen) return; padSeen = false; showControls(); updateAbilities(); }
+addEventListener('pointerdown', e => { if (e.pointerType === 'mouse' && mode === 'play') padOff(); }, true);
 // a card or the loading screen takes over: a way the d-pad or the stick already holds moves nothing until it comes back to centre
 const holdNav = () => heldNav(nav, readPads(navigator.getGamepads?.() || [], RUN).nav);
 function showCard(card) { holdNav(); inp.free(); mouseHint(); if (linesStale) setLines(); return cards.show(card); }
 function padCheck() {
   const any = [...(navigator.getGamepads?.() || [])].some(p => p && p.connected);
-  if (any && !padSeen) { padSeen = true; showControls(); return true; }
+  if (any && !padFound) { padFound = padSeen = true; showControls(); return true; }
   return false;
 }
 function pollPad(dt) {
   const p = inp.readPad(), n = p.nav;
   const was = padWas;
   padWas = { a: n.a, b: n.b, start: n.start, back: n.back, face: p.face, pause: p.pause };
-  if (p.any && !padSeen) { padSeen = true; showControls(); return; }
+  // a pad that first shows up takes the labels, and that press presses nothing; after a key or a mouse press, a pad's next press or
+  // stick takes them back
+  if (p.any && !padFound) { padFound = padSeen = true; showControls(); updateAbilities(); return; }
+  if (!padSeen && (p.down?.size || p.mx || p.mz || p.ox || p.oy)) { padSeen = true; showControls(); updateAbilities(); }
   const edge = k => n[k] && !was[k];
   if (cards.current() || mode === 'loading') {
     const d = navStep(nav, n, dt);
@@ -359,10 +367,11 @@ function updateAbilities() {
     const a = v[i];
     b.hidden = !(a && touch && mode !== 'loading');
     if (!a) return;
-    const cls = `act ab ab${i + 1} ${a.colour || ''}${a.bright ? ' bright' : ''}`;
+    // a cooling button is dimmed, its sweep is a pale arc, and its label gives the seconds left
+    const cls = `act ab ab${i + 1} ${a.colour || ''}${a.bright ? ' bright' : ''}${a.left > 0 ? ' cool' : ''}`;
     if (b.className.replace(' on', '') !== cls) b.className = cls + (b.classList.contains('on') ? ' on' : '');
     b.style.setProperty('--cd', a.share.toFixed(3));
-    const t = AB_SHORT[a.id] || a.name;
+    const t = a.left > 0 ? `${Math.ceil(a.left)}` : AB_SHORT[a.id] || a.name;
     if (b.lastChild.textContent !== t) b.lastChild.textContent = t;
     b.setAttribute('aria-label', `${a.name}${a.left > 0 ? `, ready in ${Math.ceil(a.left)} s` : ''}`);
   });
@@ -513,8 +522,9 @@ const ABILITY_LINES = {
   keys: '<kbd>F</kbd> <kbd>G</kbd> abilities',
   drag: '<kbd>F</kbd> <kbd>G</kbd> abilities',
   touch: 'The two round buttons over ATTACK use your abilities. Stand on an ability lamp and press one to swap.',
-  pad: '<kbd>LB</kbd> ability 1 · <kbd>LT</kbd> ability 2'
+  pad: '<kbd>LB</kbd> ability 1 · <kbd>LT</kbd> ability 2 · on an ability lamp, a swap'
 };
+const MOUSE_LINE = 'Mouse buttons 4 and 5 use the abilities too. On an ability lamp, an ability\'s key swaps it.';
 const keyLines = rs => [...(rs.keys || []).includes('leap') ? ['Jump again in the air: Crow step.'] : [], ...(rs.keys || []).includes('drop') ? ['Plunge onto a sealed stone from 2 m up: Bell drop.'] : []];
 // a phone with a mouse plugged in shows the mouse's lines
 const controlsKind = () => (padSeen ? 'pad' : coarse && !inp.mouse ? 'touch' : inp.canLock ? 'keys' : 'drag');
@@ -532,8 +542,11 @@ function showControls() {
   const kind = controlsKind(), base = CONTROLS[kind].slice();
   if (kind === 'keys' || kind === 'drag') base[base.length - 1] += ` ${ABILITY_LINES[kind]}.`;
   else base.push(ABILITY_LINES[kind]);
-  const html = [...base, ...moveLines(rs), ...keyLines(rs)].map(l => `<li>${l}</li>`).join('');
-  for (const id of ['runControls', 'pauseControls']) $(id).innerHTML = html;
+  const lines = [...base, ...moveLines(rs), ...keyLines(rs)], li = l => `<li>${l}</li>`;
+  // the run's help card also names the mouse's side buttons and the swap on a lamp; the pause panel keeps its height at 800 by 600
+  const more = kind === 'keys' || kind === 'drag' ? [MOUSE_LINE] : [];
+  $('runControls').innerHTML = [...lines, ...more].map(li).join('');
+  $('pauseControls').innerHTML = lines.map(li).join('');
 }
 /* a mouse found or lost changes the mouse lines, and so the height of the card they are on. Under an open card a change in the press
    that switched the input (a finger's pointerdown on a phone that has seen a mouse, or a mouse's first press with no move before it)
@@ -1028,7 +1041,8 @@ function runEvent(e) {
     case 'dead': emit('run-death'); endAt = steps + INK; deadAt = steps; mode = 'dying'; arriveLeft = 0; $('arrive').classList.add('off'); break;
     case 'store': storeRun(); break;
   }
-  if (['wisp', 'drink', 'hurt', 'fall', 'beacon', 'win', 'store', 'glim', 'foeOut'].includes(e.type)) updateHud();
+  // an ability's events too: the swap hint on a lamp shows as the feet touch it, and a take or a swap at once
+  if (['wisp', 'drink', 'hurt', 'fall', 'beacon', 'win', 'store', 'glim', 'foeOut', 'ability', 'cache', 'key'].includes(e.type)) updateHud();
 }
 /* the boss on the page: the intro stops the game for 2.4 s with its card (the bars and the zoom are fight.js's); then the boss bar
    shows and the fight starts; at the fall the bar goes, and when the light comes to the lantern a toast says where to take it */

@@ -316,7 +316,7 @@ export function startRun(rs, seed, em = rs.ember | 0) {
     // growth (gloam-downs-growth): the colours, the spark picks left (First spark gives them at the start), the two ability slots and
     // Belt's offer, the patterns carried and on the ground, the caches opened, the ability lamps, and the rolls and counts of the drops
     sparks: { flame: 0, ward: 0, gloam: 0 }, sparkPicks: Math.min(9, rs.up.first | 0), sparkNow: false, abilities: start.slots, abilityOffer: start.offer,
-    carriedPatterns: [], groundPatterns: [], caches: [], abilityLamps: [], patternRolls: 0, foePatterns: 0, abilityDrops: 0, patternsKept: 0, kept: []
+    carriedPatterns: [], groundPatterns: [], caches: [], abilityLamps: [], patternRolls: 0, abilityRolls: 0, foePatterns: 0, abilityDrops: 0, patternsKept: 0, kept: []
   };
   // Wick shelf: the run starts with a choice of two wicks, on the beacon card's own buttons
   if ((rs.unlocks || []).includes('shelf')) rs.run.offer = startOffer(s, rs.unlocks);
@@ -527,9 +527,10 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
     if (!run || R.dead) return 'none';
     // Ember parry: a melee hit from in front in the first 0.1 s of a first cut is turned aside, and the foe staggers for 1 s
     if (parried(from, ev)) return 'none';
-    // Bell guard (abilities.js): the blow is turned aside
-    if (R.abilities?.turn(from, ev, o)) return 'none';
     const safe = fighter.safe();
+    // Bell guard (abilities.js): the blow is turned aside. A blow that would not hurt anyway (in the roll's safe time or the 0.9 s
+    // after a hit) does not spend it, and a roll's near miss stays a near miss
+    if (!safe && R.abilities?.turn(from, ev, o)) return 'none';
     if (safe) {
       if (safe === 'roll') {
         const shave = run.wicks.includes('shave');

@@ -35,7 +35,7 @@ const cleanSparks = v => Object.fromEntries(COLOUR_IDS.map(c => [c, obj(v) ? int
 const cleanSlots = (v, kindled) => [0, 1].map(i => { const a = Array.isArray(v) ? v[i] : null; return obj(a) && ABILITY_IDS.includes(a.id) && kindled.includes(a.id) ? { id: a.id, bright: a.bright === true } : null; });
 // lamps on the ground: a known id where it lies
 const cleanLamps = (v, known, n, withPlace = false) => (Array.isArray(v) ? v.filter(g => obj(g) && known.includes(g.id) && coord(g.x) !== null && coord(g.y) !== null && coord(g.z) !== null && (!withPlace || ORDER.includes(g.place)))
-  .slice(0, n).map(g => ({ id: g.id, ...(withPlace ? { place: g.place, bright: g.bright === true } : {}), x: g.x, y: g.y, z: g.z })) : []);
+  .slice(0, n).map(g => ({ id: g.id, ...(withPlace ? { place: g.place, bright: g.bright === true, cool: count(g.cool, 3600), full: Math.max(1, count(g.full, 3600)) } : {}), x: g.x, y: g.y, z: g.z })) : []);
 // the patterns that can be carried: known, not found and not kindled
 const carriable = (v, found, kindled) => ids(v, PATTERN_IDS.filter(p => !found.includes(p) && !kindled.includes(p)), DROPS.patternMax + 8);
 // the growth fields of a run (and of its entry): each checked as the run's are
@@ -55,8 +55,11 @@ function cleanRun(r, s) {
   if (!obj(r) || !ORDER.includes(r.place)) return null;
   const up = s.up, top = s.emberTop;
   const wicks = ids(r.wicks, WICK_IDS, 5), ember = intIn(r.ember, 0, top, 0), grown = cleanGrown(r, s, r.place);
-  const max = maxHp(up, wicks, grown.sparks), fmax = flasksMax(up, wicks, ember);
   const seed = Number.isInteger(r.seed) && r.seed > 0 && r.seed < 2 ** 32 ? r.seed : 1;
+  // a run from v2 has no slots: slot 1 comes from the seed's start stream, as a run with no Belt starts. It is set before the entry's
+  // growth is copied from the run's, so a reload keeps it
+  if (!Array.isArray(r.abilities)) grown.abilities = startAbilities(seed, { ...s, up: { ...up, belt: 0 } }).slots;
+  const max = maxHp(up, wicks, grown.sparks), fmax = flasksMax(up, wicks, ember);
   const run = {
     seed, place: r.place, time: secs(r.time),
     hp: intIn(r.hp, 1, max, max), flasks: intIn(r.flasks, 0, fmax, fmax), carried: count(r.carried), banked: count(r.banked), foes: count(r.foes, 1e5),
@@ -65,8 +68,6 @@ function cleanRun(r, s) {
     elitesDown: ids(r.elitesDown, ORDER, ORDER.length), combo: count(r.combo, 1e5), lastUsed: r.lastUsed === true && wicks.includes('last'), shelf: r.shelf === true,
     ...grown, sparkNow: r.sparkNow === true && grown.sparkPicks > 0, abilityOffer: null, patternsKept: count(r.patternsKept, 100), kept: ids(r.kept, PATTERN_IDS, PATTERN_IDS.length)
   };
-  // a run from v2 has no slots: slot 1 comes from the seed's start stream, as a run with no Belt starts
-  if (!Array.isArray(r.abilities)) run.abilities = startAbilities(seed, { ...s, up: { ...up, belt: 0 } }).slots;
   // an offer is two different known wicks not yet chosen, or nothing; Belt's offer is two different kindled abilities, or nothing
   if (Array.isArray(r.offer) && r.offer.length === 2 && r.offer[0] !== r.offer[1] && r.offer.every(w => WICK_IDS.includes(w) && !wicks.includes(w))) run.offer = r.offer.slice();
   const abl = kindledOf(s, 'ability');

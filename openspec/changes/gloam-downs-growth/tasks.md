@@ -73,3 +73,14 @@ Not built by P either. Built in the fix pass after the checkers; see design.md "
 - [x] 6.2 `run.js`: the run starts with 1 flask; `PACE`, `foeScale` (damage ×(1 + 0.35 d^1.5), health ×(1 + 0.4 d^1.5)) and `bossScale` (+5% a spark). `foes.js` takes `scale`, and `fight.js` and the bot pass it and the Reeve's scale.
 - [x] 6.3 Tests: the later places and the Reeve in `gloam-downs-foes.test.mjs`; the start of 1 flask and every ware's 5 flasks in `gloam-downs-run.test.mjs` and `gloam-downs-growth.test.mjs`; the coal in The Crow Wall in `run.fight`; the start in `run.cards` and `run.input`.
 - [ ] 6.4 A 0.9 winning run of 15 to 25 minutes: missed (10.3). It needs more ground to cover, which is the user's call.
+
+## 7. Second fix pass after the checkers
+- [x] 7.1 Merge the pacing pass (`gloam-grow-pace`, 7760ad79).
+- [x] 7.2 Abilities: a swap keeps both cooldowns (the lamp holds and cools the one put down); the cooldowns and a Moth wisp carry over to the next place; the swap hint shows as the feet touch the lamp; a press while busy or in the air gives `refuse`; Smoke step moves over 0.12 s; Crook line pulls to 1.2 m; a snare is sprung by a heavy foe too, and a slow slows a charge; Bell guard is not spent on a blow that would not hurt.
+- [x] 7.3 The look: foe states drawn (stun, hold, slow, burn) and a stunned foe staggers; the snare and the pool of pitch drawn larger; a cooling touch button goes dark with its seconds in large figures.
+- [x] 7.4 Inputs: the mouse's side buttons read from their pointer events (real input in Chromium sends no `mousedown`); the HUD's labels follow the input in use; the help lines name the side buttons and the swap; after Kindle the focus stays in the Lamp-room's growth rows.
+- [x] 7.5 Hidden ground: the scan keeps only ledges no single jump reaches from 4 m round, and stones with slack in the approach; a ledge cache opens only on the ledge; a coyote jump does not use Crow step. The spots are rescanned (The Bell Knoll now has one ledge).
+- [x] 7.6 The save: a run starts with `abilityRolls` 0, a v2 run keeps slot 1 through the first reload, and an opened cache's prize goes into the entry with the cache.
+- [x] 7.7 Each fix has a test that failed on 7760ad79 (design.md "Second fix pass after the checkers").
+- [x] 7.8 Run every check again and the bot at three skills; the numbers are in design.md.
+- [ ] 7.9 Play by hand on a real phone, a real gamepad, real mouse side buttons and speakers. Not possible here.

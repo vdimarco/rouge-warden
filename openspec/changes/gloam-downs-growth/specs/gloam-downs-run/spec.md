@@ -34,6 +34,10 @@ A foe put out SHALL drop a pattern with a chance of 2%, plus 1% each Keen eye le
 - **WHEN** two runs with the same seed, wares and kindled list put out the same foes in the same order
 - **THEN** they drop the same patterns. Check: Node test `gloam-downs-growth.test.mjs`.
 
+#### Scenario: Back to the start rewinds the drops
+- **WHEN** a run starts and the place is reloaded after ability lamps were drawn
+- **THEN** the ability stream is back where the place began, as after a page reload. Check: Node test `gloam-downs-run.test.mjs`.
+
 ### Requirement: Pattern lamps on the ground
 A pattern lamp SHALL lie on the floor under the foe that dropped it, never in a wall or in the air, and the fight SHALL draw it as a small lamp. A lit beacon or a win SHALL also keep any pattern lamp still lying in the place.
 
@@ -50,7 +54,7 @@ The Lamp-room SHALL list each found pattern as "<name> · <what it does> · <cos
 
 #### Scenario: Kindle the Rime lamp
 - **WHEN** the save has `rime` found and 150 glim banked, and the player presses Kindle on its row
-- **THEN** 120 glim is spent, the row leaves the list, and the seed's `ability` stream may draw `rime` from then on. Check: Node test `gloam-downs-growth.test.mjs`, and e2e `gloam-downs-run.growth.e2e.mjs`.
+- **THEN** 120 glim is spent, the row leaves the list, the focus stays in the Lamp-room's pattern and pane rows (not on a ware's Buy), and the seed's `ability` stream may draw `rime` from then on. Check: Node test `gloam-downs-growth.test.mjs`, and e2e `gloam-downs-run.growth.e2e.mjs`.
 
 ### Requirement: The new wares
 The Lamp-room SHALL also sell Belt (90, 220, 420: a choice of two start abilities; slot 2 filled; bright start abilities), Keen eye (70, 140, 230, 340, 480: 4% more bright drops and 1% more pattern and ability drops a level), Lantern panes (300, 700: one more pane slot a level) and First spark (120, 260, 450: one more spark pick at the start a level).
@@ -97,26 +101,37 @@ A pane SHALL be a passive pick from `PANES`. There SHALL be 1 pane slot, and Lan
 - **THEN** a second pane row shows, and the pane set in the first row is not offered in the second. Check: e2e `gloam-downs-run.growth.e2e.mjs`.
 
 ### Requirement: Ability slots
-The lamplighter SHALL have two ability slots, each with its own cooldown on the play clock. A press SHALL be buffered 0.15 s and SHALL wait through hit stop. A press while the slot cools, drinks, rolls or is hurt SHALL do nothing but the `refuse` cue. Every run SHALL start with an ability in slot 1, drawn by the seed's `start` stream from the kindled abilities, or as Belt says.
+The lamplighter SHALL have two ability slots, each with its own cooldown on the play clock. A press SHALL be buffered 0.15 s and SHALL wait through hit stop. A press while the slot cools, drinks, rolls, is hurt or plunges, and a press of Smoke step or Bell guard in the air, SHALL do nothing but the `refuse` cue. Every run SHALL start with an ability in slot 1, drawn by the seed's `start` stream from the kindled abilities, or as Belt says.
 
 #### Scenario: Cooldown
 - **WHEN** the lamplighter uses Lantern bomb in slot 1 and presses slot 1 again 4 s later
 - **THEN** no second bomb is thrown, the cue log has `refuse`, and the slot says ready once, 8 s after the throw. Check: Node test `gloam-downs-abilities.test.mjs`.
 
+#### Scenario: Busy
+- **WHEN** the lamplighter presses slot 1 while drinking, or presses Smoke step in the air
+- **THEN** nothing starts and the cue log has `refuse`. Check: Node test `gloam-downs-abilities.test.mjs`.
+
+### Requirement: Cooldowns across places
+The cooldowns SHALL carry over to the next place (Walk on, Back to the start) with a Moth wisp still flying. A snare, a pool of pitch or a bomb in flight SHALL stay in the place it was laid in.
+
+#### Scenario: Walk on with a cooldown
+- **WHEN** the lamplighter uses Moth wisp and Flare and the next place's runner starts 0.5 s later
+- **THEN** both cooldowns are as they were, and the Moth wisp flies on. Check: Node test `gloam-downs-abilities.test.mjs`.
+
 ### Requirement: Ability inputs
-In a run, F or U SHALL use slot 1, and G or I slot 2. The mouse's side buttons SHALL use slot 1 (button 3) and slot 2 (button 4), and SHALL not move the browser back or forward. On a pad LB (4) SHALL use slot 1 and LT (6) slot 2. On touch, `#bAb1` and `#bAb2` SHALL use them, at least 44 px on the shorter side, hidden while the slot is empty.
+In a run, F or U SHALL use slot 1, and G or I slot 2. The mouse's side buttons SHALL use slot 1 (button 3) and slot 2 (button 4), read from their pointer events, and SHALL not move the browser back or forward. On a pad LB (4) SHALL use slot 1 and LT (6) slot 2. On touch, `#bAb1` and `#bAb2` SHALL use them, at least 44 px on the shorter side, hidden while the slot is empty.
 
 #### Scenario: Keys
 - **WHEN** slot 1 holds Lantern bomb and slot 2 Flare, and the player presses F and then G
 - **THEN** a bomb is thrown and Flare starts, and both slots cool. Check: e2e `gloam-downs-run.abilities.e2e.mjs`.
 
 #### Scenario: Mouse side button
-- **WHEN** the player presses button 3, then button 4, on the view
+- **WHEN** the player presses back, then forward, on the view, sent as real mouse input (DevTools protocol)
 - **THEN** slot 1's ability starts, then slot 2's, and the page takes each press, release and auxclick, so the browser does not go back or forward. Check: e2e `gloam-downs-run.abilities.e2e.mjs`, and Node test `gloam-downs-mouse.test.mjs`.
 
 #### Scenario: Pad
-- **WHEN** a pad presses LB, then LT 1 s later
-- **THEN** slot 1's ability starts, then slot 2's, and the lamplighter does not roll. Check: e2e `gloam-downs-run.abilities.e2e.mjs`.
+- **WHEN** a pad presses LB, then LT 1 s later, and then the player presses a key
+- **THEN** slot 1's ability starts, then slot 2's, and the lamplighter does not roll; the HUD shows LB and LT, and after the key F and G again. Check: e2e `gloam-downs-run.abilities.e2e.mjs`.
 
 #### Scenario: Touch layouts
 - **WHEN** the run shows on touch at 320 by 640, 390 by 844, 360 by 640 and 844 by 390 with both slots full
@@ -128,6 +143,28 @@ There SHALL be nine abilities, with the numbers of `ABILITIES` in `growth.js`: L
 #### Scenario: Every ability
 - **WHEN** the Node test uses each ability beside Snuffers, and Ember snare beside an Ironback too
 - **THEN** each does what its row says, and Lantern bomb logs its cue with `ability: bomb` and starts its cooldown. Check: Node test `gloam-downs-abilities.test.mjs`.
+
+### Requirement: Ability details
+Smoke step SHALL move 4 m over 0.12 s. Crook line SHALL pull a light foe to 1.2 m from the lamplighter. Ember snare SHALL be sprung by the first foe in it, a light foe before a heavy one: a light foe held, a heavy foe slowed, and either takes its damage. Bell guard SHALL not be spent on a blow that would not hurt (the roll's safe time, the time after a hit).
+
+#### Scenario: Smoke step on its way
+- **WHEN** the lamplighter uses Smoke step on flat ground
+- **THEN** after 2 play steps it is 0.3 to 1.0 m on its way, and after 8 it is 4 m ahead. Check: Node test `gloam-downs-abilities.test.mjs`.
+
+#### Scenario: Bell guard and a roll
+- **WHEN** Bell guard is up and a blow lands in the roll's safe time
+- **THEN** it is a near miss, and the guard is still up for the next blow. Check: Node test `gloam-downs-abilities.test.mjs`.
+
+#### Scenario: Crook line's pull
+- **WHEN** a Snuffer stands 5 m ahead on flat ground and the lamplighter uses Crook line
+- **THEN** the Snuffer ends 0.9 to 1.5 m from the lamplighter and loses 8. Check: Node test `gloam-downs-abilities.test.mjs`.
+
+### Requirement: Ground effects that read
+A snare and a pool of pitch SHALL be drawn large enough to read from the follow camera.
+
+#### Scenario: A snare and a pool that read
+- **WHEN** the fight draws a snare and a pool of pitch
+- **THEN** the snare is a ring of 14 dabs and a centre, the pool three rings that fill its 2 m, each dab 0.065 m or more and 0.15 m over the ground. Check: Node test `gloam-downs-abilities.test.mjs`, and the screenshots in design.md.
 
 #### Scenario: Drawn under fire
 - **WHEN** the Node test reads the growth colours and the fight's code that draws the abilities and the lamps
@@ -141,7 +178,7 @@ Lantern bomb SHALL throw a lantern to the soft-aim foe within 8 m, or 6 m ahead.
 - **THEN** the ring shows for 0.6 s, and each Snuffer loses 28 and then 6 over 2 s. Check: Node test `gloam-downs-abilities.test.mjs`.
 
 ### Requirement: Foe states from abilities
-Stun, hold and slow SHALL be foe states. A stunned or held foe SHALL stop, and its wind-up SHALL stop. A slowed foe SHALL walk and wind up at half speed. A heavy foe SHALL never be held, only slowed, and a stun on it SHALL last half as long. The Barrow Reeve SHALL take ability damage but no stun, hold or slow.
+Stun, hold and slow SHALL be foe states. A stunned or held foe SHALL stop, and its wind-up SHALL stop. A slowed foe SHALL walk, wind up and charge at half speed. A heavy foe SHALL never be held, only slowed, and a stun on it SHALL last half as long. The Barrow Reeve SHALL take ability damage but no stun, hold or slow.
 
 #### Scenario: Flare on a wind-up
 - **WHEN** a Snuffer is 0.1 s into its hook's wind-up 2 m away and the lamplighter uses Flare
@@ -151,6 +188,17 @@ Stun, hold and slow SHALL be foe states. A stunned or held foe SHALL stop, and i
 - **WHEN** an Ember snare catches the Barrow Reeve (a target with no zone), and a stun is put on it
 - **THEN** it takes the snare's 10 and no state. Check: Node test `gloam-downs-abilities.test.mjs`.
 
+#### Scenario: A slowed charge
+- **WHEN** an Ironback charges through an Ember snare, or into Rime lamp's cone
+- **THEN** it runs at 6.5 m/s or less (not 10), and the snare is spent with its 10. Check: Node test `gloam-downs-abilities.test.mjs`.
+
+### Requirement: Foe states shown
+Each foe state SHALL show on the foe while it lasts: a stunned or held foe stands in a stagger's pose, with pale dabs over its head (stun) or warm dabs at its feet (hold); a slowed foe has frost dabs; a burning foe rising embers.
+
+#### Scenario: States seen
+- **WHEN** a Snuffer is stunned, then held, slowed and burning, then free
+- **THEN** it has 5 stun dabs and the hurt pose, then hold, frost and ember dabs, then none and its own pose. Check: Node test `gloam-downs-abilities.test.mjs`.
+
 ### Requirement: Ability lamps
 A foe put out SHALL drop an ability lamp with a chance of 3%, plus 1% each Keen eye level, at most 3 a run; an ability cache always. A lamp SHALL be bright with a chance of 10% plus 4% each Keen eye level: 25% more power and a gold edge. A touch SHALL fill an empty slot. With both full, a slot's input pressed on the lamp SHALL swap, and the old ability SHALL lie there.
 
@@ -158,19 +206,37 @@ A foe put out SHALL drop an ability lamp with a chance of 3%, plus 1% each Keen 
 - **WHEN** both slots are full, the lamplighter stands on a Smoke step lamp and presses slot 1
 - **THEN** slot 1 holds Smoke step, and its old ability lies there as a lamp. No card opens. Check: Node test `gloam-downs-abilities.test.mjs`.
 
+### Requirement: The swap
+With both slots full, a toast SHALL say how to swap as the feet touch an ability lamp. A swap SHALL keep the cooldowns: the ability put down lies there with the cooldown it had, still cooling, and an ability taken from a lamp keeps the cooldown its lamp holds.
+
+#### Scenario: A swap keeps the cooldown
+- **WHEN** the lamplighter throws Lantern bomb, stands on a Moth wisp lamp and presses slot 1 twice
+- **THEN** slot 1 holds Lantern bomb again with more than 7 s left, and a press off the lamp throws nothing. Check: Node test `gloam-downs-abilities.test.mjs`.
+
+#### Scenario: The swap hint
+- **WHEN** both slots are full and the lamplighter steps onto a Snare lamp, pressing nothing
+- **THEN** the toast says "press an ability to swap" at once, and the slots do not change. Check: e2e `gloam-downs-run.abilities.e2e.mjs`.
+
 #### Scenario: Fill an empty slot
 - **WHEN** slot 2 is empty and the lamplighter walks onto a Moth wisp lamp in the Gaol
 - **THEN** slot 2 holds Moth wisp. Check: e2e `gloam-downs-run.abilities.e2e.mjs`.
 
 ### Requirement: The ability HUD
-With a mouse, keys or a pad the HUD SHALL show each filled slot as its key and name, with the seconds left while it cools, and a gold edge on a bright one. On touch the two buttons SHALL show the short name and the cooldown as a dark sweep instead, and the HUD row SHALL be hidden. Neither SHALL overlap the health line, the count line or a touch button.
+With a mouse, keys or a pad the HUD SHALL show each filled slot as its key and name, with the seconds left while it cools, and a gold edge on a bright one. On touch the two buttons SHALL show the short name and the cooldown as a sweep instead, and the HUD row SHALL be hidden. The help lines SHALL name the mouse's side buttons and the swap. Neither SHALL overlap the health line, the count line or a touch button.
 
 #### Scenario: Cooldown shows
 - **WHEN** both slots were used, at 1280 by 720; and slot 1 was tapped on touch at 390 by 844
 - **THEN** the HUD row reads "F Lantern bomb 8 s G Flare 14 s" or less; on touch slot 1's sweep is nearly full and slot 2's empty. Check: e2e `gloam-downs-run.abilities.e2e.mjs`.
 
+### Requirement: A cooling touch button
+On touch, a cooling ability's button SHALL read at a glance: grey and near black, with the seconds left in large figures and the time left as a pale sweep. A ready one SHALL keep its colour and its short name.
+
+#### Scenario: Cooling and ready side by side
+- **WHEN** slot 1 was tapped on touch and slot 2 is ready, at 320 by 640, 390 by 844, 360 by 640 and 844 by 390
+- **THEN** slot 1's button is darker than slot 2's and its label is a number of 18 px or more, and slot 2 shows its name. Check: e2e `gloam-downs-run.abilities.e2e.mjs`.
+
 ### Requirement: Keys
-Two lasting keys SHALL come from a fixed elite's first fall in any run: Crow step from the Rookchief, Bell drop from the Bellwether. A toast SHALL name the key, and the save SHALL keep it at once. Crow step SHALL give a second jump in the air at 7.4 m/s, once until the feet land, from 0.1 s after the first. Bell drop SHALL crack a sealed stone with a plunge from 2 m or more.
+Two lasting keys SHALL come from a fixed elite's first fall in any run: Crow step from the Rookchief, Bell drop from the Bellwether. A toast SHALL name the key, and the save SHALL keep it at once. Crow step SHALL give a second jump in the air at 7.4 m/s, once until the feet land, from 0.1 s after the first. A press the controller takes as its own jump in its coyote time SHALL not use it. Bell drop SHALL crack a sealed stone with a plunge from 2 m or more.
 
 #### Scenario: The Rookchief falls
 - **WHEN** the Rookchief is put out for the first time
@@ -180,12 +246,27 @@ Two lasting keys SHALL come from a fixed elite's first fall in any run: Crow ste
 - **WHEN** a lamplighter with Crow step jumps on flat ground, holds the jump, and presses it again at the top
 - **THEN** the feet rise 2.4 m or more over the ground, and a third press does nothing until the feet land. Check: Node test `gloam-downs-keys.test.mjs`.
 
+#### Scenario: Coyote jump
+- **WHEN** the lamplighter walks off an edge and presses Jump in the coyote time, 0.11 s after leaving it
+- **THEN** the jump is the controller's (8.2 m/s), and Crow step is still there for a second press. Check: Node test `gloam-downs-keys.test.mjs`.
+
 ### Requirement: Hidden ledges and sealed stones
 Each place SHALL have at least one ledge that only Crow step reaches (two where the scan finds two) and one sealed stone, on the baked walk map, found by `qa/lab/gloam-downs-ledges.mjs`. No place SHALL be rebaked. Each SHALL hold a cache that opens once a run, with a prize of glim, a spark, a pattern, an ability or a flask, and SHALL be drawn. design.md SHALL say whether a shortcut was found.
 
 #### Scenario: Ledges need the key
-- **WHEN** the Node test plays the controller from each ledge's stand with the way the scan kept, with and without the second jump
-- **THEN** each ledge is reached only with it, and a plunge from each stone's stand falls 2 m or more onto it. Check: Node test `gloam-downs-keys.test.mjs`, and e2e `gloam-downs-run.abilities.e2e.mjs` for the Gaol's first ledge.
+- **WHEN** the Node test plays the controller from each ledge's stand with the way the scan kept, with and without the second jump, and a run and a jump (or a short hop) from every floor within 4 m at 24 bearings
+- **THEN** each ledge is reached only with the second jump, and a plunge from each stone's stand falls 2 m or more onto it, with the stick let go 0.3 to 0.5 m early. Check: Node test `gloam-downs-keys.test.mjs`, and e2e `gloam-downs-run.abilities.e2e.mjs` for the Gaol's first ledge.
+
+### Requirement: Fair hidden ground
+No single jump from any floor within 4 m SHALL reach a ledge, and a ledge's cache SHALL open only to feet on the ledge (within 1 m of it and 0.35 m of its height). A stone SHALL open with slack in the approach (the stick let go 0.3 to 0.5 m early). A reload SHALL keep both an opened cache and its prize.
+
+#### Scenario: Not from under the ledge
+- **WHEN** the feet stand 1 m under a ledge's cache
+- **THEN** it does not open. Check: Node test `gloam-downs-keys.test.mjs`.
+
+#### Scenario: A cache and a reload
+- **WHEN** a cache of glim, a flask, a pattern or an ability is opened and the place is reloaded (Back to the start)
+- **THEN** the cache stays open, and the glim carried, the flask, or the lamp at the cache is still there. Check: Node test `gloam-downs-keys.test.mjs`.
 
 #### Scenario: Open a stone
 - **WHEN** a lamplighter with Crow step and Bell drop jumps twice and plunges onto a sealed stone
@@ -287,6 +368,10 @@ The run's save SHALL use the key `gloam-downs.run.v3`. With no v3 save, the page
 #### Scenario: From v2
 - **WHEN** the page loads with only a v2 save that has Mantle 3, Ash pocket 1 and 70 glim banked
 - **THEN** the run's save has Mantle 3, Ash pocket 2, 70 glim, the four starters kindled, and the v3 key is written. Check: Node test `gloam-downs-growth.test.mjs`.
+
+#### Scenario: A v2 run and the first reload
+- **WHEN** the page loads a v2 save with a run in The Crow Wall, and reloads the run as the page does on load
+- **THEN** slot 1 holds the ability from the seed in the run and in its entry, and the reload keeps it. Check: Node test `gloam-downs-run.test.mjs`.
 
 #### Scenario: Rubbish in v3
 - **WHEN** the v3 save has an unknown pattern, an unknown key, Flame 900 and a slot holding an ability not kindled

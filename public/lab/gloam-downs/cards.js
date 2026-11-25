@@ -138,16 +138,20 @@ export function fillGrowthLamp() {
   if (had) box.querySelector(`button[data-slot="${had.slot}"][data-pane="${had.pane}"]`)?.focus({ preventScroll: true });
 }
 function kindleRow(id) {
-  const rs = G.rs(), btn = byId('patterns').querySelector(`li[data-pattern="${id}"] button`), had = document.activeElement === btn;
+  const rs = G.rs(), list = byId('patterns'), btn = list.querySelector(`li[data-pattern="${id}"] button`), had = document.activeElement === btn;
+  // the Kindle buttons after this one, then those before it, as they stand before the row leaves
+  const rows = [...list.querySelectorAll('li[data-pattern]')].map(li => li.dataset.pattern), at = rows.indexOf(id), order = [...rows.slice(at + 1), ...rows.slice(0, at).reverse()];
   if (!kindle(rs, id)) { G.audio()?.cue('refuse'); return; }
   G.audio()?.cue('buy');
   G.storeRun();
   G.fillLamp();
   G.updateHud();
-  // the row leaves the list: the focus goes on to the next Buy or Kindle button that can be pressed, or to the main button
+  /* the row leaves the list, and the focus stays where it was: on a pane just kindled, its button in the first pane slot (to set it
+     now); else the next Kindle button of the patterns (then the one before); else the first pane button; else the main button */
   if (had) {
-    const next = [...byId('lamp').querySelectorAll('.ups li button')].find(b => !b.hidden && b.getAttribute('aria-disabled') !== 'true');
-    next ? next.focus({ preventScroll: true }) : focusMain();
+    const pane = byId('paneRow').querySelector(`button[data-pane="${id}"]`);
+    const next = pane || order.map(p => list.querySelector(`li[data-pattern="${p}"] button`)).find(Boolean) || byId('paneRow').querySelector('button');
+    next && !next.closest('[hidden]') ? next.focus({ preventScroll: true }) : focusMain();
   }
 }
 function paneButton(slot, id) {

@@ -254,6 +254,9 @@ export function makeInput(els, { run = () => false, play = () => false, hold = p
     if (!seen && !primary.matches) { seen = true; onMouse(true); }
     // a click asks for the mouse where the page may, and acts all the same (mouseAct)
     if (mouseAsk(e.button, { locked: lock.taken, lockable: lockable(), trying: lock.trying })) { take(); onState(); }
+    // the side buttons are read from their pointer events (sideButton, below): Chromium sends no mousedown after a pointerdown the
+    // page cancels
+    if (e.button === 3 || e.button === 4) return;
     const act = mouseAct(e.button, { run: run(), locked: lock.taken });
     if (!act) return;
     e.preventDefault();
@@ -264,7 +267,20 @@ export function makeInput(els, { run = () => false, play = () => false, hold = p
   /* the side buttons in a run: the browser's back and forward never fire (the page takes their down, up and auxclick), so a press of an
      ability does not leave the page */
   const side = e => { if ((e.button === 3 || e.button === 4) && run()) e.preventDefault(); };
-  for (const t of ['mousedown', 'mouseup', 'auxclick', 'pointerdown', 'pointerup']) addEventListener(t, side, true);
+  for (const t of ['mousedown', 'mouseup', 'auxclick']) addEventListener(t, side, true);
+  /* the side buttons as abilities: back (3) is slot 1 and forward (4) slot 2, read from the pointer events, which come with the
+     pointer taken too. A side button pressed while another button is down comes as a pointermove with its button set. Its pointerdown
+     and pointerup are cancelled, so the browser does not go back */
+  const SIDE_BIT = { 3: 8, 4: 16 };
+  const sideButton = e => {
+    if ((e.button !== 3 && e.button !== 4) || (e.pointerType && e.pointerType !== 'mouse') || !run()) return;
+    e.preventDefault();
+    const act = mouseAct(e.button, { run: true, locked: lock.taken }), down = e.type !== 'pointerup' && (e.buttons & SIDE_BIT[e.button]) !== 0;
+    if (!act) return;
+    if (down && play() && !held[act]) latch[act] = true;
+    held[act] = down && play();
+  };
+  for (const t of ['pointerdown', 'pointermove', 'pointerup']) addEventListener(t, sideButton, true);
   addEventListener('mouseup', e => {
     if (e.button === 3) held.ab1 = false;
     if (e.button === 4) held.ab2 = false;

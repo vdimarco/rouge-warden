@@ -9,20 +9,22 @@ import { emit } from './bus.js';
 
 export const keyOf = id => LAMP_KEYS.find(k => k.id === id) || null;
 export const hasKey = (rs, id) => (rs?.keys || []).includes(id);
-// the rules: a cache's touch (m) and rise, the glim of a glim cache before the Ember factor, the reach of a stone round the landing
-export const KEY_RULES = { touch: 1.0, rise: 1.3, stone: 1.3 };
+// the rules: a ledge cache opens to feet on the ground within `touch` of it and `rise` of its height (so on the ledge, not under it),
+// and a stone to a plunge's landing within `stone` of it and 1 m of its height
+export const KEY_RULES = { touch: 1.0, rise: 0.35, stone: 1.3 };
 
 /* the spots of each place: { id, kind: 'ledge' | 'stone', at: [x, y, z] (the cache), from: [x, y, z] (where the way starts), way: the
    inputs the scan played from there, prize, n (glim) }. Written by qa/lab/gloam-downs-ledges.mjs --write; check with it after a rebake */
-export const SPOTS = {"gaol":[{"id":"gaol-ledge1","kind":"ledge","at":[7,9.38,25],"from":[7,7.49,26.2],"way":{"run":0.3,"hold":0.5,"leapAt":0.2},"prize":"glim","n":25},{"id":"gaol-ledge2","kind":"ledge","at":[6.5,7.32,-17],"from":[6.5,5.09,-15.2],"way":{"run":0.3,"hold":0.5,"leapAt":0.2},"prize":"spark","n":30},{"id":"gaol-stone3","kind":"stone","at":[-2.3,4.21,-27],"from":[-3,7.98,-27],"way":{"run":0,"hold":0.4,"leapAt":9,"plungeAt":0.28},"prize":"glim","n":35}],"ramparts":[{"id":"ramparts-ledge1","kind":"ledge","at":[-3,4.77,23],"from":[-3,2.81,24.8],"way":{"run":0,"hold":0.5,"leapAt":0.2},"prize":"pattern","n":25},{"id":"ramparts-ledge2","kind":"ledge","at":[-22,1.78,-28],"from":[-22,0.04,-26.2],"way":{"run":0.3,"hold":0.5,"leapAt":0.2},"prize":"glim","n":30},{"id":"ramparts-stone3","kind":"stone","at":[-10.5,1.77,-19.3],"from":[-10.5,4.13,-20],"way":{"run":0,"hold":0.4,"leapAt":9,"plungeAt":0.28},"prize":"flask","n":35}],"fen":[{"id":"fen-ledge1","kind":"ledge","at":[13.5,1.67,-3.5],"from":[15.16,-0.33,-4.19],"way":{"run":0,"hold":0.5,"leapAt":0.2},"prize":"ability","n":25},{"id":"fen-ledge2","kind":"ledge","at":[-16,1.7,4.5],"from":[-16,-0.5,5.7],"way":{"run":0.3,"hold":0.5,"leapAt":0.2},"prize":"glim","n":30},{"id":"fen-stone3","kind":"stone","at":[-3.8,-0.5,-3.5],"from":[-4.5,0.49,-3.5],"way":{"run":0,"hold":0.4,"leapAt":9,"plungeAt":0.28},"prize":"spark","n":35}],"bells":[{"id":"bells-ledge1","kind":"ledge","at":[4.5,5,0.5],"from":[3.39,3.88,0.04],"way":{"run":0,"hold":0.5,"leapAt":0.2},"prize":"glim","n":25},{"id":"bells-ledge2","kind":"ledge","at":[-5,3.03,6.5],"from":[-5,0.58,5.3],"way":{"run":0.3,"hold":0.5,"leapAt":0.2},"prize":"pattern","n":30},{"id":"bells-stone3","kind":"stone","at":[-3.5,0.63,18.8],"from":[-3.5,1.39,19.5],"way":{"run":0,"hold":0.4,"leapAt":9,"plungeAt":0.28},"prize":"spark","n":35}],"barrows":[{"id":"barrows-ledge1","kind":"ledge","at":[-16.5,4.85,16],"from":[-15.65,2.52,15.15],"way":{"run":0,"hold":0.5,"leapAt":0.2},"prize":"flask","n":25},{"id":"barrows-stone2","kind":"stone","at":[2.49,1.15,18.51],"from":[2,1.93,19],"way":{"run":0,"hold":0.4,"leapAt":9,"plungeAt":0.28},"prize":"glim","n":30}]};
+export const SPOTS = {"gaol":[{"id":"gaol-ledge1","kind":"ledge","at":[2,7.33,-16.5],"from":[0.23,4.99,-14.73],"way":{"run":0,"hold":0.5,"leapAt":0.2},"prize":"glim","n":25},{"id":"gaol-ledge2","kind":"ledge","at":[7,9.38,25],"from":[7,7.49,26.2],"way":{"run":0,"hold":0.5,"leapAt":0.2},"prize":"spark","n":30},{"id":"gaol-stone3","kind":"stone","at":[-1.3,4.13,-24],"from":[-2,6.1,-24],"way":{"run":0,"hold":0.4,"leapAt":9,"plungeAt":0.28},"prize":"glim","n":35}],"ramparts":[{"id":"ramparts-ledge1","kind":"ledge","at":[-22,1.78,-28],"from":[-22,0.04,-26.2],"way":{"run":0,"hold":0.5,"leapAt":0.2},"prize":"pattern","n":25},{"id":"ramparts-ledge2","kind":"ledge","at":[-29.5,1.92,-29],"from":[-29.5,0.09,-27.8],"way":{"run":0,"hold":0.5,"leapAt":0.2},"prize":"glim","n":30},{"id":"ramparts-stone3","kind":"stone","at":[-9,1.49,-25.2],"from":[-9,3.24,-24.5],"way":{"run":0,"hold":0.4,"leapAt":9,"plungeAt":0.28},"prize":"flask","n":35}],"fen":[{"id":"fen-ledge1","kind":"ledge","at":[-12,1.67,11],"from":[-13.11,-0.5,10.54],"way":{"run":0,"hold":0.5,"leapAt":0.2},"prize":"ability","n":25},{"id":"fen-ledge2","kind":"ledge","at":[-16,1.73,2.5],"from":[-16,-0.5,1.3],"way":{"run":0,"hold":0.5,"leapAt":0.2},"prize":"glim","n":30},{"id":"fen-stone3","kind":"stone","at":[-3.8,-0.5,-3],"from":[-4.5,0.6,-3],"way":{"run":0,"hold":0.4,"leapAt":9,"plungeAt":0.28},"prize":"spark","n":35}],"bells":[{"id":"bells-ledge1","kind":"ledge","at":[4,5.4,0.5],"from":[2.34,3.72,-0.19],"way":{"run":0,"hold":0.5,"leapAt":0.2},"prize":"pattern","n":25},{"id":"bells-stone2","kind":"stone","at":[-1.01,6.78,27.99],"from":[-1.5,7.63,27.5],"way":{"run":0,"hold":0.4,"leapAt":9,"plungeAt":0.28},"prize":"spark","n":30}],"barrows":[{"id":"barrows-ledge1","kind":"ledge","at":[18.5,4.01,14],"from":[18.5,1.59,11.5],"way":{"run":0,"hold":0.5,"leapAt":0.2},"prize":"flask","n":25},{"id":"barrows-stone2","kind":"stone","at":[2.49,1.15,18.51],"from":[2,1.93,19],"way":{"run":0,"hold":0.4,"leapAt":9,"plungeAt":0.28},"prize":"glim","n":30}]};
 
 /* the second jump, pure, so the scan and the tests play the same rule: in the air, from 0.1 s after the take-off or the fall, on a fresh
-   press of Jump, once until the feet land. st: { used, was } kept by the caller. -> true when it jumped */
+   press of Jump, once until the feet land. st: { used, was } kept by the caller. A press the controller took as its own jump in this
+   step (the coyote time after walking off an edge) is not a second jump. -> true when it jumped */
 export function leap(s, st, jump, K = keyOf('leap')) {
   if (s.ground) st.used = false;
   const press = !!jump && !st.was;
   st.was = !!jump;
-  if (s.ground || st.used || !press || s.airTime < K.after) return false;
+  if (s.ground || st.used || !press || s.airTime < K.after || s.events?.includes('jump')) return false;
   s.vy = K.v;
   st.used = true;
   s.events?.push('jump');
@@ -53,11 +55,23 @@ export function makeKeys(R) {
     }
     return ev;
   };
+  /* a cache opens once a run: the cache and its prize go into the entry as well, so a reload (Back to the start, the restart after a
+     fall in a test) keeps both: the glim carried, a flask, the pattern or ability lamp at the cache and the rolls that drew it */
   function open(sp, ev) {
     const run = rs.run;
     (run.caches ||= []).push(sp.id);
-    if (run.entry) run.entry.caches = run.caches.slice();
+    const was = { carried: run.carried | 0, flasks: run.flasks | 0, gp: (run.groundPatterns || []).length, al: (run.abilityLamps || []).length };
     const what = R.prize ? R.prize(sp.prize, sp.at, ev, sp) : null;
+    const e = run.entry;
+    if (e) {
+      e.caches = run.caches.slice();
+      e.carried = (e.carried | 0) + Math.max(0, (run.carried | 0) - was.carried);
+      e.flasks = (e.flasks | 0) + Math.max(0, (run.flasks | 0) - was.flasks);
+      const copy = v => JSON.parse(JSON.stringify(v));
+      if ((run.groundPatterns || []).length > was.gp) e.groundPatterns = [...(e.groundPatterns || []), ...copy(run.groundPatterns.slice(was.gp))];
+      if ((run.abilityLamps || []).length > was.al) e.abilityLamps = [...(e.abilityLamps || []), ...copy(run.abilityLamps.slice(was.al))];
+      for (const k of ['patternRolls', 'abilityRolls']) if (k in run) e[k] = run[k];
+    }
     ev.push({ type: 'cache', spot: sp.id, kind: sp.kind, prize: sp.prize, what }, { type: 'store' });
     ev.push({ type: 'cue', cue: sp.kind === 'stone' ? 'cracks' : 'wisp', cache: sp.id });
     emit('cache-open', { spot: sp.id, prize: sp.prize, kind: sp.kind });

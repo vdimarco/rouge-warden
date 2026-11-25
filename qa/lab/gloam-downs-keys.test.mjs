@@ -2,17 +2,21 @@
 // prizes in run.js; openspec/changes/gloam-downs-growth). Each block is a scenario of the change's spec:
 //   Keys: the Rookchief's first fall gives Crow step and the Bellwether's Bell drop, saved at once with a toast and key-found, once;
 //   Crow step: a second jump in the air from 0.1 s after the take-off, once until the feet land, and 1.1 m more of rise;
-//   Hidden ledges: each place's ledges, played on its real walk map from their stand, are reached with Crow step and not without;
-//   Sealed stones: a plunge of 2 m or more with Bell drop cracks one; without the key, or from a lower fall, nothing;
+//   Hidden ledges: each place's ledges, played on its real walk map from their stand, are reached with Crow step and not without, and
+//     no single jump from any floor within 4 m reaches them (the cache opens only on the ledge);
+//   Sealed stones: a plunge of 2 m or more with Bell drop cracks one, with slack in the approach; without the key, or from a lower
+//     fall, nothing;
+//   Crow step and the coyote jump: a jump the controller takes in its coyote time is not the second jump;
 //   Caches: each prize (glim with the Ember factor, a spark pick, a pattern lamp, an ability lamp, a flask), once a run;
 //   The save: keys and caches kept, and rubbish dropped.
 // Run: node qa/lab/gloam-downs-keys.test.mjs
 import assert from 'node:assert/strict';
 import { makeWalk, makeBody, PARAMS, JUMP } from '../../public/lab/gloam-downs/play.js';
-import { startRun, makeRunner, flasksOf, groundPatterns } from '../../public/lab/gloam-downs/run.js';
+import { startRun, makeRunner, flasksOf, groundPatterns, reload } from '../../public/lab/gloam-downs/run.js';
 import { makeKeys, leap, SPOTS, groundSpots, keysLine } from '../../public/lab/gloam-downs/keys.js';
 import { makeAbilities, groundAbilities } from '../../public/lab/gloam-downs/abilities.js';
-import { tryLedge, tryStone, load } from './gloam-downs-ledges.mjs';
+import { tryLedge, tryStone, load, noLeap, stoneHolds } from './gloam-downs-ledges.mjs';
+import { reachable } from '../../public/lab/gloam-downs/play.js';
 import { LAMP_KEYS } from '../../public/lab/gloam-downs/growth.js';
 import { on } from '../../public/lab/gloam-downs/bus.js';
 import * as RS from '../../public/lab/gloam-downs/run-save.js';
@@ -60,7 +64,7 @@ const SAVED = JSON.parse(JSON.stringify(SPOTS));
 
 /* ---------------- Crow step ---------------- */
 { // the rule: in the air, from 0.1 s, on a fresh press, once until the feet land
-  const s = { ground: false, airTime: 0.05, vy: 2, events: [] }, st = { used: false, was: false };
+  const s = { ground: false, airTime: 0.05, vy: 2 }, st = { used: false, was: false };
   assert(!leap(s, st, true), 'not before 0.1 s');
   leap(s, st, false);
   s.airTime = 0.2;
@@ -98,20 +102,40 @@ const SAVED = JSON.parse(JSON.stringify(SPOTS));
   const out = {};
   for (const [id, list] of Object.entries(SAVED)) {
     const { meta, walk } = load(id);
-    // two ledges a place where the scan found two that its way opens from the rounded numbers; Barrow Crown has one (design.md)
-    assert(list.filter(s => s.kind === 'ledge').length >= (id === 'barrows' ? 1 : 2) && list.some(s => s.kind === 'stone'), `${id}: its ledges and a stone`);
+    // two ledges a place where the scan found two that its way opens and no single jump reaches; The Bell Knoll and Barrow Crown have
+    // one (design.md)
+    assert(list.filter(s => s.kind === 'ledge').length >= (id === 'barrows' || id === 'bells' ? 1 : 2) && list.some(s => s.kind === 'stone'), `${id}: its ledges and a stone`);
+    const R1 = reachable(walk, meta.spawn, meta.bounds), on = p => R1.near(p, 0.3, -0.15, 0.15);
     for (const sp of list) {
       if (sp.kind === 'ledge') {
         assert(tryLedge(walk, meta.bounds, sp.from, sp.at, sp.way, true).ok, `${id} ${sp.id}: reached with Crow step`);
         assert(!tryLedge(walk, meta.bounds, sp.from, sp.at, sp.way, false).ok, `${id} ${sp.id}: not without it`);
+        const one = noLeap(walk, meta.bounds, on, sp.at);
+        assert(!one, `${id} ${sp.id}: one jump from ${one?.from.map(v => v.toFixed(2))} reaches it`);
       } else {
         const r = tryStone(walk, meta.bounds, sp.from, sp.at, sp.way, false);
         assert(r && r.fallen >= 2 && Math.hypot(r.at[0] - sp.at[0], r.at[2] - sp.at[2]) < 0.3, `${id} ${sp.id}: a plunge from its stand falls ${r?.fallen} onto it`);
+        assert(stoneHolds(walk, meta.bounds, sp.from, sp.at, sp.way), `${id} ${sp.id}: a plunge with the stick let go 0.3 to 0.5 m early still opens it`);
       }
     }
     out[id] = list.map(s => s.id.split('-')[1]).join(' ');
   }
-  pass('hidden ground: every ledge is reached from its stand with Crow step and not without, and every stone takes a plunge of 2 m or more', out);
+  pass('hidden ground: every ledge is reached from its stand with Crow step, not without, and by no single jump from 4 m round; every stone takes a plunge of 2 m or more with slack in the approach', out);
+}
+{ // the cache opens on the ledge, not from the ground under it: feet 1.0 m under a ledge cache open nothing
+  const { R, rs } = setup({ keys: ['leap'], place: 'gaol', spots: [{ id: 'gaol-high', kind: 'ledge', at: [0, 1.0, 0.3], from: [0, 0, 0], prize: 'glim', n: 20 }] });
+  steps(R, 5);
+  assert.deepEqual(rs.run.caches, [], 'not from 1 m under it');
+  pass('ledge caches: the feet must stand on the ledge (within 0.35 m of its height), not under it');
+}
+{ // the coyote jump: off an edge, a press in the controller's coyote time is its own jump (8.2 m/s), and Crow step stays for later
+  const s = { ground: false, airTime: 0.11, vy: 8.2, events: ['jump'] }, st = { used: false, was: false };
+  assert(!leap(s, st, true), 'the controller took this press');
+  assert.equal(s.vy, 8.2);
+  assert(!st.used);
+  s.events = []; leap(s, st, false); s.airTime = 0.3;
+  assert(leap(s, st, true), 'and Crow step is still there');
+  pass('Crow step and the coyote jump: a press the controller jumps on is not the second jump');
 }
 { // the stone rule in a run: a plunge from a second jump's top (2 m or more) with Bell drop cracks the stone under it; without Bell
   // drop, or from one jump's top (1.4 m), nothing
@@ -154,6 +178,24 @@ const SAVED = JSON.parse(JSON.stringify(SPOTS));
   assert.equal(full.rs.run.carried, 30, 'flasks full: the glim instead');
   assert.equal(groundSpots(full.R).length, 0, 'an opened cache is not drawn again');
   pass('caches: glim with the Ember factor, a spark pick at once, a pattern lamp, an ability lamp, a flask (or its glim when full), once a run');
+}
+{ // a reload (Back to the start) keeps an opened cache's prize as well as the cache: the glim, the flask, the lamp at the cache
+  const at = [0, 0, 0.3];
+  const after = (prize, o = {}) => {
+    const { R, rs } = setup({ keys: ['leap'], place: 'fen', spots: [{ id: 'fen-test', kind: 'ledge', at, from: at, prize, n: 30 }] });
+    if (o.flasks !== undefined) { rs.run.flasks = o.flasks; rs.run.entry.flasks = o.flasks; }
+    steps(R, 3);
+    reload(rs.run);
+    return { R, rs };
+  };
+  assert.equal(after('glim').rs.run.carried, 30, 'the glim');
+  assert.equal(after('flask', { flasks: 0 }).rs.run.flasks, 1, 'the flask');
+  const pt = after('pattern');
+  assert.equal(pt.rs.run.groundPatterns.length + pt.rs.run.carriedPatterns.length, 1, 'the pattern lamp');
+  const ab = after('ability');
+  assert.equal(ab.rs.run.abilityLamps.length + ab.rs.run.abilities.filter(Boolean).length, 2, 'the ability lamp');
+  assert.deepEqual(after('glim').rs.run.caches, ['fen-test']);
+  pass('caches after a reload: the cache stays open and its glim, flask, pattern lamp or ability lamp stays too');
 }
 
 /* ---------------- The save ---------------- */

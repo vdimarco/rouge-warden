@@ -64,6 +64,37 @@ export const HALO = { r: 0.24, s: 0.028, spin: 1.6, bob: 0.03, crown: 6, crownR:
    the colour of a foe's tell, so the caches stay in the lamp's colours) */
 export const GROWTH_CI = { flame: 33, ward: 38, gloam: 39 };
 export const LAMPS = { r: 0.16, s: 0.04, lift: 0.4, stoneR: 0.5 };
+/* what an ability leaves on the ground, as steady dabs that read from the follow camera (8.5 m back): a snare is a ring of 14 ember dabs
+   as wide as its reach with a pale centre that blinks, a pool of pitch is three rings of dark and ember dabs that fill its 2 m, so it
+   reads as a pool and not as glim. Both stand 0.15 m over the ground */
+export const GROUND_FX = { snare: { n: 14, s: 0.07, lift: 0.15 }, pitch: { rings: [[0.35, 5], [0.65, 9], [0.95, 13]], s: 0.065, lift: 0.15 } };
+export function effectDabs(e, t = 0) {
+  const out = [];
+  if (e.kind === 'snare') {
+    const G = GROUND_FX.snare;
+    for (let i = 0; i < G.n; i++) { const a = (i / G.n) * Math.PI * 2; out.push({ kind: 'snare', x: e.at[0] + Math.sin(a) * e.r, y: e.at[1] + G.lift, z: e.at[2] + Math.cos(a) * e.r, ci: i % 2 ? 34 : 46, s: G.s }); }
+    out.push({ kind: 'snare', x: e.at[0], y: e.at[1] + G.lift, z: e.at[2], ci: 47 - (Math.floor(t * 4) % 2), s: G.s * 1.4 });
+  } else if (e.kind === 'pitch') {
+    const G = GROUND_FX.pitch;
+    G.rings.forEach(([k, n], r) => { for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2 + t * 0.5 * (r % 2 ? -1 : 1); out.push({ kind: 'pitch', x: e.at[0] + Math.sin(a) * e.r * k, y: e.at[1] + G.lift, z: e.at[2] + Math.cos(a) * e.r * k, ci: (i + r) % 2 ? 33 : 34, s: G.s }); } });
+  }
+  return out;
+}
+/* a foe's state, as abilities put it on (status.js), drawn on the foe: stunned, 5 pale dabs circling over the head; held by a snare, a
+   ring of 6 warm lamp dabs at the feet (not a fire slot, so it never reads as a tell); slowed, 4 frost dabs (Ward's deep 38) at the chest; burning, 3 dark ember dabs rising. Each shows
+   while its count runs and goes when it ends */
+export const STATE_DABS = { stun: { n: 5, r: 0.32, s: 0.05 }, hold: { n: 6, r: 0.55, s: 0.055 }, slow: { n: 4, r: 0.4, s: 0.05 }, burn: { n: 3, r: 0.22, s: 0.05 } };
+export function stateDabs(f, t = 0) {
+  const st = f?.status, out = [];
+  if (!st || !f.alive) return out;
+  const chest = f.T?.chest ?? 1, r = f.T?.r ?? 0.45;
+  const ring = (kind, y, rr, ci, spin = 0) => { const D = STATE_DABS[kind]; for (let i = 0; i < D.n; i++) { const a = (i / D.n) * Math.PI * 2 + t * spin; out.push({ kind: `state-${kind}`, x: f.x + Math.sin(a) * rr, y, z: f.z + Math.cos(a) * rr, ci, s: D.s }); } };
+  if (st.stun > 0) ring('stun', f.y + chest + 0.75, STATE_DABS.stun.r, 47, 4);
+  if (st.hold > 0) ring('hold', f.y + 0.12, Math.max(STATE_DABS.hold.r, r + 0.15), 46, 1);
+  if (st.slow > 0) ring('slow', f.y + chest, Math.max(STATE_DABS.slow.r, r + 0.1), 38, -0.8);
+  if (st.burn > 0) for (let i = 0; i < STATE_DABS.burn.n; i++) { const u = (t * 0.9 + i / STATE_DABS.burn.n) % 1, a = i * 2.1; out.push({ kind: 'state-burn', x: f.x + Math.sin(a) * STATE_DABS.burn.r, y: f.y + 0.4 + u * (chest + 0.4), z: f.z + Math.cos(a) * STATE_DABS.burn.r, ci: 33, s: STATE_DABS.burn.s * (1 - 0.5 * u) }); }
+  return out;
+}
 export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still = false, fx = {}, project = null, doc = null, mix = { ember: 0 }, emit = null, dressOf = () => null, clipOf = () => null, groundRelics = () => [],
   groundPatterns = () => [], groundAbilities = () => [], groundSpots = () => [] }) {
   const water = WATER[meta.id];
@@ -529,10 +560,11 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
     }
     const A = G.runner?.abilities;
     for (const e of A?.effects || []) {
-      if (e.kind === 'snare') for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; out.push({ kind: 'snare', x: e.at[0] + Math.sin(a) * e.r, y: e.at[1] + 0.1, z: e.at[2] + Math.cos(a) * e.r, ci: 34, s: 0.03 }); }
-      else if (e.kind === 'pitch') for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2 + t * 0.5; out.push({ kind: 'pitch', x: e.at[0] + Math.sin(a) * e.r * 0.8, y: e.at[1] + 0.08, z: e.at[2] + Math.cos(a) * e.r * 0.8, ci: i % 2 ? 33 : 34, s: 0.035 }); }
+      if (e.kind === 'snare' || e.kind === 'pitch') out.push(...effectDabs(e, t));
       else if (e.kind === 'moth' && s0()) { const L = s0(); for (let i = 0; i < 3; i++) out.push({ kind: 'moth', x: L.x + 0.45 + 0.06 * Math.sin(t * 9 + i), y: L.y + 1.5 + 0.05 * i, z: L.z + 0.06 * Math.cos(t * 7 + i), ci: 39, s: 0.03 }); }
     }
+    // the foes' states: stunned, held, slowed, burning
+    for (const f of foes.foes) if (f.status && f.state !== 'dying' && foes.shown(f)) out.push(...stateDabs(f, t));
     if (A?.guard && s0()) { const L = s0(); for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2 + t * 3; out.push({ kind: 'guard', x: L.x + Math.sin(a) * 0.7, y: L.y + 0.9, z: L.z + Math.cos(a) * 0.7, ci: 36, s: 0.03 }); } }
     return sparks ? out.slice(0, sparks.glow) : out;
   }

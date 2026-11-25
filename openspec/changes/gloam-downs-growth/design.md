@@ -65,6 +65,7 @@ Two lasting keys (`LAMP_KEYS` in `growth.js`; the name keeps it apart from `inpu
 | Bell drop | The Bellwether, The Bell Knoll | a plunge that falls 2 m or more onto a sealed stone cracks it open | sealed stones |
 
 - **No rebake.** The second jump sets `body.s.vy` from `keys.js` on a fresh jump press while the body is in the air. `play.js` integrates `vy` as it does now, so the controller does not change. A sealed stone is a ring of spark dabs with a crack glow (slot 33) on flat walk-map floor; it is drawn, and the stone opens by a rule, so it needs no mesh.
+- **The rules on the ground.** A ledge's cache opens to feet on the ground within 1 m of it and 0.35 m of its height (`KEY_RULES.rise`), so it opens on the ledge, not from the floor under it. A jump the controller takes in its coyote time (0.12 s after walking off an edge) is not the second jump, so Crow step stays for a second press.
 - **Finding the ledges.** `qa/lab/gloam-downs-ledges.mjs` (new, builder P) runs `reachable(walk, start, bounds, P)` twice for each place: with `PARAMS`, and with the jump speed whose top is the two jumps together (`jumpV` = 10.94 m/s, top 2.49 m, about the 1.40 + 1.14 m that the two jumps reach at best). Cells the second search reaches and the first does not are ledge cells. It groups them into patches of 1.5 m² or more, and prints each patch's centre, height and nearest route point. Builder P picks at least 2 ledges in each place from this list and writes them into `SPOTS` in `keys.js`. Where a ledge joins two route points with a walk 10 m or more shorter than the route between them, it is a **shortcut**: at least two places must have one, or design.md says the scan found none.
 - **Sealed stones.** At least 1 in each place, on flat floor (slope under 0.1, open 1.8 m over), 2 m or more under a ledge or a roof edge the lamplighter can stand on, found by the same script.
 - **Caches.** Each ledge and stone holds a cache. Its prize, fixed in `SPOTS`: `glim` (20 to 40, before the Ember factor), `spark` (one spark pick), `pattern`, `ability` (an ability lamp) or `flask` (fills one flask). A cache opens once a run. The bot takes the caches it can reach, so the side trips count in the pacing.
@@ -89,13 +90,15 @@ Two lasting keys (`LAMP_KEYS` in `growth.js`; the name keeps it apart from `inpu
 
 ### Slots and inputs
 - Two slots. Each holds one ability or nothing, and each has its own cooldown on the play clock. A press while the slot cools does nothing but the `refuse` cue.
+- The cooldowns carry over to the next place: the runner of each place copies them to `rs.run.abilityLive`, and the next runner (Walk on, Back to the start) starts from them, with a Moth wisp still flying. A snare, a pool of pitch and a bomb in flight stay in the place they were laid in. A page reload starts them ready (`abilityLive` is not saved).
 - Inputs (new; the old ones do not change but one):
   - Keys: F or U for slot 1, G or I for slot 2.
-  - Mouse: side buttons 3 (back) for slot 1 and 4 (forward) for slot 2, while the mouse is taken or free. The view takes `pointerdown`, `mouseup` and `auxclick` of these buttons with `preventDefault`, so the browser does not go back a page. The keys stay for a mouse that has no side buttons.
+  - Mouse: side buttons 3 (back) for slot 1 and 4 (forward) for slot 2, while the mouse is taken or free. They are read from `pointerdown`, `pointermove` (a side button pressed while another is down) and `pointerup`, whose default the page cancels, so the browser does not go back a page. Chromium sends no `mousedown` after a cancelled `pointerdown`, so the page never reads them from `mousedown`; it still cancels `mousedown`, `mouseup` and `auxclick` of these buttons. The keys stay for a mouse that has no side buttons. The run's help card adds "Mouse buttons 4 and 5 use the abilities too. On an ability lamp, an ability's key swaps it." The pause panel keeps the short "F G abilities", so it still fits at 800 by 600 with no scroll.
   - Pad: LB (4) for slot 1, LT (6) for slot 2. **LT no longer rolls**; B still does. This is the one change to an old input: the pad has no other free shoulder button, and a shoulder can be pressed with the thumb on the right stick.
-  - Touch: two round buttons, `#bAb1` and `#bAb2`, 56 px, above and left of Attack in the right-thumb group, each with its cooldown as a dark sweep and the ability's glyph. They are hidden while the slot is empty.
+  - Touch: two round buttons, `#bAb1` and `#bAb2`, 56 px, above and left of Attack in the right-thumb group, each with the ability's short name. While a slot cools its button goes grey and near black, its label is the seconds left in 20 px figures, and the time left is a pale sweep that shrinks. They are hidden while the slot is empty.
+  - The HUD's key labels follow the input in use: a pad press shows LB and LT, and a key or a mouse press in play shows F and G again.
 - A press is buffered 0.15 s, as the moves are, and waits for the next play step in hit stop.
-- An ability does not start while the lamplighter drinks, rolls or is hurt. It can start in the air (but Smoke step and Bell guard) and after a cut's strike.
+- An ability does not start while the lamplighter drinks, rolls, is hurt or plunges: the press gives the `refuse` cue and is spent. It can start in the air (but Smoke step and Bell guard, which also refuse there) and after a cut's strike.
 
 ### The abilities
 `ABILITIES` in `growth.js` holds the numbers. Two are kindled from the first run (Lantern bomb, Smoke step); the other seven are patterns. Each power value grows by its colour.
@@ -103,23 +106,24 @@ Two lasting keys (`LAMP_KEYS` in `growth.js`; the name keeps it apart from `inpu
 | Ability | Colour | Cooldown | What it does | Its tell (seen before it hurts) | Cue | Drawn as |
 |---|---|---|---|---|---|---|
 | Lantern bomb | Flame | 8 s | throws a lantern 6 m ahead (to the soft-aim foe within 8 m); it bursts 0.6 s later for 28 in 2.5 m, and burns for 6 over 2 s | a ring marker on the ground for the 0.6 s | `coal` on the throw, `slam` on the burst | an arc of dabs, then a ring and a flash in fire slots under 37 |
-| Smoke step | Gloam | 6 s | moves 4 m in the stick's way (or ahead) in 0.12 s, safe for 0.3 s; a near miss in it counts as the roll's | none needed; it hurts nothing | `roll` | a puff at both ends, grey dabs |
-| Ember snare | Gloam | 10 s | sets a snare at the feet; the first light foe that steps in is held 2 s and takes 10; heavy foes are slowed 50% | the snare's ring glows on the ground | `cracks` | a ring of 8 dabs |
+| Smoke step | Gloam | 6 s | moves 4 m in the stick's way (or ahead) over 0.12 s (a share each play step, so a blow in it is judged where the lamplighter is on the way), safe for 0.3 s; a near miss in it counts as the roll's | none needed; it hurts nothing | `roll` | a puff at both ends, grey dabs |
+| Ember snare | Gloam | 10 s | sets a snare at the feet; the first foe that steps in springs it (a light foe before a heavy one): a light foe is held 2 s, a heavy foe slowed 50%, and either takes 10 | the snare's ring glows on the ground | `cracks` | a ring of 14 dabs 0.07 m across, 0.15 m up, with a blinking centre |
 | Moth wisp | Gloam | 18 s | a wisp flies at the lamplighter's shoulder for 12 s and hits the nearest awake foe within 6 m for 5 each 0.8 s | the wisp's line to its foe shows 0.2 s before each hit | `wisp` | a lamp-colour wisp of 6 dabs |
-| Crook line | Flame | 7 s | a line to the soft-aim foe within 7 m: pulls a light foe to 1.2 m in front and deals 8; pulls the lamplighter to a heavy foe | the line shows for 0.15 s before the pull | `charge` | a line of dabs |
+| Crook line | Flame | 7 s | a line to the soft-aim foe within 7 m: pulls a light foe to 1.2 m in front (centre to centre, over 0.2 s) and deals 8; pulls the lamplighter to a heavy foe | the line shows for 0.15 s before the pull | `charge` | a line of dabs |
 | Rime lamp | Ward | 12 s | a cone of 4 m and 70° ahead; foes in it move and wind up 50% slower for 3 s | a pale cone on the ground for 0.2 s | `shards` | a fan of pale dabs, frost on the foes |
 | Flare | Ward | 14 s | every foe within 4 m that sees the lamplighter is stunned 1.2 s; a wind-up under way stops | a white core grows for 0.25 s | `light` | a burst of dabs, bright but under fire 37 |
-| Pitch pour | Flame | 12 s | a pool of 2 m at the feet for 4 s; a foe in it burns for 4 each 0.5 s; a burn from the blade or a bomb doubles it once | the pool shows at once; it burns from 0.3 s | `pulse` | a dark ring with ember dabs |
+| Pitch pour | Flame | 12 s | a pool of 2 m at the feet for 4 s; a foe in it burns for 4 each 0.5 s; a burn from the blade or a bomb doubles it once | the pool shows at once; it burns from 0.3 s | `pulse` | three rings of dark and ember dabs (5, 9 and 13) that fill the 2 m |
 | Bell guard | Ward | 9 s | for 0.8 s the next hit from in front is turned aside (no damage) and a coal is thrown back at its Pitchrook for 12 | a ring at the lamp for the 0.8 s | `clang` | a ring of dabs round the lamplighter |
 
 - Damage counts as Flame, Ward or Gloam damage by the ability's colour. It is not blade damage, so Edge and Keen edge do not raise it; Flame does, for Flame abilities. It rounds once.
 - An ability hit adds to the combo as a relic hit does (at most 1 each 0.25 s) and takes hit stop of 2 steps, inside the cap.
-- Stun, hold and slow are new foe states (`status` on the foe): a stunned or held foe stops, and its wind-up stops; a slowed foe walks and winds up at half speed. A heavy foe (an Ironback, an elite that is not light) is never held, only slowed; a stun on it lasts half as long. The Barrow Reeve takes damage from abilities, but no stun, hold or slow, so its fight keeps its rules.
+- Stun, hold and slow are new foe states (`status` on the foe): a stunned or held foe stops, and its wind-up stops; a slowed foe walks, winds up and charges at half speed (the Ironback's charge and the hook's step too). Each state shows while it lasts (`stateDabs` in `fight.js`): a stunned or held foe stands in a stagger's pose (`poseOf`), with 5 pale dabs circling over its head (stun) or 6 warm lamp dabs at its feet (hold); a slowed foe has 4 frost dabs (Ward's 38) at its chest; a burning foe 3 dark embers rising. None is a fire slot but the snare's ember 34, so a state never reads as a tell. A heavy foe (an Ironback, an elite that is not light) is never held, only slowed; a stun on it lasts half as long. The Barrow Reeve takes damage from abilities, but no stun, hold or slow, so its fight keeps its rules.
 - **Bright abilities.** A drop is bright with a chance of 10% plus 4% for each Keen eye level. A bright ability has 25% more power and its button has a gold edge.
 
 ### Ability lamps
 - An ability drops as a lamp of its colour: from a foe put out, 3% (plus 1% each Keen eye level), at most 3 a run; from a cache with the prize `ability`; and at the start (Belt). The seed's `ability` stream draws it from the kindled abilities.
-- A touch fills an empty slot. With both slots full, a toast says "Lantern bomb · press an ability to swap". Pressing a slot's input while standing on the lamp swaps it: the old ability lies there as a lamp. No card opens, so a fight does not stop.
+- A touch fills an empty slot. With both slots full, a toast says "Lantern bomb · press an ability to swap" as the feet touch the lamp (the runner sends an `ability` event, and the page shows its toasts on it). Pressing a slot's input while standing on the lamp swaps it: the old ability lies there as a lamp. No card opens, so a fight does not stop.
+- A swap keeps the cooldowns: the lamp of the ability put down holds the cooldown it had (`cool`, `full` in play steps) and goes on cooling where it lies; an ability taken from a lamp starts with what its lamp holds. A new lamp from a drop or a cache holds none. The save keeps a lamp's cooldown.
 
 ### Abilities with the moves
 - The panes and relics that name a move do not change. Hot glass and the other panes name abilities (see `PANES`).
@@ -414,6 +418,16 @@ Against the targets:
 - At 0.9 the first win in run 1 to 3: **met** (run 1).
 - At 0.9 a winning run of 15 to 25 minutes: **missed** (10.3 min). No lever measured here moves it far: foes with 4.2 times the health in Barrow Crown add about 1.5 minutes to a 0.9 run (8.9 to 10.3), because a skilled bot's run is mostly walking, wisps and side trips, and its abilities end fights fast. Nudges add 1.2 minutes of that. Reaching 15 minutes needs more ground to cover (longer routes or more places), which is new content and the user's call, not a number to tune. Slower moves were ruled out by the design.
 
+**After the second fix pass** (same levers; the abilities' fixes, the rescanned spots and the cache rules changed), 60 bots at each skill:
+
+| Skill | First run reaches place 2 | Median first win | Winning run | Runs (won) | Glim at a death, kept / lost | The Reeve's fight | Catalogue 25% bought | Abilities a run | Caches a run | Nudges a run (time) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 0.3 | 36 of 60 (60%) | run 30 (11 of 60 won within 40 runs) | 5.7 min | 2,344 (12) | 15 / 61 | 31 s | run 36 (16 of 60) | 16.5 | 2.0 | 5.2 (0.3 min) |
+| 0.5 | 58 of 60 | run 9 (60 of 60) | 6.5 min | 835 (124) | 10 / 39 | 33 s | run 14 (32 of 60) | 40.9 | 4.2 | 9.6 (0.6 min) |
+| 0.9 | 59 of 60 | run 2 (60 of 60) | 10.1 min | 440 (206) | 12 / 45 | 45 s | run 9 (14 of 60) | 87.9 | 4.8 | 17.2 (1.2 min) |
+
+The three targets met before are still met (60%, run 9, run 2), and the 15 to 25 minute run still misses (10.1). The 0.3 bots win less often than before this pass: 11 of 60 within 40 runs (was 34), and 1,076 of their 2,344 runs end at The Crow Wall. The likely causes are the cooldowns that no longer come back ready at each place and a cache that opens only on its ledge; this was not split by lever. It is not one of the four targets, but it is the slow player's way through, so it is the next thing to look at.
+
 Players are not bots: a person reads wind-ups less well than the 0.9 bot and walks less straight, so a real run is longer. These numbers say how the levers move the bots, not how long a person plays.
 
 ### Checks after the fix pass
@@ -424,6 +438,58 @@ Players are not bots: a person reads wind-ups less well than the 0.9 bot and wal
 - Pacing: the tables above; and `MAXRUNS=30 AFTER=30 node qa/lab/gloam-downs-bot.mjs 10 0.5 1`: a buy in 281 of 300 runs, and the catalogue bought to 25% by run 9, 50% by run 16, 75% by run 24 and all of it by run 30 (5 of 10 bots).
 - `openspec validate gloam-downs-growth --strict`: valid.
 - Not checked: a real phone, a real gamepad, real mouse side buttons on hardware (the e2e sends the events), and listening on speakers. No run was played by hand.
+
+### Second fix pass after the checkers
+Run on `ccr-43aa269a-y8yo7l` after the pacing pass was merged (7760ad79), on 2026-11-25. Each problem was confirmed first, and each fix has a test that fails on 7760ad79: the new Node blocks were run there with each block caught on its own, and the new browser checks were run against 7760ad79 served on its own port with soft asserts. Every one failed there and passes now.
+
+| Problem | Seen | Done | Test |
+|---|---|---|---|
+| A swap on a lamp reset the cooldown, so two presses made an ability ready again (high) | yes: `A.cool[i] = 0` and the old ability dropped as a plain lamp | the lamp holds the cooldown of the ability put down and keeps cooling; an ability taken from a lamp starts with it | abilities: "the swap" |
+| A place change reset both cooldowns and dropped a Moth wisp | yes: each place's runner made new cooldowns | `rs.run.abilityLive` carries the cooldowns and a Moth wisp; a snare, a pool and a bomb stay in their place | abilities: "a new place" |
+| The swap hint came only with the swap | yes: notes became toasts only on other events | the runner sends an `ability` event on the lamp; the page shows toasts on `ability`, `cache` and `key` events | abilities: "the swap hint"; e2e run.abilities |
+| The touch cooldown could not be seen | yes | a cooling button goes grey and near black, its label is the seconds in 20 px figures, and the sweep is pale | e2e run.abilities (4 touch layouts) |
+| Foe states had no look; no frost for Rime | yes | `stateDabs` (stun, hold, slow as frost, burn) and the stagger pose for a stunned or held foe | abilities: "foe states drawn" |
+| The snare and the pool could not be read | yes | `effectDabs`: a ring of 14 dabs and a centre, three rings for the pool, 0.065 to 0.07 m, 0.15 m up | abilities: "snare and pitch drawn" |
+| Real side buttons never used an ability in Chromium (high) | yes: no `mousedown` after a cancelled `pointerdown` | read from `pointerdown`, `pointermove` and `pointerup` | e2e run.abilities, with real input through the DevTools protocol |
+| One normal jump reached 6 of 9 ledges, and a cache opened from 1.3 m under it (high) | yes: `noLeap` found a stand for each of the 6 | the scan keeps only ledges no single jump reaches from any floor within 4 m (`noLeap`, 24 bearings, 8 radii, every layer, runs and short hops); a ledge cache opens only within 0.35 m of its height; rescanned | keys: "hidden ground", "ledge caches" |
+| A v2 run lost slot 1 on the first reload | yes | slot 1 is set before the entry is copied | run: "a v2 run" |
+| A reload lost a cache's prize, but the cache stayed open | yes | the prize (glim, flask, lamp, the rolls) goes into the entry with the cache | keys: "caches after a reload" |
+| The ability stream did not rewind on Back to the start | yes: no `abilityRolls` at the start | the run starts with `abilityRolls: 0` | run: "the ability stream" |
+| Low: two stones opened only on a knife-edge approach | yes | the scan keeps a stone only when a plunge with the stick let go 0.3, 0.4 or 0.5 m early and Attack at 0.22 or 0.34 s all open it; the Gaol and Bell Knoll stones moved | keys: "hidden ground" |
+| Low: a press while busy gave no cue | yes | `refuse` with `busy`, and the press is spent (the spec's rule) | abilities: "busy" |
+| Low: a snare and Rime did not slow a charging Ironback; a snare on a heavy foe was never spent | yes: 10 m/s through it | a slow scales a hard drive too (the charge, the hook's step); a heavy foe springs a snare and takes its 10 (a light foe first in the same step) | abilities: "the Ironback's charge" |
+| Low: Crook line pulled to 2.0 m | yes | the push speed is set for the walker's 400 m/s², over 0.2 s, to 1.2 m centre to centre | abilities: "Crook line" (1.2 m) |
+| Low: the HUD kept LB/LT after the keys; no help for the side buttons or the swap | yes | a key or mouse press in play gives the labels back; the help lines name mouse 4 and 5 and the swap | e2e run.abilities |
+| Low: after Kindle the focus went to a Buy | yes | it goes to the pane just kindled, else the next Kindle, else a pane button | e2e run.growth |
+| Low: Bell guard spent on a blow in the roll's safe time | yes | `R.hurt` checks the safe time before the guard | abilities: "Bell guard" |
+| Low: Smoke step was a teleport | yes | it moves a share each play step over 0.12 s | abilities: "Smoke step" |
+| Low: a coyote jump used up Crow step | yes | `leap` skips a press the controller jumped on in that step | keys: "Crow step and the coyote jump" |
+
+The spots after the rescan (`node qa/lab/gloam-downs-ledges.mjs --write`; patches of 1 m² or more, up to 10 cells of each tried as the cache):
+
+| Place | Ledges | Stone |
+|---|---|---|
+| The Sunken Gaol | (2, 7.33, -16.5) glim; (7, 9.38, 25) spark | (-1.3, 4.13, -24) glim |
+| The Crow Wall | (-22, 1.78, -28) pattern; (-29.5, 1.92, -29) glim | (-9, 1.49, -25.2) flask |
+| Lantern Fen | (-12, 1.67, 11) ability; (-16, 1.73, 2.5) glim | (-3.8, -0.5, -3) spark |
+| The Bell Knoll | (4, 5.4, 0.5) pattern | (-1.01, 6.78, 27.99) spark |
+| Barrow Crown | (18.5, 4.01, 14) flask | (2.49, 1.15, 18.51) glim |
+
+The Bell Knoll has one ledge now: its other two patches that Crow step opens are within 6 m of the first. The spark caches are still three (Gaol, Fen, Bell Knoll). The scan still does not look for shortcuts.
+
+Screenshots of the new look (1280 by 720, the Gaol, software WebGL): the snare's ring and the pool's three rings read from the follow camera; a stunned Snuffer shows its pale ring and a slowed one its frost. They were looked at, not compared by a test.
+
+What is still not fixed:
+- The snare and the pool are laid at the feet, so the lamplighter's body still hides part of them for the first moment; they read once the lamplighter moves.
+- No real phone, gamepad, mouse side buttons on hardware or speakers. The side buttons were sent as real mouse input through the DevTools protocol; the pad was a mock.
+
+### Checks after the second fix pass
+- Node: all pass. abilities 28 (9 new), boss 28, builds 34, camera 49, feel 11, foes-ai 44, foes 32, growth 28, keys 9 (3 new), lattice 16, mouse 11, run 70 (2 new), seed 9, sound 29, stairs 1, uniform-blocks 10, gloam-downs 33. `gloam-downs-zones.mjs`: 177 ok lines, none bad.
+- Browser (Chromium on SwiftShader, the site served on 8765): run.abilities 9, run.growth 4, run.boss 24, run.fight 8, run.input 15, run.builds 7, run.sound 20, run.cards 12, run.lineup 15, run.swing 2, run.feel 5, camera 8, mouse 8, clicks 46, cutaway 1, gloam-downs.e2e 16. run.cards failed once (the pause panel scrolled 4 px at 800 by 600 with a longer help line); the mouse line moved to the run's help card, and run.cards and run.abilities passed again.
+- `quiet.mjs --only=lab/gloam-downs`: 35 of 35. Music demo: passes, 164 files.
+- Pacing: the table "After the second fix pass" above.
+- `openspec validate --strict`: `gloam-downs-growth` and `gloam-downs-real-game` are valid.
+- Not checked: a real phone, a real gamepad, mouse side buttons on hardware, and listening on speakers. No run was played by hand.
 
 ## Checks
 - Node: all pass. boss 28, builds 34, camera 49, feel 11, foes-ai 44, foes 30, growth 23, lattice 16, mouse 11, run 68, seed 9, sound 28, stairs 1, uniform-blocks 10, gloam-downs 33. `gloam-downs-zones.mjs`: 142 ok lines, none bad.

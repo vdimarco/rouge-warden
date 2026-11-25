@@ -158,6 +158,8 @@ try {
     r = await run(page);
     assert.deepEqual([r.carried, r.bank, r.patterns, r.kindledAll.includes('rime')], [0, 70, [], true]);
     assert(!(await page.isVisible('#patterns')) && !(await page.isVisible('#patternsT')), 'no pattern left to kindle');
+    // the focus stays in the Lamp-room's growth rows (a pane button here), not on a Buy button of the wares
+    assert(await G(page, () => !!document.activeElement?.closest('#paneRow, #patterns')), `the focus after Kindle: ${await G(page, () => document.activeElement?.textContent)}`);
     pass('kindle: the Rime lamp\'s row says "80 more glim" with 40 carried, then Kindle takes the 40 carried and 80 of the bank', { bank: r.bank });
     // two pane slots: Lantern panes 1, then Thick glass in slot 1 is not offered in slot 2
     await G(page, () => window.__gloam.set({ bank: 300 }));

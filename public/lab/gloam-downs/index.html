@@ -122,8 +122,12 @@
   .act.ab.flame { border-color: #c8743a; color: #ffd9b4; }
   .act.ab.ward { border-color: #5fa874; color: #d4f6dc; }
   .act.ab.bright { box-shadow: 0 0 0 2px #e8c35a; }
-  .act.ab i { position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(rgba(0, 0, 0, 0.62) calc(var(--cd) * 360deg), transparent 0); pointer-events: none; }
+  /* a cooling ability: the button goes grey and near black, the time left is a pale sweep that shrinks as it cools, and the label
+     gives the seconds in large figures; a ready one keeps its colour and its name */
+  .act.ab i { position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(rgba(214, 206, 240, 0.34) calc(var(--cd) * 360deg), transparent 0); pointer-events: none; }
   .act.ab b { position: relative; font: 800 10px/1 var(--body); }
+  .act.ab.cool { background: rgba(8, 7, 12, 0.9); border-color: #57525f; color: #f4f0ff; }
+  .act.ab.cool b { font-size: 20px; }
   .act.ab1 { right: calc(26px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 170px); }
   .act.ab2 { right: calc(100px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 150px); }
   body.run .jump { width: 64px; height: 64px; right: calc(16px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 12px); padding: 0; }

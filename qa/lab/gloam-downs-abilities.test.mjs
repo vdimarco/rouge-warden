@@ -20,7 +20,8 @@ import { KEYS, mouseAct, readPads, PAD } from '../../public/lab/gloam-downs/inpu
 import { makeBoss } from '../../public/lab/gloam-downs/boss.js';
 import * as RS from '../../public/lab/gloam-downs/run-save.js';
 import { ABILITIES } from '../../public/lab/gloam-downs/growth.js';
-import { GROWTH_CI } from '../../public/lab/gloam-downs/fight.js';
+import { GROWTH_CI, effectDabs, stateDabs, GROUND_FX } from '../../public/lab/gloam-downs/fight.js';
+import { poseOf } from '../../public/lab/gloam-downs/foes.js';
 import fs from 'node:fs';
 
 let n = 0;
@@ -98,13 +99,16 @@ const press = (R, key) => [...R.step({ [key]: true }, 0), ...R.step({}, 0)];
   assert.deepEqual(foes.map((f, i) => hp0[i] - f.hp), [34, 34], 'and the burn');
   pass('Lantern bomb: a ring at the foe for 0.6 s, then 28 to each foe in 2.5 m, and 6 more over 2 s');
 }
-{ // Smoke step: 4 m ahead in one step, and a blow in its 0.3 s is a near miss (as the roll's)
+{ // Smoke step: 4 m ahead over 0.12 s (7 play steps, a share each step), and a blow in its 0.3 s is a near miss (as the roll's)
   const { R, s } = setup({ slots: ['step', null] });
-  press(R, 'ab1');
-  assert(Math.abs(s.z - 4) < 0.3 && Math.abs(s.x) < 0.1, `at ${s.x}, ${s.z}`);
+  R.step({ ab1: true }, 0); R.step({}, 0);
+  const z1 = s.z;
+  assert(z1 > 0.3 && z1 < 1.0, `after one step it is on its way, at ${z1}`);
   assert.equal(R.fighter.safe(), 'roll');
   assert.equal(R.hurt(20, [0, 6]), 'safe');
-  pass('Smoke step: 4 m ahead at once, and safe for 0.3 s as the roll is', { z: +s.z.toFixed(2) });
+  steps(R, 6);
+  assert(Math.abs(s.z - 4) < 0.3 && Math.abs(s.x) < 0.1, `at ${s.x}, ${s.z}`);
+  pass('Smoke step: 4 m ahead over 0.12 s, and safe for 0.3 s as the roll is', { z1: +z1.toFixed(2), z: +s.z.toFixed(2) });
 }
 { // Ember snare: the first light foe in it is held 2 s and takes 10; an Ironback is slowed, not held
   const { R, foes } = setup({ slots: ['snare', null], foes: [['S', 0, 0.6], ['I', 0.3, -0.6]] });
@@ -125,6 +129,17 @@ const press = (R, key) => [...R.step({ [key]: true }, 0), ...R.step({}, 0)];
   assert.equal(h0 - f.hp, 8);
   assert(f.z < 2.6, `pulled to ${f.z.toFixed(2)}`);
   pass('Crook line: a Snuffer at 6 m comes in and takes 8', { z: +f.z.toFixed(2) });
+}
+{ // Crook line on flat ground: a Snuffer 5 m ahead ends about 1.2 m from the lamplighter (centre to centre), as design.md says
+  const { R, s, foes } = setup({ slots: ['crook', null], foes: [['S', 0, 5]] });
+  const f = foes[0];
+  f.cool = 999;
+  press(R, 'ab1');
+  // the line's 0.15 s and the pull's 0.2 s (the hit's stop on top); then the foe is free to walk again
+  steps(R, 26);
+  const d = Math.hypot(f.x - s.x, f.z - s.z);
+  assert(Math.abs(d - 1.2) < 0.3, `ends ${d.toFixed(2)} m off`);
+  pass('Crook line: a light foe 5 m off is pulled to 1.2 m in front', { d: +d.toFixed(2) });
 }
 { // Rime lamp slows the foes in its cone; Flare stuns those within 4 m that it sees, and stops a wind-up
   const { R, foes } = setup({ slots: ['rime', 'flare'], foes: [['S', 0, 2.5], ['S', 0, -3]] });
@@ -288,6 +303,114 @@ const press = (R, key) => [...R.step({ [key]: true }, 0), ...R.step({}, 0)];
   const glow = src.slice(src.indexOf('// growth: the pattern lamps'), src.indexOf('const s0 ='));
   assert(fx.length > 200 && glow.length > 200 && !/\b37\b/.test(fx) && !/\b37\b/.test(glow));
   pass('drawn under fire: the abilities\' effects and the lamps never use fire 37');
+}
+
+/* ---------------- After the checkers ---------------- */
+{ // the swap keeps cooldowns: [bomb, flare], the bomb thrown (8 s), a Moth wisp lamp underfoot. Two presses swap the bomb out and back:
+  // it comes back still cooling, and a press then only says no
+  const { R, rs, s } = setup({ slots: ['bomb', 'flare'] });
+  press(R, 'ab1');
+  dropAbility(R, [s.x, 0, s.z], { id: 'moth', bright: false });
+  steps(R, 2);
+  press(R, 'ab1');
+  assert.equal(rs.run.abilities[0].id, 'moth');
+  const lamp = rs.run.abilityLamps.find(l => l.id === 'bomb');
+  assert(lamp && lamp.cool > 6 * 60, `the bomb lies there still cooling: ${lamp?.cool}`);
+  press(R, 'ab1');
+  assert.equal(rs.run.abilities[0].id, 'bomb');
+  assert(R.abilities.view()[0].left > 7, `the bomb has its cooldown back: ${R.abilities.view()[0].left}`);
+  // off the lamp: a press is refused, no second bomb
+  R.fighter.body.place([5, 0, 5], 0);
+  const n0 = R.log.filter(c => c.cue === 'coal').length;
+  press(R, 'ab1');
+  assert.equal(R.log.filter(c => c.cue === 'coal').length, n0, 'no bomb');
+  assert(R.log.some(c => c.cue === 'refuse' && c.slot === 0));
+  pass('the swap: an ability swapped out and back keeps its cooldown, and the lamp cools where it lies', { left: R.abilities.view()[0].left });
+}
+{ // a place change (Walk on: a new runner on the same run) keeps both cooldowns and a Moth wisp in flight
+  const { R, rs } = setup({ slots: ['moth', 'flare'] });
+  press(R, 'ab1'); press(R, 'ab2');
+  steps(R, 30);
+  const before = R.abilities.view().map(v => v.left);
+  const body = makeBody(FLAT, { p: [0, 0.5, 0], yaw: 0 }, 20, { ...PARAMS });
+  const R2 = makeRunner({ walk: FLAT, meta: META, body, rs, abilities: makeAbilities });
+  const after = R2.abilities.view().map(v => v.left);
+  assert(after.every((v, i) => Math.abs(v - before[i]) < 0.05), JSON.stringify({ before, after }));
+  assert(R2.abilities.effects.some(e => e.kind === 'moth'), 'the Moth wisp flies on');
+  pass('a new place: both cooldowns as they were, and a Moth wisp still flying', { before, after });
+}
+{ // the swap hint: standing on an ability lamp with both slots full sends an event at once, so the page shows the hint before a press
+  const { R, s } = setup({ slots: ['bomb', 'flare'] });
+  dropAbility(R, [s.x, 0, s.z], { id: 'snare', bright: false });
+  const ev = steps(R, 1);
+  assert(ev.some(e => e.type === 'ability' && e.what === 'lamp' && e.id === 'snare'));
+  assert(R.notes.some(t => /press an ability to swap/.test(t)));
+  const main = fs.readFileSync(new URL('../../public/lab/gloam-downs/main.js', import.meta.url), 'utf8');
+  assert(/'foeOut', 'ability'/.test(main), 'main.js shows the toasts on an ability event');
+  pass('the swap hint: an event as the feet touch the lamp, and the page updates its toasts on it');
+}
+{ // a press in a drink, a roll or a hurt, or Smoke step in the air: the refuse cue and nothing else, and the press is spent
+  const { R, rs, s } = setup({ slots: ['bomb', 'step'] });
+  rs.run.hp = 50;
+  R.step({ heal: true }, 0); R.step({}, 0);
+  R.step({ ab1: true }, 0);
+  assert(R.log.some(c => c.cue === 'refuse' && c.slot === 0 && c.busy), 'refused in the drink');
+  steps(R, 60);
+  assert.equal(R.abilities.view()[0].left, 0, 'and never thrown');
+  steps(R, 2, { jump: true });
+  assert(!s.ground);
+  R.step({ ab2: true }, 0);
+  assert(R.log.some(c => c.cue === 'refuse' && c.slot === 1 && c.busy), 'Smoke step refused in the air');
+  pass('busy: a press in a drink or Smoke step in the air gives the refuse cue');
+}
+{ // Bell guard is not spent on a blow in the roll's safe time: the blow is a near miss, and the guard waits for the next one
+  const { R } = setup({ slots: ['guard', null] });
+  press(R, 'ab1');
+  R.step({ roll: true }, 0);
+  assert.equal(R.hurt(20, [0, 2]), 'safe');
+  assert(R.abilities.guard, 'the guard is still up');
+  assert(R.log.some(c => c.cue === 'miss'), 'a near miss');
+  pass('Bell guard: a blow in the roll\'s safe time is a near miss and leaves the guard up');
+}
+{ // a snare slows a charging Ironback, and is spent with its damage; Rime's slow does the same
+  for (const how of ['snare', 'rime']) {
+    const { R, F, foes } = setup({ slots: [how, null], foes: [['I', 0, 8]] });
+    const ib = foes[0], h0 = ib.hp;
+    F.hold(ib, 'charge', 0.95); F.hold(ib, null);
+    if (how === 'rime') { R.fighter.body.s.yaw = 0; }
+    const z = [];
+    if (how === 'snare') { R.fighter.body.place([0, 0, 5], Math.PI); press(R, 'ab1'); }
+    for (let i = 0; i < 30; i++) {
+      if (how === 'rime' && i === 2) { R.fighter.body.place([0, 0, ib.z - 2.5], 0); press(R, 'ab1'); }
+      R.step({}, 0); z.push(ib.z);
+    }
+    const v = Math.max(...z.slice(10, 20).map((q, i) => Math.abs(q - z[i + 9]) * 60));
+    assert(v < 6.5, `${how}: the charge runs at ${v.toFixed(1)} m/s`);
+    if (how === 'snare') assert(h0 - ib.hp >= 10, 'the snare deals its damage on a heavy foe');
+  }
+  pass('the Ironback\'s charge: a snare or Rime slows it, and the snare is spent with its 10');
+}
+{ // a foe's state shows: stunned, held, slowed, burning each give their dabs; a stunned or held foe stands in a stagger's pose
+  const f = { x: 0, y: 0, z: 0, alive: true, T: { chest: 1, r: 0.45, light: true }, state: 'chase', walking: 0, k: 0, flinch: 0, status: { stun: 30, hold: 0, slow: 0, slowK: 1, burn: 0 } };
+  assert.equal(stateDabs(f).filter(d => d.kind === 'state-stun').length, 5);
+  assert.equal(poseOf(f).clip, 'hurt', 'a stunned Snuffer staggers');
+  f.status = { stun: 0, hold: 20, slow: 40, slowK: 0.5, burn: 10 };
+  const kinds = new Set(stateDabs(f).map(d => d.kind));
+  assert(kinds.has('state-hold') && kinds.has('state-slow') && kinds.has('state-burn'));
+  assert(stateDabs(f).every(d => d.ci !== 37 && d.ci !== 35 && d.ci !== 36), 'no fire slot but the ember 34 and dark 33');
+  f.status = { stun: 0, hold: 0, slow: 0, slowK: 1, burn: 0 };
+  assert.equal(stateDabs(f).length, 0, 'gone when it ends');
+  assert.notEqual(poseOf(f).clip, 'hurt');
+  pass('foe states drawn: stun, hold, slow (frost) and burn each have dabs, gone when they end; a stunned foe staggers');
+}
+{ // a snare and a pool of pitch read from the follow camera: 14 dabs and a centre for the snare, 27 for the pool, each 0.065 m or more
+  const sn = effectDabs({ kind: 'snare', at: [0, 0, 0], r: 1.2 }), pi = effectDabs({ kind: 'pitch', at: [0, 0, 0], r: 2 });
+  assert(sn.length >= 14 && pi.length >= 24, `${sn.length}, ${pi.length}`);
+  assert([...sn, ...pi].every(d => d.s >= 0.065 && d.y >= 0.14));
+  // the pool fills its 2 m: dabs from the middle to its edge
+  const rr = pi.map(d => Math.hypot(d.x, d.z));
+  assert(Math.min(...rr) < 0.8 && Math.max(...rr) > 1.8);
+  pass('snare and pitch drawn large enough to read: a ring of 14 and three rings that fill the pool', { snare: sn.length, pitch: pi.length, s: GROUND_FX.snare.s });
 }
 
 /* ---------------- Inputs ---------------- */
