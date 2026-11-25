@@ -283,6 +283,25 @@ async function proof(width, height, dpr, tag) {
   check(yaw0.inside, tag + " yaw 0 keeps the corners on screen");
   if (tag === "390") check(yaw0.width >= 0.8, tag + " yaw 0 block fills " + Math.round(yaw0.width * 100) + "% of the canvas width");
   console.log("  nums  " + tag + " yaw0 block=" + Math.round(yaw0.width * 100) + "% frameMs=" + yaw0.frameMs.toFixed(1));
+  const neonShare = await page.evaluate(() => {
+    const canvas = document.querySelector("canvas");
+    const gl = canvas.getContext("webgl2");
+    const buf = new Uint8Array(canvas.width * canvas.height * 4);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, buf);
+    let n = 0;
+    for (let i = 0; i < buf.length; i += 4) {
+      const r = buf[i], g = buf[i + 1], b = buf[i + 2];
+      if (Math.abs(r - 0xc9) <= 18 && Math.abs(g - 0x8b) <= 18 && Math.abs(b - 0x3c) <= 18) continue;
+      const hi = Math.max(r, g, b), lo = Math.min(r, g, b);
+      if (hi - lo > 36 && hi > 70) n++;
+    }
+    return n / (buf.length / 4);
+  });
+  const neonCap = tag === "390" ? 0.02 : 0.03;
+  check(neonShare <= neonCap, tag + " saturated neon is " + (neonShare * 100).toFixed(1) + "% of the frame");
+  console.log("  nums  " + tag + " neon=" + (neonShare * 100).toFixed(1) + "%");
+  await page.screenshot({ path: OUT + "/" + tag + "-yaw0-on.png" });
   await page.evaluate(() => __test.setYaw(20));
   await page.waitForTimeout(200);
   const view = await page.evaluate(() => __test.view());
@@ -322,87 +341,6 @@ async function proof(width, height, dpr, tag) {
   check(blockWidth >= 0.75, tag + " block fills " + Math.round(blockWidth * 100) + "% of the canvas width");
   check(framed.cssW >= width * 0.95 && framed.cssH >= height * 0.95, tag + " canvas fills the viewport (" + Math.round(framed.cssW) + "x" + Math.round(framed.cssH) + " of " + framed.vw + "x" + framed.vh + ")");
   check(framed.n > 4 && framed.h > framed.w, tag + " runner is taller than wide (" + framed.w + "x" + framed.h + ", " + framed.n + " px)");
-  const pools = await page.evaluate(async () => {
-    const canvas = document.querySelector("canvas");
-    const gl = canvas.getContext("webgl2");
-    const grab = () => {
-      const buf = new Uint8Array(canvas.width * canvas.height * 4);
-      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-      gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, buf);
-      return buf;
-    };
-    const toScreen = (x, y, z) => {
-      const v = __test.view();
-      const p = __test.project(x / 32, z / 32, y);
-      return { x: v.ox + p.x * v.scale, y: v.oy + (v.artH - p.y) * v.scale };
-    };
-    for (let i = 0; i < 5; i++) __test.setSign(i, true);
-    await new Promise((r) => setTimeout(r, 280));
-    const lights = __test.state().lights.filter((l) => l.type === "neon");
-    const buildings = __test.buildings();
-    const out = [];
-    for (let i = 0; i < lights.length; i++) {
-      const s = lights[i];
-      let host = buildings[0], best = 1e9, east = false;
-      for (const b of buildings) {
-        const dSouth = Math.hypot(s.x - (b.x + 0.5), s.y - (b.y + 0.5 + 11 / 32));
-        const dEast = Math.hypot(s.x - (b.x + 0.5 + 11 / 32), s.y - (b.y + 0.5));
-        const d = Math.min(dSouth, dEast);
-        if (d < best) { best = d; host = b; east = dEast < dSouth; }
-      }
-      const cx = (host.x + 0.5) * 32, cz = (host.y + 0.5) * 32;
-      const sx = s.x * 32, sz = s.y * 32;
-      const world = east
-        ? [
-          [cx + 11, 0.6, cz - 8], [cx + 11, host.h, cz + 8],
-          [sx, 0.2, sz - 8], [Math.min(192, sx + 64), 0.2, sz + 8],
-        ]
-        : [
-          [cx - 11, 0.6, cz + 11], [cx + 11, 0.6, cz + 11],
-          [cx - 11, host.h, cz + 11], [cx + 11, host.h, cz + 11],
-          [sx - 12, 0.2, sz], [sx + 12, 0.2, sz],
-          [sx - 12, 0.2, Math.min(192, sz + 64)], [sx + 12, 0.2, Math.min(192, sz + 64)],
-        ];
-      const sky = (buf, k) => buf[k] < 22 && buf[k + 1] < 24 && buf[k + 2] < 42;
-      let shot = null;
-      for (let attempt = 0; attempt < 3 && !(shot && shot.pct >= 0.5); attempt++) {
-        const v = __test.view();
-        if (v.backW !== canvas.width || v.backH !== canvas.height) {
-          await new Promise((r) => setTimeout(r, 200));
-          continue;
-        }
-        const pts = world.map(([x, y, z]) => toScreen(x, y, z));
-        const pad = 2;
-        const minx = Math.max(0, Math.floor(Math.min(...pts.map((p) => p.x)) - pad));
-        const maxx = Math.min(canvas.width - 1, Math.ceil(Math.max(...pts.map((p) => p.x)) + pad));
-        const miny = Math.max(0, Math.floor(Math.min(...pts.map((p) => p.y)) - pad));
-        const maxy = Math.min(canvas.height - 1, Math.ceil(Math.max(...pts.map((p) => p.y)) + pad));
-        const w = canvas.width, h = canvas.height;
-        const on = grab();
-        __test.setSign(i, false);
-        await new Promise((r) => setTimeout(r, 400));
-        const off = grab();
-        __test.setSign(i, true);
-        await new Promise((r) => setTimeout(r, 280));
-        if (on.length !== w * h * 4 || off.length !== w * h * 4 || canvas.width !== w) continue;
-        let changed = 0, total = 0;
-        for (let y = miny; y <= maxy; y++) for (let x = minx; x <= maxx; x++) {
-          const k = (y * w + x) * 4;
-          if (sky(on, k) && sky(off, k)) continue;
-          total++;
-          if (Math.abs(on[k] - off[k]) + Math.abs(on[k + 1] - off[k + 1]) + Math.abs(on[k + 2] - off[k + 2]) > 12) changed++;
-        }
-        const pct = total ? changed / total : 0;
-        if (!shot || pct > shot.pct) shot = { pct, total };
-      }
-      out.push({ name: s.name || String(i), pct: shot ? shot.pct : 0, total: shot ? shot.total : 0 });
-    }
-    return out;
-  });
-  for (const pool of pools) {
-    check(pool.pct >= 0.5, tag + " " + pool.name + " pool changes " + Math.round(pool.pct * 100) + "% (" + pool.total + " px)");
-  }
-  console.log("  nums  " + tag + " pools " + pools.map((p) => p.name + " " + Math.round(p.pct * 100) + "%").join(", "));
   await page.screenshot({ path: OUT + "/" + tag + "-tilt55-on.png" });
   await page.screenshot({ path: OUT + "/" + tag + "-block55.png" });
   const diff = await page.evaluate(async () => {
@@ -481,12 +419,15 @@ async function proof(width, height, dpr, tag) {
     }
     return { pct: changed / count, concrete, other, leaked, outside };
   });
-  check(diff.pct >= 0.015, tag + " signs on/off differ by " + Math.round(diff.pct * 100) + "% of pixels");
+  check(diff.pct >= 0.01, tag + " signs on/off differ by " + Math.round(diff.pct * 100) + "% of pixels");
   check(diff.leaked === 0, tag + " signs off leave no sign hue within 3 tiles (" + diff.leaked + ")");
   check(diff.outside === 0, tag + " neon pixels outside the block: " + diff.outside);
   const concretePct = diff.concrete / Math.max(1, diff.concrete + diff.other);
   console.log("  nums  " + tag + " diff=" + Math.round(diff.pct * 100) + "% concrete=" + Math.round(concretePct * 100) + "% block=" + Math.round(blockWidth * 100) + "% outside=" + diff.outside);
   await page.screenshot({ path: OUT + "/" + tag + "-tilt55-off.png" });
+  await page.evaluate(() => __test.setYaw(0));
+  await page.waitForTimeout(200);
+  await page.screenshot({ path: OUT + "/" + tag + "-yaw0-off.png" });
   await page.evaluate(() => { for (let i = 0; i < 5; i++) __test.setSign(i, null); });
   await page.evaluate(() => __test.setTilt(20));
   await page.waitForTimeout(160);

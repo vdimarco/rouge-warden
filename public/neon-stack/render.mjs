@@ -66,7 +66,7 @@ void main() {
   float fade = fadeOf(vSign);
   float neon0 = step(4.5, id) * step(id, 8.5);
   vec3 tube = pal(id);
-  id = mix(id, 2.0, neon0 * (1.0 - fade));
+  id = mix(id, 3.0, neon0 * (1.0 - fade));
   vec3 base = pal(id);
   float px = step(0.5, face) * step(face, 1.5);
   float nx = step(1.5, face) * step(face, 2.5);
@@ -96,33 +96,9 @@ void main() {
     lcol = mix(lcol, uC[i].rgb, win);
   }
   float q = floor(clamp(lit, 0.0, 0.999) * 4.0) / 3.0;
-  float own = 0.0;
-  vec3 ownCol = lcol;
-  float groundY = step(vW.y, 0.45);
-  float inBlock = step(0.0, vW.x) * step(vW.x, 192.0) * step(0.0, vW.z) * step(vW.z, 192.0);
-  for (int i = 0; i < 8; i++) {
-    float live = step(0.15, uI[i]) * step(0.5, uL[i].w);
-    float halfW = max(abs(uC[i].w), 1.0);
-    float southFace = step(0.0, uC[i].w);
-    float onSouth = step(0.0, uL[i].z - vW.z) * step(uL[i].z - vW.z, 30.0) * step(abs(vW.x - uL[i].x), halfW);
-    float onEast = step(0.0, uL[i].x - vW.x) * step(uL[i].x - vW.x, 8.0) * step(abs(vW.z - uL[i].z), 11.0);
-    float onWall = live * step(0.45, vW.y) * mix(onEast, onSouth, southFace);
-    own = max(own, onWall);
-    ownCol = mix(ownCol, uC[i].rgb, onWall);
-    float tileS = step(0.0, vW.z - uL[i].z) * step(vW.z - uL[i].z, 64.0) * step(abs(vW.x - uL[i].x), 28.0);
-    float tileE = step(0.0, vW.x - uL[i].x) * step(vW.x - uL[i].x, 64.0) * step(abs(vW.z - uL[i].z), 44.0);
-    float onTile = live * groundY * inBlock * mix(tileE, tileS, southFace);
-    col = mix(col, uC[i].rgb, onTile * 0.7);
-  }
-  own = own * (1.0 - neon0) * (1.0 - runner) * (1.0 - step(abs(vKind - 2.0), 0.25)) * (1.0 - step(abs(vKind - 3.0), 0.25));
-  wall = max(wall, own);
-  lcol = mix(lcol, ownCol, own);
-  q = max(q, own);
   col = mix(col, base, wall);
   col = mix(col, lcol, q * 0.4 * wall);
-  col = mix(col, mix(pal(2.0), tube, fade), neon0);
-  float plate = step(abs(vKind - 3.0), 0.25) * (1.0 - fade);
-  col = mix(col, pal(2.0), plate);
+  col = mix(col, mix(pal(3.0), tube, fade), neon0);
   col = mix(col, base, runner);
   o = vec4(col, 1.0);
 }`;
@@ -146,6 +122,16 @@ void main() {
     rain = max(rain, step(0.0, d.x) * step(d.x, 2.01) * step(abs(d.y + d.x), 0.1));
   }
   col = mix(col, uSmog, rain * 0.4);
+  float mx = max(col.r, max(col.g, col.b));
+  vec3 sky = vec3(14.0, 16.0, 32.0) / 255.0;
+  float ground = step(0.045, length(col - sky)) * step(mx, 0.24);
+  float gap = 1.0 - step(0.5, mod(pix.y, 2.0));
+  for (int i = 0; i < 8; i++) {
+    float y0 = min(uHalo[i].y, uHaloC[i].w);
+    float y1 = max(uHalo[i].y, uHaloC[i].w);
+    float streak = step(abs(pix.x - uHalo[i].x), 0.5) * step(y0, pix.y) * step(pix.y, y1) * gap * step(0.2, uHalo[i].z);
+    col = mix(col, uHaloC[i].rgb, streak * ground * 0.35);
+  }
   o = vec4(col, 1.0);
 }`;
 

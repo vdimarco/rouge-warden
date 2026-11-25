@@ -125,7 +125,6 @@ function scatterRain() {
 }
 function fit() {
   const cssW = window.innerWidth, cssH = window.innerHeight;
-  if (cssW < 2 || cssH < 2) return;
   const dpr = window.devicePixelRatio || 1;
   canvas.style.width = cssW + "px";
   canvas.style.height = cssH + "px";
@@ -156,7 +155,7 @@ function walkAt(clientX, clientY) {
 function lightsNow() {
   const out = world.lights.map((l) => ({ ...l }));
   for (let i = 0; i < 5; i++) {
-    const buzz = override[i] == null && world.signs[i].buzz && (time % 3.6) < 0.08;
+    const buzz = world.signs[i].buzz && (time % 3.6) < 0.08;
     const want = override[i] === false ? 0 : 1;
     const step = Math.min(Math.abs(want - fade[i]), lastDt / 0.15);
     fade[i] += Math.sign(want - fade[i]) * step;
@@ -206,7 +205,7 @@ function scene() {
     const r = parseInt(hex.slice(1, 3), 16) / 255;
     const g = parseInt(hex.slice(3, 5), 16) / 255;
     const b = parseInt(hex.slice(5, 7), 16) / 255;
-    uC[i * 4] = r; uC[i * 4 + 1] = g; uC[i * 4 + 2] = b; uC[i * 4 + 3] = l.half || 1;
+    uC[i * 4] = r; uC[i * 4 + 1] = g; uC[i * 4 + 2] = b; uC[i * 4 + 3] = 1;
     uI[i] = l.intensity ?? 1;
     if (l.sign >= 0) fadeU[l.sign + 1] = l.intensity ?? 1;
     const dx = x - rx, dz = z - rz, dy = y - 8;
@@ -372,7 +371,7 @@ window.__test = {
     drawCalls: renderer.drawCalls,
     frameMs, fps,
     lights: (frame.lights || world.lights).map((l) => ({
-      x: l.x, y: l.y, z: l.z, colour: l.colour, type: l.type, on: !!l.on, name: l.name,
+      x: l.x, y: l.y, z: l.z, colour: l.colour, type: l.type, on: !!l.on,
     })),
   }),
   setTilt: (d) => { tilt = clampTilt(d); attract = false; },
