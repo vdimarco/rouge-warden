@@ -1,0 +1,47 @@
+# Tasks
+
+Three builders work in parallel worktrees. design.md "Who builds what" names the files each one owns and the hooks each may add. Each builder runs its own checks before it hands over. The merge pass (section 4) runs every check.
+
+## 0. Shared start (each builder, first)
+- [ ] 0.1 Create `public/lab/gloam-downs/growth.js` with exactly the text in design.md "growth.js", if it is not there yet.
+- [ ] 0.2 Set `public/lab/gloam-downs/bus.js` to exactly the text in design.md "bus.js". Do not change either file in a branch; a change goes through the merge pass.
+
+## 1. Builder G: growth
+- [ ] 1.1 `run.js`: glim at risk (no bank at the beacon, the kept share at death and at End the run, the spend order carried then bank, the win banks all), and the new `UPGRADES` table with Belt, Keen eye, Lantern panes and First spark.
+- [ ] 1.2 `run.js`: patterns (drops on `foeOut` and `eliteOut` from the seed's `pattern` stream, carried, kept at a beacon or a win, lost at a death), `kindle`, `dropPattern`, `groundPatterns`, and their bus events.
+- [ ] 1.3 `run.js`: sparks (`takeSpark`, `takeSparkPick`, First spark), `colourPower`, the Flame term in `bladeBonus`, the Ward health, and the panes (`setPane`, `paneOf`, each pane's rule that is not about cooldowns).
+- [ ] 1.4 `run.js`: the hooks for K and P named in design.md (the `abilities` and `keys` options, the pend list, the two step lines, the `eliteOut` line).
+- [ ] 1.5 `run-save.js`: the v3 key, the one-time read of v2 (or v1), the Ash pocket move, and `clean()` for every new field.
+- [ ] 1.6 `screens.js`, `cards.js`, the `main.js` hooks and `index.html`: the Lamp-room's colours, wares, patterns and pane rows; the beacon card's spark picks and kept line; the start picks (Belt, First spark); `#colourRow` and `#patternsN`; the summary's glim and pattern lines.
+- [ ] 1.7 `gloam-downs-growth.test.mjs` (new): every scenario of Glim at risk, Patterns, Kindle a pattern, The new wares, Sparks, Colours of the moves (the Flame and Edge one), Lantern panes, Ash pocket at death, The lasting upgrades, The run in the save and Saved run. Update `gloam-downs-run.test.mjs` and `gloam-downs-builds.test.mjs` for the 10% rule and the beacon that no longer banks.
+- [ ] 1.8 `gloam-downs-run.growth.e2e.mjs` (new): carry glim past a beacon, keep a pattern, kindle it, pick Ward, two pane slots, and the Lamp-room and beacon card at 320 by 640, 390 by 844, 360 by 640, 800 by 600, 1280 by 720 and 844 by 390, with keys alone and a pad alone.
+
+## 2. Builder K: abilities
+- [ ] 2.1 `abilities.js` (new): two slots, cooldowns on the play clock with Gloam and the cooldown panes, the buffer, the start draw, `makeAbilities`, `abilityView`, `dropAbility`, `groundAbilities`, the swap, bright lamps, and `ability-use` and `ability-ready`.
+- [ ] 2.2 The nine abilities with the numbers of `ABILITIES`, their tells, cues (with `ability: <id>`) and powers by colour.
+- [ ] 2.3 Foe states: `statusHit` and `statusStep` in `abilities.js`, and K's three hooks in `foes.js`. The Barrow Reeve takes damage only.
+- [ ] 2.4 `input.js`: F or U and G or I; mouse buttons 3 and 4 with no back or forward; pad LB and LT, and LT no longer rolls; the latch; the touch buttons. Update `gloam-downs-mouse.test.mjs` and the input lines of `gloam-downs-run.input.e2e.mjs`.
+- [ ] 2.5 `fight.js` and `sparks.js`: each ability's effect, the ability and pattern lamps, the sealed stones and the caches. No dab in slot 37 or above.
+- [ ] 2.6 `index.html` and the `main.js` hooks: `#bAb1`, `#bAb2`, `#abilities`, `updateAbilities()`, and the two help lines. Check them in the six layouts of 1.8.
+- [ ] 2.7 `run-sound.js`: a handler for each new bus event with the cues in design.md "Sound and music". `gloam-downs-sound.test.mjs`: the Growth sounds scenarios.
+- [ ] 2.8 `gloam-downs-abilities.test.mjs` (new): every scenario of Ability slots, The abilities, Lantern bomb, Foe states from abilities, Ability lamps and the Gloam cooldown.
+- [ ] 2.9 `gloam-downs-run.abilities.e2e.mjs` (new): Ability inputs, Drawn under fire, the swap, The ability HUD, and Test hooks for growth.
+
+## 3. Builder P: pacing and keys
+- [ ] 3.1 `foes.js` and `boss.js`: `FOE_HARD` (damage 1.3, health 1.15) and `REEVE.hard` (1.2), with the Ember 4 factor on top. `gloam-downs-foes.test.mjs`: the Snuffer's hook at Ember 0.
+- [ ] 3.2 `mix.js`: `EXTRA`, two or three page zones a place, added before the mix. `gloam-downs-zones.mjs` reads them and checks the floor, the spacing and the pool. `gloam-downs-seed.test.mjs`: the mix still fits for seeds 1 to 200.
+- [ ] 3.3 `qa/lab/gloam-downs-ledges.mjs` (new): the two `reachable` searches, the ledge patches, the flat floor for stones, and the shortcuts. Write what it found for each place in design.md, and say if a place has no shortcut.
+- [ ] 3.4 `keys.js` (new): `makeKeys`, the second jump through `body.s.vy`, the stone rule on the plunge's landing, `SPOTS`, the caches and their prizes, `groundSpots`, `keyDrop` from `elites.js`'s Rookchief and Bellwether, `key-found` and `cache-open`. The `main.js` hooks and `#keysLine`.
+- [ ] 3.5 `gloam-downs-keys.test.mjs` (new): every scenario of Keys and Hidden ledges and sealed stones. `gloam-downs-camera.test.mjs` still passes with the second jump.
+- [ ] 3.6 `gloam-downs-run.keys.e2e.mjs` (new): the Rookchief gives Crow step, a ledge cache, a sealed stone, and the pause panel's keys line.
+- [ ] 3.7 `qa/lab/gloam-downs-bot.mjs`: the rewrite in design.md "The bot with growth", with the boss stepped by `boss.js`.
+- [ ] 3.8 Run the bot at 0.3, 0.5 and 0.9 (60 bots each) and tune with the levers in design.md "Targets", in their order. Write "Pacing results" in design.md. If a target misses, say which and why, and tell the user.
+
+## 4. Merge pass (after 1, 2 and 3)
+- [ ] 4.1 Merge in the order G, K, P. Fix the hook lines in `run.js`, `foes.js`, `main.js` and `index.html` where two builders met.
+- [ ] 4.2 Run every Gloam Downs Node test and `node qa/lab/gloam-downs-zones.mjs`.
+- [ ] 4.3 Serve `public/` and run every Gloam Downs e2e file with `NODE_PATH=qa/browser/node_modules`, and `CHROMIUM_PATH=/opt/pw-browsers/chromium QUIET_URL=http://127.0.0.1:8765 node qa/arcade/quiet.mjs --only=lab/gloam-downs`.
+- [ ] 4.4 Run the bot at the three skills after the merge, and update "Pacing results".
+- [ ] 4.5 Play a run with the mouse and one with keys alone. Write what felt wrong. Say which checks could not run here: a real phone, a real gamepad, real mouse side buttons, and listening on speakers.
+- [ ] 4.6 Keep the spec and design current with what was built, and validate with `openspec validate gloam-downs-growth --strict`.
+- [ ] 4.7 Archive after `add-gloam-downs` and `gloam-downs-real-game`, in that order, and review the resulting spec.
