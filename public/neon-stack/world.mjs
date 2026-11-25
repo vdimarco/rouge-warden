@@ -253,9 +253,9 @@ export function build(seed) {
     const x = (def.tx + 0.5) * TILE;
     // Just in front of this lot's south wall, still inside the lot.
     const z = (def.ty + 1) * TILE - 0.35;
-    // A closer plate on the same column owns storeys 1–2. This one sits above it.
+    // Noodle and bar share a column with a closer plate. They still sit on storeys 1–2.
     const raised = signs.some((s) => s.tx === def.tx && s.ty > def.ty);
-    const y = (raised ? 2.35 : 1.15) * TILE;
+    const y = (raised ? 2 : 1.15) * TILE;
     slices.push(slice(x, z, y, hw, hh, uvOf(def.frame + "_on"), 3, si + 1, host ? buildings.indexOf(host) : -1, false, 2));
     signMeta.push({
       name: def.name, colour: def.colour, w: fr.w, h: fr.h, tx: def.tx, ty: def.ty,
