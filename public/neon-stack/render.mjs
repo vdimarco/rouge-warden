@@ -12,6 +12,8 @@ out vec2 vUV;
 out vec3 vW;
 flat out float vKind;
 flat out float vSign;
+flat out float vOrient;
+out float vEdge;
 void main() {
   float upright = step(0.5, i2.w);
   float faceZ = step(1.5, i2.w);
@@ -22,6 +24,8 @@ void main() {
   vUV = mix(vec2(i1.y, i1.z), vec2(i1.w, i2.x), aC);
   vKind = i2.y;
   vSign = i2.z;
+  vOrient = i2.w;
+  vEdge = min(min(aC.x, 1.0 - aC.x), min(aC.y, 1.0 - aC.y));
   gl_Position = uVP * vec4(vW, 1.0);
   if (abs(i2.y - 1.0) < 0.25) gl_Position.z -= 0.02 * gl_Position.w;
 }`;
@@ -35,6 +39,8 @@ uniform float uTile;
 uniform vec3 uOutline;
 uniform vec4 uFrame;
 uniform float uOutlineOn;
+uniform vec2 uCam;
+uniform vec2 uRunner;
 uniform float uFade[8];
 uniform vec4 uL[8];
 uniform vec4 uC[8];
@@ -43,6 +49,8 @@ in vec2 vUV;
 in vec3 vW;
 flat in float vKind;
 flat in float vSign;
+flat in float vOrient;
+in float vEdge;
 layout(location=0) out vec4 o;
 
 float fadeOf(float s) {
@@ -56,6 +64,27 @@ float fadeOf(float s) {
   return f;
 }
 
+float sdBox(vec2 p, vec2 a, vec2 b) {
+  vec2 c = (a + b) * 0.5;
+  vec2 h = (b - a) * 0.5;
+  vec2 d = abs(p - c) - h;
+  return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0);
+}
+float lotGap(vec2 p) {
+  float d = 4.0;
+  d = min(d, sdBox(p, vec2(0.0, 0.0), vec2(2.0, 2.0)));
+  d = min(d, sdBox(p, vec2(4.0, 0.0), vec2(6.0, 2.0)));
+  d = min(d, sdBox(p, vec2(0.0, 3.0), vec2(2.0, 4.0)));
+  d = min(d, sdBox(p, vec2(4.0, 3.0), vec2(6.0, 4.0)));
+  d = min(d, sdBox(p, vec2(0.0, 5.0), vec2(2.0, 6.0)));
+  d = min(d, sdBox(p, vec2(4.0, 5.0), vec2(6.0, 6.0)));
+  return d;
+}
+float ovalShade(vec2 d, float rx, float ry) {
+  float e = d.x * d.x / (rx * rx) + d.y * d.y / (ry * ry);
+  return e < 1.0 ? 0.78 : 1.0;
+}
+
 void main() {
   vec4 t = texture(uAtlas, vUV);
   float runner = step(abs(vKind - 1.0), 0.25);
@@ -65,9 +94,11 @@ void main() {
     vec2 lo = uFrame.xy + one * 0.5;
     vec2 hi = uFrame.zw - one * 0.5;
     float edge = 0.0;
-    for (int y = -1; y <= 1; y++) for (int x = -1; x <= 1; x++) {
-      int man = (x < 0 ? -x : x) + (y < 0 ? -y : y);
-      if (man != 1) continue;
+    for (int y = -2; y <= 2; y++) for (int x = -2; x <= 2; x++) {
+      int ax = x < 0 ? -x : x;
+      int ay = y < 0 ? -y : y;
+      int cheb = ax > ay ? ax : ay;
+      if (cheb < 1 || cheb > 2) continue;
       vec2 s = vUV + one * vec2(float(x), float(y));
       if (s.x < lo.x || s.y < lo.y || s.x > hi.x || s.y > hi.y) continue;
       edge = max(edge, texture(uAtlas, s).a);
@@ -87,36 +118,79 @@ void main() {
   float neon = step(0.25, hi - lo) * step(0.45, hi);
   vec3 dark = vec3(0.290, 0.282, 0.322);
   if (runner > 0.5) { o = vec4(col, 1.0); return; }
+  vec3 ink = vec3(0.102, 0.102, 0.133);
+  float depth = clamp(length(vW.xz - uCam) / (7.0 * uTile), 0.0, 1.0) * 0.30;
   if (abs(vKind - 5.0) < 0.25) {
     col = mix(col, col * 0.22, neon);
+    col = mix(col, ink, depth);
     o = vec4(col, 1.0);
     return;
   }
-  if (abs(vKind - 10.0) < 0.25) { o = vec4(0.102, 0.102, 0.133, 1.0); return; }
+  if (abs(vKind - 10.0) < 0.25) { o = vec4(ink, 1.0); return; }
+  if (abs(vKind - 11.0) < 0.25) {
+    vec3 roof = vec3(74.0, 72.0, 82.0) / 255.0;
+    float lip = step(vEdge, 1.0 / 16.0);
+    col = mix(roof, vec3(138.0, 131.0, 120.0) / 255.0, lip);
+    col = mix(col, ink, depth);
+    o = vec4(col, 1.0);
+    return;
+  }
+  if (abs(vKind - 12.0) < 0.25) {
+    col *= 0.45;
+    col = mix(col, ink, depth * 0.5);
+    o = vec4(col, 1.0);
+    return;
+  }
   if (abs(vKind - 7.0) < 0.25) {
     int i = int(clamp(vSign - 0.5, 0.0, 6.0));
     col = mix(col, uC[i].rgb, 0.4 * fadeOf(vSign));
     o = vec4(col, 1.0);
     return;
   }
+  float wall = step(abs(vKind - 8.0), 0.25);
+  if (wall > 0.5 && !(t.r > 0.85 && t.g > 0.5 && t.g < 0.78 && t.b < 0.35)) {
+    float kd = vKind - 8.0;
+    float tint = floor(kd / 0.03 + 0.001);
+    float bottom = step(0.005, mod(kd + 0.0001, 0.03));
+    vec3 face = vOrient > 1.5 ? vec3(43.0, 42.0, 51.0) / 255.0 : vec3(26.0, 26.0, 34.0) / 255.0;
+    if (vSign > 0.1 && vSign < 0.4) face = vec3(43.0, 42.0, 51.0) / 255.0;
+    vec3 dye = tint < 0.5 ? vec3(1.10, 0.84, 0.90) : tint < 1.5 ? vec3(0.84, 1.08, 0.90) : vec3(0.90, 0.94, 1.10);
+    float lum = dot(face, vec3(0.299, 0.587, 0.114));
+    vec3 dyed = face * dye;
+    dyed *= lum / max(0.001, dot(dyed, vec3(0.299, 0.587, 0.114)));
+    col = mix(dyed, dyed * 0.80, bottom);
+  }
   float dim = step(abs(vKind - 4.0), 0.25);
   col = mix(col, col * 0.38, dim);
   if (abs(vKind) < 0.25) {
+    vec2 p = vW.xz / uTile;
+    float gap = lotGap(p);
+    float shade = 1.0;
+    if (gap > 0.0 && gap < 0.3) shade = 0.72;
+    vec2 sun = normalize(vec2(0.48, 0.26));
+    if (lotGap(p + sun * 0.5) < 0.0 || lotGap(p + sun) < 0.0) shade = min(shade, 0.85);
+    shade = min(shade, ovalShade(p - uRunner, 0.46, 0.30));
+    shade = min(shade, ovalShade(p - vec2(1.15, 2.5), 0.22, 0.14));
+    shade = min(shade, ovalShade(p - vec2(1.6, 4.5), 0.22, 0.14));
+    shade = min(shade, ovalShade(p - vec2(2.35, 1.2), 0.18, 0.12));
+    shade = min(shade, ovalShade(p - vec2(3.55, 4.5), 0.22, 0.14));
+    col *= shade;
     vec3 sum = vec3(0.0);
     float cover = 0.0;
     for (int i = 0; i < 8; i++) {
       float live = step(0.15, uI[i]) * step(0.5, uL[i].w);
-      vec2 d = vW.xz / uTile - uL[i].xz / uTile;
+      vec2 d = p - uL[i].xz / uTile;
       float cheb = max(abs(d.x), abs(d.y));
-      float w = clamp(1.0 - cheb / 0.85, 0.0, 1.0) * live;
-      sum += uC[i].rgb * w;
-      cover += w;
+      float w = clamp(1.0 - cheb / 1.85, 0.0, 1.0);
+      w = w * w * live;
+      if (w > cover) { cover = w; sum = uC[i].rgb; }
     }
-    col = mix(col, min(sum, vec3(1.0)), clamp(cover, 0.0, 1.0) * 0.12);
+    col = mix(col, sum, cover * 0.62);
   }
   float fade = fadeOf(vSign);
-  col = mix(col, mix(dark, col, fade), neon * (1.0 - dim));
-  col = mix(col, uHaze, clamp(vW.y / 220.0, 0.0, 1.0) * 0.18 * (1.0 - neon) * (1.0 - runner));
+  col = mix(col, mix(dark, col, fade), neon * (1.0 - dim) * (1.0 - wall));
+  if (wall > 0.5 && neon < 0.5) col = mix(col, ink, depth);
+  col = mix(col, uHaze, clamp(vW.y / 220.0, 0.0, 1.0) * 0.18 * (1.0 - neon) * (1.0 - runner) * (1.0 - wall));
   o = vec4(col, 1.0);
 }`;
 
@@ -332,7 +406,7 @@ export function createRenderer(canvas) {
       for (const name of names) out[name] = gl.getUniformLocation(prog, name);
       return out;
     };
-    stackU = loc(stackProg, ["uVP", "uSun", "uHaze", "uTile", "uOutline", "uFrame", "uOutlineOn", "uFade", "uL", "uC", "uI", "uAtlas"]);
+    stackU = loc(stackProg, ["uVP", "uSun", "uHaze", "uTile", "uOutline", "uFrame", "uOutlineOn", "uCam", "uRunner", "uFade", "uL", "uC", "uI", "uAtlas"]);
     compU = loc(compProg, ["uAlb", "uDrop", "uSmog", "uHalo", "uHaloC", "uTime"]);
     blitU = loc(blitProg, ["uBack", "uArt"]);
   }
@@ -398,6 +472,8 @@ export function createRenderer(canvas) {
     gl.uniform3fv(stackU.uOutline, api.outline || [0, 0, 0]);
     gl.uniform4fv(stackU.uFrame, api.frame || [0, 0, 1, 1]);
     gl.uniform1f(stackU.uOutlineOn, api.outlineOn || 0);
+    gl.uniform2fv(stackU.uCam, api.camXZ || [0, 0]);
+    gl.uniform2fv(stackU.uRunner, api.runnerXZ || [0, 0]);
     gl.uniform1fv(stackU.uFade, api.fade);
     gl.uniform4fv(stackU.uL, api.lights);
     gl.uniform4fv(stackU.uC, api.lightColor);
@@ -438,6 +514,8 @@ export function createRenderer(canvas) {
     api.fade = scene.fade;
     api.outline = scene.outline;
     api.outlineOn = scene.outlineOn;
+    api.camXZ = scene.camXZ;
+    api.runnerXZ = scene.runnerXZ;
     api.frame = scene.frame;
     api.lights = scene.lights;
     api.lightColor = scene.lightColor;
@@ -451,7 +529,7 @@ export function createRenderer(canvas) {
     gl.depthMask(true);
     gl.bindFramebuffer(gl.FRAMEBUFFER, alb.fb);
     gl.viewport(0, 0, artW, artH);
-    gl.clearColor(14 / 255, 16 / 255, 32 / 255, 1);
+    gl.clearColor(26 / 255, 26 / 255, 34 / 255, 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     drawStack(0, count);
     if (scene.runnerPaper && scene.runnerCount > 0) {
@@ -482,7 +560,7 @@ export function createRenderer(canvas) {
     api.drawCalls++;
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.viewport(0, 0, backW, backH);
-    gl.clearColor(14 / 255, 16 / 255, 32 / 255, 1);
+    gl.clearColor(26 / 255, 26 / 255, 34 / 255, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
     const x0 = ox, y0 = oy, x1 = ox + artW * scale, y1 = oy + artH * scale;
     const quadData = new Float32Array([

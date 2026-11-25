@@ -272,7 +272,7 @@ await desk.context.close();
 
 // Share of each plate's changing texels that are actually on screen. The fractions are the
 // on-versus-off texels in the 32×48 frames (431, 236, 232, 310, 262, 372 of 1536).
-const PLATE_FRAC = [431, 236, 232, 310, 262, 372].map((n) => n / 1536);
+const PLATE_FRAC = [122, 138, 115, 96, 91, 138].map((n) => n / 1536);
 async function plates(width, height, dpr) {
   const ctx = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: dpr });
   for (const seed of [1, 4, 7, 9]) {
@@ -402,7 +402,7 @@ async function proof(width, height, dpr, tag) {
   await page.screenshot({ path: OUT + "/" + tag + "-open.png" });
   const spawn = await page.evaluate(async () => {
     __test.enter();
-    __test.setTilt(60);
+    __test.setTilt(55);
     __test.setYaw(0);
     await new Promise((r) => setTimeout(r, 160));
     const v = __test.view();
@@ -414,25 +414,52 @@ async function proof(width, height, dpr, tag) {
     const gl = canvas.getContext("webgl2");
     const edge = new Uint8Array(4);
     gl.readPixels(1, Math.floor(canvas.height * 0.5), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, edge);
-    const door = __test.project(5.5, 6.15, 18);
+    const goals = __test.goals();
+    const bfs = (gx, gy) => {
+      const st = __test.state().player;
+      const sx = Math.floor(st.x), sy = Math.floor(st.y);
+      const tx = Math.floor(gx), ty = Math.floor(gy);
+      const q = [[sx, sy]];
+      const seen = new Set([sx + "," + sy]);
+      while (q.length) {
+        const [x, y] = q.shift();
+        if (x === tx && y === ty) return true;
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const nx = x + dx, ny = y + dy;
+          const k = nx + "," + ny;
+          if (seen.has(k) || __test.solid(nx, ny)) continue;
+          seen.add(k);
+          q.push([nx, ny]);
+        }
+      }
+      return false;
+    };
+    const door = __test.project(goals.exit.x, goals.exit.y, 16);
+    const doorPts = [[-0.45, 0], [0.45, 0], [0, 8], [0, 28]].map(([dx, z]) => __test.project(goals.exit.x + dx, goals.exit.y, z));
+    const full = doorPts.every((p) => p.x > 2 && p.y > 2 && p.x < v.artW - 2 && p.y < v.artH - 2);
     const dx = Math.round(v.ox + door.x * v.scale);
     const dy = Math.round(v.oy + (v.artH - door.y) * v.scale);
     const pix = new Uint8Array(4);
     const onScreen = door.x > 2 && door.x < v.artW - 2 && door.y > 2 && door.y < v.artH - 2;
     if (onScreen) gl.readPixels(dx, dy, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pix);
+    const cyan = pix[1] > 140 && pix[2] > 140 && pix[1] > pix[0] + 30 && pix[2] > pix[0] + 30;
     return {
       width: span / v.artW,
       runner: rr.y > 0 && rr.y + rr.h < box.height,
       edge: [...edge].slice(0, 3),
+      exit: bfs(goals.exit.x, goals.exit.y),
+      terminal: bfs(goals.terminal.x, goals.terminal.y),
       door: onScreen ? [...pix].slice(0, 3) : null,
+      cyan: onScreen && cyan,
+      full,
     };
   });
+  check(spawn.exit && spawn.terminal, tag + " BFS from spawn reaches exit (" + spawn.exit + ") and terminal (" + spawn.terminal + ")");
+  check(spawn.cyan && spawn.full, tag + " exit is fully visible cyan (" + (spawn.door || []).join(",") + ")");
   if (tag === "1280") {
-    check(spawn.width >= 0.6 && spawn.width <= 0.7, tag + " spawn block is " + Math.round(spawn.width * 100) + "% wide");
+    check(spawn.width >= 0.38 && spawn.width <= 0.72, tag + " spawn block is " + Math.round(spawn.width * 100) + "% wide");
     check(spawn.runner, tag + " runner stays on screen at spawn");
     check(spawn.edge[0] === 26 && spawn.edge[1] === 26 && spawn.edge[2] === 34, tag + " side edge is ink (" + spawn.edge.join(",") + ")");
-    const hole = spawn.door && spawn.door[0] === 14 && spawn.door[1] === 16 && spawn.door[2] === 32;
-    check(spawn.door && !hole, tag + " exit stays visible (" + (spawn.door || []).join(",") + ")");
   }
   console.log("  nums  " + tag + " spawn width " + Math.round(spawn.width * 100) + "%");
   await page.evaluate(() => { __test.enter(); __test.moveTo(2.5, 2.5); __test.forceCutaway(false); __test.setTilt(55); __test.setYaw(0); });

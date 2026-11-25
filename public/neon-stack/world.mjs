@@ -24,14 +24,14 @@ export const PALETTE = [
 
 // Opaque box inside each 24×32 runner frame: top, bottom, left, right insets.
 export const RUNNER_BOX = {
-  runner_idle: { top: 3, bottom: 3, left: 4, right: 8 },
-  runner_run_0: { top: 6, bottom: 3, left: 3, right: 6 },
-  runner_run_1: { top: 5, bottom: 3, left: 4, right: 8 },
-  runner_run_2: { top: 6, bottom: 3, left: 3, right: 6 },
-  runner_run_3: { top: 5, bottom: 3, left: 4, right: 8 },
-  runner_crouch: { top: 10, bottom: 3, left: 4, right: 7 },
-  runner_hack: { top: 3, bottom: 3, left: 4, right: 0 },
-  runner_spotted: { top: 4, bottom: 3, left: 3, right: 4 },
+  runner_idle: { top: 5, bottom: 3, left: 4, right: 8 },
+  runner_run_0: { top: 8, bottom: 3, left: 3, right: 6 },
+  runner_run_1: { top: 6, bottom: 3, left: 4, right: 8 },
+  runner_run_2: { top: 8, bottom: 3, left: 3, right: 6 },
+  runner_run_3: { top: 6, bottom: 3, left: 4, right: 8 },
+  runner_crouch: { top: 9, bottom: 3, left: 4, right: 7 },
+  runner_hack: { top: 5, bottom: 3, left: 4, right: 0 },
+  runner_spotted: { top: 6, bottom: 3, left: 3, right: 4 },
 };
 
 function uvOf(name) {
@@ -112,7 +112,7 @@ export function build(seed) {
   const blocked = Array.from({ length: GRID }, () => Array(GRID).fill(false));
 
   // Lots beside a two-tile street (tx 2–3). Rows 2 and 4 are the side alleys.
-  // The seed changes heights and roof props. The tower stays the tallest.
+  // The tower is 6 storeys. Every other lot is at most 4, so the tower is two taller.
   const spots = [
     [0, 0], [1, 0], [4, 0], [5, 0],
     [0, 1], [1, 1], [4, 1], [5, 1],
@@ -121,29 +121,21 @@ export function build(seed) {
   ];
   const nseed = (Number(seed) || 1) >>> 0;
   const rand = mulberry32(nseed || 1);
-  // Plates sit on storeys 1–2. A lot between a plate and the camera is one storey, with no roof prop.
-  const signLots = [[1, 0], [1, 1], [4, 0], [4, 1], [0, 1], [5, 3]];
-  const lots = spots.map(([tx, ty]) => [tx, ty, tx === 0 && ty === 0 ? 7 : 1 + Math.floor(rand() * 6)]);
+  // Plates sit on storeys 1–2. A non-sign lot between a plate and the camera is one storey.
+  const signLots = [[1, 1], [4, 1], [0, 1], [5, 1]];
+  const signKey = new Set(signLots.map(([x, y]) => x + "," + y));
+  const lots = spots.map(([tx, ty]) => [tx, ty, tx === 0 && ty === 0 ? 6 : 3 + Math.floor(rand() * 2)]);
   for (const [sx, sy] of signLots) {
     for (const lot of lots) {
-      if (lot[0] === sx && lot[1] > sy) lot[2] = 1;
+      if (lot[0] === sx && lot[1] > sy && !signKey.has(lot[0] + "," + lot[1])) lot[2] = 1;
     }
   }
+  for (const lot of lots) {
+    if (lot[0] === 0 && lot[1] === 0) continue;
+    if (signKey.has(lot[0] + "," + lot[1])) lot[2] = Math.max(3, Math.min(4, lot[2]));
+    else if (lot[2] > 4) lot[2] = 4;
+  }
   const blockedFront = (tx, ty) => signLots.some(([sx, sy]) => tx === sx && ty > sy);
-  const flex = () => lots.filter((l) => !(l[0] === 0 && l[1] === 0) && !blockedFront(l[0], l[1]));
-  for (const lot of flex()) {
-    if (lots.filter((l) => l[2] <= 2).length >= 3) break;
-    if (lot[2] > 2) lot[2] = 1 + Math.floor(rand() * 2);
-  }
-  for (const lot of flex()) {
-    if (lots.filter((l) => l[2] >= 5).length >= 2) break;
-    if (lot[2] < 5) lot[2] = 5 + Math.floor(rand() * 2);
-  }
-  // The back-row plates sit on storeys 4–5, so those two lots have to be that tall.
-  for (const [sx, sy] of [[1, 0], [4, 0]]) {
-    const lot = lots.find((l) => l[0] === sx && l[1] === sy);
-    if (lot[2] < 6) lot[2] = 6;
-  }
   const propNames = [];
   let ac = 0;
   for (let i = 0; i < lots.length; i++) {
@@ -165,34 +157,41 @@ export function build(seed) {
     const windows = Math.min(storeys, 2);
     const lit = new Set();
     while (lit.size < windows) lit.add(Math.floor(rand() * storeys));
+    const tint = bi % 3;
+    const wallKind = (s) => 8 + tint * 0.03 + (s === 0 ? 0.01 : 0);
     for (let s = 0; s < storeys; s++) {
       const y = (s + 0.5) * TILE;
       const body = BODY[Math.floor(rand() * BODY.length)];
       const shop = rand() < 0.5 ? "shopfront" : "door";
       const win = lit.has(s) && tx !== 4 ? "wall_lit2" : body;
+      const wk = wallKind(s);
       if (southOpen) {
-        slices.push(slice(x, (ty + 1) * TILE - 0.8, y, TILE / 2, TILE / 2, uvOf(s === 0 ? shop : body), 8, 0, bi, s === 0, 2));
+        slices.push(slice(x, (ty + 1) * TILE - 0.8, y, TILE / 2, TILE / 2, uvOf(s === 0 ? shop : body), wk, 0.2, bi, s === 0, 2));
       }
       if (streetEast && eastOpen) {
-        slices.push(slice((tx + 1) * TILE - 0.8, z, y, TILE / 2, TILE / 2, uvOf(s === 0 ? shop : win), 8, 0, bi, s === 0, 1));
+        slices.push(slice((tx + 1) * TILE - 0.8, z, y, TILE / 2, TILE / 2, uvOf(s === 0 ? shop : win), wk, 0.2, bi, s === 0, 1));
       }
       if (!streetEast && westOpen) {
-        slices.push(slice(tx * TILE + 0.8, z, y, TILE / 2, TILE / 2, uvOf(s === 0 ? shop : win), 8, 0, bi, s === 0, 1));
+        slices.push(slice(tx * TILE + 0.8, z, y, TILE / 2, TILE / 2, uvOf(s === 0 ? shop : win), wk, 0.2, bi, s === 0, 1));
       }
-      if (!streetEast && eastOpen && s > 0) slices.push(slice((tx + 1) * TILE - 0.8, z, y, TILE / 2, TILE / 2, uvOf(body), 8, 0, bi, false, 1));
-      if (streetEast && westOpen && s > 0) slices.push(slice(tx * TILE + 0.8, z, y, TILE / 2, TILE / 2, uvOf(body), 8, 0, bi, false, 1));
+      if (!streetEast && eastOpen && s > 0) slices.push(slice((tx + 1) * TILE - 0.8, z, y, TILE / 2, TILE / 2, uvOf(body), wk, 0, bi, false, 1));
+      if (streetEast && westOpen && s > 0) slices.push(slice(tx * TILE + 0.8, z, y, TILE / 2, TILE / 2, uvOf(body), wk, 0, bi, false, 1));
       if (s === 0 && !(streetEast ? eastOpen : westOpen)) {
-        if (westOpen) slices.push(slice(tx * TILE + 0.8, z, y, TILE / 2, TILE / 2, uvOf(shop), 8, 0, bi, true, 1));
-        else if (eastOpen) slices.push(slice((tx + 1) * TILE - 0.8, z, y, TILE / 2, TILE / 2, uvOf(shop), 8, 0, bi, true, 1));
+        if (westOpen) slices.push(slice(tx * TILE + 0.8, z, y, TILE / 2, TILE / 2, uvOf(shop), wk, 0.2, bi, true, 1));
+        else if (eastOpen) slices.push(slice((tx + 1) * TILE - 0.8, z, y, TILE / 2, TILE / 2, uvOf(shop), wk, 0.2, bi, true, 1));
       }
     }
-    slices.push(slice(x, z, storeys * TILE, TILE / 2, TILE / 2, uvOf("roof_cap"), 9, 0, bi, false, 0));
-    if (!blockedFront(tx, ty)) {
-      const prop = propNames[bi];
-      const fr = frames.frames[prop];
-      const scale = Math.min(1, (TILE * 0.5) / (fr.h * PX));
+    slices.push(slice(x, z, storeys * TILE, TILE / 2, TILE / 2, uvOf("roof_cap"), 11, 0, bi, false, 0));
+    const addProp = (name, ox, oz) => {
+      const fr = frames.frames[name];
+      const scale = Math.min(1, (TILE * 0.5) / (fr.h * PX), (TILE * 0.5) / (fr.w * PX));
       const ph = fr.h * PX * scale;
-      slices.push(slice(x, z + 2, storeys * TILE + ph / 2, fr.w * PX * scale / 2, ph / 2, uvOf(prop), 9, 0, bi, false, 2));
+      slices.push(slice(x + ox, z + oz, storeys * TILE + ph / 2, fr.w * PX * scale / 2, ph / 2, uvOf(name), 12, 0, bi, false, 2));
+    };
+    if (!blockedFront(tx, ty)) addProp(propNames[bi], 0, 2);
+    if (ty === 5) {
+      addProp(propNames[bi] === "antenna" ? "ac_unit" : "antenna", -6, 4);
+      if (tx === 1 || tx === 4) addProp("water_tank", 6, 3);
     }
   });
 
@@ -217,45 +216,33 @@ export function build(seed) {
     slices.push(slice(x, z, 0.15, TILE / 2, TILE / 2, uvOf(name), 0, 0, -1, true, 0));
   }
 
+  // One skyline quad. Its peaks sit just under the tower top at the spawn camera.
+  // Margins outside the block are the clear colour, flat ink, not extruded blocks.
   slices.push(slice(
-    GRID * TILE / 2, -1.15 * TILE, 6.2 * TILE,
-    16 * TILE, 5.5 * TILE,
+    3 * TILE, -1.2 * TILE, 3.5 * TILE,
+    14 * TILE, 2.6 * TILE,
     uvOf("backdrop"), 5, 0, -1, true, 2,
   ));
 
-  // Ink neighbour blocks. South faces only: the spawn camera looks north, so the sides are edge-on.
-  for (let ty = -1; ty < GRID + 12; ty++) for (let tx = -6; tx <= GRID + 1; tx++) {
-    const inside = tx >= 0 && ty >= 0 && tx < GRID && ty < GRID;
-    // The row just south of the block would stand in front of the exit.
-    if (inside || tx === 2 || tx === 3 || (ty === GRID && tx === 5)) continue;
-    const x = (tx + 0.5) * TILE;
-    const z = (ty + 0.5) * TILE;
-    slices.push(slice(x, (ty + 1) * TILE - 0.8, 0.5 * TILE, TILE / 2, TILE / 2, uvOf("side_face"), 10, 0, -1, false, 2));
-    slices.push(slice(x, z, TILE, TILE / 2, TILE / 2, uvOf("side_face"), 10, 0, -1, false, 0));
-  }
-
-  // 16×32 plates (one tile wide, two tall) on the south face of their own lot, storeys 1–2.
-  // Alley lights sit off the street, far enough that (5.5, 2.5) stays dark.
+  // Plates occupy storeys 1–2. Noodle/bar (back, left half) and cross/arrow (front, right half)
+  // do not share a screen column, so the closer tops stay clear. Lights stay more than 2.1
+  // tiles from the spawn. No floating puddle quads.
   const signs = [
-    { name: "noodle", colour: "#FF3D8B", frame: "sign_0", tx: 1, ty: 0, street: true, lx: 2.15, ly: 0.7 },
-    { name: "cross", colour: "#B6F23A", frame: "sign_2", tx: 1, ty: 1, street: true, lx: 2.15, ly: 1.2 },
-    { name: "bar", colour: "#3DE0E8", frame: "sign_1", tx: 4, ty: 0, street: true, lx: 3.85, ly: 0.7 },
-    { name: "arrow", colour: "#F2A33A", frame: "sign_3", tx: 4, ty: 1, street: true, lx: 3.85, ly: 1.2 },
-    { name: "eye", colour: "#FF3D8B", frame: "sign_4", tx: 0, ty: 1, street: false, buzz: true, lx: 2.7, ly: 2.05 },
-    { name: "glyph", colour: "#3DE0E8", frame: "sign_5", tx: 5, ty: 3, street: false, lx: 3.3, ly: 4.15 },
+    { name: "noodle", colour: "#FF3D8B", frame: "sign_0", tx: 1, ty: 1, street: true, lx: 2.15, ly: 0.7, frac: 0.22, hw: 7 },
+    { name: "cross", colour: "#B6F23A", frame: "sign_2", tx: 1, ty: 1, street: true, lx: 2.15, ly: 1.2, frac: 0.78, hw: 7 },
+    { name: "bar", colour: "#3DE0E8", frame: "sign_1", tx: 4, ty: 1, street: true, lx: 3.85, ly: 0.7, frac: 0.22, hw: 7 },
+    { name: "arrow", colour: "#F2A33A", frame: "sign_3", tx: 4, ty: 1, street: true, lx: 3.85, ly: 1.2, frac: 0.78, hw: 7 },
+    { name: "eye", colour: "#FF3D8B", frame: "sign_4", tx: 0, ty: 1, street: false, buzz: true, lx: 2.7, ly: 2.05, frac: 0.5, hw: 15 },
+    { name: "glyph", colour: "#3DE0E8", frame: "sign_5", tx: 5, ty: 1, street: false, lx: 5.55, ly: 0.35, frac: 0.5, hw: 15 },
   ];
-  const puddles = ["puddle_0", "puddle_1", "puddle_2"];
   signs.forEach((def, si) => {
     const fr = frames.frames[def.frame + "_on"];
-    const hw = TILE / 2 - 1;
+    const hw = def.hw;
     const hh = TILE;
     const host = buildings.find((b) => b.tx === def.tx && b.ty === def.ty);
-    const x = (def.tx + 0.5) * TILE;
-    // Just in front of this lot's south wall, still inside the lot.
+    const x = (def.tx + def.frac) * TILE;
     const z = (def.ty + 1) * TILE - 0.35;
-    // Noodle and bar share a column with a closer plate. They still sit on storeys 1–2.
-    const raised = signs.some((s) => s.tx === def.tx && s.ty > def.ty);
-    const y = (raised ? 2 : 1.15) * TILE;
+    const y = TILE;
     slices.push(slice(x, z, y, hw, hh, uvOf(def.frame + "_on"), 3, si + 1, host ? buildings.indexOf(host) : -1, false, 2));
     signMeta.push({
       name: def.name, colour: def.colour, w: fr.w, h: fr.h, tx: def.tx, ty: def.ty,
@@ -266,16 +253,16 @@ export function build(seed) {
       x: def.lx, y: def.ly, z: y, colour: def.colour, type: "neon", street: !!def.street,
       on: true, sign: si, radius: TILE * 2, buzz: !!def.buzz, name: def.name,
     });
-    const pf = frames.frames[puddles[si % 3]];
-    slices.push(slice(def.lx * TILE, def.ly * TILE, 0.45, pf.w * PX / 2, pf.h * PX / 2, uvOf(puddles[si % 3]), 7, si + 1, -1, true, 0));
   });
 
-  // Terminal on the tower, exit in the far corner opposite the near-street spawn.
+  // Terminal on the tower. The walkable terminal tile is the north end of the street.
+  // The exit is a cyan door on the street, inside the grid.
   const tower = buildings.find((b) => b.tx === 0 && b.ty === 0);
-  slices.push(slice(tower.x, (tower.ty + 1) * TILE + 0.5, tower.h * TILE - TILE * 0.4, TILE / 2, TILE / 2, uvOf("terminal_0"), 9, 0, 0, false, 2));
-  const exitLot = buildings.find((b) => b.tx === 5 && b.ty === 5);
-  // One tile south of the lot, in the open, so the roof rim does not cover the door.
-  slices.push(slice(exitLot.x, (GRID + 0.15) * TILE, TILE * 0.55, TILE / 2, TILE / 2, uvOf("exit_locked"), 9, 0, -1, true, 2));
+  slices.push(slice(tower.x, (tower.ty + 1) * TILE + 0.5, tower.h * TILE - TILE * 0.45, TILE / 2, TILE / 2, uvOf("terminal_0"), 9, 0, 0, false, 2));
+  const exit = { x: 2.5, y: 2.5 };
+  const exitFr = frames.frames.exit_locked;
+  const exitH = exitFr.h * PX;
+  slices.push(slice(exit.x * TILE, exit.y * TILE, exitH / 2, exitFr.w * PX / 2, exitH / 2, uvOf("exit_locked"), 9, 0, -1, true, 2));
 
   const streetProps = [
     ["trash_bag", 1.15, 2.5],
@@ -301,5 +288,6 @@ export function build(seed) {
     lights,
     signs: signMeta,
     spawn: { x: 2.5, y: 5.2 },
+    goals: { exit: { x: 2.5, y: 2.5 }, terminal: { x: 2.5, y: 0.5 } },
   };
 }

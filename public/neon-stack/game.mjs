@@ -110,15 +110,15 @@ function camera() {
   const span = Math.abs(Math.cos(yr)) + Math.abs(Math.sin(yr));
   const establishing = !attract && player.y > 4;
   const tiles = portrait
-    ? (attract ? 8.4 : 7.25) * span
-    : (attract ? TILES + 1 : establishing ? 7.4 : TILES);
+    ? (attract ? 8.4 : establishing ? 8.2 : 7.25) * span
+    : (attract ? TILES + 1 : establishing ? 11.4 : TILES);
   const dist = (tiles * TILE) / (2 * tan * aspect);
   const cx = (attract ? 3 : player.x) * TILE;
   const cz = (attract ? 3 : player.y) * TILE;
-  // At the spawn, look up the street so the tower and the skyline sit in frame.
+  // At the spawn, look up the street so the 6-storey tower and a skyline strip sit in frame.
   // Elsewhere keep the closer camera the width checks were built on.
-  const along = attract ? 16 : establishing ? TILE * (portrait ? -0.4 : -0.05) : 36;
-  const lift = establishing ? TILE * (portrait ? 2.4 : 4.2) : 0;
+  const along = attract ? 16 : establishing ? TILE * (portrait ? -3 : 0) : 36;
+  const lift = establishing ? TILE * (portrait ? 6.6 : 6.2) : 0;
   const focus = [cx + Math.sin(yr) * along, lift, cz + Math.cos(yr) * along];
   const cam = [
     focus[0] + Math.cos(tr) * Math.sin(yr) * dist,
@@ -249,6 +249,17 @@ function scene() {
     } else if (s.kind === 6) {
       s.uv = frameUV("steam_vent_" + (Math.floor(time * 8) % 4), false);
       rest.push(s);
+    } else if (s.kind === 5) {
+      if (s.restX === undefined) { s.restX = s.x; s.restZ = s.z; }
+      const px = world.spawn.x * TILE + (player.x - world.spawn.x) * TILE * 0.7;
+      const pz = world.spawn.y * TILE + (player.y - world.spawn.y) * TILE * 0.7;
+      const ox = s.restX - world.spawn.x * TILE;
+      const oz = s.restZ - world.spawn.y * TILE;
+      const a = -yaw * Math.PI / 180 * 0.78;
+      const c = Math.cos(a), sn = Math.sin(a);
+      s.x = px + ox * c - oz * sn;
+      s.z = pz + ox * sn + oz * c;
+      rest.push(s);
     } else if (s.bid < 0 || !cuts.has(s.bid) || s.low) rest.push(s);
   }
   let nearD = 2;
@@ -317,6 +328,8 @@ function scene() {
   return {
     vp, slices: runner.concat(rest), runnerCount: runner.length, runnerPaper: false,
     outline, outlineOn,
+    camXZ: [cam[0], cam[2]],
+    runnerXZ: [player.x, player.y],
     frame: [runFr.x / 1024, 1 - (runFr.y + runFr.h) / 1024, (runFr.x + runFr.w) / 1024, 1 - runFr.y / 1024],
     sun: SUN, haze: HAZE, smog: SMOG,
     rim: [rimx / rl, rimz / rl],
@@ -492,6 +505,11 @@ window.__test = {
     name: s.name, colour: s.colour, tx: s.tx, ty: s.ty,
     plate: s.plate, light: [s.x, s.y],
   })),
+  goals: () => world.goals,
+  sky: () => {
+    const s = world.slices.find((sl) => sl.kind === 5);
+    return { x: s.x / TILE, y: s.z / TILE, h: s.y };
+  },
   solid: (x, y) => solid(Math.floor(x), Math.floor(y)),
   project: (x, y, z) => renderer.project([x * TILE, z, y * TILE]),
   pixel: (x, y) => renderer.pixel(x, y),
