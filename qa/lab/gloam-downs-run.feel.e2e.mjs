@@ -138,12 +138,15 @@ try {
     assert((await snufferAhead(page)).ok);
     const at1 = await toFinisher(page);
     assert(at1 >= 0, 'the second finisher landed');
-    await G(page, () => window.__gloam.draw());
-    r = await run(page);
-    assert(len(r.fx.kick) > 0 && len(r.fx.kick) <= 0.15 + 1e-6, `the kick: ${r.fx.kick}`);
-    assert.equal(r.fx.zoom, 1, 'the zoom stays 1 under reduced motion');
+    // the kick drawn on steps 0, 3 and 6 after the finisher (each draw is slow in software WebGL): a felt kick (1.5 cm or more at its
+    // peak) and never past 0.15 m
+    const kicks = await G(page, () => { const g = window.__gloam, out = []; for (let i = 0; i < 3; i++) { if (i) g.tick(3 / 60, {}); g.draw(); const r = g.run(); out.push({ k: r.fx.kick.slice(), zoom: r.fx.zoom }); } return out; });
+    const peak = Math.max(...kicks.map(q => len(q.k)));
+    assert(kicks.every(q => len(q.k) <= 0.15 + 1e-6), `the kicks: ${kicks.map(q => len(q.k).toFixed(4))}`);
+    assert(peak >= 0.015, `a finisher's kick is felt: its peak is ${peak.toFixed(4)} m`);
+    assert(kicks.every(q => q.zoom === 1), 'the zoom stays 1 under reduced motion');
     assert.deepEqual(errors, []);
-    pass('reduced motion: "Shake off" until pressed, no kick; then "Shake on", stored at once, a finisher kicks up to 0.15 m and the zoom stays 1', { kick: +len(r.fx.kick).toFixed(4) });
+    pass('reduced motion: "Shake off" until pressed, no kick; then "Shake on", stored at once, a finisher kicks 1.5 cm to 0.15 m and the zoom stays 1', { peak: +peak.toFixed(4), kicks: kicks.map(q => +len(q.k).toFixed(4)) });
     await ctx.close();
   }
 

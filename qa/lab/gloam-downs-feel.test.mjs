@@ -63,19 +63,33 @@ function pageFight(walk, { codes = 'SSSPMI', still = false, fx = {}, hp } = {}) 
 { // a string of cuts alone gives no kick at all; the finisher, the plunge, a hit taken and a stagger do
   const F = makeFeel({ pal: PAL });
   for (let i = 0; i < 40; i++) { F.tick(1); if (i % 4 === 0) F.hit(i % 8 ? 'cut1' : 'cut2'); assert.deepEqual(F.kick(0.4, 0.34), [0, 0, 0]); }
-  const add = {};
+  const add = {}, peak = {};
   for (const k of ['fin', 'plunge', 'hurt', 'stagger']) {
     const G = makeFeel({ pal: PAL });
     G.tick(1);
     if (k === 'hurt') G.hurt(16); else if (k === 'stagger') G.stagger(); else G.hit(k);
     add[k] = +G.trauma.toFixed(3);
     let most = 0;
-    for (let i = 0; i < 6; i++) { G.tick(1); most = Math.max(most, len(G.kick(0.4, 0.34))); }
+    // the peak over the first 0.1 s (6 steps) at 400 moments of the noise: a median of about 2 to 4 cm; within 8 steps never under
+    // 1.5 cm (what the e2e asks) or over the cap
+    const peaks = [];
+    for (let t0 = 0; t0 < 1200; t0 += 3) {
+      const H = makeFeel({ pal: PAL });
+      for (let i = 0; i < t0; i++) H.tick(1);
+      if (k === 'hurt') H.hurt(16); else if (k === 'stagger') H.stagger(); else H.hit(k);
+      let m = 0, m8 = 0;
+      for (let i = 0; i < 8; i++) { H.tick(1); const q = len(H.kick(0.4, 0.34)); if (i < 6) m = Math.max(m, q); m8 = Math.max(m8, q); }
+      peaks.push(m); most = Math.max(most, m);
+      if (k === 'fin' || k === 'plunge') assert(m8 >= 0.015 && m8 <= FEEL.most, `${k} at step ${t0}: a peak of ${m8.toFixed(4)} m in 8 steps`);
+    }
+    peaks.sort((a, b) => a - b);
+    peak[k] = +peaks[peaks.length >> 1].toFixed(4);
     assert(most > 0, `${k} kicks the camera`);
   }
-  assert.deepEqual(add, { fin: 0.05, plunge: 0.06, hurt: 0.1, stagger: 0.08 });
+  assert.deepEqual(add, { fin: 0.17, plunge: 0.18, hurt: 0.1, stagger: 0.08 });
   assert.equal(FEEL.kick, 2.4);
-  pass('the gentle shake: no kick from cuts; the finisher 0.05, the plunge 0.06, a hit taken 0.10, a stagger 0.08', add);
+  assert(peak.fin >= 0.02 && peak.fin <= 0.045 && peak.plunge >= 0.02 && peak.plunge <= 0.045, `the finisher and the plunge kick 2 to 4 cm: ${JSON.stringify(peak)}`);
+  pass('the gentle shake: no kick from cuts; the finisher 0.17 and the plunge 0.18 (a median peak of 2 to 4 cm), a hit taken 0.10, a stagger 0.08', { add, median: peak });
 }
 { // 10 boss slams in one second: every offset is 0.15 m or less, and the kick falls back to nothing
   const F = makeFeel({ pal: PAL });

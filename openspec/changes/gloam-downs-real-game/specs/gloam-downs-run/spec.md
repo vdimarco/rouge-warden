@@ -32,6 +32,10 @@ While an elite is awake, the `elite` layer SHALL play a hurdy-gurdy drone on the
 - **WHEN** the e2e wakes the zone that holds the Wardmother
 - **THEN** `layers` has `elite` from the next bar line, and it leaves on the first bar line after the Wardmother is put out. Check: e2e `gloam-downs-run.sound.e2e.mjs`.
 
+#### Scenario: The Wardmother wakes again
+- **WHEN** the lamplighter wakes the Wardmother's zone, walks out of its leash until the zone sleeps, and comes back
+- **THEN** the second wake shows "The Wardmother wakes" again and sends `elite-alert` again, so the drone comes back. Check: Node test `gloam-downs-builds.test.mjs`.
+
 ### Requirement: The boss music builds
 The boss theme SHALL have six levels. Level 1 SHALL play when the fight starts. Levels 2 to 6 SHALL start on the next bar line after the boss's health share falls to 85%, 61.5%, 45%, 26.9% and 12%. At Ember 5, level 5 SHALL start at 40%. A level SHALL never go back. `__gloam.music()` SHALL give the `level`.
 
@@ -180,11 +184,15 @@ With Rising cut, Attack in the last 0.12 s of a roll, or in the 0.1 s after it, 
 - **THEN** the Snuffer takes 14 and is knocked down for 36 steps. Check: Node test `gloam-downs-builds.test.mjs`.
 
 ### Requirement: Ember parry
-With Ember parry, a melee hit that lands in the first 0.1 s of the first cut's wind-up, from a foe within 60° in front, SHALL deal no damage and stagger the foe for 1 s. The window SHALL be 6 steps, and it SHALL not open in a string. It SHALL use the Attack input of every device.
+With Ember parry, a melee hit that lands in the first 0.1 s of the first cut's wind-up, from a foe within 60° in front, SHALL deal no damage and stagger the foe for 1 s, a heavy foe too, whatever its poise. The Barrow Reeve's blow SHALL be turned aside, but the Reeve SHALL not stagger. The window SHALL be 6 steps, and it SHALL not open in a string. It SHALL use the Attack input of every device.
 
 #### Scenario: A parry
 - **WHEN** the run has Ember parry and the player presses Attack 3 steps before a Snuffer's hook lands, facing it
 - **THEN** the lamplighter takes no damage, and the Snuffer staggers for 60 steps. Check: Node test `gloam-downs-builds.test.mjs`.
+
+#### Scenario: A parried charge
+- **WHEN** the run has Ember parry and the player presses Attack 3 steps before an Ironback's charge lands, facing it
+- **THEN** the lamplighter takes no damage, the Ironback staggers for 60 steps and then chases again. Without the parry the charge deals 24. Check: Node test `gloam-downs-builds.test.mjs`.
 
 ### Requirement: Ember levels
 A win at Ember n SHALL open Ember n + 1, up to Ember 5. The Lamp-room SHALL show an Ember row with a button for each open level, and Begin the run SHALL start at the chosen level. Each level SHALL keep the rules of the levels under it and add 15% to the glim of foes and wisps, rounded down. The win card SHALL show the level and that level's best time.
@@ -216,6 +224,10 @@ The camera SHALL shake only on heavy hits: the finisher, the plunge, a hit taken
 #### Scenario: The cap
 - **WHEN** the Node test lands 10 boss slams in one second on the feel
 - **THEN** the length of every `kick()` offset is 0.15 m or less, and a string of cuts alone gives [0, 0, 0]. Check: Node test `gloam-downs-feel.test.mjs`, and `gloam-downs-camera.test.mjs` still passes.
+
+#### Scenario: A felt finisher
+- **WHEN** a finisher or a plunge lands with Shake on
+- **THEN** the camera kicks by 1.5 cm or more within 8 steps (about 2 to 4 cm at its peak), never past 0.15 m, and the kick is gone after about 0.15 s. Check: Node test `gloam-downs-feel.test.mjs`, and e2e `gloam-downs-run.feel.e2e.mjs`.
 
 ### Requirement: The Shake switch
 The pause panel SHALL have a Shake switch that reads "Shake on" or "Shake off". Until the player presses it, Shake SHALL be off under reduced motion and on otherwise. The choice SHALL be stored at once and kept over a reload. The switch SHALL change only the shake.
@@ -456,7 +468,7 @@ A bot SHALL check the run with the page's own rules on the real walk maps, again
 
 #### Scenario: Bot runs
 - **WHEN** `node qa/lab/gloam-downs-bot.mjs 60 0.3 1` runs, and the same command at skill 0.5 and at skill 0.9
-- **THEN** each pacing target holds, or design.md says which target misses and why, and the user is told. Check: the bot, `gloam-downs-bot.mjs`.
+- **THEN** each pacing target holds, or design.md says which target misses and why, and the user is told. Check: the bot, `gloam-downs-bot.mjs`. design.md "Pacing, after the merge" holds the last results: every target misses but the first and the boss fight's length.
 
 ### Requirement: Music for each place
 Each of the five places and the Lamp-room SHALL have its own theme in the dark dusk mood. A cello SHALL carry each place's explore melody. The Crow Wall and Barrow Crown SHALL have a hurdy-gurdy. The Bell Knoll SHALL lead with bells, and Lantern Fen SHALL have water and a reed. Each theme's bar SHALL be 1.9 to 3.0 s. No melody, motif or sound SHALL come from another game.

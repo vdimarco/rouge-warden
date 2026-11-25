@@ -319,6 +319,28 @@ function untilSpecial(W, E, max = 600) {
   assert.equal(P.rs.run.hp, 84, 'without it, the hook lands');
   pass('Ember parry: a hook that lands in the first cut\'s wind-up does no damage and staggers the Snuffer 60 steps');
 }
+{ // Ember parry on a heavy foe: an Ironback's charge turned aside staggers it for 60 steps, whatever its poise
+  const land = (unlocks, at) => {
+    const W = fightOn({ zones: [], unlocks, hp: 100 });
+    const r = W.F.spawn('I', 0, -5, 0), I = W.F.find(r.id);
+    let hitAt = null, stag = null, k = 0;
+    run(W, 240, i => ({ attack: at !== null && i === at }), i => {
+      if (hitAt === null && W.hurts.length) hitAt = i;
+      if (I.state === 'stagger' && stag === null) stag = { i, left: W.F.list().find(f => f.id === I.id).stagger };
+      k = i;
+      return !(hitAt !== null && at === null) && !(stag && i > stag.i + 70);
+    });
+    return { W, I, hitAt, stag, move: I.move, hp: W.rs.run.hp, k };
+  };
+  const plain = land([], null);
+  assert(plain.hitAt !== null && plain.hp < 100, `without the parry the charge lands (${plain.hp})`);
+  const p = land(['parry'], plain.hitAt - 3);
+  assert.equal(p.hp, 100, 'no damage');
+  assert(p.stag, 'the Ironback staggers');
+  assert.equal(p.stag.left, 60, 'for 60 steps');
+  assert.equal(p.I.state, 'chase', 'and then goes on');
+  pass('Ember parry: an Ironback\'s charge turned aside does no damage and staggers it 60 steps', { lands: plain.hitAt, hp: plain.hp });
+}
 
 /* ---------------- elites ---------------- */
 { // each place has its elite, in a zone that is not the first or a guard, at 1.25 times the size
@@ -556,6 +578,26 @@ function untilSpecial(W, E, max = 600) {
   assert.equal(got, 1);
   assert.equal(EVENTS.length, 15);
   pass('the screens: relic marks with Kindled; the bus: a listener that throws does not stop the next');
+}
+
+/* ---------------- the elite wakes again ---------------- */
+{
+  // wake the Wardmother, walk out of its leash until its zone sleeps, come back: the toast's event and elite-alert come again
+  const W = fightOn({ zones: eliteZones('S', [0, 0, -6]) });
+  const alerts = [], off = on('elite-alert', d => alerts.push(d.name));
+  const E = wakeElite(W);
+  let toasts = run(W, 2).filter(e => e.type === 'elite' && e.what === 'alert').length;
+  assert.equal(alerts.length, 1, 'the first wake sends elite-alert once');
+  W.s.x = 0; W.s.z = 22; W.s.vx = W.s.vz = 0;
+  let k = 0;
+  run(W, 3000, {}, () => { k++; return E.zone.awake; });
+  assert(!E.zone.awake, `the elite's zone sleeps once the lamplighter is far (${k} steps)`);
+  W.s.z = 0;
+  toasts += run(W, 600, {}, () => !E.zone.awake || alerts.length < 2).filter(e => e.type === 'elite' && e.what === 'alert').length;
+  off();
+  assert(E.zone.awake, 'the zone wakes when the lamplighter comes back');
+  assert.equal(alerts.length, 2, 'the second wake sends elite-alert again');
+  pass('the elite wakes again: its zone sleeps when the lamplighter leaves, and the next wake sends elite-alert and the toast again', { sleepSteps: k, toasts: toasts + 1 });
 }
 
 console.log(`${n} checks passed`);

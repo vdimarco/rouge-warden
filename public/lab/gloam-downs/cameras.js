@@ -136,7 +136,7 @@ export function frameClear(pr, L, B, screen, ground = () => L.y) {
    0.2 s to full rate). A hill or a wall that would bring it nearer than it chose
    raises its pitch, eased, by the least that lets it stand at its distance (bossRaise), to a pitch of 1.1; what is still in the way
    brings the eye in at no more than 15 m/s and lets it back out at no more than 12 m/s (at once only to keep the eye out of the scenery). With reduced motion it does not turn, but it still aims and pulls back. */
-export const BOSS = { on: 7.0, held: 16, wait: 0.6, rate: 1.5, stop: 15 * DEG, far: 24, least: 12, steps: 60, up: 1.15, slope: 1.1, rise: 0.05, aims: 0.8, acc: 7.5, pull: 15, back: 12 };
+export const BOSS = { on: 7.0, held: 16, wait: 0.6, rate: 1.5, stop: 15 * DEG, far: 24, least: 12, steps: 60, up: 1.15, slope: 1.1, rise: 0.05, aims: 0.8, acc: 7.5, pull: 15, back: 12, liftUp: 12, liftDown: 4 };
 /* the raise of the pitch over what stands in the way: the least raise (in steps of 0.05, to a pitch of 1.1) at which the eye stands at
    its distance D and sees every point of marks (the boss's chest and feet, and the far points of its marker: a stone beside the eye can
    hide a shard ring without standing between the eye and the aim); failing that, the least at which it stands at D and sees the most of
@@ -220,7 +220,10 @@ export function makeBossCam(cam, { screen, boss = () => null, centre = [18, 0.68
       // stone at the edge of sight rocks the pitch by 2° for as long as the two stand there
       if (!b.raise || r.lift > b.raise.lift || b.raise.lift - r.lift > 0.1 + 1e-9) b.raise = r;
     }
-    b.lift += (b.raise.lift - b.lift) * Math.min(1, 4 * dt);
+    /* up fast (12/s), down slow (4/s): the room is read at the pitch drawn now, so a raise eased in at 4/s left the eye pressed in for
+       a second while the pitch climbed (8.7 m a second after the camera came on south of the arena, with a grave stone behind, and down
+       to 3.3 m as a sweep's marks asked for more raise). Coming down slowly keeps a stone at the edge of sight from rocking the pitch */
+    b.lift += (b.raise.lift - b.lift) * Math.min(1, (b.raise.lift > b.lift ? BOSS.liftUp : BOSS.liftDown) * dt);
     /* the eye comes no nearer than the first thing in the way, as the follow camera's: in at no more than BOSS.pull m/s and back out at
        no more than BOSS.back (it went 12 m to 2.6 m and back to 12 m in single steps as a stone passed between), and at once only as
        far as keeps the eye itself out of the scenery */

@@ -363,6 +363,8 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
       const fl = walk.floorAt(px, pz, b.y + 0.35 + 0.3, b.y), c = f.zone.c;
       const wall = fl > b.y + M.drop, drop = fl < b.y - M.drop, past = Math.hypot(b.x + ux * M.v * STEP - c[0], b.z + uz * M.v * STEP - c[2]) > f.zone.leash + M.past;
       if (wall || drop || past) return stopCharge(f, M, wall, ev);
+      // how far the charge has come along its lane: it lands when its front reaches the lamplighter
+      f.prog = Math.max(f.prog, (b.x - f.lane.x) * ux + (b.z - f.lane.z) * uz);
       if (!f.landed) {
         const dx = s.x - f.lane.x, dz = s.z - f.lane.z, along = dx * ux + dz * uz, across = -dx * uz + dz * ux;
         if (along >= -0.3 && along <= M.len + 0.3 && Math.abs(across) <= M.width / 2 && along <= f.prog + f.T.r + LAMP_R && Math.abs(s.y - f.y) <= 1.6)
@@ -526,7 +528,7 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
       case 'down': if (!fresh && ++f.t >= f.downFor) { f.state = 'chase'; f.aware = true; f.cool = Math.max(f.cool, S(f.T.cool[0])); } break;
       case 'stun': if (++f.t >= f.T.moves.charge.stun) { f.state = 'chase'; f.stunned = false; f.cool = coolOf(f.T); } break;
       // a broken poise: it stands where it is for 1.2 s, then fights on
-      case 'stagger': want = { hard: [0, 0] }; if (++f.t >= STAGGER.steps) { f.state = 'chase'; f.aware = true; f.staggerEnd = F.step; f.cool = Math.max(f.cool, S(f.T.cool[0])); } break;
+      case 'stagger': want = { hard: [0, 0] }; if (++f.t >= (f.staggerFor ?? STAGGER.steps)) { f.state = 'chase'; f.aware = true; if (!f.staggerFor) f.staggerEnd = F.step; f.staggerFor = null; f.cool = Math.max(f.cool, S(f.T.cool[0])); } break;
       case 'move': want = runMove(f, ev); break;
       default: want = mind(f, ev);
     }
@@ -580,6 +582,16 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
     f.shakeDir = [fx / fl, fz / fl];
     if (f.hp <= 0) { kill(f); return dmg; }
     if (breakPoise(f, dmg)) return dmg;
+    // Ember parry: a light foe is knocked down below; a heavy foe (an Ironback, an elite) staggers for the parry's time, whatever its
+    // poise, and its blow is cut off. The run's parry has its own clang, so no cue here
+    if (how.parry && !f.T.light) {
+      cancelMove(f);
+      f.hold = null; f.push = null; f.flinch = 0;
+      f.state = 'stagger'; f.t = 0; f.staggerFor = how.knock || STAGGER.steps; f.aware = true;
+      f.hitAt = F.step + 1;
+      queue({ type: 'stagger', foe: f.id, x: f.x, y: f.y + f.T.chest, z: f.z, parry: true });
+      return dmg;
+    }
     if (f.hold || !f.T.light) return dmg;
     const ph = f.state === 'move' ? phaseOf(f.T.moves[f.move], f.mt) : null, winding = ph === 'wind';
     f.hitAt = F.step + 1;
@@ -605,7 +617,7 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
     if (f.poise > 0 || F.step < (f.staggerEnd ?? -1e9) + STAGGER.gap) return false;
     cancelMove(f);
     f.hold = null; f.push = null; f.flinch = 0;
-    f.state = 'stagger'; f.t = 0; f.poise = max; f.aware = true;
+    f.state = 'stagger'; f.t = 0; f.poise = max; f.aware = true; f.staggerFor = null;
     f.hitAt = F.step + 1;
     // the event the fight feels and draws (fight.js), and its sound: the clang of a broken guard (sound.js), marked as a stagger
     queue({ type: 'stagger', foe: f.id, x: f.x, y: f.y + f.T.chest, z: f.z });
@@ -643,15 +655,17 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
     }
     ev.push({ type: 'cracks', zone: Z.id, pts }, { type: 'cue', cue: 'cracks', zone: Z.id });
   }
+  // an elite that falls asleep wakes with its toast and its drone again (elites.js K.think reads alerted)
   function sleepZone(Z) {
     Z.awake = false;
-    for (const f of Z.members) if (!gone(f)) { cancelMove(f); f.state = 'asleep'; f.aware = false; f.alive = false; freeSlot(f); place(f, f.home); }
+    for (const f of Z.members) if (!gone(f)) { cancelMove(f); f.state = 'asleep'; f.aware = false; f.alive = false; f.alerted = false; freeSlot(f); place(f, f.home); }
   }
   // a zone that gives up its slots for a guard: it sleeps, and its foes sink over 0.6 s with their health
   function giveUp(Z) {
     Z.awake = false;
     for (const f of Z.members) {
       if (gone(f)) continue;
+      f.alerted = false;
       if (f.state === 'cracks' || f.state === 'asleep') { f.state = 'asleep'; freeSlot(f); continue; }
       cancelMove(f);
       f.state = 'sink'; f.t = 0; f.sinkTo = 'sleep'; f.alive = false; f.aware = false; f.hold = null;
@@ -827,7 +841,7 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
   F.list = () => F.foes.filter(f => shown(f)).map(f => ({
     ref: f, id: f.id, type: f.type, zone: f.zone.id, x: f.x, y: f.y, z: f.z, yaw: f.yaw, hp: f.hp, state: f.state,
     move: f.move || f.state, t: (f.move ? f.mt : f.t) / 60, flash: f.flash, held: !!f.hold, stunned: f.stunned, cool: f.cool,
-    elite: !!f.elite, poise: poiseOf(f) ? (f.poise ?? poiseOf(f)) : null, stagger: f.state === 'stagger' ? STAGGER.steps - f.t : 0
+    elite: !!f.elite, poise: poiseOf(f) ? (f.poise ?? poiseOf(f)) : null, stagger: f.state === 'stagger' ? (f.staggerFor ?? STAGGER.steps) - f.t : 0
   }));
 
   /* ---------------- ?test hooks ---------------- */

@@ -9,7 +9,7 @@ The player (laptop, 120 Hz, mouse) asked for "better music and gameplay" so it "
 - **Foes** (`foes.js`). `makeFoes({ meta, slots, seed })` reads `meta.zones` (baked `{ id, c, leash, foes }`) and the place's pool. Pools are baked per place: gaol `SSSSS`, ramparts `SSSSP`, fen `SSSSMMMP`, bells `SSSMPI`, barrows `SSSIPMBCL`. Zone rules (`fits`, `makeRoom`, the cap of 6) are shared with `qa/lab/gloam-downs-zones.mjs`.
 - **Feel** (`feel.js`, `fight.js`). Hit stop is in `run.js` (`hitStop`, cap 9 in 30 steps). The camera kick is the square of a trauma value times smooth noise (`F.kick`). `main.js` puts it on `world.anim.kick`, so `play.js` never sees it. Reduced motion turns off kick and zoom. Light foes flinch, and the finisher knocks them down.
 - **Cards** (`cards.js`, `screens.js`). The Lamp-room (`#lamp`, `#ups`), the beacon card (`#beaconCard`, `#wicks`), the pause panel and the summary.
-- **Pacing** has targets in the spec, but `qa/lab/gloam-downs-bot.mjs` is not built yet (tasks 454 to 457 of `add-gloam-downs` are open).
+- **Pacing** had targets in the spec, but no bot to check them (tasks 454 to 457 of `add-gloam-downs`). Builder BC built `qa/lab/gloam-downs-bot.mjs` in this change, and the merge pass taught it the mix and the combo. See "Pacing, after the merge".
 
 ## A. Adaptive music
 ### Layers and their changes
@@ -148,7 +148,8 @@ A win at Ember n opens Ember n + 1, up to 5. The Lamp-room shows an Ember row wi
 ## D. Feel and variety
 ### Hit stop and shake
 - Hit stop stays as it is: 3 steps for a cut, 5 for the finisher, the plunge and a hurt lamplighter, 6 for the boss slam, 9 for a phase change and death, and no more than 9 steps in any 30. A relic hit takes 2.
-- The shake goes gentle. It is the same trauma model, but a cut adds no trauma. The finisher adds 0.05, the plunge 0.06, a hit taken 0.10, a stagger 0.08 and the boss slam 0.22. `FEEL.kick` falls from 4 to 2.4, and the offset is clamped to 0.15 m. Trauma falls by 0.6 a second, as now.
+- The shake goes gentle. It is the same trauma model, but a cut adds no trauma. The finisher adds 0.17, the plunge 0.18, a hit taken 0.10, a stagger 0.08 and the boss slam 0.22. `FEEL.kick` falls from 4 to 2.4, and the offset is clamped to 0.15 m. Trauma falls by 0.6 a second, as now.
+- The finisher and the plunge were first 0.05 and 0.06. That gave a kick of 1 to 9 mm, which nobody could see. At 0.17 and 0.18 the peak in the first 0.1 s is 3.9 and 4.4 cm at the median moment of the noise, and never under 1.5 cm within 8 steps. The kick is gone after about 0.15 s. A hit taken stays at 0.10 (about 1 to 2 cm).
 - The Shake switch in the pause panel reads "Shake on" or "Shake off". The save's `shake` is `null` until the player presses it. While it is `null`, Shake is off under reduced motion and on otherwise. The switch sets `fx.kick` only. Zoom and grade keep their reduced-motion rules.
 - The kick still goes through `world.anim.kick`. `play.js` does not change, so `qa/lab/gloam-downs-camera.test.mjs` sees no difference.
 
@@ -279,6 +280,40 @@ The three branches were merged in the order A, BC, D. These are the changes made
 - `boss.js`: `makeBoss` takes `hpScale` and `phase3`. At Ember 5 the Barrow Reeve has 1,625 health, phase 2 starts at 1,000 (the same share as 800 of 1,300) and phase 3 at 650 (40%). `bossBar()` moves its two ticks to match. A new Node check covers it, and one in the builds test covers Ember 4's damage.
 - `main.js` sent `place-enter` with `rs.run`, which is null in the explorer, so the explorer stopped loading. It now reads `rs?.run`.
 - The pacing bot still plays the baked zones (it does not use `mix.js` or the combo yet). After the merge: skill 0.3 wins first in run 2 with a 4.35 min winning run; 0.5 in run 1 with 4.59 min; 0.9 in run 1 with 6.9 min. The 20 to 30 minute target for a 0.9 run still misses. No tuning was done in this pass, and the user must be told.
+
+## Fixes after the checkers
+- **The elite wakes again.** `elites.js` sent `elite-alert` and the toast only once, because `f.alerted` was never cleared. `foes.js` now clears it when a zone sleeps or gives up its slots. `main.js` `soundTick` also sends `elite: true` with `foes-alert` while a live elite is awake, so the drone comes back on any wake. A Node step in the builds test walks out of the leash and back.
+- **Ember parry on heavy foes.** A parry dealt 0 damage, which broke no poise, and `hitFoe` returned early for a foe that is not light. Now a parried heavy foe (an Ironback, the Bellwether, any elite that is not light) goes into `stagger` for the parry's 60 steps, whatever its poise. A light foe is knocked down as before. The Barrow Reeve's blow is turned aside, but the Reeve does not stagger: its own stumble takes no damage, so a stumble would be no reward. The spec says so.
+- **The Ironback's charge never landed.** `f.prog`, how far the charge has come along its lane, was set to 0 and never grew, so the hit test only passed at the lane's start. It now grows each step of the run. The charge lands when its front reaches the lamplighter (24 damage). This was there from the first build.
+- **The boss camera came in to 8.7 m.** The boss camera reads its room at the pitch it draws now, and its raise eased in at 4/s. So for about a second after it came on south of the arena (a grave stone behind), the eye stood in front of the stone at 3.9 to 8.7 m while the pitch climbed. Later, as a sweep's marks asked for more raise, it fell to 3.3 m. The raise now eases up at 12/s and down at 4/s (`BOSS.liftUp`, `BOSS.liftDown`). Only the boss camera changed. The probe a second after it comes on reads 12 m on the desktop and 14.3 m on the phone.
+- **The finisher's kick** is raised as "Hit stop and shake" says.
+
+## Pacing, after the merge
+The bot now plays as the page does: `mixZones` with the seed (so each place has its elite, and its relic), the guard's second wave, Ember 3's extra foe when the run is at Ember 3, and the combo with its glim. It was also taught to walk and fight better:
+- it turns to face a foe before it swings, and fights on until the roll is due, where before it stood still from the first sight of a wind-up;
+- it fights only foes that see it (or are within 3 m), so it no longer walks into a sleeping zone's foe on a ledge;
+- stuck for 2 s it jumps; stuck for 4 s a skilled bot gives up the wisp or zone it went for;
+- every nudge now counts the time a walk there takes at 3 m/s, plus 2 or 3 s, so a nudge never makes a run shorter;
+- a skill 0.9 bot takes every wisp and fights every zone it can reach within 24 m of its way.
+
+Nudges fell from 18 to 37 a run to 12.5 at skill 0.3 and 0.5. About 7 of them are the same climbs every run, where the straight walk meets a step it cannot take. At 0.9 there are 18.7, because it goes off the way more.
+
+`node qa/lab/gloam-downs-bot.mjs 60 <skill> 1`, Ember 0, 60 bots each, 73 s for all three on 4 cores (one thread):
+
+| Skill | First run reaches The Crow Wall | First win: median run (target) | Winning run, game time | Boss fight | At the arena |
+|---|---|---|---|---|---|
+| 0.3 | 60 of 60 (target: half) | 3 (5 to 10) | 4.6 min | 55.8 s | 51% health |
+| 0.5 | 60 of 60 | 1 (3 to 6) | 5.0 min | 64.6 s (50 to 110) | 57% health |
+| 0.9 | 60 of 60 | 1 (1 or 2) | 8.7 min (20 to 30) | 78.5 s | 68% health |
+
+Minutes a place at 0.9 (median): Gaol 1.9, Crow Wall 1.6, Fen 1.7, Bell Knoll 1.3, Barrow Crown 2.3. A 0.9 bot gives up about 14 wisps a run that it cannot climb to, so a player who takes them all spends a little longer.
+
+The levers, in order:
+1. **The guard's second wave** and 2. **the elites** are now in the bot's runs (they were in the page already). With them, the bot's new walk and fight, and the charge that now lands, the 0.3 bot's first win moved from run 2 to run 3, and the 0.9 run from 6.9 to 8.7 minutes.
+3. **Ember 3's extra foe at Ember 0** was tried: 0.3 stayed at run 2 to 3, the winning runs grew by 0.1 min or less. It would also take the Ember 3 rule away. It is not kept.
+4. **Foe health +15%** was tried on top: 0.3 first win in run 3, 0.5 in run 1, 0.9 in 9.0 min. It changes almost nothing and makes every fight longer, so it is not kept either.
+
+**The targets cannot be met with these levers.** The bots almost never die before Barrow Crown: 176 of 180 runs at 0.3 end there, and the boss decides who wins. A run has about 35 foes in five places, and the places are not large. At 2 minutes a place, a 20 to 30 minute run needs three to four times the content, or harder foes, or a boss that kills more often. None of these is one of the design's levers, and padding the run (slower walking, more health) is what the design rules out. The user must be told, and must choose: more zones in the bake, stronger foe damage at Ember 0, a harder boss for low skill, or lower targets. The boss is still drawn from the boss bot's old results, not stepped, so the boss numbers and the 0.3 deaths there are the weakest part of this check.
 
 ## Sources
 Each source is named with how it was used. None was fetched in this session: the network rules of this session were not tried, so all are cited from memory. A builder that fetches one adds "fetched" and the date.

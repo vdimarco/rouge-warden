@@ -1231,7 +1231,9 @@ let alertWas = { awake: false, guard: false };
 function soundTick() {
   const awakeNow = fight ? fight.foes.awake().length > 0 && mode !== 'dying' : false;
   const guardZ = awakeNow ? fight?.foes.zones?.find(Z => Z.awake && Z.guard) : null;
-  if (awakeNow && (!alertWas.awake || (guardZ && !alertWas.guard))) emit('foes-alert', { zone: guardZ?.id ?? fight.foes.zones?.find(Z => Z.awake)?.id ?? null, guard: !!guardZ, elite: false });
+  // the elite's drone stays with any wake of its zone: foes-alert says so while a live elite is awake
+  const E = awakeNow ? fight?.foes.elite?.() : null, eliteNow = !!(E && E.zone?.awake && !E.out && E.hp > 0);
+  if (awakeNow && (!alertWas.awake || (guardZ && !alertWas.guard))) emit('foes-alert', { zone: guardZ?.id ?? fight.foes.zones?.find(Z => Z.awake)?.id ?? null, guard: !!guardZ, elite: eliteNow });
   else if (!awakeNow && alertWas.awake) emit('fight-calm');
   alertWas = { awake: awakeNow, guard: !!guardZ };
   audio.setLow(!!fight?.feel.low && !!rs.run);
@@ -1407,7 +1409,7 @@ window.__gloam = {
     // drawn: the view the last frame drew (between steps, the blend of the last two with the mouse's turn since on top), and where it
     // drew the lamplighter
     cam: cam ? { drawn: drawn ? { yaw: drawn.yaw, pitch: drawn.pitch, dist: drawn.dist, target: drawn.target.slice(), cut: !!drawn.cut, body: drawnBody && { ...drawnBody } } : null, yaw: cam.c.yaw, dist: cam.c.dist, pitch: cam.c.pitch, want: cam.c.want, fov: cam.c.fov, aim: cam.c.aim, lift: cam.c.lift, view: view ? view.pitch : null, foe: combat?.foe?.id ?? null, turning: cam.c.turning, idle: cam.c.idle,
-      boss: bossCam ? { on: bossCam.b.on, w: bossCam.b.w, dist: view?.dist ?? null, aim: view?.target ?? null } : null } : null,
+      boss: bossCam ? { on: bossCam.b.on, w: bossCam.b.w, dist: view?.dist ?? null, aim: view?.target ?? null, goal: bossCam.b.goal?.dist ?? null, cur: bossCam.b.cur?.dist ?? null, room: bossCam.b.dist, lift: bossCam.b.lift, clear: bossCam.b.goal?.clear ?? null } : null } : null,
     // the pieces of scenery faded in front of the boss's marker (veil.js makeOccluders), or null away from Barrow Crown's run
     occluded: occluders ? occluders.faded() : null,
     // the near fade's share now (play.js fadeOf: 0 to 1, or NEAR_FADE.all with the whole figure left out)

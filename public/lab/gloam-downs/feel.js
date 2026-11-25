@@ -10,7 +10,7 @@
 
 export const FEEL = {
   tint: 3, zoom: 7, zoomK: 1.05, beat: 55, low: 0.3, pull: 0.25, still: 0.15, fade: 72, fall: 6, kick: 2.4, decay: 0.6, most: 0.15,
-  add: { cut1: 0, cut2: 0, fin: 0.05, plunge: 0.06, hurt: 0.1, stagger: 0.08, slam: 0.22, relic: 0 }, heavy: 20,
+  add: { cut1: 0, cut2: 0, fin: 0.17, plunge: 0.18, hurt: 0.1, stagger: 0.08, slam: 0.22, relic: 0 }, heavy: 20,
   // the boss intro's zoom, eased in and out over 30 steps, and the letterbox bars' height as a share of the screen
   intro: 1.15, introEase: 30, bars: 0.12
 };
