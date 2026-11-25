@@ -800,20 +800,22 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   assert.deepEqual([shave.dmg, plain.dmg, all.dmg], [15, 10, 20]);
   pass('Close shave: a cut 0.5 s after a near miss deals 15 (10 without it), and Edge 3, Keen edge and Close shave add to 20', { shave, plain, all });
 }
-{ // every upgrade: 145 health, 5 flasks, each flask heals 55% (80 of 145), the blade +36%, a death keeps 55% of the glim
+{ // every ware at Ember 0 with no sparks (gloam-downs-growth "All upgrades"): 220 health, 6 flasks, each flask heals 65% (143 of 220),
+  // the blade +60%, a death keeps 50% of the glim
   const rs = RS.fresh();
   rs.bank = UPGRADES.reduce((a, u) => a + u.costs.reduce((x, y) => x + y, 0), 0);
-  assert.equal(rs.bank, 1325, 'all of them cost 1,325 glim');
+  assert.equal(rs.bank, 9115, 'all the wares cost 9,115 glim');
   for (const u of UPGRADES) for (let k = 0; k < u.costs.length; k++) assert(buy(rs, u.id));
   assert(!buy(rs, 'mantle'), 'no level past the top');
   assert.equal(rs.bank, 0);
   startRun(rs, 9);
-  assert.deepEqual([rs.run.hp, rs.run.flasks, healOf(rs.up, maxOf(rs))], [145, 5, 80]);
-  assert(near(bladeBonus(rs.up, []), 0.36, 1e-9));
+  rs.run.sparkPicks = 0;
+  assert.deepEqual([rs.run.hp, rs.run.flasks, healOf(rs.up, maxOf(rs))], [220, 6, 143]);
+  assert(near(bladeBonus(rs.up, []), 0.6, 1e-9));
   rs.run.carried = 25;
   const e = die(rs);
-  assert.deepEqual([e.lost, e.banked, rs.bank, rs.deaths, rs.runs, rs.run], [12, 13, 13, 1, 1, null], 'Ash pocket banks 13 of 25 (55% rounded down) and 12 are lost');
-  pass('every upgrade: 145 health, 5 flasks, 55% heals, +36% blade, Ash pocket keeps 55% rounded down');
+  assert.deepEqual([e.kept, e.lost, e.banked, rs.bank, rs.deaths, rs.runs, rs.run], [12, 13, 12, 12, 1, 1, null], 'Ash pocket 5 banks 12 of 25 (50% rounded down) and 13 are lost');
+  pass('every ware: 220 health, 6 flasks, 65% heals, +60% blade, Ash pocket 5 keeps 50% rounded down');
 }
 { // the wick offers: the seed and the wicks chosen decide them; a wick chosen never comes back
   const runTo = (seed, picks) => {
@@ -851,12 +853,15 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   const w = lightBeacon(rs);
   assert(w.won && rs.run === null);
   assert.deepEqual([rs.bank, rs.wins, rs.runs, rs.bestWin, rs.ended.won, rs.ended.banked], [158, 1, 1, 400, true, 58]);
-  // a death on The Crow Wall carrying 20 with 44 banked from the Gaol
+  // a death on The Crow Wall carrying 20 with 44 banked (the beacon no longer banks: the 44 are put in the bank by hand)
   const d = RS.fresh();
   startRun(d, 5);
   d.run.carried = 44;
   lightBeacon(d);
+  assert.deepEqual([d.bank, d.run.carried], [0, 44], 'a lit beacon keeps the glim carried as carried');
+  d.bank = 44;
   d.run.offer = null;
+  d.run.sparkPicks = 0;
   d.run.carried = 20;
   const { R, rs: rr } = runnerAt(FLAT, 0, 0);
   Object.assign(rr, d);
@@ -864,8 +869,9 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   rr.run.hp = 10;
   R.hurt(16, [0, -1], {}, ev);
   assert(ev.some(e => e.type === 'dead') && ev.some(e => e.type === 'store'), 'death stores the run at once');
-  // Cinders: a death keeps 25% of the 20 carried
-  assert.deepEqual(rr.ended, { won: false, place: 'ramparts', time: 0, foes: 0, lost: 15, banked: 49, ember: 0, opened: null, relics: [], combo: 0, seed: rr.ended.seed });
+  // a death keeps 10% of the 20 carried
+  assert.deepEqual(rr.ended, { won: false, place: 'ramparts', time: 0, foes: 0, kept: 2, lost: 18, banked: 2, ember: 0, opened: null, relics: [], combo: 0, seed: rr.ended.seed, patternsKept: 0, patternsLost: 0 });
+  assert.equal(rr.bank, 46);
   assert.equal(R.clock.stop, 9, 'death holds the game for 9 steps');
   pass('the win at the last beacon and a death end the run and keep their figures');
 }
@@ -877,7 +883,7 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   body.place([3, 0, 0], 0);
   const ev = runFor(R, 2);
   assert(ev.some(e => e.type === 'beacon') && ev.some(e => e.type === 'store'));
-  assert.deepEqual([rs.bank, rs.run.carried, rs.run.place, rs.run.offer.length, rs.run.entry.hp], [9, 0, 'ramparts', 2, 100]);
+  assert.deepEqual([rs.bank, rs.run.carried, rs.run.place, rs.run.offer.length, rs.run.entry.hp, rs.run.entry.carried, rs.run.sparkPicks], [0, 9, 'ramparts', 2, 100, 9, 1]);
   assert.deepEqual([rs.run.flasks, rs.run.entry.flasks], [2, 2], 'the beacon fills the flasks: 1 of 2 becomes 2');
   // a beacon whose keepers stand stays dark (the guard rule comes with the foes)
   const g = runnerAt(FLAT, 0, 0, 0, { meta });
@@ -885,7 +891,7 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   g.body.place([3, 0, 0], 0);
   const dark = runFor(g.R, 2);
   assert(dark.some(e => e.type === 'dark') && g.rs.run.place === 'gaol');
-  pass('a lit beacon banks, fills the flasks, moves the run on with two wicks and stores it; a guarded one stays dark');
+  pass('a lit beacon keeps the glim carried, fills the flasks, moves the run on with two wicks and a spark pick and stores it; a guarded one stays dark');
 }
 
 { // a reload on the next frame after a hit goes on with the health it left; a reload in the death fade shows the summary
@@ -910,8 +916,8 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   for (const e of ev2) if (e.type === 'store') RS.store(storage, rs);
   const fade = RS.load(storage);
   assert.equal(fade.run, null);
-  // Cinders keep 5 of the 20 carried
-  assert.deepEqual({ ...fade.ended, time: +fade.ended.time.toFixed(2) }, { won: false, place: 'gaol', time: 1.25, foes: 0, lost: 15, banked: 5, ember: 0, relics: [], combo: 0, seed: fade.ended.seed, opened: null });
+  // a death keeps 2 of the 20 carried (10%)
+  assert.deepEqual({ ...fade.ended, time: +fade.ended.time.toFixed(2) }, { won: false, place: 'gaol', time: 1.25, foes: 0, kept: 2, lost: 18, banked: 2, ember: 0, relics: [], combo: 0, seed: fade.ended.seed, opened: null, patternsKept: 0, patternsLost: 0 });
   assert.equal(fade.deaths, 1);
   pass('a reload just after a hit keeps the hit, and a reload in the death fade shows the summary');
 }
@@ -940,7 +946,7 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   const s = RS.clean(bad[6]);
   assert.deepEqual(s.run.wicks, ['keen', 'long']);
   assert.equal(s.run.offer, null, 'an offer that holds a wick already chosen is dropped');
-  assert.equal(RS.clean(bad[5]).up.mantle, 3, 'a level is clamped');
+  assert.equal(RS.clean({ up: { mantle: 99 } }).up.mantle, 8, 'a level is clamped');
   assert.equal(RS.clean(bad[7]).ended, null);
   assert.equal(RS.clean({ run: { place: 'ramparts', offer: ['oil', 'oil'] } }).run.offer, null, 'an offer of one wick twice is dropped');
   // a run in Lantern Fen that banked 30 and put out 7 comes back with its entry
@@ -950,7 +956,9 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   Object.assign(rs.run, { banked: 30, foes: 7, hp: 70 });
   enter(rs.run);
   const back = RS.clean(JSON.parse(JSON.stringify(rs)));
-  assert.deepEqual([back.run.place, back.run.banked, back.run.foes, back.run.entry], ['fen', 30, 7, { hp: 70, flasks: 2, carried: 0, foes: 7, relics: [], elitesDown: [], lastUsed: false }]);
+  const { sparks, sparkPicks, carriedPatterns, groundPatterns, caches, abilityLamps, patternRolls, foePatterns, abilityDrops, abilities, ...entry } = back.run.entry;
+  assert.deepEqual([back.run.place, back.run.banked, back.run.foes, entry], ['fen', 30, 7, { hp: 70, flasks: 2, carried: 0, foes: 7, relics: [], elitesDown: [], lastUsed: false }]);
+  assert.deepEqual([sparks, abilities], [{ flame: 0, ward: 0, gloam: 0 }, rs.run.abilities], 'the entry keeps the growth fields too');
   pass('the run save: bad fields are dropped, levels clamped, a bad offer dropped, and a run comes back with its entry');
 }
 { // an old explorer page stores its own save while a run save exists: the bank and the upgrades stay
@@ -1032,10 +1040,10 @@ function runFor(R, count, inp = {}, camYaw = 0) {
     'Spare oil · +1 flask', 'Close shave · +50% after a near miss', 'Ember tongue · blade hits burn for 6 more', 'Glim heart · each glim heals 1',
     'Last ember · stand again once, at 25%'
   ]);
-  assert.deepEqual(UPGRADES.map(u => u.name), ['Mantle', 'Flask', 'Edge', 'Draught', 'Ash pocket']);
-  // every level of every upgrade, bought in turn with enough glim: what the next level gives, then "all bought" and no Buy button
+  assert.deepEqual(UPGRADES.map(u => u.name), ['Mantle', 'Flask', 'Edge', 'Draught', 'Ash pocket', 'Belt', 'Keen eye', 'Lantern panes', 'First spark']);
+  // every level of every ware, bought in turn with enough glim: what the next level gives, then "all bought" and no Buy button
   const rs = RS.fresh();
-  rs.bank = 1325;
+  rs.bank = 9115;
   const seen = [];
   for (const u of UPGRADES) {
     for (let k = 0; k < u.costs.length; k++) {
@@ -1049,11 +1057,19 @@ function runFor(R, count, inp = {}, camYaw = 0) {
     seen.push(top.label);
   }
   assert.deepEqual(seen, [
-    'Mantle 1 · +15 health · 40 glim', 'Mantle 2 · +15 health · 80 glim', 'Mantle 3 · +15 health · 140 glim', 'Mantle 3 · all bought',
-    'Flask 1 · +1 flask · 60 glim', 'Flask 2 · +1 flask · 150 glim', 'Flask 3 · +1 flask · 260 glim', 'Flask 3 · all bought',
-    'Edge 1 · +12% blade damage · 50 glim', 'Edge 2 · +12% blade damage · 100 glim', 'Edge 3 · +12% blade damage · 170 glim', 'Edge 3 · all bought',
-    'Draught 1 · heal 45% · 45 glim', 'Draught 2 · heal 55% · 110 glim', 'Draught 2 · all bought',
-    'Ash pocket · keep 55% of glim · 120 glim', 'Ash pocket · all bought'
+    'Mantle 1 · +15 health · 40 glim', 'Mantle 2 · +15 health · 80 glim', 'Mantle 3 · +15 health · 140 glim', 'Mantle 4 · +15 health · 210 glim',
+    'Mantle 5 · +15 health · 290 glim', 'Mantle 6 · +15 health · 380 glim', 'Mantle 7 · +15 health · 480 glim', 'Mantle 8 · +15 health · 600 glim', 'Mantle 8 · all bought',
+    'Flask 1 · +1 flask · 60 glim', 'Flask 2 · +1 flask · 150 glim', 'Flask 3 · +1 flask · 260 glim', 'Flask 4 · +1 flask · 420 glim', 'Flask 4 · all bought',
+    'Edge 1 · +12% blade damage · 50 glim', 'Edge 2 · +12% blade damage · 100 glim', 'Edge 3 · +12% blade damage · 170 glim', 'Edge 4 · +12% blade damage · 260 glim',
+    'Edge 5 · +12% blade damage · 380 glim', 'Edge 5 · all bought',
+    'Draught 1 · heal 45% · 45 glim', 'Draught 2 · heal 55% · 110 glim', 'Draught 3 · heal 65% · 200 glim', 'Draught 3 · all bought',
+    'Ash pocket 1 · keep 18% of glim at a death · 40 glim', 'Ash pocket 2 · keep 26% of glim at a death · 80 glim', 'Ash pocket 3 · keep 34% of glim at a death · 150 glim',
+    'Ash pocket 4 · keep 42% of glim at a death · 240 glim', 'Ash pocket 5 · keep 50% of glim at a death · 360 glim', 'Ash pocket 5 · all bought',
+    'Belt 1 · a choice of two start abilities · 90 glim', 'Belt 2 · slot 2 starts filled · 220 glim', 'Belt 3 · the start abilities are bright · 420 glim', 'Belt 3 · all bought',
+    'Keen eye 1 · better drops · 70 glim', 'Keen eye 2 · better drops · 140 glim', 'Keen eye 3 · better drops · 230 glim', 'Keen eye 4 · better drops · 340 glim',
+    'Keen eye 5 · better drops · 480 glim', 'Keen eye 5 · all bought',
+    'Lantern panes 1 · 2 pane slots · 300 glim', 'Lantern panes 2 · 3 pane slots · 700 glim', 'Lantern panes 2 · all bought',
+    'First spark 1 · 1 spark pick at the start · 120 glim', 'First spark 2 · 2 spark picks at the start · 260 glim', 'First spark 3 · 3 spark picks at the start · 450 glim', 'First spark 3 · all bought'
   ]);
   // not enough glim: the Buy button is off and says how much more is needed; Mantle with 50 banked leaves 10 and level 1
   const poor = RS.fresh();
@@ -1107,19 +1123,20 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   const e = die(rs);
   assert.deepEqual(summaryOf(e), {
     title: 'The lamp goes out',
-    rows: [['Reached', 'II · The Crow Wall'], ['Time', '2:05'], ['Foes put out', '3'], ['Glim lost', '15 glim'], ['Glim banked', '49 glim']]
+    rows: [['Reached', 'II · The Crow Wall'], ['Time', '2:05'], ['Foes put out', '3'], ['Glim', 'kept 2 · lost 18'], ['Glim banked', '2 glim'], ['Patterns', 'kept 0 · lost 0']],
+    lines: ['Glim kept 2 · lost 18', 'Patterns kept 0 · lost 0']
   });
   const ash = RS.fresh();
   ash.up.ash = 1;
   startRun(ash, 5);
   ash.run.carried = 20;
   const a = summaryOf(die(ash)).rows;
-  assert.deepEqual([a[3][1], a[4][1], ash.bank], ['9 glim', '11 glim', 11]);
+  assert.deepEqual([a[3][1], a[4][1], ash.bank], ['kept 3 · lost 17', '3 glim', 3]);
   assert.deepEqual(routeOf('fen').map(p => p.state), ['passed', 'passed', 'here', 'ahead', 'ahead']);
   assert.deepEqual(routeOf('fen').map(p => `${p.n} ${p.name}`), ['I The Sunken Gaol', 'II The Crow Wall', 'III Lantern Fen', 'IV The Bell Knoll', 'V Barrow Crown']);
   assert.equal(ASKS.restart.line('ramparts'), 'Back to the start of The Crow Wall? The glim you found here is lost.');
   for (const q of Object.values(ASKS)) assert(!/\b(north|south|east|west)\b/i.test(q.line('fen')));
-  pass('the summary: "II · The Crow Wall", 15 lost and 49 banked (Cinders); Ash pocket shows 9 lost and 11 banked; the pause panel\'s places');
+  pass('the summary: "II · The Crow Wall", glim kept 2 and lost 18 (10%); Ash pocket 1 keeps 3 of 20; the pause panel\'s places');
 }
 { // game time: a toast of 1.8 s is 108 steps; the fade to ink is 72 steps, half at 36
   assert.deepEqual([stepsOf(1800), stepsOf(2600), stepsOf(3200), INK], [108, 156, 192, 72]);
@@ -1140,13 +1157,15 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   lightBeacon(rs);
   const offer = rs.run.offer.slice();
   let r = reloadAt(rs);
-  assert.deepEqual([r.card, r.s.run.offer, r.s.run.place, r.s.bank], ['beacon', offer, 'ramparts', 30]);
+  assert.deepEqual([r.card, r.s.run.offer, r.s.run.place, r.s.bank, r.s.run.carried], ['beacon', offer, 'ramparts', 0, 30], 'the beacon keeps the 30 carried');
   // the Lamp-room from the beacon card after the choice and a buy (each stored at once): play at the next place, the buy kept
   rs.bank = 50;
   chooseWick(rs, 'heavy');
   buy(rs, 'mantle');
+  rs.run.sparkPicks = rs.run.entry.sparkPicks = 0;
   r = reloadAt(rs);
-  assert.deepEqual([r.card, r.s.run.place, r.s.run.wicks, r.s.run.hp, maxOf(r.s), r.s.bank], [null, 'ramparts', ['heavy'], 75, 115, 10]);
+  // Mantle 1 (40) takes the 30 carried first, then 10 of the bank
+  assert.deepEqual([r.card, r.s.run.place, r.s.run.wicks, r.s.run.hp, maxOf(r.s), r.s.bank, r.s.run.carried, r.s.run.entry.carried], [null, 'ramparts', ['heavy'], 75, 115, 40, 0, 0]);
   // the pause panel: the run as stored, and the sound switch
   rs.sound = false;
   r = reloadAt(rs);
@@ -1165,7 +1184,7 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   // the summary closed: the ended run is gone, and the Lamp-room opens; Begin the run starts the Gaol with the upgrades bought
   rs.ended = null;
   r = reloadAt(rs);
-  assert.deepEqual([r.card, r.s.bank, r.s.up.mantle], ['lamp', 13, 1], 'Cinders kept 3 of the 12 carried');
+  assert.deepEqual([r.card, r.s.bank, r.s.up.mantle], ['lamp', 41, 1], 'a death kept 1 of the 12 carried (10%)');
   startRun(r.s, 9);
   assert.deepEqual([r.s.run.place, r.s.run.hp, r.s.run.wicks, r.s.run.carried], ['gaol', 115, [], 0]);
   pass('a reload at each card: the help card, the Lamp-room, the beacon card with the same two wicks, play after the choice and a buy, the summary in the fade');
@@ -1432,8 +1451,8 @@ if (!skipWorlds && ORDER.every(id => fs.existsSync(`${DIR}worlds/${id}.json`))) 
     const ev = runFor(R, 3);
     const lit = ev.find(e => e.type === 'beacon');
     assert(lit && lit.next === 'ramparts' && lit.offer.length === 2, JSON.stringify(ev.map(e => e.type)));
-    assert.deepEqual([rs.bank, rs.run.carried, rs.run.place], [20, 0, 'ramparts']);
-    pass('a run through the Gaol: five wisps give 20 glim and a flask, and the beacon banks it and offers two wicks', { offer: lit.offer });
+    assert.deepEqual([rs.bank, rs.run.carried, rs.run.place], [0, 20, 'ramparts'], 'the glim stays carried');
+    pass('a run through the Gaol: five wisps give 20 glim and a flask, and the beacon keeps it carried and offers two wicks', { offer: lit.offer });
   }
 }
 { // the page's two modes (screens.js isRun, modeHref): the run by default, the explorer with ?explore or ?wander, ?run and #run always the run

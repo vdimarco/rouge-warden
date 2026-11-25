@@ -91,30 +91,30 @@ function untilSpecial(W, E, max = 600) {
 /* ---------------- names ---------------- */
 {
   assert.deepEqual(WICKS.map(w => w.name), ['Long wick', 'Keen edge', 'Quick heels', 'Heavy fall', 'Spare oil', 'Close shave', 'Ember tongue', 'Glim heart', 'Last ember']);
-  assert.deepEqual(UPGRADES.map(u => u.name), ['Mantle', 'Flask', 'Edge', 'Draught', 'Ash pocket']);
+  assert.deepEqual(UPGRADES.map(u => u.name), ['Mantle', 'Flask', 'Edge', 'Draught', 'Ash pocket', 'Belt', 'Keen eye', 'Lantern panes', 'First spark']);
   assert.deepEqual(UNLOCKS.map(u => u.name), ['Ember tongue', 'Glim heart', 'Last ember', 'Wick shelf', 'Kindled flask', 'Rising cut', 'Ember parry']);
   assert.deepEqual(RELICS.map(r => r.name), ['Ember trail', 'Spark third', 'Coal heel', 'Hooked cut', 'Bellows cut', 'Moth lamp', 'Tinder guard', 'Echo blade']);
   assert.deepEqual(ELITE_LIST.map(e => e.name), ['The Wardmother', 'The Rookchief', 'The Fen-wick', 'The Bellwether', 'The Cairnwarden']);
   assert.deepEqual(UNLOCKS.map(u => u.cost), [90, 100, 220, 160, 80, 140, 200]);
   assert.equal(UNLOCKS.reduce((a, u) => a + u.cost, 0), 990, 'the unlocks cost 990 glim in all');
-  pass('names: nine wicks, five upgrades, seven unlocks, eight relics and five elites, with these names and no others');
+  pass('names: nine wicks, nine wares, seven unlocks, eight relics and five elites, with these names and no others');
 }
 
-/* ---------------- Cinders and Ash pocket ---------------- */
+/* ---------------- a death keeps 10%, and Ash pocket 8% more a level (gloam-downs-growth) ---------------- */
 {
   const rs = RS.fresh();
   startRun(rs, 3);
   rs.run.carried = 20;
   const e = die(rs);
-  assert.deepEqual([e.banked, e.lost, rs.bank], [5, 15, 5]);
-  assert.deepEqual(summaryOf(e).rows.slice(3), [['Glim lost', '15 glim'], ['Glim banked', '5 glim']]);
+  assert.deepEqual([e.banked, e.lost, rs.bank], [2, 18, 2]);
+  assert.deepEqual(summaryOf(e).rows.slice(3, 5), [['Glim', 'kept 2 · lost 18'], ['Glim banked', '2 glim']]);
   const a = RS.fresh();
   a.up.ash = 1;
   startRun(a, 3);
   a.run.carried = 20;
   const e2 = die(a);
-  assert.deepEqual([e2.banked, e2.lost], [11, 9]);
-  pass('Cinders: a death in the Gaol with 20 glim banks 5 and loses 15; with Ash pocket it banks 11 and loses 9');
+  assert.deepEqual([e2.banked, e2.lost], [3, 17]);
+  pass('a death in the Gaol with 20 glim banks 2 and loses 18; with Ash pocket 1 it banks 3 and loses 17');
 }
 
 /* ---------------- unlocks ---------------- */
@@ -534,15 +534,15 @@ function untilSpecial(W, E, max = 600) {
   assert.deepEqual([b.emberTop, b.ember, b.run.relics, b.run.ember, b.run.elitesDown, b.run.route[0], new Set(b.run.route).size], [5, 3, ['trail', 'echo'], 5, ['gaol'], 'gaol', 5]);
   pass('the save: unknown unlocks and relics, a level over emberTop, a bad route and bad bests are dropped');
 }
-{ // from v1: the bank and levels come over, v2 is stored at once, and a later v1 write changes nothing
+{ // from v1 (with no v2): the bank and levels come over, v3 is stored at once, and a later v1 write changes nothing
   const mem = new Map(), storage = { getItem: k => mem.get(k) ?? null, setItem: (k, v) => mem.set(k, String(v)) };
   mem.set(RS.OLD_KEY, JSON.stringify({ v: 1, bank: 300, up: { mantle: 2 }, runs: 4 }));
   const s = RS.load(storage);
-  assert.deepEqual([s.bank, s.up.mantle, s.v, mem.has(RS.KEY)], [300, 2, 2, true]);
+  assert.deepEqual([s.bank, s.up.mantle, s.v, mem.has(RS.KEY)], [300, 2, 3, true]);
   mem.set(RS.OLD_KEY, JSON.stringify({ v: 1, bank: 5, up: {} }));
   assert.deepEqual([RS.load(storage).bank, RS.load(storage).up.mantle], [300, 2]);
   assert.deepEqual(RS.load(null), RS.fresh());
-  pass('from v1: 300 glim and Mantle 2 come over and v2 is stored; a later v1 write does not change v2');
+  pass('from v1: 300 glim and Mantle 2 come over and v3 is stored; a later v1 write does not change v3');
 }
 { // a run at Ember 1 in Lantern Fen with Ember trail, 30 banked and 7 foes comes back from the save
   const rs = RS.fresh();
@@ -576,7 +576,7 @@ function untilSpecial(W, E, max = 600) {
   console.error = err;
   off.forEach(f => f());
   assert.equal(got, 1);
-  assert.equal(EVENTS.length, 15);
+  assert.equal(EVENTS.length, 23);
   pass('the screens: relic marks with Kindled; the bus: a listener that throws does not stop the next');
 }
 

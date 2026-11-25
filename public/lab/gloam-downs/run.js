@@ -7,6 +7,7 @@ import { makeFighter, MOVES, BUILD, dealt } from './moves.js';
 import { makeRelics, drawRelic } from './relics.js';
 import { emit } from './bus.js';
 import { mulberry, hash2 } from '../kit/rng.js';
+import { SPARK, levelGain, COLOUR_IDS, ABILITIES, ABILITY_IDS, PANES, PANE_IDS, PANE_SLOTS, PATTERNS, PATTERN_IDS, STARTERS, DROPS } from './growth.js';
 
 /* ---------------- the step ----------------
    The game steps at a fixed 1/60 s, as many steps as the frame took, up to 15 a frame. The small term keeps a frame of 24/144 s from
@@ -78,12 +79,18 @@ export const WICKS = [
   { id: 'heart', name: 'Glim heart', text: 'each glim heals 1', unlock: 'heart' },
   { id: 'last', name: 'Last ember', text: 'stand again once, at 25%', unlock: 'last' }
 ];
+/* the lasting wares: each level costs more. The first levels of Mantle, Flask, Edge and Draught keep the costs and gifts they had, so an
+   old save keeps its power (gloam-downs-growth design.md "Lasting wares") */
 export const UPGRADES = [
-  { id: 'mantle', name: 'Mantle', costs: [40, 80, 140] },
-  { id: 'flask', name: 'Flask', costs: [60, 150, 260] },
-  { id: 'edge', name: 'Edge', costs: [50, 100, 170] },
-  { id: 'draught', name: 'Draught', costs: [45, 110] },
-  { id: 'ash', name: 'Ash pocket', costs: [120] }
+  { id: 'mantle', name: 'Mantle', costs: [40, 80, 140, 210, 290, 380, 480, 600] },
+  { id: 'flask', name: 'Flask', costs: [60, 150, 260, 420] },
+  { id: 'edge', name: 'Edge', costs: [50, 100, 170, 260, 380] },
+  { id: 'draught', name: 'Draught', costs: [45, 110, 200] },
+  { id: 'ash', name: 'Ash pocket', costs: [40, 80, 150, 240, 360] },
+  { id: 'belt', name: 'Belt', costs: [90, 220, 420] },
+  { id: 'keen', name: 'Keen eye', costs: [70, 140, 230, 340, 480] },
+  { id: 'panes', name: 'Lantern panes', costs: [300, 700] },
+  { id: 'first', name: 'First spark', costs: [120, 260, 450] }
 ];
 // the unlocks: each is bought once in the Lamp-room, and lasts for every run
 export const UNLOCKS = [
@@ -115,14 +122,161 @@ export const ember = n => ({
   special: n >= 4 ? 2 : 1, dmg: n >= 4 ? 1.2 : 1, bossHp: n >= 5 ? 1.25 : 1, phase3: n >= 5 ? 0.4 : null, beaconFlasks: n >= 5 ? 1 : Infinity
 });
 const has = (wicks, id) => (wicks || []).includes(id);
-export const maxHp = (up, wicks) => BASE.hp + 15 * (up.mantle || 0) + (has(wicks, 'long') ? 20 : 0);
+// Ward: 10 more health a level (full up to level 5, half a level after that)
+export const wardHp = sparks => SPARK.ward.hp * levelGain(sparks?.ward | 0);
+export const maxHp = (up, wicks, sparks = null) => BASE.hp + 15 * (up.mantle || 0) + (has(wicks, 'long') ? 20 : 0) + wardHp(sparks);
 export const flasksMax = (up, wicks, em = 0) => Math.max(1, BASE.flasks + (up.flask || 0) + (has(wicks, 'oil') ? 1 : 0) - ember(em).flaskCut);
 export const healShare = (up, em = 0) => BASE.heal + 0.1 * (up.draught || 0) - ember(em).healCut;
-// the blade's bonuses add (Edge and Keen edge raise the plunge too); damage and heals round once, at the end
-export const bladeBonus = (up, wicks) => 0.12 * (up.edge || 0) + (has(wicks, 'keen') ? 0.15 : 0);
-export const healOf = (up, max, em = 0) => dealt(healShare(up, em), max);
-// a death keeps a share of the glim carried: 25%, or 55% with Ash pocket (Cinders), rounded down
-export const keepShare = up => (up.ash ? 0.55 : 0.25);
+/* the blade's bonuses add (Edge, Keen edge and Flame raise the plunge and the relic hits too: they are Flame moves); damage and heals
+   round once, at the end */
+export const flameBonus = sparks => SPARK.flame.power * levelGain(sparks?.flame | 0);
+export const bladeBonus = (up, wicks, sparks = null) => 0.12 * (up.edge || 0) + (has(wicks, 'keen') ? 0.15 : 0) + flameBonus(sparks);
+export const healOf = (up, max, em = 0, more = 1) => dealt(healShare(up, em) * more, max);
+// a death, or End the run, keeps 10% of the glim carried and 8% more for each Ash pocket level (up to 50%), rounded down
+export const keepShare = up => 0.1 + 0.08 * Math.max(0, Math.min(5, up?.ash | 0));
+
+/* ---------------- the colours ----------------
+   A spark raises Flame (damage), Ward (health) or Gloam (abilities) by 1 for the rest of the run. colourPower is what the levels give
+   the power of that colour's abilities; coolShare is the share of every cooldown that Gloam leaves, never under 60% */
+export const sparksOf = run => ({ flame: run?.sparks?.flame | 0, ward: run?.sparks?.ward | 0, gloam: run?.sparks?.gloam | 0 });
+export const colourPower = (run, colour) => (SPARK[colour] ? 1 + SPARK[colour].power * levelGain(sparksOf(run)[colour] | 0) : 1);
+export const coolShare = run => Math.max(SPARK.gloam.coolMin, 1 - SPARK.gloam.cool * levelGain(sparksOf(run).gloam));
+// a spark pick taken: one colour up by 1. Ward raises the health now and at the entry, as a wick does, so a reload keeps it
+export function takeSpark(rs, colour) {
+  const run = rs.run;
+  if (!run || !COLOUR_IDS.includes(colour) || (run.sparkPicks | 0) <= 0) return false;
+  run.sparks = sparksOf(run);
+  const before = wardHp(run.sparks);
+  run.sparks[colour] += 1;
+  run.sparkPicks -= 1;
+  const more = wardHp(run.sparks) - before;
+  if (more) { run.hp += more; if (run.entry) run.entry.hp += more; }
+  if (run.entry) { run.entry.sparks = { ...run.sparks }; run.entry.sparkPicks = run.sparkPicks; }
+  if (run.sparkPicks <= 0) run.sparkNow = false;
+  emit('spark-take', { colour });
+  return true;
+}
+// a cache's spark: one more pick, offered at once on the small card (main.js shows it while sparkNow is set)
+export function takeSparkPick(rs) {
+  const run = rs.run;
+  if (!run) return false;
+  run.sparkPicks = Math.min(9, (run.sparkPicks | 0) + 1);
+  run.sparkNow = true;
+  if (run.entry) run.entry.sparkPicks = run.sparkPicks;
+  return true;
+}
+
+/* ---------------- the panes ----------------
+   A pane is a passive pick, set in a slot in any Lamp-room for free. One slot at first; Lantern panes opens two more. A pane is set in
+   one slot at most, and only a kindled pane can be set */
+export const paneSlots = rs => Math.min(PANE_SLOTS.max, PANE_SLOTS.base + (rs?.up?.panes | 0));
+export const paneOf = (rs, id) => (rs?.panes || []).slice(0, paneSlots(rs)).includes(id);
+const kindIds = kind => (kind === 'ability' ? ABILITY_IDS : kind === 'pane' ? PANE_IDS : [...ABILITY_IDS, ...PANE_IDS]);
+// the kindled abilities and panes: the starters always, and every pattern kindled
+export const kindledOf = (rs, kind = null) => [...new Set([...STARTERS, ...(rs?.kindled || [])])].filter(id => kindIds(kind).includes(id));
+export function setPane(rs, slot, id) {
+  if (!Number.isInteger(slot) || slot < 0 || slot >= paneSlots(rs)) return false;
+  rs.panes ||= [];
+  while (rs.panes.length <= slot) rs.panes.push(null);
+  if (id === null) { rs.panes[slot] = null; return true; }
+  if (!kindledOf(rs, 'pane').includes(id) || rs.panes.some((p, i) => p === id && i !== slot)) return false;
+  rs.panes[slot] = id;
+  return true;
+}
+// Ember glass: 20% more damage to a burning foe (a hit on a target adds this to its bonus)
+export const paneHit = (rs, t) => (paneOf(rs, 'ember') && (t?.status?.burn > 0 || t?.burning) ? 0.2 : 0);
+
+/* ---------------- the patterns ----------------
+   A pattern is the plan of an ability or a pane not yet kindled. It drops as a small lamp and is carried; a lit beacon or a win keeps
+   it (rs.patterns), and a death loses it. In the Lamp-room glim kindles it, and from then on it is in the drops of every later run.
+   Each draw takes the run's next roll of the seed's `pattern` stream, so the same seed, wares and kindled list give the same drops */
+export const patternOf = id => [...ABILITIES, ...PANES].find(x => x.id === id) || null;
+export const patternChance = rs => DROPS.pattern + DROPS.patternPerKeen * (rs?.up?.keen | 0);
+const patternRoll = run => { run.patternRolls = (run.patternRolls | 0) + 1; return mulberry(hash2(run.seed | 0, run.patternRolls, 0x9a77)); };
+// the patterns that may drop: not found, not kindled, not carried and not lying on the ground
+export const patternsLeft = rs => PATTERN_IDS.filter(id => !(rs.patterns || []).includes(id) && !kindledOf(rs).includes(id) &&
+  !(rs.run?.carriedPatterns || []).includes(id) && !(rs.run?.groundPatterns || []).some(g => g.id === id));
+// one roll: with chance 1 it drops one whenever one is left -> the id, or null
+export function drawPattern(rs, chance = 1) {
+  const run = rs.run;
+  if (!run) return null;
+  const r = patternRoll(run), roll = r(), left = patternsLeft(rs);
+  if (roll >= chance || !left.length) return null;
+  return left[Math.floor(r() * left.length)];
+}
+// a pattern lamp on the ground (a cache's prize calls this, keys.js) -> the id dropped, or null when none is left
+export function dropPattern(R, at = null, id = null) {
+  const run = R.rs.run;
+  if (!run) return null;
+  const pick = id ? (patternsLeft(R.rs).includes(id) ? id : null) : drawPattern(R.rs, 1);
+  if (!pick) return null;
+  const s = R.fighter?.body.s, p = at || [s.x, s.y, s.z];
+  (run.groundPatterns ||= []).push({ id: pick, x: p[0], y: p[1], z: p[2] });
+  return pick;
+}
+// what the fight draws: each pattern lamp, with its kind, colour and name
+export const groundPatterns = R => (R?.rs?.run?.groundPatterns || []).map(g => {
+  const x = patternOf(g.id);
+  return { ...g, kind: ABILITY_IDS.includes(g.id) ? 'ability' : 'pane', colour: x?.colour || 'gloam', name: x?.name || g.id };
+});
+// the glim a Lamp-room can spend: in a run the glim carried, and the bank
+export const purse = rs => (rs.bank | 0) + (rs.run?.carried | 0);
+// spend the glim carried first, then the bank. The entry's glim goes down by the part carried, so a reload cannot give it back
+export function pay(rs, cost) {
+  if (purse(rs) < cost) return false;
+  const run = rs.run, fromCarried = run ? Math.min(run.carried | 0, cost) : 0;
+  if (run) {
+    run.carried -= fromCarried;
+    if (run.entry) run.entry.carried = Math.max(0, (run.entry.carried | 0) - fromCarried);
+  }
+  rs.bank -= cost - fromCarried;
+  return true;
+}
+// the Lamp-room's Kindle: a found pattern, for its cost; it is final
+export function kindle(rs, id) {
+  const p = PATTERNS.find(x => x.id === id);
+  if (!p || !(rs.patterns || []).includes(id) || kindledOf(rs).includes(id) || !pay(rs, p.cost)) return false;
+  rs.patterns = rs.patterns.filter(x => x !== id);
+  rs.kindled = [...new Set([...(rs.kindled || []), id])];
+  emit('pattern-kindled', { id });
+  return true;
+}
+// patterns carried become found: at a lit beacon or the win -> the ids kept
+function keepPatterns(rs) {
+  const run = rs.run, ids = (run.carriedPatterns || []).filter(id => !(rs.patterns || []).includes(id) && !kindledOf(rs).includes(id));
+  rs.patterns = [...new Set([...(rs.patterns || []), ...ids])];
+  run.carriedPatterns = [];
+  run.patternsKept = (run.patternsKept | 0) + ids.length;
+  if (ids.length) emit('pattern-kept', { ids });
+  return ids;
+}
+
+/* ---------------- the start of a run ----------------
+   Without Belt, slot 1 holds one ability drawn by the seed's `start` stream from the kindled abilities. Belt 1 offers two for slot 1;
+   Belt 2 also fills slot 2; Belt 3 makes the start abilities bright. The Wick shelf's two draws come first in the same stream */
+export function startAbilities(seed, rs) {
+  const left = kindledOf(rs, 'ability'), belt = rs?.up?.belt | 0, r = stream(seed, 'start'), bright = belt >= 3;
+  r(); r();
+  const take = () => (left.length ? left.splice(Math.floor(r() * left.length), 1)[0] : null);
+  const slot = id => (id ? { id, bright } : null);
+  if (belt < 1) return { offer: null, slots: [slot(take()), null] };
+  const offer = [take(), take()].filter(Boolean), two = belt >= 2 ? take() : null;
+  return { offer: offer.length > 1 ? offer : null, slots: [offer.length === 1 ? slot(offer[0]) : null, slot(two)] };
+}
+// Belt's start choice: one of the two offered goes in slot 1; with Belt 2 and no third ability kindled, the other fills slot 2
+export function chooseStartAbility(rs, id) {
+  const run = rs.run;
+  if (!run || !run.abilityOffer || !run.abilityOffer.includes(id)) return false;
+  const bright = (rs.up.belt | 0) >= 3;
+  run.abilities ||= [null, null];
+  run.abilities[0] = { id, bright };
+  if ((rs.up.belt | 0) >= 2 && !run.abilities[1]) { const other = run.abilityOffer.find(x => x !== id); run.abilities[1] = other ? { id: other, bright } : null; }
+  run.abilityOffer = null;
+  if (run.entry) run.entry.abilities = run.abilities.map(a => (a ? { ...a } : null));
+  return true;
+}
+// the start card still asks: a wick from the shelf, a spark of First spark or Belt's ability
+export const startPicks = run => !!(run && (run.offer || (run.sparkPicks | 0) > 0 || run.abilityOffer));
 /* the order of a run's places. Below Ember 1 it is the order of the downs; from Ember 1 the seed's `route` stream orders places II
    to IV, with the Gaol always first and Barrow Crown always last */
 export function routeFor(seed, em = 0) {
@@ -139,19 +293,30 @@ export const routeOfRun = run => (run?.route?.length === ORDER.length ? run.rout
    out count as they were. The run's Ember level is rs.ember when it begins (run-save.js keeps it at or under rs.emberTop) */
 export function startRun(rs, seed, em = rs.ember | 0) {
   const e = Math.max(0, Math.min(EMBER_TOP, em | 0)), max = maxHp(rs.up, []), fl = flasksMax(rs.up, [], e), s = seed >>> 0 || 1;
+  const start = startAbilities(s, rs);
   rs.run = {
     seed: s, place: ORDER[0], time: 0, hp: max, flasks: fl, carried: 0, banked: 0, foes: 0, wicks: [], offer: null, bossDown: false, entry: null,
-    route: routeFor(s, e), ember: e, relics: [], elitesDown: [], combo: 0, lastUsed: false, shelf: false
+    route: routeFor(s, e), ember: e, relics: [], elitesDown: [], combo: 0, lastUsed: false, shelf: false,
+    // growth (gloam-downs-growth): the colours, the spark picks left (First spark gives them at the start), the two ability slots and
+    // Belt's offer, the patterns carried and on the ground, the caches opened, the ability lamps, and the rolls and counts of the drops
+    sparks: { flame: 0, ward: 0, gloam: 0 }, sparkPicks: Math.min(9, rs.up.first | 0), sparkNow: false, abilities: start.slots, abilityOffer: start.offer,
+    carriedPatterns: [], groundPatterns: [], caches: [], abilityLamps: [], patternRolls: 0, foePatterns: 0, abilityDrops: 0, patternsKept: 0, kept: []
   };
   // Wick shelf: the run starts with a choice of two wicks, on the beacon card's own buttons
-  if ((rs.unlocks || []).includes('shelf')) { rs.run.offer = startOffer(s, rs.unlocks); rs.run.shelf = true; }
+  if ((rs.unlocks || []).includes('shelf')) rs.run.offer = startOffer(s, rs.unlocks);
+  // the start card (the beacon card's buttons) asks for the shelf's wick, First spark's sparks and Belt's ability
+  rs.run.shelf = startPicks(rs.run);
   enter(rs.run);
   rs.wander = false;
   rs.ended = null;
   return rs.run;
 }
+// the growth fields a reload restores as they were at the entry
+const GROWN = ['sparks', 'sparkPicks', 'abilities', 'carriedPatterns', 'groundPatterns', 'caches', 'abilityLamps', 'patternRolls', 'foePatterns', 'abilityDrops'];
+const copy = v => (v === undefined ? undefined : JSON.parse(JSON.stringify(v)));
 export function enter(run) {
   run.entry = { hp: run.hp, flasks: run.flasks, carried: run.carried, foes: run.foes, relics: (run.relics || []).slice(), elitesDown: (run.elitesDown || []).slice(), lastUsed: !!run.lastUsed };
+  for (const k of GROWN) if (k in run) run.entry[k] = copy(run[k]);
   return run;
 }
 // after the boss's fall the boss stays down, so a reload keeps its 30 glim and its one foe on top of the entry values
@@ -164,17 +329,23 @@ export function reload(run) {
   if (e.relics) run.relics = e.relics.slice();
   if (e.elitesDown) run.elitesDown = e.elitesDown.slice();
   if ('lastUsed' in e) run.lastUsed = e.lastUsed;
+  for (const k of GROWN) if (k in e) run[k] = copy(e[k]);
+  run.sparkNow = false;
   return run;
 }
 // move the run to the start of a place, as Walk on does: the entry snapshot is taken from the values now
 export function goTo(rs, id) {
   rs.run.place = id;
   rs.furthest = Math.max(rs.furthest || 0, routeOfRun(rs.run).indexOf(id));
+  // the lamps left lying in the last place are gone
+  if (rs.run.groundPatterns) rs.run.groundPatterns = [];
+  if (rs.run.abilityLamps) rs.run.abilityLamps = [];
   enter(rs.run);
 }
-export const maxOf = rs => maxHp(rs.up, rs.run?.wicks);
+export const maxOf = rs => maxHp(rs.up, rs.run?.wicks, rs.run?.sparks);
 export const flasksOf = rs => flasksMax(rs.up, rs.run?.wicks, emberOf(rs.run));
-export const healNow = rs => healOf(rs.up, maxOf(rs), emberOf(rs.run));
+// Tallow glass: a flask heals 10% more
+export const healNow = rs => healOf(rs.up, maxOf(rs), emberOf(rs.run), paneOf(rs, 'tallow') ? 1.1 : 1);
 // a wick chosen raises the run and the entry by what it gives, so a reload keeps it. A starting wick (Wick shelf) closes the shelf
 export function chooseWick(rs, id) {
   const run = rs.run;
@@ -185,11 +356,11 @@ export function chooseWick(rs, id) {
   if (id === 'oil') { run.flasks += 1; run.entry.flasks += 1; }
   return true;
 }
-// a buy in the Lamp-room or at a beacon: a Mantle level bought in a run raises the health too, and a Flask level adds a full flask
+/* a buy in the Lamp-room or at a beacon, with the glim carried first and then the bank: a Mantle level bought in a run raises the
+   health too, and a Flask level adds a full flask */
 export function buy(rs, id) {
   const u = UPGRADES.find(x => x.id === id), lvl = rs.up[id] || 0;
-  if (!u || lvl >= u.costs.length || rs.bank < u.costs[lvl]) return false;
-  rs.bank -= u.costs[lvl];
+  if (!u || lvl >= u.costs.length || !pay(rs, u.costs[lvl])) return false;
   rs.up[id] = lvl + 1;
   const run = rs.run;
   if (run && id === 'mantle') { run.hp += 15; run.entry.hp += 15; }
@@ -200,8 +371,7 @@ export function buy(rs, id) {
 export function buyUnlock(rs, id) {
   const u = UNLOCKS.find(x => x.id === id);
   rs.unlocks ||= [];
-  if (!u || rs.unlocks.includes(id) || rs.bank < u.cost) return false;
-  rs.bank -= u.cost;
+  if (!u || rs.unlocks.includes(id) || !pay(rs, u.cost)) return false;
   rs.unlocks.push(id);
   return true;
 }
@@ -212,23 +382,30 @@ export function setEmber(rs, n) {
   rs.ember = n;
   return true;
 }
-/* a lit beacon banks the glim carried and fills every flask (one flask at Ember 5); before the last place it moves the run to the next
-   place of its route with two wicks offered; at the last it is the win */
+/* a lit beacon keeps the glim carried as carried (it is spent in the Lamp-room, or carried on, and a death keeps only a share), keeps
+   the patterns carried and fills every flask (one flask at Ember 5); before the last place it moves the run to the next place of its
+   route with two wicks and one spark pick offered; at the last it is the win */
 export function lightBeacon(rs) {
   const run = rs.run, route = routeOfRun(run), i = route.indexOf(run.place);
-  rs.bank += run.carried;
-  run.banked += run.carried;
-  run.carried = 0;
   run.flasks = Math.min(flasksOf(rs), run.flasks + Math.min(flasksOf(rs), ember(emberOf(run)).beaconFlasks));
   if (i === route.length - 1) return win(rs);
+  run.kept = keepPatterns(rs);
   run.offer = drawOffer(run.seed, i, run.wicks, rs.unlocks);
+  run.sparkPicks = Math.min(9, (run.sparkPicks | 0) + 1);
+  run.sparkNow = false;
+  run.abilityOffer = null;
   run.shelf = false;
   goTo(rs, route[i + 1]);
-  return { next: run.place, offer: run.offer.slice() };
+  return { next: run.place, offer: run.offer.slice(), kept: run.kept.slice() };
 }
 // a win at the top open level opens the next one, up to Ember 5; the best time is kept for each level
 export function win(rs) {
   const run = rs.run, em = emberOf(run);
+  // the win banks all the glim carried, and keeps the patterns carried
+  const kept = keepPatterns(rs), glim = run.carried | 0;
+  rs.bank += glim;
+  run.banked += glim;
+  run.carried = 0;
   rs.wins += 1;
   rs.runs += 1;
   if (!rs.bestWin || run.time < rs.bestWin) rs.bestWin = run.time;
@@ -237,18 +414,25 @@ export function win(rs) {
   const opened = em >= (rs.emberTop | 0) && em < EMBER_TOP;
   if (opened) rs.emberTop = em + 1;
   rs.bestCombo = Math.max(rs.bestCombo | 0, run.combo | 0);
-  rs.ended = { won: true, place: run.place, time: run.time, foes: run.foes, lost: 0, banked: run.banked, ember: em, opened: opened ? em + 1 : null, relics: (run.relics || []).slice(), combo: run.combo | 0, seed: run.seed };
+  rs.ended = {
+    won: true, place: run.place, time: run.time, foes: run.foes, kept: glim, lost: 0, banked: run.banked, ember: em, opened: opened ? em + 1 : null, relics: (run.relics || []).slice(), combo: run.combo | 0, seed: run.seed,
+    patternsKept: run.patternsKept | 0, patternsLost: 0
+  };
   rs.run = null;
-  return { won: true };
+  return { won: true, kept };
 }
-// at 0 health: Cinders keep 25% of the glim carried, rounded down, or 55% with Ash pocket; the rest is lost
+// at 0 health, or End the run: 10% of the glim carried is kept, and 8% more each Ash pocket level, rounded down; the rest is lost, and
+// so are the patterns carried
 export function die(rs) {
   const run = rs.run, kept = Math.floor(run.carried * keepShare(rs.up) + 1e-9);
   rs.bank += kept;
   rs.runs += 1;
   rs.deaths += 1;
   rs.bestCombo = Math.max(rs.bestCombo | 0, run.combo | 0);
-  rs.ended = { won: false, place: run.place, time: run.time, foes: run.foes, lost: run.carried - kept, banked: run.banked + kept, ember: emberOf(run), opened: null, relics: (run.relics || []).slice(), combo: run.combo | 0, seed: run.seed };
+  rs.ended = {
+    won: false, place: run.place, time: run.time, foes: run.foes, kept, lost: run.carried - kept, banked: run.banked + kept, ember: emberOf(run), opened: null, relics: (run.relics || []).slice(), combo: run.combo | 0, seed: run.seed,
+    patternsKept: run.patternsKept | 0, patternsLost: (run.carriedPatterns || []).length
+  };
   rs.run = null;
   return rs.ended;
 }
@@ -263,26 +447,32 @@ export function die(rs) {
    - think(ev, play): runs after the lamplighter on every game step (stage 2's foes; play is false in hit stop). A foe's hit calls
      runner.hurt(dmg, from, { push });
    - onLight(): runs when a beacon lights, before it banks (the foes' glim motes not yet taken count as carried). */
-export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable = () => ({ ok: true }), drop = null, think = null, onLight = null, still = false, log = [], fx = {}, clock = makeClock() }) {
+export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable = () => ({ ok: true }), drop = null, think = null, onLight = null, still = false, log = [], fx = {}, clock = makeClock(), abilities = null, keys = null }) {
   // fx.stop false turns hit stop off (__gloam.fx), so the game must still play with it off
   const stop = n => (fx.stop === false ? 0 : hitStop(clock, n));
+  // Clear glass: an ability use makes the next blade hit within 2 s deal 40% more
+  const clearOn = () => paneOf(rs, 'clear') && R.clearUntil > clock.play;
   const stats = () => {
     const run = rs.run;
     if (!run) return {};
     return {
-      bonus: bladeBonus(rs.up, run.wicks), heavy: run.wicks.includes('heavy'), quick: run.wicks.includes('heels'), shave: run.wicks.includes('shave'),
+      bonus: bladeBonus(rs.up, run.wicks, run.sparks) + (clearOn() ? PANE_RULES.clear : 0), heavy: run.wicks.includes('heavy'), quick: run.wicks.includes('heels'), shave: run.wicks.includes('shave'),
       drink: run.flasks <= 0 ? 'empty' : run.hp >= maxOf(rs) ? 'full' : 'ok', relics: run.relics || [], unlocks: rs.unlocks || []
     };
   };
   const fighter = makeFighter(body, walk, { stats });
   const R = {
     clock, fighter, rs, meta, log, fx, wisps: new Set(), lit: false, dead: false, onBeacon: false, hurtAt: -1, blink: still ? 8 : 4,
-    pend: { attack: false, roll: false, heal: false }, targets, lightable, think,
+    pend: { attack: false, roll: false, heal: false, ab1: false, ab2: false }, targets, lightable, think,
     drop: drop || ((n) => { if (rs.run) rs.run.carried += n; }),
     // the place's elite (elites.js sets it when it wakes), and the relics lying here and the fires they light (relics.js)
-    elite: null, max: () => maxOf(rs), bonus: () => (rs.run ? bladeBonus(rs.up, rs.run.wicks) : 0)
+    elite: null, max: () => maxOf(rs), bonus: () => (rs.run ? bladeBonus(rs.up, rs.run.wicks, rs.run.sparks) : 0),
+    // growth: the toasts the page shows next (main.js updateGrowth), Lead glass ready for the next fight, Clear glass's window
+    notes: [], lead: true, clearUntil: -1
   };
   R.relics = makeRelics(R);
+  R.abilities = abilities ? abilities(R) : null;
+  R.keys = keys ? keys(R) : null;
   const cue = (ev, name, more) => { const c = { cue: name, step: clock.step, play: clock.play, ...more }; R.log.push(c); ev.push({ type: 'cue', ...c, logged: true }); };
   // the Ember level's glim: 15% more a level, rounded down
   const glimAt = n => Math.floor(n * glimFactor(emberOf(rs.run)) + 1e-9);
@@ -327,8 +517,10 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
       }
       return 'safe';
     }
-    // Ember 4: foes deal 20% more
-    const d = Math.round(dmg * ember(emberOf(run)).dmg);
+    // Ember 4: foes deal 20% more. Lead glass: the first hit of each fight deals half
+    const lead = paneOf(rs, 'lead') && R.lead;
+    R.lead = false;
+    const d = Math.round(dmg * ember(emberOf(run)).dmg * (lead ? PANE_RULES.lead : 1));
     run.hp = Math.max(0, run.hp - d);
     fighter.knock(from, o.push ?? MOVES.hurt.push);
     R.hurtAt = clock.step;
@@ -377,20 +569,51 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
     if ((rs.unlocks || []).includes('kflask') && run.flasks < flasksOf(rs)) { run.flasks += 1; flask = true; }
     ev.push({ type: 'elite', what: 'fall', name: el.elite?.name || 'The elite', place: run.place, relic, flask }, { type: 'store' });
     emit('elite-fall', { place: run.place, relic });
+    R.keys?.eliteOut(run.place, ev);
+    // an elite drops a pattern with a chance of 35%, 1.8 m from its relic on the same ground, so the two are taken (and named) apart
+    const pat = drawPattern(rs, DROPS.patternElite);
+    if (pat) {
+      let at = [e.x, e.y, e.z];
+      for (const [dx, dz] of [[1.8, 0], [-1.8, 0], [0, 1.8], [0, -1.8]]) {
+        const y = R.floorAt ? R.floorAt(e.x + dx, e.z + dz, e.y) : e.y;
+        if (Number.isFinite(y) && Math.abs(y - e.y) < 0.6) { at = [e.x + dx, y, e.z + dz]; break; }
+      }
+      dropPattern(R, at, pat);
+    }
+  }
+  // a pattern lamp touched: carried until the next beacon, with a toast
+  function takePatterns(ev) {
+    const run = rs.run, p = body.s;
+    for (const g of (run.groundPatterns || []).slice()) {
+      if (Math.hypot(p.x - g.x, p.z - g.z) > PANE_RULES.touch || Math.abs(p.y - g.y) > 1.6) continue;
+      run.groundPatterns.splice(run.groundPatterns.indexOf(g), 1);
+      if ((run.carriedPatterns ||= []).includes(g.id)) continue;
+      run.carriedPatterns.push(g.id);
+      const name = patternOf(g.id)?.name || g.id;
+      R.notes.push(`A pattern: <b>${name}</b>. Light a beacon to keep it.`);
+      ev.push({ type: 'pattern', what: 'take', id: g.id }, { type: 'store' });
+      cue(ev, 'wisp', { pattern: g.id });
+      emit('pattern-found', { id: g.id, place: run.place });
+    }
   }
   function step(act, camYaw) {
     const ev = (R.out = []);
     // a press during hit stop waits for the next play step
-    for (const k of ['attack', 'roll', 'heal']) if (act[k]) R.pend[k] = true;
+    for (const k of ['attack', 'roll', 'heal', 'ab1', 'ab2']) if (act[k]) R.pend[k] = true;
     const play = advance(clock);
     if (play && rs.run && !R.dead) {
-      const a = { ...act, attack: act.attack || R.pend.attack, roll: act.roll || R.pend.roll, heal: act.heal || R.pend.heal };
-      R.pend.attack = R.pend.roll = R.pend.heal = false;
+      const a = { ...act };
+      for (const k of Object.keys(R.pend)) { a[k] = act[k] || R.pend[k]; R.pend[k] = false; }
+      // Lead glass: a new fight begins once no foe is awake
+      if (!R.targets().length) R.lead = true;
       fighter.step(a, camYaw, R.targets(), ev);
+      R.abilities?.step(a, camYaw, ev);
+      R.keys?.step(a, ev);
       rs.run.time += STEP;
       const s = body.s;
       meta.wisps.forEach((w, i) => { if (!R.wisps.has(i) && touches(s, w.p)) take(i, ev); });
       R.relics.take(ev);
+      takePatterns(ev);
       const on = atBeacon(s, meta.beacon);
       if (on && !R.onBeacon) light(ev);
       R.onBeacon = on;
@@ -412,6 +635,9 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
       for (const e of ev) if (e.type === 'foeOut' && R.elite && e.foe === R.elite.id) eliteOut(e, ev);
     }
     for (const e of ev.slice()) {
+      // Clear glass: an ability's use opens 2 s for the next blade hit (the cut or the plunge), which takes it
+      if (e.type === 'ability-use' || (e.type === 'ability' && e.what === 'use')) R.clearUntil = clock.play + steps(PANE_RULES.clearFor);
+      else if (e.type === 'hit' && e.kind !== 'relic' && !e.ability && R.clearUntil > clock.play) R.clearUntil = -1;
       if (e.type === 'stop') stop(e.n);
       // a drink that ends after the flasks went to 0 (a test hook, a later stage's cost) heals nothing and takes nothing
       else if (e.type === 'drink' && rs.run && rs.run.flasks > 0) {
@@ -432,6 +658,23 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
   R.step = step; R.hurt = hurt; R.light = light; R.take = take; R.kill = (ev = R.out) => { if (rs.run && !R.dead) kill(ev); return ev; };
   // a foe put out: one more for the run's count, and its glim drops, with the Ember level's 15% a level
   R.out = [];
-  R.foeOut = (glim = 0, at = null) => { if (rs.run) { rs.run.foes += 1; if (glim) R.drop(glimAt(glim), at); } };
+  R.foeOut = (glim = 0, at = null) => {
+    const run = rs.run;
+    if (!run) return;
+    run.foes += 1;
+    if (glim) R.drop(glimAt(glim), at);
+    // Thick glass: a foe put out heals 3% of the maximum health
+    if (paneOf(rs, 'thick') && !R.dead) run.hp = Math.min(maxOf(rs), run.hp + dealt(PANE_RULES.thick, maxOf(rs)));
+    // the elite's own drop is eliteOut's (35%); any other foe drops a pattern with 2%, 1% more a Keen eye level, at most 2 a run
+    const elite = R.elite && R.elite.out && !R.eliteDown;
+    if (elite || (run.foePatterns | 0) >= DROPS.patternMax) return;
+    const pat = drawPattern(rs, patternChance(rs));
+    if (!pat) return;
+    run.foePatterns = (run.foePatterns | 0) + 1;
+    const s = body.s;
+    dropPattern(R, at || [s.x, s.y, s.z], pat);
+  };
   return R;
 }
+// the panes' numbers that the runner uses (the panes about cooldowns are abilities.js's)
+export const PANE_RULES = { thick: 0.03, lead: 0.5, clear: 0.4, clearFor: 2, touch: 1.0 };

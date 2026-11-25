@@ -3,18 +3,18 @@
 Three builders work in parallel worktrees. design.md "Who builds what" names the files each one owns and the hooks each may add. Each builder runs its own checks before it hands over. The merge pass (section 4) runs every check.
 
 ## 0. Shared start (each builder, first)
-- [ ] 0.1 Create `public/lab/gloam-downs/growth.js` with exactly the text in design.md "growth.js", if it is not there yet.
-- [ ] 0.2 Set `public/lab/gloam-downs/bus.js` to exactly the text in design.md "bus.js". Do not change either file in a branch; a change goes through the merge pass.
+- [x] 0.1 Create `public/lab/gloam-downs/growth.js` with exactly the text in design.md "growth.js", if it is not there yet.
+- [x] 0.2 Set `public/lab/gloam-downs/bus.js` to exactly the text in design.md "bus.js". Do not change either file in a branch; a change goes through the merge pass.
 
 ## 1. Builder G: growth
-- [ ] 1.1 `run.js`: glim at risk (no bank at the beacon, the kept share at death and at End the run, the spend order carried then bank, the win banks all), and the new `UPGRADES` table with Belt, Keen eye, Lantern panes and First spark.
-- [ ] 1.2 `run.js`: patterns (drops on `foeOut` and `eliteOut` from the seed's `pattern` stream, carried, kept at a beacon or a win, lost at a death), `kindle`, `dropPattern`, `groundPatterns`, and their bus events.
-- [ ] 1.3 `run.js`: sparks (`takeSpark`, `takeSparkPick`, First spark), `colourPower`, the Flame term in `bladeBonus`, the Ward health, and the panes (`setPane`, `paneOf`, each pane's rule that is not about cooldowns).
-- [ ] 1.4 `run.js`: the hooks for K and P named in design.md (the `abilities` and `keys` options, the pend list, the two step lines, the `eliteOut` line).
-- [ ] 1.5 `run-save.js`: the v3 key, the one-time read of v2 (or v1), the Ash pocket move, and `clean()` for every new field.
-- [ ] 1.6 `screens.js`, `cards.js`, the `main.js` hooks and `index.html`: the Lamp-room's colours, wares, patterns and pane rows; the beacon card's spark picks and kept line; the start picks (Belt, First spark); `#colourRow` and `#patternsN`; the summary's glim and pattern lines.
-- [ ] 1.7 `gloam-downs-growth.test.mjs` (new): every scenario of Glim at risk, Patterns, Kindle a pattern, The new wares, Sparks, Colours of the moves (the Flame and Edge one), Lantern panes, Ash pocket at death, The lasting upgrades, The run in the save and Saved run. Update `gloam-downs-run.test.mjs` and `gloam-downs-builds.test.mjs` for the 10% rule and the beacon that no longer banks.
-- [ ] 1.8 `gloam-downs-run.growth.e2e.mjs` (new): carry glim past a beacon, keep a pattern, kindle it, pick Ward, two pane slots, and the Lamp-room and beacon card at 320 by 640, 390 by 844, 360 by 640, 800 by 600, 1280 by 720 and 844 by 390, with keys alone and a pad alone.
+- [x] 1.1 `run.js`: glim at risk (no bank at the beacon, the kept share at death and at End the run, the spend order carried then bank, the win banks all), and the new `UPGRADES` table with Belt, Keen eye, Lantern panes and First spark.
+- [x] 1.2 `run.js`: patterns (drops on `foeOut` and `eliteOut` from the seed's `pattern` stream, carried, kept at a beacon or a win, lost at a death), `kindle`, `dropPattern`, `groundPatterns`, and their bus events.
+- [x] 1.3 `run.js`: sparks (`takeSpark`, `takeSparkPick`, First spark), `colourPower`, the Flame term in `bladeBonus`, the Ward health, and the panes (`setPane`, `paneOf`, each pane's rule that is not about cooldowns).
+- [x] 1.4 `run.js`: the hooks for K and P named in design.md (the `abilities` and `keys` options, the pend list, the two step lines, the `eliteOut` line).
+- [x] 1.5 `run-save.js`: the v3 key, the one-time read of v2 (or v1), the Ash pocket move, and `clean()` for every new field.
+- [x] 1.6 `screens.js`, `cards.js`, the `main.js` hooks and `index.html`: the Lamp-room's colours, wares, patterns and pane rows; the beacon card's spark picks and kept line; the start picks (Belt, First spark); `#colourRow` and `#patternsN`; the summary's glim and pattern lines.
+- [x] 1.7 `gloam-downs-growth.test.mjs` (new): every scenario of Glim at risk, Patterns, Kindle a pattern, The new wares, Sparks, Colours of the moves (the Flame and Edge one), Lantern panes, Ash pocket at death, The lasting upgrades, The run in the save and Saved run. Update `gloam-downs-run.test.mjs` and `gloam-downs-builds.test.mjs` for the 10% rule and the beacon that no longer banks.
+- [x] 1.8 `gloam-downs-run.growth.e2e.mjs` (new): carry glim past a beacon, keep a pattern, kindle it, pick Ward, two pane slots, and the Lamp-room and beacon card at 320 by 640, 390 by 844, 360 by 640, 800 by 600, 1280 by 720 and 844 by 390, with keys alone and a pad alone.
 
 ## 2. Builder K: abilities
 - [ ] 2.1 `abilities.js` (new): two slots, cooldowns on the play clock with Gloam and the cooldown panes, the buffer, the start draw, `makeAbilities`, `abilityView`, `dropAbility`, `groundAbilities`, the swap, bright lamps, and `ability-use` and `ability-ready`.

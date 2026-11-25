@@ -208,6 +208,25 @@
   .ups li button { grid-column: 2; grid-row: 1 / span 2; min-width: 88px; padding: 4px 10px; line-height: 1.15; white-space: normal; }
   .ups li button[aria-disabled="true"] { color: var(--ash); border-color: var(--edge); background: rgba(20, 18, 26, 0.9); cursor: default; font-weight: 600; font-size: 13px; }
   .ups li.top span { color: var(--ash); }
+  /* growth (builder G): the Lamp-room's colours line, pattern rows and pane slots, the beacon card's spark buttons and kept line, and
+     the HUD's colour row and pattern mark. The HUD takes no input; each pane button is 44 px high at least */
+  #lamp .colours { margin: 0 0 6px; font-size: 13px; color: #f2d7a6; }
+  #lamp .colours[hidden], #patternsT[hidden], #patterns[hidden], #panesT[hidden], #paneRow[hidden], #sparks[hidden], #beaconKept[hidden], .hud .colourRow[hidden] { display: none; }
+  #patterns li { min-height: 44px; }
+  #patterns li button { grid-row: 1; }
+  .panes { display: grid; gap: 6px; margin: 6px 0 10px; }
+  .panes .paneSlot { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .panes .paneSlot > b { flex: 0 0 100%; font: 700 11px/1.2 var(--title); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ash); }
+  .panes button { flex: 1 1 140px; min-height: 44px; padding: 4px 10px; text-align: left; line-height: 1.2; white-space: normal; font-size: 12px; }
+  .panes button b { display: block; font-size: 14px; }
+  .panes button[aria-pressed="true"] { background: #5a2214; border-color: var(--ember); color: #ffe2bd; }
+  #sparks { margin-top: 6px; }
+  #sparks button { border-left: 4px solid var(--hue, var(--ember)); }
+  #beaconKept { color: #ffd77a; font-weight: 600; }
+  .hud .colourRow { display: flex; gap: 8px; margin: 2px 0 0; font: 700 13px/1 var(--body); }
+  .hud .colourRow i { font-style: normal; }
+  .hud #patternsN { font-style: normal; color: #ffd77a; }
+  @media (max-width: 360px) { .hud .colourRow { gap: 6px; font-size: 12px; } .panes button { flex-basis: 120px; } }
   /* the builds (builder BC): the Lamp-room's Unlocks list and Ember row, the beacon card's kindle line, the win card's opened level, and
      the HUD's relic marks. The marks are small ember-edged tags in lamp colours, never brighter than the fire; the HUD takes no input */
   .unlocksT { margin: 4px 0 0; font: 700 12px/1.2 var(--title); letter-spacing: 0.12em; text-transform: uppercase; color: #f2d7a6; }
@@ -270,7 +289,8 @@
 <div class="hud" id="hud" hidden>
   <p class="where" id="where">The Sunken Gaol</p>
   <p class="life" id="life" aria-label="Health and flasks"><i class="hpbar"><i id="hpFill"></i></i><b id="hpN">100/100</b><i class="pips" id="pips"></i></p>
-  <p class="count" id="count"><b>◆ 0/5</b> wisps · <i>beacon dark</i></p>
+  <p class="colourRow" id="colourRow" hidden></p>
+  <p class="count" id="count"><b>◆ 0/5</b> wisps · <i>beacon dark</i><i id="patternsN" hidden></i></p>
   <div class="combo" id="combo" hidden aria-live="off"><b id="comboN"></b><i id="comboPip"></i><i class="cbar"><i id="comboFill"></i></i></div>
   <p class="hint" id="hint">Climb to the keep. Light the beacon.</p>
   <div class="relics" id="relics" role="img" aria-label="No relics" hidden></div>
@@ -328,7 +348,7 @@
 
 <div class="panel" id="runHelp" hidden><div class="box" role="dialog" aria-labelledby="runHelpT">
   <h2 id="runHelpT">Gloam Downs</h2>
-  <p>A run through five dark places, with a blade, a roll and two flasks. Put out each beacon's keepers, then light it. A lit beacon banks the glim you carry. Spend it in the Lamp-room, on upgrades that last.</p>
+  <p>A run through five dark places, with a blade, a roll and two flasks. Put out each beacon's keepers, then light it. At a lit beacon, spend the glim you carry in the Lamp-room, on wares that last, or carry it on. A death keeps only a little of it.</p>
   <ul id="runControls"></ul>
   <p id="exploreLine">Explore walks the places with no foes.</p>
   <div class="row"><button type="button" class="go" id="bBegin">Begin the run</button><button type="button" id="bExplore" title="Walk the five places with no foes">Explore</button></div>
@@ -351,6 +371,8 @@
   <h2 id="beaconT">The beacon burns</h2>
   <p id="beaconLine">Choose a wick. It burns for the rest of the run.</p>
   <div class="wicks" id="wicks"></div>
+  <div class="wicks" id="sparks" hidden></div>
+  <p id="beaconKept" hidden></p>
   <p id="beaconBank" hidden>Banked: 0 glim. Spend it in the Lamp-room, or walk on.</p>
   <div class="row" id="beaconRow" hidden><button type="button" id="bSpend">Spend glim</button><button type="button" class="go" id="bWalkOn">Walk on</button></div>
 </div></div>
@@ -358,9 +380,12 @@
 <div class="panel" id="lamp" hidden><div class="box" role="dialog" aria-labelledby="lampT">
   <h2 id="lampT">The Lamp-room</h2>
   <p id="lampLine">Banked: 0 glim. What you buy here lasts for every run.</p>
+  <p class="colours" id="colours" hidden></p>
   <ul class="ups" id="ups"></ul>
+  <h3 class="unlocksT" id="patternsT">Patterns</h3><ul class="ups" id="patterns" aria-labelledby="patternsT"></ul>
   <h3 class="unlocksT" id="unlocksT">Unlocks</h3>
   <ul class="ups" id="unlocks" aria-labelledby="unlocksT"></ul>
+  <h3 class="unlocksT" id="panesT">Lantern panes</h3><div class="panes" id="paneRow" role="group" aria-labelledby="panesT"></div>
   <p class="emberLine" id="emberLine" hidden></p>
   <div class="row" id="emberRow" role="group" aria-label="Ember level" hidden></div>
   <div class="row" id="lampRow"><button type="button" class="go" id="bLampBack" hidden>Back to the beacon</button><button type="button" class="go" id="bLampBegin" hidden>Begin the run</button><button type="button" class="go" id="bLampGoOn" hidden>Go on with the run</button><button type="button" id="bLampWander" hidden>Wander</button><button type="button" id="bLampToWander" hidden>Back to Wander</button><button type="button" id="bLampExplore" hidden>Explore</button></div>
