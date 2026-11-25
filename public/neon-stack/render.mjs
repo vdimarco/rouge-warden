@@ -137,7 +137,8 @@ void main() {
   col = mix(col, uSmog, rain * 0.4);
   float mx = max(col.r, max(col.g, col.b));
   vec3 sky = vec3(14.0, 16.0, 32.0) / 255.0;
-  float ground = step(0.045, length(col - sky)) * step(mx, 0.24);
+  vec3 ink = vec3(26.0, 26.0, 34.0) / 255.0;
+  float ground = step(0.045, length(col - sky)) * step(mx, 0.24) * step(0.06, length(col - ink));
   float gap = 1.0 - step(0.5, mod(pix.y, 2.0));
   for (int i = 0; i < 8; i++) {
     float y0 = min(uHalo[i].y, uHaloC[i].w);
