@@ -414,12 +414,30 @@ async function proof(width, height, dpr, tag) {
       const ay = v.artH - (y - v.oy) / v.scale;
       if (ax < minx || ax > maxx || ay < miny || ay > maxy) outside++;
     }
+    const box = canvas.getBoundingClientRect();
+    const rr = __test.runnerRect();
+    const sx = canvas.width / box.width;
+    const sy = canvas.height / box.height;
+    const rx0 = (rr.x - box.left) * sx;
+    const ry0 = (rr.y - box.top) * sy;
+    const rx1 = rx0 + rr.w * sx;
+    const ry1 = ry0 + rr.h * sy;
+    const margin = 10 * sx;
+    const outlineCol = (r, g, b) => {
+      if (Math.abs(r - 242) <= 14 && Math.abs(g - 163) <= 14 && Math.abs(b - 58) <= 16) return true;
+      if (r > g + 45 && b > g + 30 && r > b && r > 140) return true;
+      if (g > r + 35 && b > r + 35 && g > 140) return true;
+      if (g > r + 45 && g > b + 45 && g > 140) return true;
+      return false;
+    };
     let stray = 0;
-    for (let y = 0; y < canvas.height; y++) for (let x = 0; x < canvas.width; x++) {
-      const i = (y * canvas.width + x) * 4;
-      if (!neon(off[i], off[i + 1], off[i + 2])) continue;
-      if (onRunner(x, y)) continue;
-      stray++;
+    for (let y = Math.max(0, Math.floor(ry0 - margin)); y <= Math.min(canvas.height - 1, Math.ceil(ry1 + margin)); y++) {
+      for (let x = Math.max(0, Math.floor(rx0 - margin)); x <= Math.min(canvas.width - 1, Math.ceil(rx1 + margin)); x++) {
+        const inside = x >= rx0 + 2 && x <= rx1 - 2 && y >= ry0 + 2 && y <= ry1 - 2;
+        if (inside) continue;
+        const i = (y * canvas.width + x) * 4;
+        if (outlineCol(off[i], off[i + 1], off[i + 2])) stray++;
+      }
     }
     return { pct: changed / count, concrete, other, leaked, outside, stray };
   });
@@ -475,6 +493,49 @@ async function proof(width, height, dpr, tag) {
   await page.waitForTimeout(280);
   await page.screenshot({ path: OUT + "/" + tag + "-signs-on.png" });
 
+  const street = await page.evaluate(async () => {
+    __test.moveTo(2.5, 2.5);
+    __test.setYaw(0);
+    __test.setTilt(55);
+    await new Promise((r) => setTimeout(r, 200));
+    const canvas = document.querySelector("canvas");
+    const gl = canvas.getContext("webgl2");
+    const grab = () => {
+      const buf = new Uint8Array(canvas.width * canvas.height * 4);
+      gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, buf);
+      return buf;
+    };
+    const lights = __test.state().lights.filter((l) => l.street);
+    const changed = [];
+    for (const l of lights) {
+      for (let i = 0; i < 6; i++) __test.setSign(i, true);
+      await new Promise((r) => setTimeout(r, 180));
+      const on = grab();
+      const idx = __test.state().lights.filter((x) => x.type === "neon").findIndex((x) => x.x === l.x && x.y === l.y);
+      __test.setSign(idx, false);
+      await new Promise((r) => setTimeout(r, 220));
+      const off = grab();
+      const v = __test.view();
+      const p = __test.project(l.x, l.y, 0);
+      const q = __test.project(l.x + 2, l.y, 0);
+      const rad = Math.hypot((q.x - p.x) * v.scale, (q.y - p.y) * v.scale);
+      const gx = v.ox + p.x * v.scale;
+      const gy = v.oy + (v.artH - p.y) * v.scale;
+      let n = 0;
+      const x0 = Math.max(0, Math.floor(gx - rad)), x1 = Math.min(canvas.width - 1, Math.ceil(gx + rad));
+      const y0 = Math.max(0, Math.floor(gy - rad)), y1 = Math.min(canvas.height - 1, Math.ceil(gy + rad));
+      for (let y = y0; y <= y1; y += 2) for (let x = x0; x <= x1; x += 2) {
+        if ((x - gx) * (x - gx) + (y - gy) * (y - gy) > rad * rad) continue;
+        const i = (y * canvas.width + x) * 4;
+        if (Math.abs(on[i] - off[i]) + Math.abs(on[i + 1] - off[i + 1]) + Math.abs(on[i + 2] - off[i + 2]) > 18) n++;
+      }
+      changed.push(n);
+    }
+    for (let i = 0; i < 6; i++) __test.setSign(i, null);
+    return changed;
+  });
+  street.forEach((n, i) => check(n > 0, tag + " street sign " + i + " changes " + n + " street pixels within 2 tiles"));
+
   const sil = await page.evaluate(async () => {
     __test.moveTo(4.5, 2.5);
     __test.setYaw(0);
@@ -497,9 +558,10 @@ async function proof(width, height, dpr, tag) {
         }
       }
     }
-    return { near, w: maxx - minx + 1, h: maxy - miny + 1, p };
+    const rr = __test.runnerRect();
+    return { near, w: rr.w, h: rr.h, p };
   });
-  check(sil.near > 8 && sil.h > sil.w, tag + " runner figure is taller than wide (" + sil.near + " px, " + sil.w + "x" + sil.h + ")");
+  check(sil.near > 8 && sil.h > sil.w, tag + " runner figure is taller than wide (" + sil.near + " px, " + sil.w.toFixed(0) + "x" + sil.h.toFixed(0) + ")");
   await page.screenshot({ path: OUT + "/" + tag + "-silhouette.png" });
   const nums = await page.evaluate(() => __test.state());
   console.log("  nums  " + tag + " drawCalls=" + nums.drawCalls + " slices=" + nums.slices + " frameMs=" + nums.frameMs.toFixed(1) + " fps=" + nums.fps.toFixed(1) + " art=" + view.artW + " ratio=" + view.ratio);

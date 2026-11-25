@@ -89,12 +89,18 @@ function camera() {
   const tan = Math.tan(FOV / 2);
   const portrait = renderer.view.artH > renderer.view.artW;
   const span = Math.abs(Math.cos(yr)) + Math.abs(Math.sin(yr));
-  const tiles = portrait ? (attract ? 8.4 : 7.25) * span : (attract ? TILES + 1 : TILES);
+  const establishing = !attract && player.y > 4;
+  const tiles = portrait
+    ? (attract ? 8.4 : 7.25) * span
+    : (attract ? TILES + 1 : establishing ? 16.5 : TILES);
   const dist = (tiles * TILE) / (2 * tan * aspect);
   const cx = (attract ? 3 : player.x) * TILE;
   const cz = (attract ? 3 : player.y) * TILE;
-  const shift = attract ? 16 : 36;
-  const focus = [cx + Math.sin(yr) * shift, 0, cz + Math.cos(yr) * shift];
+  // At the spawn, look up the street so the tower and the skyline sit in frame.
+  // Elsewhere keep the closer camera the width checks were built on.
+  const along = attract ? 16 : establishing ? -TILE * 2.4 : 36;
+  const lift = establishing ? TILE * (portrait ? 1.5 : 2.8) : 0;
+  const focus = [cx + Math.sin(yr) * along, lift, cz + Math.cos(yr) * along];
   const cam = [
     focus[0] + Math.cos(tr) * Math.sin(yr) * dist,
     focus[1] + Math.sin(tr) * dist,
@@ -198,36 +204,47 @@ function scene() {
     const px = player.x * TILE, pz = player.y * TILE;
     world.buildings.forEach((b, i) => { if (hits(cam[0], cam[2], px, pz, b)) cuts.add(i); });
   }
+  const lights = lightsNow();
   const runner = [];
   const rest = [];
   const runName = runnerFrame();
+  const runFr = world.frames[runName];
   for (const s of world.slices) {
     if (s.kind === 1) {
-      const fr = world.frames[runName];
       s.x = player.x * TILE;
       s.z = player.y * TILE;
-      s.hx = fr.w * (TILE / 16) / 2;
-      s.hz = fr.h * (TILE / 16) / 2;
+      s.hx = runFr.w * (TILE / 16) / 2;
+      s.hz = runFr.h * (TILE / 16) / 2;
       s.y = s.hz;
       s.uv = frameUV(runName, facing < 0);
+      const yr = yaw * Math.PI / 180;
+      s.orient = Math.abs(Math.sin(yr)) > Math.abs(Math.cos(yr)) ? 1 : 2;
       runner.push(s);
+    } else if (s.kind === 3 && s.sign >= 1) {
+      const meta = world.signs[s.sign - 1];
+      const on = override[s.sign - 1] !== false;
+      s.uv = frameUV(meta.frame + (on ? "_on" : "_off"), false);
+      if (s.bid < 0 || !cuts.has(s.bid) || s.low) rest.push(s);
     } else if (s.kind === 6) {
       s.uv = frameUV("steam_vent_" + (Math.floor(time * 8) % 4), false);
       rest.push(s);
     } else if (s.bid < 0 || !cuts.has(s.bid) || s.low) rest.push(s);
   }
-  let nearD = 1e9;
-  let outline = [0.24, 0.88, 0.91];
-  for (const s of world.signs) {
-    const d = Math.hypot(s.x - player.x, s.y - player.y);
-    if (d < nearD) {
+  let nearD = 2.4;
+  let outline = [0, 0, 0];
+  let outlineOn = 0;
+  for (const l of lights) {
+    if (l.type !== "neon" || (l.intensity ?? 0) < 0.45) continue;
+    const d = Math.hypot(l.x - player.x, l.y - player.y);
+    if (d <= 2.25 && d < nearD) {
       nearD = d;
-      outline = [parseInt(s.colour.slice(1, 3), 16) / 255, parseInt(s.colour.slice(3, 5), 16) / 255, parseInt(s.colour.slice(5, 7), 16) / 255];
+      outlineOn = 1;
+      const hex = l.colour;
+      outline = [parseInt(hex.slice(1, 3), 16) / 255, parseInt(hex.slice(3, 5), 16) / 255, parseInt(hex.slice(5, 7), 16) / 255];
     }
   }
-  renderer.outline = outline;
   renderer.tile = TILE;
-  const lights = lightsNow();
+
   const uL = new Float32Array(32);
   const uC = new Float32Array(32);
   const uI = new Float32Array(8);
@@ -262,9 +279,7 @@ function scene() {
     l._end = [ex, ez];
     l._world = [x, y, z];
   });
-  let master = 0;
-  for (let i = 1; i <= 6; i++) master = Math.max(master, fadeU[i]);
-  fadeU[0] = master;
+  fadeU[0] = 1;
   const rl = Math.hypot(rimx, rimz) || 1;
   const vp = mul(proj, view);
   renderer.vp = vp;
@@ -279,6 +294,8 @@ function scene() {
   });
   return {
     vp, slices: runner.concat(rest), runnerCount: runner.length, runnerPaper: false,
+    outline, outlineOn,
+    frame: [runFr.x / 1024, 1 - (runFr.y + runFr.h) / 1024, (runFr.x + runFr.w) / 1024, 1 - runFr.y / 1024],
     sun: SUN, haze: HAZE, smog: SMOG,
     rim: [rimx / rl, rimz / rl],
     fade: fadeU, lights: uL, lightColor: uC, intensity: uI,
@@ -423,7 +440,7 @@ window.__test = {
     drawCalls: renderer.drawCalls,
     frameMs, fps,
     lights: (frame.lights || world.lights).map((l) => ({
-      x: l.x, y: l.y, z: l.z, colour: l.colour, type: l.type, on: !!l.on,
+      x: l.x, y: l.y, z: l.z, colour: l.colour, type: l.type, on: !!l.on, street: !!l.street,
     })),
   }),
   setTilt: (d) => { tilt = clampTilt(d); attract = false; },

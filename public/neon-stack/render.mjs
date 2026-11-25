@@ -23,6 +23,7 @@ void main() {
   vKind = i2.y;
   vSign = i2.z;
   gl_Position = uVP * vec4(vW, 1.0);
+  if (abs(i2.y - 1.0) < 0.25) gl_Position.z -= 0.02 * gl_Position.w;
 }`;
 
 const FRAG = `#version 300 es
@@ -32,6 +33,8 @@ uniform vec3 uSun;
 uniform vec3 uHaze;
 uniform float uTile;
 uniform vec3 uOutline;
+uniform vec4 uFrame;
+uniform float uOutlineOn;
 uniform float uFade[8];
 uniform vec4 uL[8];
 uniform vec4 uC[8];
@@ -43,7 +46,7 @@ flat in float vSign;
 layout(location=0) out vec4 o;
 
 float fadeOf(float s) {
-  float f = uFade[0];
+  float f = 1.0;
   f = mix(f, uFade[1], step(0.5, s) * step(s, 1.5));
   f = mix(f, uFade[2], step(1.5, s) * step(s, 2.5));
   f = mix(f, uFade[3], step(2.5, s) * step(s, 3.5));
@@ -57,10 +60,17 @@ void main() {
   vec4 t = texture(uAtlas, vUV);
   float runner = step(abs(vKind - 1.0), 0.25);
   if (runner > 0.5 && t.a < 0.5) {
-    float edge = 0.0;
+    if (uOutlineOn < 0.5) discard;
     vec2 one = vec2(1.0 / 1024.0);
+    vec2 lo = uFrame.xy + one * 0.5;
+    vec2 hi = uFrame.zw - one * 0.5;
+    float edge = 0.0;
     for (int y = -2; y <= 2; y++) for (int x = -2; x <= 2; x++) {
-      edge = max(edge, texture(uAtlas, vUV + one * vec2(float(x), float(y))).a);
+      int man = (x < 0 ? -x : x) + (y < 0 ? -y : y);
+      if (man == 0 || man > 2) continue;
+      vec2 s = vUV + one * vec2(float(x), float(y));
+      if (s.x < lo.x || s.y < lo.y || s.x > hi.x || s.y > hi.y) continue;
+      edge = max(edge, texture(uAtlas, s).a);
     }
     if (edge < 0.5) discard;
     o = vec4(uOutline, 1.0);
@@ -74,13 +84,19 @@ void main() {
   vec3 dark = vec3(0.290, 0.282, 0.322);
   if (runner > 0.5) { o = vec4(col, 1.0); return; }
   if (abs(vKind - 5.0) < 0.25) {
-    col = mix(dark, col, max(uFade[0], 1.0 - neon));
+    col = mix(col, col * 0.22, neon);
+    o = vec4(col, 1.0);
+    return;
+  }
+  if (abs(vKind - 10.0) < 0.25) { o = vec4(0.102, 0.102, 0.133, 1.0); return; }
+  if (abs(vKind - 7.0) < 0.25) {
+    int i = int(clamp(vSign - 0.5, 0.0, 6.0));
+    col = mix(col, uC[i].rgb, 0.16 * fadeOf(vSign));
     o = vec4(col, 1.0);
     return;
   }
   float dim = step(abs(vKind - 4.0), 0.25);
   col = mix(col, col * 0.38, dim);
-  float wall = step(abs(vKind - 8.0), 0.25) * (1.0 - neon);
   vec2 tile = floor(vW.xz / uTile);
   float best = 0.0;
   vec3 lcol = col;
@@ -88,15 +104,12 @@ void main() {
     float live = step(0.15, uI[i]) * step(0.5, uL[i].w);
     vec2 st = floor(uL[i].xz / uTile);
     float horiz = max(abs(tile.x - st.x), abs(tile.y - st.y));
-    float vert = abs(floor(vW.y / uTile) - floor(uL[i].y / uTile));
-    float amt = 0.0;
-    amt = mix(amt, 0.10, step(horiz, 0.5) * step(0.5, vert) * step(vert, 3.5));
-    amt = mix(amt, 0.40, step(horiz, 0.5) * step(vert, 0.5));
-    float win = step(best, amt * live);
-    best = max(best, amt * live);
+    float g = step(abs(vKind), 0.25) * step(horiz, 2.5) * 0.14 * live;
+    float win = step(best, g);
+    best = max(best, g);
     lcol = mix(lcol, uC[i].rgb, win);
   }
-  col = mix(col, lcol, 0.0);
+  col = mix(col, lcol, best);
   float fade = fadeOf(vSign);
   col = mix(col, mix(dark, col, fade), neon * (1.0 - dim));
   col = mix(col, uHaze, clamp(vW.y / 220.0, 0.0, 1.0) * 0.18 * (1.0 - neon) * (1.0 - runner));
@@ -324,6 +337,8 @@ export function createRenderer(canvas) {
     vp: new Float32Array(16),
     tile: 32,
     outline: [0.24, 0.88, 0.91],
+    outlineOn: 0,
+    frame: [0, 0, 1, 1],
     setAtlas: (img) => { atlasImg = img; uploadAtlas(); },
   };
   let alb = null, light = null, comp = null, lost = false;
@@ -367,6 +382,8 @@ export function createRenderer(canvas) {
     gl.uniform3fv(gl.getUniformLocation(stackProg, "uHaze"), api.haze);
     gl.uniform1f(gl.getUniformLocation(stackProg, "uTile"), api.tile || 32);
     gl.uniform3fv(gl.getUniformLocation(stackProg, "uOutline"), api.outline || [0.24, 0.88, 0.91]);
+    gl.uniform4fv(gl.getUniformLocation(stackProg, "uFrame"), api.frame || [0, 0, 1, 1]);
+    gl.uniform1f(gl.getUniformLocation(stackProg, "uOutlineOn"), api.outlineOn || 0);
     gl.uniform1fv(gl.getUniformLocation(stackProg, "uFade"), api.fade);
     gl.uniform4fv(gl.getUniformLocation(stackProg, "uL"), api.lights);
     gl.uniform4fv(gl.getUniformLocation(stackProg, "uC"), api.lightColor);
@@ -405,6 +422,9 @@ export function createRenderer(canvas) {
     api.haze = scene.haze;
     api.rim = scene.rim;
     api.fade = scene.fade;
+    api.outline = scene.outline;
+    api.outlineOn = scene.outlineOn;
+    api.frame = scene.frame;
     api.lights = scene.lights;
     api.lightColor = scene.lightColor;
     api.intensity = scene.intensity;
