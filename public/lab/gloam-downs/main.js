@@ -21,7 +21,8 @@ import { relicEvent, RELIC_IDS, groundRelics } from './relics.js';
 import { dressOf, eliteClip } from './elites.js';
 import { UNLOCK_IDS, buyUnlock, setEmber, routeOfRun, emberOf } from './run.js';
 import { unlockRows, emberRow, relicMarks, kindleLine, moveLines } from './screens.js';
-import { glimLine, keptLine } from './screens.js'; import { startPicks } from './run.js'; const { bindGrowth, updateGrowth, fillGrowthLamp, sparkButtons, abilityButtons, growthView, setGrowth } = cards; bindGrowth({ rs: () => rs, runner: () => runner, mode: () => mode, audio: () => audio, toast: (h, ms) => toast(h, ms), storeRun: () => storeRun(), fillLamp: () => fillLamp(), updateHud: () => updateHud(), openBeacon: () => openBeacon() });
+import { glimLine, keptLine } from './screens.js';
+import { startPicks } from './run.js';
 import { makePool } from './pool.js';
 import { figures, poolFor, lineup, LINEUP } from './figures.js';
 import { findVeils, makeVeils, findOccluders, makeOccluders, VEIL } from './veil.js';
@@ -31,6 +32,9 @@ import { parseSeed, seedCode, smallSeed } from './mix.js';
 import { REEVE, REEVE_TEXT } from './boss.js';
 import { makeRunSound } from './run-sound.js';
 import { emit } from './bus.js';
+// growth (gloam-downs-growth): the page parts in cards.js, bound to the page's state with getters
+const { bindGrowth, updateGrowth, fillGrowthLamp, sparkButtons, abilityButtons, growthView, setGrowth } = cards;
+bindGrowth({ rs: () => rs, runner: () => runner, mode: () => mode, audio: () => audio, toast: (h, ms) => toast(h, ms), storeRun: () => storeRun(), fillLamp: () => fillLamp(), updateHud: () => updateHud(), openBeacon: () => openBeacon() });
 
 const $ = id => document.getElementById(id);
 const canvas = $('view'), loading = $('loading'), loadLine = $('loadLine'), barFill = $('barFill'), bar = $('bar');

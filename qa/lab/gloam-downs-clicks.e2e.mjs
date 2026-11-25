@@ -264,6 +264,8 @@ try {
     assert.equal((await run(page)).mode, 'beacon', `${lock}: the beacon card opens`);
     assert(!(await locked(page)), 'the beacon card frees the mouse');
     await click(page, '#wicks button', 'a wick');
+    // gloam-downs-growth: the beacon's spark pick comes after the wick
+    await click(page, '#sparks button', 'a spark');
     if (await page.isVisible('#bSpend')) { await click(page, '#bSpend', 'Spend glim'); await click(page, '#bLampBack', 'Back to the beacon'); }
     await click(page, '#bWalkOn', 'Walk on');
     await ready(page);

@@ -339,12 +339,12 @@ const whats = F => F.S.view().changes.map(c => c.what);
   console.error = err;
   a(); b();
   assert.deepEqual(got, [{ zone: 'G1' }]);
-  assert.equal(EVENTS.length, 15);
+  assert.equal(EVENTS.length, 23);
   const F = fake(), { A } = busRun(F);
   for (const e of EVENTS) emit(e, {});
   assert.deepEqual(A.view().events.length ? EVENTS.filter(e => !A.heardEvents.includes(e)) : ['none'], []);
   A.off();
-  pass('the bus: a listener that throws does not stop the next one; the run\'s sound subscribes to all 15 events', { events: EVENTS.length });
+  pass('the bus: a listener that throws does not stop the next one; the run\'s sound subscribes to all 23 events', { events: EVENTS.length });
 }
 { // the stingers: beacon then the Lamp-room, death then silence and the Lamp-room 2 s or more later
   const F = fake();

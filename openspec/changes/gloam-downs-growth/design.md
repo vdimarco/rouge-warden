@@ -306,6 +306,42 @@ Three builders work in parallel worktrees. Each owns its files, and each may add
 - `__gloam.set(fields)` gains `sparks`, `patterns`, `kindled`, `panes`, `bank` (G), `abilities` and `cool` (K), `keys` (P). `__gloam.run()` gains `sparks`, `patterns`, `carriedPatterns`, `panes` (G), `abilities` with `{ id, bright, left }` for each slot (K), `keys` and `caches` (P). Each builder adds its fields in its own spread function.
 - The merge pass goes in the order G, K, P, because K and P call G's functions, and P's bot reads all of it. It runs every Gloam Downs check, the bot and the pacing tune.
 
+## Merge pass
+Run on `ccr-43aa269a-y8yo7l` from the design commit `afc6aa70`, on 2026-11-25.
+
+### What was merged
+- **G** (`gloam-grow-g`, `4dc0dc89`): merged with no conflict.
+- **K** (abilities) and **P** (pacing and keys): **not merged**. Neither builder came back: there is no branch and no report. So the game has no abilities to use, no `abilities.js`, no new inputs, no keys, no hidden ledges or caches, no `FOE_HARD`, no page zones, and no rewritten bot. G's hooks for them (`abilities` and `keys` in `makeRunner`, the pend list, the step lines, `R.keys?.eliteOut`) are in place and do nothing while those options are null.
+- What a player sees of K's part without K: Belt is sold in the Lamp-room and asks for a start ability that does nothing yet; Gloam sparks raise a colour no move uses; the patterns of the seven abilities can drop and be kindled; Hot, Smoked, Storm and Clear glass have no effect. These wait for K.
+
+### What the merge pass changed
+- `main.js`: G's import line, which also held a destructure and a `bindGrowth` call, is now two import lines and a bind after the imports. No change in what it does.
+- `index.html`: the run's count line does not wrap (so "◇ 1" stays on its line at 320 px), and on a narrow upright screen (520 px wide or less, 560 px tall or more) the place's name card starts 220 px down, under the HUD at its tallest. Before, at 320 by 640, the name card's "II · The second place" lay over the count line, which the colour row and the pattern mark had pushed down.
+- `index.html`: the Lamp-room's foot (`#lampRow`) is 99.5% opaque, not 97%. With the taller Lamp-room the rows under it showed through, faintly, below Back to the beacon at 1280 by 800. Fully opaque made Chromium draw a grey band over the top of the card, so it is 99.5%.
+- `screens.js`: `growthText` keeps a number and its unit together ("1 s", "4 m"), so a pane's text no longer breaks before its "s" at 320 px.
+- Tests updated for G's rules (the files are K's and P's and others, changed here because the rules changed): the v3 save key, the beacon that carries glim on, the beacon's spark pick before Walk on, the 23 bus events, the new run help, the 10% and 18% kept shares, the nine wares and the summary's rows. See tasks.md 4.2 and 4.3 for the list.
+- `qa/lab/gloam-downs-bot.mjs`: the least change that lets the bot play by G's rules (P's rewrite is still to come): one save across runs (up to 40, or 5 after the first win), the Lamp-room at every lit beacon with the glim carried spent first, spark picks (Ward under 50% health, else Flame), the panes that work without abilities (Thick, then Lead and Tallow when kindled), and new lines for the catalogue share bought and the glim kept and lost. No abilities, keys or caches; the boss fight is still drawn from the old boss-bot results.
+
+### Checks
+- Node: all pass. boss 28, builds 34, camera 49, feel 11, foes-ai 44, foes 30, growth 23, lattice 16, mouse 11, run 68, seed 9, sound 28, stairs 1, uniform-blocks 10, gloam-downs 33. `gloam-downs-zones.mjs`: 142 ok lines, none bad.
+- Browser (Chromium on SwiftShader, site served on 8765 and 8822): all pass after the fixes. run.boss 24, run.fight 8, run.input 15, run.builds 7, run.sound 20, run.cards 12, run.lineup 15, run.swing 2, run.feel 5, run.growth 4, camera 8, mouse 8, clicks 46, cutaway 1, gloam-downs.e2e 16. run.abilities and run.keys do not exist yet (K and P).
+- `quiet.mjs --only=lab/gloam-downs`: 35 of 35.
+- Music demo: passes, 164 files, every group in its targets.
+- `openspec validate --strict`: `gloam-downs-growth` and `gloam-downs-real-game` are valid.
+- Screenshots looked at: the beacon card's sparks, the Lamp-room (top and foot) and the HUD with the colour row and pattern mark, at 320 by 640, 390 by 844 and 1280 by 800. No overlap and no cut text after the fixes above. The ability HUD could not be shot: it is K's and was not built.
+- Not checked here: a real phone, a real gamepad, real mouse side buttons, and listening on speakers. No run was played by hand (no display).
+
+### Pacing, after the merge
+`node qa/lab/gloam-downs-bot.mjs 60 <skill> 1`, with the bot as changed above.
+
+| Skill | First run reaches place 2 | Median first win | Winning run | Runs (won) | Glim at a death, kept / lost | Catalogue 25% bought |
+|---|---|---|---|---|---|---|
+| 0.3 | 60 of 60 | run 2 | 4.5 min | 433 (180) | 15 / 73 | never, in any bot |
+| 0.5 | 60 of 60 | run 1 | 4.8 min | 371 (329) | 14 / 56 | never |
+| 0.9 | 60 of 60 | run 1 | 8.5 min | 361 (356) | 24 / 75 | never |
+
+Against the targets: a 0.5 bot should first win in run 6 to 12 (it wins in run 1: **miss**); a 0.9 bot should win in run 1 to 3 (it does) with a winning run of 15 to 25 minutes (8.5: **miss**); a 0.3 first run should reach place 2 in half the bots (all do: met). The game is still too short and too easy, as before this change. That is expected: every lever for it (harder Ember 0, page zones, caches and side trips, a third wave) is P's, and P was not built. G's glim at risk does not slow a bot that wins its first run; it only makes the catalogue slower to buy (no bot reaches 25% of 11,725 glim within its first win plus 5 runs). The 0.3 and 0.5 runs are shorter than 0.9 because a skilled bot also takes every wisp and fights every zone. The next step is P's tuning, in the order of "Targets".
+
 ## Checks
 - Node: `gloam-downs-growth.test.mjs` (glim at risk, wares, patterns, kindle, sparks, panes, save v3 and the v2 read), `gloam-downs-abilities.test.mjs` (each ability's numbers, cooldowns, status, the swap, the colours), `gloam-downs-keys.test.mjs` (the second jump's height, the stone rule, each spot on the walk map and reachable only with its key, the caches), `gloam-downs-run.test.mjs`, `gloam-downs-builds.test.mjs`, `gloam-downs-feel.test.mjs`, `gloam-downs-seed.test.mjs`, `gloam-downs-foes.test.mjs`, `gloam-downs-foes-ai.test.mjs`, `gloam-downs-boss.test.mjs`, `gloam-downs-sound.test.mjs`, `gloam-downs-mouse.test.mjs`, `gloam-downs-camera.test.mjs` (must still pass), and `node qa/lab/gloam-downs-zones.mjs` with the page zones.
 - Browser, with the site served: `gloam-downs-run.growth.e2e.mjs`, `gloam-downs-run.abilities.e2e.mjs`, `gloam-downs-run.keys.e2e.mjs`, and every existing Gloam Downs e2e file. Each new HUD and card part at 320 by 640, 390 by 844, 360 by 640, 800 by 600, 1280 by 720 and 844 by 390.

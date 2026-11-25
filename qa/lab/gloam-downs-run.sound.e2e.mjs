@@ -259,7 +259,7 @@ if (part('run')) {
     pass('the Lamp-room logs card, focus twice, buy and refuse, in that order', log);
   }
   { // the pause panel: its filter and its switches
-    await G(page, () => { document.getElementById('bLampBack').click(); document.querySelector('#wicks button')?.click(); document.getElementById('bWalkOn').click(); });
+    await G(page, () => { document.getElementById('bLampBack').click(); document.querySelector('#wicks button')?.click(); document.querySelector('#sparks button')?.click(); document.getElementById('bWalkOn').click(); });
     await page.waitForFunction(() => window.__gloam.ready() && window.__gloam.state().place === 'ramparts', null, { timeout: 120000 });
     await G(page, () => { const g = window.__gloam; for (let i = 0; i < 400 && !document.getElementById('arrive').classList.contains('off'); i++) g.tick(1 / 60, {}); });
     await G(page, () => window.__gloam.set({ hp: 30 }));

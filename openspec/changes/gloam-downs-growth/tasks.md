@@ -17,6 +17,7 @@ Three builders work in parallel worktrees. design.md "Who builds what" names the
 - [x] 1.8 `gloam-downs-run.growth.e2e.mjs` (new): carry glim past a beacon, keep a pattern, kindle it, pick Ward, two pane slots, and the Lamp-room and beacon card at 320 by 640, 390 by 844, 360 by 640, 800 by 600, 1280 by 720 and 844 by 390, with keys alone and a pad alone.
 
 ## 2. Builder K: abilities
+Not built: the K branch did not come back to the merge pass (no branch, no report). Every task here is still open.
 - [ ] 2.1 `abilities.js` (new): two slots, cooldowns on the play clock with Gloam and the cooldown panes, the buffer, the start draw, `makeAbilities`, `abilityView`, `dropAbility`, `groundAbilities`, the swap, bright lamps, and `ability-use` and `ability-ready`.
 - [ ] 2.2 The nine abilities with the numbers of `ABILITIES`, their tells, cues (with `ability: <id>`) and powers by colour.
 - [ ] 2.3 Foe states: `statusHit` and `statusStep` in `abilities.js`, and K's three hooks in `foes.js`. The Barrow Reeve takes damage only.
@@ -28,6 +29,7 @@ Three builders work in parallel worktrees. design.md "Who builds what" names the
 - [ ] 2.9 `gloam-downs-run.abilities.e2e.mjs` (new): Ability inputs, Drawn under fire, the swap, The ability HUD, and Test hooks for growth.
 
 ## 3. Builder P: pacing and keys
+Not built: the P branch did not come back to the merge pass either. Every task here is still open, but the merge pass made part of 3.7 (see 4.4).
 - [ ] 3.1 `foes.js` and `boss.js`: `FOE_HARD` (damage 1.3, health 1.15) and `REEVE.hard` (1.2), with the Ember 4 factor on top. `gloam-downs-foes.test.mjs`: the Snuffer's hook at Ember 0.
 - [ ] 3.2 `mix.js`: `EXTRA`, two or three page zones a place, added before the mix. `gloam-downs-zones.mjs` reads them and checks the floor, the spacing and the pool. `gloam-downs-seed.test.mjs`: the mix still fits for seeds 1 to 200.
 - [ ] 3.3 `qa/lab/gloam-downs-ledges.mjs` (new): the two `reachable` searches, the ledge patches, the flat floor for stones, and the shortcuts. Write what it found for each place in design.md, and say if a place has no shortcut.
@@ -39,9 +41,17 @@ Three builders work in parallel worktrees. design.md "Who builds what" names the
 
 ## 4. Merge pass (after 1, 2 and 3)
 - [ ] 4.1 Merge in the order G, K, P. Fix the hook lines in `run.js`, `foes.js`, `main.js` and `index.html` where two builders met.
-- [ ] 4.2 Run every Gloam Downs Node test and `node qa/lab/gloam-downs-zones.mjs`.
-- [ ] 4.3 Serve `public/` and run every Gloam Downs e2e file with `NODE_PATH=qa/browser/node_modules`, and `CHROMIUM_PATH=/opt/pw-browsers/chromium QUIET_URL=http://127.0.0.1:8765 node qa/arcade/quiet.mjs --only=lab/gloam-downs`.
-- [ ] 4.4 Run the bot at the three skills after the merge, and update "Pacing results".
+  - G merged (`gloam-grow-g` at `4dc0dc89`) with no conflict. K and P did not come back, so their merges and hook lines wait for a later pass. The `main.js` import line that G packed with a bind call is split into an import and a bind after the imports.
+- [x] 4.2 Run every Gloam Downs Node test and `node qa/lab/gloam-downs-zones.mjs`.
+  - All 14 Node tests pass (boss 28, builds 34, camera 49, feel 11, foes-ai 44, foes 30, growth 23, lattice 16, mouse 11, run 68, seed 9, sound 28, stairs 1, uniform-blocks 10), and `gloam-downs.test.mjs` 33. Zones: 142 ok lines, none bad.
+  - Fixed for G's rules: `gloam-downs-sound.test.mjs` counts 23 bus events, and `gloam-downs-foes-ai.test.mjs` checks that the keepers' 9 glim are carried on, not banked.
+- [x] 4.3 Serve `public/` and run every Gloam Downs e2e file with `NODE_PATH=qa/browser/node_modules`, and `CHROMIUM_PATH=/opt/pw-browsers/chromium QUIET_URL=http://127.0.0.1:8765 node qa/arcade/quiet.mjs --only=lab/gloam-downs`.
+  - Results are in design.md "Merge pass". Fixed for G's rules: the v3 save key in run.boss, run.cards, run.feel and run.input; the beacon that carries glim on in run.fight, run.input and run.cards; the beacon's spark pick before Walk on in run.cards, run.input, run.fight, run.sound and clicks; the new run help, the 10% and 18% kept shares, the nine wares and the summary's glim and pattern rows in run.cards.
+- [x] 4.4 Run the bot at the three skills after the merge, and update "Pacing results".
+  - The bot is not P's rewrite. The merge pass changed it only so far as G's rules need: it keeps one save across runs (up to 40 runs, or 5 after the first win), shops at every lit beacon with the glim carried first, takes spark picks (Ward under 50% health, else Flame), kindles and sets the panes that work without abilities, and prints the catalogue share bought and the glim kept and lost. It does not use abilities, keys or caches, and the boss is still drawn. Every target misses; see design.md "Merge pass".
 - [ ] 4.5 Play a run with the mouse and one with keys alone. Write what felt wrong. Say which checks could not run here: a real phone, a real gamepad, real mouse side buttons, and listening on speakers.
+  - Not done by hand: this session has no display. The screenshots of the Lamp-room, the beacon card and the HUD were looked at instead. Not checked: a real phone, a real gamepad, real mouse side buttons, and listening on speakers.
 - [ ] 4.6 Keep the spec and design current with what was built, and validate with `openspec validate gloam-downs-growth --strict`.
+  - `openspec validate --strict` says both `gloam-downs-growth` and `gloam-downs-real-game` are valid. The spec still holds K's and P's requirements, which are not built, so this stays open.
 - [ ] 4.7 Archive after `add-gloam-downs` and `gloam-downs-real-game`, in that order, and review the resulting spec.
+  - Not archived: K and P are not built.

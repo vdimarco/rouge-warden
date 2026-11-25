@@ -121,7 +121,8 @@ export const colourLine = run => colourRow(run).map(c => `${c.name} ${c.n}`).joi
 export const patternsMark = run => ((run?.carriedPatterns || []).length ? `◇ ${run.carriedPatterns.length}` : '');
 // what a pattern, an ability or a pane does, and its name
 export const growthName = id => patternOf(id)?.name || id;
-export const growthText = id => patternOf(id)?.text || '';
+// a number and its unit ("1 s", "4 m") stay on one line (merge pass: a pane's "by 1 s" broke before its "s" at 320 px)
+export const growthText = id => (patternOf(id)?.text || '').replace(/(\d) (s|m)\b/g, '$1\u00a0$2');
 // the Lamp-room's patterns: "<name> · <what it does> · <cost> glim" with Kindle, under the same rules as a Buy
 export function patternRows(rs) {
   return (rs.patterns || []).filter(id => PATTERNS.some(p => p.id === id)).map(id => {

@@ -222,7 +222,7 @@ try {
     await G(page, () => window.__gloam.hurt(16));
     r = await run(page);
     assert.deepEqual([r.hp, r.stop], [84, 5]);
-    const saved = await G(page, () => JSON.parse(localStorage.getItem('gloam-downs.run.v2')));
+    const saved = await G(page, () => JSON.parse(localStorage.getItem('gloam-downs.run.v3')));
     assert.equal(saved.run.hp, 84, 'the hit is stored at once');
     await tick(page, 1.0, {});
     a = await state(page);
@@ -259,7 +259,7 @@ try {
     pass('the pause panel: focus, Tab, End the run asks again, Escape and M behave, the tool opens it');
 
     // the beacon: light() acts as a touch; the card offers two wicks; Escape cannot leave it; a reload shows the same two. Its keepers
-    // in the keep are put out first (the guard rule), and their 9 glim are banked with the 9 carried
+    // in the keep are put out first (the guard rule), and their 9 glim are carried on with the 9 carried (a lit beacon no longer banks)
     await G(page, () => window.__gloam.set({ carried: 9 }));
     await G(page, () => window.__gloam.out('G5'));
     await G(page, () => window.__gloam.light());
@@ -268,7 +268,7 @@ try {
     const offer = await page.$$eval('#wicks button', bs => bs.map(b => b.textContent));
     assert(offer.length === 2 && offer.every(t => / · /.test(t)), JSON.stringify(offer));
     r = await run(page);
-    assert.deepEqual([r.bank, r.carried, r.place, r.flasks], [18, 0, 'ramparts', 2]);
+    assert.deepEqual([r.bank, r.carried, r.place, r.flasks], [0, 18, 'ramparts', 2]);
     await page.keyboard.press('Escape');
     assert(await page.isVisible('#beaconCard'), 'Escape does not close the card before a wick is chosen');
     await page.goto(`${SITE}/lab/gloam-downs/worlds/gaol.json`);
@@ -277,12 +277,15 @@ try {
     assert.equal((await state(page)).place, 'ramparts');
     assert.deepEqual(await page.$$eval('#wicks button', bs => bs.map(b => b.textContent)), offer, 'the same two wicks after a reload');
     await page.keyboard.press('Enter');
-    assert.equal(await active(page), 'bWalkOn', 'after the choice Walk on has the focus');
+    // then the beacon's spark pick (gloam-downs-growth): Enter takes the first, Flame
+    assert.equal(await G(page, () => document.activeElement.dataset.spark), 'flame', 'after the wick the first spark has the focus');
+    await page.keyboard.press('Enter');
+    assert.equal(await active(page), 'bWalkOn', 'after the choices Walk on has the focus');
     r = await run(page);
-    assert(r.wicks.length === 1 && r.offer === null);
+    assert(r.wicks.length === 1 && r.offer === null && r.sparks.flame === 1);
     await page.keyboard.press('Enter');
     await page.waitForFunction(() => window.__gloam.ready() && window.__gloam.run().mode === 'play', null, { timeout: 120000 });
-    pass('the beacon, its keepers out, banks the 9 carried and their 9, fills the flasks and offers two wicks; Escape cannot pass them; a reload shows the same two', { offer, wick: r.wicks });
+    pass('the beacon, its keepers out, carries the 9 carried and their 9 on, fills the flasks and offers two wicks; Escape cannot pass them; a reload shows the same two', { offer, wick: r.wicks });
     assert.deepEqual(errors, []);
     await ctx.close();
   }

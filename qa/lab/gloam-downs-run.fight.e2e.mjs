@@ -2,7 +2,7 @@
 //   in the Gaol, a Snuffer's zone wakes with ember cracks, the Snuffer rises, winds up with its pole back and its cup aglow (the tell
 //   adds fire pixels in its box), hooks the lamplighter and takes 16 health; the lamplighter rolls through a hook unhurt; the string
 //   puts a Snuffer out, and its 3 glim fly in; the beacon will not catch while the keep's Snuffers stand (the toast names the keep, and
-//   a notch points to them), and lights once they are out, banking their glim;
+//   a notch points to them), and lights once they are out, its keepers' glim carried on (a lit beacon no longer banks);
 //   a Snuffer winding up 6 m beside the lamplighter on a phone gives a notch at the right edge that fills over the wind-up;
 //   and one fight each in their places: a Pitchrook's lob onto its ring on The Crow Wall, a Mirelight's pulse over the water of Lantern
 //   Fen, and an Ironback's charge lane and slam ring at The Bell Knoll, each marker adding fire pixels on the ground.
@@ -159,25 +159,27 @@ const nearArc = (x, y, z, r, yaw) => Array.from({ length: 9 }, (_, k) => { const
       g.tick(0.1, {});
       g.light();
       g.draw();
-      const toast = document.getElementById('toast').textContent, notches = g.notches(), lit = g.state().lit, bank = g.run().bank;
+      const toast = document.getElementById('toast').textContent, notches = g.notches(), lit = g.state().lit, bank = g.run().bank, carried = g.run().carried;
       g.out('G5');
       g.light();
-      return { toast, notches, lit, bank, after: g.run().bank, mode: g.run().mode, place: g.run().place };
+      return { toast, notches, lit, bank, carried, after: g.run().bank, carriedAfter: g.run().carried, mode: g.run().mode, place: g.run().place };
     });
     assert(/in the keep/.test(r.toast) && !/north|south|east|west/i.test(r.toast), r.toast);
     assert(r.notches.some(q => q.kind === 'keepers'), JSON.stringify(r.notches));
     assert(!r.lit);
-    assert(r.after - r.bank >= 9 + 3, `banked ${r.after - r.bank}`);
+    // gloam-downs-growth: the beacon banks nothing; the keepers' 9 glim (and the 3 before) are carried into the next place
+    assert.equal(r.after, r.bank, `banked ${r.after - r.bank}`);
+    assert(r.carriedAfter >= 9 + 3, `carried ${r.carriedAfter}`);
     assert.equal(r.place, 'ramparts');
     await shot(page, 'desk-gaol-beacon');
-    pass('the beacon stays dark while the keepers stand (the toast names the keep, a notch points to them), and lights once they are out', { toast: r.toast, banked: r.after - r.bank });
+    pass('the beacon stays dark while the keepers stand (the toast names the keep, a notch points to them), and lights once they are out', { toast: r.toast, carried: r.carriedAfter });
   }
   /* ---------------- one fight each in their places ---------------- */
   // walk on to a place: there the beacon card shows with its two wicks; choose the first and walk on
   const to = async (id, keep) => {
     await G(page, id => window.__gloam.go(id), id);
     await ready(page);
-    if (await page.isVisible('#beaconCard')) { await page.click('#wicks button'); await page.click('#bWalkOn'); }
+    if (await page.isVisible('#beaconCard')) { await page.click('#wicks button'); await page.click('#sparks button'); await page.click('#bWalkOn'); }
     assert.equal(await G(page, () => window.__gloam.run().mode), 'play');
     await G(page, () => window.__gloam.set({ hp: 100 }));
     await clearBut(page, keep);

@@ -1,4 +1,4 @@
-// Gloam Downs: the pacing bot. Each bot plays whole runs, one after another, until its first win or 12 runs, with the page's own rules:
+// Gloam Downs: the pacing bot. Each bot plays whole runs, one after another, until 5 runs after its first win or 40 runs, with the page's own rules:
 // the run (run.js), the lamplighter's moves (moves.js), the seed's mix of the zones with the elite's zone, Ember 3's extra foe and the
 // guard's second wave (mix.js, as makeFight uses it), the foes and their elites (foes.js, elites.js), the combo and its glim
 // (combo.js), the relics (relics.js), and the Lamp-room's upgrades and unlocks bought between runs, on the real walk maps of the five
@@ -18,12 +18,13 @@
 //   The boss: Barrow Crown's zones are fought on the real map; the Barrow Reeve's fight is not stepped here. It is drawn from the boss
 //   bot's own results (qa/lab/gloam-downs-boss.sim.mjs, in add-gloam-downs design.md): a win at full health 52% of tries at skill 0.3,
 //   93% at 0.5 and all at 0.7 and up, scaled by the health the bot arrives with, and a fight of 55 to 78 s.
-// Run: node qa/lab/gloam-downs-bot.mjs [bots = 20] [skill = 0.5] [first seed = 1]   (MAXRUNS=12, VERBOSE=1)
+// Run: node qa/lab/gloam-downs-bot.mjs [bots = 20] [skill = 0.5] [first seed = 1]   (MAXRUNS=40, AFTER=5 runs after the first win, VERBOSE=1)
 import fs from 'node:fs';
 import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 import { makeWalk, makeBody, PARAMS } from '../../public/lab/gloam-downs/play.js';
-import { startRun, makeRunner, buy, buyUnlock, chooseWick, maxOf, flasksOf, glimFactor, emberOf, UPGRADES, UNLOCKS, BASE } from '../../public/lab/gloam-downs/run.js';
+import { startRun, makeRunner, buy, buyUnlock, chooseWick, maxOf, flasksOf, glimFactor, emberOf, UPGRADES, UNLOCKS, BASE, purse, takeSpark, setPane, paneSlots, kindle, kindledOf } from '../../public/lab/gloam-downs/run.js';
+import { PATTERNS } from '../../public/lab/gloam-downs/growth.js';
 import * as RS from '../../public/lab/gloam-downs/run-save.js';
 import { makeFoes, phaseOf } from '../../public/lab/gloam-downs/foes.js';
 import { specialPhase } from '../../public/lab/gloam-downs/elites.js';
@@ -35,7 +36,7 @@ import { ROUTES, POOLS } from '../../games/gloam-downs/lib/zones.mjs';
 
 const W = fileURLToPath(new URL('../../public/lab/gloam-downs/worlds/', import.meta.url));
 const BOTS = +(process.argv[2] || 20), SKILL = +(process.argv[3] || 0.5), SEED0 = +(process.argv[4] || 1);
-const MAXRUNS = +(process.env.MAXRUNS || 12), VERBOSE = !!process.env.VERBOSE;
+const MAXRUNS = +(process.env.MAXRUNS || 40), AFTER = +(process.env.AFTER ?? 5), VERBOSE = !!process.env.VERBOSE;
 const PLACE_LIMIT = 12 * 60 * 60; // 12 minutes of game time in one place is a loss (a bot that cannot get on)
 const SIDE = 24, WALK = 3.0; // a skilled bot's reach off the way for a wisp or a zone (m); the walk speed a nudge is counted at (m/s)
 const why = { route: 0, foe: 0, wisp: 0, zone: 0 }; // the nudges by kind, and the wisps and zones a skilled bot gave up
@@ -52,20 +53,34 @@ function place(id) {
 const BOSS = [[0.3, 199 / 385, 55.2], [0.5, 200 / 214, 63.0], [0.7, 1, 69.6], [0.9, 1, 77.8]];
 const lerp = (k, i) => { if (k <= BOSS[0][0]) return BOSS[0][i]; for (let j = 1; j < BOSS.length; j++) if (k <= BOSS[j][0]) { const a = BOSS[j - 1], b = BOSS[j], u = (k - a[0]) / (b[0] - a[0]); return a[i] + (b[i] - a[i]) * u; } return BOSS.at(-1)[i]; };
 
-// what the bot buys between runs, in this order: the cheapest affordable first among the next of each
-const WANT = ['up:mantle', 'up:flask', 'un:kflask', 'up:edge', 'up:draught', 'un:shelf', 'un:rising', 'up:ash', 'un:tongue', 'un:heart', 'un:last', 'un:parry'];
+/* what the bot buys in each Lamp-room (before a run and at each lit beacon), in this order: the first affordable of the next of each.
+   gloam-downs-growth (merge pass): a lit beacon no longer banks, so the Lamp-room spends the glim carried first, then the bank (pay in
+   run.js), and the bot shops at the beacons too. It kindles a found pane pattern first (only the panes that work without abilities:
+   Lead and Tallow glass), and sets its panes as Thick, Lead, Tallow glass. It does not buy Belt or Keen eye: with no abilities in the
+   game yet (builder K) they give nearly nothing */
+const WANT = ['up:mantle', 'up:flask', 'un:kflask', 'up:edge', 'up:draught', 'un:shelf', 'un:rising', 'up:ash', 'un:tongue', 'un:heart', 'un:last', 'un:parry', 'up:first', 'up:panes'];
+const KINDLE = ['lead', 'tallow'], PANE_ORDER = ['thick', 'lead', 'tallow'];
+// the whole catalogue, in glim: every ware level, every unlock and every pattern
+const CATALOGUE = UPGRADES.reduce((a, u) => a + u.costs.reduce((x, c) => x + c, 0), 0) + UNLOCKS.reduce((a, u) => a + u.cost, 0) + PATTERNS.reduce((a, p) => a + (p.cost | 0), 0);
+const spentOf = rs => UPGRADES.reduce((a, u) => a + u.costs.slice(0, rs.up[u.id] || 0).reduce((x, c) => x + c, 0), 0) +
+  UNLOCKS.filter(u => (rs.unlocks || []).includes(u.id)).reduce((a, u) => a + u.cost, 0) + PATTERNS.filter(p => (rs.kindled || []).includes(p.id)).reduce((a, p) => a + (p.cost | 0), 0);
 function shop(rs) {
+  for (const id of KINDLE) if ((rs.patterns || []).includes(id)) kindle(rs, id);
   for (let guard = 0; guard < 40; guard++) {
     const opts = WANT.map(w => {
       const [k, id] = w.split(':');
       if (k === 'up') { const u = UPGRADES.find(x => x.id === id), l = rs.up[id] || 0; return l < u.costs.length ? { w, cost: u.costs[l] } : null; }
       return (rs.unlocks || []).includes(id) ? null : { w, cost: UNLOCKS.find(x => x.id === id).cost };
-    }).filter(Boolean).filter(o => o.cost <= rs.bank);
-    if (!opts.length) return;
+    }).filter(Boolean).filter(o => o.cost <= purse(rs));
+    if (!opts.length) break;
     const o = opts[0], [k, id] = o.w.split(':');
     if (k === 'up') buy(rs, id); else buyUnlock(rs, id);
   }
+  const have = PANE_ORDER.filter(id => kindledOf(rs, 'pane').includes(id));
+  for (let i = 0; i < paneSlots(rs); i++) if ((rs.panes || [])[i] !== have[i]) setPane(rs, i, have[i] || null);
 }
+// the spark picks: Ward while the health share was under 50% at the last beacon, else Flame
+function sparks(rs, share) { while ((rs.run?.sparkPicks | 0) > 0) if (!takeSpark(rs, share < 0.5 ? 'ward' : 'flame')) break; }
 // the wick the bot takes from an offer
 const WICK_RANK = ['keen', 'long', 'oil', 'heels', 'tongue', 'last', 'heavy', 'heart', 'shave'];
 const pickWick = offer => offer.slice().sort((a, b) => WICK_RANK.indexOf(a) - WICK_RANK.indexOf(b))[0];
@@ -231,7 +246,7 @@ function playPlace(rs, id, bot) {
   }
   if (!out && rs.run) { if (VERBOSE) console.log('stuck', id, JSON.stringify({ at: [s.x, s.y, s.z].map(v => +v.toFixed(1)), wi, dark, light: F.lightable(), live: F.targets().map(t => [t.id, t.state, +t.x.toFixed(1), +t.y.toFixed(1), +t.z.toFixed(1), t.hp, sees(walk, s, t), walk.support(t.x, t.z, t.y + 1), t.cool, t.aware]), act: act(), hp: rs.run.hp, fl: rs.run.flasks, ground: s.ground, th: threats().map(t => [t.key, t.left, t.at]), melee: [...F.melee].map(g => g.id), tgt: R.fighter.f.target?.id, move: R.fighter.f.move, ground: R.relics.view().ground })); R.kill([]); out = { type: 'dead', stuck: true }; }
   combo.end();
-  return { out, time: (rs.run?.time ?? rs.ended?.time ?? 0) - t0, nudges, elite: R.eliteDown || false };
+  return { out, time: (rs.run?.time ?? rs.ended?.time ?? 0) - t0, nudges, elite: R.eliteDown || false, share: rs.run ? rs.run.hp / maxOf(rs) : 0 };
 }
 
 /* ---------------- one bot ---------------- */
@@ -243,6 +258,7 @@ function playBot(b) {
     shop(rs);
     startRun(rs, hash2(b, r, 0x5eed) || 1);
     if (rs.run.offer) chooseWick(rs, pickWick(rs.run.offer));
+    sparks(rs, 1);
     const per = {};
     let nudges = 0;
     while (rs.run) {
@@ -252,27 +268,38 @@ function playBot(b) {
       nudges += res.nudges;
       if (rs.run?.offer) chooseWick(rs, pickWick(rs.run.offer));
       if (res.out?.type === 'dead' || res.out?.type === 'win' || !rs.run) break;
+      // a lit beacon: the spark pick, then the Lamp-room (a 0.3 bot carries its glim on half the time)
+      sparks(rs, res.share);
+      if (bot.skill >= 0.5 || bot.rnd() < 0.5) shop(rs);
     }
     const e = rs.ended;
-    runs.push({ won: e.won, place: e.place, time: +(e.time / 60).toFixed(2), banked: e.banked, relics: e.relics.length, per, nudges });
+    runs.push({ won: e.won, place: e.place, time: +(e.time / 60).toFixed(2), banked: e.banked, kept: e.kept, lost: e.lost, relics: e.relics.length, per, nudges, spent: spentOf(rs) });
     if (VERBOSE) console.log(`bot ${b} run ${r + 1}: ${e.won ? 'WIN' : 'died in ' + e.place} ${(e.time / 60).toFixed(1)} min, banked ${e.banked}, relics ${e.relics.join(',') || '-'}, nudges ${nudges}`);
     rs.ended = null;
-    if (e.won) break;
+    // up to MAXRUNS runs, or the first win and AFTER (5) runs more, so the catalogue's growth shows
+    if (e.won && bot.firstWin == null) bot.firstWin = r + 1;
+    if (bot.firstWin != null && r + 1 >= bot.firstWin + AFTER) break;
   }
-  return { runs, boss: bot.bossFights, arrive: bot.arrive, hurt: bot.hurt };
+  return { runs, firstWin: bot.firstWin ?? null, boss: bot.bossFights, arrive: bot.arrive, hurt: bot.hurt };
 }
 
 const t0 = Date.now(), bots = [];
 for (let b = SEED0; b < SEED0 + BOTS; b++) bots.push(playBot(b));
 const med = v => { const s = v.slice().sort((a, c) => a - c); return s.length ? s[Math.floor(s.length / 2)] : null; };
 const firstReach = bots.filter(x => x.runs[0].won || x.runs[0].place !== 'gaol').length;
-const winRun = bots.map(x => (x.runs.at(-1).won ? x.runs.length : null));
-const wins = winRun.filter(Boolean);
-const winTimes = bots.map(x => x.runs.at(-1)).filter(r => r.won).map(r => r.time);
+const wins = bots.map(x => x.firstWin).filter(Boolean);
+const winTimes = bots.filter(x => x.firstWin).map(x => x.runs[x.firstWin - 1].time);
 const reached = {};
 for (const x of bots) for (const r of x.runs) reached[r.place] = (reached[r.place] || 0) + 1;
 console.log(`${BOTS} bots, skill ${SKILL}, ${((Date.now() - t0) / 1000).toFixed(0)} s`);
 console.log(`first run reaches The Crow Wall: ${firstReach} of ${BOTS} (${Math.round((100 * firstReach) / BOTS)}%)`);
+// the run at which each quarter of the catalogue is bought (the median of the bots that got there)
+const quarter = q => { const v = bots.map(x => x.runs.findIndex(r => r.spent >= q * CATALOGUE)).filter(i => i >= 0).map(i => i + 1); return `${med(v) ?? '-'} (${v.length} of ${BOTS})`; };
+console.log(`catalogue ${CATALOGUE} glim; bought 25% by run ${quarter(0.25)}, 50% ${quarter(0.5)}, 75% ${quarter(0.75)}, 100% ${quarter(1)}`);
+const allRuns = bots.flatMap(x => x.runs), deaths = allRuns.filter(r => !r.won);
+console.log(`glim at a death (mean): kept ${(deaths.reduce((a, r) => a + (r.kept | 0), 0) / (deaths.length || 1)).toFixed(0)}, lost ${(deaths.reduce((a, r) => a + (r.lost | 0), 0) / (deaths.length || 1)).toFixed(0)}`);
+const winsAll = allRuns.filter(r => r.won).length;
+console.log(`runs played ${allRuns.length}, won ${winsAll}`);
 console.log(`won within ${MAXRUNS} runs: ${wins.length} of ${BOTS}; median first-win run ${med(wins) ?? '-'} (of those that won)`);
 console.log(`winning run: median ${med(winTimes) ?? '-'} min of game time; boss fight (from the boss bot) median ${(med(bots.flatMap(x => x.boss)) ?? 0).toFixed(1)} s`);
 console.log(`runs ended in: ${Object.entries(reached).map(([p, n]) => `${p} ${n}`).join(', ')}`);

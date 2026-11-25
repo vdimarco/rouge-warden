@@ -130,7 +130,7 @@ try {
     await page.waitForSelector('#pause:not([hidden])');
     await page.click('#bShake');
     assert.equal(await text(page, '#bShake'), 'Shake on');
-    const stored = await G(page, () => JSON.parse(localStorage.getItem('gloam-downs.run.v2') || localStorage.getItem('gloam-downs.run.v1')));
+    const stored = await G(page, () => JSON.parse(localStorage.getItem('gloam-downs.run.v3') || localStorage.getItem('gloam-downs.run.v1')));
     assert.equal(stored.shake, true, 'the choice is stored at once');
     await page.keyboard.press('Escape');
     await ready(page, 'play');

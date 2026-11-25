@@ -810,13 +810,15 @@ if (process.env.GLOAM_WORLDS !== '0') {
     const dark = ev.find(e => e.type === 'dark');
     assert(dark && /in the keep/.test(dark.why), JSON.stringify(dark));
     assert.deepEqual(dark.at.map(v => +v.toFixed(2)), [2.3, 4.21, -23.8]);
-    const bank = W.rs.bank;
+    const bank = W.rs.bank, carried = W.rs.run.carried;
     W.F.putOut('G5');
     const lit = W.R.light([]);
     assert(lit.some(e => e.type === 'beacon'), 'the beacon lights');
-    assert.equal(W.rs.bank - bank, 9, 'the 9 glim of its keepers are banked');
+    // gloam-downs-growth: a lit beacon no longer banks; the 9 glim of its keepers stay carried
+    assert.equal(W.rs.run.carried - carried, 9, 'the 9 glim of its keepers are carried');
+    assert.equal(W.rs.bank, bank, 'the beacon banks nothing');
     for (const z of Object.values(ZONES).flat().filter(z => z.keeper)) assert(!/\b(north|south|east|west)\b/i.test(keeperLine(z.keeper)), keeperLine(z.keeper));
-    pass("the guard rule: the beacon stays dark while its keepers stand, and the toast names where; out('G5') and light() bank their 9 glim", { why: dark.why });
+    pass("the guard rule: the beacon stays dark while its keepers stand, and the toast names where; out('G5') and light() carry their 9 glim on", { why: dark.why });
   }
   { /* pushed off the terrace: a finisher knocks a Snuffer of the terrace guard (B4) off the terrace. On the committed walk map the
        terrace (y 4.5) falls in shelves of 3.9 and 3.6 to the ground at 2.3, so the Snuffer lands there, 2.2 m below and outside its

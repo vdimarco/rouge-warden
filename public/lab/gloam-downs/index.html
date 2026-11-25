@@ -227,6 +227,10 @@
   .hud .colourRow i { font-style: normal; }
   .hud #patternsN { font-style: normal; color: #ffd77a; }
   @media (max-width: 360px) { .hud .colourRow { gap: 6px; font-size: 12px; } .panes button { flex-basis: 120px; } }
+  /* merge pass (gloam-downs-growth): the colour row and the pattern mark make the run's HUD taller, so on a narrow upright screen the
+     place's name card starts under the HUD's tallest (with the relics row), and the count line keeps "◇ 1" on its line */
+  body.run .hud .count { white-space: nowrap; }
+  @media (max-width: 520px) and (min-height: 560px) { body.run .arrive { top: calc(var(--sat) + 220px); transform: translate(-50%, 0); } }
   /* the builds (builder BC): the Lamp-room's Unlocks list and Ember row, the beacon card's kindle line, the win card's opened level, and
      the HUD's relic marks. The marks are small ember-edged tags in lamp colours, never brighter than the fire; the HUD takes no input */
   .unlocksT { margin: 4px 0 0; font: 700 12px/1.2 var(--title); letter-spacing: 0.12em; text-transform: uppercase; color: #f2d7a6; }
@@ -240,7 +244,7 @@
   /* with the unlocks the Lamp-room is taller than a short screen: its lists scroll inside the card, and its own buttons (Begin the run
      and the rest) stay at the card's foot, so the main button is always in view */
   #lamp .box { scroll-padding-bottom: 80px; }
-  #lamp #lampRow { position: sticky; bottom: -18px; z-index: 1; margin: 0 -18px -18px; padding: 10px 18px 18px; background: rgba(10, 9, 14, 0.97); border-top: 1px solid var(--edge); }
+  #lamp #lampRow { position: sticky; bottom: -18px; z-index: 1; margin: 0 -18px -18px; padding: 10px 18px 18px; background: rgba(10, 9, 14, 0.995); border-top: 1px solid var(--edge); }
   @media (max-height: 660px) { #lamp #lampRow { bottom: -12px; margin: 0 -14px -12px; padding: 8px 14px 12px; } }
   .wicks button em.kindle { display: block; margin-top: 4px; font-style: normal; font-size: 12px; color: #ffd77a; }
   .opened { color: #ffd77a; }
