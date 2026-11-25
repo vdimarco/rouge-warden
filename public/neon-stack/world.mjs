@@ -274,7 +274,8 @@ export function build(seed) {
   const tower = buildings.find((b) => b.tx === 0 && b.ty === 0);
   slices.push(slice(tower.x, (tower.ty + 1) * TILE + 0.5, tower.h * TILE - TILE * 0.4, TILE / 2, TILE / 2, uvOf("terminal_0"), 9, 0, 0, false, 2));
   const exitLot = buildings.find((b) => b.tx === 5 && b.ty === 5);
-  slices.push(slice(exitLot.x, (exitLot.ty + 1) * TILE + 1.2, TILE * 0.7, TILE / 2, TILE / 2, uvOf("exit_locked"), 9, 0, buildings.indexOf(exitLot), true, 2));
+  // One tile south of the lot, in the open, so the roof rim does not cover the door.
+  slices.push(slice(exitLot.x, (GRID + 0.15) * TILE, TILE * 0.55, TILE / 2, TILE / 2, uvOf("exit_locked"), 9, 0, -1, true, 2));
 
   const streetProps = [
     ["trash_bag", 1.15, 2.5],
@@ -286,15 +287,6 @@ export function build(seed) {
     const fr = frames.frames[name];
     const hh = fr.h * PX / 2;
     slices.push(slice(tx * TILE, ty * TILE, hh, fr.w * PX / 2, hh, uvOf(name), name.startsWith("steam") ? 6 : 9, 0, -1, true, 2));
-  });
-
-  // Barrel beside the first street sign. wall_plain has no window.
-  const barrelX = 2.15 * TILE;
-  const barrelZ = 3.15 * TILE;
-  slices.push(slice(barrelX, barrelZ, 7, 5 * PX, 6 * PX, uvOf("wall_plain"), 9, 0, -1, true, 2));
-  lights.push({
-    x: barrelX / TILE, y: barrelZ / TILE, z: 6, colour: "#F2A33A", type: "fire",
-    on: true, sign: -1, radius: TILE * 2, buzz: false, name: "barrel",
   });
 
   const runner = frames.frames.runner_idle;
@@ -309,6 +301,5 @@ export function build(seed) {
     lights,
     signs: signMeta,
     spawn: { x: 2.5, y: 5.2 },
-    barrel: { x: barrelX / TILE, y: barrelZ / TILE },
   };
 }

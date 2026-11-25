@@ -140,28 +140,6 @@ check(cut.on < cut.off, "cutaway drops slices (" + cut.on + " then " + cut.off +
 check(!!cut.hit, "runner stays visible (" + cut.hit + ")");
 await shot("1280-cutaway");
 
-const fire = await desk.page.evaluate(async () => {
-  const lights = __test.state().lights;
-  const barrel = lights.find((l) => l.type === "fire");
-  const neon = lights.filter((l) => l.type === "neon");
-  const dist = Math.min(...neon.map((l) => Math.hypot(l.x - barrel.x, l.y - barrel.y)));
-  __test.moveTo(2.5, 2.5);
-  __test.setTilt(48);
-  const dx = barrel.x - 2.5, dy = barrel.y - 2.5;
-  __test.setYaw((Math.atan2(dx, dy) * 180 / Math.PI + 360) % 360);
-  await new Promise((r) => setTimeout(r, 280));
-  const view = __test.view();
-  let warm = null;
-  for (let y = 0; y < view.artH && !warm; y += 2) for (let x = 0; x < view.artW; x += 2) {
-    const c = __test.pixel(x, y);
-    if (c[0] > 150 && c[1] > c[2] + 25 && c[0] > c[1] && c[2] < 120) warm = c.join(",");
-  }
-  return { dist, warm, on: barrel.on };
-});
-check(fire.dist <= 2, "barrel within 2 tiles (" + fire.dist.toFixed(2) + ")");
-check(!!fire.warm, "fire lights a nearby surface (" + fire.warm + ")");
-await shot("1280-fire");
-
 await desk.page.evaluate(() => __test.setSign(0, false));
 await desk.page.waitForTimeout(220);
 const faded = await desk.page.evaluate(() => __test.state().lights[0]);
@@ -436,7 +414,7 @@ async function proof(width, height, dpr, tag) {
     const gl = canvas.getContext("webgl2");
     const edge = new Uint8Array(4);
     gl.readPixels(1, Math.floor(canvas.height * 0.5), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, edge);
-    const door = __test.project(5.5, 6.04, 22);
+    const door = __test.project(5.5, 6.15, 18);
     const dx = Math.round(v.ox + door.x * v.scale);
     const dy = Math.round(v.oy + (v.artH - door.y) * v.scale);
     const pix = new Uint8Array(4);

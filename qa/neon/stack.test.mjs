@@ -23,9 +23,7 @@ assert.equal(a.signs.filter((s) => s.street).length, 4);
 assert.deepEqual(a.signs.filter((s) => s.buzz).map((s) => s.name), ["eye"]);
 assert.deepEqual(a.signs.filter((s) => s.colour === "#B6F23A").map((s) => s.name), ["cross"]);
 
-const fire = a.lights.find((l) => l.type === "fire");
-const near = Math.min(...a.lights.filter((l) => l.type === "neon").map((l) => Math.hypot(l.x - fire.x, l.y - fire.y)));
-assert.ok(near <= 2, "barrel is " + near.toFixed(2) + " tiles from the nearest sign");
+assert.equal(a.lights.some((l) => l.type === "fire"), false);
 assert.ok(a.slices.length <= 900, a.slices.length + " slices");
 for (const seed of [1, 4, 7, 9]) {
   const w = build(seed);
@@ -84,4 +82,4 @@ for (const name of ["world.mjs", "render.mjs", "game.mjs", "art/atlas-data.mjs"]
 }
 const kb = bytes / 1024;
 assert.ok(kb < 150, kb.toFixed(1) + " KB gzipped");
-console.log("PASS neon stack logic, barrel " + near.toFixed(2) + " tiles, " + a.slices.length + " slices, " + kb.toFixed(1) + " KB gz, tile " + TILE);
+console.log("PASS neon stack logic, " + a.slices.length + " slices, " + kb.toFixed(1) + " KB gz, tile " + TILE);

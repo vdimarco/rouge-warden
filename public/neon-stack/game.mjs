@@ -192,11 +192,13 @@ function lightsNow() {
     out[i].intensity = buzz ? 0 : fade[i];
   }
   const fire = out.find((l) => l.type === "fire");
-  const flick = 0.42 + 0.58 * Math.abs(Math.sin(time * hz * Math.PI * 2));
-  fire.x += Math.sin(time * hz * 2.2) * 0.05;
-  fire.z += Math.sin(time * hz * 3.1) * 0.35;
-  fire.intensity = flick;
-  fire.on = true;
+  if (fire) {
+    const flick = 0.42 + 0.58 * Math.abs(Math.sin(time * hz * Math.PI * 2));
+    fire.x += Math.sin(time * hz * 2.2) * 0.05;
+    fire.z += Math.sin(time * hz * 3.1) * 0.35;
+    fire.intensity = flick;
+    fire.on = true;
+  }
   return out;
 }
 function frameUV(name, flip) {
