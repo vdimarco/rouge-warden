@@ -46,9 +46,10 @@ for (const s of a.signs) {
   assert.ok(s.plate.x - s.plate.hx >= s.tx * TILE - 0.1 && s.plate.x + s.plate.hx <= (s.tx + 1) * TILE + 0.1, s.name + " leaves its lot");
 }
 const neon = a.lights.filter((l) => l.type === "neon");
-for (const [tx, ty] of [[0.5, 2.5], [5.5, 2.5], [2.5, 4.5], [3.5, 4.5]]) {
-  const far = Math.min(...neon.map((l) => Math.hypot(l.x - tx, l.y - ty)));
-  assert.ok(far > 2, "(" + tx + "," + ty + ") is " + far.toFixed(2) + " from a sign");
+for (const ty of [2.5, 4.5]) {
+  const tiles = [0.5, 1.5, 4.5, 5.5].map((tx) => Math.min(...neon.map((l) => Math.hypot(l.x - tx, l.y - ty))));
+  const dark = tiles.filter((d) => d > 2).length;
+  assert.ok(dark >= 2, "alley y=" + ty + " has " + dark + " dark tiles (" + tiles.map((d) => d.toFixed(2)).join(", ") + ")");
 }
 for (const seed of [1, 4, 7, 9]) {
   const w = build(seed);

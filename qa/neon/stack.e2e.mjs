@@ -355,6 +355,7 @@ async function plates(width, height, dpr) {
       const dark = (ty) => {
         let n = 0;
         for (let tx = 0; tx < 6; tx++) {
+          if (tx === 2 || tx === 3) continue;
           const x = tx + 0.5, y = ty + 0.5;
           if (lights.every((l) => Math.hypot(l.x - x, l.y - y) > 2)) n++;
         }

@@ -241,8 +241,8 @@ export function build(seed) {
     { name: "cross", colour: "#B6F23A", frame: "sign_2", tx: 1, ty: 1, street: true, lx: 2.15, ly: 1.2 },
     { name: "bar", colour: "#3DE0E8", frame: "sign_1", tx: 4, ty: 0, street: true, lx: 3.85, ly: 0.7 },
     { name: "arrow", colour: "#F2A33A", frame: "sign_3", tx: 4, ty: 1, street: true, lx: 3.85, ly: 1.2 },
-    { name: "eye", colour: "#FF3D8B", frame: "sign_4", tx: 0, ty: 1, street: false, buzz: true, lx: 0.3, ly: 4.55 },
-    { name: "glyph", colour: "#3DE0E8", frame: "sign_5", tx: 5, ty: 3, street: false, lx: 5.7, ly: 4.55 },
+    { name: "eye", colour: "#FF3D8B", frame: "sign_4", tx: 0, ty: 1, street: false, buzz: true, lx: 2.7, ly: 2.05 },
+    { name: "glyph", colour: "#3DE0E8", frame: "sign_5", tx: 5, ty: 3, street: false, lx: 3.3, ly: 4.15 },
   ];
   const puddles = ["puddle_0", "puddle_1", "puddle_2"];
   signs.forEach((def, si) => {
