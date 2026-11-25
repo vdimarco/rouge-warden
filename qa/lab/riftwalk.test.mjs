@@ -5,7 +5,8 @@
 // Run: node qa/lab/riftwalk.test.mjs
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { GROW, GROUPS, ZONES, SELF, direction, headingTo, gamesOf, zoneGames, seats, pages, assign, ringPlace, roomSeats, exitRing, frameRing, FRAMES, walkRoom, zoneAt, pick, facing, neighbour, walk } from '../../public/lab/riftwalk/hall.js';
+import { GROW, GROUPS, ZONES, SELF, direction, headingTo, gamesOf, zoneGames, seats, pages, assign, ringPlace, roomSeats, exitRing, frameRing, FRAMES, walkRoom, zoneAt, pick, facing, neighbour, walk, PRIVATE, walkFloors, floorAt, STEP_UP } from '../../public/lab/riftwalk/hall.js';
+import { webcrypto } from 'node:crypto';
 const root = new URL('../../', import.meta.url), read = p => readFileSync(new URL(p, root), 'utf8');
 const near = (a, b, e = 1e-9) => Math.abs(a - b) <= e;
 let n = 0; const pass = (name, data) => { n++; console.log('PASS ' + name + (data ? ' ' + JSON.stringify(data) : '')); };
@@ -109,6 +110,34 @@ assert(GAMES.length >= 40, 'switch.js lists the games: ' + GAMES.length);
   // A corner building: the step goes back to the nearer street.
   const corner = walk({ x: 4, z: street.z[0] - 0.4 }, cross); assert.deepEqual(corner, { x: 4, z: street.z[0] }); const deep = walk({ x: alley.x[1] + 0.3, z: -9 }, cross); assert.deepEqual(deep, { x: alley.x[1], z: -9 });
   pass('the visitor stays on the streets');
+}
+
+{ // A private world: a door of its own on the alley, a sealed world behind it, and floors to walk on (a house).
+  const [home] = PRIVATE, at = data.zones[home.id], place = ringPlace(at.ring), dir = 'public/lab/riftwalk/worlds/private/' + home.id + '/';
+  assert(home.locked && home.groups.length === 0 && !ZONES.some(z => z.id === home.id), 'a private world is not a collection');
+  assert(at.room && at.private, 'the alley has its door'); assert.deepEqual(walk({ x: at.station[0], z: at.station[1] }, HALL.bounds), { x: at.station[0], z: at.station[1] }, 'its station is on the street');
+  assert(near(at.ring.centre[1] - at.ring.height / 2, 0.085, 0.2), 'its door stands on the ground');
+  const v = [at.ring.centre[0] - at.station[0], 0, at.ring.centre[2] - at.station[1]]; assert(dot(v, at.ring.normal) < 0, 'its door faces its station');
+  for (const z of ZONES) { const r = data.zones[z.id].ring; assert(Math.hypot(r.centre[0] - at.ring.centre[0], r.centre[2] - at.ring.centre[2]) > 3, 'clear of the ' + z.id + ' door'); }
+  const world = JSON.parse(read(dir + 'screens.json')), lock = world.lock;
+  assert.equal(lock.kdf, 'PBKDF2-SHA256'); assert(lock.iterations >= 300000, 'a slow key'); assert.equal(Buffer.from(lock.salt, 'base64').length, 16);
+  for (const f of ['150k.bin', '500k.bin', 'full.bin']) { const b = readFileSync(new URL(dir + f, root)); assert(b.length > 1e6, f); assert.notEqual(b.subarray(12, 16).toString('latin1'), 'NGSP', f + ' is sealed, not a plain splat file'); }
+  for (const f of ['150k.spz', '500k.spz', 'full.spz']) assert.throws(() => readFileSync(new URL(dir + f, root)), f + ': no unsealed copy');
+  // The check text opens only with the right key: a wrong password fails. RIFTWALK_PASSWORD, when set, must open it.
+  const open = async pw => { const s = webcrypto.subtle, base = await s.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveKey']), key = await s.deriveKey({ name: 'PBKDF2', hash: 'SHA-256', salt: Buffer.from(lock.salt, 'base64'), iterations: lock.iterations }, base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']), c = Buffer.from(lock.check, 'base64'); return new TextDecoder().decode(await s.decrypt({ name: 'AES-GCM', iv: c.subarray(0, 12) }, key, c.subarray(12))); };
+  await assert.rejects(open('not the password'), 'a wrong password does not open it');
+  if (process.env.RIFTWALK_PASSWORD) assert.equal(await open(process.env.RIFTWALK_PASSWORD), 'riftwalk private world');
+  // The floors: start and the way out are on the ground floor; the stairs go down to the basement; no step drops a floor.
+  const F = world.floors, on = p => F.some(b => p.x >= b.x[0] && p.x <= b.x[1] && p.z >= b.z[0] && p.z <= b.z[1] && Math.abs(floorAt(b, p) - p.y) < 1e-9);
+  assert(on({ x: world.start.x, z: world.start.z, y: 0 }), 'the visitor starts on a floor');
+  let p = { x: world.start.x, z: world.start.z, y: 0 }; const go = (x, z, steps = 400) => { for (let i = 0; i < steps; i++) { const d = Math.hypot(x - p.x, z - p.z); if (d < 0.01) break; const k = Math.min(1, 0.05 / d), q = walkFloors(p, { x: p.x + (x - p.x) * k, z: p.z + (z - p.z) * k }, F); assert(Math.abs(q.y - p.y) <= STEP_UP, 'no step drops a floor'); p = q; } return p; };
+  go(1.0, 9.5); assert(p.z > 9 && p.y === 0, 'through both doorways to the kitchen'); go(1.0, 1.4);
+  go(6.25, 3.6); go(6.25, 8.5); assert(near(p.y, -3.05, 1e-9) && p.z > 8, 'down the stairs to the basement'); go(7.5, 7.5); assert(near(p.y, -3.05, 1e-9));
+  go(6.25, 8.5); go(6.25, 3.6); assert(p.y === 0, 'and back up from the foot of the stairs'); const wall = walkFloors({ x: 3, z: 3.4, y: 0 }, { x: 3, z: 4.6 }, F); assert(wall.z < 3.5, 'a wall with no doorway stops the visitor');
+  const under = walkFloors({ x: 7.5, z: 8, y: -3.05 }, { x: 6.25, z: 5 }, F); assert(near(under.y, -3.05, 1e-9), 'the basement floor does not climb the stairs from below');
+  const exit = ringPlace(world.exit); assert(near(world.exit.centre[2], 0.18, 1e-9) && exit.normal[2] === 1, 'the way out is on the salon\'s street wall, facing in');
+  assert.deepEqual(roomSeats([]), [], 'a world with no machines has no seats');
+  pass('a private world: a locked door on the alley, a sealed house behind it, and floors with stairs', { station: at.station, floors: F.length });
 }
 
 console.log(`${n} checks passed`);

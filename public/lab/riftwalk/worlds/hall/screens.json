@@ -180,6 +180,30 @@
     "width": 1.5,
     "height": 1.95
    }
+  },
+  "home": {
+   "station": [
+    0.3,
+    -11.6
+   ],
+   "facing": 1.5708,
+   "room": true,
+   "shop": "north street, east wall",
+   "private": true,
+   "ring": {
+    "centre": [
+     2.0,
+     1.06,
+     -11.6
+    ],
+    "normal": [
+     -1.0,
+     0,
+     0.0
+    ],
+    "width": 1.5,
+    "height": 1.95
+   }
   }
  },
  "screens": []

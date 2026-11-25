@@ -7,8 +7,10 @@
 import * as THREE from 'three';
 import { SplatMesh, SparkRenderer } from '@sparkjsdev/spark';
 import * as sound from './sound.js';
-import { direction, GROUPS, ZONES, GROW, gamesOf, zoneGames, seats, pages, assign, ringPlace, roomSeats, exitRing, frameRing, walkRoom, zoneAt, headingTo, pick, facing, neighbour, walk } from './hall.js';
+import { direction, GROUPS, ZONES as PUBLIC_ZONES, PRIVATE, walkFloors, floorAt, GROW, gamesOf, zoneGames, seats, pages, assign, ringPlace, roomSeats, exitRing, frameRing, walkRoom, zoneAt, headingTo, pick, facing, neighbour, walk } from './hall.js';
 
+// The zones: one for each collection of games, then the private worlds (a locked door, no games).
+const ZONES = PUBLIC_ZONES.concat(PRIVATE), isLocked = i => !!ZONES[i]?.locked;
 const $ = id => document.getElementById(id);
 const canvas = $('view'), loadLine = $('load'), startCard = $('start'), go = $('go'), target = $('target'), keysBar = $('keys'), groupsBar = $('groups'), flash = $('flash'), list = $('list');
 const query = new URLSearchParams(location.search);
@@ -85,13 +87,47 @@ function sharpenHall(file) {
 // so the mesh turns half a turn about x; the room's screens.json gives its scale and the eye height.
 const backLink = document.querySelector('.labbar .back');   // the top-left link: Lab in the alley, Alley inside a world
 const ROOMS = {}; let hallMesh = null, HALLDATA = null, room = null, RINGS = [];   // RINGS: the zones that have a room, in the order of their rings   // room: the index of the zone whose room the visitor is in, or null in the hall
-const roomData = id => ROOMS[id] ? Promise.resolve(ROOMS[id]) : fetch(`./worlds/rooms/${id}/screens.json`).then(r => { if (!r.ok) throw new Error('Room missing: ' + id); return r.json(); }).then(d => (ROOMS[id] = d));
+const roomDir = id => (PRIVATE.some(z => z.id === id) ? './worlds/private/' : './worlds/rooms/') + id + '/';
+const roomData = id => ROOMS[id] ? Promise.resolve(ROOMS[id]) : fetch(roomDir(id) + 'screens.json').then(r => { if (!r.ok) throw new Error('Room missing: ' + id); return r.json(); }).then(d => (ROOMS[id] = d));
 async function loadRoom(id, quality) {
-  const response = await fetch(`./worlds/rooms/${id}/${quality}.spz`); if (!response.ok) throw new Error('Room file missing: ' + id);
-  const mesh = new SplatMesh({ fileBytes: new Uint8Array(await response.arrayBuffer()) }); await mesh.initialized;
+  const lock = ROOMS[id].lock, response = await fetch(roomDir(id) + quality + (lock ? '.bin' : '.spz')); if (!response.ok) throw new Error('Room file missing: ' + id);
+  let bytes = new Uint8Array(await response.arrayBuffer()); if (lock) bytes = await unseal(KEYS[id], bytes);
+  const mesh = new SplatMesh({ fileBytes: bytes }); await mesh.initialized;
   // An API world has y down and turns half a turn about x. An app export has y up, and turns about y so the visitor faces its best view.
   const h = ROOMS[id].hall; if (h.flip === false) mesh.rotation.y = h.turn || 0; else mesh.quaternion.set(1, 0, 0, 0); mesh.scale.setScalar(h.scale); mesh.position.set(0, h.ground, 0); return mesh;
 }
+/* ---------------- a locked world ---------------- */
+// A private world's files are sealed (qa/lab/riftwalk-seal.mjs): AES-GCM with a key that PBKDF2 makes from the
+// password. The page makes the key from what the visitor types, opens the world's short check text with it, and keeps
+// the key in memory only, for this visit. A wrong password fails the check, and nothing is downloaded.
+const KEYS = {};
+const fromB64 = t => Uint8Array.from(atob(t), c => c.charCodeAt(0));
+async function unseal(key, bytes) { return new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: bytes.subarray(0, 12) }, key, bytes.subarray(12))); }
+async function unlock(id, password) {
+  const lock = ROOMS[id].lock, base = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveKey']);
+  const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', hash: 'SHA-256', salt: fromB64(lock.salt), iterations: lock.iterations }, base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+  try { await unseal(key, fromB64(lock.check)); } catch (e) { return false; }
+  KEYS[id] = key; return true;
+}
+const lockCard = $('lock'), lockForm = $('lockForm'), lockInput = $('lockPass'), lockNote = $('lockNote');
+let lockFor = null;   // the zone index the password card is open for
+function askPassword(index) {
+  lockFor = index; lockCard.hidden = false; lockNote.textContent = ''; lockInput.value = ''; keys.clear(); visit.walk = null;
+  $('lockTitle').textContent = ZONES[index].label + ' is locked'; lockInput.focus({ preventScroll: true });
+}
+function closeLock() { lockCard.hidden = true; lockFor = null; canvas.focus?.({ preventScroll: true }); }
+lockForm.addEventListener('submit', async e => {
+  e.preventDefault(); const index = lockFor, id = ZONES[index]?.id; if (!id) return;
+  const button = lockForm.querySelector('button[type=submit]'); button.disabled = true; lockNote.textContent = 'Checking…';
+  try {
+    await roomData(id);
+    if (await unlock(id, lockInput.value)) { closeLock(); goRoom(index); }
+    else { lockNote.textContent = 'That is not the password.'; lockInput.select(); }
+  } catch (error) { console.error(error); lockNote.textContent = 'The door did not answer. Try again.'; }
+  finally { button.disabled = false; }
+});
+$('lockCancel').addEventListener('click', closeLock);
+lockCard.addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeLock(); } });
 function showWorld(mesh) { if (hall === mesh) return; if (hall) { scene.remove(hall); if (hall !== hallMesh) hall.dispose?.(); } hall = mesh; if (mesh) scene.add(mesh); }
 
 /* ---------------- a machine's portal ---------------- */
@@ -110,6 +146,7 @@ const LOOKS = {
   strategy: { radius: 0.012, wave: 0.003, scan: 0.5, font: '600 70px "Palatino Linotype", Palatino, Georgia, serif' },
   gta: { radius: 0.02, wave: 0.02, scan: 0.75, font: '900 76px Impact, "Arial Black", sans-serif' },
   lab: { radius: 0.05, wave: 0.02, scan: 0.55, font: '600 68px "Trebuchet MS", "Segoe UI", sans-serif' },
+  home: { radius: 0.03, wave: 0.008, scan: 0.3, font: '700 74px Georgia, "Times New Roman", serif' },
 };
 const VERTEX = `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
 const FRAGMENT = `
@@ -263,7 +300,7 @@ let portals = [];
 const LIVE = { on: !touch && !noWorld && query.get('live') !== '0', zone: -1, loading: -1, mesh: null, scene: null, spark: null, cam: null, portal: null, still: null, aspect: 1, meshes: new Map(), sorting: false };
 function endLive() { const v = LIVE; if (!v.portal) return; if (v.portal.uniforms.uMap.value !== v.still && v.still) { v.portal.uniforms.uMap.value = v.still; v.portal.uniforms.uAspect.value = v.aspect; } v.portal = v.still = null; }
 function stepLive() {
-  const v = LIVE; if (!v.on) return; const p = portals[visit.aim], near = room === null && visit.phase === 'hall' && p?.door && p.game && !p.game.exit && p.uniforms.uHasMap.value === 1;
+  const v = LIVE; if (!v.on) return; const p = portals[visit.aim], near = room === null && visit.phase === 'hall' && p?.door && p.game && !p.game.exit && !isLocked(p.game.zone) && p.uniforms.uHasMap.value === 1;
   if (!near) return endLive(); const c = p.place.centre, n = p.place.normal, r = p.place.right, dx = frame.position.x - c[0], dz = frame.position.z - c[2], out = dx * n[0] + dz * n[2], side = dx * r[0] + dz * r[2];
   if (out < 0.2 || Math.hypot(dx, dz) > 7) return endLive(); const index = p.game.zone, id = ZONES[index].id;
   if (!v.scene) { v.scene = new THREE.Scene(); v.spark = new SparkRenderer({ renderer, target: { width: 512, height: 664 }, focalAdjustment: 2 }); v.scene.add(v.spark); v.cam = new THREE.PerspectiveCamera(74, 512 / 664, 0.05, 30000); v.cam.rotation.order = 'YXZ'; v.scene.add(v.cam); }
@@ -364,26 +401,28 @@ function buildHall() {
   const zoneOf = id => ZONES.find(z => z.id === id);
   portals = PLACES.map((place, i) => makePortal(place, i, place.ring ? ZONES[RINGS[i - SCREENS.length]] : zoneOf(place.zone)));
   ZONES.forEach((z, i) => { visit.page[i] = 0; fill(i); });
-  RINGS.forEach((i, k) => { const z = ZONES[i]; show(portals[SCREENS.length + k], { zone: i, id: 'ring-' + z.id, title: z.label, sub: `${gamesIn(i).length} ${gamesIn(i).length === 1 ? 'game' : 'games'} · a world of its own`, url: null, art: `./worlds/rooms/${z.id}/door.webp`, color: z.color }); });
+  RINGS.forEach((i, k) => { const z = ZONES[i]; show(portals[SCREENS.length + k], z.locked ? { zone: i, id: 'ring-' + z.id, title: z.label, sub: 'Locked · a private world', url: null, art: null, color: z.color, locked: true } : { zone: i, id: 'ring-' + z.id, title: z.label, sub: `${gamesIn(i).length} ${gamesIn(i).length === 1 ? 'game' : 'games'} · a world of its own`, url: null, art: `./worlds/rooms/${z.id}/door.webp`, color: z.color }); });
   if (!reduced) ZONES.forEach((z, i) => { const at = new THREE.Group(); at.position.set(STATIONS[i].station[0], 0, STATIONS[i].station[1]); scene.add(at); air.push(motes(touch ? 26 : 44, z.color, false, null, at)); const k = RINGS.indexOf(i); if (k >= 0) { const p = portals[SCREENS.length + k]; air.push(motes(30, z.color, true, p.uniforms.uHalf.value, p.group)); } });
 }
 // The places of a room: its machines, with the zone's games from the front machine outward, and the ring back to the hall.
 function buildRoom(index) {
   clearPlaces(); room = index; paintBack(); const zone = ZONES[index], data = ROOMS[zone.id];
   // A scenery room has no machines: its games hang as floating frames, one for each game.
-  HALL = { eye: data.hall.eye ?? data.hall.ground, reach: 1, frames: !!data.hall.frames }; SCREENS = (HALL.frames ? frameRing(gamesIn(index).length, HALL.eye) : data.screens).map(s => ({ ...s, zone: zone.id })); PLACES = SCREENS.concat([exitRing(SCREENS)]); camera.position.set(0, HALL.eye, 0);
+  HALL = { eye: data.hall.eye ?? data.hall.ground, reach: 1, frames: !!data.hall.frames, floors: data.floors || null }; SCREENS = (HALL.frames ? frameRing(gamesIn(index).length, HALL.eye) : data.screens).map(s => ({ ...s, zone: zone.id })); PLACES = SCREENS.concat([data.exit ? ringPlace(data.exit) : exitRing(SCREENS)]); camera.position.set(0, HALL.eye, 0);
   portals = PLACES.map((place, i) => makePortal(place, i, zone)); visit.page[index] = 0; fill(index);
   show(portals[SCREENS.length], { exit: true, zone: index, id: 'ring-hall', title: 'The alley', sub: 'Back to the alley of all the games', url: null, art: null, color: '#ffffff' });
-  if (!reduced) { air.push(motes(touch ? 50 : 90, zone.color, false)); const p = portals[SCREENS.length]; air.push(motes(30, '#ffffff', true, p.uniforms.uHalf.value, p.group)); }
+  // A world with floors is a house, not a ring round the visitor: only its way out has motes.
+  if (!reduced) { if (!HALL.floors) air.push(motes(touch ? 50 : 90, zone.color, false)); const p = portals[SCREENS.length]; air.push(motes(30, '#ffffff', true, p.uniforms.uHalf.value, p.group)); }
 }
 // Through a ring into a zone's room: the view fills with the zone's light, the room's world loads, and the visitor
 // stands in its middle and faces the first game. The room shows small first and sharpens.
 const pause = ms => new Promise(done => setTimeout(done, ms));
 function goRoom(index) {
   if (visit.phase !== 'hall' || visit.glide || !ZONES[index] || !HALLDATA.zones[ZONES[index].id].room) return; const zone = ZONES[index];
+  if (zone.locked && !KEYS[zone.id]) { askPassword(index); return; }
   visit.phase = 'travel'; target.hidden = keysBar.hidden = groupsBar.hidden = true; canvas.classList.remove('aim'); flash.style.setProperty('--tint', zone.color); flash.classList.add('on'); sound.whoosh(true); sound.hum(0);
   roomData(zone.id).then(() => Promise.all([noWorld ? null : loadRoom(zone.id, '150k'), pause(reduced ? 0 : 600)])).then(([mesh]) => {
-    showWorld(mesh); buildRoom(index); visit.zone = index; frame.position.set(0, 0, 0); visit.yaw = SCREENS[roomSeats(SCREENS)[0]].heading; visit.pitch = 0; visit.turnTo = null;
+    showWorld(mesh); buildRoom(index); visit.zone = index; const s0 = ROOMS[zone.id].start; frame.position.set(s0?.x ?? 0, 0, s0?.z ?? 0); visit.yaw = s0 ? s0.facing : SCREENS.length ? SCREENS[roomSeats(SCREENS)[0]].heading : 0; visit.pitch = 0; visit.turnTo = null;
     visit.phase = 'hall'; flash.classList.remove('on'); keysBar.hidden = groupsBar.hidden = false; mark(); banner(zone); paint(); sound.place(zone.id);
     // The room sharpens: a desktop takes the room's full-resolution file, and a phone the 500,000-splat file.
     if (!noWorld) loadRoom(zone.id, query.get('q') || (touch ? '500k' : 'full')).then(sharp => { if (room === index && visit.phase !== 'travel') showWorld(sharp); else sharp.dispose?.(); }).catch(() => { /* the small room stays */ });
@@ -457,12 +496,12 @@ const spot = new THREE.Mesh(new THREE.RingGeometry(0.16, 0.24, 40), new THREE.Me
 spot.rotation.x = -Math.PI / 2; spot.renderOrder = 15; spot.frustumCulled = false; spot.visible = false; scene.add(spot);
 function walkTo(clientX, clientY) {
   const [origin, d] = lookRay(clientX, clientY); if (d.y > -0.03) return false;            // the sky, a wall far off, or the horizon
-  const t = -origin.y / d.y, far = Math.hypot(d.x * t, d.z * t); if (far > 30 || far < 0.3) return false;
-  const at = { x: origin.x + d.x * t, z: origin.z + d.z * t }, to = room !== null ? walkRoom(at, HALL.reach) : walk(at, HALL.bounds);
+  const ground = frame.position.y, t = (ground - origin.y) / d.y, far = Math.hypot(d.x * t, d.z * t); if (far > 30 || far < 0.3) return false;
+  const at = { x: origin.x + d.x * t, z: origin.z + d.z * t }, to = room !== null && HALL.floors ? walkFloors({ x: frame.position.x, z: frame.position.z, y: ground }, at, HALL.floors) : room !== null ? walkRoom(at, HALL.reach) : walk(at, HALL.bounds);
   if (Math.hypot(to.x - frame.position.x, to.z - frame.position.z) < 0.15) return false;
   visit.walk = { to, stuck: 0 }; visit.turnTo = Math.atan2(to.x - frame.position.x, -(to.z - frame.position.z)); visit.pitchTo = 0; visit.aimTo = -1;
-  spot.position.set(to.x, 0.02, to.z); spot.material.color.set(ZONES[visit.zone].color); spot.material.opacity = 0.9; spot.visible = true;
-  if (reduced) { frame.position.x = to.x; frame.position.z = to.z; visit.walk = null; if (room === null) enter(zoneAt(frame.position, STATIONS)); }
+  spot.position.set(to.x, (to.y ?? 0) + 0.02, to.z); spot.material.color.set(ZONES[visit.zone].color); spot.material.opacity = 0.9; spot.visible = true;
+  if (reduced) { frame.position.x = to.x; frame.position.z = to.z; if (to.y !== undefined) frame.position.y = to.y; visit.walk = null; if (room === null) enter(zoneAt(frame.position, STATIONS)); }
   return true;
 }
 const noTouch = () => { for (const p of portals) p.touch = 0; };
@@ -470,7 +509,7 @@ const portalAt = (x, y) => visit.phase === 'hall' ? pick(...lookRay(x, y), PLACE
 // The machines and rings as the visitor sees them from where they stand: each with its heading, its distance over the
 // floor and the look angle up to it.
 const seen = () => PLACES.map(p => { const dx = p.centre[0] - frame.position.x, dz = p.centre[2] - frame.position.z, distance = Math.hypot(dx, dz); // front: the visitor is on the side the place faces. A door seen from behind is not a stop and has no name card.
-  return { ...p, heading: Math.atan2(dx, -dz), distance, pitch: Math.atan2(p.centre[1] - HALL.eye, distance), front: -(dx * p.normal[0] + dz * p.normal[2]) > 0.25 * distance }; });
+  return { ...p, heading: Math.atan2(dx, -dz), distance, pitch: Math.atan2(p.centre[1] - HALL.eye - frame.position.y, distance), front: -(dx * p.normal[0] + dz * p.normal[2]) > 0.25 * distance }; });
 // The arrows start from the place in view, so one press moves on to the next place. In the hall they stop at machines
 // only: a ring hangs right over its machines, and the Room button and the R key open the room of the zone.
 function turn(step) { if (visit.phase !== 'hall' || visit.glide) return; const now = seen(), stops = lit().map((on, k) => on && now[k].front && !(room === null && SCREENS.length && portals[k].door)), i = neighbour(visit.turnTo ?? (visit.aim >= 0 ? now[visit.aim].heading : visit.yaw), now, stops, step, reach()); if (i >= 0) { visit.turnTo = now[i].heading; visit.pitchTo = now[i].pitch; visit.aimTo = i; } }
@@ -485,10 +524,21 @@ function through(x, z) {
       const out = (frame.position.x - c[0]) * n[0] + (frame.position.z - c[2]) * n[2], along = (frame.position.x - c[0]) * r[0] + (frame.position.z - c[2]) * r[2];
       if (out > 0 && out < 2.1 && Math.abs(along) < p.place.width / 2 + 0.2 && -(x * n[0] + z * n[2]) > 0.6) { visit.walk = null; keys.clear(); goRoom(p.game.zone); return; }
     }
+  } else if (HALL.floors) {
+    const e = PLACES[PLACES.length - 1], n = e.normal, out = (frame.position.x - e.centre[0]) * n[0] + (frame.position.z - e.centre[2]) * n[2], along = (frame.position.x - e.centre[0]) * e.right[0] + (frame.position.z - e.centre[2]) * e.right[2];
+    if (Math.abs(frame.position.y) < 0.3 && out < 0.5 && Math.abs(along) < e.width / 2 + 0.2 && -(x * n[0] + z * n[2]) > 0.6) { visit.walk = null; keys.clear(); goHall(); }
   } else {
     const exit = PLACES[PLACES.length - 1], far = Math.hypot(frame.position.x, frame.position.z); if (!exit?.ring || far < HALL.reach - 0.04) return;
     const d = direction(exit.heading); if (x * d.x + z * d.z > 0.75 && (frame.position.x * d.x + frame.position.z * d.z) / far > 0.75) { visit.walk = null; keys.clear(); goHall(); }
   }
+}
+// One step of the visitor toward `want`: on the alley's open floor, within a room's reach, or on a house's floors
+// (which also sets the height of the floor the visitor stands on). Returns how far the visitor moved.
+function stepTo(want) {
+  const from = frame.position, before = { x: from.x, z: from.z };
+  if (room !== null && HALL.floors) { const to = walkFloors({ x: from.x, z: from.z, y: from.y }, want, HALL.floors); from.set(to.x, to.y, to.z); }
+  else { const to = room !== null ? walkRoom(want, HALL.reach) : walk(want, HALL.bounds); from.x = to.x; from.z = to.z; }
+  return Math.hypot(from.x - before.x, from.z - before.z);
 }
 const keys = new Set();
 const ease = t => t * t * (3 - 2 * t);
@@ -520,11 +570,11 @@ function step(dt) {
   if (visit.walk && (visit.phase !== 'hall' || length > 0)) visit.walk = null;
   if (visit.walk) {
     const w = visit.walk, dx = w.to.x - frame.position.x, dz = w.to.z - frame.position.z, left = Math.hypot(dx, dz), go = Math.min(left, (room !== null ? 1.6 : 3.2) * dt);
-    const want = { x: frame.position.x + dx / (left || 1) * go, z: frame.position.z + dz / (left || 1) * go }, to = room !== null ? walkRoom(want, HALL.reach) : walk(want, HALL.bounds), moved = Math.hypot(to.x - frame.position.x, to.z - frame.position.z);
-    frame.position.x = to.x; frame.position.z = to.z; w.stuck = moved < go * 0.3 ? w.stuck + dt : 0; if (left < 0.06 || w.stuck > 0.4) visit.walk = null; if (room === null) enter(zoneAt(frame.position, STATIONS)); if (left > 0.06) through(dx / left, dz / left);
+    const moved = stepTo({ x: frame.position.x + dx / (left || 1) * go, z: frame.position.z + dz / (left || 1) * go });
+    w.stuck = moved < go * 0.3 ? w.stuck + dt : 0; if (left < 0.06 || w.stuck > 0.4) visit.walk = null; if (room === null) enter(zoneAt(frame.position, STATIONS)); if (left > 0.06) through(dx / left, dz / left);
   }
   if (!visit.walk && spot.visible) { spot.material.opacity -= dt * 2.5; if (spot.material.opacity <= 0) spot.visible = false; }
-  if (length > 0) { ahead /= length; side /= length; const a = visit.yaw, speed = (room !== null ? 1.3 : 2.2) * dt, step2 = { x: frame.position.x + (Math.sin(a) * ahead + Math.cos(a) * side) * speed, z: frame.position.z + (-Math.cos(a) * ahead + Math.sin(a) * side) * speed }, to = room !== null ? walkRoom(step2, HALL.reach) : walk(step2, HALL.bounds); frame.position.x = to.x; frame.position.z = to.z; if (room === null) enter(zoneAt(frame.position, STATIONS)); through(Math.sin(a) * ahead + Math.cos(a) * side, -Math.cos(a) * ahead + Math.sin(a) * side); }
+  if (length > 0) { ahead /= length; side /= length; const a = visit.yaw, speed = (room !== null ? 1.3 : 2.2) * dt, step2 = { x: frame.position.x + (Math.sin(a) * ahead + Math.cos(a) * side) * speed, z: frame.position.z + (-Math.cos(a) * ahead + Math.sin(a) * side) * speed }; stepTo(step2); if (room === null) enter(zoneAt(frame.position, STATIONS)); through(Math.sin(a) * ahead + Math.cos(a) * side, -Math.cos(a) * ahead + Math.sin(a) * side); }
   // The lit place in the middle of the view is named on screen. A ring is high on the wall, so it counts only when
   // the visitor looks up at it.
   const now = seen(), mask = lit().map((on, i) => on && now[i].front && Math.abs(now[i].pitch - visit.pitch) < 0.32);
@@ -546,7 +596,7 @@ canvas.addEventListener('pointermove', e => {
 });
 const lift = e => { if (!drag || e.pointerId !== drag.id) return; const tap = drag.moved < 10 && performance.now() - drag.at < 500, d = drag; drag = null; canvas.classList.remove('look'); if (tap && e.type === 'pointerup' && visit.phase === 'hall' && !visit.glide) { const i = portalAt(d.sx, d.sy); if (i >= 0) launch(i); else walkTo(d.sx, d.sy); } };
 canvas.addEventListener('pointerup', lift); canvas.addEventListener('pointercancel', lift); canvas.addEventListener('pointerleave', () => { hover = -1; noTouch(); });
-const nextZone = step => travel((visit.zone + step + ZONES.length) % ZONES.length);
+const nextZone = step => travel((Math.min(visit.zone, PUBLIC_ZONES.length - 1) + step + PUBLIC_ZONES.length) % PUBLIC_ZONES.length);
 // The door tool (?edit): for the person who places the doors. With a door in the middle of the view, keys move it on
 // its wall and change its size, and a panel shows the numbers to paste into worlds/hall/screens.json.
 //   J L  along the wall     I K  up and down     N M  out of and into the wall
@@ -579,10 +629,10 @@ viewsBtn.addEventListener('click', () => showViews(viewsMenu.hidden));
 addEventListener('pointerdown', e => { if (!viewsMenu.hidden && !viewsMenu.contains(e.target) && e.target !== viewsBtn) showViews(false); }, true);
 addEventListener('keydown', e => {
   if (!viewsMenu.hidden) { if (e.key === 'Escape') { e.preventDefault(); showViews(false); viewsBtn.focus({ preventScroll: true }); } return; }
-  if (visit.phase !== 'hall' || window.GameSwitch?.isOpen) return; const k = e.key.toLowerCase();
+  if (visit.phase !== 'hall' || window.GameSwitch?.isOpen || !lockCard.hidden) return; const k = e.key.toLowerCase();
   if (k === 'arrowleft' || k === 'arrowright') { e.preventDefault(); turn(k === 'arrowright' ? 1 : -1); }
   else if (k === 'arrowup' || k === 'arrowdown') { e.preventDefault(); nextZone(k === 'arrowdown' ? 1 : -1); }
-  else if (k >= '1' && k <= String(ZONES.length)) travel(+k - 1);
+  else if (k >= '1' && k <= String(PUBLIC_ZONES.length)) travel(+k - 1);
   else if (k === 'pagedown' || k === 'm') { if (!$('kMore').hidden) { e.preventDefault(); setPage(visit.page[visit.zone] + 1); } }
   else if (k === 'r') { if (room === null) goRoom(visit.zone); }
   else if (k === 'escape' || k === 'backspace') { if (room !== null) { e.preventDefault(); goHall(); } }
@@ -592,7 +642,7 @@ addEventListener('keydown', e => {
 addEventListener('keyup', e => keys.delete(e.key.toLowerCase())); addEventListener('blur', () => keys.clear());
 $('kBack').addEventListener('click', () => goHall()); $('kRoom').addEventListener('click', () => goRoom(visit.zone)); $('kPrev').addEventListener('click', () => turn(-1)); $('kNext').addEventListener('click', () => turn(1));
 $('kGo').addEventListener('click', () => { if (visit.aim >= 0) launch(visit.aim); }); $('kMore').addEventListener('click', () => setPage(visit.page[visit.zone] + 1));
-ZONES.forEach((z, i) => { const b = document.createElement('button'); b.type = 'button'; b.dataset.zone = z.id; b.textContent = z.label; b.style.setProperty('--tint', z.color); b.setAttribute('aria-pressed', 'false'); b.addEventListener('click', () => travel(i)); groupsBar.append(b); });
+PUBLIC_ZONES.forEach((z, i) => { const b = document.createElement('button'); b.type = 'button'; b.dataset.zone = z.id; b.textContent = z.label; b.style.setProperty('--tint', z.color); b.setAttribute('aria-pressed', 'false'); b.addEventListener('click', () => travel(i)); groupsBar.append(b); });
 go.addEventListener('click', start);
 
 /* ---------------- the loop ---------------- */
@@ -641,7 +691,7 @@ requestAnimationFrame(tick);
 window.__riftwalk = {
   live: () => ({ on: LIVE.on, zone: LIVE.portal ? ZONES[LIVE.zone].id : null }),
   sound: () => sound.state(), preview: () => ({ url: preview.portal?.game?.url ?? null, playing: !!preview.texture }),
-  state: () => ({ phase: visit.phase, room: room === null ? null : ZONES[room].id, zone: ZONES[visit.zone].id, page: visit.page[visit.zone], pages: pagesIn(visit.zone), aim: visit.aim, yaw: visit.yaw, pitch: visit.pitch, turning: visit.turnTo !== null, gliding: !!visit.glide, walking: !!visit.walk, place: { x: frame.position.x, z: frame.position.z }, hall: !!hall, splats: hall?.packedSplats?.numSplats ?? 0,
+  state: () => ({ phase: visit.phase, room: room === null ? null : ZONES[room].id, zone: ZONES[visit.zone].id, page: visit.page[visit.zone], pages: pagesIn(visit.zone), aim: visit.aim, yaw: visit.yaw, pitch: visit.pitch, turning: visit.turnTo !== null, gliding: !!visit.glide, walking: !!visit.walk, place: { x: frame.position.x, z: frame.position.z, y: frame.position.y }, lock: lockCard.hidden ? null : { title: $('lockTitle').textContent, note: lockNote.textContent }, unlocked: Object.keys(KEYS), hall: !!hall, splats: hall?.packedSplats?.numSplats ?? 0,
     hover, flow: portals.map(p => +p.uniforms.uFlow.value.toFixed(2)), touch: portals.map(p => +p.uniforms.uTouch.value.toFixed(2)),
     motes: air.reduce((n, m) => n + m.geometry.attributes.position.count, 0),
     machines: portals.slice(0, SCREENS.length).map(p => ({ zone: p.zone.id, game: p.game?.id ?? null, title: p.game?.title ?? null, url: p.game?.url ?? null, lit: p.lit, art: p.uniforms.uHasMap.value === 1 })),
@@ -656,5 +706,7 @@ window.__riftwalk = {
   rim: (i, x = 1, y = 0) => { const p = portals[i]; if (!p) return null; const h = p.uniforms.uHalf.value, c = p.place.centre, r = p.place.right, u = p.place.up; camera.updateMatrixWorld(true); ndc.set(c[0] + r[0] * x * h.x + u[0] * y * h.y, c[1] + r[1] * x * h.x + u[1] * y * h.y, c[2] + r[2] * x * h.x + u[2] * y * h.y).project(camera); return ndc.z > 1 ? null : { x: (ndc.x + 1) / 2 * innerWidth, y: (1 - ndc.y) / 2 * innerHeight }; },
   // Turn at once to a place (a machine, or a ring after the machines), as the visitor sees it from where they stand.
   face: i => { const p = seen()[i]; if (!p) return; visit.turnTo = null; visit.yaw = p.heading; visit.pitch = p.pitch; camera.rotation.set(visit.pitch, -visit.yaw, 0); camera.updateMatrixWorld(true); },
+  // Stand at once at (x, z): in a world with floors, on the floor box there; in the alley, in the zone of the nearest station.
+  goto: (x, z) => { visit.walk = null; visit.glide = null; const b = room !== null && HALL.floors ? HALL.floors.find(f => x >= f.x[0] && x <= f.x[1] && z >= f.z[0] && z <= f.z[1]) : null; frame.position.set(x, b ? floorAt(b, { x, z }) : 0, z); if (room === null) enter(zoneAt(frame.position, STATIONS)); },
   look: heading => { visit.turnTo = null; visit.yaw = wrap(heading); visit.pitch = 0; camera.rotation.set(visit.pitch, -visit.yaw, 0); camera.updateMatrixWorld(true); },
 };
