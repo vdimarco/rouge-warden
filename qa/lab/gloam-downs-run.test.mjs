@@ -27,7 +27,7 @@ import { makeWalk, makeBody, pose, PARAMS, SWINGS, BLADE, bladeAt } from '../../
 import { ORDER, KEY as EXPLORER_KEY, fresh as explorerFresh, store as explorerStore } from '../../public/lab/gloam-downs/save.js';
 import {
   STEP, MAX_STEPS, steps, stepCount, makeClock, advance, hitStop, drawOffer, stream, startRun, enter, reload, goTo, chooseWick, buy,
-  lightBeacon, die, maxOf, flasksOf, maxHp, flasksMax, healOf, bladeBonus, makeRunner, WICKS, UPGRADES
+  lightBeacon, die, maxOf, flasksOf, maxHp, flasksMax, healOf, bladeBonus, makeRunner, WICKS, UPGRADES, BASE, PACE, depthOf, foeScale, sparkCount, bossScale
 } from '../../public/lab/gloam-downs/run.js';
 import { HITS, MOVES, clearLine, sees, makePost, makeFighter, nearest, faceYaw, dealt, yawFor } from '../../public/lab/gloam-downs/moves.js';
 import * as RS from '../../public/lab/gloam-downs/run-save.js';
@@ -41,6 +41,10 @@ const near = (a, b, e) => Math.abs(a - b) <= e;
 const RATES = [30, 60, 120, 144];
 const DEG = Math.PI / 180;
 const wrap = a => Math.atan2(Math.sin(a), Math.cos(a));
+/* the run starts with 1 flask (gloam-downs-growth design.md "Pacing results"; gloam-downs-growth.test.mjs checks it with every ware).
+   These checks test the rules at 2, the start before that change */
+assert.equal(BASE.flasks, 1, 'the run starts with 1 flask');
+BASE.flasks = 2;
 
 /* ---------------- made-up ground ----------------
    From a function of (x, z): a height, [top, floor under its gap], or [top, floor, the gap's underside] (as in gloam-downs.test.mjs) */

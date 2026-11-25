@@ -357,12 +357,12 @@ const heard = names => { const got = []; const offs = names.map(k => on(k, d => 
   assert.deepEqual([0, 1, 2, 3, 4, 5].map(a => Math.round(keepShare({ ash: a }) * 100)), [10, 18, 26, 34, 42, 50]);
   pass('Ash pocket 2: a death with 100 carried keeps 26 and loses 74; 10% to 50% in 8% steps');
 }
-{ // All upgrades at Ember 0 with no sparks: 220 health, 6 flasks, 65% heals, the blade +60%, 50% kept
+{ // All upgrades at Ember 0 with no sparks: 220 health, 5 flasks (the run starts with 1), 65% heals, the blade +60%, 50% kept
   const rs = RS.fresh();
   for (const u of UPGRADES) rs.up[u.id] = u.costs.length;
   startRun(rs, 9);
-  assert.deepEqual([rs.run.hp, maxOf(rs), rs.run.flasks, healNow(rs), Math.round(bladeBonus(rs.up, []) * 100), Math.round(keepShare(rs.up) * 100)], [220, 220, 6, 143, 60, 50]);
-  pass('all upgrades: 220 health, 6 flasks, a flask heals 65%, the blade +60%, a death keeps 50%');
+  assert.deepEqual([rs.run.hp, maxOf(rs), rs.run.flasks, healNow(rs), Math.round(bladeBonus(rs.up, []) * 100), Math.round(keepShare(rs.up) * 100)], [220, 220, 5, 143, 60, 50]);
+  pass('all upgrades: 220 health, 5 flasks, a flask heals 65%, the blade +60%, a death keeps 50%');
 }
 { // the win banks all the glim carried and keeps the patterns carried
   const rs = RS.fresh();

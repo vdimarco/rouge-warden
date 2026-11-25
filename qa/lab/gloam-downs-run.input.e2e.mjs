@@ -66,10 +66,12 @@ try {
     await page.focus('#bBegin');
     await page.keyboard.press('Enter');
     let r = await run(page);
-    assert.deepEqual([r.mode, r.place, r.hp, r.max, r.flasks, r.flasksMax], ['play', 'gaol', 100, 100, 2, 2]);
+    assert.deepEqual([r.mode, r.place, r.hp, r.max, r.flasks, r.flasksMax], ['play', 'gaol', 100, 100, 1, 1]);
     for (const id of ['#bAttack', '#bRoll', '#bHeal', '#bJump']) assert(!(await page.isVisible(id)), `${id} is hidden with a mouse`);
     const tb = await page.locator('#tools').boundingBox();
-    pass('the run starts from its help card with 100 health and 2 flasks; Tab stays in the card', { tools1280: [tb.x, tb.y, tb.width, tb.height].map(v => +v.toFixed(1)) });
+    pass('the run starts from its help card with 100 health and 1 flask; Tab stays in the card', { tools1280: [tb.x, tb.y, tb.width, tb.height].map(v => +v.toFixed(1)) });
+    // the checks below drink at 2 flasks: Flask 1 gives the second
+    await G(page, () => window.__gloam.set({ up: { flask: 1 }, flasks: 2 }));
 
     // swing: J on the keys, then a left click on the view, at a training post 2 m ahead
     await postAhead(page, 2.0);
@@ -444,7 +446,7 @@ try {
     const box = async sel => { const b = await page.locator(sel).boundingBox(); return b && [Math.round(b.x), Math.round(b.y), Math.round(b.width)]; };
     const want = { '#bAttack': [290, 664, 84], '#bRoll': [214, 750, 64], '#bJump': [302, 756, 72], '#bHeal': [226, 682, 52] };
     for (const [sel, w] of Object.entries(want)) assert.deepEqual(await box(sel), w, `${sel} at 390x844`);
-    assert.match(await page.textContent('#bHeal'), /2/);
+    assert.match(await page.textContent('#bHeal'), /1/, 'the run starts with 1 flask');
     assert.equal(await page.textContent('#bMap'), 'Pause');
     const cdp = await ctx.newCDPSession(page);
     const touch = (type, pts = []) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: pts.map(([x, y, id]) => ({ x, y, id: id ?? 1 })) });

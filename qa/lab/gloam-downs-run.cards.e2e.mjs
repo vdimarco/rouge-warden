@@ -140,12 +140,12 @@ try {
     await shot(page, 'keys-help-1280x720');
     await page.keyboard.press('Enter');
     let r = await run(page);
-    assert.deepEqual([r.mode, r.place, r.hp, r.max, r.flasks], ['play', 'gaol', 100, 100, 2]);
+    assert.deepEqual([r.mode, r.place, r.hp, r.max, r.flasks], ['play', 'gaol', 100, 100, 1]);
     assert.equal(await text(page, '#hpN'), '100/100');
-    pass('the help card says what the run asks, Escape keeps it, and Begin the run starts the Gaol with 100/100 and 2 flasks');
+    pass('the help card says what the run asks, Escape keeps it, and Begin the run starts the Gaol with 100/100 and 1 flask');
 
-    // the health line: 74 of 100 fills the bar 74% beside "74/100", with one full pip and one empty; 40 of 100 and 1 flask
-    await G(page, () => window.__gloam.set({ hp: 74, flasks: 1 }));
+    // the health line: 74 of 100 fills the bar 74% beside "74/100", with one full pip and one empty (Flask 1 gives the second); 40 of 100
+    await G(page, () => window.__gloam.set({ up: { flask: 1 }, hp: 74, flasks: 1 }));
     const line = () => G(page, () => ({
       n: document.getElementById('hpN').textContent, fill: document.getElementById('hpFill').getBoundingClientRect().width / document.querySelector('.hpbar').getBoundingClientRect().width,
       pips: [...document.querySelectorAll('#pips i')].map(i => i.classList.contains('on')), count: document.getElementById('count').textContent
@@ -159,6 +159,7 @@ try {
     l = await line();
     assert.deepEqual([l.n, l.pips, l.count], ['40/100', [true, false], '◆ 0/5 wisps · ● 18 glim']);
     pass('the health line: "74/100" beside a bar filled 74% with one full pip and one empty; the wisps and the glim carried', l);
+    await G(page, () => window.__gloam.set({ up: { flask: 0 } }));
 
     // a toast: 8 px under the HUD's measured bottom; it lasts its steps of game time, not wall time
     await G(page, t => window.__gloam.toast(t, 1800), KEEPERS);
@@ -178,7 +179,7 @@ try {
     await tick(page, 1.6, {});
     assert(await page.isVisible('#beaconCard'));
     r = await run(page);
-    assert.deepEqual([r.bank, r.carried, r.place, r.flasks], [0, 44, 'ramparts', 2]);
+    assert.deepEqual([r.bank, r.carried, r.place, r.flasks], [0, 44, 'ramparts', 1]);
     const wicks = await page.$$eval('#wicks button', bs => bs.map(b => b.textContent));
     const WICK = { long: 'Long wick · +20 health', keen: 'Keen edge · +15% blade damage', heels: 'Quick heels · roll again after 0.12 s', heavy: 'Heavy fall · plunge ×1.5 and wider', oil: 'Spare oil · +1 flask', shave: 'Close shave · +50% after a near miss' };
     assert.deepEqual(wicks, r.offer.map(id => WICK[id]));
@@ -421,8 +422,8 @@ try {
       const { ctx, page, errors } = await open({ viewport: { width: list[0][0], height: list[0][1] }, ...opts }, '?run&test&fresh&seed=4&nodraw');
       await each(page, list, `${label}-help`, 'runHelp');
       await G(page, () => document.getElementById('bBegin').click());
-      // the widest HUD: 165/165 (Mantle 3, Long wick), 5 of 5 flasks (Flask 2, Spare oil), 5/5 wisps, 254 glim, and the longest toasts
-      await G(page, () => window.__gloam.set({ up: { mantle: 3, flask: 2 }, wicks: ['long', 'oil'] }));
+      // the widest HUD: 165/165 (Mantle 3, Long wick), 5 of 5 flasks (Flask 3, Spare oil), 5/5 wisps, 254 glim, and the longest toasts
+      await G(page, () => window.__gloam.set({ up: { mantle: 3, flask: 3 }, wicks: ['long', 'oil'] }));
       for (let i = 0; i < 5; i++) await G(page, i => window.__gloam.wisp(i), i);
       await G(page, () => window.__gloam.set({ hp: 165, flasks: 5, carried: 254 }));
       assert.equal(await text(page, '#hpN'), '165/165');

@@ -130,7 +130,8 @@ Two lasting keys (`LAMP_KEYS` in `growth.js`; the name keeps it apart from `inpu
 ### Ember 0 is harder
 - Foes deal 30% more damage at Ember 0 than now (`FOE_HARD.dmg` in `foes.js`, 1.3; the Ember 4 factor multiplies it). Foe health goes up 15% (`FOE_HARD.hp`, 1.15). The Barrow Reeve deals 20% more (`boss.js`, `REEVE.hard`), and its health stays 1,300.
 - Builder P may move these within: damage 1.15 to 1.5, foe health 1.0 to 1.3, boss damage 1.0 to 1.4. Nothing else gets slower: no walk speed, no longer wind-ups.
-- The starting kit is as now: 100 health, 2 flasks, 35% heals. So the first runs die, and Mantle, Flask, Draught and the sparks carry the player on.
+- The starting kit: 100 health, 1 flask (2 before the pacing pass; see "Pacing results"), 35% heals. So the first runs die, and Mantle, Flask, Draught and the sparks carry the player on.
+- The run's later places are harder: foe damage ×(1 + 0.35 d^1.5) and health ×(1 + 0.4 d^1.5) at place depth d, and the Reeve has 5% more health for each spark the run holds ("Pacing results").
 
 ### More to do in each place
 - **Page zones.** `mix.js` gets `EXTRA`, a table of 2 or 3 more zones a place, each `{ id, c, leash, foes }` as in `games/gloam-downs/lib/zones.mjs`, at Ember 0 and up. They are not baked: `mixZones` adds them to `meta.zones` before the mix, and the same zone rules (`fits`, the cap of 6, pool slots, 20 m pairs) hold. Their centres are on the walk map's floor (checked by `qa/lab/gloam-downs-zones.mjs`, which builder P extends to read `EXTRA`), and none is within 8 m of a baked zone or the beacon. Their foes come from the place's pool, so no new baked foe is needed: a zone takes the pool's slots when it wakes and gives them back when it sleeps or is put out, as now.
@@ -360,24 +361,60 @@ Run on `ccr-43aa269a-y8yo7l` after the merge pass, on 2026-11-25. Builders K and
 - The bot: one save across runs; the Reeve stepped with `boss.js` and the shared boss mind; abilities (an attack ability with 2 foes near or an elite up, Smoke step or Bell guard for 4 rolls in 10, Flare or Rime lamp on a wind-up it reads near it); lamps and caches; Belt's start ability; sparks (Ward, Gloam once both slots hold one, else Flame); `HARD_DMG`, `HARD_HP` and `REEVE_HARD` to try a lever.
 
 ### Pacing results
-`node qa/lab/gloam-downs-bot.mjs 60 <skill> 1`, with the game as committed (foes ×1.3 damage and ×1.15 health, the Reeve ×1.2):
+The pacing pass (branch `gloam-grow-pace`, 2026-11-25) fixed the early win the way the player asked: the lamplighter starts weak, the places ahead grow harder, and lasting growth gives the strength back.
 
-| Skill | First run reaches place 2 | Median first win | Winning run | Runs (won) | Glim at a death, kept / lost | The Reeve's fight | Abilities a run | Caches a run | Nudges a run |
-|---|---|---|---|---|---|---|---|---|---|
-| 0.3 | 50 of 60 | run 2 | 4.9 min | 425 (324) | 11 / 73 | 31 s | 25 | 4.0 | 11.9 |
-| 0.5 | 59 of 60 | run 1 | 5.2 min | 365 (353) | 11 / 64 | 31 s | 40 | 4.7 | 12.8 |
-| 0.9 | 59 of 60 | run 1 | 8.7 min | 371 (343) | 10 / 53 | 36 s | 70 | 5.1 | 18.1 |
+**What changed** (all in `run.js` `BASE` and `PACE`, read by `foes.js`, `fight.js` and the bot):
+- The run starts with **1 flask**, not 2 (`BASE.flasks`). The first Flask level (60 glim) gives the second back, and every Flask level adds one, up to 5 with every level (was 6).
+- Foes in the run's later places hit harder and have more health (`foeScale`). At place depth d (the run's first place is 0, Barrow Crown 4), damage ×(1 + 0.35 d^1.5) and health ×(1 + 0.4 d^1.5): ×1.35 and ×1.4 in the second place, ×2.0 and ×2.1 in the third, ×2.8 and ×3.1 in the fourth, ×3.8 and ×4.2 in Barrow Crown. They multiply `FOE_HARD` (1.3 and 1.15, as before). The Gaol is as it was, so a first run's start is the same fight. Elites keep their own health.
+- The Barrow Reeve has 5% more health for each spark the run holds when it reaches Barrow Crown (`bossScale`, with Ember 5's 1.25): 1,820 with 8 sparks. A run that grew more meets a larger Reeve.
+- The bot takes the levers as `START_HP`, `START_FL`, `HEAL`, `BLADE`, `DEPTH_DMG`, `DEPTH_HP`, `DEPTH_POW`, `BOSS_SPARK`, `REEVE_HP` and `THICK`, and prints the time nudges add to a run.
 
-No bot bought 25% of the catalogue (11,725 glim) within its first win and 5 runs more, at any skill. That cap stops a bot before growth shows: with no win cap, 0.5 bots buy something in 281 of 300 runs and own the whole catalogue by run 30 (see the checks below). So runs do grow the lamplighter, run by run, as the user asked; what misses is how hard the first runs are.
+**What was tried.** Each line is `node qa/lab/gloam-downs-bot.mjs <bots> <skill> 1` with only the named levers changed from the game as it was at `1da574d1` (foes ×1.3 damage and ×1.15 health, the Reeve ×1.2, 100 health, 2 flasks). "Reach" is the share of first runs at 0.3 that reach The Crow Wall; "won" is the median first-win run; "min" the median winning run at 0.9. A depth lever written "a/b" is damage/health per place, linear unless a power is given.
 
-With every lever at the top of its range (`HARD_DMG=1.5 HARD_HP=1.3 REEVE_HARD=1.4`): at 0.3 the first run reaches place 2 in 26 of 60 (43%) and the median first win is run 5; at 0.5 54 of 60 reach place 2 and the median first win is still run 1, in 5.4 min. The third wave at the guards (lever 5) was not tried: the guard fights are a small share of a run, and at 0.5 the first run already wins.
+| Step | Levers | Bots | 0.3 reach | 0.3 won | 0.5 won | 0.9 won | 0.9 min |
+|---|---|---|---|---|---|---|---|
+| base | none | 20 | 75% | run 2 | run 1 | run 1 | 8.9 |
+| A | depth 0.25/0.25 | 20 | 75% | 7 | 1 | 1 | 9.4 |
+| B | depth 0.4/0.3, Reeve +5% a spark | 20 | 75% | 9 | 2 | 1 | 9.5 |
+| C | 70 health, blade ×0.75, depth 0.25/0.25 | 20 | **10%** | 27 | 2 | 1 | 10.1 |
+| D | 1 flask, depth 0.3/0.3, Reeve +5% | 20 | 65% | 11 | 2 | 1 | 9.9 |
+| E | depth 0.6/0.5, Reeve +5% | 20 | not run | | 5 | 1 | 10.0 |
+| F | depth 0.9/0.5, Reeve +8% | 20 | not run | | 12 | 3 | 10.5 |
+| G | depth 0.6/0.8, Reeve +5% | 20 | 75% | 35 (11 of 20 won) | 6 | 2 | 10.9 |
+| H | depth 1.2/0.6, Reeve +10% | 20 | not run | | 24 | 13 | 10.1 |
+| I | G and 1 flask | 20 | 65% | 37 (3 of 20) | 8 | 2 | 10.6 |
+| J | G, 85 health, blade ×0.85 | 20 | **25%** | 26 (1 of 20) | 8 | 2 | 11.2 |
+| K | G, 1 flask, blade ×0.85 | 20 | **25%** | 33 (1 of 20) | 9 | 2 | 12.0 |
+| L | depth 0.5/0.7, Reeve +5%, 1 flask, 85 health, blade ×0.85 | 20 | **20%** | 27 (1 of 20) | 7 | 2 | 11.0 |
+| M | depth 0.5/0.8, Reeve +5%, 1 flask | 20 | 65% | 26 (8 of 20) | 5 | 2 | 11.0 |
+| I | as I | 60 | 60% | 37 (10 of 60) | 6 | 2 | 10.5 |
+| N | depth 0.75/0.8, Reeve +5%, 1 flask | 60 | not run | | 11 | 3 | 10.5 |
+| linear 0.7/0.8 | depth 0.7/0.8, Reeve +5%, 1 flask | 60 | 60% | 39 (2 of 60) | 10 | 2 | 10.6 |
+| **chosen** | depth 0.35/0.4 at power 1.5, Reeve +5%, 1 flask | 60 | **60%** | **35 (34 of 60)** | **7** | **1** | **10.3** |
+
+What the steps showed:
+- A lower start health or blade (C, J, K, L) breaks the 0.3 target at once: the Gaol's fights get longer, and a 0.3 bot dies there. One flask fewer costs less (65% and 60%), so it is the start weakness kept. Mantle and Edge stay as they were; they give strength on top of the start, as before.
+- Foes that grow with the place index move the 0.5 bot's first win from run 1 to run 5 to 24 (E to H) without touching the Gaol, so the 0.3 target holds. The 0.9 bot needs fewer runs than the 0.5 bot because it reads more wind-ups and takes less damage a run (389 against 540).
+- A linear step (I, N, the linear line) left the 0.3 bots stuck at The Crow Wall: only 2 to 10 of 60 won within 40 runs, though their glim bought a quarter of the catalogue. A step that is small at the second place and grows after it (power 1.5) keeps the later places as hard and lets growth carry a weak player on: 34 of 60 won within 40 runs.
+- Fewer free heals were not needed: Thick glass, the fifth wisp's flask and the beacon's full flasks are as they were.
+
+**The game as committed**, 60 bots at each skill:
+
+| Skill | First run reaches place 2 | Median first win | Winning run | Runs (won) | Glim at a death, kept / lost | The Reeve's fight | Catalogue 25% bought | Abilities a run | Caches a run | Nudges a run (time) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 0.3 | 36 of 60 (60%) | run 35 (34 of 60 won within 40 runs) | 5.6 min | 2,283 (51) | 21 / 75 | 29 s | run 32 (50 of 60) | 16 | 2.5 | 6.0 (0.4 min) |
+| 0.5 | 57 of 60 | run 7 (60 of 60) | 6.1 min | 728 (145) | 12 / 43 | 32 s | run 12 (33 of 60) | 38 | 4.1 | 10.1 (0.6 min) |
+| 0.9 | 59 of 60 | run 1 (60 of 60) | 10.3 min | 414 (228) | 11 / 42 | 43 s | run 8 (9 of 60) | 86 | 4.6 | 17.3 (1.2 min) |
+
+Minutes a place (median) at 0.9: the Gaol 2.2, The Crow Wall 1.9, The Fen 2.4, The Bell Knoll 1.6, Barrow Crown 2.0. Where 0.5 runs end: Barrow Crown 503 (145 of them wins), The Fen 145, The Bell Knoll 39, The Crow Wall 37, the Gaol 4.
 
 Against the targets:
-- A first run at 0.3 reaches place 2 in half the bots or more: **met** (83%) as committed; the top of the levers breaks it (43%), so the levers stay where the design put them.
-- At 0.5 the median first win in run 6 to 12: **missed** (run 1), with every lever at its top too.
-- At 0.9 the first win in run 1 to 3: met. A winning run of 15 to 25 minutes: **missed** (8.7 min).
+- A first run at 0.3 reaches place 2 in half the bots or more: **met** (60%).
+- At 0.5 the median first win in run 6 to 12: **met** (run 7).
+- At 0.9 the first win in run 1 to 3: **met** (run 1).
+- At 0.9 a winning run of 15 to 25 minutes: **missed** (10.3 min). No lever measured here moves it far: foes with 4.2 times the health in Barrow Crown add about 1.5 minutes to a 0.9 run (8.9 to 10.3), because a skilled bot's run is mostly walking, wisps and side trips, and its abilities end fights fast. Nudges add 1.2 minutes of that. Reaching 15 minutes needs more ground to cover (longer routes or more places), which is new content and the user's call, not a number to tune. Slower moves were ruled out by the design.
 
-Why: the levers make foes hit harder, but the bot's mind (reads, rolls and drinks at a fixed share of health) loses little health at 0.5 and up, and each run grows inside itself: a spark at every beacon (Flame +10% a level), wicks and relics. The Reeve's fight is 31 to 36 s in a run, against 66 s for the boss bot alone at 0.5, because a bot arrives with four sparks, a wick and relics. A run is short because the places are small: the five routes add up to about 270 m (from 34 m in The Bell Knoll to 71 m in Barrow Crown), and the page zones add 20 foes. Meeting the targets needs a lever outside the design (more places or longer routes, foes that scale with the run's sparks, or a Reeve with more health), which is the user's call. Players are not bots: these numbers say the bots are strong, not that the game is easy for a person, but the gap to the targets is large.
+Players are not bots: a person reads wind-ups less well than the 0.9 bot and walks less straight, so a real run is longer. These numbers say how the levers move the bots, not how long a person plays.
 
 ### Checks after the fix pass
 - Node: all pass. abilities 19 (new), boss 28, builds 34, camera 49, feel 11, foes-ai 44, foes 31, growth 28, keys 6 (new), lattice 16, mouse 11, run 68, seed 9, sound 29, stairs 1, uniform-blocks 10, gloam-downs 33. `gloam-downs-zones.mjs`: 177 ok lines, none bad. `gloam-downs-ledges.mjs` as above.

@@ -13,7 +13,7 @@ import { writeBone, rotX, rotZ } from './pool.js';
 import { bladeAt, SWINGS } from './play.js';
 import { makeCombo, COMBO } from './combo.js';
 import { mixZones } from './mix.js';
-import { ember, emberOf } from './run.js';
+import { ember, emberOf, foeScale, bossScale } from './run.js';
 
 
 const STEP = 1 / 60;
@@ -77,7 +77,7 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
   // the seed's foe mix and the elite's zone; the arena and the guard zones stay as baked
   const zones = mix && meta.zones ? mixZones(meta.id, meta.zones, codes.join(''), seed, mix) : meta.zones;
   const combo = makeCombo({ emit, best: rs.run?.combo ?? 0 });
-  const foes = makeFoes({ walk, meta: { ...meta, zones }, slots: codes, seed, onScreen, water, combo });
+  const foes = makeFoes({ walk, meta: { ...meta, zones }, slots: codes, seed, onScreen, water, combo, scale: rs.run ? foeScale(rs.run) : null });
   const sparks = pool.extra && pool.extra.end > pool.extra.first ? makeSparks(world, pool.extra.first, pool.extra.end - pool.extra.first, meta.pal, { glow: 64 }) : null;
   const feel = makeFeel({ pal: meta.pal, still, fx });
   const fits = new Map(); // a foe's marker laid on the ground: its fit, kept while the marker stands where it is
@@ -89,7 +89,7 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
   const EMB = ember(emberOf(rs.run));
   const bossSlot = codeSlot('B'), candleSlot = codeSlot('C'), lightSlot = codeSlot('L');
   const arena = (meta.zones || []).find(z => z.boss);
-  const boss = (G.boss = arena && (bossSlot || lightSlot) ? makeBoss({ walk, arena, seed: rs.run?.seed ?? 1, bounds: meta.bounds, down: !!rs.run?.bossDown, water, hpScale: EMB.bossHp, phase3: EMB.phase3 }) : null);
+  const boss = (G.boss = arena && (bossSlot || lightSlot) ? makeBoss({ walk, arena, seed: rs.run?.seed ?? 1, bounds: meta.bounds, down: !!rs.run?.bossDown, water, hpScale: rs.run ? bossScale(rs.run) : EMB.bossHp, phase3: EMB.phase3 }) : null);
   const fire = meta.beacon?.p ? [meta.beacon.p[0], meta.beacon.p[1] + 1.2, meta.beacon.p[2]] : null;
   // the twelve candles stand on the ground round the ring of 7.0 m; they light (their slot wakes) at the intro
   function placeCandles() {

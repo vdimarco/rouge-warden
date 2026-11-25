@@ -31,7 +31,7 @@ import fs from 'node:fs';
 import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 import { makeWalk, makeBody, PARAMS } from '../../public/lab/gloam-downs/play.js';
-import { startRun, makeRunner, buy, buyUnlock, chooseWick, maxOf, flasksOf, emberOf, ember, UPGRADES, UNLOCKS, purse, takeSpark, setPane, paneSlots, kindle, kindledOf, chooseStartAbility, groundPatterns } from '../../public/lab/gloam-downs/run.js';
+import { startRun, makeRunner, buy, buyUnlock, chooseWick, maxOf, flasksOf, emberOf, ember, UPGRADES, UNLOCKS, purse, takeSpark, setPane, paneSlots, kindle, kindledOf, chooseStartAbility, groundPatterns, BASE, PACE, PANE_RULES, foeScale, bossScale } from '../../public/lab/gloam-downs/run.js';
 import { makeAbilities, groundAbilities } from '../../public/lab/gloam-downs/abilities.js';
 import { makeKeys, groundSpots } from '../../public/lab/gloam-downs/keys.js';
 import { makeBoss, REEVE } from '../../public/lab/gloam-downs/boss.js';
@@ -55,6 +55,17 @@ const SIDE = 24, WALK = 3.0; // a skilled bot's reach off the way for a wisp or 
 if (process.env.HARD_DMG) FOE_HARD.dmg = +process.env.HARD_DMG;
 if (process.env.HARD_HP) FOE_HARD.hp = +process.env.HARD_HP;
 if (process.env.REEVE_HARD) REEVE.hard = +process.env.REEVE_HARD;
+// and the growth levers (run.js BASE and PACE): START_HP, START_FL, HEAL, BLADE, DEPTH_DMG, DEPTH_HP, BOSS_SPARK, REEVE_HP, THICK
+if (process.env.START_HP) BASE.hp = +process.env.START_HP;
+if (process.env.START_FL) BASE.flasks = +process.env.START_FL;
+if (process.env.HEAL) BASE.heal = +process.env.HEAL;
+if (process.env.BLADE) PACE.blade = +process.env.BLADE;
+if (process.env.DEPTH_DMG) PACE.depthDmg = +process.env.DEPTH_DMG;
+if (process.env.DEPTH_HP) PACE.depthHp = +process.env.DEPTH_HP;
+if (process.env.DEPTH_POW) PACE.depthPow = +process.env.DEPTH_POW;
+if (process.env.BOSS_SPARK) PACE.bossSpark = +process.env.BOSS_SPARK;
+if (process.env.REEVE_HP) REEVE.hp = +process.env.REEVE_HP;
+if (process.env.THICK) PANE_RULES.thick = +process.env.THICK;
 const why = { route: 0, foe: 0, wisp: 0, zone: 0 }; // the nudges by kind, and the wisps and zones a skilled bot gave up
 
 const places = {};
@@ -109,10 +120,10 @@ function playPlace(rs, id, bot) {
   // as the page's makeFight: the seed's mix of the zones (the elite's zone, Ember 3's extra foe, the guard's second wave) and the combo
   const zones = mixZones(id, meta.zones, POOLS[id], rs.run.seed, { ember: rs.run.ember ?? 0 });
   const combo = makeCombo({ emit: null, best: rs.run.combo ?? 0 });
-  const F = makeFoes({ walk, meta: { ...meta, zones }, slots: POOLS[id], seed: rs.run.seed, combo });
+  const F = makeFoes({ walk, meta: { ...meta, zones }, slots: POOLS[id], seed: rs.run.seed, combo, scale: foeScale(rs.run) });
   // Barrow Crown: the Reeve in its arena, stepped by boss.js on the same runner (as the page's fight does)
   const arena = zones.find(z => z.boss), EMB = ember(emberOf(rs.run));
-  const B = arena ? makeBoss({ walk, arena, seed: rs.run.seed, bounds: meta.bounds, down: !!rs.run.bossDown, hpScale: EMB.bossHp, phase3: EMB.phase3 }) : null;
+  const B = arena ? makeBoss({ walk, arena, seed: rs.run.seed, bounds: meta.bounds, down: !!rs.run.bossDown, hpScale: bossScale(rs.run), phase3: EMB.phase3 }) : null;
   if (B) B.ready = true;
   const targets = B ? () => (B.alive ? [...F.targets(), B] : F.targets()) : F.targets;
   const think = B ? (ev, play) => { F.think(ev, play); B.think(ev, play); if (ev.some(e => e.type === 'boss' && (e.what === 'intro' || e.what === 'fall'))) F.hush(); } : F.think;
@@ -237,7 +248,7 @@ function playPlace(rs, id, bot) {
         const far = Math.hypot(x - s.x, z - s.z);
         if (process.env.NUDGE) console.log('foe nudge', id, foe.id, foe.type, foe.state, +fd.toFixed(2), +(foe.y - s.y).toFixed(2), foe.fly ? 'fly' : '', R.fighter.f.move);
         body.place([x, y + 0.3, z], Math.atan2(foe.x - x, foe.z - z));
-        nudges++; why.foe++; rs.run.time += 2 + far / WALK;
+        nudges++; why.foe++; rs.run.time += 2 + far / WALK; bot.nudgeTime += 2 + far / WALK;
       }
       if (fd - foe.r > 1.5) return toward([foe.x, foe.y, foe.z]);
       // in reach: Attack on every other step, and turn to face the foe first (a swing at the air never lands)
@@ -323,7 +334,7 @@ function playPlace(rs, id, bot) {
         if (process.env.NUDGE) console.log('route nudge', id, wi, g.map(v => +v.toFixed(1)), [s.x, s.y, s.z].map(v => +v.toFixed(1)), +far.toFixed(1), s.ground);
         body.place([g[0], g[1] + 0.5, g[2]], s.yaw);
         nudges++; why.route++;
-        rs.run.time += 3 + far / WALK;
+        rs.run.time += 3 + far / WALK; bot.nudgeTime += 3 + far / WALK;
         if (g === route[Math.min(wi, route.length - 1)] && wi < route.length - 1) wi++;
       }
       best = Infinity; bestAt = steps; jumped = false;
@@ -338,7 +349,7 @@ function playPlace(rs, id, bot) {
 /* ---------------- one bot ---------------- */
 function playBot(b) {
   const rs = RS.fresh();
-  const bot = { skill: SKILL, rnd: mulberry(hash2(b, 0xb07, 7)), bossFights: [], arrive: [], hurt: 0, caches: 0, abilities: 0, bossAt: null };
+  const bot = { skill: SKILL, rnd: mulberry(hash2(b, 0xb07, 7)), bossFights: [], arrive: [], hurt: 0, caches: 0, abilities: 0, bossAt: null, nudgeTime: 0 };
   const runs = [];
   for (let r = 0; r < MAXRUNS; r++) {
     shop(rs);
@@ -369,7 +380,7 @@ function playBot(b) {
     if (e.won && bot.firstWin == null) bot.firstWin = r + 1;
     if (bot.firstWin != null && r + 1 >= bot.firstWin + AFTER) break;
   }
-  return { runs, firstWin: bot.firstWin ?? null, boss: bot.bossFights, arrive: bot.arrive, hurt: bot.hurt, caches: bot.caches, abilities: bot.abilities, keys: (rs.keys || []).slice() };
+  return { runs, firstWin: bot.firstWin ?? null, boss: bot.bossFights, arrive: bot.arrive, hurt: bot.hurt, caches: bot.caches, abilities: bot.abilities, nudgeTime: bot.nudgeTime, keys: (rs.keys || []).slice() };
 }
 
 const t0 = Date.now(), bots = [];
@@ -380,7 +391,7 @@ const wins = bots.map(x => x.firstWin).filter(Boolean);
 const winTimes = bots.filter(x => x.firstWin).map(x => x.runs[x.firstWin - 1].time);
 const reached = {};
 for (const x of bots) for (const r of x.runs) reached[r.place] = (reached[r.place] || 0) + 1;
-console.log(`${BOTS} bots, skill ${SKILL}, ${((Date.now() - t0) / 1000).toFixed(0)} s; foes deal ×${FOE_HARD.dmg} with ×${FOE_HARD.hp} health, the Reeve ×${REEVE.hard}`);
+console.log(`${BOTS} bots, skill ${SKILL}, ${((Date.now() - t0) / 1000).toFixed(0)} s; foes deal ×${FOE_HARD.dmg} with ×${FOE_HARD.hp} health, the Reeve ×${REEVE.hard}; start ${BASE.hp} health, ${BASE.flasks} flasks, heal ${BASE.heal}; ${JSON.stringify(PACE)}`);
 console.log(`first run reaches The Crow Wall: ${firstReach} of ${BOTS} (${Math.round((100 * firstReach) / BOTS)}%)`);
 // the run at which each quarter of the catalogue is bought (the median of the bots that got there)
 const quarter = q => { const v = bots.map(x => x.runs.findIndex(r => r.spent >= q * CATALOGUE)).filter(i => i >= 0).map(i => i + 1); return `${med(v) ?? '-'} (${v.length} of ${BOTS})`; };
@@ -403,4 +414,5 @@ console.log(`minutes a place (median): ${Object.entries(per).map(([p, v]) => `${
 const arr = bots.flatMap(x => x.arrive);
 console.log(`at the arena: health ${(100 * med(arr.map(a => a.h))).toFixed(0)}% (median), flasks left ${med(arr.map(a => a.flasks))}; damage taken a run (mean) ${(bots.reduce((a, x) => a + x.hurt, 0) / bots.flatMap(x => x.runs).length).toFixed(0)}`);
 console.log(`nudges: ${JSON.stringify(why)} (route and foe are nudges; wisp and zone were given up)`);
+console.log(`nudge time a run (mean): ${(bots.reduce((a, x) => a + x.nudgeTime, 0) / 60 / bots.flatMap(x => x.runs).length).toFixed(2)} min`);
 console.log(`nudges a run (mean): ${(bots.flatMap(x => x.runs).reduce((a, r) => a + r.nudges, 0) / bots.flatMap(x => x.runs).length).toFixed(1)}; relics a run (mean): ${(bots.flatMap(x => x.runs).reduce((a, r) => a + r.relics, 0) / bots.flatMap(x => x.runs).length).toFixed(2)}`);

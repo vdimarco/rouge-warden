@@ -26,7 +26,8 @@ import { survey, fits, makeRoom, walkRoute, walkPath, ironWalls } from './gloam-
 import { makeWalk, makeBody, PARAMS } from '../../public/lab/gloam-downs/play.js';
 import { makeFoes, FOE_HARD, TYPES } from '../../public/lab/gloam-downs/foes.js';
 import { REEVE } from '../../public/lab/gloam-downs/boss.js';
-import { startRun, makeRunner } from '../../public/lab/gloam-downs/run.js';
+import { startRun, makeRunner, PACE, depthOf, foeScale, sparkCount, bossScale } from '../../public/lab/gloam-downs/run.js';
+import { bossLines } from '../../public/lab/gloam-downs/boss.js';
 import * as RS from '../../public/lab/gloam-downs/run-save.js';
 
 const DIR = fileURLToPath(new URL('../../public/lab/gloam-downs/', import.meta.url)), W = DIR + 'worlds/';
@@ -578,5 +579,31 @@ if (check) {
   for (let i = 0; i < 240 && !hurt; i++) hurt = R.step({}, 0).find(e => e.type === 'hurt') || null;
   assert(hurt && hurt.dmg === 21, `the hook dealt ${hurt?.dmg}`);
   pass('Ember 0 is harder: a Snuffer has 58 health and its hook deals 21; the Reeve deals 20% more', { hook: hurt.dmg, hp: f.hp });
+}
+
+{ /* the later places (gloam-downs-growth design.md "Pacing results"): at place depth d foes deal ×(1 + 0.35 d^1.5) and have
+     ×(1 + 0.4 d^1.5) health, the Gaol is as before, and the Reeve has 5% more health for each spark the run holds */
+  assert.deepEqual([PACE.blade, PACE.depthDmg, PACE.depthHp, PACE.depthPow, PACE.bossSpark], [1, 0.35, 0.4, 1.5, 0.05]);
+  const rs = RS.fresh(); startRun(rs, 3);
+  assert.deepEqual([depthOf(rs.run), foeScale(rs.run)], [0, { dmg: 1, hp: 1 }], 'the Gaol: no change');
+  rs.run.place = 'barrows';
+  const top = foeScale(rs.run);
+  assert.deepEqual([depthOf(rs.run), +top.dmg.toFixed(2), +top.hp.toFixed(2)], [4, 3.8, 4.2], 'Barrow Crown: ×3.8 damage, ×4.2 health');
+  rs.run.sparks = { flame: 4, ward: 2, gloam: 2 };
+  assert.deepEqual([sparkCount(rs.run), +bossScale(rs.run).toFixed(2), bossLines(bossScale(rs.run)).max], [8, 1.4, 1820], 'the Reeve with 8 sparks: 1,820 health');
+  // a Snuffer in The Crow Wall (the second place): its health ×1.4 and its hook ×1.35
+  rs.run.place = 'ramparts'; rs.run.sparks = { flame: 0, ward: 0, gloam: 0 };
+  const sc = foeScale(rs.run);
+  const info = { x0: -20, z0: -20, step: 0.25, nx: 161, nz: 161 }, walk = makeWalk(info, new Int16Array(2 * 161 * 161));
+  const body = makeBody(walk, { p: [0, 0.5, 0], yaw: 0 }, 20, { ...PARAMS });
+  const F = makeFoes({ walk, meta: { zones: [], spawn: { p: [0, 0, 10] } }, slots: 'S', seed: 3, bounds: 20, scale: sc });
+  const R = makeRunner({ walk, meta: { wisps: [], beacon: { p: [90, 0, 90], r: 1 } }, body, rs, targets: F.targets, think: F.think });
+  F.bind(R);
+  const f = F.find(F.spawn('S', 0, 1.6, Math.PI).id);
+  assert.equal(f.hp, Math.round(TYPES.S.hp * FOE_HARD.hp * 1.4));
+  let hurt = null;
+  for (let i = 0; i < 240 && !hurt; i++) hurt = R.step({}, 0).find(e => e.type === 'hurt') || null;
+  assert(hurt && hurt.dmg === Math.round(16 * FOE_HARD.dmg * 1.35), `the hook dealt ${hurt?.dmg}`);
+  pass('the later places: the Gaol as before, Barrow Crown ×3.8 damage and ×4.2 health; a Crow Wall Snuffer has 80 health and its hook deals 28; the Reeve +5% a spark', { hook: hurt.dmg, hp: f.hp });
 }
 console.log(`${n} checks passed`);

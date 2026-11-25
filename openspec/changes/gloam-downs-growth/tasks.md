@@ -42,7 +42,7 @@ Not built by P either. Built in the fix pass after the checkers; see design.md "
   - Partly: the ledge cache and the keys line are in `gloam-downs-run.abilities.e2e.mjs`; the Rookchief's key and the stone are checked in Node (`gloam-downs-keys.test.mjs`), not in a browser.
 - [x] 3.7 `qa/lab/gloam-downs-bot.mjs`: the rewrite in design.md "The bot with growth", with the boss stepped by `boss.js`.
 - [x] 3.8 Run the bot at 0.3, 0.5 and 0.9 (60 bots each) and tune with the levers in design.md "Targets", in their order. Write "Pacing results" in design.md. If a target misses, say which and why, and tell the user.
-  - Done; two targets miss even with every lever at the top of its range. See design.md "Pacing results".
+  - Done; two targets missed with every lever at the top of its range. The pacing pass (6) meets three of the four. See design.md "Pacing results".
 
 ## 4. Merge pass (after 1, 2 and 3)
 - [x] 4.1 Merge in the order G, K, P. Fix the hook lines in `run.js`, `foes.js`, `main.js` and `index.html` where two builders met.
@@ -67,3 +67,9 @@ Not built by P either. Built in the fix pass after the checkers; see design.md "
 - [x] 5.3 The smaller fixes, each with a Node test that fails before it: the elite's pattern lamp and relic on the floor (`R.floorAt`), a pattern lamp left lying at a lit beacon, a flier's drops on the ground, the 2% roll only skipped for the elite itself, Lead glass by the foes that see the lamplighter, the old summary's kept glim, the beacon card's warning in numbers, the colour row in words, and the summary that says the glim once.
 - [x] 5.4 Run every Node test, the zone check, every Gloam Downs e2e file, the quiet check and the bot at three skills; write the numbers into design.md.
 - [ ] 5.5 Play by hand on a real phone, a real gamepad, real mouse side buttons and speakers. Not possible here (no display, no devices).
+
+## 6. Pacing pass: start weak, grow strong
+- [x] 6.1 Measure the levers with 20 and then 60 bots at 0.3, 0.5 and 0.9: a lower start health, blade and flask count, foes that grow with the place index, a Reeve that grows with the run's sparks. Every step's numbers are in design.md "Pacing results".
+- [x] 6.2 `run.js`: the run starts with 1 flask; `PACE`, `foeScale` (damage ×(1 + 0.35 d^1.5), health ×(1 + 0.4 d^1.5)) and `bossScale` (+5% a spark). `foes.js` takes `scale`, and `fight.js` and the bot pass it and the Reeve's scale.
+- [x] 6.3 Tests: the later places and the Reeve in `gloam-downs-foes.test.mjs`; the start of 1 flask and every ware's 5 flasks in `gloam-downs-run.test.mjs` and `gloam-downs-growth.test.mjs`; the coal in The Crow Wall in `run.fight`; the start in `run.cards` and `run.input`.
+- [ ] 6.4 A 0.9 winning run of 15 to 25 minutes: missed (10.3). It needs more ground to cover, which is the user's call.

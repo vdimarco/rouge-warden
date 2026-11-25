@@ -199,11 +199,30 @@ Places SHALL get more zones from `EXTRA` in `mix.js`, at every Ember level, unde
 - **THEN** every page zone fits its place's pool, its centre is on the floor, and the spacing holds; and `gloam-downs-seed.test.mjs` finds every seed from 1 to 200 mixes with them and has an elite. Check: the zone check, and Node test `gloam-downs-seed.test.mjs`.
 
 ### Requirement: Harder Ember 0
-At Ember 0, foes SHALL deal 30% more damage than before this change and have 15% more health, and the Barrow Reeve SHALL deal 20% more. The Ember 4 factor SHALL multiply these. The run SHALL start with 100 health, 2 flasks and 35% heals, as before.
+At Ember 0, foes SHALL deal 30% more damage than before this change and have 15% more health, and the Barrow Reeve SHALL deal 20% more. The Ember 4 factor SHALL multiply these. The run SHALL start with 100 health, 1 flask and 35% heals; each Flask level SHALL add a flask.
+
+#### Scenario: A first run
+- **WHEN** a run starts with no ware bought
+- **THEN** it has 100 health and 1 flask, and a drink heals 35. Check: Node test `gloam-downs-run.test.mjs`, and e2e `gloam-downs-run.cards.e2e.mjs` and `gloam-downs-run.input.e2e.mjs`.
 
 #### Scenario: A Snuffer's hook
 - **WHEN** at Ember 0 a Snuffer's hook lands on a lamplighter with no roll
 - **THEN** it deals 21 (16 × 1.3, rounded). Check: Node test `gloam-downs-foes.test.mjs`.
+
+### Requirement: Harder later places
+In a run's later places, foes SHALL deal more damage and have more health: at place depth d (the run's first place 0, Barrow Crown 4), damage ×(1 + 0.35 d^1.5) and health ×(1 + 0.4 d^1.5), on top of the Ember 0 factors. The run's first place SHALL be as before. The Barrow Reeve SHALL have 5% more health for each spark the run holds when Barrow Crown loads.
+
+#### Scenario: The Crow Wall
+- **WHEN** at Ember 0 a Snuffer in The Crow Wall hooks a lamplighter with no roll
+- **THEN** it has 80 health and the hook deals 28 (16 × 1.3 × 1.35, rounded). Check: Node test `gloam-downs-foes.test.mjs`.
+
+#### Scenario: A Pitchrook's coal in the second place
+- **WHEN** a Pitchrook's coal lands on the lamplighter in The Crow Wall
+- **THEN** it deals 32 (18 × 1.3 × 1.35). Check: e2e `gloam-downs-run.fight.e2e.mjs`.
+
+#### Scenario: Barrow Crown and the Reeve
+- **WHEN** a run with 8 sparks reaches Barrow Crown
+- **THEN** its foes deal ×3.8 and have ×4.2 health, and the Reeve has 1,820 health. Check: Node test `gloam-downs-foes.test.mjs`.
 
 ### Requirement: Growth sounds
 The run's sound SHALL play existing cues: the touch of a pattern `wisp` and then `glim` for `pattern-found`; `buy` for `pattern-kept` and `pattern-kindled`; `light` for `key-found`; the ability's own cue on its use; `focus` for `ability-ready`; `choice` for `spark-take`; and `cracks` or `wisp` with `glim` for `cache-open`. An ability that hits nothing SHALL not bring the strings in.
@@ -253,7 +272,7 @@ The Lamp-room SHALL sell, a level at a time:
 
 #### Scenario: All upgrades
 - **WHEN** a player has bought every level and plays at Ember 0 with no sparks
-- **THEN** a run starts with 220 health and 6 flasks. Each flask heals 65%, the blade deals 60% more, and a death keeps 50% of the glim carried. Check: Node test `gloam-downs-run.test.mjs`.
+- **THEN** a run starts with 220 health and 5 flasks. Each flask heals 65%, the blade deals 60% more, and a death keeps 50% of the glim carried. Check: Node test `gloam-downs-growth.test.mjs`.
 
 ### Requirement: The run in the save
 The save SHALL hold the run in progress: seed, route, Ember level, place, time, health, flasks, glim carried and banked, foes put out, wicks, an offer not chosen, relics, elites put out, best combo, the boss's fall, sparks, spark picks left, abilities, patterns carried, caches opened, ability lamps on the ground, and the entry values. It SHALL hold the summary of an ended run until its card closes.

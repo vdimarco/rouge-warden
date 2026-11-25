@@ -207,8 +207,8 @@ const nearArc = (x, y, z, r, yaw) => Array.from({ length: 9 }, (_, k) => { const
     const hit = await G(page, id => { const g = window.__gloam, hp = g.run().hp; g.hold(id, null); g.tick(0.25, {}); g.draw(); return { hp, coal: true }; }, r.f.id);
     await shot(page, 'desk-ramparts-coal');
     const land = await G(page, hp => { const g = window.__gloam; g.tick(1, {}); return hp - g.run().hp; }, hit.hp);
-    assert.equal(land, 23, `the coal took ${land} (18 × 1.3 at Ember 0)`);
-    pass('The Crow Wall: a Pitchrook lobs onto a ring laid where the lamplighter stood, and its coal takes 23 (18 × 1.3 at Ember 0)', { ring: after.fire - before.fire });
+    assert.equal(land, 32, `the coal took ${land} (18 × 1.3 at Ember 0, ×1.35 in the run's second place)`);
+    pass('The Crow Wall: a Pitchrook lobs onto a ring laid where the lamplighter stood, and its coal takes 32 (18 × 1.3 at Ember 0, ×1.35 in the second place)', { ring: after.fire - before.fire });
   }
   { // Lantern Fen: a Mirelight floats over the water, swells and pulses a ring on the water's surface
     await to('fen', ['F1']);

@@ -67,7 +67,7 @@ export function startOffer(seed, unlocks = []) {
 }
 
 /* ---------------- the numbers ---------------- */
-export const BASE = { hp: 100, flasks: 2, heal: 0.35, wisp: 4, boss: 30, elite: 15 };
+export const BASE = { hp: 100, flasks: 1, heal: 0.35, wisp: 4, boss: 30, elite: 15 };
 export const WICKS = [
   { id: 'long', name: 'Long wick', text: '+20 health' },
   { id: 'keen', name: 'Keen edge', text: '+15% blade damage' },
@@ -122,6 +122,17 @@ export const ember = n => ({
   special: n >= 4 ? 2 : 1, dmg: n >= 4 ? 1.2 : 1, bossHp: n >= 5 ? 1.25 : 1, phase3: n >= 5 ? 0.4 : null, beaconFlasks: n >= 5 ? 1 : Infinity
 });
 const has = (wicks, id) => (wicks || []).includes(id);
+/* the pacing levers (gloam-downs-growth design.md "Pacing results"). The run starts with 1 flask (BASE), and Flask levels give the rest
+   back. Foes in the later places of the run hit harder and have more health: at place depth d (the Gaol, or the run's first place, is
+   0, Barrow Crown 4) damage ×(1 + 0.35 d^1.5) and health ×(1 + 0.4 d^1.5), so ×1.35 and ×1.4 in the second place and ×3.8 and ×4.2 in
+   Barrow Crown; the sparks, wicks and relics of the run and the lasting wares carry the lamplighter through them. The Barrow Reeve has
+   5% more health for each spark the run holds. blade is the blade's share at the start: a lower one was measured and broke the
+   skill 0.3 target, so it stays 1 */
+export const PACE = { blade: 1, depthDmg: 0.35, depthHp: 0.4, depthPow: 1.5, bossSpark: 0.05 };
+export const depthOf = run => Math.max(0, routeOfRun(run).indexOf(run?.place));
+export const foeScale = run => { const d = depthOf(run) ** PACE.depthPow; return { dmg: 1 + PACE.depthDmg * d, hp: 1 + PACE.depthHp * d }; };
+export const sparkCount = run => Object.values(run?.sparks || {}).reduce((a, n) => a + (n | 0), 0);
+export const bossScale = run => ember(emberOf(run)).bossHp * (1 + PACE.bossSpark * sparkCount(run));
 // Ward: 10 more health a level (full up to level 5, half a level after that)
 export const wardHp = sparks => SPARK.ward.hp * levelGain(sparks?.ward | 0);
 export const maxHp = (up, wicks, sparks = null) => BASE.hp + 15 * (up.mantle || 0) + (has(wicks, 'long') ? 20 : 0) + wardHp(sparks);
@@ -130,7 +141,7 @@ export const healShare = (up, em = 0) => BASE.heal + 0.1 * (up.draught || 0) - e
 /* the blade's bonuses add (Edge, Keen edge and Flame raise the plunge and the relic hits too: they are Flame moves); damage and heals
    round once, at the end */
 export const flameBonus = sparks => SPARK.flame.power * levelGain(sparks?.flame | 0);
-export const bladeBonus = (up, wicks, sparks = null) => 0.12 * (up.edge || 0) + (has(wicks, 'keen') ? 0.15 : 0) + flameBonus(sparks);
+export const bladeBonus = (up, wicks, sparks = null) => PACE.blade - 1 + 0.12 * (up.edge || 0) + (has(wicks, 'keen') ? 0.15 : 0) + flameBonus(sparks);
 export const healOf = (up, max, em = 0, more = 1) => dealt(healShare(up, em) * more, max);
 // a death, or End the run, keeps 10% of the glim carried and 8% more for each Ash pocket level (up to 50%), rounded down
 export const keepShare = up => 0.1 + 0.08 * Math.max(0, Math.min(5, up?.ash | 0));

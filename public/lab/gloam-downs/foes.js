@@ -154,7 +154,9 @@ export const laneAt = (M, mt) => M.len * clamp((mt + 1) / M.grow, 0, 1);
    surface, or undefined: the Mirelight floats over it.
    think(ev, play) runs on every game step after the lamplighter, as the runner's think; ev gets the cues and what the page draws:
    { type: 'cracks', pts }, 'rise', 'burst' (a coal, a pulse, a slam or a charge into a wall), 'foeOut' and 'glim'. */
-export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null, onScreen = () => true, water, place = meta.id || 'place', bounds = meta.bounds ?? 34, combo = null }) {
+export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null, onScreen = () => true, water, place = meta.id || 'place', bounds = meta.bounds ?? 34, combo = null, scale = null }) {
+  // the run's later places: foes hit harder and have more health (run.js foeScale)
+  const SC = { dmg: scale?.dmg ?? 1, hp: scale?.hp ?? 1 };
   const rng = stream(seed, `foes/${place}`);
   const codes = [...slots], holders = codes.map(() => null), counts = poolCounts(codes);
   const lim = bounds - 0.6;
@@ -168,7 +170,7 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
   function makeFoe(zone, type, k, home) {
     const T = TYPES[type];
     const f = {
-      id: `${zone.id}.${k}`, type, T, zone, k, home, hp: Math.round(T.hp * FOE_HARD.hp), out: false, state: 'asleep', t: 0, aware: false, away: 0, offT: 0,
+      id: `${zone.id}.${k}`, type, T, zone, k, home, hp: Math.round(T.hp * FOE_HARD.hp * SC.hp), out: false, state: 'asleep', t: 0, aware: false, away: 0, offT: 0,
       move: null, mt: 0, landed: false, cool: 0, ready: 0, flinch: 0, since: 999, downFor: 0, stunned: false, hold: null, slot: -1,
       flash: 0, shake: 0, shakeDir: [1, 0], push: null, shove: null, marker: null, aim: null, lane: null, prog: 0, firm: home.slice(),
       yaw: 0, x: home[0], y: home[1], z: home[2], r: T.r, alive: false, vx: 0, vz: 0, walking: 0, diedAt: null,
@@ -279,7 +281,7 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
   // a hit on the lamplighter: true once it has landed (in a safe time it passes, and the attack tests its later active steps)
   function strike(f, dmg, from, ev, o = {}) {
     if (f.hold || !F.runner) return false;
-    const r = F.runner.hurt(dmg * FOE_HARD.dmg, from, o, ev);
+    const r = F.runner.hurt(dmg * FOE_HARD.dmg * SC.dmg, from, o, ev);
     return r === 'hit' || r === 'dead' || r === 'none';
   }
   function hookReaches(f, M, s) {
