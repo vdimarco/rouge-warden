@@ -232,7 +232,9 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
     const bellows = h.id === 'cut2' && holds(st, 'relics', 'bellows');
     for (const t of meets(h, targets, { x: s.x, y: s.y, z: s.z, yaw: s.yaw })) {
       const how = { from: [s.x, s.z], push: bellows ? BUILD.bellows.push : h.push, knock: bellows ? BUILD.bellows.knock : h.knock, stagger: !!h.stagger, kind: h.id };
-      const dmg = t.hit(raw, how);
+      // Ember glass (run.js paneHit): its 20% adds to the blade's bonuses on a burning foe, and the damage still rounds once
+      const more = st.extra ? st.extra(t) : 0;
+      const dmg = t.hit(more ? raw * (1 + bonusNow(st) + more) / (1 + bonusNow(st)) : raw, how);
       if (dmg === false) continue;
       any = true;
       on.push(t.type || 'post');
@@ -448,6 +450,8 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
   function safe() {
     const [a, b] = MOVES.roll.safe;
     if (f.move === 'roll' && f.t >= a && f.t <= b) return 'roll';
+    // Smoke step (abilities.js): safe for 0.3 s, and a near miss in it counts as the roll's
+    if (f.smoke > 0) return 'roll';
     return f.safe > 0 ? 'hurt' : null;
   }
   // the hit of the string that a press of Attack starts next (0 cut1, 1 cut2, 2 the finisher): the one after the hit that plays, or

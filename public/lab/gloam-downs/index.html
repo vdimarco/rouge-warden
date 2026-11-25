@@ -116,12 +116,24 @@
   .act.attack { width: 76px; height: 76px; right: calc(16px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 84px); font-size: 13px; }
   .act.roll { width: 60px; height: 60px; right: calc(100px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 18px); background: rgba(20, 18, 30, 0.72); border-color: #6a6478; color: var(--bone); }
   .act.heal { width: 48px; height: 48px; right: calc(104px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 94px); font-size: 10px; background: rgba(14, 40, 34, 0.72); border-color: #3f8f78; color: #c8f6e6; }
+  /* the two ability buttons (gloam-downs-growth): above Attack and above Heal, 56 px, with the cooldown as a dark sweep (--cd, the share
+     left) and the ability's short name. A bright ability has a gold edge; hidden while the slot is empty */
+  .act.ab { width: 56px; height: 56px; font-size: 10px; overflow: hidden; background: rgba(30, 22, 44, 0.78); border-color: #8a7fd0; color: #e6defc; --cd: 0; }
+  .act.ab.flame { border-color: #c8743a; color: #ffd9b4; }
+  .act.ab.ward { border-color: #5fa874; color: #d4f6dc; }
+  .act.ab.bright { box-shadow: 0 0 0 2px #e8c35a; }
+  .act.ab i { position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(rgba(0, 0, 0, 0.62) calc(var(--cd) * 360deg), transparent 0); pointer-events: none; }
+  .act.ab b { position: relative; font: 800 10px/1 var(--body); }
+  .act.ab1 { right: calc(26px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 170px); }
+  .act.ab2 { right: calc(100px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 150px); }
   body.run .jump { width: 64px; height: 64px; right: calc(16px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 12px); padding: 0; }
   @media (min-height: 661px) {
     .act.attack { width: 84px; height: 84px; bottom: calc(var(--sab) + 96px); font-size: 14px; }
     .act.roll { width: 64px; height: 64px; right: calc(112px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 30px); }
     .act.heal { width: 52px; height: 52px; right: calc(112px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 110px); }
     body.run .jump { width: 72px; height: 72px; bottom: calc(var(--sab) + 16px); }
+    .act.ab1 { bottom: calc(var(--sab) + 188px); }
+    .act.ab2 { right: calc(110px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 170px); }
   }
   /* the run's cards: the places of the run, the wick choice and the question before End the run */
   .route { list-style: none; margin: 8px 0 10px; padding: 0; display: grid; gap: 4px; }
@@ -163,6 +175,16 @@
      code under the run time (pause panel) and under the summary's rows */
   .hud .combo { display: flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 8px; background: var(--panel2); border: 1px solid var(--edge); transition: opacity 0.4s linear; }
   .hud .combo[hidden] { display: none; }
+  /* the ability slots on the HUD (a mouse, keys or a pad; on a touch screen the two buttons show the same): "1 Lantern bomb 3.2 s" */
+  .hud .abilities { display: flex; flex-wrap: wrap; gap: 4px 8px; margin: 2px 0 0; font: 600 12px/1.3 var(--body); color: var(--bone); }
+  .hud .abilities[hidden] { display: none; }
+  .hud .abilities span { padding: 2px 7px; border-radius: 7px; background: var(--panel2); border: 1px solid var(--edge); white-space: nowrap; }
+  .hud .abilities span.cool { color: #9a93a8; }
+  .hud .abilities span.bright { border-color: #e8c35a; }
+  .hud .abilities kbd { font: 700 11px/1 var(--body); color: var(--ember); margin-right: 4px; }
+  /* in the boss fight the HUD keeps its rect (add-gloam-downs "The HUD in the boss fight"), so the ability row moves to the bottom left,
+     where the boss camera keeps it clear (main.js measureScreen) */
+  .hud.boss .abilities { position: fixed; left: calc(10px + env(safe-area-inset-left, 0px)); bottom: calc(var(--sab) + 14px); margin: 0; }
   .hud .combo.fading { opacity: 0; }
   .hud .combo b { font: 700 12px/1 var(--body); color: #ffe2bd; font-variant-numeric: tabular-nums; min-width: 2.6em; }
   .hud .combo #comboPip { display: block; width: 8px; height: 8px; border-radius: 50%; border: 1px solid var(--emberd); box-sizing: border-box; }
@@ -296,6 +318,7 @@
   <p class="colourRow" id="colourRow" hidden></p>
   <p class="count" id="count"><b>◆ 0/5</b> wisps · <i>beacon dark</i><i id="patternsN" hidden></i></p>
   <div class="combo" id="combo" hidden aria-live="off"><b id="comboN"></b><i id="comboPip"></i><i class="cbar"><i id="comboFill"></i></i></div>
+  <div class="abilities" id="abilities" hidden aria-label="Abilities"></div>
   <p class="hint" id="hint">Climb to the keep. Light the beacon.</p>
   <div class="relics" id="relics" role="img" aria-label="No relics" hidden></div>
 </div>
@@ -307,6 +330,8 @@
 <button type="button" class="act attack" id="bAttack" hidden aria-label="Attack">ATTACK</button>
 <button type="button" class="act roll" id="bRoll" hidden aria-label="Roll">ROLL</button>
 <button type="button" class="act heal" id="bHeal" hidden aria-label="Heal">HEAL<b id="healN">2</b></button>
+<button type="button" class="act ab ab1" id="bAb1" hidden aria-label="Ability 1"><i></i><b></b></button>
+<button type="button" class="act ab ab2" id="bAb2" hidden aria-label="Ability 2"><i></i><b></b></button>
 <div class="stick" id="stick" hidden><i></i></div>
 <p class="mousehint" id="mouseHint" hidden>Click to look with the mouse</p>
 
@@ -363,6 +388,7 @@
   <ol class="route" id="route"></ol>
   <p id="pauseLine">Run time 0:00</p>
   <p class="seed" id="seedLine"></p>
+  <p class="seed" id="keysLine" hidden></p>
   <ul id="pauseControls"></ul>
   <div id="pauseRow">
     <div class="row"><button type="button" class="go" id="bResume">Resume</button><button type="button" id="bSound" aria-pressed="true">Sound on</button><button type="button" id="bMusic" aria-pressed="true">Music on</button></div>

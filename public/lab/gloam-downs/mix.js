@@ -13,6 +13,36 @@ import { fits, foesOf, poolCounts } from './foes.js';
 export const NEWEST = { gaol: 'S', ramparts: 'P', fen: 'M', bells: 'I', barrows: 'I' };
 export const ELITE = { gaol: 'S', ramparts: 'P', fen: 'M', bells: 'I', barrows: 'S' };
 export const MIX = { tries: 20, near: 20, weightNew: 3, extraFrom: 3, routeFrom: 1 };
+/* the page zones (gloam-downs-growth design.md "More to do in each place"): zones that are not baked, added to each place's zones
+   before the mix, at every Ember level. Their foes come from the place's pool, so they need no new baked foe, and the mix draws them
+   as any other zone (each fits the pool with every zone within 20 m as baked, as the seed check asks). Each centre is on the walk map's floor by the way, at least 8 m from a baked zone and the beacon (7 m in The Fen and
+   Barrow Crown, which have less room) and 7 m from the start; none in The Bell Knoll; qa/lab/gloam-downs-zones.mjs checks them */
+export const EXTRA = {
+  gaol: [
+    { id: 'G6', name: 'yard east', c: [10, -2.19, 13.5], leash: 3, foes: 'SS' },
+    { id: 'G7', name: 'lane by the wall', c: [9.3, 0.31, -6.3], leash: 3, foes: 'SS' },
+    { id: 'G8', name: 'under the keep', c: [7.46, 2.71, -14.09], leash: 3, foes: 'SS' }
+  ],
+  ramparts: [
+    { id: 'R5', name: 'vale top', c: [0, 0.44, 20], leash: 3, foes: 'SS' },
+    { id: 'R6', name: 'vale east', c: [2, -1.07, 5], leash: 3, foes: 'SS' },
+    { id: 'R7', name: 'under the tower', c: [-10.3, 0.57, -13.3], leash: 3, foes: 'SS' }
+  ],
+  fen: [
+    { id: 'F5', name: 'reed bank', c: [-1.43, 0.08, 12.39], leash: 3, foes: 'SM' },
+    { id: 'F6', name: 'west pool', c: [-3.19, -0.49, 2.52], leash: 3, foes: 'SM' },
+    { id: 'F7', name: 'the climb', c: [2.2, 2.41, -9.8], leash: 3, foes: 'SP' }
+  ],
+  // The Bell Knoll has none: with its pool's one Ironback and three Snuffers, any page zone left some seeds with no room for the elite
+  bells: [],
+  barrows: [
+    { id: 'W5', name: 'the low barrow', c: [-3.7, 1.21, 20.8], leash: 3, foes: 'S' },
+    // (none nearer the stones: no zone stands within 25 m of the arena)
+    { id: 'W6', name: 'by the long mound', c: [6.3, 0.94, 10.8], leash: 3, foes: 'S' }
+  ]
+};
+// a place's zones with its page zones after the baked ones (each once)
+export const withExtra = (place, zones = []) => [...zones, ...(EXTRA[place] || []).filter(x => !zones.some(z => z.id === x.id))];
 
 const dist = (a, b) => Math.hypot(a.c[0] - b.c[0], a.c[2] - b.c[2]);
 // zones the mix may change: not a guard, not the arena, and not the Gaol's G1 (its one Snuffer teaches the fight). The elite never
@@ -27,7 +57,7 @@ const mixable = (z, i, place) => !z.guard && !z.boss && !(place === 'gaol' && i 
 export function mixZones(place, zones = [], slots = '', seed = 1, { ember = 0 } = {}) {
   const pool = typeof slots === 'string' ? poolCounts(slots) : slots;
   const types = Object.keys(pool).filter(t => 'SPMI'.includes(t));
-  const copy = zones.map(z => ({ ...z, c: z.c.slice(), baked: z.baked ?? z.foes }));
+  const copy = withExtra(place, zones).map(z => ({ ...z, c: z.c.slice(), baked: z.baked ?? z.foes }));
   if (!types.length) return copy;
   const rnd = stream(seed, `mix/${place}`), newest = NEWEST[place];
   // a zone's foes, drawn from the pool's slots without putting them back (so a zone alone never asks for more than the pool holds),

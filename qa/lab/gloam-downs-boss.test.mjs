@@ -21,7 +21,9 @@ import { STEP, stepCount, startRun, makeRunner, maxOf, reload, goTo, BASE, ember
 import { HITS, clearLine } from '../../public/lab/gloam-downs/moves.js';
 import * as RS from '../../public/lab/gloam-downs/run-save.js';
 import { makeBoss, bossLines, REEVE, REEVE_TEXT, ATTACKS, choose, phaseFor, segAt, segStart, inSlices, inLane, lengthOf, lightAt } from '../../public/lab/gloam-downs/boss.js';
-import { inRing } from '../../public/lab/gloam-downs/foes.js';
+import { inRing, FOE_HARD } from '../../public/lab/gloam-downs/foes.js';
+// these checks test the rules at the numbers of the foes' table; Ember 0's harder factors (FOE_HARD, REEVE.hard) are checked in gloam-downs-foes.test.mjs
+FOE_HARD.dmg = 1; FOE_HARD.hp = 1; REEVE.hard = 1;
 import { makeFight } from '../../public/lab/gloam-downs/fight.js';
 import { readFigures, makePool } from '../../public/lab/gloam-downs/pool.js';
 import { poolFor } from '../../public/lab/gloam-downs/figures.js';

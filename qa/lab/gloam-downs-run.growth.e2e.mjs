@@ -138,7 +138,7 @@ try {
     assert.deepEqual([r.hp, r.max, r.sparks, r.sparkPicks], [90, 110, { flame: 0, ward: 1, gloam: 0 }, 0]);
     assert.equal(await text(page, '#hpN'), '90/110');
     assert(await page.isVisible('#colourRow'));
-    assert.equal(await text(page, '#colourRow'), '▲ 0◆ 1● 0');
+    assert.equal(await text(page, '#colourRow'), 'Flame 0Ward 1Gloam 0');
     assert.equal(await text(page, '#beaconKept'), 'Kept: Rime lamp');
     assert.match(await text(page, '#beaconBank'), /^You carry 40 glim, and 0 is banked\./);
     assert.equal(await text(page, '#bSpend'), 'Lamp-room');

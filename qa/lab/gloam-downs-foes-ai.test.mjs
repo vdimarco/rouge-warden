@@ -22,7 +22,10 @@ import { makeWalk, makeBody, PARAMS, reachable, camLayout, SWINGS } from '../../
 import { STEP, stepCount, startRun, makeRunner, maxOf } from '../../public/lab/gloam-downs/run.js';
 import { HITS, MOVES } from '../../public/lab/gloam-downs/moves.js';
 import * as RS from '../../public/lab/gloam-downs/run-save.js';
-import { makeFoes, TYPES, RULES, phaseOf, ringAt, laneAt, keeperLine, fits, makeRoom } from '../../public/lab/gloam-downs/foes.js';
+import { makeFoes, TYPES, RULES, phaseOf, ringAt, laneAt, keeperLine, fits, makeRoom, FOE_HARD } from '../../public/lab/gloam-downs/foes.js';
+import { REEVE as REEVE_HARD } from '../../public/lab/gloam-downs/boss.js';
+// these checks test the rules at the numbers of the foes' table; Ember 0's harder factors (FOE_HARD, REEVE.hard) are checked in gloam-downs-foes.test.mjs
+FOE_HARD.dmg = 1; FOE_HARD.hp = 1; REEVE_HARD.hard = 1;
 import { makeFight, tellGrow, TELL } from '../../public/lab/gloam-downs/fight.js';
 import { makeFeel, FEEL } from '../../public/lab/gloam-downs/feel.js';
 import { WATER, ringResiduals, laneResiduals } from '../../public/lab/gloam-downs/markers.js';

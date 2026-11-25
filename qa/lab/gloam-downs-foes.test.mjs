@@ -23,7 +23,11 @@ import { findVeils, makeVeils, conicOf, coverOf, VEIL } from '../../public/lab/g
 import { makeCamera } from '../../public/lab/gloam-downs/ink/webgl/view.mjs';
 import { ZONES, POOLS, zoneJson, poolTypes } from '../../games/gloam-downs/lib/zones.mjs';
 import { survey, fits, makeRoom, walkRoute, walkPath, ironWalls } from './gloam-downs-zones.mjs';
-import { makeWalk } from '../../public/lab/gloam-downs/play.js';
+import { makeWalk, makeBody, PARAMS } from '../../public/lab/gloam-downs/play.js';
+import { makeFoes, FOE_HARD, TYPES } from '../../public/lab/gloam-downs/foes.js';
+import { REEVE } from '../../public/lab/gloam-downs/boss.js';
+import { startRun, makeRunner } from '../../public/lab/gloam-downs/run.js';
+import * as RS from '../../public/lab/gloam-downs/run-save.js';
 
 const DIR = fileURLToPath(new URL('../../public/lab/gloam-downs/', import.meta.url)), W = DIR + 'worlds/';
 const SplatCodec = new Function(fs.readFileSync(DIR + 'ink/splat-codec.js', 'utf8') + '\nreturn SplatCodec;')();
@@ -557,5 +561,22 @@ if (check) {
   assert.equal(F2.putOut('G5'), 3);
   assert.equal(F2.lightable().ok, true);
   pass('the guard\'s second wave: G5\'s three Snuffers out, two rise 1.5 s later with cracks first, and the beacon waits for them');
+}
+
+{ // Ember 0 is harder (gloam-downs-growth): a Snuffer's hook deals 21 (16 × 1.3, rounded), it has 58 health (50 × 1.15), and the Reeve's
+  // blows deal 20% more
+  assert.deepEqual([FOE_HARD.dmg, FOE_HARD.hp, REEVE.hard], [1.3, 1.15, 1.2]);
+  const info = { x0: -20, z0: -20, step: 0.25, nx: 161, nz: 161 }, walk = makeWalk(info, new Int16Array(2 * 161 * 161));
+  const rs = RS.fresh(); startRun(rs, 3);
+  const body = makeBody(walk, { p: [0, 0.5, 0], yaw: 0 }, 20, { ...PARAMS });
+  const F = makeFoes({ walk, meta: { zones: [], spawn: { p: [0, 0, 10] } }, slots: 'S', seed: 3, bounds: 20 });
+  const R = makeRunner({ walk, meta: { wisps: [], beacon: { p: [90, 0, 90], r: 1 } }, body, rs, targets: F.targets, think: F.think });
+  F.bind(R);
+  const f = F.find(F.spawn('S', 0, 1.6, Math.PI).id);
+  assert.equal(f.hp, Math.round(TYPES.S.hp * 1.15));
+  let hurt = null;
+  for (let i = 0; i < 240 && !hurt; i++) hurt = R.step({}, 0).find(e => e.type === 'hurt') || null;
+  assert(hurt && hurt.dmg === 21, `the hook dealt ${hurt?.dmg}`);
+  pass('Ember 0 is harder: a Snuffer has 58 health and its hook deals 21; the Reeve deals 20% more', { hook: hurt.dmg, hp: f.hp });
 }
 console.log(`${n} checks passed`);

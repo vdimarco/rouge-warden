@@ -956,7 +956,7 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   Object.assign(rs.run, { banked: 30, foes: 7, hp: 70 });
   enter(rs.run);
   const back = RS.clean(JSON.parse(JSON.stringify(rs)));
-  const { sparks, sparkPicks, carriedPatterns, groundPatterns, caches, abilityLamps, patternRolls, foePatterns, abilityDrops, abilities, ...entry } = back.run.entry;
+  const { sparks, sparkPicks, carriedPatterns, groundPatterns, caches, abilityLamps, patternRolls, foePatterns, abilityDrops, abilityRolls, abilities, ...entry } = back.run.entry;
   assert.deepEqual([back.run.place, back.run.banked, back.run.foes, entry], ['fen', 30, 7, { hp: 70, flasks: 2, carried: 0, foes: 7, relics: [], elitesDown: [], lastUsed: false }]);
   assert.deepEqual([sparks, abilities], [{ flame: 0, ward: 0, gloam: 0 }, rs.run.abilities], 'the entry keeps the growth fields too');
   pass('the run save: bad fields are dropped, levels clamped, a bad offer dropped, and a run comes back with its entry');
@@ -999,7 +999,7 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   assert(two.pause && two.down.size === 1, 'two pads holding Start make one press');
   const run = readPads([pad([PAD.X, PAD.B, PAD.Y, PAD.RB])], true);
   assert(run.attack && run.roll && run.heal && run.face && !run.slow);
-  assert(readPads([pad([PAD.RT])], true).attack && readPads([pad([PAD.LT])], true).roll && readPads([pad([PAD.BACK])], true).pause);
+  assert(readPads([pad([PAD.RT])], true).attack && readPads([pad([PAD.LT])], true).ab2 && !readPads([pad([PAD.LT])], true).roll && readPads([pad([PAD.BACK])], true).pause);
   const wander = readPads([pad([PAD.X, PAD.RT, PAD.B, PAD.LT, PAD.Y])], false);
   assert(wander.slow && !wander.attack && !wander.roll && !wander.heal, 'in Wander X walks, and RT, B, LT and Y do nothing');
   assert(!readPads([pad([PAD.BACK])], false).pause);
@@ -1123,7 +1123,7 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   const e = die(rs);
   assert.deepEqual(summaryOf(e), {
     title: 'The lamp goes out',
-    rows: [['Reached', 'II · The Crow Wall'], ['Time', '2:05'], ['Foes put out', '3'], ['Glim', 'kept 2 · lost 18'], ['Glim banked', '2 glim'], ['Patterns', 'kept 0 · lost 0']],
+    rows: [['Reached', 'II · The Crow Wall'], ['Time', '2:05'], ['Foes put out', '3'], ['Glim', 'kept 2 · lost 18'], ['Patterns', 'kept 0 · lost 0']],
     lines: ['Glim kept 2 · lost 18', 'Patterns kept 0 · lost 0']
   });
   const ash = RS.fresh();
@@ -1131,7 +1131,7 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   startRun(ash, 5);
   ash.run.carried = 20;
   const a = summaryOf(die(ash)).rows;
-  assert.deepEqual([a[3][1], a[4][1], ash.bank], ['kept 3 · lost 17', '3 glim', 3]);
+  assert.deepEqual([a[3][1], a[4][1], ash.bank], ['kept 3 · lost 17', 'kept 0 · lost 0', 3]);
   assert.deepEqual(routeOf('fen').map(p => p.state), ['passed', 'passed', 'here', 'ahead', 'ahead']);
   assert.deepEqual(routeOf('fen').map(p => `${p.n} ${p.name}`), ['I The Sunken Gaol', 'II The Crow Wall', 'III Lantern Fen', 'IV The Bell Knoll', 'V Barrow Crown']);
   assert.equal(ASKS.restart.line('ramparts'), 'Back to the start of The Crow Wall? The glim you found here is lost.');

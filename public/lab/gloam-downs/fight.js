@@ -57,7 +57,15 @@ export const HALO = { r: 0.24, s: 0.028, spin: 1.6, bob: 0.03, crown: 6, crownR:
    else the seed mixes them (mix.js) at mix.ember. emit is the bus (bus.js) for combo-tier. dressOf(f) -> { size, crown } or null and
    groundRelics(run) -> [{ id, x, y, z }] are the builds' (elites.js, relics.js): the fight draws what they give. clipOf(f) -> { clip, t }
    or null poses an elite in its special move (elites.js eliteClip) */
-export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still = false, fx = {}, project = null, doc = null, mix = { ember: 0 }, emit = null, dressOf = () => null, clipOf = () => null, groundRelics = () => [] }) {
+/* growth (gloam-downs-growth): the colours' spark slots on the ground (Flame the dark ember 33, Ward the Mirelight's deep 38, Gloam its
+   pale pulse 39). None is a fire slot (34 to 37) or the lamp's warm 46, which the grade brings near them: fire is the colour of a foe's
+   tell, so a lamp lying near a foe never reads as one; and what a lamp on the ground looks like: a pattern lamp is a ring of 4 dabs round a pale core, an ability lamp 5 dabs in its
+   colour (a bright one with a larger core), a ledge cache a lamp of 4 pale lamp dabs, a sealed stone a ring of 6 lamp dabs whose core glows ember once Bell drop is held (fire is
+   the colour of a foe's tell, so the caches stay in the lamp's colours) */
+export const GROWTH_CI = { flame: 33, ward: 38, gloam: 39 };
+export const LAMPS = { r: 0.16, s: 0.04, lift: 0.4, stoneR: 0.5 };
+export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still = false, fx = {}, project = null, doc = null, mix = { ember: 0 }, emit = null, dressOf = () => null, clipOf = () => null, groundRelics = () => [],
+  groundPatterns = () => [], groundAbilities = () => [], groundSpots = () => [] }) {
   const water = WATER[meta.id];
   const W = () => (doc ? doc.defaultView.innerWidth : 1280), H = () => (doc ? doc.defaultView.innerHeight : 720);
   const onScreen = (x, y, z) => {
@@ -70,7 +78,7 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
   const zones = mix && meta.zones ? mixZones(meta.id, meta.zones, codes.join(''), seed, mix) : meta.zones;
   const combo = makeCombo({ emit, best: rs.run?.combo ?? 0 });
   const foes = makeFoes({ walk, meta: { ...meta, zones }, slots: codes, seed, onScreen, water, combo });
-  const sparks = pool.extra && pool.extra.end > pool.extra.first ? makeSparks(world, pool.extra.first, pool.extra.end - pool.extra.first, meta.pal) : null;
+  const sparks = pool.extra && pool.extra.end > pool.extra.first ? makeSparks(world, pool.extra.first, pool.extra.end - pool.extra.first, meta.pal, { glow: 64 }) : null;
   const feel = makeFeel({ pal: meta.pal, still, fx });
   const fits = new Map(); // a foe's marker laid on the ground: its fit, kept while the marker stands where it is
   const G = { foes, sparks, feel, combo, zones, runner: null, game: 0, keeperTo: -1, keeperAt: null, beatTo: -1, lift: MARK_LIFT, bars: 0, halo: [] };
@@ -256,6 +264,7 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
       /* what a relic does, as the builds send it (relics.js): a line of fire along a roll (kind 'line': a, b, life), a burning ring
          (kind 'ring': x, y, z, r, life), and a thrown spark (kind 'spark': from, to). Fire slots 34 and 35, under fire 37 */
       case 'relicFx': relicFx(e); break;
+      case 'abilityFx': abilityFx(e); break;
       case 'dark': G.keeperTo = G.game + NOTCH.keepers; G.keeperAt = e.at; break;
     }
   };
@@ -298,6 +307,34 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
     } else if (e.kind === 'spark' && e.from && e.to) {
       sparks.smear(e.from, e.to, 36, 0.05, 0.16);
       sparks.sparks(e.to[0], e.to[1], e.to[2], 35, 6, 3);
+    }
+  }
+
+  /* what an ability does, as abilities.js sends it: a throw or a pull (a smear of dabs), the bomb's ring before it bursts and its burst,
+     Smoke step's puffs, Rime lamp's cone, Flare's core and flash, a snare's snap and Bell guard's ring. All under fire 37 */
+  function abilityFx(e) {
+    if (!sparks) return;
+    const at = e.at, ground = (x, z, y) => walk.support(x, z, y + 0.6) ?? y;
+    switch (e.kind) {
+      case 'throw': sparks.smear(e.from, e.to, 35, 0.05, 0.3); break;
+      case 'line': sparks.smear(e.a, e.b, e.id === 'moth' ? 39 : 36, 0.03, e.life ?? 0.2); break;
+      case 'tell': sparks.ring(at[0], ground(at[0], at[2], at[1]) + OVER, at[2], 34, e.r * 0.9, e.r, e.life ?? 0.6, Math.round(10 + e.r * 6), 0.04); break;
+      case 'burst':
+        sparks.ring(at[0], ground(at[0], at[2], at[1]) + OVER, at[2], 35, e.r * 0.3, e.r, 0.35, Math.round(12 + e.r * 6), 0.05);
+        sparks.flash(at[0], at[1] + 0.4, at[2], 36, 0.5, 0.12);
+        sparks.drops(at[0], at[1] + 0.3, at[2], 34, 10, 2.5, 2.5);
+        break;
+      case 'puff': sparks.drops(at[0], at[1] + 0.5, at[2], 46, 8, 1.2, 1.5); break;
+      case 'cone':
+        for (let i = 0; i < 9; i++) {
+          const a = e.yaw + ((i / 8) - 0.5) * (e.arc * Math.PI / 180), r = e.r * 0.9;
+          sparks.smear([at[0], at[1] + 0.3, at[2]], [at[0] + Math.sin(a) * r, at[1] + 0.3, at[2] + Math.cos(a) * r], 47, 0.03, 0.25);
+        }
+        break;
+      case 'core': sparks.flash(at[0], at[1], at[2], 47, 0.4, e.life ?? 0.25); break;
+      case 'flash': sparks.flash(at[0], at[1], at[2], 36, 0.9, 0.12); sparks.ring(at[0], at[1] - 0.9 + OVER, at[2], 47, 0.4, e.r, 0.3, 24, 0.04); break;
+      case 'snap': sparks.sparks(at[0], at[1] + 0.3, at[2], 34, 10, 3); break;
+      case 'ring': sparks.ring(at[0], at[1] + 0.9, at[2], 36, 0.6, e.r, 0.25, 16, 0.04); break;
     }
   }
 
@@ -472,15 +509,41 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
         out.push({ kind: 'relic', x: q.x + Math.sin(a) * HALO.relicR, y: q.y + 0.45 + (still ? 0 : 0.04 * Math.sin(t * 3)), z: q.z + Math.cos(a) * HALO.relicR, ci: 46, s: HALO.relicS });
       }
     }
+    // growth: the pattern lamps and the ability lamps (bobbing a little), the caches on the ledges and the sealed stones, and what an
+    // ability leaves standing (a snare, a pool of pitch, a moth wisp, Bell guard's ring)
+    const bob = i => (still ? 0 : 0.04 * Math.sin(t * 3 + i));
+    for (const [n, q] of (groundPatterns() || []).entries()) {
+      out.push({ kind: 'pattern', x: q.x, y: q.y + LAMPS.lift + bob(n), z: q.z, ci: 39, s: LAMPS.s * 1.3 });
+      for (let i = 0; i < 4; i++) { const a = (i / 4) * Math.PI * 2 + t * 1.5; out.push({ kind: 'pattern', x: q.x + Math.sin(a) * LAMPS.r, y: q.y + LAMPS.lift + bob(n), z: q.z + Math.cos(a) * LAMPS.r, ci: GROWTH_CI[q.colour] ?? 39, s: LAMPS.s }); }
+    }
+    for (const [n, q] of (groundAbilities() || []).entries()) {
+      out.push({ kind: 'ability', x: q.x, y: q.y + LAMPS.lift + bob(n + 3), z: q.z, ci: GROWTH_CI[q.colour] ?? 39, s: LAMPS.s * (q.bright ? 2 : 1.4) });
+      for (let i = 0; i < 4; i++) { const a = (i / 4) * Math.PI * 2 - t * 2; out.push({ kind: 'ability', x: q.x + Math.sin(a) * LAMPS.r * 1.2, y: q.y + LAMPS.lift + bob(n + 3), z: q.z + Math.cos(a) * LAMPS.r * 1.2, ci: GROWTH_CI[q.colour] ?? 39, s: LAMPS.s }); }
+    }
+    for (const q of groundSpots() || []) {
+      const [x, y, z] = q.at;
+      if (q.kind === 'stone') {
+        for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; out.push({ kind: 'stone', x: x + Math.sin(a) * LAMPS.stoneR, y: y + 0.08, z: z + Math.cos(a) * LAMPS.stoneR, ci: 46, s: LAMPS.s }); }
+        out.push({ kind: 'stone', x, y: y + 0.1, z, ci: q.open ? 33 : 46, s: LAMPS.s * (q.open ? 1.6 : 1) });
+      } else for (let i = 0; i < 4; i++) { const a = (i / 4) * Math.PI * 2 + t; out.push({ kind: 'cache', x: x + Math.sin(a) * 0.12, y: y + 0.35 + (still ? 0 : 0.03 * Math.sin(t * 2)), z: z + Math.cos(a) * 0.12, ci: 47, s: LAMPS.s }); }
+    }
+    const A = G.runner?.abilities;
+    for (const e of A?.effects || []) {
+      if (e.kind === 'snare') for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; out.push({ kind: 'snare', x: e.at[0] + Math.sin(a) * e.r, y: e.at[1] + 0.1, z: e.at[2] + Math.cos(a) * e.r, ci: 34, s: 0.03 }); }
+      else if (e.kind === 'pitch') for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2 + t * 0.5; out.push({ kind: 'pitch', x: e.at[0] + Math.sin(a) * e.r * 0.8, y: e.at[1] + 0.08, z: e.at[2] + Math.cos(a) * e.r * 0.8, ci: i % 2 ? 33 : 34, s: 0.035 }); }
+      else if (e.kind === 'moth' && s0()) { const L = s0(); for (let i = 0; i < 3; i++) out.push({ kind: 'moth', x: L.x + 0.45 + 0.06 * Math.sin(t * 9 + i), y: L.y + 1.5 + 0.05 * i, z: L.z + 0.06 * Math.cos(t * 7 + i), ci: 39, s: 0.03 }); }
+    }
+    if (A?.guard && s0()) { const L = s0(); for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2 + t * 3; out.push({ kind: 'guard', x: L.x + Math.sin(a) * 0.7, y: L.y + 0.9, z: L.z + Math.cos(a) * 0.7, ci: 36, s: 0.03 }); } }
     return sparks ? out.slice(0, sparks.glow) : out;
   }
+  const s0 = () => G.runner?.fighter.body.s ?? null;
 
   /* ---------------- notches ----------------
    An ember notch at the screen's edge for each wind-up whose foe's chest is out of the view (the 3 nearest their hit), filling from
    empty to full over the wind-up; and for 3 s toward a dark beacon's keepers. A notch sits where the line from the screen's middle
    toward the foe meets the edge, slid along the edge clear of the controls: on a touch screen a notch at the bottom sits 8 px over
    the buttons, and one at the top 8 px under the Lab bar and clear of the HUD and the tools */
-  const AVOID = ['.labbar .back', '#menu', '#hud', '#tools', '#toast.on', '#bAttack', '#bRoll', '#bHeal', '#bJump', '.bossbar', '#bossBar'];
+  const AVOID = ['.labbar .back', '#menu', '#hud', '#tools', '#toast.on', '#bAttack', '#bRoll', '#bHeal', '#bAb1', '#bAb2', '#bJump', '.bossbar', '#bossBar'];
   function rects() {
     if (!doc) return [];
     return AVOID.flatMap(sel => [...doc.querySelectorAll(sel)]).filter(el => !el.hidden && el.offsetParent !== null).map(el => el.getBoundingClientRect()).filter(r => r.width && r.height);

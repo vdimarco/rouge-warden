@@ -9,7 +9,9 @@ import assert from 'node:assert/strict';
 import { makeWalk, makeBody, PARAMS } from '../../public/lab/gloam-downs/play.js';
 import * as RUN from '../../public/lab/gloam-downs/run.js';
 import * as RS from '../../public/lab/gloam-downs/run-save.js';
-import { makeFoes } from '../../public/lab/gloam-downs/foes.js';
+import { makeFoes, FOE_HARD } from '../../public/lab/gloam-downs/foes.js';
+// these checks test the rules at the numbers of the foes' table; Ember 0's harder factors (FOE_HARD, REEVE.hard) are checked in gloam-downs-foes.test.mjs
+FOE_HARD.dmg = 1; FOE_HARD.hp = 1;
 import { makePost, HITS, MOVES, RISE, BUILD } from '../../public/lab/gloam-downs/moves.js';
 import { ELITES, ELITE_LIST, eliteZone, specialSteps, dressOf } from '../../public/lab/gloam-downs/elites.js';
 import { RELICS, KINDLE, drawRelic, kindled, relicLine, groundRelics, FIRE } from '../../public/lab/gloam-downs/relics.js';
@@ -107,7 +109,8 @@ function untilSpecial(W, E, max = 600) {
   rs.run.carried = 20;
   const e = die(rs);
   assert.deepEqual([e.banked, e.lost, rs.bank], [2, 18, 2]);
-  assert.deepEqual(summaryOf(e).rows.slice(3, 5), [['Glim', 'kept 2 · lost 18'], ['Glim banked', '2 glim']]);
+  // the glim banked is the glim kept here, so it is not said twice
+  assert.deepEqual(summaryOf(e).rows.slice(3, 5), [['Glim', 'kept 2 · lost 18'], ['Patterns', 'kept 0 · lost 0']]);
   const a = RS.fresh();
   a.up.ash = 1;
   startRun(a, 3);

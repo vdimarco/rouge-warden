@@ -12,21 +12,33 @@
 //   30 + 20k% health when no wind-up is near.
 //   Stuck: no progress for 2 s and it jumps for 1 s; no progress for 4 s and a skilled bot gives up the wisp or zone it went for, or
 //   the bot is put at its next point (a nudge). A foe it cannot reach for 8 s: it is put beside it (a nudge). A nudge counts the time
-//   a walk there takes at 3 m/s, and 2 or 3 s more, so a nudge never makes the run shorter. About 7 nudges a run come from the same
-//   climbs, where the straight walk to the next point meets a step it cannot take (Gaol points 8, 9 and 14, Fen 5 and 8, Bell Knoll 6,
-//   Crow Wall 17). NUDGE=1 prints each nudge.
-//   The boss: Barrow Crown's zones are fought on the real map; the Barrow Reeve's fight is not stepped here. It is drawn from the boss
-//   bot's own results (qa/lab/gloam-downs-boss.sim.mjs, in add-gloam-downs design.md): a win at full health 52% of tries at skill 0.3,
-//   93% at 0.5 and all at 0.7 and up, scaled by the health the bot arrives with, and a fight of 55 to 78 s.
+//   a walk there takes at 3 m/s, and 2 or 3 s more, so a nudge never makes the run shorter. Most nudges come from the same climbs,
+//   where the straight walk to the next point meets a step it cannot take (Gaol points 8, 9 and 14, Fen 5 and 8, Bell Knoll 6, Crow
+//   Wall 17); the fix pass measured about 12 a run (the "nudges a run" line), not the 7 an earlier note said. A foe it cannot reach
+//   for 8 s that is not a guard's or the elite is left behind instead (it walks on, as a player does). NUDGE=1 prints each nudge.
+//   The boss: Barrow Crown's zones are fought on the real map, and the Barrow Reeve is stepped with boss.js on the same runner, by the
+//   boss bot's own mind (qa/lab/gloam-downs-bossbot.mjs: the reads, rolls and mistakes of qa/lab/gloam-downs-boss.sim.mjs).
+//   Growth (gloam-downs-growth): one save across a bot's runs. In each Lamp-room (before a run and at each lit beacon, the glim carried
+//   spent first) it kindles the found patterns it can pay for, cheapest first, then buys the cheapest next level of its list; a 0.3 bot
+//   shops at a beacon half the time. It takes its spark picks by a rule (Ward under 50% health, Gloam once both slots hold an
+//   ability, else Flame), sets its panes by a fixed order and picks Belt's start ability by a fixed order. It walks to the pattern and
+//   ability lamps it sees within 12 m, and to the caches its keys open within 16 m of the way: a ledge by the second jump and a sealed
+//   stone by a plunge, with the inputs the ledge scan played (qa/lab/gloam-downs-ledges.mjs), two tries each.
+//   Abilities: an attack ability when 2 or more foes are near or an elite or the Reeve is awake; Smoke step or Bell guard in place of
+//   4 rolls in 10; Flare or Rime lamp on a wind-up it reads near it.
 // Run: node qa/lab/gloam-downs-bot.mjs [bots = 20] [skill = 0.5] [first seed = 1]   (MAXRUNS=40, AFTER=5 runs after the first win, VERBOSE=1)
 import fs from 'node:fs';
 import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 import { makeWalk, makeBody, PARAMS } from '../../public/lab/gloam-downs/play.js';
-import { startRun, makeRunner, buy, buyUnlock, chooseWick, maxOf, flasksOf, glimFactor, emberOf, UPGRADES, UNLOCKS, BASE, purse, takeSpark, setPane, paneSlots, kindle, kindledOf } from '../../public/lab/gloam-downs/run.js';
+import { startRun, makeRunner, buy, buyUnlock, chooseWick, maxOf, flasksOf, emberOf, ember, UPGRADES, UNLOCKS, purse, takeSpark, setPane, paneSlots, kindle, kindledOf, chooseStartAbility, groundPatterns } from '../../public/lab/gloam-downs/run.js';
+import { makeAbilities, groundAbilities } from '../../public/lab/gloam-downs/abilities.js';
+import { makeKeys, groundSpots } from '../../public/lab/gloam-downs/keys.js';
+import { makeBoss, REEVE } from '../../public/lab/gloam-downs/boss.js';
+import { bossBrain } from './gloam-downs-bossbot.mjs';
 import { PATTERNS } from '../../public/lab/gloam-downs/growth.js';
 import * as RS from '../../public/lab/gloam-downs/run-save.js';
-import { makeFoes, phaseOf } from '../../public/lab/gloam-downs/foes.js';
+import { makeFoes, phaseOf, FOE_HARD } from '../../public/lab/gloam-downs/foes.js';
 import { specialPhase } from '../../public/lab/gloam-downs/elites.js';
 import { sees } from '../../public/lab/gloam-downs/moves.js';
 import { mixZones } from '../../public/lab/gloam-downs/mix.js';
@@ -39,6 +51,10 @@ const BOTS = +(process.argv[2] || 20), SKILL = +(process.argv[3] || 0.5), SEED0 
 const MAXRUNS = +(process.env.MAXRUNS || 40), AFTER = +(process.env.AFTER ?? 5), VERBOSE = !!process.env.VERBOSE;
 const PLACE_LIMIT = 12 * 60 * 60; // 12 minutes of game time in one place is a loss (a bot that cannot get on)
 const SIDE = 24, WALK = 3.0; // a skilled bot's reach off the way for a wisp or a zone (m); the walk speed a nudge is counted at (m/s)
+// the pacing levers, to try a value without editing the game: HARD_DMG, HARD_HP (foes.js FOE_HARD) and REEVE_HARD (boss.js REEVE.hard)
+if (process.env.HARD_DMG) FOE_HARD.dmg = +process.env.HARD_DMG;
+if (process.env.HARD_HP) FOE_HARD.hp = +process.env.HARD_HP;
+if (process.env.REEVE_HARD) REEVE.hard = +process.env.REEVE_HARD;
 const why = { route: 0, foe: 0, wisp: 0, zone: 0 }; // the nudges by kind, and the wisps and zones a skilled bot gave up
 
 const places = {};
@@ -49,23 +65,19 @@ function place(id) {
   const walk = makeWalk(meta.walk, new Int16Array(raw.buffer, raw.byteOffset, raw.byteLength >> 1));
   return (places[id] = { meta, walk });
 }
-// the boss bot's results (add-gloam-downs design.md): wins over tries and the fight's median length, by skill
-const BOSS = [[0.3, 199 / 385, 55.2], [0.5, 200 / 214, 63.0], [0.7, 1, 69.6], [0.9, 1, 77.8]];
-const lerp = (k, i) => { if (k <= BOSS[0][0]) return BOSS[0][i]; for (let j = 1; j < BOSS.length; j++) if (k <= BOSS[j][0]) { const a = BOSS[j - 1], b = BOSS[j], u = (k - a[0]) / (b[0] - a[0]); return a[i] + (b[i] - a[i]) * u; } return BOSS.at(-1)[i]; };
-
-/* what the bot buys in each Lamp-room (before a run and at each lit beacon), in this order: the first affordable of the next of each.
-   gloam-downs-growth (merge pass): a lit beacon no longer banks, so the Lamp-room spends the glim carried first, then the bank (pay in
-   run.js), and the bot shops at the beacons too. It kindles a found pane pattern first (only the panes that work without abilities:
-   Lead and Tallow glass), and sets its panes as Thick, Lead, Tallow glass. It does not buy Belt or Keen eye: with no abilities in the
-   game yet (builder K) they give nearly nothing */
-const WANT = ['up:mantle', 'up:flask', 'un:kflask', 'up:edge', 'up:draught', 'un:shelf', 'un:rising', 'up:ash', 'un:tongue', 'un:heart', 'un:last', 'un:parry', 'up:first', 'up:panes'];
-const KINDLE = ['lead', 'tallow'], PANE_ORDER = ['thick', 'lead', 'tallow'];
+/* what the bot buys in each Lamp-room (before a run and at each lit beacon), in this order: the first affordable of the next of each. A
+   lit beacon does not bank, so the Lamp-room spends the glim carried first, then the bank (pay in run.js). Found patterns come first */
+const WANT = ['up:mantle', 'up:flask', 'un:kflask', 'up:edge', 'up:draught', 'up:belt', 'un:shelf', 'up:ash', 'up:keen', 'un:rising', 'un:tongue', 'un:heart', 'un:last', 'un:parry', 'up:first', 'up:panes'];
+const PANE_ORDER = ['smoked', 'thick', 'lead', 'hot', 'tallow', 'storm', 'ember', 'clear'];
+// Belt's start ability, and the abilities it uses on a wind-up, in place of a roll, and to attack
+const START_ORDER = ['bomb', 'moth', 'pitch', 'flare', 'crook', 'snare', 'rime', 'guard', 'step'];
+const DODGE = ['step', 'guard'], READ = ['flare', 'rime'], HIT = ['bomb', 'moth', 'pitch', 'snare', 'crook'];
 // the whole catalogue, in glim: every ware level, every unlock and every pattern
 const CATALOGUE = UPGRADES.reduce((a, u) => a + u.costs.reduce((x, c) => x + c, 0), 0) + UNLOCKS.reduce((a, u) => a + u.cost, 0) + PATTERNS.reduce((a, p) => a + (p.cost | 0), 0);
 const spentOf = rs => UPGRADES.reduce((a, u) => a + u.costs.slice(0, rs.up[u.id] || 0).reduce((x, c) => x + c, 0), 0) +
   UNLOCKS.filter(u => (rs.unlocks || []).includes(u.id)).reduce((a, u) => a + u.cost, 0) + PATTERNS.filter(p => (rs.kindled || []).includes(p.id)).reduce((a, p) => a + (p.cost | 0), 0);
 function shop(rs) {
-  for (const id of KINDLE) if ((rs.patterns || []).includes(id)) kindle(rs, id);
+  for (const p of PATTERNS.filter(p => (rs.patterns || []).includes(p.id)).sort((a, b) => a.cost - b.cost)) kindle(rs, p.id);
   for (let guard = 0; guard < 40; guard++) {
     const opts = WANT.map(w => {
       const [k, id] = w.split(':');
@@ -79,8 +91,13 @@ function shop(rs) {
   const have = PANE_ORDER.filter(id => kindledOf(rs, 'pane').includes(id));
   for (let i = 0; i < paneSlots(rs); i++) if ((rs.panes || [])[i] !== have[i]) setPane(rs, i, have[i] || null);
 }
-// the spark picks: Ward while the health share was under 50% at the last beacon, else Flame
-function sparks(rs, share) { while ((rs.run?.sparkPicks | 0) > 0) if (!takeSpark(rs, share < 0.5 ? 'ward' : 'flame')) break; }
+// the spark picks: Ward while the health share was under 50% at the last beacon, Gloam once both slots hold an ability, else Flame
+function sparks(rs, share) {
+  while ((rs.run?.sparkPicks | 0) > 0) {
+    const both = (rs.run.abilities || []).every(Boolean);
+    if (!takeSpark(rs, share < 0.5 ? 'ward' : both ? 'gloam' : 'flame')) break;
+  }
+}
 // the wick the bot takes from an offer
 const WICK_RANK = ['keen', 'long', 'oil', 'heels', 'tongue', 'last', 'heavy', 'heart', 'shave'];
 const pickWick = offer => offer.slice().sort((a, b) => WICK_RANK.indexOf(a) - WICK_RANK.indexOf(b))[0];
@@ -93,10 +110,20 @@ function playPlace(rs, id, bot) {
   const zones = mixZones(id, meta.zones, POOLS[id], rs.run.seed, { ember: rs.run.ember ?? 0 });
   const combo = makeCombo({ emit: null, best: rs.run.combo ?? 0 });
   const F = makeFoes({ walk, meta: { ...meta, zones }, slots: POOLS[id], seed: rs.run.seed, combo });
-  const R = makeRunner({ walk, meta, body, rs, targets: F.targets, lightable: F.lightable, drop: F.drop, think: F.think, onLight: F.bank });
+  // Barrow Crown: the Reeve in its arena, stepped by boss.js on the same runner (as the page's fight does)
+  const arena = zones.find(z => z.boss), EMB = ember(emberOf(rs.run));
+  const B = arena ? makeBoss({ walk, arena, seed: rs.run.seed, bounds: meta.bounds, down: !!rs.run.bossDown, hpScale: EMB.bossHp, phase3: EMB.phase3 }) : null;
+  if (B) B.ready = true;
+  const targets = B ? () => (B.alive ? [...F.targets(), B] : F.targets()) : F.targets;
+  const think = B ? (ev, play) => { F.think(ev, play); B.think(ev, play); if (ev.some(e => e.type === 'boss' && (e.what === 'intro' || e.what === 'fall'))) F.hush(); } : F.think;
+  const R = makeRunner({ walk, meta, body, rs, targets, lightable: B ? B.lightable : F.lightable, drop: F.drop, think, onLight: F.bank, abilities: makeAbilities, keys: makeKeys });
   F.bind(R);
-  const s = body.s, route = ROUTES[id].map(p => p.slice()), boss = id === 'barrows';
-  const arenaAt = boss ? route.findIndex(p => Math.hypot(p[0] - 18, p[2] + 22) < 1) : -1;
+  B?.bind(R);
+  const brain = B ? bossBrain({ B, R, rs, body, skill: k, rnd, C: arena.c }) : null;
+  const s = body.s, route = ROUTES[id].map(p => p.slice());
+  // the spots of this place: a cache its keys open, given up after two tries; a spot under way: { sp, t, tries }
+  const spotsDone = new Set();
+  let spotRun = null;
   let wi = 1, t0 = rs.run.time, best = Infinity, bestAt = 0, nudges = 0, steps = 0, out = null, dark = null, lastHit = 0;
   const read = new Map(); // a wind-up read: its foe and start step -> { at, miss }
   const wisps = new Set(), seen = new Set(); // wisps taken or given up; zones woken or given up
@@ -104,6 +131,13 @@ function playPlace(rs, id, bot) {
     // a relic on the ground, the keepers when the beacon is dark, a wisp near the way (skill 0.8 and up), or the route's next point
     const g = R.relics.view().ground[0];
     if (g) return [g.x, g.y, g.z];
+    // a pattern lamp or an ability lamp within 12 m (an ability lamp only while a slot is empty)
+    const lamps = [...groundPatterns(R), ...(R.rs.run.abilities || []).some(a => !a) ? groundAbilities(R) : []];
+    goalLamp = null;
+    for (const l of lamps) if (Math.hypot(l.x - s.x, l.z - s.z) < 12 && !giveUp.has(`${l.id}:${l.x}`)) { goalLamp = l; return (goalAt = [l.x, l.y, l.z]); }
+    // a cache its keys open, within 16 m: the start of its way
+    const sp = spotNear();
+    if (sp) return sp.from;
     if (dark && !F.lightable().ok) return dark;
     if (k >= 0.8) {
       // a skilled player takes every wisp and fights every zone: the nearest one left within 24 m of here, else the way on
@@ -122,6 +156,9 @@ function playPlace(rs, id, bot) {
     }
     return route[Math.min(wi, route.length - 1)];
   };
+  const giveUp = new Set(), passed = new Set();
+  let goalLamp = null, goalAt = null;
+  const spotNear = () => groundSpots(R).find(sp => sp.open && !spotsDone.has(sp.id) && Math.hypot(sp.from[0] - s.x, sp.from[2] - s.z) < 16);
   const toward = (p, slow = false) => { const dx = p[0] - s.x, dz = p[2] - s.z, d = Math.hypot(dx, dz) || 1; return { mx: dx / d, mz: -dz / d, slow }; };
   // the wind-ups that threaten the lamplighter now: { f, left (steps to the hit), from (where to roll away from) }
   function threats() {
@@ -146,13 +183,33 @@ function playPlace(rs, id, bot) {
     }
     return list;
   }
+  // the ability slots: which holds an ability of a kind, and is ready
+  const slotOf = kinds => { const v = R.abilities.view(); for (let i = 0; i < 2; i++) if (v[i] && kinds.includes(v[i].id) && v[i].left <= 0) return i; return -1; };
+  const press = (a, i) => ({ ...a, [i ? 'ab2' : 'ab1']: true });
+  let usedAb = 0;
   function act() {
+    const a = act0();
+    if (!rs.run) return a;
+    // in place of a roll, 4 times in 10: Smoke step or Bell guard
+    if (a.roll) { const i = slotOf(DODGE); if (i >= 0 && rnd() < 0.4) { usedAb++; return press({ ...a, roll: false }, i); } }
+    // a wind-up read near it: Flare or Rime lamp
+    if (a.read) { const i = slotOf(READ); if (i >= 0) { usedAb++; return press(a, i); } }
+    // 2 or more foes near, or an elite awake: an attack ability
+    if (a.fight) {
+      const near = F.targets().filter(t => t.aware && Math.hypot(t.x - s.x, t.z - s.z) < 6).length, elite = R.elite && !R.eliteDown && R.elite.aware;
+      const i = slotOf(HIT);
+      if (i >= 0 && (near >= 2 || elite) && steps % 6 === 0) { usedAb++; return press(a, i); }
+    }
+    return a;
+  }
+  function act0() {
     const run = rs.run, hp = run.hp / maxOf(rs), live = F.targets();
     // a wind-up read in time: roll away about 9 steps before the hit
     for (const t of threats()) {
       let r = read.get(t.key);
       if (!r) { r = { at: Math.round((0.7 - 0.45 * k + (rnd() - 0.5) * 0.2) * 60), miss: rnd() < 0.45 * Math.pow(1 - k, 1.3) }; read.set(t.key, r); }
       if (r.miss || t.at < r.at) continue;
+      if (t.left <= 22 && t.left > 10 && Math.hypot(t.f.x - s.x, t.f.z - s.z) < 4) return { read: true };
       if (t.left <= 10 || (t.f.special?.def.kind === 'coals' || t.f.move === 'lob')) {
         const dx = s.x - t.from[0], dz = s.z - t.from[1], d = Math.hypot(dx, dz) || 1;
         const side = t.f.move === 'charge' || t.f.special?.def.kind === 'bent';
@@ -167,9 +224,11 @@ function playPlace(rs, id, bot) {
     // the nearest foe in the fight
     let foe = null, fd = 9;
     // a foe that sees the lamplighter (a sleeping zone's foe on its ledge is left alone), or one within 3 m
-    for (const t of live) { const d = Math.hypot(t.x - s.x, t.z - s.z); if (d < fd && Math.abs(t.y - s.y) < 2.5 && (t.aware || d < 3)) { foe = t; fd = d; } }
+    for (const t of live) { const d = Math.hypot(t.x - s.x, t.z - s.z); if (d < fd && Math.abs(t.y - s.y) < 2.5 && (t.aware || d < 3) && (!passed.has(t) || d < 2)) { foe = t; fd = d; } }
     if (foe) {
-      // a foe the bot cannot reach (over deep water, on a ledge) for 8 s: it is put beside it, as a nudge
+      /* a foe the bot cannot reach (over deep water, on a ledge) for 8 s: a guard's foe or the elite, which the bot must put out, is
+         reached by a nudge; any other the bot leaves, as a player walks on past a foe it cannot reach (it still fights it within 2 m) */
+      if (steps - lastHit > 480 && !foe.zone.guard && !foe.elite) { lastHit = steps; passed.add(foe); why.passed = (why.passed || 0) + 1; return toward(goalOf()); }
       if (steps - lastHit > 480) {
         lastHit = steps;
         const dx = s.x - foe.x, dz = s.z - foe.z, l = Math.hypot(dx, dz) || 1;
@@ -184,15 +243,52 @@ function playPlace(rs, id, bot) {
       // in reach: Attack on every other step, and turn to face the foe first (a swing at the air never lands)
       const off = Math.abs(Math.atan2(Math.sin(Math.atan2(foe.x - s.x, foe.z - s.z) - s.yaw), Math.cos(Math.atan2(foe.x - s.x, foe.z - s.z) - s.yaw)));
       if (off > 0.5 || fd - foe.r > 1.0) return toward([foe.x, foe.y, foe.z], true);
-      return { attack: steps % 2 === 0, ...toward([foe.x, foe.y, foe.z]), mx: 0, mz: 0 };
+      return { attack: steps % 2 === 0, ...toward([foe.x, foe.y, foe.z]), mx: 0, mz: 0, fight: true };
     }
     const g = goalOf();
     return toward(g);
   }
-  let boss0 = false, jumped = false, jumpTo = 0;
+  let jumped = false, jumpTo = 0, fought = false;
+  const arenaD = () => (arena ? Math.hypot(arena.c[0] - s.x, arena.c[2] - s.z) : Infinity);
+  // a cache's way, played as the ledge scan played it: from a stand at `from`, run for way.run s, jump, and (a ledge) jump again
+  // way.leapAt s after the take-off, or (a stone) Attack way.plungeAt s after it
+  function spotAct() {
+    const S = spotRun, sp = S.sp, w = sp.way, t = (S.t++) / 60;
+    const dx = sp.at[0] - s.x, dz = sp.at[2] - s.z, d = Math.hypot(dx, dz) || 1, over = d < (sp.kind === 'ledge' ? 0.5 : 0.4);
+    if (S.t < 12) return {}; // stand still first, as the scan did
+    const tt = t - 0.2, a = over ? {} : { mx: dx / d, mz: -dz / d };
+    if (tt >= w.run) {
+      const j = tt - w.run;
+      a.jump = j < w.hold;
+      if (sp.kind === 'ledge' && j >= w.leapAt && j < w.leapAt + 0.3) a.jump = j >= w.leapAt + 1 / 60;
+      if (sp.kind === 'stone' && j >= w.plungeAt && !s.ground) a.attack = true;
+    }
+    if (tt > w.run + 2.5 || (tt > w.run + 0.3 && s.ground && !R.fighter.f.move)) {
+      const done = (rs.run.caches || []).includes(sp.id);
+      if (done || ++S.tries >= 2) { spotsDone.add(sp.id); spotRun = null; if (done) bot.caches++; }
+      else { S.t = 0; S.walk = true; }
+    }
+    return a;
+  }
   while (rs.run && steps < PLACE_LIMIT) {
-    const a = act();
+    let a;
+    // the Reeve: from its intro to its fall, the boss bot's mind plays (with the abilities, as act() adds them)
+    if (B && B.up && (B.started || arenaD() < 11) && !R.dead) {
+      if (!fought) { fought = true; bot.arrive.push({ h: rs.run.hp / maxOf(rs), flasks: rs.run.flasks }); bot.bossAt = rs.run.time; }
+      a = brain.act();
+      if (a.roll) { const i = slotOf(DODGE); if (i >= 0 && rnd() < 0.4) a = press({ ...a, roll: false }, i); }
+      if (a.attack && B.alive) { const i = slotOf(HIT); if (i >= 0 && steps % 6 === 0) { usedAb++; a = press(a, i); } }
+    } else if (spotRun && !spotRun.walk) a = spotAct();
+    else {
+      a = act();
+      // at a cache's stand with no foe near: its way starts
+      const sp = spotNear();
+      if (spotRun?.walk && Math.hypot(spotRun.sp.from[0] - s.x, spotRun.sp.from[2] - s.z) < 0.35) spotRun.walk = false;
+      else if (!spotRun && sp && Math.hypot(sp.from[0] - s.x, sp.from[2] - s.z) < 0.35 && !F.targets().some(t => t.aware && Math.hypot(t.x - s.x, t.z - s.z) < 9)) spotRun = { sp, t: 0, tries: 0 };
+      if (spotRun?.walk) a = { ...toward(spotRun.sp.from), slow: true };
+    }
     steps++;
+    if (B && fought && !B.up && bot.bossAt != null) { bot.bossFights.push(rs.run.time - bot.bossAt); bot.bossAt = null; }
     if (jumpTo > 0) { jumpTo--; a.jump = jumpTo % 20 < 10; }
     for (const e of R.step(a, 0)) {
       if (e.type === 'dark') dark = e.at;
@@ -211,14 +307,16 @@ function playPlace(rs, id, bot) {
     if (Math.hypot(p[0] - s.x, p[2] - s.z) < 1.2 && wi < route.length - 1) { wi++; best = Infinity; }
     const g = goalOf(), d = Math.hypot(g[0] - s.x, g[2] - s.z);
     for (let i = 0; i < meta.wisps.length; i++) if (!R.wisps.has(i) && Math.hypot(meta.wisps[i].p[0] - s.x, meta.wisps[i].p[2] - s.z) < 1.2) wisps.add(i);
-    const fighting = F.targets().some(t => t.aware && Math.hypot(t.x - s.x, t.z - s.z) < 9 && Math.abs(t.y - s.y) < 2.5);
-    if (d < best - 0.3 || fighting) { best = Math.min(best, d); bestAt = steps; }
+    const fighting = F.targets().some(t => t.aware && !passed.has(t) && Math.hypot(t.x - s.x, t.z - s.z) < 9 && Math.abs(t.y - s.y) < 2.5);
+    if (d < best - 0.3 || fighting || (B && fought && B.up) || (spotRun && !spotRun.walk)) { best = Math.min(best, d); bestAt = steps; }
     else if (steps - bestAt > 120 && !jumped) { jumped = true; jumpTo = 60; }
     else if (steps - bestAt > 240) {
       // stuck for 4 s, a jump tried: a skilled bot gives up a wisp or a zone off the way; else it is put at its point, and the time
       // a walk there takes at the walk speed is counted, with 3 s more
-      const zone = F.zones.find(Z => Z.c === g), wisp = meta.wisps.findIndex(w => w.p === g);
-      if (zone) { seen.add(zone.id); why.zone++; }
+      const zone = F.zones.find(Z => Z.c === g), wisp = meta.wisps.findIndex(w => w.p === g), spot = groundSpots(R).find(sp => sp.from === g);
+      if (goalLamp && g === goalAt) { giveUp.add(`${goalLamp.id}:${goalLamp.x}`); why.lamp = (why.lamp || 0) + 1; }
+      else if (spot) { spotsDone.add(spot.id); why.spot = (why.spot || 0) + 1; }
+      else if (zone) { seen.add(zone.id); why.zone++; }
       else if (wisp >= 0) { wisps.add(wisp); why.wisp++; }
       else {
         const far = Math.hypot(g[0] - s.x, g[2] - s.z);
@@ -230,34 +328,25 @@ function playPlace(rs, id, bot) {
       }
       best = Infinity; bestAt = steps; jumped = false;
     }
-    // Barrow Crown: at the arena the boss fight, from the boss bot's results
-    if (boss && !boss0 && wi > arenaAt) {
-      boss0 = true;
-      const h = rs.run.hp / maxOf(rs);
-      bot.arrive.push({ h, flasks: rs.run.flasks });
-      const pWin = lerp(k, 1) * (0.55 + 0.45 * h), len = lerp(k, 2) * (0.9 + rnd() * 0.25);
-      rs.run.time += len;
-      bot.bossFights.push(len);
-      if (rnd() > pWin) { out = { type: 'dead' }; R.kill([]); break; }
-      rs.run.bossDown = true;
-      rs.run.carried += Math.floor(BASE.boss * glimFactor(emberOf(rs.run)));
-      rs.run.foes += 1;
-    }
   }
   if (!out && rs.run) { if (VERBOSE) console.log('stuck', id, JSON.stringify({ at: [s.x, s.y, s.z].map(v => +v.toFixed(1)), wi, dark, light: F.lightable(), live: F.targets().map(t => [t.id, t.state, +t.x.toFixed(1), +t.y.toFixed(1), +t.z.toFixed(1), t.hp, sees(walk, s, t), walk.support(t.x, t.z, t.y + 1), t.cool, t.aware]), act: act(), hp: rs.run.hp, fl: rs.run.flasks, ground: s.ground, th: threats().map(t => [t.key, t.left, t.at]), melee: [...F.melee].map(g => g.id), tgt: R.fighter.f.target?.id, move: R.fighter.f.move, ground: R.relics.view().ground })); R.kill([]); out = { type: 'dead', stuck: true }; }
   combo.end();
+  bot.abilities += usedAb;
   return { out, time: (rs.run?.time ?? rs.ended?.time ?? 0) - t0, nudges, elite: R.eliteDown || false, share: rs.run ? rs.run.hp / maxOf(rs) : 0 };
 }
 
 /* ---------------- one bot ---------------- */
 function playBot(b) {
   const rs = RS.fresh();
-  const bot = { skill: SKILL, rnd: mulberry(hash2(b, 0xb07, 7)), bossFights: [], arrive: [], hurt: 0 };
+  const bot = { skill: SKILL, rnd: mulberry(hash2(b, 0xb07, 7)), bossFights: [], arrive: [], hurt: 0, caches: 0, abilities: 0, bossAt: null };
   const runs = [];
   for (let r = 0; r < MAXRUNS; r++) {
     shop(rs);
     startRun(rs, hash2(b, r, 0x5eed) || 1);
     if (rs.run.offer) chooseWick(rs, pickWick(rs.run.offer));
+    if (rs.run.abilityOffer) chooseStartAbility(rs, rs.run.abilityOffer.slice().sort((a, b) => START_ORDER.indexOf(a) - START_ORDER.indexOf(b))[0]);
+    // NOAB=1: a run with no abilities (to see what they add)
+    if (process.env.NOAB) { rs.run.abilities = [null, null]; rs.run.abilityOffer = null; }
     sparks(rs, 1);
     const per = {};
     let nudges = 0;
@@ -280,7 +369,7 @@ function playBot(b) {
     if (e.won && bot.firstWin == null) bot.firstWin = r + 1;
     if (bot.firstWin != null && r + 1 >= bot.firstWin + AFTER) break;
   }
-  return { runs, firstWin: bot.firstWin ?? null, boss: bot.bossFights, arrive: bot.arrive, hurt: bot.hurt };
+  return { runs, firstWin: bot.firstWin ?? null, boss: bot.bossFights, arrive: bot.arrive, hurt: bot.hurt, caches: bot.caches, abilities: bot.abilities, keys: (rs.keys || []).slice() };
 }
 
 const t0 = Date.now(), bots = [];
@@ -291,17 +380,22 @@ const wins = bots.map(x => x.firstWin).filter(Boolean);
 const winTimes = bots.filter(x => x.firstWin).map(x => x.runs[x.firstWin - 1].time);
 const reached = {};
 for (const x of bots) for (const r of x.runs) reached[r.place] = (reached[r.place] || 0) + 1;
-console.log(`${BOTS} bots, skill ${SKILL}, ${((Date.now() - t0) / 1000).toFixed(0)} s`);
+console.log(`${BOTS} bots, skill ${SKILL}, ${((Date.now() - t0) / 1000).toFixed(0)} s; foes deal ×${FOE_HARD.dmg} with ×${FOE_HARD.hp} health, the Reeve ×${REEVE.hard}`);
 console.log(`first run reaches The Crow Wall: ${firstReach} of ${BOTS} (${Math.round((100 * firstReach) / BOTS)}%)`);
 // the run at which each quarter of the catalogue is bought (the median of the bots that got there)
 const quarter = q => { const v = bots.map(x => x.runs.findIndex(r => r.spent >= q * CATALOGUE)).filter(i => i >= 0).map(i => i + 1); return `${med(v) ?? '-'} (${v.length} of ${BOTS})`; };
 console.log(`catalogue ${CATALOGUE} glim; bought 25% by run ${quarter(0.25)}, 50% ${quarter(0.5)}, 75% ${quarter(0.75)}, 100% ${quarter(1)}`);
 const allRuns = bots.flatMap(x => x.runs), deaths = allRuns.filter(r => !r.won);
+// the runs in which the bot bought something (a ware, an unlock or a pattern): the spend went up from the run before
+const buys = bots.reduce((a, x) => a + x.runs.filter((r, i) => r.spent > (i ? x.runs[i - 1].spent : 0)).length, 0);
+console.log(`runs with a buy: ${buys} of ${allRuns.length}`);
 console.log(`glim at a death (mean): kept ${(deaths.reduce((a, r) => a + (r.kept | 0), 0) / (deaths.length || 1)).toFixed(0)}, lost ${(deaths.reduce((a, r) => a + (r.lost | 0), 0) / (deaths.length || 1)).toFixed(0)}`);
 const winsAll = allRuns.filter(r => r.won).length;
 console.log(`runs played ${allRuns.length}, won ${winsAll}`);
 console.log(`won within ${MAXRUNS} runs: ${wins.length} of ${BOTS}; median first-win run ${med(wins) ?? '-'} (of those that won)`);
-console.log(`winning run: median ${med(winTimes) ?? '-'} min of game time; boss fight (from the boss bot) median ${(med(bots.flatMap(x => x.boss)) ?? 0).toFixed(1)} s`);
+console.log(`winning run: median ${med(winTimes) ?? '-'} min of game time; the Reeve's fight (stepped) median ${(med(bots.flatMap(x => x.boss)) ?? 0).toFixed(1)} s`);
+const nRuns = bots.flatMap(x => x.runs).length;
+console.log(`abilities used a run (mean) ${(bots.reduce((a, x) => a + x.abilities, 0) / nRuns).toFixed(1)}; caches opened a run (mean) ${(bots.reduce((a, x) => a + x.caches, 0) / nRuns).toFixed(2)}; bots with Crow step ${bots.filter(x => x.keys.includes('leap')).length}, with Bell drop ${bots.filter(x => x.keys.includes('drop')).length}`);
 console.log(`runs ended in: ${Object.entries(reached).map(([p, n]) => `${p} ${n}`).join(', ')}`);
 const per = {};
 for (const x of bots) for (const r of x.runs) for (const [p, t] of Object.entries(r.per)) (per[p] ||= []).push(t);

@@ -198,7 +198,7 @@ try {
     await page.keyboard.press('Enter');
     assert.deepEqual((await run(page)).sparks, { flame: 1, ward: 0, gloam: 0 });
     assert.equal(await active(page), 'bWalkOn', 'after the choices Walk on has the focus');
-    assert.match(await text(page, '#beaconBank'), /You carry 44 glim, and 0 is banked\. Spend it in the Lamp-room, or carry it on: a death keeps only 10%\./);
+    assert.match(await text(page, '#beaconBank'), /You carry 44 glim, and 0 is banked\. Spend it in the Lamp-room, or carry it on: a death would keep only 4 of it \(10%\) and lose 40\./);
     assert.equal((await stored(page)).run.wicks.length, 1, 'the wick is stored at once');
     // Spend glim opens the Lamp-room with Back to the beacon alone; Escape goes back with the focus on Walk on
     await page.keyboard.press('Shift+Tab');
@@ -288,7 +288,8 @@ try {
     assert.deepEqual(r.ended, ended, 'a reload in the fade shows the same figures');
     assert.equal(r.place, 'gaol');
     const sum = await page.$$eval('#summary dd', ds => ds.map(d => d.textContent));
-    assert.deepEqual([sum[0], sum[3], sum[4], sum[5]], ['II · The Crow Wall', 'kept 2 · lost 18', '2 glim', 'kept 0 · lost 0']);
+    // the glim banked is the glim kept, so it is said once
+    assert.deepEqual([sum[0], sum[3], sum[4], sum.length], ['II · The Crow Wall', 'kept 2 · lost 18', 'kept 0 · lost 0', 5]);
     assert.equal(await text(page, '#sumT'), 'The lamp goes out');
     assert.equal(await active(page), 'bSumLamp');
     assert.deepEqual(await faults(page, 'summary'), []);
@@ -343,7 +344,7 @@ try {
     await tick(page, 0.02, {});
     assert.equal((await run(page)).mode, 'ended');
     const ash = await page.$$eval('#summary dd', ds => ds.map(d => d.textContent));
-    assert.deepEqual([ash[0], ash[3], ash[4]], ['I · The Sunken Gaol', 'kept 3 · lost 17', '3 glim']);
+    assert.deepEqual([ash[0], ash[3], ash[4]], ['I · The Sunken Gaol', 'kept 3 · lost 17', 'kept 0 · lost 0']);
     assert.equal((await stored(page)).bank, 12);
     pass('a death with Ash pocket 1 keeps 3 of 20 (18%); the summary comes after 72 steps of game time');
     assert.deepEqual(errors, []);

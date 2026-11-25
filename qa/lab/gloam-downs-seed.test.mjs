@@ -9,7 +9,7 @@
 //   the same seed gives the same mix, elites, route and offers; the seed's code of six letters and ?seed= for a code or a number.
 // Run: node qa/lab/gloam-downs-seed.test.mjs
 import assert from 'node:assert/strict';
-import { mixZones, eliteZone, routeOf, mixWave, seedCode, parseSeed, smallSeed, NEWEST, ELITE, MIX } from '../../public/lab/gloam-downs/mix.js';
+import { withExtra, EXTRA, mixZones, eliteZone, routeOf, mixWave, seedCode, parseSeed, smallSeed, NEWEST, ELITE, MIX } from '../../public/lab/gloam-downs/mix.js';
 import { fits, foesOf, poolCounts, RULES } from '../../public/lab/gloam-downs/foes.js';
 import { drawOffer, stream } from '../../public/lab/gloam-downs/run.js';
 import { ORDER } from '../../public/lab/gloam-downs/save.js';
@@ -40,7 +40,8 @@ const mixOf = (id, seed, ember = 0) => mixZones(id, ZONES[id], POOLS[id], seed, 
 { // every seed fits: seeds 1 to 200, five places, Ember 0 and 3
   const stats = {};
   for (const ember of [0, 3]) for (const id of PLACES) {
-    const pool = poolCounts(POOLS[id]), base = ZONES[id];
+    // the baked zones and the page zones after them (mix.js EXTRA)
+    const pool = poolCounts(POOLS[id]), base = withExtra(id, ZONES[id]);
     let changed = 0, kept = 0, elites = 0;
     for (let seed = 1; seed <= 200; seed++) {
       const zs = mixOf(id, seed, ember);
@@ -141,10 +142,11 @@ const mixOf = (id, seed, ember = 0) => mixZones(id, ZONES[id], POOLS[id], seed, 
     b.forEach((z, i) => {
       if ((id === 'gaol' && i === 0) || z.guard || z.boss) return;
       total++;
-      if (foesOf(z).length >= ZONES[id][i].foes.length + 1) more++;
+      if (foesOf(z).length >= withExtra(id, ZONES[id])[i].foes.length + 1) more++;
     });
   }
-  assert(more / total > 0.4, `one foe more in ${more} of ${total} zones`);
+  // with the page zones (mix.js EXTRA) more zones share each pool, so fewer have room for the foe more (28% at the merge, 40% before)
+  assert(more / total > 0.25, `one foe more in ${more} of ${total} zones`);
   pass('Ember 3 adds one foe to the zones that may change where the pool and the cap allow', { more, total });
 }
 

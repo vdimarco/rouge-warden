@@ -43,7 +43,7 @@ function cleanGrown(r, s, place) {
   const kindled = kindledOf(s), abilities = kindledOf(s, 'ability');
   const g = {
     sparks: cleanSparks(r.sparks), sparkPicks: intIn(r.sparkPicks, 0, 9, 0), carriedPatterns: carriable(r.carriedPatterns, s.patterns, kindled),
-    caches: spotIds(r.caches), patternRolls: count(r.patternRolls, 1e6), foePatterns: intIn(r.foePatterns, 0, DROPS.patternMax, 0), abilityDrops: intIn(r.abilityDrops, 0, DROPS.abilityMax, 0),
+    caches: spotIds(r.caches), patternRolls: count(r.patternRolls, 1e6), abilityRolls: count(r.abilityRolls, 1e6), foePatterns: intIn(r.foePatterns, 0, DROPS.patternMax, 0), abilityDrops: intIn(r.abilityDrops, 0, DROPS.abilityMax, 0),
     abilityLamps: cleanLamps(r.abilityLamps, abilities, 6, true).filter(l => !place || l.place === place),
     groundPatterns: cleanLamps(r.groundPatterns, PATTERN_IDS, 6)
   };
@@ -88,7 +88,7 @@ function cleanRun(r, s) {
 function cleanEnded(e, top) {
   if (!obj(e) || !ORDER.includes(e.place)) return null;
   return {
-    won: e.won === true, place: e.place, time: secs(e.time), foes: count(e.foes, 1e5), kept: count(e.kept), lost: count(e.lost), banked: count(e.banked),
+    won: e.won === true, place: e.place, time: secs(e.time), foes: count(e.foes, 1e5), kept: Number.isFinite(e.kept) ? count(e.kept) : null, lost: count(e.lost), banked: count(e.banked),
     ember: intIn(e.ember, 0, EMBER_TOP, 0), relics: ids(e.relics, RELIC_IDS, RELIC_MAX), combo: count(e.combo, 1e5),
     seed: Number.isInteger(e.seed) && e.seed > 0 && e.seed < 2 ** 32 ? e.seed : null,
     opened: Number.isInteger(e.opened) && e.opened >= 1 && e.opened <= Math.min(top, EMBER_TOP) ? e.opened : null,

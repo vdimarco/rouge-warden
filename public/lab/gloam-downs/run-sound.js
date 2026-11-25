@@ -154,7 +154,17 @@ export function makeRunSound({ log, rs, phone = false, step = () => 0, ear = () 
     'run-death': () => { A.setFight({ awake: false }); A.sting('death'); },
     'run-win': () => A.sting('win'),
     'lamp-room': d => A.setScene('lamp', { wait: d.wait || 0 }),
-    'combo-tier': () => {}
+    'combo-tier': () => {},
+    // growth (gloam-downs-growth design.md "Sound and music"): cues that exist, so sound.js needs no recipe. The runner logs the touch's
+    // own cue (wisp) and each ability's cue with `ability: <id>`; these add the rest
+    'pattern-found': () => A.cue('glim', { pattern: true }),
+    'pattern-kept': () => A.cue('buy', { pattern: true }),
+    'pattern-kindled': () => A.cue('buy', { kindled: true }),
+    'key-found': () => A.cue('light', { key: true }),
+    'ability-use': () => {},
+    'ability-ready': d => A.cue('focus', { ready: d.slot ?? 0 }),
+    'spark-take': () => A.cue('choice', { spark: true }),
+    'cache-open': () => A.cue('glim', { cache: true })
   };
   const offs = EVENTS.map(name => on(name, d => { A.heardEvents.push(name); if (A.heardEvents.length > 32) A.heardEvents.shift(); HANDLERS[name]?.(d || {}); }));
   // stop listening (a test that makes more than one run sound)

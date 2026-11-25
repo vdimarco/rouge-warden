@@ -10,7 +10,9 @@
 //   - every point that can be reached: never more than 6 awake;
 //   - the Ironback walls: a floor (the one under any gap, so not the top of an overhang) 2 m or more higher 0.5 m on, within 3 m past
 //     the leash of each zone with an Ironback;
-//   - the distances: each guard zone to its beacon, and no other zone within 25 m of the arena.
+//   - the distances: each guard zone to its beacon, and no other zone within 25 m of the arena;
+//   - the page zones (mix.js EXTRA, gloam-downs-growth): each centre on the floor and in reach, 8 m or more from every baked zone and the
+//     beacon (7 m in The Fen and Barrow Crown) and 7 m from the start, 25 m from the arena, each foe type in the pool.
 // Run alone: node qa/lab/gloam-downs-zones.mjs   (prints a report; exits with 1 on a failure)
 import fs from 'node:fs';
 import zlib from 'node:zlib';
@@ -18,6 +20,7 @@ import { fileURLToPath } from 'node:url';
 import { makeWalk, reachable } from '../../public/lab/gloam-downs/play.js';
 import { ZONES, POOLS, ROUTES, zoneJson, poolTypes } from '../../games/gloam-downs/lib/zones.mjs';
 import { freeSlots, fits, makeRoom } from '../../public/lab/gloam-downs/foes.js';
+import { EXTRA } from '../../public/lab/gloam-downs/mix.js';
 
 export const DIR = fileURLToPath(new URL('../../public/lab/gloam-downs/worlds/', import.meta.url));
 export const PLACES = ['gaol', 'ramparts', 'fen', 'bells', 'barrows'];
@@ -181,6 +184,16 @@ export function survey(dir = DIR) {
     for (const g of zones.filter(q => q.guard)) {
       const d = Math.hypot(meta.beacon.p[0] - g.c[0], meta.beacon.p[2] - g.c[2]);
       out.push({ ok: true, what: `${id} ${g.id}: ${d.toFixed(1)} m from the beacon`, d, zone: g.id, place: id });
+    }
+    const lim = id === 'fen' || id === 'barrows' ? 7 : 8;
+    for (const x of EXTRA[id] || []) {
+      const y = floorAt(walk, x.c[0], x.c[2]), sup = walk.support(x.c[0], x.c[2], x.c[1] + 0.5);
+      ok(sup !== null && Math.abs(sup - x.c[1]) <= 0.3 && R.near([x.c[0], sup + 0.5, x.c[2]], 0.8), `${id} ${x.id} (a page zone): its centre is on the floor (${(sup ?? y)?.toFixed(2)}) and can be reached`);
+      const near = [...zones.filter(z => !z.boss).map(z => [z.id, z.c, lim]), ['the beacon', meta.beacon.p, lim], ['the start', meta.spawn.p, 7]].filter(([, c, m]) => Math.hypot(c[0] - x.c[0], c[2] - x.c[2]) < m);
+      ok(!near.length, `${id} ${x.id} (a page zone): ${lim} m or more from the baked zones and the beacon, and 7 m from the start${near.length ? ` (not: ${near.map(n => n[0]).join(' ')})` : ''}`);
+      const ar = zones.find(z => z.boss);
+      if (ar) ok(dist(ar, x.c[0], x.c[2]) >= RULE.arenaClear, `${id} ${x.id} (a page zone): ${RULE.arenaClear} m or more from the arena`);
+      ok(foesOf(x).every(t => (pool[t] || 0) > 0), `${id} ${x.id} (a page zone): its foes ${x.foes} are in the pool`);
     }
     const arena = zones.find(z => z.boss);
     if (arena) {

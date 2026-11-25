@@ -3,7 +3,7 @@
 // the runner that steps one place of a run. No DOM, so Node tests and the bot use it as it is.
 import { ORDER } from './save.js';
 import { touches, atBeacon } from './play.js';
-import { makeFighter, MOVES, BUILD, dealt } from './moves.js';
+import { makeFighter, MOVES, BUILD, dealt, clearLine } from './moves.js';
 import { makeRelics, drawRelic } from './relics.js';
 import { emit } from './bus.js';
 import { mulberry, hash2 } from '../kit/rng.js';
@@ -241,6 +241,11 @@ export function kindle(rs, id) {
   emit('pattern-kindled', { id });
   return true;
 }
+// the pattern lamps on the ground of the place become carried (a lit beacon, the win)
+function takeGround(run) {
+  for (const g of run.groundPatterns || []) if (!(run.carriedPatterns ||= []).includes(g.id)) run.carriedPatterns.push(g.id);
+  run.groundPatterns = [];
+}
 // patterns carried become found: at a lit beacon or the win -> the ids kept
 function keepPatterns(rs) {
   const run = rs.run, ids = (run.carriedPatterns || []).filter(id => !(rs.patterns || []).includes(id) && !kindledOf(rs).includes(id));
@@ -312,7 +317,7 @@ export function startRun(rs, seed, em = rs.ember | 0) {
   return rs.run;
 }
 // the growth fields a reload restores as they were at the entry
-const GROWN = ['sparks', 'sparkPicks', 'abilities', 'carriedPatterns', 'groundPatterns', 'caches', 'abilityLamps', 'patternRolls', 'foePatterns', 'abilityDrops'];
+const GROWN = ['sparks', 'sparkPicks', 'abilities', 'carriedPatterns', 'groundPatterns', 'caches', 'abilityLamps', 'patternRolls', 'foePatterns', 'abilityDrops', 'abilityRolls'];
 const copy = v => (v === undefined ? undefined : JSON.parse(JSON.stringify(v)));
 export function enter(run) {
   run.entry = { hp: run.hp, flasks: run.flasks, carried: run.carried, foes: run.foes, relics: (run.relics || []).slice(), elitesDown: (run.elitesDown || []).slice(), lastUsed: !!run.lastUsed };
@@ -387,6 +392,8 @@ export function setEmber(rs, n) {
    route with two wicks and one spark pick offered; at the last it is the win */
 export function lightBeacon(rs) {
   const run = rs.run, route = routeOfRun(run), i = route.indexOf(run.place);
+  // the pattern lamps still lying in this place are taken with the beacon, as the glim motes not yet taken are (onLight)
+  takeGround(run);
   run.flasks = Math.min(flasksOf(rs), run.flasks + Math.min(flasksOf(rs), ember(emberOf(run)).beaconFlasks));
   if (i === route.length - 1) return win(rs);
   run.kept = keepPatterns(rs);
@@ -401,6 +408,7 @@ export function lightBeacon(rs) {
 // a win at the top open level opens the next one, up to Ember 5; the best time is kept for each level
 export function win(rs) {
   const run = rs.run, em = emberOf(run);
+  takeGround(run);
   // the win banks all the glim carried, and keeps the patterns carried
   const kept = keepPatterns(rs), glim = run.carried | 0;
   rs.bank += glim;
@@ -457,7 +465,8 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
     if (!run) return {};
     return {
       bonus: bladeBonus(rs.up, run.wicks, run.sparks) + (clearOn() ? PANE_RULES.clear : 0), heavy: run.wicks.includes('heavy'), quick: run.wicks.includes('heels'), shave: run.wicks.includes('shave'),
-      drink: run.flasks <= 0 ? 'empty' : run.hp >= maxOf(rs) ? 'full' : 'ok', relics: run.relics || [], unlocks: rs.unlocks || []
+      drink: run.flasks <= 0 ? 'empty' : run.hp >= maxOf(rs) ? 'full' : 'ok', relics: run.relics || [], unlocks: rs.unlocks || [],
+      extra: t => paneHit(rs, t)
     };
   };
   const fighter = makeFighter(body, walk, { stats });
@@ -470,6 +479,8 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
     // growth: the toasts the page shows next (main.js updateGrowth), Lead glass ready for the next fight, Clear glass's window
     notes: [], lead: true, clearUntil: -1
   };
+  // the floor under (x, z) near y: where a drop lies (the relic and the pattern lamp of an elite, a flier's drops)
+  R.floorAt = (x, z, y) => walk.support(x, z, y + 1.2);
   R.relics = makeRelics(R);
   R.abilities = abilities ? abilities(R) : null;
   R.keys = keys ? keys(R) : null;
@@ -505,6 +516,8 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
     if (!run || R.dead) return 'none';
     // Ember parry: a melee hit from in front in the first 0.1 s of a first cut is turned aside, and the foe staggers for 1 s
     if (parried(from, ev)) return 'none';
+    // Bell guard (abilities.js): the blow is turned aside
+    if (R.abilities?.turn(from, ev, o)) return 'none';
     const safe = fighter.safe();
     if (safe) {
       if (safe === 'roll') {
@@ -514,12 +527,14 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
         if ((run.relics || []).includes('tinder')) fighter.tinder();
         ev.push({ type: 'miss' });
         cue(ev, 'miss', shave ? { shave } : {});
+        // Storm glass: a near miss cools both abilities by 1 s
+        R.abilities?.nearMiss();
       }
       return 'safe';
     }
     // Ember 4: foes deal 20% more. Lead glass: the first hit of each fight deals half
     const lead = paneOf(rs, 'lead') && R.lead;
-    R.lead = false;
+    if (paneOf(rs, 'lead')) R.lead = false;
     const d = Math.round(dmg * ember(emberOf(run)).dmg * (lead ? PANE_RULES.lead : 1));
     run.hp = Math.max(0, run.hp - d);
     fighter.knock(from, o.push ?? MOVES.hurt.push);
@@ -564,7 +579,8 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
     R.eliteDown = true;
     const relic = drawRelic(run.seed, run.elitesDown.length, run.relics);
     if (!run.elitesDown.includes(run.place)) run.elitesDown.push(run.place);
-    R.relics.drop(relic, [e.x, R.floorAt ? R.floorAt(e.x, e.z, e.y) : e.y, e.z]);
+    const y0 = R.floorAt(e.x, e.z, e.y) ?? e.y;
+    R.relics.drop(relic, [e.x, y0, e.z]);
     let flask = false;
     if ((rs.unlocks || []).includes('kflask') && run.flasks < flasksOf(rs)) { run.flasks += 1; flask = true; }
     ev.push({ type: 'elite', what: 'fall', name: el.elite?.name || 'The elite', place: run.place, relic, flask }, { type: 'store' });
@@ -573,10 +589,11 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
     // an elite drops a pattern with a chance of 35%, 1.8 m from its relic on the same ground, so the two are taken (and named) apart
     const pat = drawPattern(rs, DROPS.patternElite);
     if (pat) {
-      let at = [e.x, e.y, e.z];
+      // the first of four spots 1.8 m away on floor within 0.6 m of the relic's, with no wall between; else beside the relic
+      let at = [e.x + 0.6, R.floorAt(e.x + 0.6, e.z, y0) ?? y0, e.z];
       for (const [dx, dz] of [[1.8, 0], [-1.8, 0], [0, 1.8], [0, -1.8]]) {
-        const y = R.floorAt ? R.floorAt(e.x + dx, e.z + dz, e.y) : e.y;
-        if (Number.isFinite(y) && Math.abs(y - e.y) < 0.6) { at = [e.x + dx, y, e.z + dz]; break; }
+        const y = R.floorAt(e.x + dx, e.z + dz, y0);
+        if (Number.isFinite(y) && Math.abs(y - y0) < 0.6 && clearLine(walk, e.x, y0 + 0.9, e.z, e.x + dx, y + 0.9, e.z + dz)) { at = [e.x + dx, y, e.z + dz]; break; }
       }
       dropPattern(R, at, pat);
     }
@@ -604,8 +621,8 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
     if (play && rs.run && !R.dead) {
       const a = { ...act };
       for (const k of Object.keys(R.pend)) { a[k] = act[k] || R.pend[k]; R.pend[k] = false; }
-      // Lead glass: a new fight begins once no foe is awake
-      if (!R.targets().length) R.lead = true;
+      // Lead glass: a new fight begins once no foe sees the lamplighter (a foe asleep at home, or homing, is not in the fight)
+      if (!R.targets().some(t => t.aware)) R.lead = true;
       fighter.step(a, camYaw, R.targets(), ev);
       R.abilities?.step(a, camYaw, ev);
       R.keys?.step(a, ev);
@@ -643,6 +660,8 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
       else if (e.type === 'drink' && rs.run && rs.run.flasks > 0) {
         rs.run.flasks -= 1;
         rs.run.hp = Math.min(maxOf(rs), rs.run.hp + healNow(rs));
+        // Tallow glass: a flask cools both abilities by 3 s
+        R.abilities?.drink();
         ev.push({ type: 'store' });
       } else if (e.type === 'cue' && !e.logged) {
         // the cue with its game and play steps, and what it carries (hit, on, wind, act, foe, ...) for the sound
@@ -655,24 +674,41 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
     body.s.hide = !R.dead && fighter.f.safe > 0 && R.hurtAt >= 0 && Math.floor((clock.step - R.hurtAt) / R.blink) % 2 === 0;
     return ev;
   }
+  /* a cache's prize (keys.js opens it): glim (its n, with the Ember factor), a spark pick offered at once, a pattern lamp or an ability
+     lamp at the cache, or a flask filled. A prize that has nothing left to give (no pattern left, flasks full, no abilities) gives
+     its glim instead. -> what it gave */
+  R.prize = (kind, at, ev, sp = {}) => {
+    const run = rs.run;
+    if (!run) return null;
+    const glim = () => { const n = glimAt(sp.n || 25); run.carried += n; ev.push({ type: 'glim', n }); R.notes.push(`A cache · +${n} glim`); return 'glim'; };
+    if (kind === 'spark') { takeSparkPick(rs); R.notes.push('A cache · a spark: choose a colour'); return 'spark'; }
+    if (kind === 'pattern') { const id = dropPattern(R, at); if (id) { R.notes.push(`A cache · a pattern lamp: <b>${patternOf(id)?.name || id}</b>`); return 'pattern'; } return glim(); }
+    if (kind === 'ability') { const l = R.abilities?.dropAt?.(at); if (l) { R.notes.push(`A cache · an ability lamp: <b>${l.name}</b>`); return 'ability'; } return glim(); }
+    if (kind === 'flask' && run.flasks < flasksOf(rs)) { run.flasks += 1; R.notes.push('A cache · a flask fills'); return 'flask'; }
+    return glim();
+  };
   R.step = step; R.hurt = hurt; R.light = light; R.take = take; R.kill = (ev = R.out) => { if (rs.run && !R.dead) kill(ev); return ev; };
   // a foe put out: one more for the run's count, and its glim drops, with the Ember level's 15% a level
   R.out = [];
-  R.foeOut = (glim = 0, at = null) => {
+  R.foeOut = (glim = 0, at = null, foe = null) => {
     const run = rs.run;
     if (!run) return;
     run.foes += 1;
     if (glim) R.drop(glimAt(glim), at);
     // Thick glass: a foe put out heals 3% of the maximum health
     if (paneOf(rs, 'thick') && !R.dead) run.hp = Math.min(maxOf(rs), run.hp + dealt(PANE_RULES.thick, maxOf(rs)));
+    // Hot glass: a foe put out within 3 s of an ability cools the other one by 2 s
+    R.abilities?.foeOut();
     // the elite's own drop is eliteOut's (35%); any other foe drops a pattern with 2%, 1% more a Keen eye level, at most 2 a run
-    const elite = R.elite && R.elite.out && !R.eliteDown;
-    if (elite || (run.foePatterns | 0) >= DROPS.patternMax) return;
-    const pat = drawPattern(rs, patternChance(rs));
-    if (!pat) return;
-    run.foePatterns = (run.foePatterns | 0) + 1;
-    const s = body.s;
-    dropPattern(R, at || [s.x, s.y, s.z], pat);
+    const elite = !!(foe && R.elite && foe.id === R.elite.id);
+    if (elite) return;
+    const s = body.s, where = at || [s.x, s.y, s.z];
+    if ((run.foePatterns | 0) < DROPS.patternMax) {
+      const pat = drawPattern(rs, patternChance(rs));
+      if (pat) { run.foePatterns = (run.foePatterns | 0) + 1; dropPattern(R, where, pat); }
+    }
+    // an ability lamp: 3%, 1% more a Keen eye level, at most 3 a run (abilities.js draws it from the kindled abilities)
+    if (R.abilities && (run.abilityDrops | 0) < DROPS.abilityMax && R.abilities.dropRoll?.(where)) run.abilityDrops = (run.abilityDrops | 0) + 1;
   };
   return R;
 }

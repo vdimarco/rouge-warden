@@ -22,6 +22,7 @@ import * as RS from '../../public/lab/gloam-downs/run-save.js';
 import { summaryOf, patternRows, paneRows, colourRow, colourLine, patternsMark, keptLine, glimLine, cardOnLoad } from '../../public/lab/gloam-downs/screens.js';
 import { PATTERNS, PATTERN_IDS, STARTERS, ABILITIES, DROPS, SPARK } from '../../public/lab/gloam-downs/growth.js';
 import { on } from '../../public/lab/gloam-downs/bus.js';
+import { makeFoes } from '../../public/lab/gloam-downs/foes.js';
 
 let n = 0;
 const pass = (name, data) => { n++; console.log('PASS ' + name + (data ? ' ' + JSON.stringify(data) : '')); };
@@ -51,7 +52,7 @@ const heard = names => { const got = []; const offs = names.map(k => on(k, d => 
   rs.run.carried = 40;
   const out = lightBeacon(rs);
   assert.deepEqual([out.next, rs.run.place, rs.run.carried, rs.bank, rs.run.banked, rs.run.entry.carried], ['ramparts', 'ramparts', 40, 0, 0, 40]);
-  assert.match(glimLine(rs, 'beacon'), /^You carry 40 glim, and 0 is banked\. .*a death keeps only 10%\.$/);
+  assert.match(glimLine(rs, 'beacon'), /^You carry 40 glim, and 0 is banked\. .*a death would keep only 4 of it \(10%\) and lose 36\.$/);
   pass('glim at risk: 40 carried past the Gaol\'s beacon is still carried in The Crow Wall, and the bank stays 0');
 }
 { // A death keeps 10%: 125 carried and no Ash pocket -> the bank goes up by 12, "Glim kept 12 · lost 113"
@@ -245,7 +246,8 @@ const heard = names => { const got = []; const offs = names.map(k => on(k, d => 
   rs.run.offer = null;
   assert(takeSpark(rs, 'ward'));
   assert.deepEqual([rs.run.hp, maxOf(rs), rs.run.entry.hp, rs.run.sparkPicks], [90, 110, 90, 0]);
-  assert.deepEqual(colourRow(rs.run).map(c => c.text), ['▲ 0', '◆ 1', '● 0']);
+  // the colours' marks are their names, so they never share the wisps' ◆ or the glim's ● on the count line
+  assert.deepEqual(colourRow(rs.run).map(c => c.text), ['Flame 0', 'Ward 1', 'Gloam 0']);
   assert.equal(colourLine(rs.run), 'Flame 0 · Ward 1 · Gloam 0');
   assert(!takeSpark(rs, 'ward'), 'no pick left');
   ears.off();
@@ -312,12 +314,21 @@ const heard = names => { const got = []; const offs = names.map(k => on(k, d => 
   rs.up.panes = 2;
   setPane(rs, 0, 'lead');
   posts.push(makePost(FLAT, s.x + Math.sin(s.yaw) * 1.2, s.z + Math.cos(s.yaw) * 1.2));
+  // the fight: a target that sees the lamplighter (a foe asleep at home or homing is not in it)
+  posts[0].aware = true;
   runFor(R, 1);
   assert.equal(R.hurt(20, [s.x, s.z - 1], {}, []), 'hit');
   assert.equal(rs.run.hp, 90, 'the first hit of the fight: 10 of 20');
   runFor(R, 70);
   R.hurt(20, [s.x, s.z - 1], {}, []);
   assert.equal(rs.run.hp, 70, 'the next hit while the post stands: all 20');
+  // the post no longer sees the lamplighter: the fight is over, and the next one starts with a half hit again
+  posts[0].aware = false;
+  runFor(R, 70);
+  posts[0].aware = true;
+  R.hurt(20, [s.x, s.z - 1], {}, []);
+  assert.equal(rs.run.hp, 60, 'a new fight: half again');
+  rs.run.hp = 70;
   setPane(rs, 1, 'tallow');
   assert.equal(healNow(rs), 39, 'Tallow glass: 35% of 100 × 1.1, rounded once');
   setPane(rs, 2, 'clear');
@@ -415,4 +426,69 @@ const heard = names => { const got = []; const offs = names.map(k => on(k, d => 
   pass('rubbish in v3: unknown ids dropped, Flame 900 is 40, a slot with Moth wisp (not kindled) is empty, a pattern kindled cannot be carried');
 }
 
+
+/* ---------------- fixes after the merge pass (each failed before its fix) ---------------- */
+{ // the elite's pattern lamp lies on floor the lamplighter can reach: never in a wall 1.8 m in +x, and on the ground under a flier
+  const info = { x0: -20, z0: -20, step: 0.25, nx: 161, nz: 161 }, N = info.nx * info.nz, cells = new Int16Array(2 * N);
+  // a wall 3 m high from x 1.5 to 2.5
+  for (let j = 0; j < info.nz; j++) for (let i = 0; i < info.nx; i++) { const x = info.x0 + i * info.step; if (x >= 1.5 && x <= 2.5) { cells[j * info.nx + i] = 300; cells[N + j * info.nx + i] = 300; } }
+  const walk = makeWalk(info, cells);
+  const was = DROPS.patternElite;
+  DROPS.patternElite = 1;
+  for (const y0 of [0, 1.4]) {
+    const rs = RS.fresh(); startRun(rs, 5);
+    const body = makeBody(walk, { p: [-6, 0.5, 0], yaw: 0 }, 20, { ...PARAMS });
+    let once = true;
+    const R = makeRunner({ walk, meta: META, body, rs, think: ev => { if (once) { once = false; ev.push({ type: 'foeOut', foe: 'E1', x: 0.3, y: y0, z: 0 }); } } });
+    R.elite = { id: 'E1', elite: { name: 'The test elite' } };
+    runFor(R, 2);
+    const g = groundPatterns(R)[0], relic = R.relics.view().ground[0];
+    assert(g && Math.abs(g.y) < 0.01 && !(g.x >= 1.4 && g.x <= 2.6), `the lamp at ${g?.x}, ${g?.y}`);
+    assert(relic && Math.abs(relic.y) < 0.01, `the relic at height ${relic?.y}`);
+  }
+  DROPS.patternElite = was;
+  pass('the elite\'s pattern lamp and relic lie on the floor: not in a wall beside it, and under a flier, not in the air');
+}
+{ // a pattern lamp left lying when the beacon lights is taken with it, kept, and the summary of a later death counts it as kept
+  const rs = RS.fresh(); startRun(rs, 3);
+  rs.run.groundPatterns = [{ id: 'rime', x: 1, y: 0, z: 1 }];
+  rs.run.foePatterns = 1;
+  const out = lightBeacon(rs);
+  assert.deepEqual([out.kept, rs.patterns, rs.run.groundPatterns], [['rime'], ['rime'], []]);
+  pass('a lit beacon takes the pattern lamps still lying in the place, as it takes the glim motes');
+}
+{ // a flier's drops fall to the ground under it: a Mirelight put out 1.8 m up drops its glim and pattern at the floor
+  const rs = RS.fresh(); startRun(rs, 3);
+  const body = makeBody(FLAT, { p: [0, 0.5, 0], yaw: 0 }, 20, { ...PARAMS });
+  const F = makeFoes({ walk: FLAT, meta: { zones: [], spawn: { p: [0, 0, 10] } }, slots: 'M', seed: 3, bounds: 20 });
+  const R = makeRunner({ walk: FLAT, meta: META, body, rs, targets: F.targets, think: F.think });
+  F.bind(R);
+  const m = F.find(F.spawn('M', 0, 3).id);
+  m.y = 1.8;
+  let at = null;
+  const out0 = R.foeOut;
+  R.foeOut = (g, a, f) => { at = a; return out0(g, a, f); };
+  m.hit(999, {});
+  assert(at && Math.abs(at[1]) < 0.01, `dropped at height ${at?.[1]}`);
+  pass('a Mirelight put out in the air drops at the floor under it', { y: at[1] });
+}
+{ // a foe put out in the same step after the elite still rolls for its pattern (the check is whether this foe is the elite)
+  const { R, rs } = runnerAt();
+  R.elite = { id: 'E1', out: true };
+  const before = rs.run.patternRolls | 0;
+  R.foeOut(0, [1, 0, 1], { id: 'S9' });
+  assert.equal((rs.run.patternRolls | 0) - before, 1, 'another foe rolls');
+  R.foeOut(0, [1, 0, 1], { id: 'E1' });
+  assert.equal((rs.run.patternRolls | 0) - before, 1, 'the elite does not roll here (eliteOut does)');
+  pass('the 2% pattern roll is skipped only for the elite itself, not for every foe after it in the same step');
+}
+{ // a summary from an old save with no kept count shows what it banked, not "kept 0"; a death whose banked is its kept says it once
+  const old = RS.clean({ ended: { won: false, place: 'fen', time: 100, foes: 3, lost: 40, banked: 55 } });
+  assert.equal(old.ended.kept, null);
+  const rows = summaryOf(old.ended).rows.map(r => r[0]);
+  assert(!rows.includes('Glim') && rows.includes('Glim banked'));
+  const now = summaryOf({ won: false, place: 'fen', time: 100, foes: 3, kept: 30, lost: 270, banked: 30 }).rows;
+  assert.deepEqual(now.filter(r => r[0].startsWith('Glim')), [['Glim', 'kept 30 · lost 270']]);
+  pass('the summary: an old save shows the glim banked and no "kept 0"; a death says its glim once');
+}
 console.log(`${n} checks passed`);

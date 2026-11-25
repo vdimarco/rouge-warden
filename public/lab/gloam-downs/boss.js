@@ -22,7 +22,8 @@ const LAMP_R = PARAMS.radius, BOSS_LOOK = 0.6;
    lamplighter is in the arena, the 11 m of the intro (and of the pause for the boss files), the 13 m that Step back goes back to, and
    the ring of the 12 grave candles */
 export const REEVE = {
-  hp: 1300, phases: [800, 350], r: 0.9, chest: 1.7, height: 3.4, turn: 1.2, walk: [1.8, 1.8, 2.4], near: 2.6, reachY: 2.5,
+  // hard: Ember 0 is harder, the Reeve's blows deal 20% more (gloam-downs-growth design.md; the pacing tune may use 1.0 to 1.4)
+  hard: 1.2, hp: 1300, phases: [800, 350], r: 0.9, chest: 1.7, height: 3.4, turn: 1.2, walk: [1.8, 1.8, 2.4], near: 2.6, reachY: 2.5,
   gap: [S(1.0), S(0.75), S(0.55)], intro: S(2.4), rise: S(0.9), stumble: S(2.0), fall: S(0.6), parts: S(0.6), stop: 9, kick: 0.2,
   arena: { c: [18, 0.68, -22], leash: 6.5, in: 7.0, intro: 11, back: 13, candles: 7.0, camera: 16 },
   light: { rise: S(0.5), fly: S(0.5), up: 1.2, over: 0.32, beacon: S(0.5) },
@@ -176,7 +177,7 @@ export function makeBoss({ walk, arena = null, seed = 1, runner = null, bounds =
   // a hit on the lamplighter: true once it has landed (in a safe time it passes, and the attack tests its later active steps)
   function strike(dmg, from, ev, o = {}) {
     if (B.hold || !R()) return false;
-    const r = R().hurt(dmg, from, o, ev);
+    const r = R().hurt(dmg * REEVE.hard, from, o, ev);
     return r === 'hit' || r === 'dead' || r === 'none';
   }
   const place = (x, z, yaw) => { B.body.place([x, ground(x, z) + 0.3, z], yaw); B.x = B.body.s.x; B.y = B.body.s.y; B.z = B.body.s.z; B.yaw = yaw; };

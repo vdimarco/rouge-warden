@@ -105,13 +105,17 @@ export function modeHref(path, search, mode) {
 export function summaryOf(e, route = ORDER) {
   const at = route.indexOf(e.place);
   const rows = [['Reached', at >= 0 ? `${NUMERAL[at]} · ${NAMES[e.place]}` : placeLine(e.place)], ['Time', fmt(e.time)], ['Foes put out', String(e.foes)],
-    ['Glim', `kept ${e.kept | 0} · lost ${e.lost | 0}`], ['Glim banked', `${e.banked} glim`], ['Patterns', `kept ${e.patternsKept | 0} · lost ${e.patternsLost | 0}`]];
+    // the glim kept and lost; the glim banked only when it says more (a win, or an old run whose beacons banked); a run from an old save
+    // with no kept count shows only what it banked
+    ...(e.kept === null || e.kept === undefined ? [] : [['Glim', `kept ${e.kept | 0} · lost ${e.lost | 0}`]]),
+    ...((e.banked | 0) !== (e.kept ?? -1) ? [['Glim banked', `${e.banked} glim`]] : []), ['Patterns', `kept ${e.patternsKept | 0} · lost ${e.patternsLost | 0}`]];
   return { title: e.won ? 'The downs are lit' : 'The lamp goes out', rows, lines: rows.slice(3).filter(r => r[0] !== 'Glim banked').map(([k, v]) => `${k} ${v}`) };
 }
 
 /* ---------------- growth on the screens (gloam-downs-growth) ----------------
-   The colours: "▲ 2 ◆ 1 ● 3" on the HUD in their hues, and "Flame 2 · Ward 1 · Gloam 0" on the Lamp-room's top line */
-export const COLOUR_MARK = { flame: '▲', ward: '◆', gloam: '●' };
+   The colours: "Flame 2 Ward 1 Gloam 3" on the HUD in their hues, and "Flame 2 · Ward 1 · Gloam 0" on the Lamp-room's top line */
+// the colours' marks are their names, so they never share a shape with the wisps' ◆ and the glim's ● on the count line below
+export const COLOUR_MARK = { flame: 'Flame', ward: 'Ward', gloam: 'Gloam' };
 export function colourRow(run) {
   const s = sparksOf(run);
   return COLOURS.map(c => ({ id: c.id, name: c.name, hue: c.hue, n: s[c.id], mark: COLOUR_MARK[c.id], text: `${COLOUR_MARK[c.id]} ${s[c.id]}` }));
@@ -146,7 +150,13 @@ export const keptLine = ids => (ids?.length ? `Kept: ${ids.map(growthName).join(
 export function glimLine(rs, at = 'lamp') {
   const run = rs.run, share = Math.round(keepShare(rs.up) * 100);
   if (!run) return `Banked: ${rs.bank} glim. What you buy here lasts for every run.`;
-  if (at === 'beacon') return `You carry ${run.carried} glim, and ${rs.bank} is banked. Spend it in the Lamp-room, or carry it on: a death keeps only ${share}%.`;
+  // the beacon says what a death would cost in numbers, not only as a share (the merge pass found one line easy to miss)
+  if (at === 'beacon') {
+    const kept = Math.floor(run.carried * keepShare(rs.up) + 1e-9);
+    return run.carried > 0
+      ? `You carry ${run.carried} glim, and ${rs.bank} is banked. Spend it in the Lamp-room, or carry it on: a death would keep only ${kept} of it (${share}%) and lose ${run.carried - kept}.`
+      : `You carry 0 glim, and ${rs.bank} is banked.`;
+  }
   return `Carried: ${run.carried} glim · Banked: ${rs.bank} glim. The glim carried is spent first. What you buy here lasts for every run.`;
 }
 // the start card's ability buttons (Belt): "<name> · <what it does>"

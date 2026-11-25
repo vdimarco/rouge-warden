@@ -85,10 +85,13 @@ const eyeOf = v => { const cp = Math.cos(v.pitch); return [v.target[0] + v.dist 
   assert.equal(T(0, { run: false, locked: false, lockable: false }), 'jump');
   assert.equal(T(2, { run: true, locked: false, lockable: false }), 'look');
   assert.equal(T(2, { run: false, locked: false, lockable: false }), 'look');
-  // the middle button and the side buttons do nothing; no button turns the view while the mouse is taken
-  for (const b of [1, 3, 4]) assert.equal(T(b, { run: true, locked: true }), null);
+  // the middle button does nothing; the side buttons are the two abilities in a run (taken or free) and nothing in the explorer; no
+  // button turns the view while the mouse is taken
+  assert.equal(T(1, { run: true, locked: true }), null);
+  for (const locked of [true, false]) assert.deepEqual([T(3, { run: true, locked }), T(4, { run: true, locked })], ['ab1', 'ab2']);
+  for (const b of [3, 4]) assert.equal(T(b, { run: false, locked: true }), null);
   for (const b of [0, 1, 2, 3, 4]) assert.notEqual(T(b, { run: true, locked: true }), 'look');
-  pass('the buttons: a click acts and also asks for the mouse where it may; taken, left attacks or jumps and right rolls; the fallback drags with the right');
+  pass('the buttons: a click acts and also asks for the mouse where it may; taken, left attacks or jumps and right rolls; the side buttons are the abilities; the fallback drags with the right');
 }
 { // a move across the view: more than 35° from straight ahead or back, past the stick's dead size
   assert(!across(0, 1) && !across(0, -1) && !across(0.5, 1) && !across(0.1, 0.05), 'ahead, back, 27° and a light tilt are not across');

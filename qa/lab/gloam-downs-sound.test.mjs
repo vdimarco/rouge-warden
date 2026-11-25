@@ -573,4 +573,24 @@ const swingAt = (S, t, id = 'cut1') => {
   assert(gaolPedal >= 3 && pedal(reeve[0]) === 0, `the Gaol's strings are a pedal figure (${gaolPedal} of its inner off-beats on D), the Reeve's is not`);
   pass('the Barrow Reeve\'s ostinato is its own figure: no place shares its steps or its notes, and it has no pedal note', reeve.map(from));
 }
+{ // growth (gloam-downs-growth): each new bus event plays a cue that exists, and a bomb that misses does not bring the strings in
+  const F = fake(), { A, log } = busRun(F);
+  F.S.arrive('gaol'); F.run(0.3); F.S.placeTheme('gaol'); F.run(3);
+  const want = { 'pattern-found': 'glim', 'pattern-kept': 'buy', 'pattern-kindled': 'buy', 'key-found': 'light', 'ability-ready': 'focus', 'spark-take': 'choice', 'cache-open': 'glim' };
+  for (const [ev, cue] of Object.entries(want)) {
+    const n = log.length;
+    emit(ev, { id: 'rime', slot: 0, colour: 'ward', spot: 'gaol-ledge1', prize: 'glim' });
+    assert(log.slice(n).some(c => c.cue === cue), `${ev} plays ${cue}`);
+    assert(CUES[cue], `${cue} has a recipe`);
+  }
+  emit('ability-use', { id: 'bomb', slot: 0 });
+  assert(A.view().events.includes('ability-use') && A.view().events.includes('cache-open'));
+  // a fight is awake; the bomb's throw and burst (coal, slam) with no hit on a foe: drums, and no strings
+  emit('foes-alert', { zone: 'G2' });
+  log.push({ cue: 'coal', step: F.step, play: F.step, ability: 'bomb' }, { cue: 'slam', step: F.step + 36, play: F.step + 36, ability: 'bomb' });
+  A.flush(); F.run(3);
+  assert(F.S.view().layers.includes('drums') && !F.S.view().layers.includes('strings'), JSON.stringify(F.S.view().layers));
+  A.off();
+  pass('growth sounds: pattern-found, pattern-kept, pattern-kindled, key-found, ability-ready, spark-take and cache-open play cues that exist; a bomb that misses brings no strings');
+}
 console.log(`PASS qa/lab/gloam-downs-sound.test.mjs: ${passed} checks`);

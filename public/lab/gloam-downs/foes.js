@@ -11,6 +11,7 @@ import { eliteKit } from './elites.js';
 import { mixWave, WAVE } from './mix.js';
 import { STAGGER, poiseOf } from './feel.js';
 import { comboGlim } from './combo.js';
+import { statusStep } from './status.js';
 
 const S = sec => Math.round(sec * 60);
 const STEP = 1 / 60, DEG = Math.PI / 180;
@@ -44,6 +45,9 @@ export const TYPES = {
   }
 };
 // the markers as baked (lib/foes.mjs): a ring's radius at k = 1, and the Ironback's lane: width, piece length, pieces
+/* Ember 0 is harder (gloam-downs-growth design.md "Ember 0 is harder"): every foe's blow deals `dmg` times its number, and every foe
+   has `hp` times its health. The Ember 4 factor multiplies on top. The ranges the pacing tune may use: dmg 1.15 to 1.5, hp 1.0 to 1.3 */
+export const FOE_HARD = { dmg: 1.3, hp: 1.15 };
 export const MARKERS = { P: { ring: 1.4 }, M: { ring: 2.2 }, I: { ring: 3.0, lane: [1.6, 1.4, 5] } };
 
 export const RULES = {
@@ -164,7 +168,7 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
   function makeFoe(zone, type, k, home) {
     const T = TYPES[type];
     const f = {
-      id: `${zone.id}.${k}`, type, T, zone, k, home, hp: T.hp, out: false, state: 'asleep', t: 0, aware: false, away: 0, offT: 0,
+      id: `${zone.id}.${k}`, type, T, zone, k, home, hp: Math.round(T.hp * FOE_HARD.hp), out: false, state: 'asleep', t: 0, aware: false, away: 0, offT: 0,
       move: null, mt: 0, landed: false, cool: 0, ready: 0, flinch: 0, since: 999, downFor: 0, stunned: false, hold: null, slot: -1,
       flash: 0, shake: 0, shakeDir: [1, 0], push: null, shove: null, marker: null, aim: null, lane: null, prog: 0, firm: home.slice(),
       yaw: 0, x: home[0], y: home[1], z: home[2], r: T.r, alive: false, vx: 0, vz: 0, walking: 0, diedAt: null,
@@ -275,7 +279,7 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
   // a hit on the lamplighter: true once it has landed (in a safe time it passes, and the attack tests its later active steps)
   function strike(f, dmg, from, ev, o = {}) {
     if (f.hold || !F.runner) return false;
-    const r = F.runner.hurt(dmg, from, o, ev);
+    const r = F.runner.hurt(dmg * FOE_HARD.dmg, from, o, ev);
     return r === 'hit' || r === 'dead' || r === 'none';
   }
   function hookReaches(f, M, s) {
@@ -513,6 +517,15 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
   /* ---------------- one foe, one play step ---------------- */
   function stepFoe(f, ev) {
     if (f.hold) return;
+    // the states abilities put on a foe (status.js): a stun or a hold stops it where it stands, and its wind-up; a slow halves its walk
+    // and its wind-up
+    const st = statusStep(f);
+    if (st.stop && ['idle', 'chase', 'home', 'move'].includes(f.state)) {
+      if (f.state === 'move') cancelMove(f);
+      if (f.cool > 0) f.cool--;
+      physics(f, { hard: [0, 0] });
+      return;
+    }
     // a hit lands in the blade's step, before this think: its flinch or knock-down counts from the next play step
     const fresh = f.hitAt === F.step;
     if (f.cool > 0) f.cool--;
@@ -529,10 +542,17 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
       case 'stun': if (++f.t >= f.T.moves.charge.stun) { f.state = 'chase'; f.stunned = false; f.cool = coolOf(f.T); } break;
       // a broken poise: it stands where it is for 1.2 s, then fights on
       case 'stagger': want = { hard: [0, 0] }; if (++f.t >= (f.staggerFor ?? STAGGER.steps)) { f.state = 'chase'; f.aware = true; if (!f.staggerFor) f.staggerEnd = F.step; f.staggerFor = null; f.cool = Math.max(f.cool, S(f.T.cool[0])); } break;
-      case 'move': want = runMove(f, ev); break;
+      case 'move': {
+        // slowed: a wind-up counts on only on the share of steps the slow leaves
+        if (st.speed < 1 && phaseOf(f.T.moves[f.move], f.mt) === 'wind' && (f.slowAcc = (f.slowAcc || 0) + st.speed) < 1) { want = { hard: [0, 0] }; break; }
+        if (st.speed < 1) f.slowAcc = Math.max(0, (f.slowAcc || 0) - 1);
+        want = runMove(f, ev);
+        break;
+      }
       default: want = mind(f, ev);
     }
     if (f.state === 'out' || f.state === 'dying') return;
+    if (st.speed < 1 && Array.isArray(want)) want = [want[0] * st.speed, want[1] * st.speed];
     physics(f, want);
     if (f.state === 'out' || f.state === 'dying') return;
     // off the edge: more than 6 m below its zone, or under y -25, it is put out, and its glim drops on its last firm ground
@@ -628,7 +648,10 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
   function kill(f, ev = null) {
     const grounded = f.T.fly || f.body?.s.ground, c = f.zone.c;
     const onGround = grounded && Math.hypot(f.x - c[0], f.z - c[2]) <= f.zone.leash + 0.25 && f.y >= c[1] - RULES.below;
-    putOut(f, ev, onGround ? [f.x, f.y, f.z] : f.firm);
+    // a flier's drops fall to the ground (or the water) under it, so a pattern or an ability lamp can be touched
+    let at = onGround ? [f.x, f.y, f.z] : f.firm;
+    if (f.T.fly) at = [at[0], groundY(at[0], at[2], at[1]), at[2]];
+    putOut(f, ev, at);
   }
   function putOut(f, ev, at) {
     if (f.out || f.state === 'dying') return;
@@ -640,7 +663,7 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
     if (shown({ state: was }) && was !== 'sink') { f.state = 'dying'; f.t = 0; } else { f.state = 'out'; freeSlot(f); }
     (ev ? e => ev.push(e) : queue)({ type: 'foeOut', foe: f.id, x: f.x, y: f.y, z: f.z });
     (ev ? e => ev.push(e) : queue)({ type: 'cue', cue: 'out', foe: f.id });
-    F.runner?.foeOut(comboGlim(f.T.glim, F.combo?.tier ?? 0), at);
+    F.runner?.foeOut(comboGlim(f.T.glim, F.combo?.tier ?? 0), at, f);
   }
 
   /* ---------------- zones ---------------- */
@@ -721,7 +744,7 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
       if (F.coal === c.f) F.coal = null;
       c.f.marker = c.f.move === 'lob' && phaseOf(c.f.T.moves.lob, c.f.mt) === 'wind' ? c.f.marker : null;
       ev.push({ type: 'burst', kind: 'coal', x: c.to[0], y: c.to[1], z: c.to[2], r: c.R }, { type: 'cue', cue: 'coal' });
-      if (s && inRing(s, c.to[0], c.to[1], c.to[2], c.R, c.rise) && !c.f.hold) strike(c.f, c.dmg, [c.to[0], c.to[2]], ev);
+      if (s && inRing(s, c.to[0], c.to[1], c.to[2], c.R, c.rise) && !c.f.hold) strike(c.f, c.dmg, [c.to[0], c.to[2]], ev, { coal: true });
     }
   }
   // where a coal is in its flight: an arc from the hand to the ring's centre

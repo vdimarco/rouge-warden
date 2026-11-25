@@ -15,6 +15,9 @@ import { STEP, stepCount, startRun, reload, goTo, chooseWick, buy, maxOf, flasks
 import { nearest, faceYaw, makePost, HITS, hitOf, clearLine } from './moves.js';
 import { NUMERAL, NAMES, fmt, stepsOf, INK, inkAt, TIMED, hudOf, wickLine, wickName, upgradeRows, lampButtons, summaryOf, winOf, routeOf, ASKS, cardOnLoad, isRun, modeHref } from './screens.js';
 import { makeInput, navStep, readPads, heldNav } from './input.js';
+import { makeAbilities, groundAbilities, abilityOf } from './abilities.js';
+import { makeKeys, groundSpots, keysLine } from './keys.js';
+import { groundPatterns } from './run.js';
 import * as cards from './cards.js';
 // the builds (relics, unlocks, Ember): builder BC's hooks
 import { relicEvent, RELIC_IDS, groundRelics } from './relics.js';
@@ -169,11 +172,11 @@ const layoutNow = () => camLayout(innerWidth, innerHeight);
 addEventListener('resize', () => { sizeArt(); if (cam) cam.layout(layoutNow()); placeBossBar(); measureScreen(); });
 
 /* ---------------- input ---------------- */
-const jumpBtn = $('bJump'), stickEl = $('stick'), actBtns = [$('bAttack'), $('bRoll'), $('bHeal')];
+const jumpBtn = $('bJump'), stickEl = $('stick'), actBtns = [$('bAttack'), $('bRoll'), $('bHeal')], abBtns = [$('bAb1'), $('bAb2')];
 /* the mouse: taken by a click on the view (input.js). Freed in play in a run, by Escape or by the browser, it opens the pause panel. A
    card that opens frees it, so its buttons can be clicked, and a button that goes back to play takes it again (the click is the
    gesture the browser asks for) */
-const inp = makeInput({ canvas, stick: stickEl, jump: jumpBtn, attack: $('bAttack'), roll: $('bRoll'), heal: $('bHeal') }, {
+const inp = makeInput({ canvas, stick: stickEl, jump: jumpBtn, attack: $('bAttack'), roll: $('bRoll'), heal: $('bHeal'), ab1: $('bAb1'), ab2: $('bAb2') }, {
   run: () => RUN, play: () => mode === 'play', hold: () => mode === 'play' || mode === 'loading',
   onLock: (taken, ours) => { if (!taken && !ours && RUN && mode === 'play' && rs.run) openPause(); mouseHint(); },
   onState: () => mouseHint(),
@@ -298,12 +301,13 @@ function measureScreen() {
   bossScreen.w = innerWidth;
   bossScreen.h = innerHeight;
   bossScreen.bar = $('menu').getBoundingClientRect().bottom || 52;
-  bossScreen.rects = [hud, tools, jumpBtn, ...actBtns].filter(el => !el.hidden).map(el => el.getBoundingClientRect()).filter(r => r.width > 0).map(r => [r.left, r.top, r.width, r.height]);
+  bossScreen.rects = [hud, tools, jumpBtn, ...actBtns, ...abBtns, $('abilities')].filter(el => !el.hidden).map(el => el.getBoundingClientRect()).filter(r => r.width > 0).map(r => [r.left, r.top, r.width, r.height]);
 }
 function showHud(on) {
   hud.hidden = tools.hidden = !on;
   jumpBtn.hidden = !(on && coarse);
   for (const b of actBtns) b.hidden = !(on && coarse && RUN);
+  updateAbilities();
 }
 function updateHud() {
   if (RUN) return updateRunHud();
@@ -334,6 +338,34 @@ function updateRunHud() {
   $('life').setAttribute('aria-label', `Health ${h.text}, ${h.pips.filter(Boolean).length} of ${h.pips.length} flasks`);
   $('count').innerHTML = `<b>◆ ${h.wisps}/5</b> wisps · <em>● ${h.glim}</em> glim`;
   $('healN').textContent = String(Math.min(5, rs.run.flasks));
+  updateAbilities();
+}
+/* ---------------- the abilities on the page (gloam-downs-growth) ----------------
+   The HUD's row of the two slots ("1 Lantern bomb", or the seconds left while it cools) with a mouse, keys or a pad; on a touch screen
+   the two round buttons over Attack and Heal, with the cooldown as a dark sweep. A slot with nothing in it shows nothing */
+const AB_SHORT = { bomb: 'BOMB', step: 'STEP', snare: 'SNARE', moth: 'MOTH', crook: 'CROOK', rime: 'RIME', flare: 'FLARE', pitch: 'PITCH', guard: 'GUARD' };
+const abKeys = () => (padSeen ? ['LB', 'LT'] : ['F', 'G']);
+// glows: the steady dabs of the last draw by kind (fight.js glows: pattern, ability, cache, stone, snare, ...), for ?test
+const abilityView = () => ({ glows: fight ? fight.halo.reduce((m, g) => ((m[g.kind] = (m[g.kind] || 0) + 1), m), {}) : {}, abilities: runner?.abilities ? runner.abilities.view() : (rs?.run?.abilities || [null, null]).map(a => (a ? { ...a, left: 0, share: 0 } : null)), ...(runner?.keys ? runner.keys.view() : { keys: (rs?.keys || []).slice(), caches: (rs?.run?.caches || []).slice() }) });
+function updateAbilities() {
+  const el = $('abilities');
+  if (!el) return;
+  const v = RUN && rs?.run && !hud.hidden ? abilityView().abilities : [null, null], keys = abKeys(), touch = coarse && !inp.mouse;
+  const html = v.map((a, i) => (a ? `<span class="${a.left > 0 ? 'cool' : ''}${a.bright ? ' bright' : ''}"><kbd>${keys[i]}</kbd>${a.name}${a.left > 0 ? ` ${Math.ceil(a.left)}\u00a0s` : ''}</span>` : '')).join('');
+  el.hidden = touch || !v.some(Boolean);
+  if (el.innerHTML !== html) el.innerHTML = html;
+  el.setAttribute('aria-label', v.filter(Boolean).map((a, i) => `${a.name}${a.left > 0 ? `, ready in ${Math.ceil(a.left)} seconds` : ', ready'}`).join('; ') || 'No abilities');
+  abBtns.forEach((b, i) => {
+    const a = v[i];
+    b.hidden = !(a && touch && mode !== 'loading');
+    if (!a) return;
+    const cls = `act ab ab${i + 1} ${a.colour || ''}${a.bright ? ' bright' : ''}`;
+    if (b.className.replace(' on', '') !== cls) b.className = cls + (b.classList.contains('on') ? ' on' : '');
+    b.style.setProperty('--cd', a.share.toFixed(3));
+    const t = AB_SHORT[a.id] || a.name;
+    if (b.lastChild.textContent !== t) b.lastChild.textContent = t;
+    b.setAttribute('aria-label', `${a.name}${a.left > 0 ? `, ready in ${Math.ceil(a.left)} s` : ''}`);
+  });
 }
 /* ---------------- the builds on the page (builder BC) ----------------
    The HUD's relic marks: a short mark for each relic held, ember when it kindles with a wick, and "Kindled" after them once one does */
@@ -476,6 +508,14 @@ const CONTROLS = {
   pad: ['Left stick: move. A light tilt walks. Right stick: look.', '<kbd>A</kbd> jump · <kbd>X</kbd> attack · <kbd>B</kbd> roll · <kbd>Y</kbd> heal',
     '<kbd>RB</kbd> face the foe · <kbd>Start</kbd> pause']
 };
+// the two ability slots and the keys held, in the words of the input in use (gloam-downs-growth)
+const ABILITY_LINES = {
+  keys: '<kbd>F</kbd> <kbd>G</kbd> abilities',
+  drag: '<kbd>F</kbd> <kbd>G</kbd> abilities',
+  touch: 'The two round buttons over ATTACK use your abilities. Stand on an ability lamp and press one to swap.',
+  pad: '<kbd>LB</kbd> ability 1 · <kbd>LT</kbd> ability 2'
+};
+const keyLines = rs => [...(rs.keys || []).includes('leap') ? ['Jump again in the air: Crow step.'] : [], ...(rs.keys || []).includes('drop') ? ['Plunge onto a sealed stone from 2 m up: Bell drop.'] : []];
 // a phone with a mouse plugged in shows the mouse's lines
 const controlsKind = () => (padSeen ? 'pad' : coarse && !inp.mouse ? 'touch' : inp.canLock ? 'keys' : 'drag');
 // the explorer's help card: the keys and the mouse on a desktop or a phone with a mouse, the touch lines on a touch screen
@@ -488,7 +528,11 @@ function helpLines() {
 function showControls() {
   if (!RUN) return;
   // the moves that unlocks add use the Attack input of every device: one line each once bought
-  const html = [...CONTROLS[controlsKind()], ...moveLines(rs)].map(l => `<li>${l}</li>`).join('');
+  // with keys the abilities' line joins the last line (Pause), so the pause panel keeps its height at 800 by 600
+  const kind = controlsKind(), base = CONTROLS[kind].slice();
+  if (kind === 'keys' || kind === 'drag') base[base.length - 1] += ` ${ABILITY_LINES[kind]}.`;
+  else base.push(ABILITY_LINES[kind]);
+  const html = [...base, ...moveLines(rs), ...keyLines(rs)].map(l => `<li>${l}</li>`).join('');
   for (const id of ['runControls', 'pauseControls']) $(id).innerHTML = html;
 }
 /* a mouse found or lost changes the mouse lines, and so the height of the card they are on. Under an open card a change in the press
@@ -619,6 +663,9 @@ function openPause() {
   $('route').innerHTML = routeOf(rs.run.place, routeOfRun(rs.run)).map(p => `<li class="${p.state}"><span>${p.n}</span> ${p.name}<em>${p.state === 'here' ? 'now' : p.state}</em></li>`).join('');
   $('pauseLine').textContent = `Run time ${fmt(rs.run.time)}`;
   $('seedLine').textContent = `Seed ${seedCode(rs.run.seed)}`;
+  // the keys held, on the seed's line's own row only once there is one (the panel keeps its height on a phone)
+  $('keysLine').hidden = !(rs.keys || []).length;
+  $('keysLine').textContent = keysLine(rs);
   soundLabel();
   $('pauseRow').hidden = false;
   $('askRow').hidden = true;
@@ -930,11 +977,12 @@ function newRunner() {
   // the foes of this place, with the place: every foe back, and the foes put out kept for this place only. The seed mixes them
   // (mix.js); with ?test they stand as baked (the checks of each place rely on them) unless &mix asks for the mix
   fight = pool && !LOOK && rs.run ? makeFight({ walk, meta, world, pool, rs, max: () => maxOf(rs), still, fx, project, doc: document, mix: q.has('test') && !q.has('mix') ? false : { ember: rs.run.ember ?? 0 },
-    emit, dressOf, clipOf: eliteClip, groundRelics: () => groundRelics(runner) }) : null;
+    emit, dressOf, clipOf: eliteClip, groundRelics: () => groundRelics(runner),
+    groundAbilities: () => groundAbilities(runner), groundPatterns: () => groundPatterns(runner), groundSpots: () => groundSpots(runner) }) : null;
   lastRun = { seed: rs.run?.seed ?? lastRun.seed, combo: rs.run?.combo ?? 0 };
   foeTargets = fight ? () => fight.targets() : () => [];
   runner = makeRunner({
-    walk, meta, body, rs, targets, still, log: cues, fx,
+    walk, meta, body, rs, targets, still, log: cues, fx, abilities: makeAbilities, keys: makeKeys,
     ...(fight ? { lightable: fight.lightable, drop: fight.foes.drop, think: fight.think, onLight: fight.foes.bank } : {})
   });
   fight?.bind(runner);
@@ -1324,6 +1372,8 @@ function draw(o = {}) {
     fight.draw(view, { time: Number.isFinite(o.time) ? o.time : undefined, pool: o.pool, art: art.h });
     fxNow.kick = fight.kick; fxNow.zoom = fight.zoom; fxNow.bars = fight.bars;
     fight.showNotches(view, mode === 'play');
+    // the abilities' cooldown sweeps and seconds, each frame (only what changed is written)
+    if (RUN) updateAbilities();
   } else if (RUN) { fxNow.kick = [0, 0, 0]; fxNow.zoom = 1; fxNow.bars = 0; world.anim.grade = null; }
   if (RUN) { world.anim.kick = fxNow.kick; world.anim.zoom = fxNow.zoom; world.anim.bars = fxNow.bars; }
   // the fog stays at fogNear..fogFar whatever the camera's distance (the renderer spreads it over dist ± radius)
@@ -1421,6 +1471,7 @@ const runState = () => {
     step: k?.step ?? 0, playStep: k?.play ?? 0, stop: k?.stop ?? 0, ended: rs?.ended ? { ...rs.ended } : null,
     ...buildsView(),
     ...growthView(),
+    ...abilityView(),
     move: f?.move ?? null, hit: f?.move === 'hit' ? hitOf(f.hit).id : null, t: f ? f.t / 60 : 0, safe: runner?.fighter.safe() ?? null, combo: runner?.fighter.nextHit() ?? 0,
     fx: {
       kick: fxNow.kick.slice(), zoom: fight ? fight.feel.zoom() : fxNow.zoom, bars: fight ? fight.feel.bars() : fxNow.bars, grade: (fight?.cols || meta?.pal || []).slice(), blink: !!body?.s.hide,
@@ -1475,7 +1526,7 @@ window.__gloam = {
     for (let i = 0; i < n; i++) {
       if (held === 'live') { pollPad(STEP); if (mode !== 'loading') inp.read(); }
       else {
-        Object.assign(input, { mx: 0, mz: 0, jump: false, slow: false, ox: 0, oy: 0, attack: false, roll: false, heal: false }, held);
+        Object.assign(input, { mx: 0, mz: 0, jump: false, slow: false, ox: 0, oy: 0, attack: false, roll: false, heal: false, ab1: false, ab2: false }, held);
         if (held.look && !lookWas && mode === 'play') face();
         lookWas = !!held.look;
       }
@@ -1533,6 +1584,12 @@ window.__gloam = {
     if (Number.isFinite(o.bossHp) && fight?.boss) { fight.hooks.bossHp(o.bossHp); fillBossBar(); }
     setBuilds(o);
     setGrowth(o);
+    // the abilities: slots ([{ id, bright } | null, same]), the seconds of cooldown left on each, and the keys held
+    if (run && Array.isArray(o.abilities)) run.abilities = [0, 1].map(i => { const a = o.abilities[i]; return a && abilityOf(a.id) ? { id: a.id, bright: !!a.bright } : null; });
+    if (Array.isArray(o.cool)) runner?.abilities?.setCool(o.cool);
+    if (Array.isArray(o.keys)) rs.keys = [...new Set(o.keys.filter(k => k === 'leap' || k === 'drop'))];
+    if (run && Array.isArray(o.abilityLamps)) run.abilityLamps = o.abilityLamps.filter(l => abilityOf(l.id)).map(l => ({ id: l.id, bright: !!l.bright, place: run.place, x: +l.x, y: +l.y, z: +l.z }));
+    if (Array.isArray(o.abilities) || Array.isArray(o.keys)) showControls();
     updateHud();
     if (mode === 'lamp') fillLamp();
     storeRun();

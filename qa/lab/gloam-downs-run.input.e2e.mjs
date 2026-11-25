@@ -389,10 +389,10 @@ try {
     await tick(page, 1.0, 'live');
     const string = (await G(page, () => window.__gloam.sounds())).slice(n0).filter(c => c.cue === 'swing').map(c => c.hit);
     assert.deepEqual(string, ['cut1', 'cut2', 'fin'], `three X: ${string}`);
-    // RT swings, LT rolls and Y drinks, as main.js wires the pads' run buttons
+    // RT swings and Y drinks, as main.js wires the pads' run buttons; LT is ability 2 now, and with slot 2 empty it does nothing
     const btn = async (i, sec = 1.0) => { const k = (await G(page, () => window.__gloam.sounds())).length; await G(page, i => window.__press(i, true), i); await tick(page, 0.1, 'live'); await G(page, i => window.__press(i, false), i); await tick(page, sec, 'live'); return (await G(page, () => window.__gloam.sounds())).slice(k).map(c => c.cue); };
     assert((await btn(7)).includes('swing'), 'RT swings');
-    assert((await btn(6)).includes('roll'), 'LT rolls');
+    assert(!(await btn(6)).includes('roll'), 'LT no longer rolls');
     await G(page, () => window.__gloam.set({ hp: 50 }));
     const fl = (await run(page)).flasks;
     assert((await btn(3)).includes('drink') && (await run(page)).flasks === fl - 1, 'Y drinks a flask');

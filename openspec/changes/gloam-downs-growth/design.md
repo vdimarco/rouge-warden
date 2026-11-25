@@ -312,7 +312,7 @@ Run on `ccr-43aa269a-y8yo7l` from the design commit `afc6aa70`, on 2026-11-25.
 ### What was merged
 - **G** (`gloam-grow-g`, `4dc0dc89`): merged with no conflict.
 - **K** (abilities) and **P** (pacing and keys): **not merged**. Neither builder came back: there is no branch and no report. So the game has no abilities to use, no `abilities.js`, no new inputs, no keys, no hidden ledges or caches, no `FOE_HARD`, no page zones, and no rewritten bot. G's hooks for them (`abilities` and `keys` in `makeRunner`, the pend list, the step lines, `R.keys?.eliteOut`) are in place and do nothing while those options are null.
-- What a player sees of K's part without K: Belt is sold in the Lamp-room and asks for a start ability that does nothing yet; Gloam sparks raise a colour no move uses; the patterns of the seven abilities can drop and be kindled; Hot, Smoked, Storm and Clear glass have no effect. These wait for K.
+- What a player sees of K's part without K: Belt is sold in the Lamp-room and asks for a start ability that does nothing yet; Gloam sparks raise a colour no move uses; the patterns of the seven abilities can drop and be kindled; Hot, Smoked, Storm and Clear glass have no effect. These wait for K. (The fix pass below built K's and P's parts; this line is the state at the merge pass.)
 
 ### What the merge pass changed
 - `main.js`: G's import line, which also held a destructure and a `bindGrowth` call, is now two import lines and a bind after the imports. No change in what it does.
@@ -322,7 +322,73 @@ Run on `ccr-43aa269a-y8yo7l` from the design commit `afc6aa70`, on 2026-11-25.
 - Tests updated for G's rules (the files are K's and P's and others, changed here because the rules changed): the v3 save key, the beacon that carries glim on, the beacon's spark pick before Walk on, the 23 bus events, the new run help, the 10% and 18% kept shares, the nine wares and the summary's rows. See tasks.md 4.2 and 4.3 for the list.
 - `qa/lab/gloam-downs-bot.mjs`: the least change that lets the bot play by G's rules (P's rewrite is still to come): one save across runs (up to 40, or 5 after the first win), the Lamp-room at every lit beacon with the glim carried spent first, spark picks (Ward under 50% health, else Flame), the panes that work without abilities (Thick, then Lead and Tallow when kindled), and new lines for the catalogue share bought and the glim kept and lost. No abilities, keys or caches; the boss fight is still drawn from the old boss-bot results.
 
-### Checks
+### Fix pass after the checkers
+Run on `ccr-43aa269a-y8yo7l` after the merge pass, on 2026-11-25. Builders K and P never came back, so this pass built their parts on G's hooks, and fixed what the checkers found. Each problem was confirmed on the tree first (by `ls`, `grep`, a Node script or the browser), and each fix has a test that failed before it.
+
+### What the checkers found, and what was done
+| Problem | Confirmed | Done |
+|---|---|---|
+| No abilities: no `abilities.js`, no input, no HUD | yes: no file, `makeRunner` got `abilities: null`, F/G/LB did nothing | built (below) |
+| No keys, no second jump, no ledges or stones | yes: no `keys.js`, no `rs.keys` writer | built (below) |
+| Pacing misses its targets | yes, and still: see "Pacing results" | page zones and harder Ember 0 built and tuned; two targets still miss |
+| The bot drew the Reeve's fight | yes: the header said so | the bot steps `boss.js` with the boss bot's own mind, moved to `qa/lab/gloam-downs-bossbot.mjs` and shared |
+| Nudges: about 18 a run, not 7 | yes | a foe it cannot reach that is not a guard's or the elite is now left behind; the header gives the measured numbers (12 to 18 a run) |
+| Glim spent on things that do nothing (Belt, Gloam, panes, ability patterns, Keen eye's ability share) | yes: `colourPower` and `coolShare` had no caller | all work now: the abilities use Belt, Gloam, Keen eye, Hot, Smoked, Storm, Tallow and Clear glass |
+| Losing 90% at a death is harsh, and the beacon warned in one line | yes | the 10% rule stays (design); the beacon card now says in numbers what a death would keep and lose |
+| Pattern lamps never drawn | yes: nothing read `groundPatterns` | `fight.js` draws pattern lamps, ability lamps, caches and stones as steady dabs |
+| `R.floorAt` never set | yes | set in `makeRunner`; the elite's pattern lamp and relic lie on the floor, past no wall |
+| A beacon wiped pattern lamps on the ground | yes | a lit beacon or a win takes them as carried, as it takes the glim motes |
+| The bot never walked to lamps, never bought Belt or Keen eye | yes | it walks to lamps within 12 m and to caches its keys open, kindles every found pattern, buys Belt and Keen eye |
+| Low: colour row marks shared the wisps' and glim's shapes | yes | the row is words: "Flame 2 Ward 1 Gloam 0" |
+| Low: the summary said the glim twice | yes | "Glim banked" shows only when it differs from "Glim kept" |
+| Low: Rookchief logged an elite check for every foe after it | yes | `foeOut` gets the foe; only the elite itself skips the 2% roll |
+| Low: Lead glass re-armed per place, and any hurt used it up | yes | a fight ends once no target sees the lamplighter; only a set Lead glass is spent |
+| Low: an old summary showed "kept 0" | yes | `kept` is null when the save had none; the summary then shows only what was banked |
+| Low: a Mirelight's drops hung in the air | yes | a flier's drops fall to the floor or water under it |
+
+### What was built, and where it differs from the plan above
+- `abilities.js`: the two slots, the nine abilities with the numbers of `ABILITIES`, cooldowns on the play clock with Gloam (`coolShare`) and Smoked glass, power by colour (`colourPower`) and bright (25%), the 0.15 s buffer, the `refuse` cue, ability lamps (3% from a foe and 1% a Keen eye level, 3 a run; bright 10% and 4% a Keen eye level), the touch and the swap, Hot, Storm and Tallow glass, Bell guard's turn in `R.hurt`, and `ability-use` and `ability-ready`. An ability's hit is a relic hit for the combo, with 2 steps of hit stop.
+- `status.js` (new, not in the plan): `statusHit` and `statusStep`. They are not in `abilities.js` so that `foes.js` can import them with no loop through `run.js`.
+- `foes.js`: the status hook in `stepFoe` (a stun or hold stops the foe and its wind-up; a slow halves its walk and its wind-up), `FOE_HARD` (damage 1.3, health 1.15), the coal's `coal` flag for Bell guard, and the foe passed to `runner.foeOut`. `boss.js`: `REEVE.hard` 1.2.
+- `input.js`: F or U, G or I; the side buttons 3 and 4 in a run (the page takes their down, up and auxclick); LB and LT on a pad, and LT no longer rolls; `#bAb1` and `#bAb2`. `moves.js`: Smoke step's safe time counts as the roll's, and Ember glass adds to a blade hit on a burning foe.
+- The HUD: with a mouse, keys or a pad, `#abilities` shows "F Lantern bomb 8 s" for each slot; on touch the two round buttons over Attack and Heal show the short name and a dark sweep, and the HUD row is hidden, so the HUD is no taller at 320 px. The pause panel's `#keysLine` shows only once a key is held, so the panel still fits at 1280 by 720.
+- `fight.js`: ability effects as dabs (throw, ring, burst, puffs, cone, core, flash, snap) and steady dabs for lamps, caches, stones, a snare, a pool, a moth and Bell guard. The spark pool keeps 64 steady dabs (was 40). Pattern and ability lamps use no fire slot (34 to 37) and not the lamp's warm 46: Flame lamps the dark ember 33, Ward 38, Gloam 39 (and a pattern's core 39); caches and stones use the lamp's 46 and 47, as relics do. Fire is the colour of a foe's tell: three ability lamps in fire 35 lying by a Snuffer made the phone's tell check count 27 fire pixels at rest and fail, and in 46 still 22 (the grade brings 46 near the fire slots); in 33, 38 and 39 it counts 11. A bright lamp has a larger core.
+- `keys.js`: `leap` (the second jump, 7.4 m/s, from 0.1 s, once until the feet land, through `body.s.vy`; `play.js` unchanged), the stone rule on the plunge's `land` cue (a fall of 2 m or more), caches once a run with their prizes (`R.prize` in `run.js`), `keyDrop` on the first fall of the Rookchief and the Bellwether, saved at once, and `key-found` and `cache-open`.
+- `qa/lab/gloam-downs-ledges.mjs`: the two reach searches (`PARAMS`, and `jumpV` 10.94), ledge cells grouped into patches of 1.5 m² or more, and then a test the plan did not have: it plays the real controller from a stand under each patch with a few timings, keeps a ledge only when the second jump lands on it and the same inputs with no second jump do not, and checks again with the rounded numbers it writes. A stone is flat floor that a plunge from floor 0.7 m or more higher lands on after a fall of 2 m or more. Found: the Gaol 5 patches (3 opened), The Crow Wall 6 (4), The Fen 6 (2), The Bell Knoll 3 (3), Barrow Crown 2 (2); kept: two ledges and a stone in each place but Barrow Crown, which keeps one ledge (its second failed with the rounded numbers). **The scan does not look for shortcuts**, so whether a ledge shortens a route is not known (task 3.3 stays open).
+- `mix.js` `EXTRA`: three page zones in the Gaol (G6, G7, G8), The Crow Wall (R5, R6, R7) and The Fen (F5, F6, F7), two in Barrow Crown (W5, W6), and **none in The Bell Knoll**: with its pool's one Ironback and three Snuffers, every page zone tried there left 3 to 72 of 200 seeds with no zone for the elite. The Fen and Barrow Crown keep 7 m from the baked zones, not 8 (no room at 8). A zone near the arena (W7) broke the 25 m rule and was dropped. With more zones sharing each pool, Ember 3's foe more fits in 28% of zones (was 40%; the seed test's floor is now 25%).
+- Sound: the bus handlers use cues that exist: `glim` for `pattern-found` (the runner logs the touch's `wisp`), `buy` for `pattern-kept` and `pattern-kindled` (no harp figure), `light` for `key-found` (not the beacon sting and bells), `focus` for `ability-ready`, `choice` for `spark-take`, and `glim` with the runner's `cracks` or `wisp` for `cache-open`.
+- The bot: one save across runs; the Reeve stepped with `boss.js` and the shared boss mind; abilities (an attack ability with 2 foes near or an elite up, Smoke step or Bell guard for 4 rolls in 10, Flare or Rime lamp on a wind-up it reads near it); lamps and caches; Belt's start ability; sparks (Ward, Gloam once both slots hold one, else Flame); `HARD_DMG`, `HARD_HP` and `REEVE_HARD` to try a lever.
+
+### Pacing results
+`node qa/lab/gloam-downs-bot.mjs 60 <skill> 1`, with the game as committed (foes ×1.3 damage and ×1.15 health, the Reeve ×1.2):
+
+| Skill | First run reaches place 2 | Median first win | Winning run | Runs (won) | Glim at a death, kept / lost | The Reeve's fight | Abilities a run | Caches a run | Nudges a run |
+|---|---|---|---|---|---|---|---|---|---|
+| 0.3 | 50 of 60 | run 2 | 4.9 min | 425 (324) | 11 / 73 | 31 s | 25 | 4.0 | 11.9 |
+| 0.5 | 59 of 60 | run 1 | 5.2 min | 365 (353) | 11 / 64 | 31 s | 40 | 4.7 | 12.8 |
+| 0.9 | 59 of 60 | run 1 | 8.7 min | 371 (343) | 10 / 53 | 36 s | 70 | 5.1 | 18.1 |
+
+No bot bought 25% of the catalogue (11,725 glim) within its first win and 5 runs more, at any skill. That cap stops a bot before growth shows: with no win cap, 0.5 bots buy something in 281 of 300 runs and own the whole catalogue by run 30 (see the checks below). So runs do grow the lamplighter, run by run, as the user asked; what misses is how hard the first runs are.
+
+With every lever at the top of its range (`HARD_DMG=1.5 HARD_HP=1.3 REEVE_HARD=1.4`): at 0.3 the first run reaches place 2 in 26 of 60 (43%) and the median first win is run 5; at 0.5 54 of 60 reach place 2 and the median first win is still run 1, in 5.4 min. The third wave at the guards (lever 5) was not tried: the guard fights are a small share of a run, and at 0.5 the first run already wins.
+
+Against the targets:
+- A first run at 0.3 reaches place 2 in half the bots or more: **met** (83%) as committed; the top of the levers breaks it (43%), so the levers stay where the design put them.
+- At 0.5 the median first win in run 6 to 12: **missed** (run 1), with every lever at its top too.
+- At 0.9 the first win in run 1 to 3: met. A winning run of 15 to 25 minutes: **missed** (8.7 min).
+
+Why: the levers make foes hit harder, but the bot's mind (reads, rolls and drinks at a fixed share of health) loses little health at 0.5 and up, and each run grows inside itself: a spark at every beacon (Flame +10% a level), wicks and relics. The Reeve's fight is 31 to 36 s in a run, against 66 s for the boss bot alone at 0.5, because a bot arrives with four sparks, a wick and relics. A run is short because the places are small: the five routes add up to about 270 m (from 34 m in The Bell Knoll to 71 m in Barrow Crown), and the page zones add 20 foes. Meeting the targets needs a lever outside the design (more places or longer routes, foes that scale with the run's sparks, or a Reeve with more health), which is the user's call. Players are not bots: these numbers say the bots are strong, not that the game is easy for a person, but the gap to the targets is large.
+
+### Checks after the fix pass
+- Node: all pass. abilities 19 (new), boss 28, builds 34, camera 49, feel 11, foes-ai 44, foes 31, growth 28, keys 6 (new), lattice 16, mouse 11, run 68, seed 9, sound 29, stairs 1, uniform-blocks 10, gloam-downs 33. `gloam-downs-zones.mjs`: 177 ok lines, none bad. `gloam-downs-ledges.mjs` as above.
+- Each fix in the table has a test that failed on the tree before it: the five new blocks at the end of `gloam-downs-growth.test.mjs` were run against `HEAD`'s game files and each failed; `abilities.js` and `keys.js` did not exist, so their tests could not pass before.
+- Browser (Chromium on SwiftShader, site served on 8765): run.abilities 9 (new), run.boss 24, run.builds 7, run.cards 12, run.feel 5, run.fight 8, run.growth 4, run.input 15, run.lineup 15, run.sound 20, run.swing 2, camera 8, mouse 8, clicks 46, cutaway 1, gloam-downs.e2e 16. Tests changed for the new rules: the hook's 21 and the coal's 23 (×1.3), LT no longer rolls, the colour row in words, the beacon card's warning, and the summary's glim said once. `gloam-downs-run.keys.e2e.mjs` was not written: its ledge cache and keys line are in `run.abilities`, and the Rookchief's key and the stone are checked in Node.
+- `quiet.mjs --only=lab/gloam-downs`: 35 of 35. Music demo: passes, 164 files, every group in its targets.
+- Pacing: the tables above; and `MAXRUNS=30 AFTER=30 node qa/lab/gloam-downs-bot.mjs 10 0.5 1`: a buy in 281 of 300 runs, and the catalogue bought to 25% by run 9, 50% by run 16, 75% by run 24 and all of it by run 30 (5 of 10 bots).
+- `openspec validate gloam-downs-growth --strict`: valid.
+- Not checked: a real phone, a real gamepad, real mouse side buttons on hardware (the e2e sends the events), and listening on speakers. No run was played by hand.
+
+## Checks
 - Node: all pass. boss 28, builds 34, camera 49, feel 11, foes-ai 44, foes 30, growth 23, lattice 16, mouse 11, run 68, seed 9, sound 28, stairs 1, uniform-blocks 10, gloam-downs 33. `gloam-downs-zones.mjs`: 142 ok lines, none bad.
 - Browser (Chromium on SwiftShader, site served on 8765 and 8822): all pass after the fixes. run.boss 24, run.fight 8, run.input 15, run.builds 7, run.sound 20, run.cards 12, run.lineup 15, run.swing 2, run.feel 5, run.growth 4, camera 8, mouse 8, clicks 46, cutaway 1, gloam-downs.e2e 16. run.abilities and run.keys do not exist yet (K and P).
 - `quiet.mjs --only=lab/gloam-downs`: 35 of 35.
