@@ -78,6 +78,10 @@ void main() {
   }
   if (t.a < 0.5) discard;
   vec3 col = t.rgb;
+  // Window amber stays off the sign amber so a dark sign is not a lit window.
+  if (abs(vKind - 8.0) < 0.25 && col.r > 0.85 && col.g > 0.5 && col.g < 0.78 && col.b < 0.35) {
+    col = vec3(201.0, 133.0, 58.0) / 255.0;
+  }
   float hi = max(col.r, max(col.g, col.b));
   float lo = min(col.r, min(col.g, col.b));
   float neon = step(0.25, hi - lo) * step(0.45, hi);

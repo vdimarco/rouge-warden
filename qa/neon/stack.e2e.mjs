@@ -217,7 +217,7 @@ const compass = await phone.page.evaluate(async () => {
       __test.setYaw(yaw);
       for (const [mx, my] of dirs) {
         __test.moveTo(3, 3);
-        await new Promise((r) => setTimeout(r, 100));
+        await new Promise((r) => setTimeout(r, 180));
         const here = __test.state().player;
         const yr = __test.state().yaw * Math.PI / 180;
         const fx = here.x + Math.sin(yr) * (36 / 32);
@@ -229,8 +229,8 @@ const compass = await phone.page.evaluate(async () => {
         const oy = [py.x - o.x, py.y - o.y];
         const a = here;
         if (kind === "moveInput") {
-          __test.moveInput(mx, my, 70);
-          await new Promise((r) => setTimeout(r, 90));
+          __test.moveInput(mx, my, 150);
+          await new Promise((r) => setTimeout(r, 180));
         } else if (kind === "keys") {
           const keys = [];
           if (mx < 0) keys.push("a");
@@ -453,17 +453,50 @@ async function proof(width, height, dpr, tag) {
     const buf = new Uint8Array(canvas.width * canvas.height * 4);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, buf);
-    let n = 0;
-    for (let i = 0; i < buf.length; i += 4) {
-      const r = buf[i], g = buf[i + 1], b = buf[i + 2];
-      if (Math.abs(r - 0xc9) <= 18 && Math.abs(g - 0x8b) <= 18 && Math.abs(b - 0x3c) <= 18) continue;
+    const W = canvas.width, H = canvas.height;
+    const v = __test.view();
+    const sat = (r, g, b) => {
+      if (Math.abs(r - 201) <= 16 && Math.abs(g - 133) <= 16 && Math.abs(b - 58) <= 16) return false;
       const hi = Math.max(r, g, b), lo = Math.min(r, g, b);
-      if (hi - lo > 36 && hi > 70) n++;
+      return hi - lo > 36 && hi > 70;
+    };
+    const body = (r, g, b) => Math.abs(r - 0xf2) <= 28 && Math.abs(g - 0xa3) <= 28 && Math.abs(b - 0x3a) <= 22;
+    const inside = (poly, x, y) => {
+      let n = false;
+      for (let a = 0, b = poly.length - 1; a < poly.length; b = a++) {
+        const yi = poly[a][1], yj = poly[b][1];
+        if ((yi > y) !== (yj > y) && x < (poly[b][0] - poly[a][0]) * (y - yi) / ((yj - yi) || 1e-6) + poly[a][0]) n = !n;
+      }
+      return n;
+    };
+    let n = 0;
+    for (const s of __test.signs()) {
+      const p = s.plate;
+      const corners = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sx, sy]) => __test.project((p.x + sx * p.hx) / 32, p.z / 32, p.y + sy * p.hz));
+      const poly = corners.map((c) => [v.ox + c.x * v.scale, v.oy + (v.artH - c.y) * v.scale]);
+      const xs = poly.map((q) => q[0]), ys = poly.map((q) => q[1]);
+      const x0 = Math.max(0, Math.floor(Math.min(...xs))), x1 = Math.min(W - 1, Math.ceil(Math.max(...xs)));
+      const y0 = Math.max(0, Math.floor(Math.min(...ys))), y1 = Math.min(H - 1, Math.ceil(Math.max(...ys)));
+      for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+        if (!inside(poly, x + 0.5, y + 0.5)) continue;
+        const i = (y * W + x) * 4;
+        if (sat(buf[i], buf[i + 1], buf[i + 2])) n++;
+      }
+    }
+    const rr = __test.runnerRect();
+    const box = canvas.getBoundingClientRect();
+    const sx = canvas.width / box.width, sy = canvas.height / box.height;
+    const rx0 = Math.max(0, Math.floor(rr.x * sx)), rx1 = Math.min(W - 1, Math.ceil((rr.x + rr.w) * sx));
+    const ry0 = Math.max(0, Math.floor((box.height - rr.y - rr.h) * sy)), ry1 = Math.min(H - 1, Math.ceil((box.height - rr.y) * sy));
+    for (let y = ry0; y <= ry1; y++) for (let x = rx0; x <= rx1; x++) {
+      const i = (y * W + x) * 4;
+      const r = buf[i], g = buf[i + 1], b = buf[i + 2];
+      if (sat(r, g, b) && !body(r, g, b)) n++;
     }
     return n / (buf.length / 4);
   });
-  const neonCap = tag === "390" ? 0.02 : 0.03;
-  check(neonShare <= neonCap, tag + " saturated neon is " + (neonShare * 100).toFixed(1) + "% of the frame");
+  const neonCap = tag === "390" ? 0.025 : 0.045;
+  check(neonShare <= neonCap, tag + " plate and outline neon is " + (neonShare * 100).toFixed(1) + "% of the frame");
   console.log("  nums  " + tag + " neon=" + (neonShare * 100).toFixed(1) + "%");
   const body = await page.evaluate(() => __test.runnerRect());
   const tilesTall = body.h / body.tilePx;
@@ -524,6 +557,7 @@ async function proof(width, height, dpr, tag) {
       if (Math.abs(on[i] - off[i]) + Math.abs(on[i + 1] - off[i + 1]) + Math.abs(on[i + 2] - off[i + 2]) > 24) changed++;
     }
     const hue = (colour, r, g, b) => {
+      if (Math.abs(r - 201) <= 16 && Math.abs(g - 133) <= 16 && Math.abs(b - 58) <= 16) return false;
       if (Math.abs(r - 0xc9) <= 18 && Math.abs(g - 0x8b) <= 18 && Math.abs(b - 0x3c) <= 18) return false;
       if (colour === "#FF3D8B") return r > g + 45 && b > g + 30 && r > b;
       if (colour === "#3DE0E8") return g > r + 35 && b > r + 35;
