@@ -777,7 +777,7 @@ if (process.env.GLOAM_WORLDS !== '0') {
     assert(sink !== null && sink === cracks, `the sink and the cracks start together (${sink}, ${cracks})`);
     assert.equal(asleep - sink, RULES.sink);
     assert(rise - cracks >= RULES.cracks && rise - cracks <= RULES.cracks + 1, `the rise ${rise - cracks} steps after the cracks`);
-    assert.equal(R3.members[0].hp, 30);
+    assert.equal(R3.members[0].hp, R3.members[0].T.hp, 'it sinks with its health (the Rookchief, the elite, stands in R3)');
     pass("the guards of The Crow Wall: R3's Pitchrook sinks while R4's cracks show, then R4 rises", { sink, rise });
   }
   { /* every guard can wake: from points 2 m apart within 10 m of each guard zone's centre that can be reached, with the other zones

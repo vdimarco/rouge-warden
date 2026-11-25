@@ -192,6 +192,29 @@
   .ups li button { grid-column: 2; grid-row: 1 / span 2; min-width: 88px; padding: 4px 10px; line-height: 1.15; white-space: normal; }
   .ups li button[aria-disabled="true"] { color: var(--ash); border-color: var(--edge); background: rgba(20, 18, 26, 0.9); cursor: default; font-weight: 600; font-size: 13px; }
   .ups li.top span { color: var(--ash); }
+  /* the builds (builder BC): the Lamp-room's Unlocks list and Ember row, the beacon card's kindle line, the win card's opened level, and
+     the HUD's relic marks. The marks are small ember-edged tags in lamp colours, never brighter than the fire; the HUD takes no input */
+  .unlocksT { margin: 4px 0 0; font: 700 12px/1.2 var(--title); letter-spacing: 0.12em; text-transform: uppercase; color: #f2d7a6; }
+  #unlocks li { grid-template-columns: 1fr auto; min-height: 44px; }
+  #unlocks li button { grid-row: 1; }
+  .emberLine { margin: 4px 0 6px; font-size: 13px; color: var(--ash); }
+  #emberRow { flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  #emberRow[hidden] { display: none; }
+  #emberRow button { flex: 1 0 64px; }
+  #emberRow button[aria-pressed="true"] { background: #5a2214; border-color: var(--ember); color: #ffe2bd; }
+  /* with the unlocks the Lamp-room is taller than a short screen: its lists scroll inside the card, and its own buttons (Begin the run
+     and the rest) stay at the card's foot, so the main button is always in view */
+  #lamp .box { scroll-padding-bottom: 80px; }
+  #lamp #lampRow { position: sticky; bottom: -18px; z-index: 1; margin: 0 -18px -18px; padding: 10px 18px 18px; background: rgba(10, 9, 14, 0.97); border-top: 1px solid var(--edge); }
+  @media (max-height: 660px) { #lamp #lampRow { bottom: -12px; margin: 0 -14px -12px; padding: 8px 14px 12px; } }
+  .wicks button em.kindle { display: block; margin-top: 4px; font-style: normal; font-size: 12px; color: #ffd77a; }
+  .opened { color: #ffd77a; }
+  .hud .relics { display: flex; flex-wrap: wrap; gap: 3px; align-items: center; max-width: 180px; }
+  .hud .relics[hidden] { display: none; }
+  .hud .relics i { display: block; font: 700 11px/1 var(--body); font-style: normal; padding: 3px 5px; border-radius: 6px; color: #f2d7a6; background: var(--panel2); border: 1px solid #5a3424; }
+  .hud .relics i.k { border-color: var(--ember); color: #ffd77a; }
+  .hud .relics em { font: 700 10px/1 var(--body); font-style: normal; letter-spacing: 0.08em; text-transform: uppercase; color: #ffd77a; }
+  @media (max-width: 520px) { .hud .relics i { font-size: 10px; padding: 2px 4px; } }
   .panel .bank { color: #ffd77a; font-weight: 700; }
   /* short windows: smaller titles and padding, so the pause panel and the Lamp-room fit 640 and 600 px with no scroll */
   @media (max-height: 660px) {
@@ -233,6 +256,7 @@
   <p class="life" id="life" aria-label="Health and flasks"><i class="hpbar"><i id="hpFill"></i></i><b id="hpN">100/100</b><i class="pips" id="pips"></i></p>
   <p class="count" id="count"><b>◆ 0/5</b> wisps · <i>beacon dark</i></p>
   <p class="hint" id="hint">Climb to the keep. Light the beacon.</p>
+  <div class="relics" id="relics" role="img" aria-label="No relics" hidden></div>
 </div>
 <div class="tools" id="tools" hidden>
   <button type="button" id="bLook" title="Turn the view behind the lamplighter (R)">Look</button>
@@ -317,6 +341,10 @@
   <h2 id="lampT">The Lamp-room</h2>
   <p id="lampLine">Banked: 0 glim. What you buy here lasts for every run.</p>
   <ul class="ups" id="ups"></ul>
+  <h3 class="unlocksT" id="unlocksT">Unlocks</h3>
+  <ul class="ups" id="unlocks" aria-labelledby="unlocksT"></ul>
+  <p class="emberLine" id="emberLine" hidden></p>
+  <div class="row" id="emberRow" role="group" aria-label="Ember level" hidden></div>
   <div class="row" id="lampRow"><button type="button" class="go" id="bLampBack" hidden>Back to the beacon</button><button type="button" class="go" id="bLampBegin" hidden>Begin the run</button><button type="button" class="go" id="bLampGoOn" hidden>Go on with the run</button><button type="button" id="bLampWander" hidden>Wander</button><button type="button" id="bLampToWander" hidden>Back to Wander</button><button type="button" id="bLampExplore" hidden>Explore</button></div>
 </div></div>
 
@@ -324,6 +352,7 @@
   <h2 id="winT">The downs are lit</h2>
   <p>The last light of the downs burns over Barrow Crown, and every beacon is lit.</p>
   <dl class="score"><dt>Time</dt><dd id="winTime"></dd><dt>Best winning time</dt><dd id="winBest"></dd><dt>Glim banked</dt><dd id="winBanked"></dd><dt>Runs</dt><dd id="winRuns"></dd><dt>Deaths</dt><dd id="winDeaths"></dd></dl>
+  <p class="opened" id="winOpened" hidden></p>
   <div class="row"><button type="button" class="go" id="bWinLamp">To the Lamp-room</button><button type="button" id="bWinWander" hidden>Wander</button></div>
 </div></div>
 

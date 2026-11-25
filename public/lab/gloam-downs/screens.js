@@ -2,7 +2,8 @@
 // summary, the pause panel's places and the card that a load of the page opens, all from the run's save (run-save.js) and its rules
 // (run.js). No DOM, so the Node test reads the same texts and choices that the page shows; main.js builds the cards from them.
 import { ORDER } from './save.js';
-import { WICKS, UPGRADES, BASE, maxOf, flasksOf } from './run.js';
+import { WICKS, UPGRADES, UNLOCKS, EMBER, BASE, maxOf, flasksOf } from './run.js';
+import { relicOf, kindled, KINDLE } from './relics.js';
 
 export const NUMERAL = ['I', 'II', 'III', 'IV', 'V'];
 export const NAMES = { gaol: 'The Sunken Gaol', ramparts: 'The Crow Wall', fen: 'Lantern Fen', bells: 'The Bell Knoll', barrows: 'Barrow Crown' };
@@ -46,7 +47,7 @@ const GIVES = {
   flask: () => '+1 flask',
   edge: () => '+12% blade damage',
   draught: next => `heal ${Math.round((BASE.heal + 0.1 * next) * 100)}%`,
-  ash: () => 'keep 30% of glim'
+  ash: () => 'keep 55% of glim'
 };
 export function upgradeRow(rs, id) {
   const u = UPGRADES.find(x => x.id === id), lvl = rs.up[id] || 0, max = u.costs.length, top = lvl >= max;
@@ -93,27 +94,51 @@ export function modeHref(path, search, mode) {
 }
 
 /* ---------------- the run summary ---------------- */
-export function summaryOf(e) {
+export function summaryOf(e, route = ORDER) {
+  const at = route.indexOf(e.place);
   return {
     title: e.won ? 'The downs are lit' : 'The lamp goes out',
-    rows: [['Reached', placeLine(e.place)], ['Time', fmt(e.time)], ['Foes put out', String(e.foes)], ['Glim lost', `${e.lost} glim`], ['Glim banked', `${e.banked} glim`]]
+    rows: [['Reached', at >= 0 ? `${NUMERAL[at]} · ${NAMES[e.place]}` : placeLine(e.place)], ['Time', fmt(e.time)], ['Foes put out', String(e.foes)], ['Glim lost', `${e.lost} glim`], ['Glim banked', `${e.banked} glim`]]
   };
 }
 
-// the win card: the time, the best winning time, the glim banked in this run, the runs and the deaths
+/* the win card: the time, the best winning time, the glim banked in this run, the runs and the deaths. Above Ember 0 it shows the level
+   first, and the best time is that level's; a win that opened a level says so (opened) */
 export function winOf(rs) {
-  const e = rs.ended || {};
-  return {
-    title: 'The downs are lit',
-    rows: [['Time', fmt(e.time || 0)], ['Best winning time', rs.bestWin ? fmt(rs.bestWin) : '–'], ['Glim banked', `${e.banked || 0} glim`], ['Runs', String(rs.runs)], ['Deaths', String(rs.deaths)]]
-  };
+  const e = rs.ended || {}, em = e.ember | 0, best = em ? rs.bestByEmber?.[em] : rs.bestWin;
+  const rows = [['Time', fmt(e.time || 0)], [em ? `Best at Ember ${em}` : 'Best winning time', best ? fmt(best) : '–'], ['Glim banked', `${e.banked || 0} glim`], ['Runs', String(rs.runs)], ['Deaths', String(rs.deaths)]];
+  if (em) rows.unshift(['Ember', `Ember ${em}`]);
+  return { title: 'The downs are lit', rows, opened: e.opened ? `Ember ${e.opened} opens in the Lamp-room: ${EMBER[e.opened]}.` : '' };
+}
+
+/* ---------------- the builds ----------------
+   The Lamp-room's Unlocks list: "<name> · <what it gives> · <cost> glim", and "<name> · bought" once bought. Its Buy is as an
+   upgrade's: off with too little glim, and saying how much more is needed */
+export function unlockRow(rs, id) {
+  const u = UNLOCKS.find(x => x.id === id), got = (rs.unlocks || []).includes(id), need = got ? 0 : Math.max(0, u.cost - rs.bank);
+  return { id, cost: u.cost, got, need, label: got ? `${u.name} · bought` : `${u.name} · ${u.text} · ${u.cost} glim`, buy: got ? null : need ? `${need} more glim` : 'Buy' };
+}
+export const unlockRows = rs => UNLOCKS.map(u => unlockRow(rs, u.id));
+// the Ember row: a button for each open level, the chosen one on; none before the first win
+export const emberRow = rs => ((rs.emberTop | 0) < 1 ? [] : Array.from({ length: (rs.emberTop | 0) + 1 }, (_, i) => ({ n: i, label: `Ember ${i}`, on: (rs.ember | 0) === i, text: EMBER[i] })));
+// the relics on the HUD: a short mark for each, and whether it kindles with a wick of the run
+export const relicMarks = run => (run?.relics || []).map(id => ({ id, mark: relicOf(id)?.mark || '?', name: relicOf(id)?.name || id, kindled: kindled(run, id) }));
+// the beacon card's line for a wick that kindles a relic the run holds
+export const kindleLine = (run, wick) => { const k = KINDLE.find(x => x.wick === wick && (run?.relics || []).includes(x.relic)); return k ? `Kindled with ${relicOf(k.relic).name}: ${k.text}` : ''; };
+// the help lines for the moves that unlocks add, on every device's Attack
+export function moveLines(rs) {
+  const u = rs.unlocks || [], out = [];
+  if (u.includes('rising')) out.push('Rising cut: attack as a roll ends.');
+  if (u.includes('parry')) out.push('Ember parry: start a first cut just as a blow comes, facing it.');
+  return out;
 }
 
 /* ---------------- the pause panel ----------------
    The five places of the run, each passed, here or ahead, and the two questions it asks again before it acts */
-export const routeOf = place => {
-  const at = ORDER.indexOf(place);
-  return ORDER.map((id, i) => ({ id, n: NUMERAL[i], name: NAMES[id], state: i < at ? 'passed' : i === at ? 'here' : 'ahead' }));
+// in the run's own route (from Ember 1 the seed orders places II to IV)
+export const routeOf = (place, route = ORDER) => {
+  const at = route.indexOf(place);
+  return route.map((id, i) => ({ id, n: NUMERAL[i], name: NAMES[id], state: i < at ? 'passed' : i === at ? 'here' : 'ahead' }));
 };
 export const ASKS = {
   end: { line: () => 'End the run? The glim you carry is lost.', yes: 'Yes, end it' },

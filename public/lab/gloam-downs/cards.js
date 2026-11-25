@@ -27,7 +27,10 @@ export function move(d) {
   const list = buttonsOf(c.el);
   if (!list.length) return;
   const i = list.indexOf(document.activeElement);
-  list[i < 0 ? (d > 0 ? 0 : list.length - 1) : wrapIndex(i, list.length, d)].focus({ preventScroll: true });
+  const b = list[i < 0 ? (d > 0 ? 0 : list.length - 1) : wrapIndex(i, list.length, d)];
+  b.focus({ preventScroll: true });
+  // a long card (the Lamp-room with its unlocks) scrolls inside itself, so the focused button is in view with keys or a pad alone
+  b.scrollIntoView?.({ block: 'nearest' });
 }
 // press the focused button, or the main button when the focus is outside the card -> the button pressed
 export function press() {

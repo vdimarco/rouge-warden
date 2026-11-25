@@ -12,10 +12,14 @@ import { ORDER, LATTICE, load, store, wispCount, fresh } from './save.js';
 import { placeName, nextOf, mapGroups, mapLine, arriveLine, hintOf, startPlace } from './places.js';
 import * as RS from './run-save.js';
 import { STEP, stepCount, startRun, reload, goTo, chooseWick, buy, maxOf, flasksOf, makeRunner, newSeed, WICKS } from './run.js';
-import { nearest, faceYaw, makePost, HITS, clearLine } from './moves.js';
+import { nearest, faceYaw, makePost, HITS, hitOf, clearLine } from './moves.js';
 import { NUMERAL, NAMES, fmt, stepsOf, INK, inkAt, TIMED, hudOf, wickLine, wickName, upgradeRows, lampButtons, summaryOf, winOf, routeOf, ASKS, cardOnLoad, isRun, modeHref } from './screens.js';
 import { makeInput, navStep, readPads, heldNav } from './input.js';
 import * as cards from './cards.js';
+// the builds (relics, unlocks, Ember): builder BC's hooks
+import { relicEvent, RELIC_IDS } from './relics.js';
+import { UNLOCK_IDS, buyUnlock, setEmber, routeOfRun, emberOf } from './run.js';
+import { unlockRows, emberRow, relicMarks, kindleLine, moveLines } from './screens.js';
 import { makePool } from './pool.js';
 import { figures, poolFor, lineup, LINEUP } from './figures.js';
 import { findVeils, makeVeils, findOccluders, makeOccluders, VEIL } from './veil.js';
@@ -295,6 +299,7 @@ function updateHud() {
 }
 // the run's HUD: the health bar with its number and a pip for each flask, then the wisps of this place and the glim carried
 function updateRunHud() {
+  updateRelics();
   const h = hudOf(rs, runner?.wisps.size || 0);
   $('where').textContent = meta.name;
   $('life').hidden = !h;
@@ -312,6 +317,89 @@ function updateRunHud() {
   $('life').setAttribute('aria-label', `Health ${h.text}, ${h.pips.filter(Boolean).length} of ${h.pips.length} flasks`);
   $('count').innerHTML = `<b>◆ ${h.wisps}/5</b> wisps · <em>● ${h.glim}</em> glim`;
   $('healN').textContent = String(Math.min(5, rs.run.flasks));
+}
+/* ---------------- the builds on the page (builder BC) ----------------
+   The HUD's relic marks: a short mark for each relic held, ember when it kindles with a wick, and "Kindled" after them once one does */
+function updateRelics() {
+  const el = $('relics');
+  if (!el) return;
+  const marks = RUN && rs.run ? relicMarks(rs.run) : [];
+  el.hidden = !marks.length;
+  const html = marks.map(m => `<i class="rl${m.kindled ? ' k' : ''}" title="${m.name}${m.kindled ? ' · Kindled' : ''}">${m.mark}</i>`).join('') + (marks.some(m => m.kindled) ? '<em>Kindled</em>' : '');
+  if (el.innerHTML !== html) el.innerHTML = html;
+  el.setAttribute('aria-label', marks.length ? `Relics: ${marks.map(m => m.name + (m.kindled ? ', kindled' : '')).join('; ')}` : 'No relics');
+}
+// what the builds' events show on the page (relics.js relicEvent)
+const buildPage = { toast: (html, ms) => toast(html, ms), hud: () => updateHud() };
+// the Lamp-room's Unlocks list and Ember row (fillLamp)
+function fillBuilds() {
+  const list = $('unlocks');
+  for (const row of unlockRows(rs)) {
+    let li = list.querySelector(`li[data-unlock="${row.id}"]`);
+    if (!li) {
+      li = document.createElement('li');
+      li.dataset.unlock = row.id;
+      li.innerHTML = '<span></span><button type="button"></button>';
+      li.querySelector('button').addEventListener('click', () => buyUnlockRow(row.id));
+      list.appendChild(li);
+    }
+    li.classList.toggle('top', row.got);
+    li.querySelector('span').textContent = row.label;
+    const btn = li.querySelector('button');
+    btn.hidden = row.got;
+    btn.textContent = row.buy || '';
+    btn.setAttribute('aria-disabled', String(!!row.need));
+    btn.setAttribute('aria-label', row.need ? `${row.label}: ${row.need} more glim needed` : `Buy ${row.label}`);
+  }
+  const box = $('emberRow'), levels = emberRow(rs);
+  box.hidden = !levels.length || !!rs.run;
+  const want = levels.map(l => l.n).join();
+  if (box.dataset.levels !== want) {
+    box.dataset.levels = want;
+    box.innerHTML = '';
+    for (const l of levels) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.dataset.ember = String(l.n);
+      b.textContent = l.label;
+      b.title = l.text;
+      b.addEventListener('click', () => { if (setEmber(rs, l.n)) { audio?.cue('choice'); storeRun(); fillLamp(); } });
+      box.appendChild(b);
+    }
+  }
+  for (const b of box.querySelectorAll('button')) b.setAttribute('aria-pressed', String(Number(b.dataset.ember) === (rs.ember | 0)));
+  $('emberLine').hidden = box.hidden;
+  $('emberLine').textContent = levels.length ? `Ember ${rs.ember | 0}: ${levels[rs.ember | 0].text}.` : '';
+}
+function buyUnlockRow(id) {
+  const btn = $('unlocks').querySelector(`li[data-unlock="${id}"] button`), had = document.activeElement === btn;
+  if (!buyUnlock(rs, id)) { audio?.cue('refuse'); return; }
+  audio?.cue('buy');
+  storeRun();
+  fillLamp();
+  showControls();
+  // a bought row has no Buy button: the focus goes on to the next Buy button, or to the main button
+  if (had && btn.hidden) {
+    const all = [...$('lamp').querySelectorAll('.ups li button')], at = all.indexOf(btn);
+    const next = [...all.slice(at + 1), ...all.slice(0, at)].find(b => !b.hidden);
+    next ? next.focus({ preventScroll: true }) : cards.focusMain();
+  }
+}
+// ?test: what the builds are now, for __gloam.run()
+function buildsView() {
+  const run = rs?.run, E = fight?.foes.elite?.();
+  return {
+    relics: run?.relics?.slice() ?? [], unlocks: (rs?.unlocks || []).slice(), ember: run ? emberOf(run) : rs?.ember ?? 0, emberTop: rs?.emberTop ?? 0, route: run ? routeOfRun(run).slice() : null,
+    kindled: run ? relicMarks(run).filter(m => m.kindled).map(m => m.id) : [], ground: runner?.relics ? runner.relics.view().ground : [],
+    elite: E ? { id: E.id, name: E.elite.name, zone: E.zone.id, c: E.zone.c.slice(), hp: E.hp, max: E.T.hp, size: E.size, state: E.state, out: E.out, special: E.special ? E.special.def.kind : null } : null
+  };
+}
+// ?test: __gloam.set's build fields
+function setBuilds(o) {
+  if (Array.isArray(o.unlocks)) rs.unlocks = [...new Set(o.unlocks.filter(u => UNLOCK_IDS.includes(u)))];
+  if (Number.isInteger(o.emberTop)) rs.emberTop = Math.max(0, Math.min(5, o.emberTop));
+  if (Number.isInteger(o.ember)) { rs.emberTop = Math.max(rs.emberTop | 0, o.ember); setEmber(rs, Math.max(0, Math.min(5, o.ember))); if (rs.run) rs.run.ember = rs.ember; }
+  if (Array.isArray(o.relics) && rs.run) rs.run.relics = [...new Set(o.relics.filter(r => RELIC_IDS.includes(r)))].slice(0, 5);
 }
 // in a run the toast sits 8 px under the HUD's measured bottom, at every width, and again whenever the HUD changes size
 function placeToast() {
@@ -382,7 +470,8 @@ function helpLines() {
 }
 function showControls() {
   if (!RUN) return;
-  const html = CONTROLS[controlsKind()].map(l => `<li>${l}</li>`).join('');
+  // the moves that unlocks add use the Attack input of every device: one line each once bought
+  const html = [...CONTROLS[controlsKind()], ...moveLines(rs)].map(l => `<li>${l}</li>`).join('');
   for (const id of ['runControls', 'pauseControls']) $(id).innerHTML = html;
 }
 /* a mouse found or lost changes the mouse lines, and so the height of the card they are on. Under an open card a change in the press
@@ -488,12 +577,14 @@ function beginRun(card) {
   soundPress();
   audio?.cue('choice');
   rs.seen = true;
-  startRun(rs, seed());
+  // at the Ember level chosen in the Lamp-room, in its route; with Wick shelf the beacon card first offers two starting wicks
+  startRun(rs, seed(), rs.ember | 0);
   storeRun();
   closeCard(card);
   if (meta.id !== rs.run.place || !placeFresh) return go(rs.run.place);
   newRunner();
   updateHud();
+  if (rs.run.offer) openBeacon();
 }
 $('bBegin').addEventListener('click', () => beginRun('runHelp'));
 // Explore: the run's first card also opens the explorer, the places with no foes
@@ -506,7 +597,7 @@ const seed = () => (q.has('seed') ? Number(q.get('seed')) >>> 0 || 1 : newSeed(r
 function openPause() {
   if (!rs.run) return;
   asking = null;
-  $('route').innerHTML = routeOf(rs.run.place).map(p => `<li class="${p.state}"><span>${p.n}</span> ${p.name}<em>${p.state === 'here' ? 'now' : p.state}</em></li>`).join('');
+  $('route').innerHTML = routeOf(rs.run.place, routeOfRun(rs.run)).map(p => `<li class="${p.state}"><span>${p.n}</span> ${p.name}<em>${p.state === 'here' ? 'now' : p.state}</em></li>`).join('');
   $('pauseLine').textContent = `Run time ${fmt(rs.run.time)}`;
   soundLabel();
   $('pauseRow').hidden = false;
@@ -556,7 +647,7 @@ $('pause').addEventListener('pointerdown', e => { if (e.target === $('pause') &&
 // the beacon card: two wicks to choose from, then Spend glim (the Lamp-room) and Walk on. Its offer is in the save, so a reload before
 // the choice shows the same two wicks over the next place
 function openBeacon() {
-  const run = rs.run, offer = run.offer, box = $('wicks');
+  const run = rs.run, offer = run.offer, box = $('wicks'), shelf = !!run.shelf;
   box.textContent = '';
   for (const id of offer || []) {
     const b = document.createElement('button'), name = document.createElement('b');
@@ -565,16 +656,23 @@ function openBeacon() {
     b.dataset.wick = id;
     name.textContent = wickName(id);
     b.append(name, wickLine(id).slice(name.textContent.length));
+    // a wick that kindles a relic the run holds says so
+    const k = kindleLine(run, id);
+    if (k) { const em = document.createElement('em'); em.className = 'kindle'; em.textContent = k; b.append(em); }
     b.addEventListener('click', () => {
       if (!rs.run?.offer || !chooseWick(rs, id)) return;
       audio?.cue('choice');
       storeRun();
       updateHud();
+      // Wick shelf's starting wick: the card closes and the run starts in the Gaol
+      if (shelf) { rs.run.shelf = false; storeRun(); return closeCard('beaconCard'); }
       openBeacon();
     });
     box.appendChild(b);
   }
-  $('beaconLine').textContent = offer ? 'Choose a wick. It burns for the rest of the run.' : `${wickName(run.wicks.at(-1))} burns in the lamp.`;
+  $('beaconT').textContent = shelf ? 'The Wick shelf' : 'The beacon burns';
+  const lit = run.wicks.at(-1), kl = lit ? kindleLine(run, lit) : '';
+  $('beaconLine').textContent = offer ? (shelf ? 'Choose a wick to start the run with. It burns for the whole run.' : 'Choose a wick. It burns for the rest of the run.') : `${wickName(lit)} burns in the lamp.${kl ? ` Kindled: ${kl.split(': ')[1]}.` : ''}`;
   $('beaconBank').innerHTML = `Banked: <b class="bank">${rs.bank} glim</b>. Spend it in the Lamp-room, or walk on.`;
   $('beaconBank').hidden = $('beaconRow').hidden = !!offer;
   // before the wick is chosen only a wick button closes the card: it has no back action. The Lamp-room theme follows the stinger
@@ -622,6 +720,7 @@ function fillLamp() {
     btn.setAttribute('aria-disabled', String(!!row.need));
     btn.setAttribute('aria-label', row.need ? `${row.label}: ${row.need} more glim needed` : `Buy ${row.label}`);
   }
+  fillBuilds();
 }
 function buyUp(id) {
   const btn = $('ups').querySelector(`li[data-up="${id}"] button`), had = document.activeElement === btn;
@@ -666,8 +765,12 @@ $('bSumLamp').addEventListener('click', () => {
    Wander shows from the first win, or Wander. The win is stored already, so a reload before it closes shows it again */
 function openWin() {
   emit('lamp-room', { wait: 0 });
-  const w = winOf(rs), dds = $('winCard').querySelectorAll('dd');
-  w.rows.forEach(([, v], i) => { dds[i].textContent = v; });
+  // the rows as winOf gives them: above Ember 0 the level first, and that level's best time; and the level a win opened
+  const w = winOf(rs), dl = $('winCard').querySelector('dl');
+  dl.textContent = '';
+  for (const [k, v] of w.rows) { const dt = document.createElement('dt'), dd = document.createElement('dd'); dt.textContent = k; dd.textContent = v; dl.append(dt, dd); }
+  $('winOpened').hidden = !w.opened;
+  $('winOpened').textContent = w.opened;
   $('bWinWander').hidden = !wanderOpen();
   openCard('winCard', 'ended', () => $('bWinLamp'));
 }
@@ -793,6 +896,7 @@ function newRunner() {
 // what the runner's step did, on the page
 function runEvent(e) {
   fight?.event(e);
+  relicEvent(e, buildPage);
   switch (e.type) {
     case 'wisp':
       setLit([meta.wisps[e.i].ids], false);
@@ -1044,7 +1148,7 @@ async function go(id) {
     openOnLoad();
     storeRun();
     // the boss files come while The Bell Knoll plays, or once play starts in Barrow Crown; never after the boss's fall
-    if (!LOOK && rs.run && (id === 'bells' || id === 'barrows') && !rs.run.bossDown) fetchBoss();
+    if (!LOOK && rs.run && routeOfRun(rs.run).indexOf(id) >= 3 && !rs.run.bossDown) fetchBoss();
   } else if (!save.seen) {
     helpLines();
     $('help').hidden = false;
@@ -1242,7 +1346,8 @@ const runState = () => {
     carried: run?.carried ?? 0, bank: rs?.bank ?? 0, wisps: runner?.wisps.size ?? 0, wicks: run?.wicks.slice() ?? [], offer: run?.offer?.slice() ?? null,
     foes: run?.foes ?? 0, banked: run?.banked ?? 0, bossDown: !!run?.bossDown, time: run?.time ?? 0, entry: run ? { ...run.entry } : null,
     step: k?.step ?? 0, playStep: k?.play ?? 0, stop: k?.stop ?? 0, ended: rs?.ended ? { ...rs.ended } : null,
-    move: f?.move ?? null, hit: f?.move === 'hit' ? HITS[f.hit].id : null, t: f ? f.t / 60 : 0, safe: runner?.fighter.safe() ?? null, combo: runner?.fighter.nextHit() ?? 0,
+    ...buildsView(),
+    move: f?.move ?? null, hit: f?.move === 'hit' ? hitOf(f.hit).id : null, t: f ? f.t / 60 : 0, safe: runner?.fighter.safe() ?? null, combo: runner?.fighter.nextHit() ?? 0,
     fx: {
       kick: fxNow.kick.slice(), zoom: fight ? fight.feel.zoom() : fxNow.zoom, bars: fight ? fight.feel.bars() : fxNow.bars, grade: (fight?.cols || meta?.pal || []).slice(), blink: !!body?.s.hide,
       low: !!fight?.feel.low, beats: fight?.feel.beats ?? 0, tell: fight?.grow ?? 1
@@ -1348,6 +1453,7 @@ window.__gloam = {
     }
     // the boss's health: the phase of that health at once, with one hit stop of 9 steps and one stumble of 2 s
     if (Number.isFinite(o.bossHp) && fight?.boss) { fight.hooks.bossHp(o.bossHp); fillBossBar(); }
+    setBuilds(o);
     updateHud();
     if (mode === 'lamp') fillLamp();
     storeRun();

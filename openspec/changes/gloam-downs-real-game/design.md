@@ -237,6 +237,37 @@ Three builders work in parallel. Each owns files, and each may add only the name
 - If the bot shows that a 0.9 run cannot reach 20 minutes with these levers, the builders report it to the user and do not pad the run.
 - The bot runs the page's own rules with `mix.js`, `elites.js` and `relics.js` on the real walk maps. It writes its results here.
 
+## Builder BC: what was built
+This is what builder BC built on branch `gloam-real-bc`, and where it differs from the plan above.
+
+### Hooks in shared files
+- `foes.js` has three lines: the `elites.js` import, one line after `freeOf` that makes the elite kit (`eliteKit(F, { ... })`), and one line at the top of `mind()`: `const em = EK.think(f, ev); if (em) return em.want;`. The kit picks the elite's zone, makes the elite, runs its special move, and puts the Ember rules on every foe on its first think (the cooldowns at Ember 2, the elite's health at Ember 1). An elite's special move runs with the foe in `chase`, so the hit rules of `hitFoe` and the knock-down still apply. `elites.js` exports `eliteClip(f)`, so `fight.js` can pose a special move with the base move's clips.
+- `main.js`: the bodies of `beginRun`, `fillLamp` and `openBeacon`, the `relicEvent(e, buildPage)` line in `runEvent`, `updateRelics()` in `updateRunHud`, `...buildsView()` in `runState`, and `setBuilds(o)` in `__gloam.set`. It also needed four small lines outside the plan: the imports (put after the `cards.js` import, away from builder A's line), `routeOf(place, route)` in `openPause`, the boss files loading in the fourth place of the route in `go()`, and `hitOf(f.hit).id` in `runState` (the Rising cut is hit 3). `showControls` adds the help lines of the moves bought, and the win card builds its rows from `winOf`.
+- `index.html`: `#unlocks` (with an "Unlocks" heading), `#emberLine` and `#emberRow` in the Lamp-room, `#relics` as the last child of `#hud`, `#winOpened` on the win card, and their CSS after the `.ups` rules.
+- `cards.js`: a button that takes the focus by Tab or the pad is scrolled into view inside its card.
+
+### Where it differs from the plan
+- **The Bellwether stands in B1.** The Bell Knoll's pool has one Ironback slot, and only B1, the first zone, holds an Ironback. A second Ironback added to B2 or B3 waits for that slot while B1 is awake, so the zone it joined could stay asleep (`gloam-downs-foes-ai.test.mjs` found it). `eliteZone` now uses the first zone when it is the only zone that holds the elite's type. Every other elite stands in a zone that is not the first.
+- **The Cairnwarden's sweep** starts from 3.2 m, as the hook does, and the Cairnwarden steps in at 1.2 m/s during the wind-up until it is 1.6 m away. From 2.4 m, as first planned, the sweep never started: the Snuffer's mind holds 2.8 m away.
+- **The Fen-wick's split is its fall.** The Fen-wick goes out at the split, so its relic and its 15 glim drop then. The two Mirelights of 14 are plain foes.
+- **The Lamp-room scrolls inside its card.** Five upgrade rows, seven unlocks and the Ember row do not fit 640 px. The lists scroll, and the card's own buttons (Begin the run and the rest) stand at its foot. The cards and clicks e2e now check that each button comes into view clear of that foot, and that the page never scrolls.
+- **Sounds.** The builds use cues that already have a recipe: a relic taken is `wisp`, an Echo blade hit is `hit`, a parry is `clang`, Last ember is `heal`, and each elite's tell is its base move's cue (`scrape`, `whistle`, `hum`, `paw`, `rear`). Each carries a field (`relic`, `parry`, `last`, `elite`) so builder A can give them their own sound.
+- **Ember 4's damage** is applied in `run.js`'s `hurt`, so the boss's hits are 20% stronger at Ember 4 too.
+- **Not built:** Ember 5's boss health (+25%) and its phase 3 at 40%. They need `boss.js`, which no builder owns, so `bossBar()` has no Ember 5 tick yet. The arrival card's numeral and the summary's "Reached" line still number the places in the downs' order on a seeded route. The relic lamps, the fire lines and rings and the crown are not drawn: `fight.js` is builder D's, and it reads `groundRelics(R)`, `R.relics.view()` and `dressOf(f)`.
+
+### The pacing bot, first results
+`qa/lab/gloam-downs-bot.mjs` plays whole runs on the real walk maps with the run, the moves, the foes, the elites, the relics and the Lamp-room. It walks each place's route from `games/gloam-downs/lib/zones.mjs`. A bot that makes no progress for 3 s is put at its next point (a nudge, with 3 s added). The Barrow Reeve's fight is not stepped: it is drawn from the boss bot's results in add-gloam-downs. `mix.js` and the second waves are builder D's and are not in this branch, so the bot plays the baked zones.
+
+`node qa/lab/gloam-downs-bot.mjs 30 <skill> 1`, Ember 0, about 15 s a run of 30 bots:
+
+| Skill | First run reaches The Crow Wall | First win: median run | Winning run (game time) | Nudges a run |
+|---|---|---|---|---|
+| 0.3 | 30 of 30 | 2 | 4.1 min | 16 |
+| 0.5 | 30 of 30 | 1 | 4.2 min | 16 |
+| 0.9 | 30 of 30 | 1 | 6.6 min | 33 |
+
+Every target but the first misses. Runs are 4 to 7 minutes, not 20 to 30, and bots seldom die before Barrow Crown. Two things make these numbers too kind. The bot's walk is crude, so it is often nudged ahead of where a player would walk. And without the second waves, the bot has fewer foes than the design plans. Task 4.4 should tune with the levers in "Pacing" once `mix.js` is merged, and teach the bot to walk without nudges first. If the targets still miss, the user should be told.
+
 ## Sources
 Each source is named with how it was used. None was fetched in this session: the network rules of this session were not tried, so all are cited from memory. A builder that fetches one adds "fetched" and the date.
 - **Dead Cells** (Motion Twin, 2018), game, from memory: elite foes that guard an item, the Boss Cell levels that open after a win and add rules, and runs whose biome order changes. We took the shape: elites that drop a change to your moves, and levels of heat after a win. No name, item or rule is copied.
