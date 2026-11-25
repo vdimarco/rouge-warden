@@ -106,8 +106,6 @@ export const eliteZone = zones => zones.find(z => Number.isInteger(z.elite))?.id
 /* ---------------- the route ----------------
    From Ember 1 the seed orders places II to IV; the Gaol stays first and Barrow Crown last. Below Ember 1 the order is as it was */
 export const routeOf = (seed = 1, ember = 0) => routeFor(seed, ember); // one rule with run.js, which the run keeps in run.route
-  return [ORDER[0], ...mid, ORDER.at(-1)];
-}
 
 /* ---------------- the guard's second wave ----------------
    When every foe of a guard zone is put out, a second wave rises 1.5 s later at the same spots: the guard's baked foes less the first

@@ -258,7 +258,7 @@ try {
     r = await run(page);
     assert.equal(r.mode, 'dying');
     // the foes put out are the keep's three Snuffers, put out before the Gaol's beacon
-    assert.deepEqual(r.ended, { won: false, place: 'ramparts', time: r.ended.time, foes: 3, lost: 15, banked: 49, ember: 0, opened: null, relics: [], combo: 0 }, 'Cinders keep 5 of the 20 carried');
+    assert.deepEqual(r.ended, { won: false, place: 'ramparts', time: r.ended.time, foes: 3, lost: 15, banked: 49, ember: 0, opened: null, relics: [], combo: 0, seed: r.ended.seed }, 'Cinders keep 5 of the 20 carried');
     await tick(page, 0.5, {});
     await G(page, () => window.__gloam.draw());
     await shot(page, 'keys-fade-1280x720');

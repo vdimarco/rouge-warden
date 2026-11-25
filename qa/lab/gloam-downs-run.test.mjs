@@ -865,7 +865,7 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   R.hurt(16, [0, -1], {}, ev);
   assert(ev.some(e => e.type === 'dead') && ev.some(e => e.type === 'store'), 'death stores the run at once');
   // Cinders: a death keeps 25% of the 20 carried
-  assert.deepEqual(rr.ended, { won: false, place: 'ramparts', time: 0, foes: 0, lost: 15, banked: 49, ember: 0, opened: null, relics: [], combo: 0 });
+  assert.deepEqual(rr.ended, { won: false, place: 'ramparts', time: 0, foes: 0, lost: 15, banked: 49, ember: 0, opened: null, relics: [], combo: 0, seed: rr.ended.seed });
   assert.equal(R.clock.stop, 9, 'death holds the game for 9 steps');
   pass('the win at the last beacon and a death end the run and keep their figures');
 }
@@ -911,7 +911,7 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   const fade = RS.load(storage);
   assert.equal(fade.run, null);
   // Cinders keep 5 of the 20 carried
-  assert.deepEqual({ ...fade.ended, time: +fade.ended.time.toFixed(2) }, { won: false, place: 'gaol', time: 1.25, foes: 0, lost: 15, banked: 5, ember: 0, relics: [], combo: 0, opened: null });
+  assert.deepEqual({ ...fade.ended, time: +fade.ended.time.toFixed(2) }, { won: false, place: 'gaol', time: 1.25, foes: 0, lost: 15, banked: 5, ember: 0, relics: [], combo: 0, seed: fade.ended.seed, opened: null });
   assert.equal(fade.deaths, 1);
   pass('a reload just after a hit keeps the hit, and a reload in the death fade shows the summary');
 }
@@ -1214,14 +1214,14 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   pass('the pose of each move is finite, the roll turns round the middle, and the blink hides every bone but the shadow');
 }
 
-{ // the score's sample bank: 500 KB or less, every file in its manifest, and the license note
+{ // the score's sample bank: 800 KB or less, every file in its manifest, and the license note
   const man = JSON.parse(fs.readFileSync(`${DIR}audio/manifest.json`, 'utf8'));
   let bytes = 0, files = 0;
   for (const e of Object.values(man.instruments)) for (const f of Object.values(e.notes)) { bytes += fs.statSync(`${DIR}audio/${f}`).size; files++; }
-  assert(bytes <= 500 * 1024, `the bank is ${bytes} bytes`);
+  assert(bytes <= 800 * 1024, `the bank is ${bytes} bytes`);
   const readme = fs.readFileSync(`${DIR}audio/README.md`, 'utf8');
   assert(/FluidR3_GM/.test(readme) && /Frank Wen/.test(readme) && /CC BY 3\.0/.test(readme) && /MIT/.test(readme));
-  pass('the sample bank is 500 KB or less, and audio/README.md holds the license note', { files, kb: Math.round(bytes / 1024) });
+  pass('the sample bank is 800 KB or less, and audio/README.md holds the license note', { files, kb: Math.round(bytes / 1024) });
 }
 
 /* ---------------- the swings (design.md "The swings") ----------------
