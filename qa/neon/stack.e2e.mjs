@@ -222,6 +222,86 @@ check(Math.abs(afterDrag.yaw - hold.yaw) < 2, "a phone drag does not turn (" + a
 await phone.context.close();
 await desk.context.close();
 
+// Share of each plate's changing texels that are actually on screen. The fractions are the
+// on-versus-off texels in the 32×48 frames (431, 236, 232, 310, 262, 372 of 1536).
+const PLATE_FRAC = [431, 236, 232, 310, 262, 372].map((n) => n / 1536);
+async function plates(width, height, dpr) {
+  const ctx = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: dpr });
+  for (const seed of [1, 4, 7, 9]) {
+    const page = await ctx.newPage();
+    await page.goto(GAME + "?seed=" + seed, { waitUntil: "domcontentloaded" });
+    await page.waitForFunction(() => window.__test && __test.ready());
+    const rows = await page.evaluate(async (frac) => {
+      __test.enter();
+      __test.moveTo(2.5, 5.2);
+      __test.setTilt(55);
+      __test.setYaw(0);
+      for (let i = 0; i < 6; i++) __test.setSign(i, true);
+      await new Promise((r) => setTimeout(r, 180));
+      const canvas = document.querySelector("canvas");
+      const gl = canvas.getContext("webgl2");
+      const grab = () => {
+        const buf = new Uint8Array(canvas.width * canvas.height * 4);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, buf);
+        return buf;
+      };
+      const v = __test.view();
+      const signs = __test.signs();
+      const out = [];
+      for (let i = 0; i < signs.length; i++) {
+        const p = signs[i].plate;
+        const corners = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sx, sy]) => __test.project((p.x + sx * p.hx) / 32, p.z / 32, p.y + sy * p.hz));
+        const poly = corners.map((c) => [v.ox + c.x * v.scale, v.oy + (v.artH - c.y) * v.scale]);
+        let area = 0;
+        for (let a = 0; a < 4; a++) {
+          const q = poly[a], r = poly[(a + 1) % 4];
+          area += q[0] * r[1] - r[0] * q[1];
+        }
+        area = Math.abs(area) / 2;
+        const on = grab();
+        __test.setSign(i, false);
+        await new Promise((r) => setTimeout(r, 40));
+        const off = grab();
+        __test.setSign(i, true);
+        const inside = (x, y) => {
+          let n = false;
+          for (let a = 0, b = 3; a < 4; b = a++) {
+            const yi = poly[a][1], yj = poly[b][1];
+            if ((yi > y) !== (yj > y) && x < (poly[b][0] - poly[a][0]) * (y - yi) / ((yj - yi) || 1e-6) + poly[a][0]) n = !n;
+          }
+          return n;
+        };
+        let diff = 0;
+        const W = canvas.width;
+        for (let k = 0; k < on.length; k += 4) {
+          if (Math.abs(on[k] - off[k]) + Math.abs(on[k + 1] - off[k + 1]) + Math.abs(on[k + 2] - off[k + 2]) <= 18) continue;
+          const px = (k / 4) % W, py = Math.floor(k / 4 / W);
+          if (inside(px + 0.5, py + 0.5)) diff++;
+        }
+        out.push({ name: signs[i].name, share: area ? diff / (area * frac[i]) : 0 });
+      }
+      const lights = __test.state().lights.filter((l) => l.type === "neon");
+      const dark = (ty) => {
+        let n = 0;
+        for (let tx = 0; tx < 6; tx++) {
+          const x = tx + 0.5, y = ty + 0.5;
+          if (lights.every((l) => Math.hypot(l.x - x, l.y - y) > 2)) n++;
+        }
+        return n;
+      };
+      return { out, alley: [dark(2), dark(4)] };
+    }, PLATE_FRAC);
+    for (const row of rows.out) check(row.share >= 0.8, width + " seed " + seed + " " + row.name + " plate " + Math.round(row.share * 100) + "% visible");
+    check(rows.alley[0] >= 2 && rows.alley[1] >= 2, width + " alleys keep dark tiles (" + rows.alley.join(",") + ")");
+    await page.close();
+  }
+  await ctx.close();
+}
+console.log("plates");
+await plates(1280, 800, 1);
+await plates(390, 844, 2);
+
 console.log("homepage");
 for (const [w, h, dpr] of [[1280, 800, 1], [390, 844, 2], [320, 640, 2]]) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: dpr });

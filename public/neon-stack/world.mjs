@@ -121,12 +121,12 @@ export function build(seed) {
   ];
   const nseed = (Number(seed) || 1) >>> 0;
   const rand = mulberry32(nseed || 1);
-  // Street signs stand 3 storeys. Anything between one and the camera is shorter.
-  const signLots = [[1, 0], [1, 1], [4, 0], [4, 1]];
+  // Plates sit on storeys 1–2. A lot between a plate and the camera is one storey, with no roof prop.
+  const signLots = [[1, 0], [1, 1], [4, 0], [4, 1], [0, 1], [5, 3]];
   const lots = spots.map(([tx, ty]) => [tx, ty, tx === 0 && ty === 0 ? 7 : 1 + Math.floor(rand() * 6)]);
   for (const [sx, sy] of signLots) {
     for (const lot of lots) {
-      if (lot[0] === sx && lot[1] > sy) lot[2] = Math.min(lot[2], 2);
+      if (lot[0] === sx && lot[1] > sy) lot[2] = 1;
     }
   }
   const blockedFront = (tx, ty) => signLots.some(([sx, sy]) => tx === sx && ty > sy);
@@ -138,6 +138,11 @@ export function build(seed) {
   for (const lot of flex()) {
     if (lots.filter((l) => l[2] >= 5).length >= 2) break;
     if (lot[2] < 5) lot[2] = 5 + Math.floor(rand() * 2);
+  }
+  // The back-row plates sit on storeys 4–5, so those two lots have to be that tall.
+  for (const [sx, sy] of [[1, 0], [4, 0]]) {
+    const lot = lots.find((l) => l[0] === sx && l[1] === sy);
+    if (lot[2] < 6) lot[2] = 6;
   }
   const propNames = [];
   let ac = 0;
@@ -182,9 +187,13 @@ export function build(seed) {
       }
     }
     slices.push(slice(x, z, storeys * TILE, TILE / 2, TILE / 2, uvOf("roof_cap"), 9, 0, bi, false, 0));
-    const prop = propNames[bi];
-    const ph = frames.frames[prop].h * PX;
-    slices.push(slice(x, z + 2, storeys * TILE + ph / 2, frames.frames[prop].w * PX / 2, ph / 2, uvOf(prop), 9, 0, bi, false, 2));
+    if (!blockedFront(tx, ty)) {
+      const prop = propNames[bi];
+      const fr = frames.frames[prop];
+      const scale = Math.min(1, (TILE * 0.5) / (fr.h * PX));
+      const ph = fr.h * PX * scale;
+      slices.push(slice(x, z + 2, storeys * TILE + ph / 2, fr.w * PX * scale / 2, ph / 2, uvOf(prop), 9, 0, bi, false, 2));
+    }
   });
 
   // Street and sidewalks. Outside the block the ground is ink, so the frame edges are not grey.
@@ -217,6 +226,7 @@ export function build(seed) {
   // Ink neighbour blocks. South faces only: the spawn camera looks north, so the sides are edge-on.
   for (let ty = -1; ty < GRID + 12; ty++) for (let tx = -6; tx <= GRID + 1; tx++) {
     const inside = tx >= 0 && ty >= 0 && tx < GRID && ty < GRID;
+    // The row just south of the block would stand in front of the exit.
     if (inside || tx === 2 || tx === 3) continue;
     const x = (tx + 0.5) * TILE;
     const z = (ty + 0.5) * TILE;
@@ -224,28 +234,33 @@ export function build(seed) {
     slices.push(slice(x, z, TILE, TILE / 2, TILE / 2, uvOf("side_face"), 10, 0, -1, false, 0));
   }
 
-  // Four street signs on south faces the spawn camera sees, plus one light in each alley.
+  // 16×32 plates (one tile wide, two tall) on the south face of their own lot, storeys 1–2.
+  // Alley lights sit off the street, far enough that (5.5, 2.5) stays dark.
   const signs = [
-    { name: "noodle", colour: "#FF3D8B", frame: "sign_0", tx: 1, ty: 0, street: true, lx: 2.15, ly: 1.15 },
-    { name: "cross", colour: "#B6F23A", frame: "sign_2", tx: 1, ty: 1, street: true, lx: 2.15, ly: 1.7 },
-    { name: "bar", colour: "#3DE0E8", frame: "sign_1", tx: 4, ty: 0, street: true, lx: 3.85, ly: 1.15 },
-    { name: "arrow", colour: "#F2A33A", frame: "sign_3", tx: 4, ty: 1, street: true, lx: 3.85, ly: 1.7 },
-    { name: "eye", colour: "#FF3D8B", frame: "sign_4", tx: 0, ty: 1, street: false, buzz: true, lx: 2.15, ly: 2.5 },
-    { name: "glyph", colour: "#3DE0E8", frame: "sign_5", tx: 5, ty: 3, street: false, lx: 3.85, ly: 4.5 },
+    { name: "noodle", colour: "#FF3D8B", frame: "sign_0", tx: 1, ty: 0, street: true, lx: 2.15, ly: 0.7 },
+    { name: "cross", colour: "#B6F23A", frame: "sign_2", tx: 1, ty: 1, street: true, lx: 2.15, ly: 1.2 },
+    { name: "bar", colour: "#3DE0E8", frame: "sign_1", tx: 4, ty: 0, street: true, lx: 3.85, ly: 0.7 },
+    { name: "arrow", colour: "#F2A33A", frame: "sign_3", tx: 4, ty: 1, street: true, lx: 3.85, ly: 1.2 },
+    { name: "eye", colour: "#FF3D8B", frame: "sign_4", tx: 0, ty: 1, street: false, buzz: true, lx: 0.3, ly: 4.55 },
+    { name: "glyph", colour: "#3DE0E8", frame: "sign_5", tx: 5, ty: 3, street: false, lx: 5.7, ly: 4.55 },
   ];
   const puddles = ["puddle_0", "puddle_1", "puddle_2"];
   signs.forEach((def, si) => {
     const fr = frames.frames[def.frame + "_on"];
-    const hw = fr.w * PX / 2;
-    const hh = fr.h * PX / 2;
+    const hw = TILE / 2 - 1;
+    const hh = TILE;
     const host = buildings.find((b) => b.tx === def.tx && b.ty === def.ty);
     const x = (def.tx + 0.5) * TILE;
-    const z = (def.ty + 1) * TILE + 1.4;
-    const y = hh;
+    // Just in front of this lot's south wall, still inside the lot.
+    const z = (def.ty + 1) * TILE - 0.35;
+    // A closer plate on the same column owns storeys 1–2. This one sits above it.
+    const raised = signs.some((s) => s.tx === def.tx && s.ty > def.ty);
+    const y = (raised ? 2.35 : 1.15) * TILE;
     slices.push(slice(x, z, y, hw, hh, uvOf(def.frame + "_on"), 3, si + 1, host ? buildings.indexOf(host) : -1, false, 2));
     signMeta.push({
       name: def.name, colour: def.colour, w: fr.w, h: fr.h, tx: def.tx, ty: def.ty,
       buzz: !!def.buzz, street: def.street, frame: def.frame, x: def.lx, y: def.ly,
+      plate: { x, z, y, hx: hw, hz: hh },
     });
     lights.push({
       x: def.lx, y: def.ly, z: y, colour: def.colour, type: "neon", street: !!def.street,

@@ -40,6 +40,31 @@ for (const seed of [1, 4, 7, 9]) {
   assert.ok(ac / w.buildings.length <= 0.4, "seed " + seed + " ac " + ac);
 }
 assert.ok(a.slices.some((s) => s.kind === 1));
+for (const s of a.signs) {
+  assert.ok(s.plate.hx * 2 <= TILE, s.name + " wider than its lot");
+  assert.ok(Math.abs(s.plate.hz * 2 - TILE * 2) < 1, s.name + " is not two tiles tall");
+  assert.ok(s.plate.x - s.plate.hx >= s.tx * TILE - 0.1 && s.plate.x + s.plate.hx <= (s.tx + 1) * TILE + 0.1, s.name + " leaves its lot");
+}
+const neon = a.lights.filter((l) => l.type === "neon");
+for (const [tx, ty] of [[0.5, 2.5], [5.5, 2.5], [2.5, 4.5], [3.5, 4.5]]) {
+  const far = Math.min(...neon.map((l) => Math.hypot(l.x - tx, l.y - ty)));
+  assert.ok(far > 2, "(" + tx + "," + ty + ") is " + far.toFixed(2) + " from a sign");
+}
+for (const seed of [1, 4, 7, 9]) {
+  const w = build(seed);
+  for (const s of w.signs) {
+    for (const b of w.buildings) {
+      if (b.tx === s.tx && b.ty > s.ty) assert.equal(b.h, 1, "seed " + seed + " lot in front of " + s.name);
+    }
+  }
+  for (const sl of w.slices) {
+    if (sl.kind !== 9 || sl.bid < 0 || sl.orient !== 2) continue;
+    const host = w.buildings[sl.bid];
+    if (sl.y <= host.h * TILE) continue;
+    assert.ok(sl.hz * 2 <= TILE * 0.5 + 0.01, "prop " + (sl.hz * 2 / TILE).toFixed(2) + " tiles");
+    assert.ok(!w.signs.some((s) => s.tx === host.tx && s.ty < host.ty), "prop in front of a sign");
+  }
+}
 
 const blocked = (x, y) => a.blocked[x][y];
 const alley = pathfind(blocked, 2.5, 0.5, 2.5, 4.5);

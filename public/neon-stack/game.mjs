@@ -482,7 +482,11 @@ window.__test = {
   setSign: (i, on) => { override[i] = on; },
   forceCutaway: (on) => { cutaway = !!on; },
   enter: () => { attract = false; },
-  buildings: () => world.buildings.map((b) => ({ x: b.tx, y: b.ty, h: b.h })),
+  buildings: () => world.buildings.map((b) => ({ x: b.tx, y: b.ty, h: b.h, prop: b.prop })),
+  signs: () => world.signs.map((s) => ({
+    name: s.name, colour: s.colour, tx: s.tx, ty: s.ty,
+    plate: s.plate, light: [s.x, s.y],
+  })),
   solid: (x, y) => solid(Math.floor(x), Math.floor(y)),
   project: (x, y, z) => renderer.project([x * TILE, z, y * TILE]),
   pixel: (x, y) => renderer.pixel(x, y),
