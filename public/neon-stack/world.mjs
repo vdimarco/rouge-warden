@@ -218,7 +218,7 @@ export function build(seed) {
   }
 
   slices.push(slice(
-    GRID * TILE / 2, -2.4 * TILE, 6.2 * TILE,
+    GRID * TILE / 2, -1.15 * TILE, 6.2 * TILE,
     16 * TILE, 5.5 * TILE,
     uvOf("backdrop"), 5, 0, -1, true, 2,
   ));
@@ -227,7 +227,7 @@ export function build(seed) {
   for (let ty = -1; ty < GRID + 12; ty++) for (let tx = -6; tx <= GRID + 1; tx++) {
     const inside = tx >= 0 && ty >= 0 && tx < GRID && ty < GRID;
     // The row just south of the block would stand in front of the exit.
-    if (inside || tx === 2 || tx === 3) continue;
+    if (inside || tx === 2 || tx === 3 || (ty === GRID && tx === 5)) continue;
     const x = (tx + 0.5) * TILE;
     const z = (ty + 0.5) * TILE;
     slices.push(slice(x, (ty + 1) * TILE - 0.8, 0.5 * TILE, TILE / 2, TILE / 2, uvOf("side_face"), 10, 0, -1, false, 2));

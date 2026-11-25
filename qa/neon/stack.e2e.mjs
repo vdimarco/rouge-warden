@@ -351,6 +351,41 @@ async function proof(width, height, dpr, tag) {
   });
   check(attract, tag + " attract keeps the whole block in frame");
   await page.screenshot({ path: OUT + "/" + tag + "-open.png" });
+  const spawn = await page.evaluate(async () => {
+    __test.enter();
+    __test.setTilt(60);
+    __test.setYaw(0);
+    await new Promise((r) => setTimeout(r, 160));
+    const v = __test.view();
+    const corners = [[0, 0], [6, 0], [0, 6], [6, 6]].map(([x, y]) => __test.project(x, y, 0));
+    const span = Math.max(...corners.map((p) => p.x)) - Math.min(...corners.map((p) => p.x));
+    const rr = __test.runnerRect();
+    const box = document.querySelector("canvas").getBoundingClientRect();
+    const canvas = document.querySelector("canvas");
+    const gl = canvas.getContext("webgl2");
+    const edge = new Uint8Array(4);
+    gl.readPixels(1, Math.floor(canvas.height * 0.5), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, edge);
+    const door = __test.project(5.5, 6.04, 22);
+    const dx = Math.round(v.ox + door.x * v.scale);
+    const dy = Math.round(v.oy + (v.artH - door.y) * v.scale);
+    const pix = new Uint8Array(4);
+    const onScreen = door.x > 2 && door.x < v.artW - 2 && door.y > 2 && door.y < v.artH - 2;
+    if (onScreen) gl.readPixels(dx, dy, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pix);
+    return {
+      width: span / v.artW,
+      runner: rr.y > 0 && rr.y + rr.h < box.height,
+      edge: [...edge].slice(0, 3),
+      door: onScreen ? [...pix].slice(0, 3) : null,
+    };
+  });
+  if (tag === "1280") {
+    check(spawn.width >= 0.6 && spawn.width <= 0.7, tag + " spawn block is " + Math.round(spawn.width * 100) + "% wide");
+    check(spawn.runner, tag + " runner stays on screen at spawn");
+    check(spawn.edge[0] === 26 && spawn.edge[1] === 26 && spawn.edge[2] === 34, tag + " side edge is ink (" + spawn.edge.join(",") + ")");
+    const hole = spawn.door && spawn.door[0] === 14 && spawn.door[1] === 16 && spawn.door[2] === 32;
+    check(spawn.door && !hole, tag + " exit stays visible (" + (spawn.door || []).join(",") + ")");
+  }
+  console.log("  nums  " + tag + " spawn width " + Math.round(spawn.width * 100) + "%");
   await page.evaluate(() => { __test.enter(); __test.moveTo(2.5, 2.5); __test.forceCutaway(false); __test.setTilt(55); __test.setYaw(0); });
   await page.waitForTimeout(200);
   const yaw0 = await page.evaluate(() => {
