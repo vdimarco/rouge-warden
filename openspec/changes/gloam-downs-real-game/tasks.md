@@ -24,7 +24,7 @@ Three builders work in parallel. design.md "Who builds what" names the files eac
 - [x] 2.4 `relics.js` (new): the eight relics, the kindlings, `groundRelics`, the touch, and `relic-take`. `moves.js`: each relic's change to its move, Rising cut and Ember parry.
 - [x] 2.5 `screens.js`, `cards.js` and the `main.js` hooks: the Unlocks list, the Ember row, the Wick shelf card, the relic marks on the HUD, "Kindled" on the beacon card, the win card's level and best time, and the help lines for the new moves.
 - [x] 2.6 `index.html`: `#unlocks`, `#emberRow` and `#relics`, with their CSS. Check them at 320 by 640, 390 by 844, 360 by 640, 800 by 600 and 1280 by 720.
-- [ ] 2.7 `gloam-downs-builds.test.mjs` (new): every scenario of Elites, the five elites, Relics, the relic lists, Kindlings, Unlocks, the wicks from unlocks, Kindled flask, Rising cut, Ember parry, Ember levels and rules, Cinders, Names, and the save. Done but for Ember 4 and 5: the 31 checks cover the rest. Ember 4's special-move share and damage are built but not checked; Ember 5's boss health and phase line are not built (they need boss.js, which no builder owns; see design.md "Builder BC: what was built").
+- [x] 2.7 `gloam-downs-builds.test.mjs` (new): every scenario of Elites, the five elites, Relics, the relic lists, Kindlings, Unlocks, the wicks from unlocks, Kindled flask, Rising cut, Ember parry, Ember levels and rules, Cinders, Names, and the save. The merge pass added the Ember 4 damage check (builds test) and the Ember 5 boss check (boss test).
 - [x] 2.8 `gloam-downs-run.builds.e2e.mjs` (new): the elite shows in each place, take a relic, buy an unlock, Wick shelf, the Ember row after a win, the Lamp-room in five layouts with keys alone and a pad alone, and the build hooks.
 - [x] 2.9 `qa/lab/gloam-downs-bot.mjs` (new): add-gloam-downs tasks 454 to 457, with the page's rules, `mix.js`, `elites.js`, `relics.js` and the unlocks. The bot buys in the Lamp-room between runs. Built and run at 0.3, 0.5 and 0.9; the targets miss (design.md "Builder BC: what was built"), which task 4.4 tunes.
 
@@ -33,7 +33,7 @@ Three builders work in parallel. design.md "Who builds what" names the files eac
 - [x] 3.2 The Shake switch: `#bShake`, its listener and label in `main.js`, `fx.kick` from the save's `shake`, and the reduced-motion default.
 - [x] 3.3 Poise and stagger in `foes.js` (the hit function only), with the crack glow in `fight.js`.
 - [x] 3.4 `combo.js` (new): counts, tiers, the end rules, `combo-tier` on the bus, and the glim factor on the `foeOut` line in `foes.js`.
-- [ ] 3.5 `fight.js` and `sparks.js`: the lamp halo, the elite crown and size from `dressOf`, the relic lamps from `groundRelics`, the fire line, the burning rings and the spark. No dab uses slot 37.
+- [x] 3.5 `fight.js` and `sparks.js`: the lamp halo, the elite crown and size from `dressOf`, the relic lamps from `groundRelics`, the fire line, the burning rings and the spark. No dab uses slot 37.
 - [x] 3.6 `#combo` in `index.html` and `updateCombo()`. Check it at 320 by 640, 390 by 844, 360 by 640, 800 by 600 and 1280 by 720.
 - [x] 3.7 `mix.js` (new): the foe mix, the elite's zone, the route, Ember 3's extra foe, and the guard's second wave; `mixWave` in `foes.js`'s all-out check. Pass `mix` to `makeFight` in `newRunner()`.
 - [x] 3.8 The seed code in Crockford base 32, `?seed=` for a code or a number, and `#seedLine` in the pause panel and the summary.
@@ -57,10 +57,10 @@ Builder D's notes for the merge pass (branch `gloam-real-d`):
 - Checks run on this branch: every Gloam Downs Node test passes, with `gloam-downs-zones.mjs`. The bake and colour checks were skipped, because `games/gloam-downs` has no `npm ci` here. In Chromium on software WebGL these pass: `run.feel`, `run.cards`, `run.fight`, `run.input`, `run.sound`, `run.swing`, `run.lineup`, and `quiet.mjs --only=lab/gloam-downs`. `run.boss` fails at "the boss camera stays out at 12 m or more (8.725)". It fails the same way on `049d82fc`, so this branch did not cause it. Not checked here: a real phone, a real gamepad, listening on speakers, and how the shake feels at 120 Hz.
 
 ## 4. Merge pass (after 1, 2 and 3)
-- [ ] 4.1 Merge in the order A, BC, D. Fix the hook lines in `main.js` and `index.html` where two builders met.
-- [ ] 4.2 Run every Gloam Downs Node test and `node qa/lab/gloam-downs-zones.mjs`.
+- [x] 4.1 Merge in the order A, BC, D. Fix the hook lines in `main.js` and `index.html` where two builders met.
+- [x] 4.2 Run every Gloam Downs Node test and `node qa/lab/gloam-downs-zones.mjs`.
 - [ ] 4.3 Serve `public/` and run every Gloam Downs e2e file with `NODE_PATH=qa/browser/node_modules`, and `quiet.mjs`.
 - [ ] 4.4 Run the bot at skills 0.3, 0.5 and 0.9. Tune with the levers in design.md "Pacing", in their order. Write the results in design.md. If a target cannot be met, tell the user.
 - [ ] 4.5 Play a run with the mouse at 120 Hz, and one with keys alone. Write what felt wrong. Say which checks could not run here: a real phone, a real gamepad, and listening on speakers.
-- [ ] 4.6 Keep the spec and design current with what was built, and validate with `openspec validate gloam-downs-real-game --strict`.
+- [x] 4.6 Keep the spec and design current with what was built, and validate with `openspec validate gloam-downs-real-game --strict`.
 - [ ] 4.7 Archive `add-gloam-downs` first, so the `gloam-downs-run` spec exists in `openspec/specs/`. Then archive this change, and review the resulting spec.

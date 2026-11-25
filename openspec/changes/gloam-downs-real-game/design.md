@@ -253,7 +253,7 @@ This is what builder BC built on branch `gloam-real-bc`, and where it differs fr
 - **The Lamp-room scrolls inside its card.** Five upgrade rows, seven unlocks and the Ember row do not fit 640 px. The lists scroll, and the card's own buttons (Begin the run and the rest) stand at its foot. The cards and clicks e2e now check that each button comes into view clear of that foot, and that the page never scrolls.
 - **Sounds.** The builds use cues that already have a recipe: a relic taken is `wisp`, an Echo blade hit is `hit`, a parry is `clang`, Last ember is `heal`, and each elite's tell is its base move's cue (`scrape`, `whistle`, `hum`, `paw`, `rear`). Each carries a field (`relic`, `parry`, `last`, `elite`) so builder A can give them their own sound.
 - **Ember 4's damage** is applied in `run.js`'s `hurt`, so the boss's hits are 20% stronger at Ember 4 too.
-- **Not built:** Ember 5's boss health (+25%) and its phase 3 at 40%. They need `boss.js`, which no builder owns, so `bossBar()` has no Ember 5 tick yet. The arrival card's numeral and the summary's "Reached" line still number the places in the downs' order on a seeded route. The relic lamps, the fire lines and rings and the crown are not drawn: `fight.js` is builder D's, and it reads `groundRelics(R)`, `R.relics.view()` and `dressOf(f)`.
+- **Not built on this branch:** Ember 5's boss rules and the drawing of relics and crowns. The merge pass added both (see "The merge pass"). The arrival card's numeral and the summary's "Reached" line still number the places in the downs' order on a seeded route.
 
 ### The pacing bot, first results
 `qa/lab/gloam-downs-bot.mjs` plays whole runs on the real walk maps with the run, the moves, the foes, the elites, the relics and the Lamp-room. It walks each place's route from `games/gloam-downs/lib/zones.mjs`. A bot that makes no progress for 3 s is put at its next point (a nudge, with 3 s added). The Barrow Reeve's fight is not stepped: it is drawn from the boss bot's results in add-gloam-downs. `mix.js` and the second waves are builder D's and are not in this branch, so the bot plays the baked zones.
@@ -267,6 +267,18 @@ This is what builder BC built on branch `gloam-real-bc`, and where it differs fr
 | 0.9 | 30 of 30 | 1 | 6.6 min | 33 |
 
 Every target but the first misses. Runs are 4 to 7 minutes, not 20 to 30, and bots seldom die before Barrow Crown. Two things make these numbers too kind. The bot's walk is crude, so it is often nudged ahead of where a player would walk. And without the second waves, the bot has fewer foes than the design plans. Task 4.4 should tune with the levers in "Pacing" once `mix.js` is merged, and teach the bot to walk without nudges first. If the targets still miss, the user should be told.
+
+## The merge pass
+The three branches were merged in the order A, BC, D. These are the changes made where the parts met.
+- `main.js`: the win card keeps BC's rows from `winOf` and sends A's `lamp-room` event in place of `audio.setScene('lamp')`. `newRunner()` passes `emit`, `dressOf`, `eliteClip` (as `clipOf`) and `groundRelics(runner)` to `makeFight`, so the crown, the elite's size, its special-move pose and the relic lamps are drawn.
+- `foes.js`: both import lines are kept (BC's elite kit, D's mix, poise and combo). A stagger also plays the `clang` cue, marked `stagger: true`, so it has a sound.
+- `elites.js`: the mix marks the elite's zone with the index of the elite in its foes. That index can be 0, so `eliteZone` now checks for a number, and the kit makes that exact foe the elite. Before, an index of 0 read as "no mark", and the elite could stand in another zone from the one the mix had filled.
+- `mix.js`: `routeOf` now calls `run.js` `routeFor`, so there is one route rule. Both used the same stream and shuffle already.
+- `relics.js`: the fire trail, the burning ring, the moth pulse and the thrown spark now send D's `relicFx` events, so `fight.js` draws them.
+- `run.js` and `run-save.js`: the end of a run keeps its `seed`, so the summary's seed line survives a reload.
+- `boss.js`: `makeBoss` takes `hpScale` and `phase3`. At Ember 5 the Barrow Reeve has 1,625 health, phase 2 starts at 1,000 (the same share as 800 of 1,300) and phase 3 at 650 (40%). `bossBar()` moves its two ticks to match. A new Node check covers it, and one in the builds test covers Ember 4's damage.
+- `main.js` sent `place-enter` with `rs.run`, which is null in the explorer, so the explorer stopped loading. It now reads `rs?.run`.
+- The pacing bot still plays the baked zones (it does not use `mix.js` or the combo yet). After the merge: skill 0.3 wins first in run 2 with a 4.35 min winning run; 0.5 in run 1 with 4.59 min; 0.9 in run 1 with 6.9 min. The 20 to 30 minute target for a 0.9 run still misses. No tuning was done in this pass, and the user must be told.
 
 ## Sources
 Each source is named with how it was used. None was fetched in this session: the network rules of this session were not tried, so all are cited from memory. A builder that fetches one adds "fetched" and the date.
