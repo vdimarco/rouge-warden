@@ -283,7 +283,7 @@ export const LINES_PAD = {
 // Phone play: one tap swings, the rope lets go by itself, and a rope on a clog plunges by itself.
 export const LINES_PHONE = {
   intro: ["Shoes off. Plunger up.", "Hear that? Something is backing up.", "Tap the crack.", "It plunges by itself.", "Clear the space around you.", "Give yourself some room.", "The toilet is overflowing! Tap it.", "It plunges by itself. Hold on!"],
-  tutorial: ["Tap right to swing at the gold ring.", "Swing out. The rope lets go by itself.", "Tap again before you land.", "The rope reels you in by itself.", "Tap the next building while you fly.", "Drag on the right side to look around.", "Your score is at the top of the screen.", "That green light is a clog. Tap it to plunge."],
+  tutorial: ["Tap right to swing at the gold ring.", "Swing out. Lift your thumb to let go.", "Tap again before you land.", "The rope reels you in by itself.", "Tap the next building while you fly.", "Drag on the right side to look around.", "Your score is at the top of the screen.", "That green light is a clog. Tap it to plunge."],
   clog: ["That's a clog. Tap it to plunge.", "Hold on. It plunges by itself.", "Flushed.", "The city thanks you. Quietly."],
   king: LINES.king, splash: LINES.splash,
   wall: ["On the wall. Left thumb climbs. JUMP jumps off."],

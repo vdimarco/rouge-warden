@@ -68,7 +68,7 @@ try {
   });
   await page.screenshot({ path: out + "/chain.png" });
   console.log("chain", JSON.stringify({ frames: held.frames, cue: held.cue, wallAt: held.wallAt, first: held.first, still: held.still, fires: held.fires, y: held.y, log: held.log }));
-  check(held.first && held.first.tag === "building" && held.still && held.detaches === 0 && held.buildings === 1 && held.fires === 1 && held.wallAt < 0, "holding E keeps that building rope on until the button comes up", held);
+  check(held.first && (held.first.tag === "building" || held.first.tag === "sky") && held.still && held.detaches === 0 && held.fires === 1 && held.wallAt < 0, "holding E keeps that rope on until the button comes up", held);
   check(held.ups === 0 && held.drys === 0, "a held rope does not dry-fire and does not take a second press", held);
 
   await page.keyboard.up("KeyE");
@@ -118,13 +118,15 @@ try {
       if (r) sky = true;
       if (sky && !G.P.ropes.some((q) => q.state === "attached")) { dropped = true; break; }
     }
-    const still = G.P.ropes.some((q) => q.state === "attached" && q.target && q.target.tag === "sky");
+    const live = G.P.ropes.find((q) => q.state === "attached" && q.target && q.target.tag === "sky");
+    const still = !!live;
+    const dist = live ? Math.hypot(live.anchor.x - G.P.pos.x, live.anchor.y - (G.P.pos.y + G.P.chest), live.anchor.z - G.P.pos.z) : 0;
     const detaches = G.test.events().filter((e) => e.frame > mark && e.type === "detach").length;
-    return { frames, sky, dropped, still, detaches, y: +G.P.pos.y.toFixed(1) };
+    return { frames, sky, dropped, still, detaches, dist: +dist.toFixed(2), y: +G.P.pos.y.toFixed(1) };
   });
   await page.screenshot({ path: out + "/water.png" });
   console.log("water", JSON.stringify(water));
-  check(!water.sky && !water.still, "holding over open water never attaches to an invisible sky point", water);
+  check(water.sky && water.still && !water.dropped && water.dist > 0 && water.dist <= 28.8, "holding over open water keeps a sky rope inside 16 body-heights", water);
   check(page.errors.length === 0, "no page errors", page.errors);
 } catch (e) {
   check(false, "the hold-chain run threw", e.stack || String(e));

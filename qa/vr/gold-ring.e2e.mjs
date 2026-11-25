@@ -5,7 +5,7 @@ import { mkdir } from "node:fs/promises";
 import { newPage, open, close, checker, watchdog, resize } from "./lib.mjs";
 
 const { check, done } = checker("gold-ring");
-watchdog(420000, "gold-ring");
+watchdog(720000, "gold-ring");
 const out = process.env.SHOTS || "/opt/cursor/artifacts/easy-swing";
 await mkdir(out, { recursive: true });
 
@@ -34,9 +34,10 @@ try {
     const place = () => {
       up(0); up(2);
       if (G.game && G.game.progress) G.game.progress.tutorial = 0;
-      G.test.teleport(S.x, S.y, S.z);
+      G.test.teleport(R.x + (R.nx || 0) * 14, R.y - 1.5, R.z + (R.nz || 0) * 14);
+      G.P.onGround = false;
       G.test.face(R.x, R.z);
-      if (G.flatcam) { G.flatcam.bankOn = false; G.flatcam.shakeOn = false; G.flatcam.reset(G.rigYaw, -0.42); }
+      if (G.flatcam) { G.flatcam.bankOn = false; G.flatcam.shakeOn = false; G.flatcam.reset(G.rigYaw, 0); }
       G.P.vel.x = G.P.vel.y = G.P.vel.z = 0;
       for (let i = 0; i < 20; i++) {
         G.test.step(1 / 60, 1);
@@ -52,21 +53,23 @@ try {
       for (let n = 0; n < 20; n++) {
         G.test.step(1 / 60, 1);
         const live = G.P.ropes.find((r) => r.state !== "idle");
-        if (live) { rope = { side: G.P.ropes.indexOf(live), tag: live.target && live.target.tag, x: live.anchor.x, y: live.anchor.y, z: live.anchor.z, state: live.state }; break; }
+        if (live) { rope = { side: G.P.ropes.indexOf(live), tag: live.target && live.target.tag, id: live.target && live.target.id, x: live.anchor.x, y: live.anchor.y, z: live.anchor.z, state: live.state }; break; }
       }
       const fires = G.test.events().filter((e) => e.type === "fire" && e.frame > mark).map((e) => e.side);
       return { rope, fires, tut: G.game && G.game.progress && G.game.progress.tutorial };
     };
     const left = [], right = [];
     let tower = 0;
+    const ids = {};
     for (let i = 0; i < 30; i++) {
       const s = shot(0);
-      if (i < 10) left.push(s);
+      if (i < 20) left.push(s);
+      if (s.rope && s.rope.id != null) ids[s.rope.id] = (ids[s.rope.id] || 0) + 1;
       const on = s.rope && s.rope.side === 0 && s.rope.tag === "building" && Math.abs(s.rope.x - R.x) < 2;
       if (on) tower++;
     }
     up(0);
-    for (let i = 0; i < 10; i++) right.push(shot(2));
+    for (let i = 0; i < 20; i++) right.push(shot(2));
     up(2);
     place();
     down(0);
@@ -74,18 +77,76 @@ try {
     G.test.render(0);
     const held = G.P.ropes.map((r) => ({ state: r.state, tag: r.target && r.target.tag, x: +r.anchor.x.toFixed(2), y: +r.anchor.y.toFixed(2) }));
     return {
-      w: innerWidth, h: innerHeight, tower, left, right, held, tut: G.game.progress.tutorial,
+      w: innerWidth, h: innerHeight, tower, ids, left, right, held, tut: G.game.progress.tutorial,
       ring: { x: R.x, y: R.y, z: R.z },
     };
   });
 
   await page.screenshot({ path: out + "/gold-ring-1280x800.png" });
-  const leftOk = run.left.length === 10 && run.left.every((s) => s.fires.length === 1 && s.fires[0] === 0 && s.rope && s.rope.side === 0);
-  const rightOk = run.right.length === 10 && run.right.every((s) => s.fires.length === 1 && s.fires[0] === 1 && s.rope && s.rope.side === 1);
-  console.log("1280", JSON.stringify({ w: run.w, h: run.h, tower: run.tower, tut: run.tut, held: run.held, left0: run.left[0], right0: run.right[0] }));
-  check(run.w === 1280 && run.tower === 30, "at 1280, 30 of 30 ropes from the gold-ring lesson attach to the tower", { tower: run.tower, w: run.w, held: run.held });
-  check(leftOk, "the left button fires the left rope 10 of 10 at 1280", run.left.map((s) => s.fires));
-  check(rightOk, "the right button fires the right rope 10 of 10 at 1280", run.right.map((s) => s.fires));
+  const leftOk = run.left.length === 20 && run.left.every((s) => s.fires.length === 1 && s.fires[0] === 0 && s.rope && s.rope.side === 0);
+  const rightOk = run.right.length === 20 && run.right.every((s) => s.fires.length === 1 && s.fires[0] === 1 && s.rope && s.rope.side === 1);
+  console.log("1280", JSON.stringify({ w: run.w, h: run.h, tower: run.tower, ids: run.ids, tut: run.tut, held: run.held, left0: run.left[0], right0: run.right[0] }));
+  check(run.w === 1280 && run.tower === 30 && run.ids[952] === 30, "at 1280, 30 of 30 ropes from the gold-ring lesson attach to tower 952", { tower: run.tower, ids: run.ids, w: run.w });
+  check(leftOk, "the left button fires the left rope 20 of 20 at 1280", run.left.map((s) => s.fires));
+  check(rightOk, "the right button fires the right rope 20 of 20 at 1280", run.right.map((s) => s.fires));
+
+  const holdSky = async (tag) => page.evaluate((tag) => {
+    const canvas = document.querySelector("canvas");
+    const down = (button) => canvas.dispatchEvent(new MouseEvent("mousedown", { button, bubbles: true, cancelable: true }));
+    const up = (button) => document.dispatchEvent(new MouseEvent("mouseup", { button, bubbles: true }));
+    const H = 1.8, cap = 16 * H;
+    let held = 0;
+    for (let i = 0; i < 20; i++) {
+      up(0);
+      const S = G.city.start, R = G.city.goldRing;
+      if (G.game && G.game.progress) G.game.progress.tutorial = 0;
+      G.test.teleport(R.x + (R.nx || 0) * 14, R.y - 1.5, R.z + (R.nz || 0) * 14);
+      G.test.face(R.x, R.z);
+      if (G.flatcam) { G.flatcam.bankOn = false; G.flatcam.shakeOn = false; G.flatcam.reset(G.rigYaw, 0); }
+      G.P.onGround = false; G.P.wall = null; G.P.wallCool = 30;
+      G.P.vel.x = G.P.vel.y = G.P.vel.z = 0;
+      for (let k = 0; k < 4; k++) G.test.step(1 / 60, 1);
+      down(0);
+      let on = false;
+      for (let n = 0; n < 30; n++) {
+        G.test.step(1 / 60, 1);
+        if (G.P.ropes.some((r) => r.state === "attached" && r.target && r.target.tag === "building")) on = true;
+      }
+      if (!on) continue;
+      for (let n = 0; n < 300; n++) G.test.step(1 / 60, 1);
+      if (G.P.ropes.some((r) => r.state === "attached")) held++;
+      up(0);
+      for (let n = 0; n < 4; n++) G.test.step(1 / 60, 1);
+    }
+    let sky = 0, over = 0, far = 0;
+    for (let i = 0; i < 10; i++) {
+      up(0);
+      if (G.game && G.game.progress) G.game.progress.tutorial = 9;
+      G.test.teleport(0, 40, 400);
+      G.rigYaw = 0;
+      if (G.flatcam) { G.flatcam.bankOn = false; G.flatcam.shakeOn = false; G.flatcam.reset(0, -0.2); }
+      G.P.onGround = false; G.P.wall = null; G.P.vel.x = 0; G.P.vel.y = 0; G.P.vel.z = 16;
+      for (let k = 0; k < 3; k++) G.test.step(1 / 60, 1);
+      down(0);
+      let rope = null;
+      for (let n = 0; n < 20; n++) {
+        G.test.step(1 / 60, 1);
+        rope = G.P.ropes.find((r) => r.state !== "idle") || rope;
+      }
+      if (rope && rope.target && rope.target.tag === "sky") {
+        sky++;
+        const d = Math.hypot(rope.anchor.x - G.P.pos.x, rope.anchor.y - (G.P.pos.y + G.P.chest), rope.anchor.z - G.P.pos.z);
+        if (d > far) far = d;
+        if (d > cap + 1e-3) over++;
+      }
+      up(0);
+    }
+    return { tag, held, sky, over, far: +far.toFixed(2), cap };
+  }, tag);
+  const hold1280 = await holdSky("1280");
+  console.log("hold-sky 1280", JSON.stringify(hold1280));
+  check(hold1280.held === 20, "at 1280 a held building rope is still on at 5 s, 20 of 20", hold1280);
+  check(hold1280.sky === 10 && hold1280.over === 0, "at 1280 no sky rope is over 28.8 m", hold1280);
 
   await page.evaluate(() => {
     const canvas = document.querySelector("canvas");
@@ -100,11 +161,14 @@ try {
         const S = G.city.start, R = G.city.goldRing;
         up();
         if (G.game && G.game.progress) G.game.progress.tutorial = 0;
-        G.test.teleport(S.x, S.y, S.z);
+        G.test.teleport(R.x + (R.nx || 0) * 14, R.y - 4, R.z + (R.nz || 0) * 14);
+        G.P.onGround = false;
         G.test.face(R.x, R.z);
-        if (G.flatcam) { G.flatcam.bankOn = false; G.flatcam.shakeOn = false; G.flatcam.reset(G.rigYaw, -0.35); }
+        if (G.flatcam) { G.flatcam.bankOn = false; G.flatcam.shakeOn = false; G.flatcam.reset(G.rigYaw, -0.2); }
         G.P.vel.x = G.P.vel.y = G.P.vel.z = 0;
         for (let i = 0; i < 12; i++) G.test.step(1 / 60, 1);
+        G.P.onGround = false;
+        G.P.vel.x = -(R.nx || 0) * 10; G.P.vel.z = 4; G.P.vel.y = 2;
         down();
         const samples = [];
         let picked = null, last = null, shot = null;
@@ -117,7 +181,7 @@ try {
           if (n % 60 === 0) samples.push({ n, y: +G.P.pos.y.toFixed(1), hy: +hy.toFixed(1), sp: +sp.toFixed(1), moved: +moved.toFixed(1), ground: G.P.onGround, wall: !!G.P.wall, st: r && r.state });
           last = samples[samples.length - 1];
           if (!r || Math.abs(r.anchor.x - R.x) > 2 || Math.abs(r.anchor.z - R.z) > 8) continue;
-          if (G.P.onGround || G.P.wall || !(sp > 8) || moved < 14 || G.P.pos.y > S.y - 4 || G.P.pos.y < 14 || hy < 16 || hy > 52) continue;
+          if (G.P.onGround || G.P.wall || !(sp > 4) || hy > 30) continue;
           if (G.flatcam) {
             const dx = R.x - G.P.pos.x, dz = R.z - G.P.pos.z, hlen = Math.hypot(dx, dz) || 1;
             const yaw = Math.atan2(-dx, -dz);
@@ -263,7 +327,7 @@ try {
   await page.screenshot({ path: out + "/gold-ink-1280-fade.png" });
   const gone1280 = await page.evaluate(() => window.__goldInk.gone());
   console.log("ink1280", JSON.stringify({ swing: ink1280, fade: fade1280, gone: gone1280 }));
-  check(ink1280.picked != null && !ink1280.ground && !ink1280.easy && ink1280.ink && ink1280.len > 40, "at 1280 a mid-swing rope is on the gold-ring tower and is not an easy web", { picked: ink1280.picked, len: ink1280.len, easy: ink1280.easy, ink: ink1280.ink, pos: ink1280.pos, anchor: ink1280.anchor, last: ink1280.last });
+  check(ink1280.picked != null && !ink1280.ground && !ink1280.easy && ink1280.ink && ink1280.len > 8 && ink1280.len <= 28.8, "at 1280 a mid-swing rope is on the gold-ring tower and is not an easy web", { picked: ink1280.picked, len: ink1280.len, easy: ink1280.easy, ink: ink1280.ink, pos: ink1280.pos, anchor: ink1280.anchor, last: ink1280.last });
   check(ink1280.hemp === 0 && ink1280.mesh && ink1280.mesh.visible && ink1280.mesh.n > 0, "at 1280 the gold-ring rope is the ink mesh, not hemp", { hemp: ink1280.hemp, mesh: ink1280.mesh });
   check(ink1280.reach != null && ink1280.reach < 0.75, "at 1280 the ink line is drawn to the anchor", ink1280.reach);
   check(ink1280.line && ink1280.line.width >= 1 && ink1280.line.width <= 4 && ink1280.line.sideL > 90, "at 1280 the ink line is about 2 px across the sky (" + (ink1280.line && ink1280.line.width) + ")", ink1280.line);
@@ -279,9 +343,10 @@ try {
     const S = G.city.start, R = G.city.goldRing;
     document.dispatchEvent(new MouseEvent("mouseup", { button: 0, bubbles: true }));
     if (G.game && G.game.progress) G.game.progress.tutorial = 0;
-    G.test.teleport(S.x, S.y, S.z);
+    G.test.teleport(R.x + (R.nx || 0) * 14, R.y - 1.5, R.z + (R.nz || 0) * 14);
+    G.P.onGround = false;
     G.test.face(R.x, R.z);
-    if (G.flatcam) G.flatcam.reset(G.rigYaw, -0.42);
+    if (G.flatcam) G.flatcam.reset(G.rigYaw, 0);
     G.test.step(1 / 60, 8);
     document.querySelector("canvas").dispatchEvent(new MouseEvent("mousedown", { button: 0, bubbles: true, cancelable: true }));
     for (let n = 0; n < 20; n++) { G.test.step(1 / 60, 1); if (G.P.ropes.some((r) => r.state === "attached")) break; }
@@ -292,6 +357,54 @@ try {
   const phone = await page.evaluate(() => ({ w: innerWidth, h: innerHeight, ropes: G.P.ropes.map((r) => ({ state: r.state, tag: r.target && r.target.tag, x: r.anchor.x })) }));
   console.log("390", JSON.stringify(phone));
   check(phone.w === 390 && phone.ropes.some((r) => r.state === "attached" && r.tag === "building" && Math.abs(r.x - run.ring.x) < 2), "at 390 the rope is on the gold-ring tower", phone);
+  const run390 = await page.evaluate(() => {
+    const S = G.city.start, R = G.city.goldRing;
+    const canvas = document.querySelector("canvas");
+    const down = (button) => canvas.dispatchEvent(new MouseEvent("mousedown", { button, bubbles: true, cancelable: true }));
+    const up = (button) => document.dispatchEvent(new MouseEvent("mouseup", { button, bubbles: true }));
+    const shot = (button) => {
+      up(0); up(2);
+      if (G.game && G.game.progress) G.game.progress.tutorial = 0;
+      G.test.teleport(R.x + (R.nx || 0) * 14, R.y - 1.5, R.z + (R.nz || 0) * 14);
+      G.P.onGround = false;
+      G.test.face(R.x, R.z);
+      if (G.flatcam) { G.flatcam.bankOn = false; G.flatcam.shakeOn = false; G.flatcam.reset(G.rigYaw, 0); }
+      G.P.vel.x = G.P.vel.y = G.P.vel.z = 0;
+      for (let i = 0; i < 8; i++) G.test.step(1 / 60, 1);
+      const mark = G.frame;
+      down(button);
+      let rope = null;
+      for (let n = 0; n < 20; n++) {
+        G.test.step(1 / 60, 1);
+        const live = G.P.ropes.find((r) => r.state !== "idle");
+        if (live) { rope = { side: G.P.ropes.indexOf(live), tag: live.target && live.target.tag, id: live.target && live.target.id, x: live.anchor.x }; break; }
+      }
+      const fires = G.test.events().filter((e) => e.type === "fire" && e.frame > mark).map((e) => e.side);
+      return { rope, fires };
+    };
+    let tower = 0;
+    const ids = {}, left = [], right = [];
+    for (let i = 0; i < 30; i++) {
+      const s = shot(0);
+      if (i < 20) left.push(s);
+      if (s.rope && s.rope.id != null) ids[s.rope.id] = (ids[s.rope.id] || 0) + 1;
+      if (s.rope && s.rope.side === 0 && s.rope.tag === "building" && Math.abs(s.rope.x - R.x) < 2) tower++;
+    }
+    up(0);
+    for (let i = 0; i < 20; i++) right.push(shot(2));
+    up(2);
+    return { w: innerWidth, h: innerHeight, tower, ids, left: left.map((s) => s.fires), right: right.map((s) => s.fires), leftSide: left.map((s) => s.rope && s.rope.side), rightSide: right.map((s) => s.rope && s.rope.side) };
+  });
+  console.log("390 counts", JSON.stringify({ w: run390.w, h: run390.h, tower: run390.tower, ids: run390.ids }));
+  const left390 = run390.left.length === 20 && run390.left.every((f, i) => f.length === 1 && f[0] === 0 && run390.leftSide[i] === 0);
+  const right390 = run390.right.length === 20 && run390.right.every((f, i) => f.length === 1 && f[0] === 1 && run390.rightSide[i] === 1);
+  check(run390.w === 390 && run390.h === 844 && run390.tower === 30 && run390.ids[952] === 30, "at 390, 30 of 30 ropes from the gold-ring lesson attach to tower 952", { tower: run390.tower, ids: run390.ids, w: run390.w, h: run390.h });
+  check(left390, "the left button fires the left rope 20 of 20 at 390", run390.left);
+  check(right390, "the right button fires the right rope 20 of 20 at 390", run390.right);
+  const hold390 = await holdSky("390");
+  console.log("hold-sky 390", JSON.stringify(hold390));
+  check(hold390.held === 20, "at 390 a held building rope is still on at 5 s, 20 of 20", hold390);
+  check(hold390.sky === 10 && hold390.over === 0, "at 390 no sky rope is over 28.8 m", hold390);
 
   const ink390 = await page.evaluate(() => window.__goldInk.swing());
   await page.screenshot({ path: out + "/gold-ink-390-swing.png" });
@@ -299,7 +412,7 @@ try {
   await page.screenshot({ path: out + "/gold-ink-390-fade.png" });
   const gone390 = await page.evaluate(() => window.__goldInk.gone());
   console.log("ink390", JSON.stringify({ swing: ink390, fade: fade390, gone: gone390 }));
-  check(ink390.w === 390 && ink390.picked != null && !ink390.ground && !ink390.easy && ink390.ink && ink390.len > 40, "at 390 a mid-swing rope is on the gold-ring tower", { w: ink390.w, picked: ink390.picked, len: ink390.len, easy: ink390.easy, pos: ink390.pos, last: ink390.last });
+  check(ink390.w === 390 && ink390.picked != null && !ink390.ground && !ink390.easy && ink390.ink && ink390.len > 8 && ink390.len <= 28.8, "at 390 a mid-swing rope is on the gold-ring tower", { w: ink390.w, picked: ink390.picked, len: ink390.len, easy: ink390.easy, pos: ink390.pos, last: ink390.last });
   check(ink390.hemp === 0 && ink390.mesh && ink390.mesh.visible && ink390.mesh.n > 0 && ink390.reach != null && ink390.reach < 0.75, "at 390 the ink line is drawn to the anchor", { hemp: ink390.hemp, mesh: ink390.mesh, reach: ink390.reach });
   check(!!ink390.anchorOnScreen && ink390.line && ink390.line.inkD < 18 && ink390.line.sideL > 70, "at 390 the line is ink across the sky and the anchor is in the frame", { line: ink390.line, anchor: ink390.anchorInk });
   check(fade390.mesh && fade390.mesh.n > 0 && fade390.mesh.fade > 0.02 && fade390.mesh.fade < 0.1, "at 390 the line is partly faded about 100 ms after release", fade390.mesh);

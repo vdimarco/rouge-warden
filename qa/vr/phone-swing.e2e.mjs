@@ -35,6 +35,9 @@ try {
   // and covered 80 m in these 12 seconds.
   const run = await page.evaluate(() => {
     G.test.hold(true);
+    G.renderer.setAnimationLoop(null);
+    // Frames that ran between PLAY and this call must not choose the lesson or the aim.
+    if (G.game && G.game.progress) G.game.progress.tutorial = 0;
     const s = G.city.start, R = G.city.goldRing;
     G.test.teleport(s.x, s.y, s.z); G.rigYaw = Math.atan2(-(R.x - s.x), -(R.z - s.z));
     // in the chase view: hold the camera at this bearing and stop the hand-off settle (it eases the pitch for a while after
