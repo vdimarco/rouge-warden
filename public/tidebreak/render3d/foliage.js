@@ -221,11 +221,15 @@ export function foliagePatch(shader) {
     .replace('#include <color_vertex>', '#include <color_vertex>\n#ifdef USE_INSTANCING_COLOR\n vColor.rgb = mix( vec3( 1. ), instanceColor.rgb, aLeaf );\n#endif\nvLeaf = aLeaf;')
     .replace('#include <begin_vertex>', `#include <begin_vertex>
       transformed += normal * sin( uTime * 3.1 + dot( position, vec3( 37., 23., 31. ) ) ) * .007 * aLeaf * uSway;`);
-  shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vLeaf; uniform vec3 uSunView; uniform vec3 uSunColor;')
-    .replace('#include <normal_fragment_begin>', THREE.ShaderChunk.normal_fragment_begin.replace('normal *= faceDirection;', ''))
-    .replace('#include <opaque_fragment>', `
+  shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vLeaf; uniform vec3 uSunView; uniform vec3 uSunColor;');
+  // Unlit foliage (software WebGL) has no view-space normal. The lit path adds translucency.
+  if (shader.fragmentShader.includes('#include <normal_fragment_begin>')) {
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <normal_fragment_begin>', THREE.ShaderChunk.normal_fragment_begin.replace('normal *= faceDirection;', ''))
+      .replace('#include <opaque_fragment>', `
       { vec3 v = normalize( vViewPosition ); float back = max( dot( -v, uSunView ), 0. ), through = max( -dot( normal, uSunView ), 0. );
         outgoingLight += diffuseColor.rgb * uSunColor * vLeaf * ( through * .16 + pow( back, 4. ) * .5 + .05 ); }
       #include <opaque_fragment>`);
+  }
   return shader;
 }

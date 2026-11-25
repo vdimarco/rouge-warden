@@ -2,6 +2,7 @@
 // alpha for bump and height blending), a macro noise for large patches, a soft glow sprite, and particle atlases for sparks, smoke, dust and debris.
 // Nothing here is a painted 2D sprite, so the ground takes the real light.
 import * as THREE from 'three';
+import { graphicsSupport } from './choice.js';
 
 const random = seed => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t ^= t + Math.imul(t ^ t >>> 7, 61 | t); return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 // Tiling value noise: a lattice of period `cells` that wraps, so every octave tiles the texture seamlessly.
@@ -72,6 +73,7 @@ function grass(size, seed, stops, bladeTones) {
 }
 // Scattered pebbles with a dark contact edge, used on dirt, sand and the river bed.
 function pebbles(c, h, size, seed, count, tones, min = 1.5, max = 5) {
+  if (graphicsSupport().software) count = Math.max(1, count >> 2); // a quarter of the scatter on software WebGL
   const rand = random(seed);
   for (let i = 0; i < count; i++) {
     const x = rand() * size, y = rand() * size, rx = min + rand() * (max - min), ry = rx * (.55 + rand() * .4), a = rand() * Math.PI, tone = tones[Math.floor(rand() * tones.length)];

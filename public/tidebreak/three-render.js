@@ -49,11 +49,14 @@ export class ThreeRenderer {
     glCanvas.id = 'battle-3d'; glCanvas.setAttribute('aria-hidden', 'true'); glCanvas.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;pointer-events:none;display:block';
     overlay.id = 'battle-overlay'; overlay.setAttribute('aria-hidden', 'true'); overlay.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;pointer-events:none';
     canvas.after(glCanvas, overlay); this.canvas = glCanvas; this.overlay = overlay; this.ctx = overlay.getContext('2d');
-    this.gl = new THREE.WebGLRenderer({ canvas: glCanvas, antialias: true, powerPreference: 'high-performance', stencil: false });
+    // Software WebGL (SwiftShader) spends seconds in the shadow pass and in multisample resolve. Skip both there;
+    // a GPU still draws the soft shadow map and antialiasing.
+    const software = graphicsSupport().software;
+    this.gl = new THREE.WebGLRenderer({ canvas: glCanvas, antialias: !software, powerPreference: 'high-performance', stencil: false });
     installGrade(); this.gl.toneMapping = THREE.CustomToneMapping; this.gl.outputColorSpace = THREE.SRGBColorSpace;
-    this.gl.shadowMap.enabled = true; this.gl.shadowMap.type = THREE.PCFShadowMap; this.gl.info.autoReset = true;
+    this.gl.shadowMap.enabled = !software; this.gl.shadowMap.type = THREE.PCFShadowMap; this.gl.info.autoReset = true;
     this.scene = new THREE.Scene(); this.camera = new THREE.PerspectiveCamera(FOV, 1, 150, 22000);
-    this.sky = new Sky(this.gl, this.scene);
+    this.sky = new Sky(this.gl, this.scene); if (software) this.sky.sun.castShadow = false;
     this.textures = { ...groundTextures(), macro: macroTexture(), glow: glowTexture(), sparks: sparkAtlas(), soft: softAtlas() };
     this.terrain = new Terrain(this.scene, this.textures, this.textures.macro);
     this.props = new Props(this.scene, assets, this.textures, { coverage: !graphicsSupport().software, heightAt: (x, z) => this.terrain.heightAt(x, z), heightUniforms: this.terrain.heightUniforms }); // alpha to coverage is slow in software WebGL
@@ -85,14 +88,18 @@ export class ThreeRenderer {
   resize() {
     this.width = innerWidth; this.height = innerHeight; this.quality ??= 1;
     this.dpr = backingRatio(this.width, this.height, devicePixelRatio, this.quality);
-    this.gl.setPixelRatio(this.dpr); this.gl.setSize(this.width, this.height, false);
+    // backingRatio already stops at 2. On software WebGL the 3D view is the expensive framebuffer: cap it at half
+    // a CSS pixel and at 480 device pixels on the long side. The HUD overlay stays sharper, and at most 1:1.
+    if (graphicsSupport().software) this.dpr = Math.min(this.dpr, 1);
+    this.drawRatio = graphicsSupport().software ? Math.min(this.dpr, 0.5, 480 / Math.max(this.width, this.height)) : this.dpr;
+    this.gl.setPixelRatio(this.drawRatio); this.gl.setSize(this.width, this.height, false);
     this.overlay.width = Math.round(this.width * this.dpr); this.overlay.height = Math.round(this.height * this.dpr); this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     // The footprint below is the gameplay camera's, so the hero select lens comes off first (it returns on its next frame).
     const aspect = this.width / Math.max(1, this.height); this.camera.aspect = aspect; this.gameLens();
     this.calibrateCamera();
     const half = THREE.MathUtils.degToRad(FOV / 2);
-    this.effects?.setScale(this.height * this.dpr / (2 * Math.tan(half)));
-    OUTLINE.uResolution.value.set(this.width * this.dpr, this.height * this.dpr); OUTLINE.uWidth.value = Math.max(1, 1.35 * this.dpr * Math.min(1.4, Math.max(.8, this.height / 900)));
+    this.effects?.setScale(this.height * this.drawRatio / (2 * Math.tan(half)));
+    OUTLINE.uResolution.value.set(this.width * this.drawRatio, this.height * this.drawRatio); OUTLINE.uWidth.value = Math.max(1, 1.35 * this.drawRatio * Math.min(1.4, Math.max(.8, this.height / 900)));
     const q = this.quality, size = q >= .8 ? 2048 : q >= .6 ? 1536 : 1024; this.shadowSize = size;
     if (this.props) { this.props.detail = q; this.props.view = null; }
     this.restartTiming();

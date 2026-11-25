@@ -3,6 +3,7 @@
 // point lights gives strikes a short flash; the light count never changes, so no shader recompiles.
 import * as THREE from 'three';
 import { TERRAIN_HEIGHT_GLSL } from '../relief.js';
+import { graphicsSupport } from './choice.js';
 
 const MAX_DECALS = 320, MAX_RIBBONS = 160, MAX_PARTICLES = 2400;
 // --- ground decals ------------------------------------------------------------------------------------------------
@@ -166,12 +167,15 @@ class Decals {
     const x0 = Math.max(0, Math.floor((bounds.x0 - origin.x) / cell)), x1 = Math.min(segments - 1, Math.ceil((bounds.x1 - origin.x) / cell) - 1);
     const z0 = Math.max(0, Math.floor((bounds.z0 - origin.y) / cell)), z1 = Math.min(segments - 1, Math.ceil((bounds.z1 - origin.y) / cell) - 1);
     if (x1 < x0 || z1 < z0) return false;
+    // Software WebGL keeps the marks and steps the ground grid by two, so each decal is about a quarter of the triangles.
+    const step = graphicsSupport().software ? 2 : 1;
     const water = this.waterIn(bounds.x0, bounds.z0, bounds.x1, bounds.z1), bridges = [0, 1, 2].map(j => this.bridgePolygon(j, bounds));
-    const count = (x1 - x0 + 1) * (z1 - z0 + 1) * 6 + (water ? 6 : 0) + bridges.reduce((sum, p) => sum + Math.max(0, p.length - 2) * 3, 0);
+    const cols = Math.floor((x1 - x0) / step) + 1, rows = Math.floor((z1 - z0) / step) + 1;
+    const count = cols * rows * 6 + (water ? 6 : 0) + bridges.reduce((sum, p) => sum + Math.max(0, p.length - 2) * 3, 0);
     if (!this.reserve(count)) return false;
     // Float32 world coordinates and the mirrored diagonal match the rendered ground, including triangle interiors.
-    for (let row = z0; row <= z1; row++) for (let col = x0; col <= x1; col++) {
-      const ax = Math.fround(origin.x + col * cell), bx = Math.fround(origin.x + (col + 1) * cell), az = Math.fround(origin.y + row * cell), bz = Math.fround(origin.y + (row + 1) * cell);
+    for (let row = z0; row <= z1; row += step) for (let col = x0; col <= x1; col += step) {
+      const ax = Math.fround(origin.x + col * cell), bx = Math.fround(origin.x + Math.min(segments, col + step) * cell), az = Math.fround(origin.y + row * cell), bz = Math.fround(origin.y + Math.min(segments, row + step) * cell);
       const a = [ax, az], b = [bx, az], c = [ax, bz], d = [bx, bz];
       if (row < segments / 2) { this.triangle(i, a, c, b, 0); this.triangle(i, b, c, d, 0); }
       else { this.triangle(i, a, c, d, 0); this.triangle(i, a, d, b, 0); }

@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import { riverGeometry, riverCrossings, riverOutline, shoreRibbon } from '../river.js';
 import { withWorld, fowAtEnd, worldMapped } from './materials.js';
+import { graphicsSupport } from './choice.js';
 import { buildRelief } from '../relief.js';
 
 const MASK = 1024;
@@ -109,8 +110,7 @@ const GROUND_FRAGMENT = `
   float h = ground.a; vec3 col = ground.rgb; float rough = .96;
   // Fells expose grey stone on the steep shoulders. Sheltered hollows keep a little darker green moss; both cues
   // come from the actual surface so the material describes landforms rather than decorating a flat floor.
-  vec3 surfaceN = normalize( cross( dFdx( vWorldP ), dFdy( vWorldP ) ) );
-  float slope = 1. - abs( surfaceN.y );
+  /* slope */
   float rocky = max( smoothstep( .025, .19, slope ) * .8, smoothstep( 300., 480., vWorldP.y ) * smoothstep( .44, .7, macro2.g ) * .5 );
   rocky *= ( 1. - max( mask.r, max( mask.g, mask.b ) ) ) * ( 1. - max( zone.r, zone.g * .7 ) );
   vec3 fellStone = stone.rgb * vec3( .8, .84, .83 );
@@ -144,16 +144,29 @@ export class Terrain {
     this.relief = null;
     this.heightUniforms = { uTerrainHeight: { value: null }, uTerrainOrigin: { value: new THREE.Vector2() }, uTerrainSpan: { value: 1 }, uTerrainSegments: { value: 1 } };
     this.uniforms = { uMask: { value: null }, uZones: { value: null }, uMacro: { value: macro }, uGrass: { value: textures.grass }, uDry: { value: textures.dry }, uMoss: { value: textures.moss }, uDirt: { value: textures.dirt }, uStone: { value: textures.stone }, uSand: { value: textures.sand }, uRealm: { value: 0 } };
-    const material = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: .95, metalness: 0 });
+    // The full splat plus a physical shader is a multi-second SwiftShader frame by itself. Software draws an unlit
+    // ground from four samples and no screen-space derivatives. A GPU keeps the full material.
+    const softwareGround = graphicsSupport().software;
+    const slope = 'vec3 surfaceN = normalize( cross( dFdx( vWorldP ), dFdy( vWorldP ) ) );\n  float slope = 1. - abs( surfaceN.y );';
+    const groundFragment = GROUND_FRAGMENT.replace('/* slope */', slope);
+    // Four samples and no lighting. The full splat plus a physical shader is a multi-second software frame on its own.
+    const groundSoft = `
+      vec2 wp = vWorldP.xz; vec2 muv = wp / uSize; float inside = step( 0., muv.x ) * step( muv.x, 1. ) * step( 0., muv.y ) * step( muv.y, 1. );
+      vec4 mask = texture2D( uMask, clamp( muv, 0., 1. ) ) * inside;
+      vec3 col = texture2D( uGrass, wp / 430. ).rgb;
+      col = mix( col, texture2D( uDirt, wp / 380. ).rgb, smoothstep( .25, .7, mask.r ) );
+      col = mix( col, texture2D( uSand, wp / 300. ).rgb, smoothstep( .25, .7, mask.g ) );
+      col = mix( col, texture2D( uStone, wp / 330. ).rgb, smoothstep( .25, .75, mask.b ) );
+      diffuseColor.rgb *= col;`;
+    const material = softwareGround ? new THREE.MeshBasicMaterial({ color: '#ffffff' }) : new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: .95, metalness: 0 });
     material.onBeforeCompile = shader => {
       withWorld(shader); fowAtEnd(shader); Object.assign(shader.uniforms, this.uniforms);
       shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>
         uniform sampler2D uMask, uZones, uMacro, uGrass, uDry, uMoss, uDirt, uStone, uSand; uniform float uRealm;`)
-        .replace('#include <map_fragment>', 'float groundH = .5, groundRough = .95;\n' + GROUND_FRAGMENT)
-        .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = groundRough;')
-        .replace('#include <normal_fragment_maps>', BUMP);
+        .replace('#include <map_fragment>', softwareGround ? groundSoft : 'float groundH = .5, groundRough = .95;\n' + groundFragment);
+      if (!softwareGround) shader.fragmentShader = shader.fragmentShader.replace('#include <roughnessmap_fragment>', 'float roughnessFactor = groundRough;').replace('#include <normal_fragment_maps>', BUMP);
     };
-    material.customProgramCacheKey = () => 'shore-ground-relief';
+    material.customProgramCacheKey = () => softwareGround ? 'shore-ground-relief-soft' : 'shore-ground-relief';
     this.ground = new THREE.Mesh(new THREE.BufferGeometry(), material); this.ground.castShadow = this.ground.receiveShadow = true;
     this.ground.name = 'ground'; scene.add(this.ground);
     this.stone = worldMapped(textures.stone, { color: '#b9b1a1', scale: 240, key: 'stone-built' });
