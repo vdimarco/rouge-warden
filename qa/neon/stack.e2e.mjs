@@ -217,8 +217,8 @@ for (let i = 1; i <= 6; i++) {
 await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
 await phone.page.waitForTimeout(80);
 const afterDrag = await phone.page.evaluate(() => __test.state());
-check(Math.abs(afterDrag.player.x - hold.player.x) < 0.05 && Math.abs(afterDrag.player.y - hold.player.y) < 0.05, "a phone drag does not walk");
-check(Math.abs(afterDrag.yaw - hold.yaw) > 2, "a phone drag turns (" + afterDrag.yaw.toFixed(1) + ")");
+check(Math.hypot(afterDrag.player.x - hold.player.x, afterDrag.player.y - hold.player.y) > 0.05, "a phone drag walks (" + afterDrag.player.x.toFixed(2) + "," + afterDrag.player.y.toFixed(2) + ")");
+check(Math.abs(afterDrag.yaw - hold.yaw) < 2, "a phone drag does not turn (" + afterDrag.yaw.toFixed(1) + ")");
 await phone.context.close();
 await desk.context.close();
 

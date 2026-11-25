@@ -27,7 +27,13 @@ let time = 0;
 const override = [null, null, null, null, null, null];
 const fade = [1, 1, 1, 1, 1, 1];
 let facing = 1;
+let faceWant = 1;
+let faceT = 1;
 let moving = false;
+let speed = 0;
+const stick = { x: 0, y: 0 };
+let stickTimer = 0;
+let wish = { x: 0, y: -1 };
 let pose = "";
 const keys = new Set();
 const active = new Map();
@@ -317,18 +323,31 @@ function step(dt) {
   if (attract) yaw += 12 * dt;
   if (keys.has("q")) yaw -= 90 * dt;
   if (keys.has("e")) yaw += 90 * dt;
-  let mx = 0, my = 0;
+  let mx = stick.x, my = stick.y;
   if (keys.has("a") || keys.has("arrowleft")) mx -= 1;
   if (keys.has("d") || keys.has("arrowright")) mx += 1;
   if (keys.has("w") || keys.has("arrowup")) my -= 1;
   if (keys.has("s") || keys.has("arrowdown")) my += 1;
+  mx = Math.max(-1, Math.min(1, mx));
+  my = Math.max(-1, Math.min(1, my));
+  const pushing = mx !== 0 || my !== 0;
+  if (pushing) {
+    const len = Math.hypot(mx, my) || 1;
+    wish = { x: mx / len, y: my / len };
+  }
+  speed = Math.max(0, Math.min(1, speed + (pushing ? 1 : -1) * dt / 0.1));
   moving = false;
-  if (mx || my) {
+  if (speed > 0.001) {
     moving = true;
     route = [];
-    const [dx, dy] = viewDelta(mx, my);
-    if (dx) facing = dx > 0 ? 1 : -1;
-    tryMove(dx * 3 * dt, dy * 3 * dt);
+    const [dx, dy] = viewDelta(wish.x, wish.y);
+    if (Math.abs(dx) > 0.2) {
+      const want = dx > 0 ? 1 : -1;
+      if (want !== faceWant) { faceWant = want; faceT = 0; }
+    }
+    faceT += dt;
+    if (faceT >= 0.08) facing = faceWant;
+    tryMove(dx * 3 * speed * dt, dy * 3 * speed * dt);
   } else if (route.length) {
     const [tx, ty] = route[0];
     const dx = tx - player.x, dy = ty - player.y;
@@ -401,13 +420,17 @@ canvas.addEventListener("pointermove", (e) => {
   if (!p) return;
   if (Math.hypot(e.clientX - p.sx, e.clientY - p.sy) > 8) { p.drag = true; dragged = true; }
   if (phone() && active.size >= 2) {
+    yaw -= (e.clientX - p.x) * 0.45;
     tilt = clampTilt(tilt + (e.clientY - p.y) * 0.15);
+    p.x = e.clientX;
     p.y = e.clientY;
+    stick.x = 0;
+    stick.y = 0;
     multi = true;
     dragged = true;
   } else if (phone() && p.drag) {
-    yaw -= (e.clientX - p.x) * 0.45;
-    p.x = e.clientX;
+    stick.x = Math.max(-1, Math.min(1, (e.clientX - p.sx) / 48));
+    stick.y = Math.max(-1, Math.min(1, (e.clientY - p.sy) / 48));
   } else if (!phone() && p.btn === 2 && p.drag) {
     yaw -= (e.clientX - p.x) * 0.4;
     p.x = e.clientX;
@@ -418,6 +441,8 @@ function endPointer(e) {
   if (!p) return;
   active.delete(e.pointerId);
   if (active.size) return;
+  stick.x = 0;
+  stick.y = 0;
   const walk = !eatClick && !dragged && !multi && (phone() || p.btn === 0);
   eatClick = false;
   dragged = false;
@@ -442,7 +467,7 @@ addEventListener("keyup", (e) => keys.delete(e.key.toLowerCase()));
 window.__test = {
   ready: () => ready,
   state: () => ({
-    player: { x: player.x, y: player.y },
+    player: { x: player.x, y: player.y, facing },
     tilt, yaw: wrap(yaw),
     slices: renderer.slices,
     drawCalls: renderer.drawCalls,
@@ -470,6 +495,13 @@ window.__test = {
   },
   setPose: (name) => { pose = name || ""; },
   outline: () => shownOutline,
+  moveInput: (dx, dy, ms = 100) => {
+    attract = false;
+    stick.x = Math.max(-1, Math.min(1, dx));
+    stick.y = Math.max(-1, Math.min(1, dy));
+    clearTimeout(stickTimer);
+    stickTimer = setTimeout(() => { stick.x = 0; stick.y = 0; }, ms);
+  },
   viewStep: (mx, my, dt = 0.3) => {
     attract = false;
     const [dx, dy] = viewDelta(mx, my);
