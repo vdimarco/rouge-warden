@@ -1,5 +1,6 @@
 // Neon Stack: one loop, plain objects, camera snapped once per frame.
-import { TILE, PALETTE, build, pathfind } from "./world.mjs";
+import { TILE, build, pathfind, RUNNER_BOX } from "./world.mjs";
+import { atlasUrl } from "./art/atlas-data.mjs";
 import { createRenderer, lookAt, perspective, mul } from "./render.mjs";
 
 const FOV = 20 * Math.PI / 180;
@@ -12,7 +13,7 @@ const SMOG = [0x8a / 255, 0x83 / 255, 0x78 / 255];
 const canvas = document.getElementById("view");
 const params = new URLSearchParams(location.search);
 const world = build(params.get("seed") || 1);
-const renderer = createRenderer(canvas, world.atlas, PALETTE);
+const renderer = createRenderer(canvas);
 let lastDt = 1 / 60;
 
 const player = { x: world.spawn.x, y: world.spawn.y };
@@ -23,8 +24,11 @@ let eatClick = false;
 let cutaway = true;
 let route = [];
 let time = 0;
-const override = [null, null, null, null, null];
-const fade = [1, 1, 1, 1, 1];
+const override = [null, null, null, null, null, null];
+const fade = [1, 1, 1, 1, 1, 1];
+let facing = 1;
+let moving = false;
+let pose = "";
 const keys = new Set();
 const active = new Map();
 let dragged = false;
@@ -154,7 +158,7 @@ function walkAt(clientX, clientY) {
 }
 function lightsNow() {
   const out = world.lights.map((l) => ({ ...l }));
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 6; i++) {
     const buzz = world.signs[i].buzz && (time % 3.6) < 0.08;
     const want = override[i] === false ? 0 : 1;
     const step = Math.min(Math.abs(want - fade[i]), lastDt / 0.15);
@@ -168,9 +172,20 @@ function lightsNow() {
   fire.z += Math.sin(time * hz * 3.1) * 0.35;
   fire.intensity = flick;
   fire.on = true;
-  const car = out.find((l) => l.type === "strip");
-  car.intensity = 1;
   return out;
+}
+function frameUV(name, flip) {
+  const f = world.frames[name];
+  let u0 = f.x / 1024, u1 = (f.x + f.w) / 1024;
+  const v0 = 1 - (f.y + f.h) / 1024, v1 = 1 - f.y / 1024;
+  if (flip) { const t = u0; u0 = u1; u1 = t; }
+  return [u0, v0, u1, v1];
+}
+function runnerFrame() {
+  if (pose === "idle") return "runner_idle";
+  if (pose === "crouch" || pose === "hack" || pose === "spotted") return "runner_" + pose;
+  if (pose === "run" || moving) return "runner_run_" + (Math.floor(time * 8) % 4);
+  return "runner_idle";
 }
 function scene() {
   fit();
@@ -185,10 +200,33 @@ function scene() {
   }
   const runner = [];
   const rest = [];
+  const runName = runnerFrame();
   for (const s of world.slices) {
-    if (s.kind === 1) { s.x = player.x * TILE; s.z = player.y * TILE; runner.push(s); }
-    else if (s.bid < 0 || !cuts.has(s.bid) || s.low) rest.push(s);
+    if (s.kind === 1) {
+      const fr = world.frames[runName];
+      s.x = player.x * TILE;
+      s.z = player.y * TILE;
+      s.hx = fr.w * (TILE / 16) / 2;
+      s.hz = fr.h * (TILE / 16) / 2;
+      s.y = s.hz;
+      s.uv = frameUV(runName, facing < 0);
+      runner.push(s);
+    } else if (s.kind === 6) {
+      s.uv = frameUV("steam_vent_" + (Math.floor(time * 8) % 4), false);
+      rest.push(s);
+    } else if (s.bid < 0 || !cuts.has(s.bid) || s.low) rest.push(s);
   }
+  let nearD = 1e9;
+  let outline = [0.24, 0.88, 0.91];
+  for (const s of world.signs) {
+    const d = Math.hypot(s.x - player.x, s.y - player.y);
+    if (d < nearD) {
+      nearD = d;
+      outline = [parseInt(s.colour.slice(1, 3), 16) / 255, parseInt(s.colour.slice(3, 5), 16) / 255, parseInt(s.colour.slice(5, 7), 16) / 255];
+    }
+  }
+  renderer.outline = outline;
+  renderer.tile = TILE;
   const lights = lightsNow();
   const uL = new Float32Array(32);
   const uC = new Float32Array(32);
@@ -225,7 +263,7 @@ function scene() {
     l._world = [x, y, z];
   });
   let master = 0;
-  for (let i = 1; i <= 5; i++) master = Math.max(master, fadeU[i]);
+  for (let i = 1; i <= 6; i++) master = Math.max(master, fadeU[i]);
   fadeU[0] = master;
   const rl = Math.hypot(rimx, rimz) || 1;
   const vp = mul(proj, view);
@@ -240,7 +278,7 @@ function scene() {
     haloC[i * 4 + 3] = ah - e.y;
   });
   return {
-    vp, slices: runner.concat(rest), runnerCount: runner.length, runnerPaper: true,
+    vp, slices: runner.concat(rest), runnerCount: runner.length, runnerPaper: false,
     sun: SUN, haze: HAZE, smog: SMOG,
     rim: [rimx / rl, rimz / rl],
     fade: fadeU, lights: uL, lightColor: uC, intensity: uI,
@@ -256,8 +294,11 @@ function step(dt) {
   if (keys.has("d") || keys.has("arrowright")) mx += 1;
   if (keys.has("w") || keys.has("arrowup")) my -= 1;
   if (keys.has("s") || keys.has("arrowdown")) my += 1;
+  moving = false;
   if (mx || my) {
+    moving = true;
     route = [];
+    if (mx) facing = mx > 0 ? 1 : -1;
     const yr = yaw * Math.PI / 180;
     const fx = -Math.sin(yr), fz = -Math.cos(yr);
     const rx = Math.cos(yr), rz = -Math.sin(yr);
@@ -268,6 +309,8 @@ function step(dt) {
     const dx = tx - player.x, dy = ty - player.y;
     const d = Math.hypot(dx, dy);
     const step = 3 * dt;
+    moving = true;
+    if (dx) facing = dx > 0 ? 1 : -1;
     if (d <= step) { player.x = tx; player.y = ty; route.shift(); }
     else { player.x += dx / d * step; player.y += dy / d * step; }
   }
@@ -299,6 +342,15 @@ function frame(now) {
   }
   samples.push(raw * 1000);
   if (samples.length > 60) samples.shift();
+  if (fpsWant) {
+    fpsWindow.push({ t: now, ms: raw * 1000 });
+    while (fpsWindow.length && now - fpsWindow[0].t > 1000) fpsWindow.shift();
+    if (now - (frame.fpsShown || 0) > 250 && fpsWindow.length) {
+      const avg = fpsWindow.reduce((a, s) => a + s.ms, 0) / fpsWindow.length;
+      fpsEl.textContent = avg > 0 ? (1000 / avg).toFixed(0) + " fps" : "";
+      frame.fpsShown = now;
+    }
+  }
   frameMs = samples.reduce((a, b) => a + b, 0) / samples.length;
   fps = frameMs > 0 ? 1000 / frameMs : 0;
   warmed++;
@@ -391,5 +443,47 @@ window.__test = {
     const r = world.slices.find((s) => s.kind === 1);
     return r ? { x: r.x, y: r.y, z: r.z, hx: r.hx, uv: r.uv } : null;
   },
+  setPose: (name) => { pose = name || ""; },
+  runnerRect: () => {
+    const name = runnerFrame();
+    const box = RUNNER_BOX[name];
+    const f = world.frames[name];
+    const px = TILE / 16;
+    const halfW = f.w * px / 2;
+    const halfH = f.h * px / 2;
+    const cx = player.x * TILE;
+    const cz = player.y * TILE;
+    const left = facing < 0 ? box.right : box.left;
+    const right = facing < 0 ? box.left : box.right;
+    const x0 = cx - halfW + left * px;
+    const x1 = cx + halfW - right * px;
+    const y0 = box.bottom * px;
+    const y1 = (f.h - box.top) * px;
+    const rect = canvas.getBoundingClientRect();
+    const css = (x, y, z) => {
+      const p = renderer.project([x, y, z]);
+      return renderer.client(p.x, p.y, rect);
+    };
+    const corners = [css(x0, y0, cz), css(x1, y0, cz), css(x0, y1, cz), css(x1, y1, cz)];
+    const xs = corners.map((p) => p.x);
+    const ys = corners.map((p) => p.y);
+    const minX = Math.min(...xs), maxX = Math.max(...xs);
+    const minY = Math.min(...ys), maxY = Math.max(...ys);
+    const foot = css(cx, y0, cz);
+    const tile = css(cx, y0 + TILE, cz);
+    return { x: minX, y: minY, w: maxX - minX, h: maxY - minY, tilePx: Math.abs(tile.y - foot.y) };
+  },
 };
-requestAnimationFrame(frame);
+const fpsWant = params.get("fps") === "1";
+const fpsEl = document.createElement("div");
+fpsEl.id = "fps";
+fpsEl.style.cssText = "position:fixed;left:8px;bottom:8px;z-index:4;color:#F3E9D6;font:14px/1 ui-monospace,monospace;display:none;pointer-events:none";
+document.body.appendChild(fpsEl);
+if (fpsWant) fpsEl.style.display = "block";
+const fpsWindow = [];
+const atlas = new Image();
+atlas.onload = () => {
+  renderer.setAtlas(atlas);
+  requestAnimationFrame(frame);
+};
+atlas.src = atlasUrl;

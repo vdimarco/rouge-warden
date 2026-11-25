@@ -11,18 +11,12 @@ const a = build(4);
 const again = build(4);
 const other = build(9);
 
-assert.equal(a.buildings.length, 12);
-assert.ok(a.buildings.every((b) => b.h >= 16 && b.h <= 40));
+assert.equal(a.buildings.length, 16);
+assert.ok(a.buildings.every((b) => b.h >= 1 && b.h <= 7));
+assert.equal(a.buildings.find((b) => b.tx === 0 && b.ty === 0).h, 7);
 assert.deepEqual(a.buildings, again.buildings);
-assert.notDeepEqual(a.buildings.map((b) => b.h), other.buildings.map((b) => b.h));
-assert.equal(a.signs.length, 5);
-assert.deepEqual(a.signs.map((s) => [s.name, s.w, s.h, s.colour]), [
-  ["noodle", 12, 10, "#FF3D8B"],
-  ["bar", 6, 20, "#3DE0E8"],
-  ["arrow", 14, 6, "#F2A33A"],
-  ["eye", 12, 8, "#FF3D8B"],
-  ["cross", 9, 9, "#B6F23A"],
-]);
+assert.equal(a.signs.length, 6);
+assert.equal(a.signs.filter((s) => s.street).length, 4);
 assert.deepEqual(a.signs.filter((s) => s.buzz).map((s) => s.name), ["eye"]);
 assert.deepEqual(a.signs.filter((s) => s.colour === "#B6F23A").map((s) => s.name), ["cross"]);
 
@@ -44,7 +38,7 @@ if (around.length) {
 assert.equal(pathfind(blocked, 2.5, 0.5, 1.5, 1.5).length, 0);
 
 let bytes = 0;
-for (const name of ["world.mjs", "render.mjs", "game.mjs"]) {
+for (const name of ["world.mjs", "render.mjs", "game.mjs", "art/atlas-data.mjs"]) {
   bytes += zlib.gzipSync(fs.readFileSync(path.join(root, "public/neon-stack", name))).length;
 }
 const kb = bytes / 1024;

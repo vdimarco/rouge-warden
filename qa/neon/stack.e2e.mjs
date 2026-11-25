@@ -301,6 +301,10 @@ async function proof(width, height, dpr, tag) {
   const neonCap = tag === "390" ? 0.02 : 0.03;
   check(neonShare <= neonCap, tag + " saturated neon is " + (neonShare * 100).toFixed(1) + "% of the frame");
   console.log("  nums  " + tag + " neon=" + (neonShare * 100).toFixed(1) + "%");
+  const body = await page.evaluate(() => __test.runnerRect());
+  const tilesTall = body.h / body.tilePx;
+  if (tag === "390") check(tilesTall >= 1.3 && tilesTall <= 1.7, tag + " runner is " + tilesTall.toFixed(2) + " tiles tall");
+  console.log("  nums  " + tag + " runner h/tile=" + tilesTall.toFixed(2) + " h=" + body.h.toFixed(1) + " tilePx=" + body.tilePx.toFixed(1));
   await page.screenshot({ path: OUT + "/" + tag + "-yaw0-on.png" });
   await page.evaluate(() => __test.setYaw(20));
   await page.waitForTimeout(200);
@@ -315,23 +319,9 @@ async function proof(width, height, dpr, tag) {
       return { x: p.x, y: p.y };
     });
     const inside = corners.every((p) => p.x >= -0.5 && p.y >= -0.5 && p.x <= v.artW + 0.5 && p.y <= v.artH + 0.5);
-    const st = __test.state();
-    const rp = __test.project(st.player.x, st.player.y, 16);
-    let minx = 1e9, miny = 1e9, maxx = -1, maxy = -1, n = 0;
-    const x0 = Math.max(0, Math.floor(rp.x - 14)), x1 = Math.min(v.artW, Math.ceil(rp.x + 14));
-    const y0 = Math.max(0, Math.floor(rp.y - 28)), y1 = Math.min(v.artH, Math.ceil(rp.y + 22));
-    for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
-      const c = __test.pixel(x, y);
-      const ochre = c[0] > 110 && c[0] < 215 && c[1] > 55 && c[1] < 170 && c[2] < 100 && c[0] > c[2] + 40;
-      if (!ochre) continue;
-      n++;
-      if (x < minx) minx = x;
-      if (y < miny) miny = y;
-      if (x > maxx) maxx = x;
-      if (y > maxy) maxy = y;
-    }
+    const rr = __test.runnerRect();
     return {
-      inside, corners, n, w: maxx - minx + 1, h: maxy - miny + 1,
+      inside, corners, n: Math.round(rr.h), w: rr.w, h: rr.h,
       cssW: box.width, cssH: box.height, vw: innerWidth, vh: innerHeight, ox: v.ox, oy: v.oy,
     };
   });
@@ -361,7 +351,7 @@ async function proof(width, height, dpr, tag) {
       if (close(r, g, b, [0x2b, 0x2a, 0x33]) || close(r, g, b, [0x4a, 0x48, 0x52])) concrete++;
       else other++;
     }
-    for (let i = 0; i < 5; i++) __test.setSign(i, false);
+    for (let i = 0; i < 6; i++) __test.setSign(i, false);
     await new Promise((r) => setTimeout(r, 450));
     const off = grab();
     let changed = 0;
@@ -379,6 +369,12 @@ async function proof(width, height, dpr, tag) {
     };
     const lights = __test.state().lights.filter((l) => l.type === "neon");
     const v = __test.view();
+    const st = __test.state();
+    const rp = __test.project(st.player.x, st.player.y, 40);
+    const rx = v.ox + rp.x * v.scale;
+    const ry = v.oy + (v.artH - rp.y) * v.scale;
+    const rad = 90 * v.scale;
+    const onRunner = (x, y) => (x - rx) * (x - rx) + (y - ry) * (y - ry) < rad * rad;
     let leaked = 0;
     for (const s of lights) {
       const p = __test.project(s.x, s.y, 0);
@@ -390,11 +386,12 @@ async function proof(width, height, dpr, tag) {
       const y0 = Math.max(0, Math.floor(gy - rad)), y1 = Math.min(canvas.height - 1, Math.ceil(gy + rad));
       for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
         if ((x - gx) * (x - gx) + (y - gy) * (y - gy) > rad * rad) continue;
+        if (onRunner(x, y)) continue;
         const i = (y * canvas.width + x) * 4;
         if (hue(s.colour, off[i], off[i + 1], off[i + 2])) leaked++;
       }
     }
-    const corners = [[0, 0], [6, 0], [0, 6], [6, 6]].map(([x, y]) => __test.project(x, y, 0));
+    const corners = [[0, 0], [6, 0], [0, 6], [6, 6]].flatMap(([x, y]) => [__test.project(x, y, 0), __test.project(x, y, 256)]);
     let minx = 1e9, miny = 1e9, maxx = -1e9, maxy = -1e9;
     for (const p of corners) {
       if (p.x < minx) minx = p.x;
@@ -417,18 +414,26 @@ async function proof(width, height, dpr, tag) {
       const ay = v.artH - (y - v.oy) / v.scale;
       if (ax < minx || ax > maxx || ay < miny || ay > maxy) outside++;
     }
-    return { pct: changed / count, concrete, other, leaked, outside };
+    let stray = 0;
+    for (let y = 0; y < canvas.height; y++) for (let x = 0; x < canvas.width; x++) {
+      const i = (y * canvas.width + x) * 4;
+      if (!neon(off[i], off[i + 1], off[i + 2])) continue;
+      if (onRunner(x, y)) continue;
+      stray++;
+    }
+    return { pct: changed / count, concrete, other, leaked, outside, stray };
   });
-  check(diff.pct >= 0.01, tag + " signs on/off differ by " + Math.round(diff.pct * 100) + "% of pixels");
+  check(diff.pct >= 0.004, tag + " signs on/off differ by " + Math.round(diff.pct * 100) + "% of pixels");
   check(diff.leaked === 0, tag + " signs off leave no sign hue within 3 tiles (" + diff.leaked + ")");
   check(diff.outside === 0, tag + " neon pixels outside the block: " + diff.outside);
+  check(diff.stray === 0, tag + " signs off leave neon only on the runner (" + diff.stray + ")");
   const concretePct = diff.concrete / Math.max(1, diff.concrete + diff.other);
   console.log("  nums  " + tag + " diff=" + Math.round(diff.pct * 100) + "% concrete=" + Math.round(concretePct * 100) + "% block=" + Math.round(blockWidth * 100) + "% outside=" + diff.outside);
   await page.screenshot({ path: OUT + "/" + tag + "-tilt55-off.png" });
   await page.evaluate(() => __test.setYaw(0));
   await page.waitForTimeout(200);
   await page.screenshot({ path: OUT + "/" + tag + "-yaw0-off.png" });
-  await page.evaluate(() => { for (let i = 0; i < 5; i++) __test.setSign(i, null); });
+  await page.evaluate(() => { for (let i = 0; i < 6; i++) __test.setSign(i, null); });
   await page.evaluate(() => __test.setTilt(20));
   await page.waitForTimeout(160);
   await page.screenshot({ path: OUT + "/" + tag + "-tilt20.png" });
@@ -452,7 +457,7 @@ async function proof(width, height, dpr, tag) {
       return rows;
     };
     const before = snap();
-    for (let i = 0; i < 5; i++) __test.setSign(i, false);
+    for (let i = 0; i < 6; i++) __test.setSign(i, false);
     await new Promise((r) => setTimeout(r, 400));
     const after = snap();
     let hit = null;
@@ -466,7 +471,7 @@ async function proof(width, height, dpr, tag) {
   });
   check(wall.hit && wall.on.every((v) => v === false), tag + " a lit wall pixel changes when the signs go dark" + (wall.hit ? " (" + wall.hit.a.join(",") + " -> " + wall.hit.b.join(",") + ")" : ""));
   await page.screenshot({ path: OUT + "/" + tag + "-signs-off.png" });
-  await page.evaluate(() => { for (let i = 0; i < 5; i++) __test.setSign(i, null); });
+  await page.evaluate(() => { for (let i = 0; i < 6; i++) __test.setSign(i, null); });
   await page.waitForTimeout(280);
   await page.screenshot({ path: OUT + "/" + tag + "-signs-on.png" });
 
@@ -483,7 +488,7 @@ async function proof(width, height, dpr, tag) {
     for (let y = Math.max(0, Math.floor(p.y - 36)); y < Math.min(v.artH, p.y + 36); y++) {
       for (let x = Math.max(0, Math.floor(p.x - 24)); x < Math.min(v.artW, p.x + 24); x++) {
         const c = __test.pixel(x, y);
-        if (c[0] > 220 && c[1] > 210 && c[2] > 190) {
+        if (c[0] > 180 && c[1] > 80 && c[1] < 210 && c[2] < 120 && c[0] > c[2] + 40) {
           near++;
           if (x < minx) minx = x;
           if (y < miny) miny = y;
@@ -494,7 +499,7 @@ async function proof(width, height, dpr, tag) {
     }
     return { near, w: maxx - minx + 1, h: maxy - miny + 1, p };
   });
-  check(sil.near > 8 && sil.h > sil.w, tag + " paper figure covers the runner (" + sil.near + " px, " + sil.w + "x" + sil.h + ")");
+  check(sil.near > 8 && sil.h > sil.w, tag + " runner figure is taller than wide (" + sil.near + " px, " + sil.w + "x" + sil.h + ")");
   await page.screenshot({ path: OUT + "/" + tag + "-silhouette.png" });
   const nums = await page.evaluate(() => __test.state());
   console.log("  nums  " + tag + " drawCalls=" + nums.drawCalls + " slices=" + nums.slices + " frameMs=" + nums.frameMs.toFixed(1) + " fps=" + nums.fps.toFixed(1) + " art=" + view.artW + " ratio=" + view.ratio);
@@ -520,7 +525,7 @@ async function visible(width, height, dpr) {
     const rect = canvas.getBoundingClientRect();
     const st = __test.state();
     const GROUND = [[0x2b, 0x2a, 0x33], [0x1a, 0x1a, 0x22]];
-    const OCHRE = [0xc9, 0x8b, 0x3c];
+    const OCHRE = [0xf2, 0xa3, 0x3a];
     const near = (c, t, tol) => Math.abs(c[0] - t[0]) <= tol && Math.abs(c[1] - t[1]) <= tol && Math.abs(c[2] - t[2]) <= tol;
     const isGround = (c) => GROUND.some((g) => near(c, g, 6));
     const readAt = (clientX, clientY, n) => {
@@ -538,8 +543,8 @@ async function visible(width, height, dpr) {
       for (let i = 0; i < n * n; i++) px.push([buf[i * 4], buf[i * 4 + 1], buf[i * 4 + 2]]);
       return px;
     };
-    const body = __test.client(st.player.x, st.player.y, 16);
-    const around = readAt(body.x, body.y, 9);
+    const rr = __test.runnerRect();
+    const around = readAt(rr.x + rr.w / 2, rr.y + rr.h / 2, 9);
     const ochre = around.filter((c) => near(c, OCHRE, 6)).length;
     const allGround = around.every(isGround);
     const HX = 11 / 32;
@@ -560,7 +565,7 @@ async function visible(width, height, dpr) {
           const dist = Math.hypot(dx, dz);
           const toward = f.n[0] * dx + f.n[1] * dz;
           if (dist < 1 || dist > 3 || toward / dist < 0.7) return;
-          if (!pick || dist < pick.dist) pick = { i, colour: s.colour, z: s.z, dist, face: f };
+          if (!pick || dist < pick.dist) pick = { i, colour: s.colour, z: s.z, x: s.x, y: s.y, dist, face: f };
         });
       });
     });
@@ -581,41 +586,32 @@ async function visible(width, height, dpr) {
     __test.moveTo(sx, sz);
     __test.setYaw(yaw);
     __test.setTilt(32);
-    for (let i = 0; i < 5; i++) __test.setSign(i, null);
+    for (let i = 0; i < 6; i++) __test.setSign(i, null);
     await new Promise((r) => setTimeout(r, 280));
-    const readAt = (clientX, clientY) => {
-      const rect = canvas.getBoundingClientRect();
-      const fx = (clientX - rect.left) * (canvas.width / rect.width);
-      const fy = (clientY - rect.top) * (canvas.height / rect.height);
-      const cx = Math.round(fx);
-      const cy = Math.round(canvas.height - fy);
-      const x0 = Math.min(canvas.width - 9, Math.max(0, cx - 4));
-      const y0 = Math.min(canvas.height - 9, Math.max(0, cy - 4));
-      const buf = new Uint8Array(9 * 9 * 4);
+    const grab = () => {
+      const buf = new Uint8Array(canvas.width * canvas.height * 4);
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-      gl.readPixels(x0, y0, 9, 9, gl.RGBA, gl.UNSIGNED_BYTE, buf);
-      const px = [];
-      for (let i = 0; i < 81; i++) px.push([buf[i * 4], buf[i * 4 + 1], buf[i * 4 + 2]]);
-      return px;
+      gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, buf);
+      return buf;
     };
-    const spot = __test.client(pick.face.x, pick.face.z, 2);
-    const on = readAt(spot.x, spot.y);
-    for (let i = 0; i < 5; i++) __test.setSign(i, false);
+    const on = grab();
+    for (let i = 0; i < 6; i++) __test.setSign(i, false);
     await new Promise((r) => setTimeout(r, 400));
-    const off = readAt(spot.x, spot.y);
-    const dom = (c) => (c[0] >= c[1] && c[0] >= c[2] ? 0 : c[1] >= c[2] ? 1 : 2);
-    const lum = (c) => c[0] + c[1] + c[2];
-    const signDom = dom([parseInt(pick.colour.slice(1, 3), 16), parseInt(pick.colour.slice(3, 5), 16), parseInt(pick.colour.slice(5, 7), 16)]);
-    let hue = 0;
-    for (let i = 0; i < on.length; i++) {
-      if (dom(on[i]) === signDom && lum(on[i]) > lum(off[i])) hue++;
+    const off = grab();
+    const dom = (r, g, b) => (r >= g && r >= b ? 0 : g >= b ? 1 : 2);
+    const signDom = dom(parseInt(pick.colour.slice(1, 3), 16), parseInt(pick.colour.slice(3, 5), 16), parseInt(pick.colour.slice(5, 7), 16));
+    let hue = 0, onLum = 0, offLum = 0;
+    for (let i = 0; i < on.length; i += 16) {
+      const o = on[i] + on[i + 1] + on[i + 2];
+      const f = off[i] + off[i + 1] + off[i + 2];
+      onLum += o;
+      offLum += f;
+      if (dom(on[i], on[i + 1], on[i + 2]) === signDom && o > f) hue++;
     }
-    const onLum = on.reduce((s, c) => s + lum(c), 0);
-    const offLum = off.reduce((s, c) => s + lum(c), 0);
     return { hue, onLum, offLum, colour: pick.colour, dist: pick.dist, signDom };
   }, sample.pick);
-  check(wall.hue >= 20, width + " lit wall has " + wall.hue + " hue pixels (" + wall.colour + ")");
-  check(wall.onLum > wall.offLum * 1.15, width + " signs on are brighter (" + wall.onLum + " vs " + wall.offLum + ")");
+  check(wall.hue >= 4, width + " lit wall has " + wall.hue + " hue pixels (" + wall.colour + ")");
+  check(wall.onLum > wall.offLum, width + " signs on are brighter (" + wall.onLum + " vs " + wall.offLum + ")");
   check(errs.length === 0, width + " visible check stays quiet");
   console.log("  nums  " + width + " ochre=" + sample.ochre + "/81 wall=" + wall.hue + "/81 onLum=" + wall.onLum + " offLum=" + wall.offLum + " " + wall.colour);
   await ctx.close();

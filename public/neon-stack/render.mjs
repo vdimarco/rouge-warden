@@ -28,11 +28,10 @@ void main() {
 const FRAG = `#version 300 es
 precision highp float;
 uniform sampler2D uAtlas;
-uniform sampler2D uPal;
 uniform vec3 uSun;
 uniform vec3 uHaze;
-uniform vec2 uRim;
-uniform float uPass;
+uniform float uTile;
+uniform vec3 uOutline;
 uniform float uFade[8];
 uniform vec4 uL[8];
 uniform vec4 uC[8];
@@ -50,56 +49,57 @@ float fadeOf(float s) {
   f = mix(f, uFade[3], step(2.5, s) * step(s, 3.5));
   f = mix(f, uFade[4], step(3.5, s) * step(s, 4.5));
   f = mix(f, uFade[5], step(4.5, s) * step(s, 5.5));
+  f = mix(f, uFade[6], step(5.5, s) * step(s, 6.5));
   return f;
 }
-vec3 pal(float id) { return texture(uPal, vec2((id + 0.5) / 16.0, 0.5)).rgb; }
 
 void main() {
   vec4 t = texture(uAtlas, vUV);
-  if (t.a < 0.5) discard;
-  if (uPass > 0.5) {
-    o = vec4(pal(9.0), 1.0);
+  float runner = step(abs(vKind - 1.0), 0.25);
+  if (runner > 0.5 && t.a < 0.5) {
+    float edge = 0.0;
+    vec2 one = vec2(1.0 / 1024.0);
+    for (int y = -2; y <= 2; y++) for (int x = -2; x <= 2; x++) {
+      edge = max(edge, texture(uAtlas, vUV + one * vec2(float(x), float(y))).a);
+    }
+    if (edge < 0.5) discard;
+    o = vec4(uOutline, 1.0);
     return;
   }
-  float face = t.g * 255.0;
-  float id = t.r * 255.0;
-  float fade = fadeOf(vSign);
-  float neon0 = step(4.5, id) * step(id, 8.5);
-  vec3 tube = pal(id);
-  id = mix(id, 3.0, neon0 * (1.0 - fade));
-  vec3 base = pal(id);
-  float px = step(0.5, face) * step(face, 1.5);
-  float nx = step(1.5, face) * step(face, 2.5);
-  float pz = step(2.5, face) * step(face, 3.5);
-  float nz = step(3.5, face) * step(face, 4.5);
-  float side = clamp(px + nx + pz + nz, 0.0, 1.0);
-  vec3 n = vec3(px - nx, 1.0 - side, pz - nz);
-  float lam = clamp(dot(normalize(uSun), n) * 0.85 + 0.15, 0.0, 1.0);
-  lam = clamp(lam * (0.55 + t.b * 0.45), 0.0, 1.0);
-  lam = floor(clamp(lam, 0.0, 0.999) * 4.0) / 3.0;
-  vec3 col = mix(pal(1.0), base, lam);
-  float runner = step(abs(vKind - 1.0), 0.25);
-  col = mix(col, pal(1.0), step(abs(vKind - 2.0), 0.25));
-  col = mix(col, uHaze, clamp(vW.y / 48.0, 0.0, 1.0) * 0.28 * (1.0 - neon0) * (1.0 - runner));
-  float wall = step(side, 0.0);
-  wall = 1.0 - wall;
-  wall = wall * (1.0 - neon0) * (1.0 - runner) * (1.0 - step(abs(vKind - 2.0), 0.25));
-  float lit = 0.0;
-  vec3 lcol = pal(4.0);
+  if (t.a < 0.5) discard;
+  vec3 col = t.rgb;
+  float hi = max(col.r, max(col.g, col.b));
+  float lo = min(col.r, min(col.g, col.b));
+  float neon = step(0.25, hi - lo) * step(0.45, hi);
+  vec3 dark = vec3(0.290, 0.282, 0.322);
+  if (runner > 0.5) { o = vec4(col, 1.0); return; }
+  if (abs(vKind - 5.0) < 0.25) {
+    col = mix(dark, col, max(uFade[0], 1.0 - neon));
+    o = vec4(col, 1.0);
+    return;
+  }
+  float dim = step(abs(vKind - 4.0), 0.25);
+  col = mix(col, col * 0.38, dim);
+  float wall = step(abs(vKind - 8.0), 0.25) * (1.0 - neon);
+  vec2 tile = floor(vW.xz / uTile);
+  float best = 0.0;
+  vec3 lcol = col;
   for (int i = 0; i < 8; i++) {
-    vec3 toL = uL[i].xyz - vW;
-    float dist = length(toL);
-    float faceL = dot(n.xz, toL.xz / max(length(toL.xz), 0.001));
-    float a = clamp(1.0 - dist / max(uL[i].w, 0.001), 0.0, 1.0) * uI[i] * step(0.2, faceL) * step(0.5, uL[i].w);
-    float win = step(lit, a);
-    lit = mix(lit, a, win);
+    float live = step(0.15, uI[i]) * step(0.5, uL[i].w);
+    vec2 st = floor(uL[i].xz / uTile);
+    float horiz = max(abs(tile.x - st.x), abs(tile.y - st.y));
+    float vert = abs(floor(vW.y / uTile) - floor(uL[i].y / uTile));
+    float amt = 0.0;
+    amt = mix(amt, 0.10, step(horiz, 0.5) * step(0.5, vert) * step(vert, 3.5));
+    amt = mix(amt, 0.40, step(horiz, 0.5) * step(vert, 0.5));
+    float win = step(best, amt * live);
+    best = max(best, amt * live);
     lcol = mix(lcol, uC[i].rgb, win);
   }
-  float q = floor(clamp(lit, 0.0, 0.999) * 4.0) / 3.0;
-  col = mix(col, base, wall);
-  col = mix(col, lcol, q * 0.4 * wall);
-  col = mix(col, mix(pal(3.0), tube, fade), neon0);
-  col = mix(col, base, runner);
+  col = mix(col, lcol, 0.0);
+  float fade = fadeOf(vSign);
+  col = mix(col, mix(dark, col, fade), neon * (1.0 - dim));
+  col = mix(col, uHaze, clamp(vW.y / 220.0, 0.0, 1.0) * 0.18 * (1.0 - neon) * (1.0 - runner));
   o = vec4(col, 1.0);
 }`;
 
@@ -269,10 +269,11 @@ function xform(m, v) {
   return [x / w, y / w, z / w];
 }
 
-export function createRenderer(canvas, atlas, palette) {
+export function createRenderer(canvas) {
   const gl = canvas.getContext("webgl2", { alpha: false, antialias: false, depth: true, preserveDrawingBuffer: true, powerPreference: "high-performance" });
   if (!gl) throw new Error("WebGL2 is not available");
-  let stackProg, compProg, blitProg, quad, inst, vao, blitVao, blitBuf, atlasTex, palTex;
+  let stackProg, compProg, blitProg, quad, inst, vao, blitVao, blitBuf, atlasTex;
+  let atlasImg = null;
   const data = new Float32Array(4096 * 12);
   function boot() {
     stackProg = program(gl, VERT, FRAG);
@@ -304,15 +305,16 @@ export function createRenderer(canvas, atlas, palette) {
     gl.bindVertexArray(null);
     atlasTex = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, atlasTex);
-    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, atlas.w, atlas.h, 0, gl.RGBA, gl.UNSIGNED_BYTE, atlas.data);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 0]));
     texParams(gl, gl.NEAREST);
-    palTex = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, palTex);
-    const pal = new Uint8Array(16 * 4);
-    palette.forEach((c, i) => { pal[i * 4] = c[0]; pal[i * 4 + 1] = c[1]; pal[i * 4 + 2] = c[2]; pal[i * 4 + 3] = 255; });
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, 16, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, pal);
+    if (atlasImg) uploadAtlas();
+  }
+  function uploadAtlas() {
+    gl.bindTexture(gl.TEXTURE_2D, atlasTex);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, atlasImg);
     texParams(gl, gl.NEAREST);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
   }
   boot();
 
@@ -320,6 +322,9 @@ export function createRenderer(canvas, atlas, palette) {
     gl, drawCalls: 0, slices: 0,
     view: { artW: 2, artH: 2, scale: 1, ox: 0, oy: 0, backW: 2, backH: 2 },
     vp: new Float32Array(16),
+    tile: 32,
+    outline: [0.24, 0.88, 0.91],
+    setAtlas: (img) => { atlasImg = img; uploadAtlas(); },
   };
   let alb = null, light = null, comp = null, lost = false;
   const drop = () => {
@@ -358,10 +363,10 @@ export function createRenderer(canvas, atlas, palette) {
   function drawStack(pass, count) {
     gl.useProgram(stackProg);
     gl.uniformMatrix4fv(gl.getUniformLocation(stackProg, "uVP"), false, api.vp);
-    gl.uniform1f(gl.getUniformLocation(stackProg, "uPass"), pass);
     gl.uniform3fv(gl.getUniformLocation(stackProg, "uSun"), api.sun);
     gl.uniform3fv(gl.getUniformLocation(stackProg, "uHaze"), api.haze);
-    gl.uniform2fv(gl.getUniformLocation(stackProg, "uRim"), api.rim);
+    gl.uniform1f(gl.getUniformLocation(stackProg, "uTile"), api.tile || 32);
+    gl.uniform3fv(gl.getUniformLocation(stackProg, "uOutline"), api.outline || [0.24, 0.88, 0.91]);
     gl.uniform1fv(gl.getUniformLocation(stackProg, "uFade"), api.fade);
     gl.uniform4fv(gl.getUniformLocation(stackProg, "uL"), api.lights);
     gl.uniform4fv(gl.getUniformLocation(stackProg, "uC"), api.lightColor);
@@ -369,9 +374,6 @@ export function createRenderer(canvas, atlas, palette) {
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, atlasTex);
     gl.uniform1i(gl.getUniformLocation(stackProg, "uAtlas"), 0);
-    gl.activeTexture(gl.TEXTURE1);
-    gl.bindTexture(gl.TEXTURE_2D, palTex);
-    gl.uniform1i(gl.getUniformLocation(stackProg, "uPal"), 1);
     gl.bindVertexArray(vao);
     gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, count);
     api.drawCalls++;
