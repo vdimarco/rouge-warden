@@ -2,8 +2,9 @@
 // summary, the pause panel's places and the card that a load of the page opens, all from the run's save (run-save.js) and its rules
 // (run.js). No DOM, so the Node test reads the same texts and choices that the page shows; main.js builds the cards from them.
 import { ORDER } from './save.js';
-import { WICKS, UPGRADES, UNLOCKS, EMBER, BASE, maxOf, flasksOf } from './run.js';
+import { WICKS, UPGRADES, UNLOCKS, EMBER, BASE, maxOf, flasksOf, keepShare, purse, sparksOf, paneSlots, kindledOf, patternOf, startPicks } from './run.js';
 import { relicOf, kindled, KINDLE } from './relics.js';
+import { COLOURS, PATTERNS, PANES, ABILITIES } from './growth.js';
 
 export const NUMERAL = ['I', 'II', 'III', 'IV', 'V'];
 export const NAMES = { gaol: 'The Sunken Gaol', ramparts: 'The Crow Wall', fen: 'Lantern Fen', bells: 'The Bell Knoll', barrows: 'Barrow Crown' };
@@ -47,12 +48,18 @@ const GIVES = {
   flask: () => '+1 flask',
   edge: () => '+12% blade damage',
   draught: next => `heal ${Math.round((BASE.heal + 0.1 * next) * 100)}%`,
-  ash: () => 'keep 55% of glim'
+  ash: next => `keep ${Math.round(keepShare({ ash: next }) * 100)}% of glim at a death`,
+  belt: next => ['a choice of two start abilities', 'slot 2 starts filled', 'the start abilities are bright'][next - 1],
+  keen: () => 'better drops',
+  panes: next => `${next + 1} pane slots`,
+  first: next => `${next} spark ${next === 1 ? 'pick' : 'picks'} at the start`
 };
+// the glim a Lamp-room spends: in a run the glim carried first, then the bank
+const purseOf = rs => purse(rs);
 export function upgradeRow(rs, id) {
   const u = UPGRADES.find(x => x.id === id), lvl = rs.up[id] || 0, max = u.costs.length, top = lvl >= max;
   const name = max > 1 ? `${u.name} ${top ? lvl : lvl + 1}` : u.name;
-  const cost = top ? 0 : u.costs[lvl], need = top ? 0 : Math.max(0, cost - rs.bank);
+  const cost = top ? 0 : u.costs[lvl], need = top ? 0 : Math.max(0, cost - purseOf(rs));
   return {
     id, lvl, max, top, cost, need,
     label: top ? `${name} · all bought` : `${name} · ${GIVES[id](lvl + 1)} · ${cost} glim`,
@@ -94,13 +101,57 @@ export function modeHref(path, search, mode) {
 }
 
 /* ---------------- the run summary ---------------- */
+// the glim and pattern rows read as one line each: "Glim kept 12 · lost 113", "Patterns kept 0 · lost 1"
 export function summaryOf(e, route = ORDER) {
   const at = route.indexOf(e.place);
-  return {
-    title: e.won ? 'The downs are lit' : 'The lamp goes out',
-    rows: [['Reached', at >= 0 ? `${NUMERAL[at]} · ${NAMES[e.place]}` : placeLine(e.place)], ['Time', fmt(e.time)], ['Foes put out', String(e.foes)], ['Glim lost', `${e.lost} glim`], ['Glim banked', `${e.banked} glim`]]
-  };
+  const rows = [['Reached', at >= 0 ? `${NUMERAL[at]} · ${NAMES[e.place]}` : placeLine(e.place)], ['Time', fmt(e.time)], ['Foes put out', String(e.foes)],
+    ['Glim', `kept ${e.kept | 0} · lost ${e.lost | 0}`], ['Glim banked', `${e.banked} glim`], ['Patterns', `kept ${e.patternsKept | 0} · lost ${e.patternsLost | 0}`]];
+  return { title: e.won ? 'The downs are lit' : 'The lamp goes out', rows, lines: rows.slice(3).filter(r => r[0] !== 'Glim banked').map(([k, v]) => `${k} ${v}`) };
 }
+
+/* ---------------- growth on the screens (gloam-downs-growth) ----------------
+   The colours: "▲ 2 ◆ 1 ● 3" on the HUD in their hues, and "Flame 2 · Ward 1 · Gloam 0" on the Lamp-room's top line */
+export const COLOUR_MARK = { flame: '▲', ward: '◆', gloam: '●' };
+export function colourRow(run) {
+  const s = sparksOf(run);
+  return COLOURS.map(c => ({ id: c.id, name: c.name, hue: c.hue, n: s[c.id], mark: COLOUR_MARK[c.id], text: `${COLOUR_MARK[c.id]} ${s[c.id]}` }));
+}
+export const colourLine = run => colourRow(run).map(c => `${c.name} ${c.n}`).join(' · ');
+// the HUD's pattern count, "◇ 1", while a pattern is carried
+export const patternsMark = run => ((run?.carriedPatterns || []).length ? `◇ ${run.carriedPatterns.length}` : '');
+// what a pattern, an ability or a pane does, and its name
+export const growthName = id => patternOf(id)?.name || id;
+export const growthText = id => patternOf(id)?.text || '';
+// the Lamp-room's patterns: "<name> · <what it does> · <cost> glim" with Kindle, under the same rules as a Buy
+export function patternRows(rs) {
+  return (rs.patterns || []).filter(id => PATTERNS.some(p => p.id === id)).map(id => {
+    const p = PATTERNS.find(x => x.id === id), need = Math.max(0, p.cost - purseOf(rs));
+    return { id, kind: p.kind, cost: p.cost, need, label: `${growthName(id)} · ${growthText(id)} · ${p.cost} glim`, buy: need ? `${need} more glim` : 'Kindle' };
+  });
+}
+/* the pane rows: one for each open slot, with every kindled pane but those set in another slot. The one set in the row is on; pressing
+   it again takes it out */
+export function paneRows(rs) {
+  const n = paneSlots(rs), set = rs.panes || [], kindledPanes = kindledOf(rs, 'pane');
+  return Array.from({ length: n }, (_, slot) => ({
+    slot, set: set[slot] || null,
+    panes: kindledPanes.filter(id => !set.some((p, i) => p === id && i !== slot)).map(id => ({ id, name: growthName(id), text: growthText(id), on: set[slot] === id }))
+  }));
+}
+// the beacon card's spark buttons, and its kept line
+export const SPARK_PICKS = COLOURS.map(c => ({ id: c.id, label: `${c.name} +1`, text: c.text, hue: c.hue }));
+export const keptLine = ids => (ids?.length ? `Kept: ${ids.map(growthName).join(', ')}` : '');
+// the glim on the beacon card and the Lamp-room's top line
+export function glimLine(rs, at = 'lamp') {
+  const run = rs.run, share = Math.round(keepShare(rs.up) * 100);
+  if (!run) return `Banked: ${rs.bank} glim. What you buy here lasts for every run.`;
+  if (at === 'beacon') return `You carry ${run.carried} glim, and ${rs.bank} is banked. Spend it in the Lamp-room, or carry it on: a death keeps only ${share}%.`;
+  return `Carried: ${run.carried} glim · Banked: ${rs.bank} glim. The glim carried is spent first. What you buy here lasts for every run.`;
+}
+// the start card's ability buttons (Belt): "<name> · <what it does>"
+export const abilityLine = id => `${growthName(id)} · ${growthText(id)}`;
+export const ABILITY_NAMES = Object.fromEntries(ABILITIES.map(a => [a.id, a.name]));
+export const PANE_NAMES = Object.fromEntries(PANES.map(p => [p.id, p.name]));
 
 /* the win card: the time, the best winning time, the glim banked in this run, the runs and the deaths. Above Ember 0 it shows the level
    first, and the best time is that level's; a win that opened a level says so (opened) */
@@ -115,7 +166,7 @@ export function winOf(rs) {
    The Lamp-room's Unlocks list: "<name> · <what it gives> · <cost> glim", and "<name> · bought" once bought. Its Buy is as an
    upgrade's: off with too little glim, and saying how much more is needed */
 export function unlockRow(rs, id) {
-  const u = UNLOCKS.find(x => x.id === id), got = (rs.unlocks || []).includes(id), need = got ? 0 : Math.max(0, u.cost - rs.bank);
+  const u = UNLOCKS.find(x => x.id === id), got = (rs.unlocks || []).includes(id), need = got ? 0 : Math.max(0, u.cost - purseOf(rs));
   return { id, cost: u.cost, got, need, label: got ? `${u.name} · bought` : `${u.name} · ${u.text} · ${u.cost} glim`, buy: got ? null : need ? `${need} more glim` : 'Buy' };
 }
 export const unlockRows = rs => UNLOCKS.map(u => unlockRow(rs, u.id));
@@ -141,7 +192,7 @@ export const routeOf = (place, route = ORDER) => {
   return route.map((id, i) => ({ id, n: NUMERAL[i], name: NAMES[id], state: i < at ? 'passed' : i === at ? 'here' : 'ahead' }));
 };
 export const ASKS = {
-  end: { line: () => 'End the run? The glim you carry is lost.', yes: 'Yes, end it' },
+  end: { line: () => 'End the run? Most of the glim you carry is lost, and the patterns you carry too.', yes: 'Yes, end it' },
   restart: { line: place => `Back to the start of ${NAMES[place]}? The glim you found here is lost.`, yes: 'Yes, go back' }
 };
 
@@ -152,6 +203,7 @@ export const ASKS = {
 export function cardOnLoad(rs) {
   if (rs.ended) return rs.ended.won ? 'win' : 'summary';
   if (!rs.run) return rs.seen ? 'lamp' : 'help';
-  if (rs.run.offer) return 'beacon';
+  // the picks still waiting: a wick, a spark (a beacon's, First spark's or a cache's) or Belt's ability
+  if (startPicks(rs.run)) return 'beacon';
   return null;
 }

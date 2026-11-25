@@ -21,6 +21,7 @@ import { relicEvent, RELIC_IDS, groundRelics } from './relics.js';
 import { dressOf, eliteClip } from './elites.js';
 import { UNLOCK_IDS, buyUnlock, setEmber, routeOfRun, emberOf } from './run.js';
 import { unlockRows, emberRow, relicMarks, kindleLine, moveLines } from './screens.js';
+import { glimLine, keptLine } from './screens.js'; import { startPicks } from './run.js'; const { bindGrowth, updateGrowth, fillGrowthLamp, sparkButtons, abilityButtons, growthView, setGrowth } = cards; bindGrowth({ rs: () => rs, runner: () => runner, mode: () => mode, audio: () => audio, toast: (h, ms) => toast(h, ms), storeRun: () => storeRun(), fillLamp: () => fillLamp(), updateHud: () => updateHud(), openBeacon: () => openBeacon() });
 import { makePool } from './pool.js';
 import { figures, poolFor, lineup, LINEUP } from './figures.js';
 import { findVeils, makeVeils, findOccluders, makeOccluders, VEIL } from './veil.js';
@@ -309,6 +310,7 @@ function updateHud() {
 }
 // the run's HUD: the health bar with its number and a pip for each flask, then the wisps of this place and the glim carried
 function updateRunHud() {
+  updateGrowth();
   updateRelics();
   const h = hudOf(rs, runner?.wisps.size || 0);
   $('where').textContent = meta.name;
@@ -595,7 +597,8 @@ function beginRun(card) {
   if (meta.id !== rs.run.place || !placeFresh) return go(rs.run.place);
   newRunner();
   updateHud();
-  if (rs.run.offer) openBeacon();
+  // the start picks: the shelf's wick, First spark's sparks and Belt's ability, on the beacon card's buttons
+  if (startPicks(rs.run)) openBeacon();
 }
 $('bBegin').addEventListener('click', () => beginRun('runHelp'));
 // Explore: the run's first card also opens the explorer, the places with no foes
@@ -662,9 +665,30 @@ $('pause').addEventListener('pointerdown', e => { if (e.target === $('pause') &&
 
 // the beacon card: two wicks to choose from, then Spend glim (the Lamp-room) and Walk on. Its offer is in the save, so a reload before
 // the choice shows the same two wicks over the next place
+/* growth: after the wick, the spark picks (#sparks), then the patterns kept (#beaconKept), then Lamp-room and Walk on. The start card
+   asks for the shelf's wick, First spark's sparks and Belt's ability; a cache's spark opens the card for its one pick */
 function openBeacon() {
-  const run = rs.run, offer = run.offer, box = $('wicks'), shelf = !!run.shelf;
+  const run = rs.run, offer = run.offer, box = $('wicks'), shelf = !!run.shelf, cache = !shelf && !!run.sparkNow && !offer;
+  const sparks = !offer && (run.sparkPicks | 0) > 0, ability = !offer && !sparks && !!run.abilityOffer, waiting = !!offer || sparks || ability;
+  // a pick taken: the start card and a cache's card close once nothing more is asked; the beacon card shows its next part
+  const next = () => {
+    if (!rs.run) return;
+    if ((shelf || cache) && !startPicks(rs.run)) { rs.run.shelf = false; rs.run.sparkNow = false; storeRun(); return closeCard('beaconCard'); }
+    openBeacon();
+  };
   box.textContent = '';
+  $('sparks').hidden = !sparks;
+  if (sparks) sparkButtons($('sparks'), next);
+  if (ability) abilityButtons(box, run.abilityOffer, next);
+  $('beaconKept').textContent = keptLine(run.kept);
+  $('beaconKept').hidden = shelf || cache || waiting || !run.kept?.length;
+  $('bSpend').textContent = 'Lamp-room';
+  if (cache) {
+    $('beaconT').textContent = 'A spark';
+    $('beaconLine').textContent = 'Choose a spark. It raises one colour for the rest of the run.';
+    $('beaconBank').hidden = $('beaconRow').hidden = true;
+    return openCard('beaconCard', 'beacon', () => $('sparks').querySelector('button'));
+  }
   for (const id of offer || []) {
     const b = document.createElement('button'), name = document.createElement('b');
     b.type = 'button';
@@ -680,20 +704,22 @@ function openBeacon() {
       audio?.cue('choice');
       storeRun();
       updateHud();
-      // Wick shelf's starting wick: the card closes and the run starts in the Gaol
-      if (shelf) { rs.run.shelf = false; storeRun(); return closeCard('beaconCard'); }
-      openBeacon();
+      // Wick shelf's starting wick: the card closes and the run starts in the Gaol, unless First spark or Belt still ask
+      next();
     });
     box.appendChild(b);
   }
-  $('beaconT').textContent = shelf ? 'The Wick shelf' : 'The beacon burns';
+  $('beaconT').textContent = shelf ? (offer ? 'The Wick shelf' : 'The run begins') : 'The beacon burns';
   const lit = run.wicks.at(-1), kl = lit ? kindleLine(run, lit) : '';
-  $('beaconLine').textContent = offer ? (shelf ? 'Choose a wick to start the run with. It burns for the whole run.' : 'Choose a wick. It burns for the rest of the run.') : `${wickName(lit)} burns in the lamp.${kl ? ` Kindled: ${kl.split(': ')[1]}.` : ''}`;
-  $('beaconBank').innerHTML = `Banked: <b class="bank">${rs.bank} glim</b>. Spend it in the Lamp-room, or walk on.`;
-  $('beaconBank').hidden = $('beaconRow').hidden = !!offer;
-  // before the wick is chosen only a wick button closes the card: it has no back action. The Lamp-room theme follows the stinger
+  $('beaconLine').textContent = offer ? (shelf ? 'Choose a wick to start the run with. It burns for the whole run.' : 'Choose a wick. It burns for the rest of the run.')
+    : sparks ? `Choose a spark. It raises one colour for the rest of the run.${run.sparkPicks > 1 ? ` ${run.sparkPicks} picks left.` : ''}`
+    : ability ? 'Choose an ability for slot 1. It is yours for the whole run.'
+    : lit ? `${wickName(lit)} burns in the lamp.${kl ? ` Kindled: ${kl.split(': ')[1]}.` : ''}` : 'The beacon burns.';
+  $('beaconBank').innerHTML = glimLine(rs, 'beacon').replace(/(\d+ glim)/, '<b class="bank">$1</b>');
+  $('beaconBank').hidden = $('beaconRow').hidden = waiting;
+  // before the picks are made only a pick button closes the card: it has no back action. The Lamp-room theme follows the stinger
   emit('lamp-room', { wait: 0 });
-  openCard('beaconCard', 'beacon', () => (rs.run?.offer ? box.querySelector('button') : $('bWalkOn')));
+  openCard('beaconCard', 'beacon', () => (rs.run?.offer || rs.run?.abilityOffer ? box.querySelector('button') : (rs.run?.sparkPicks | 0) > 0 ? $('sparks').querySelector('button') : $('bWalkOn')));
 }
 // Walk on loads the next place; after a reload at the card, the card already shows over it
 $('bWalkOn').addEventListener('click', () => { audio?.cue('choice'); if (meta.id === rs.run.place) return closeCard('beaconCard'); hideCard('beaconCard'); retake(); go(rs.run.place); });
@@ -714,7 +740,8 @@ function openLamp(from = null) {
   openCard('lamp', 'lamp', () => $(LAMP[b.main]), b.back ? () => $(LAMP[b.back]).click() : null);
 }
 function fillLamp() {
-  $('lampLine').innerHTML = `Banked: <b class="bank">${rs.bank} glim</b>. What you buy here lasts for every run.`;
+  $('lampLine').innerHTML = glimLine(rs, 'lamp').replace(/(\d+ glim)/g, '<b class="bank">$1</b>');
+  fillGrowthLamp();
   const list = $('ups');
   for (const row of upgradeRows(rs)) {
     let li = list.querySelector(`li[data-up="${row.id}"]`);
@@ -766,9 +793,11 @@ $('bLampExplore').addEventListener('click', () => toMode('explore'));
 function openSummary() {
   // the run summary plays the Lamp-room theme after 2 s of silence
   emit('lamp-room', { wait: 2 });
-  const s = summaryOf(rs.ended), dds = $('summary').querySelectorAll('dd');
+  // the rows as summaryOf gives them, with the glim and the patterns kept and lost ("Glim kept 12 · lost 113")
+  const s = summaryOf(rs.ended), dl = $('summary').querySelector('dl');
   $('sumT').textContent = s.title;
-  s.rows.forEach(([, v], i) => { dds[i].textContent = v; });
+  dl.textContent = '';
+  for (const [k, v] of s.rows) { const dt = document.createElement('dt'), dd = document.createElement('dd'); dt.textContent = k; dd.textContent = v; dl.append(dt, dd); }
   $('sumSeed').textContent = seedLineOf(rs.ended);
   openCard('summary', 'ended', () => $('bSumLamp'));
 }
@@ -926,7 +955,7 @@ function runEvent(e) {
       emit('beacon-lit', { place: meta.id });
       beaconLit = true;
       setLit(meta.beacon.fire, true);
-      toast('The beacon burns. Its glim is banked, and the flasks are full.', 2400);
+      toast('The beacon burns, and the flasks are full. Spend the glim you carry, or carry it on.', 2400);
       endAt = steps + 90;
       mode = 'lit';
       break;
@@ -1387,6 +1416,7 @@ const runState = () => {
     foes: run?.foes ?? 0, banked: run?.banked ?? 0, bossDown: !!run?.bossDown, time: run?.time ?? 0, entry: run ? { ...run.entry } : null,
     step: k?.step ?? 0, playStep: k?.play ?? 0, stop: k?.stop ?? 0, ended: rs?.ended ? { ...rs.ended } : null,
     ...buildsView(),
+    ...growthView(),
     move: f?.move ?? null, hit: f?.move === 'hit' ? hitOf(f.hit).id : null, t: f ? f.t / 60 : 0, safe: runner?.fighter.safe() ?? null, combo: runner?.fighter.nextHit() ?? 0,
     fx: {
       kick: fxNow.kick.slice(), zoom: fight ? fight.feel.zoom() : fxNow.zoom, bars: fight ? fight.feel.bars() : fxNow.bars, grade: (fight?.cols || meta?.pal || []).slice(), blink: !!body?.s.hide,
@@ -1498,6 +1528,7 @@ window.__gloam = {
     // the boss's health: the phase of that health at once, with one hit stop of 9 steps and one stumble of 2 s
     if (Number.isFinite(o.bossHp) && fight?.boss) { fight.hooks.bossHp(o.bossHp); fillBossBar(); }
     setBuilds(o);
+    setGrowth(o);
     updateHud();
     if (mode === 'lamp') fillLamp();
     storeRun();
