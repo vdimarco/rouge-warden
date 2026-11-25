@@ -430,6 +430,18 @@ function untilSpecial(W, E, max = 600) {
   off.forEach(f => f());
   pass('an elite put out drops 15 glim and a relic, a touch takes it, and Kindled flask fills a flask', { relic: g[0].id });
 }
+{ // Ember 4: a hit on the lamplighter deals 20% more (16 -> 19), and an elite picks its special move twice as often (40% -> 80%)
+  const hit = em => {
+    const setup = Object.assign(() => {}, { pre: rs => { rs.emberTop = em; rs.ember = em; } });
+    const W = postRun({ setup });
+    W.rs.run.ember = em; W.rs.run.hp = 100;
+    W.R.hurt(16, [0, -1], {}, []);
+    return 100 - W.rs.run.hp;
+  };
+  assert.deepEqual([hit(3), hit(4), hit(5)], [16, 19, 19]);
+  assert.deepEqual([RUN.ember(3).special, RUN.ember(4).special], [1, 2]);
+  pass('Ember 4: a hit of 16 takes 19, and the special-move share doubles', { e3: hit(3), e4: hit(4) });
+}
 { // Ember 1: the elite has 30% more health. Ember 2: a Snuffer's hook winds up 33 steps, and its cooldown is 15% shorter
   const W = fightOn({ zones: eliteZones('S', [0, 0, -3]), ember: 1 });
   const E = wakeElite(W);

@@ -17,10 +17,10 @@ import fs from 'node:fs';
 import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 import { makeWalk, makeBody, makeCamera, camLayout, PARAMS } from '../../public/lab/gloam-downs/play.js';
-import { STEP, stepCount, startRun, makeRunner, maxOf, reload, goTo, BASE } from '../../public/lab/gloam-downs/run.js';
+import { STEP, stepCount, startRun, makeRunner, maxOf, reload, goTo, BASE, ember } from '../../public/lab/gloam-downs/run.js';
 import { HITS, clearLine } from '../../public/lab/gloam-downs/moves.js';
 import * as RS from '../../public/lab/gloam-downs/run-save.js';
-import { makeBoss, REEVE, REEVE_TEXT, ATTACKS, choose, phaseFor, segAt, segStart, inSlices, inLane, lengthOf, lightAt } from '../../public/lab/gloam-downs/boss.js';
+import { makeBoss, bossLines, REEVE, REEVE_TEXT, ATTACKS, choose, phaseFor, segAt, segStart, inSlices, inLane, lengthOf, lightAt } from '../../public/lab/gloam-downs/boss.js';
 import { inRing } from '../../public/lab/gloam-downs/foes.js';
 import { makeFight } from '../../public/lab/gloam-downs/fight.js';
 import { readFigures, makePool } from '../../public/lab/gloam-downs/pool.js';
@@ -750,6 +750,17 @@ if (process.env.GLOAM_WORLDS !== '0') {
     assert(Math.max(...worst) <= 0.35, `the west ring lies on the ground beside the yew (worst ${Math.max(...worst).toFixed(2)} m)`);
     pass("the shard ring beside the yew lies on the ground under the crown's edge, not on its top", { worst: Math.round(Math.max(...worst) * 100) / 100 });
   }
+}
+
+{ // Ember 5: the Barrow Reeve has 25% more health, phase 2 starts at the same share as ever, and phase 3 starts at 40%
+  assert.deepEqual(bossLines(), { max: 1300, lines: [800, 350] }, 'below Ember 5 the lines stand as they were');
+  const E = ember(5), B = makeBoss({ walk: FLAT, arena: ARENA0, seed: 3, hpScale: E.bossHp, phase3: E.phase3 });
+  assert.deepEqual([B.hp, B.max, B.lines], [1625, 1625, [1000, 650]]);
+  const at = hp => { B.setHp(hp); return B.phase; };
+  assert.deepEqual([at(1625), at(1001), at(999), at(651), at(649)], [1, 1, 2, 2, 3]);
+  const E4 = ember(4), B4 = makeBoss({ walk: FLAT, arena: ARENA0, seed: 3, hpScale: E4.bossHp, phase3: E4.phase3 });
+  assert.deepEqual([B4.max, B4.lines], [1300, [800, 350]], 'Ember 4 keeps the boss as it was');
+  pass('at Ember 5 the Barrow Reeve has 1,625 health, phase 2 at 1,000 and phase 3 at 650 (40%); Ember 4 keeps 1,300', { lines: B.lines });
 }
 
 console.log(`\n${n} checks passed`);

@@ -13,6 +13,7 @@ import { writeBone, rotX, rotZ } from './pool.js';
 import { bladeAt, SWINGS } from './play.js';
 import { makeCombo, COMBO } from './combo.js';
 import { mixZones } from './mix.js';
+import { ember, emberOf } from './run.js';
 
 
 const STEP = 1 / 60;
@@ -77,9 +78,10 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
   /* the Barrow Reeve, at Barrow Crown: its slot (from the boss files, reserved until they come in), the candles' slot, and the slot of
      the light carried after the fall (from the foe files, so a reload after the fall needs no boss file) */
   const codeSlot = code => pool.slots.find(s => s.code === code) || null;
+  const EMB = ember(emberOf(rs.run));
   const bossSlot = codeSlot('B'), candleSlot = codeSlot('C'), lightSlot = codeSlot('L');
   const arena = (meta.zones || []).find(z => z.boss);
-  const boss = (G.boss = arena && (bossSlot || lightSlot) ? makeBoss({ walk, arena, seed: rs.run?.seed ?? 1, bounds: meta.bounds, down: !!rs.run?.bossDown, water }) : null);
+  const boss = (G.boss = arena && (bossSlot || lightSlot) ? makeBoss({ walk, arena, seed: rs.run?.seed ?? 1, bounds: meta.bounds, down: !!rs.run?.bossDown, water, hpScale: EMB.bossHp, phase3: EMB.phase3 }) : null);
   const fire = meta.beacon?.p ? [meta.beacon.p[0], meta.beacon.p[1] + 1.2, meta.beacon.p[2]] : null;
   // the twelve candles stand on the ground round the ring of 7.0 m; they light (their slot wakes) at the intro
   function placeCandles() {

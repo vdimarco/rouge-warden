@@ -135,13 +135,20 @@ export const lanternOf = s => [s.x + Math.cos(s.yaw) * 0.56 + Math.sin(s.yaw) * 
    B.ready is set by the page when the boss files have loaded: until then the arena sleeps, and the intro waits.
    think(ev, play) runs on every game step after the lamplighter, as part of the runner's think; ev gets the cues, the stops, the bursts
    and { type: 'boss', what: 'intro' | 'start' | 'phase' | 'slam' | 'fall' | 'light' | 'hp' } for the page. */
-export function makeBoss({ walk, arena = null, seed = 1, runner = null, bounds = 34, down = false, water } = {}) {
+/* Ember 5 (run.js ember): hpScale 1.25 gives 1,625 health, and phase3 0.4 starts phase 3 at 40% of it. Phase 2 starts at the same
+   share as ever (800 of 1,300) */
+export const bossLines = (hpScale = 1, phase3 = null) => {
+  const max = Math.round(REEVE.hp * hpScale);
+  return { max, lines: [Math.round((max * REEVE.phases[0]) / REEVE.hp), Math.round(phase3 != null ? max * phase3 : (max * REEVE.phases[1]) / REEVE.hp)] };
+};
+export function makeBoss({ walk, arena = null, seed = 1, runner = null, bounds = 34, down = false, water, hpScale = 1, phase3 = null } = {}) {
+  const LINES = bossLines(hpScale, phase3), phaseOf = hp => (hp >= LINES.lines[0] ? 1 : hp >= LINES.lines[1] ? 2 : 3);
   const rng = stream(seed, 'boss');
   const c = (arena?.c || REEVE.arena.c).slice(), leash = arena?.leash ?? REEVE.arena.leash, dark = arena?.keeper ? darkLine(arena.keeper) : REEVE_TEXT.dark;
   const ground = (x, z, y = c[1]) => { let g = walk.support(x, z, y + 2.5); if (g === null) g = walk.top(x, z); return water !== undefined ? Math.max(g, water) : g; };
   const y0 = ground(c[0], c[2]);
   const B = {
-    id: 'reeve', type: 'B', code: 'B', zone: 'arena', c, leash, hp: REEVE.hp, max: REEVE.hp, phase: 1, state: down ? 'down' : 'wait', t: 0,
+    id: 'reeve', type: 'B', code: 'B', zone: 'arena', c, leash, hp: LINES.max, max: LINES.max, lines: LINES.lines, phase: 1, state: down ? 'down' : 'wait', t: 0,
     move: null, mt: 0, landed: false, last: [], gap: 0, prog: 0, started: false, up: !down, ready: false, hold: null, mk: null, shards: [],
     x: c[0], y: y0, z: c[2], yaw: 0, r: REEVE.r, alive: false, walking: 0, flash: 0, shake: 0, shakeDir: [1, 0], flashTo: 0, shakeTo: 0,
     game: 0, step: 0, pending: [], falling: false, stumbleNext: false, diedAt: null, runner,
@@ -368,10 +375,10 @@ export function makeBoss({ walk, arena = null, seed = 1, runner = null, bounds =
   // the boss's health set at once: the phase of that health, with one stop of 9 steps and one stumble however many thresholds it
   // crossed; at 0 the fall. Before the fight has started there is no stumble
   function setHp(hp) {
-    B.hp = clamp(Math.round(hp), 0, REEVE.hp);
+    B.hp = clamp(Math.round(hp), 0, B.max);
     B.pending.push({ type: 'boss', what: 'hp', hp: B.hp });
     if (B.hp <= 0 && B.up) { B.falling = true; B.alive = false; return; }
-    const ph = phaseFor(B.hp);
+    const ph = phaseOf(B.hp);
     if (ph !== B.phase) { B.phase = ph; if (B.started && B.up) B.stumbleNext = true; }
   }
   B.setHp = setHp;

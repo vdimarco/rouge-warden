@@ -106,7 +106,7 @@ if (audio) for (const k of ['keydown', 'pointerdown', 'pointerup', 'touchend', '
 function sceneOfPlace() {
   if (!audio || !meta || fight?.boss?.fighting()) return;
   if (arriveLeft > 0 && !bossCard) audio.setScene('arrive', { id: meta.id });
-  else audio.setScene(meta.id === 'barrows' && rs.run?.bossDown ? 'light' : 'place', { id: meta.id });
+  else audio.setScene(meta.id === 'barrows' && rs?.run?.bossDown ? 'light' : 'place', { id: meta.id });
 }
 let sinceStore = 0, endAt = 0;
 /* the boss files: they load during The Bell Knoll, or after play starts in Barrow Crown, and stay. bossFile once they are in, bossLoad
@@ -279,6 +279,9 @@ function bossBar(on) {
   $('bossBar').hidden = !on;
   // in the boss fight the hint hides, so the HUD fits the rects the boss camera keeps clear
   hud.classList.toggle('boss', on);
+  // the ticks at the phases' ends: 61.5% and 26.9%, or 40% for phase 3 at Ember 5 (boss.js bossLines)
+  const B = fight?.boss;
+  if (B?.lines) $('bossBar').querySelectorAll('.tick').forEach((t, i) => { t.style.left = `${((B.lines[i] / B.max) * 100).toFixed(1)}%`; });
   placeBossBar();
   fillBossBar();
   measureScreen();
@@ -1158,7 +1161,7 @@ async function go(id) {
   showHud(true);
   bossCard = false;
   arrive();
-  audio?.setScene('arrive', { id }); emit('place-enter', { id, index: ORDER.indexOf(id), ember: rs.run?.ember ?? 0 });
+  audio?.setScene('arrive', { id }); emit('place-enter', { id, index: ORDER.indexOf(id), ember: rs?.run?.ember ?? 0 });
   if (manual && !nodraw) draw();
   if (RUN) {
     if (!rs.run && rs.ended?.won && rs.ended.place === id) { beaconLit = true; setLit(meta.beacon.fire, true); }

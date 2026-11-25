@@ -607,8 +607,9 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
     f.hold = null; f.push = null; f.flinch = 0;
     f.state = 'stagger'; f.t = 0; f.poise = max; f.aware = true;
     f.hitAt = F.step + 1;
-    // the event the fight feels and draws (fight.js); the sound of a stagger is builder A's to give (sound.js has no recipe yet)
+    // the event the fight feels and draws (fight.js), and its sound: the clang of a broken guard (sound.js), marked as a stagger
     queue({ type: 'stagger', foe: f.id, x: f.x, y: f.y + f.T.chest, z: f.z });
+    queue({ type: 'cue', cue: 'clang', foe: f.id, stagger: true });
     return true;
   }
   // put out: its glim drops (on its last firm ground when it is off its ground or in the air), and its slot frees after its parts fall
