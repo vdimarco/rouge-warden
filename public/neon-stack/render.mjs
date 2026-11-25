@@ -65,9 +65,9 @@ void main() {
     vec2 lo = uFrame.xy + one * 0.5;
     vec2 hi = uFrame.zw - one * 0.5;
     float edge = 0.0;
-    for (int y = -2; y <= 2; y++) for (int x = -2; x <= 2; x++) {
+    for (int y = -1; y <= 1; y++) for (int x = -1; x <= 1; x++) {
       int man = (x < 0 ? -x : x) + (y < 0 ? -y : y);
-      if (man == 0 || man > 2) continue;
+      if (man != 1) continue;
       vec2 s = vUV + one * vec2(float(x), float(y));
       if (s.x < lo.x || s.y < lo.y || s.x > hi.x || s.y > hi.y) continue;
       edge = max(edge, texture(uAtlas, s).a);
@@ -91,25 +91,25 @@ void main() {
   if (abs(vKind - 10.0) < 0.25) { o = vec4(0.102, 0.102, 0.133, 1.0); return; }
   if (abs(vKind - 7.0) < 0.25) {
     int i = int(clamp(vSign - 0.5, 0.0, 6.0));
-    col = mix(col, uC[i].rgb, 0.16 * fadeOf(vSign));
+    col = mix(col, uC[i].rgb, 0.4 * fadeOf(vSign));
     o = vec4(col, 1.0);
     return;
   }
   float dim = step(abs(vKind - 4.0), 0.25);
   col = mix(col, col * 0.38, dim);
-  vec2 tile = floor(vW.xz / uTile);
-  float best = 0.0;
-  vec3 lcol = col;
-  for (int i = 0; i < 8; i++) {
-    float live = step(0.15, uI[i]) * step(0.5, uL[i].w);
-    vec2 st = floor(uL[i].xz / uTile);
-    float horiz = max(abs(tile.x - st.x), abs(tile.y - st.y));
-    float g = step(abs(vKind), 0.25) * step(horiz, 2.5) * 0.14 * live;
-    float win = step(best, g);
-    best = max(best, g);
-    lcol = mix(lcol, uC[i].rgb, win);
+  if (abs(vKind) < 0.25) {
+    vec3 sum = vec3(0.0);
+    float cover = 0.0;
+    for (int i = 0; i < 8; i++) {
+      float live = step(0.15, uI[i]) * step(0.5, uL[i].w);
+      vec2 d = vW.xz / uTile - uL[i].xz / uTile;
+      float cheb = max(abs(d.x), abs(d.y));
+      float w = clamp(1.0 - cheb / 0.85, 0.0, 1.0) * live;
+      sum += uC[i].rgb * w;
+      cover += w;
+    }
+    col = mix(col, min(sum, vec3(1.0)), clamp(cover, 0.0, 1.0) * 0.12);
   }
-  col = mix(col, lcol, best);
   float fade = fadeOf(vSign);
   col = mix(col, mix(dark, col, fade), neon * (1.0 - dim));
   col = mix(col, uHaze, clamp(vW.y / 220.0, 0.0, 1.0) * 0.18 * (1.0 - neon) * (1.0 - runner));
@@ -286,6 +286,7 @@ export function createRenderer(canvas) {
   const gl = canvas.getContext("webgl2", { alpha: false, antialias: false, depth: true, preserveDrawingBuffer: true, powerPreference: "high-performance" });
   if (!gl) throw new Error("WebGL2 is not available");
   let stackProg, compProg, blitProg, quad, inst, vao, blitVao, blitBuf, atlasTex;
+  let stackU = null, compU = null, blitU = null;
   let atlasImg = null;
   const data = new Float32Array(4096 * 12);
   function boot() {
@@ -321,6 +322,14 @@ export function createRenderer(canvas) {
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 0]));
     texParams(gl, gl.NEAREST);
     if (atlasImg) uploadAtlas();
+    const loc = (prog, names) => {
+      const out = {};
+      for (const name of names) out[name] = gl.getUniformLocation(prog, name);
+      return out;
+    };
+    stackU = loc(stackProg, ["uVP", "uSun", "uHaze", "uTile", "uOutline", "uFrame", "uOutlineOn", "uFade", "uL", "uC", "uI", "uAtlas"]);
+    compU = loc(compProg, ["uAlb", "uDrop", "uSmog", "uHalo", "uHaloC", "uTime"]);
+    blitU = loc(blitProg, ["uBack", "uArt"]);
   }
   function uploadAtlas() {
     gl.bindTexture(gl.TEXTURE_2D, atlasTex);
@@ -377,20 +386,20 @@ export function createRenderer(canvas) {
   }
   function drawStack(pass, count) {
     gl.useProgram(stackProg);
-    gl.uniformMatrix4fv(gl.getUniformLocation(stackProg, "uVP"), false, api.vp);
-    gl.uniform3fv(gl.getUniformLocation(stackProg, "uSun"), api.sun);
-    gl.uniform3fv(gl.getUniformLocation(stackProg, "uHaze"), api.haze);
-    gl.uniform1f(gl.getUniformLocation(stackProg, "uTile"), api.tile || 32);
-    gl.uniform3fv(gl.getUniformLocation(stackProg, "uOutline"), api.outline || [0.24, 0.88, 0.91]);
-    gl.uniform4fv(gl.getUniformLocation(stackProg, "uFrame"), api.frame || [0, 0, 1, 1]);
-    gl.uniform1f(gl.getUniformLocation(stackProg, "uOutlineOn"), api.outlineOn || 0);
-    gl.uniform1fv(gl.getUniformLocation(stackProg, "uFade"), api.fade);
-    gl.uniform4fv(gl.getUniformLocation(stackProg, "uL"), api.lights);
-    gl.uniform4fv(gl.getUniformLocation(stackProg, "uC"), api.lightColor);
-    gl.uniform1fv(gl.getUniformLocation(stackProg, "uI"), api.intensity);
+    gl.uniformMatrix4fv(stackU.uVP, false, api.vp);
+    gl.uniform3fv(stackU.uSun, api.sun);
+    gl.uniform3fv(stackU.uHaze, api.haze);
+    gl.uniform1f(stackU.uTile, api.tile || 32);
+    gl.uniform3fv(stackU.uOutline, api.outline || [0, 0, 0]);
+    gl.uniform4fv(stackU.uFrame, api.frame || [0, 0, 1, 1]);
+    gl.uniform1f(stackU.uOutlineOn, api.outlineOn || 0);
+    gl.uniform1fv(stackU.uFade, api.fade);
+    gl.uniform4fv(stackU.uL, api.lights);
+    gl.uniform4fv(stackU.uC, api.lightColor);
+    gl.uniform1fv(stackU.uI, api.intensity);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, atlasTex);
-    gl.uniform1i(gl.getUniformLocation(stackProg, "uAtlas"), 0);
+    gl.uniform1i(stackU.uAtlas, 0);
     gl.bindVertexArray(vao);
     gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, count);
     api.drawCalls++;
@@ -457,12 +466,12 @@ export function createRenderer(canvas) {
     gl.useProgram(compProg);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, alb.color);
-    gl.uniform1i(gl.getUniformLocation(compProg, "uAlb"), 0);
-    gl.uniform2fv(gl.getUniformLocation(compProg, "uDrop"), scene.drops);
-    gl.uniform3fv(gl.getUniformLocation(compProg, "uSmog"), scene.smog);
-    gl.uniform4fv(gl.getUniformLocation(compProg, "uHalo"), scene.halo);
-    gl.uniform4fv(gl.getUniformLocation(compProg, "uHaloC"), scene.haloColor);
-    gl.uniform1f(gl.getUniformLocation(compProg, "uTime"), scene.time);
+    gl.uniform1i(compU.uAlb, 0);
+    gl.uniform2fv(compU.uDrop, scene.drops);
+    gl.uniform3fv(compU.uSmog, scene.smog);
+    gl.uniform4fv(compU.uHalo, scene.halo);
+    gl.uniform4fv(compU.uHaloC, scene.haloColor);
+    gl.uniform1f(compU.uTime, scene.time);
     gl.bindVertexArray(null);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
     api.drawCalls++;
@@ -478,10 +487,10 @@ export function createRenderer(canvas) {
     gl.bindVertexArray(blitVao);
     gl.bindBuffer(gl.ARRAY_BUFFER, blitBuf);
     gl.bufferData(gl.ARRAY_BUFFER, quadData, gl.DYNAMIC_DRAW);
-    gl.uniform2f(gl.getUniformLocation(blitProg, "uBack"), backW, backH);
+    gl.uniform2f(blitU.uBack, backW, backH);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, comp.color);
-    gl.uniform1i(gl.getUniformLocation(blitProg, "uArt"), 0);
+    gl.uniform1i(blitU.uArt, 0);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     api.drawCalls++;
   };

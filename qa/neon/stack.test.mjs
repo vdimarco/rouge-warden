@@ -26,7 +26,19 @@ assert.deepEqual(a.signs.filter((s) => s.colour === "#B6F23A").map((s) => s.name
 const fire = a.lights.find((l) => l.type === "fire");
 const near = Math.min(...a.lights.filter((l) => l.type === "neon").map((l) => Math.hypot(l.x - fire.x, l.y - fire.y)));
 assert.ok(near <= 2, "barrel is " + near.toFixed(2) + " tiles from the nearest sign");
-assert.ok(a.slices.length <= 3000, a.slices.length + " slices");
+assert.ok(a.slices.length <= 900, a.slices.length + " slices");
+for (const seed of [1, 4, 7, 9]) {
+  const w = build(seed);
+  assert.ok(w.slices.length <= 900, "seed " + seed + " slices " + w.slices.length);
+  const hs = w.buildings.map((b) => b.h);
+  assert.equal(w.buildings.filter((b) => b.h === 7).length, 1, "seed " + seed + " one tower");
+  assert.ok(hs.filter((h) => h <= 2).length >= 3, "seed " + seed + " shorts " + hs.join(","));
+  assert.ok(hs.filter((h) => h >= 5).length >= 2, "seed " + seed + " talls " + hs.join(","));
+  const lights = w.lights.filter((l) => l.type === "neon").map((l) => l.x.toFixed(2) + "," + l.y.toFixed(2));
+  assert.equal(new Set(lights).size, lights.length, "seed " + seed + " stacked lights");
+  const ac = w.buildings.filter((b) => b.prop === "ac_unit").length;
+  assert.ok(ac / w.buildings.length <= 0.4, "seed " + seed + " ac " + ac);
+}
 assert.ok(a.slices.some((s) => s.kind === 1));
 
 const blocked = (x, y) => a.blocked[x][y];

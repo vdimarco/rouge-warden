@@ -62,6 +62,15 @@ function solid(tx, ty) {
   return tx < 0 || ty < 0 || tx >= 6 || ty >= 6 || world.blocked[tx][ty];
 }
 function free(x, y) { return !solid(Math.floor(x), Math.floor(y)); }
+function viewDelta(mx, my) {
+  const yr = yaw * Math.PI / 180;
+  const upx = -Math.sin(yr);
+  const upz = -Math.cos(yr);
+  const rx = -upz;
+  const rz = upx;
+  const len = Math.hypot(mx, my) || 1;
+  return [(mx * rx - my * upx) / len, (mx * rz - my * upz) / len];
+}
 function tryMove(dx, dy) {
   const nx = player.x + dx, ny = player.y + dy;
   if (free(nx, ny)) { player.x = nx; player.y = ny; return; }
@@ -82,6 +91,7 @@ function hits(ax, az, bx, bz, box) {
   return true;
 }
 let lastCam = [0, 0, 0];
+let shownOutline = { on: 0, colour: [0, 0, 0] };
 function camera() {
   const tr = tilt * Math.PI / 180;
   const yr = yaw * Math.PI / 180;
@@ -92,14 +102,14 @@ function camera() {
   const establishing = !attract && player.y > 4;
   const tiles = portrait
     ? (attract ? 8.4 : 7.25) * span
-    : (attract ? TILES + 1 : establishing ? 16.5 : TILES);
+    : (attract ? TILES + 1 : establishing ? 12.4 : TILES);
   const dist = (tiles * TILE) / (2 * tan * aspect);
   const cx = (attract ? 3 : player.x) * TILE;
   const cz = (attract ? 3 : player.y) * TILE;
   // At the spawn, look up the street so the tower and the skyline sit in frame.
   // Elsewhere keep the closer camera the width checks were built on.
-  const along = attract ? 16 : establishing ? -TILE * 2.4 : 36;
-  const lift = establishing ? TILE * (portrait ? 1.5 : 2.8) : 0;
+  const along = attract ? 16 : establishing ? -TILE * (portrait ? 2.2 : 0.85) : 36;
+  const lift = establishing ? TILE * (portrait ? 1.6 : 5.4) : 0;
   const focus = [cx + Math.sin(yr) * along, lift, cz + Math.cos(yr) * along];
   const cam = [
     focus[0] + Math.cos(tr) * Math.sin(yr) * dist,
@@ -230,19 +240,20 @@ function scene() {
       rest.push(s);
     } else if (s.bid < 0 || !cuts.has(s.bid) || s.low) rest.push(s);
   }
-  let nearD = 2.4;
+  let nearD = 2;
   let outline = [0, 0, 0];
   let outlineOn = 0;
   for (const l of lights) {
     if (l.type !== "neon" || (l.intensity ?? 0) < 0.45) continue;
     const d = Math.hypot(l.x - player.x, l.y - player.y);
-    if (d <= 2.25 && d < nearD) {
+    if (d < 2 && d < nearD) {
       nearD = d;
       outlineOn = 1;
       const hex = l.colour;
       outline = [parseInt(hex.slice(1, 3), 16) / 255, parseInt(hex.slice(3, 5), 16) / 255, parseInt(hex.slice(5, 7), 16) / 255];
     }
   }
+  shownOutline = { on: outlineOn, colour: outline.slice() };
   renderer.tile = TILE;
 
   const uL = new Float32Array(32);
@@ -315,12 +326,9 @@ function step(dt) {
   if (mx || my) {
     moving = true;
     route = [];
-    if (mx) facing = mx > 0 ? 1 : -1;
-    const yr = yaw * Math.PI / 180;
-    const fx = -Math.sin(yr), fz = -Math.cos(yr);
-    const rx = Math.cos(yr), rz = -Math.sin(yr);
-    const len = Math.hypot(mx, my);
-    tryMove((mx / len * rx + my / len * fx) * 3 * dt, (mx / len * rz + my / len * fz) * 3 * dt);
+    const [dx, dy] = viewDelta(mx, my);
+    if (dx) facing = dx > 0 ? 1 : -1;
+    tryMove(dx * 3 * dt, dy * 3 * dt);
   } else if (route.length) {
     const [tx, ty] = route[0];
     const dx = tx - player.x, dy = ty - player.y;
@@ -461,6 +469,15 @@ window.__test = {
     return r ? { x: r.x, y: r.y, z: r.z, hx: r.hx, uv: r.uv } : null;
   },
   setPose: (name) => { pose = name || ""; },
+  outline: () => shownOutline,
+  viewStep: (mx, my, dt = 0.3) => {
+    attract = false;
+    const [dx, dy] = viewDelta(mx, my);
+    if (dx) facing = dx > 0 ? 1 : -1;
+    const before = { x: player.x, y: player.y };
+    tryMove(dx * 3 * dt, dy * 3 * dt);
+    return { before, after: { x: player.x, y: player.y }, dx, dy };
+  },
   runnerRect: () => {
     const name = runnerFrame();
     const box = RUNNER_BOX[name];

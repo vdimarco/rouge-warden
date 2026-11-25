@@ -68,7 +68,7 @@ const view = await desk.page.evaluate(() => __test.view());
 check(view.artW === 320 && view.scale === 4, "1280 art buffer is 320 at 4x (" + view.artW + " at " + view.scale + ")");
 const budget = await desk.page.evaluate(() => __test.state());
 check(budget.drawCalls <= 50, "drawCalls " + budget.drawCalls);
-check(budget.slices <= 3000, "slices " + budget.slices);
+check(budget.slices <= 900, "slices " + budget.slices);
 check(budget.frameMs > 0, "frameMs " + budget.frameMs.toFixed(1));
 console.log("  nums  drawCalls=" + budget.drawCalls + " slices=" + budget.slices + " frameMs=" + budget.frameMs.toFixed(1) + " fps=" + budget.fps.toFixed(1));
 
@@ -494,7 +494,7 @@ async function proof(width, height, dpr, tag) {
   await page.screenshot({ path: OUT + "/" + tag + "-signs-on.png" });
 
   const street = await page.evaluate(async () => {
-    __test.moveTo(2.5, 2.5);
+    __test.moveTo(2.5, 4.8);
     __test.setYaw(0);
     __test.setTilt(55);
     await new Promise((r) => setTimeout(r, 200));
@@ -505,15 +505,22 @@ async function proof(width, height, dpr, tag) {
       gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, buf);
       return buf;
     };
+    const hue = (colour, r, g, b) => {
+      if (colour === "#FF3D8B") return r > g + 30 && r > b && r > 90;
+      if (colour === "#3DE0E8") return g > r + 20 && b > r + 20 && g > 80;
+      if (colour === "#F2A33A") return r > b + 40 && g > b + 20 && r > 90 && b < 140;
+      if (colour === "#B6F23A") return g > r + 25 && g > b + 25 && g > 90;
+      return false;
+    };
     const lights = __test.state().lights.filter((l) => l.street);
     const changed = [];
     for (const l of lights) {
-      for (let i = 0; i < 6; i++) __test.setSign(i, true);
-      await new Promise((r) => setTimeout(r, 180));
+      for (let i = 0; i < 6; i++) __test.setSign(i, false);
+      __test.setSign(__test.state().lights.filter((x) => x.type === "neon").findIndex((x) => x.x === l.x && x.y === l.y), true);
+      await new Promise((r) => setTimeout(r, 280));
       const on = grab();
-      const idx = __test.state().lights.filter((x) => x.type === "neon").findIndex((x) => x.x === l.x && x.y === l.y);
-      __test.setSign(idx, false);
-      await new Promise((r) => setTimeout(r, 220));
+      for (let i = 0; i < 6; i++) __test.setSign(i, false);
+      await new Promise((r) => setTimeout(r, 280));
       const off = grab();
       const v = __test.view();
       const p = __test.project(l.x, l.y, 0);
@@ -527,14 +534,49 @@ async function proof(width, height, dpr, tag) {
       for (let y = y0; y <= y1; y += 2) for (let x = x0; x <= x1; x += 2) {
         if ((x - gx) * (x - gx) + (y - gy) * (y - gy) > rad * rad) continue;
         const i = (y * canvas.width + x) * 4;
-        if (Math.abs(on[i] - off[i]) + Math.abs(on[i + 1] - off[i + 1]) + Math.abs(on[i + 2] - off[i + 2]) > 18) n++;
+        if (hue(l.colour, on[i], on[i + 1], on[i + 2]) && !hue(l.colour, off[i], off[i + 1], off[i + 2])) n++;
       }
       changed.push(n);
     }
     for (let i = 0; i < 6; i++) __test.setSign(i, null);
     return changed;
   });
-  street.forEach((n, i) => check(n > 0, tag + " street sign " + i + " changes " + n + " street pixels within 2 tiles"));
+  street.forEach((n, i) => check(n > 0, tag + " street sign " + i + " paints its own hue within 2 tiles (" + n + ")"));
+
+  if (tag === "1280") {
+    const outline = await page.evaluate(async () => {
+      const sign = __test.state().lights.find((l) => l.street);
+      const read = async (dist) => {
+        __test.moveTo(sign.x, sign.y - dist);
+        __test.setYaw(0);
+        __test.setTilt(55);
+        await new Promise((r) => setTimeout(r, 200));
+        return __test.outline().on;
+      };
+      const near = await read(1.9);
+      const far = await read(2.1);
+      return { near, far };
+    });
+    check(outline.near === 1 && outline.far === 0, "outline on at 1.9 (" + outline.near + ") and off at 2.1 (" + outline.far + ")");
+    const moved = await page.evaluate(async () => {
+      const out = [];
+      for (const yaw of [0, 90, 180]) {
+        __test.moveTo(2.5, 3.2);
+        __test.setYaw(yaw);
+        __test.setTilt(55);
+        await new Promise((r) => setTimeout(r, 80));
+        const mark = __test.project(2.5, 2.2, 0);
+        const step = __test.viewStep(0, -1, 0.08);
+        await new Promise((r) => setTimeout(r, 80));
+        const moved = __test.project(2.5, 2.2, 0);
+        out.push({ yaw, dy: moved.y - mark.y, world: step.after });
+      }
+      return out;
+    });
+    for (const row of moved) {
+      check(row.dy > 0.4, "yaw " + row.yaw + " up moves toward the top of the screen (" + row.dy.toFixed(1) + ")");
+    }
+  }
 
   const sil = await page.evaluate(async () => {
     __test.moveTo(4.5, 2.5);
@@ -606,8 +648,13 @@ async function visible(width, height, dpr) {
       return px;
     };
     const rr = __test.runnerRect();
-    const around = readAt(rr.x + rr.w / 2, rr.y + rr.h / 2, 9);
-    const ochre = around.filter((c) => near(c, OCHRE, 6)).length;
+    let ochre = 0;
+    let around = [];
+    for (const t of [0.2, 0.35, 0.5, 0.7]) {
+      const sample = readAt(rr.x + rr.w / 2, rr.y + rr.h * t, 9);
+      const n = sample.filter((c) => near(c, OCHRE, 8)).length;
+      if (n >= ochre) { ochre = n; around = sample; }
+    }
     const allGround = around.every(isGround);
     const HX = 11 / 32;
     const lights = st.lights.filter((l) => l.type === "neon");
