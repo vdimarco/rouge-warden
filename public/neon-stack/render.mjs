@@ -109,9 +109,10 @@ void main() {
   }
   if (t.a < 0.5) discard;
   vec3 col = t.rgb;
-  // Window amber stays off the sign amber so a dark sign is not a lit window.
-  if (abs(vKind - 8.0) < 0.25 && col.r > 0.85 && col.g > 0.5 && col.g < 0.78 && col.b < 0.35) {
-    col = vec3(201.0, 133.0, 58.0) / 255.0;
+  // Warm window texels keep their texture, shifted onto #C9853A so a dark sign is not a lit window.
+  if (abs(vKind - 8.0) < 0.25 && t.r > 0.55 && t.g > 0.25 && t.b < 0.45 && t.r > t.b + 0.25) {
+    float lumT = dot(t.rgb, vec3(0.299, 0.587, 0.114));
+    col = clamp(vec3(201.0, 133.0, 58.0) / 255.0 * (0.82 + 0.36 * lumT), vec3(187.0, 119.0, 44.0) / 255.0, vec3(215.0, 147.0, 72.0) / 255.0);
   }
   float hi = max(col.r, max(col.g, col.b));
   float lo = min(col.r, min(col.g, col.b));
@@ -130,14 +131,12 @@ void main() {
   if (abs(vKind - 11.0) < 0.25) {
     vec3 roof = vec3(74.0, 72.0, 82.0) / 255.0;
     float lip = step(vEdge, 1.0 / 16.0);
-    col = mix(roof, vec3(138.0, 131.0, 120.0) / 255.0, lip);
-    col = mix(col, ink, depth);
+    col = mix(roof, vec3(184.0, 172.0, 148.0) / 255.0, lip);
     o = vec4(col, 1.0);
     return;
   }
   if (abs(vKind - 12.0) < 0.25) {
     col *= 0.45;
-    col = mix(col, ink, depth * 0.5);
     o = vec4(col, 1.0);
     return;
   }
@@ -148,11 +147,11 @@ void main() {
     return;
   }
   float wall = step(abs(vKind - 8.0), 0.25);
-  if (wall > 0.5 && !(t.r > 0.85 && t.g > 0.5 && t.g < 0.78 && t.b < 0.35)) {
+  if (wall > 0.5 && !(t.r > 0.55 && t.g > 0.25 && t.b < 0.45 && t.r > t.b + 0.25)) {
     float kd = vKind - 8.0;
     float tint = floor(kd / 0.03 + 0.001);
     float bottom = step(0.005, mod(kd + 0.0001, 0.03));
-    vec3 face = vOrient > 1.5 ? vec3(43.0, 42.0, 51.0) / 255.0 : vec3(26.0, 26.0, 34.0) / 255.0;
+    vec3 face = vOrient > 1.5 ? vec3(43.0, 42.0, 51.0) / 255.0 : vec3(36.0, 35.0, 44.0) / 255.0;
     if (vSign > 0.1 && vSign < 0.4) face = vec3(43.0, 42.0, 51.0) / 255.0;
     vec3 dye = tint < 0.5 ? vec3(1.10, 0.84, 0.90) : tint < 1.5 ? vec3(0.84, 1.08, 0.90) : vec3(0.90, 0.94, 1.10);
     float lum = dot(face, vec3(0.299, 0.587, 0.114));
@@ -189,7 +188,6 @@ void main() {
   }
   float fade = fadeOf(vSign);
   col = mix(col, mix(dark, col, fade), neon * (1.0 - dim) * (1.0 - wall));
-  if (wall > 0.5 && neon < 0.5) col = mix(col, ink, depth);
   col = mix(col, uHaze, clamp(vW.y / 220.0, 0.0, 1.0) * 0.18 * (1.0 - neon) * (1.0 - runner) * (1.0 - wall));
   o = vec4(col, 1.0);
 }`;

@@ -111,14 +111,14 @@ function camera() {
   const establishing = !attract && player.y > 4;
   const tiles = portrait
     ? (attract ? 8.4 : establishing ? 8.2 : 7.25) * span
-    : (attract ? TILES + 1 : establishing ? 11.4 : TILES);
+    : (attract ? TILES + 1 : establishing ? 10 : TILES);
   const dist = (tiles * TILE) / (2 * tan * aspect);
   const cx = (attract ? 3 : player.x) * TILE;
   const cz = (attract ? 3 : player.y) * TILE;
-  // At the spawn, look up the street so the 6-storey tower and a skyline strip sit in frame.
-  // Elsewhere keep the closer camera the width checks were built on.
-  const along = attract ? 16 : establishing ? TILE * (portrait ? -3 : 0) : 36;
-  const lift = establishing ? TILE * (portrait ? 6.6 : 6.2) : 0;
+  // At the spawn, aim up the block without pulling the camera back. The runner stays
+  // in the lower third. Elsewhere keep the closer camera the width checks were built on.
+  const along = attract ? 16 : establishing ? TILE * (portrait ? -2 : -1.875) : 36;
+  const lift = establishing ? TILE * (portrait ? 3.75 : 3.625) : 0;
   const focus = [cx + Math.sin(yr) * along, lift, cz + Math.cos(yr) * along];
   const cam = [
     focus[0] + Math.cos(tr) * Math.sin(yr) * dist,
