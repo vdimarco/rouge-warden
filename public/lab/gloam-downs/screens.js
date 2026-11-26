@@ -5,7 +5,11 @@ import { ORDER } from './save.js';
 import { WICKS, UPGRADES, UNLOCKS, EMBER, BASE, maxOf, flasksOf, keepShare, purse, sparksOf, paneSlots, kindledOf, patternOf, startPicks } from './run.js';
 import { relicOf, kindled, KINDLE } from './relics.js';
 import { COLOURS, PATTERNS, PANES, ABILITIES } from './growth.js';
-import { ELITE_LIST } from './elites.js';
+import { ELITE_LIST, ELITES } from './elites.js';
+import { BLADES, OFFHANDS } from './gear.js';
+import { LAMP_KEYS } from './growth.js';
+// the gear builder's gearMark (hud-gear.js) and the start picks: hub.js keeps their stand-ins until it lands
+import { gearMark, startBlade, startOffhand, kindledBlades, kindledOffhands } from './hub.js';
 
 export const NUMERAL = ['I', 'II', 'III', 'IV', 'V'];
 export const NAMES = { gaol: 'The Sunken Gaol', ramparts: 'The Crow Wall', fen: 'Lantern Fen', bells: 'The Bell Knoll', barrows: 'Barrow Crown' };
@@ -70,7 +74,7 @@ export function upgradeRow(rs, id) {
   const name = max > 1 ? `${u.name} ${top ? lvl : lvl + 1}` : u.name;
   const cost = top ? 0 : u.costs[lvl], need = top ? 0 : Math.max(0, cost - purseOf(rs));
   return {
-    id, lvl, max, top, cost, need,
+    id, lvl, max, top, cost, need, mark: gearMark({ kind: 'ware', colour: u.colour || null }),
     label: top ? `${name} · all bought` : `${name} · ${GIVES[id](lvl + 1)} · ${cost} glim`,
     buy: top ? null : need ? `${need} more glim` : 'Buy'
   };
@@ -140,7 +144,7 @@ export const growthText = id => (patternOf(id)?.text || '').replace(/(\d) (s|m)\
 export function patternRows(rs) {
   return (rs.patterns || []).filter(id => PATTERNS.some(p => p.id === id)).map(id => {
     const p = PATTERNS.find(x => x.id === id), need = Math.max(0, p.cost - purseOf(rs));
-    return { id, kind: p.kind, cost: p.cost, need, label: `${growthName(id)} · ${growthText(id)} · ${p.cost} glim`, buy: need ? `${need} more glim` : 'Kindle' };
+    return { id, kind: p.kind, cost: p.cost, need, mark: gearMark({ kind: p.kind, id }), label: `${growthName(id)} · ${growthText(id)} · ${p.cost} glim`, buy: need ? `${need} more glim` : 'Kindle' };
   });
 }
 /* the pane rows: one for each open slot, with every kindled pane but those set in another slot. The one set in the row is on; pressing
@@ -149,7 +153,7 @@ export function paneRows(rs) {
   const n = paneSlots(rs), set = rs.panes || [], kindledPanes = kindledOf(rs, 'pane');
   return Array.from({ length: n }, (_, slot) => ({
     slot, set: set[slot] || null,
-    panes: kindledPanes.filter(id => !set.some((p, i) => p === id && i !== slot)).map(id => ({ id, name: growthName(id), text: growthText(id), on: set[slot] === id }))
+    panes: kindledPanes.filter(id => !set.some((p, i) => p === id && i !== slot)).map(id => ({ id, name: growthName(id), text: growthText(id), on: set[slot] === id, mark: gearMark({ kind: 'pane', id }) }))
   }));
 }
 // the beacon card's spark buttons, and its kept line
@@ -187,7 +191,7 @@ export function winOf(rs) {
    upgrade's: off with too little glim, and saying how much more is needed */
 export function unlockRow(rs, id) {
   const u = UNLOCKS.find(x => x.id === id), got = (rs.unlocks || []).includes(id), need = got ? 0 : Math.max(0, u.cost - purseOf(rs));
-  return { id, cost: u.cost, got, need, label: got ? `${u.name} · bought` : `${u.name} · ${u.text} · ${u.cost} glim`, buy: got ? null : need ? `${need} more glim` : 'Buy' };
+  return { id, cost: u.cost, got, need, mark: gearMark({ kind: 'unlock' }), label: got ? `${u.name} · bought` : `${u.name} · ${u.text} · ${u.cost} glim`, buy: got ? null : need ? `${need} more glim` : 'Buy' };
 }
 export const unlockRows = rs => UNLOCKS.map(u => unlockRow(rs, u.id));
 // the Ember row: a button for each open level, the chosen one on; none before the first win
@@ -286,4 +290,40 @@ export function recapOf(e, route = ORDER) {
     ['Best combo', (e.combo | 0) >= 2 ? `×${e.combo | 0}` : '–']
   ];
   return { title: e.won ? 'The downs are lit' : 'The lamp goes out', won: !!e.won, path, rows, sparks, by: e.won ? '' : byLine(e.by) };
+}
+
+/* ---------------- the hall's own rows (gloam-downs-hub) ----------------
+   The blade rack and the off-hand stand: each kindled item with its string or rule, the start one marked, and Pick. The trophy wall:
+   each key, held or where it comes from. The well: the bank and the last run. Every row carries its category mark (gearMark) */
+export function bladeRows(rs) {
+  const on = startBlade(rs);
+  return kindledBlades(rs).map(id => BLADES.find(b => b.id === id)).map(b => ({
+    id: b.id, name: b.name, text: b.text, start: b.id === on, mark: gearMark({ kind: 'blade', id: b.id }),
+    label: `${b.name} · ${b.text}`, pick: b.id === on ? 'Start blade' : 'Pick'
+  }));
+}
+export function offhandRows(rs) {
+  const on = startOffhand(rs);
+  const rows = kindledOffhands(rs).map(id => OFFHANDS.find(o => o.id === id)).map(o => ({
+    id: o.id, name: o.name, text: `${o.text}; cools in ${o.cool}\u00a0s`, start: o.id === on, mark: gearMark({ kind: 'offhand', id: o.id }),
+    label: `${o.name} · ${o.text}`, pick: o.id === on ? 'Start off-hand' : 'Pick'
+  }));
+  rows.push({ id: null, name: 'None', text: 'start with the off-hand slot empty', start: on === null, mark: gearMark({ kind: 'offhand' }), label: 'None · start with the off-hand slot empty', pick: on === null ? 'Start off-hand' : 'Pick' });
+  return rows;
+}
+// the elite whose first fall gives a key: the one of the key's place
+const eliteFrom = place => ELITES[place] || null;
+export function keyRows(rs) {
+  return LAMP_KEYS.map(k => {
+    const got = (rs.keys || []).includes(k.id), e = eliteFrom(k.from);
+    return { id: k.id, name: k.name, got, mark: gearMark({ kind: 'key', colour: k.colour || null }), label: got ? `${k.name} · ${k.text}` : `${k.name} · not yet: the first fall of ${e ? e.name : `the elite of ${NAMES[k.from] || k.from}`}` };
+  });
+}
+// the well: the bank, and the last run in a line
+export function wellLines(rs) {
+  const lines = [`Banked: ${rs.bank | 0} glim. Runs ${rs.runs | 0} · wins ${rs.wins | 0} · deaths ${rs.deaths | 0}.`];
+  const e = rs.ended;
+  if (e) { const r = recapOf(e); lines.push(`${r.title}. ${r.rows.slice(0, 3).map(([k, v]) => `${k} ${v}`).join(' · ')}`); }
+  else lines.push((rs.runs | 0) === 0 ? 'No run yet. The run door is at the back of the hall.' : `Furthest place: ${NAMES[ORDER[Math.min(4, rs.furthest | 0)]]}.`);
+  return lines;
 }

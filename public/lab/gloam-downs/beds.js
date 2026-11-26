@@ -17,7 +17,10 @@ export const BEDS = {
   ramparts: { trim: -14, wind: { f: 900, q: 1.1, db: -2, wander: 0.45 }, sparse: [{ what: 'caw', every: [9, 22], far: true }], gust: ['whistle'] },
   fen: { trim: -21, wind: { f: 380, q: 0.6, db: -6, wander: 0.3 }, water: true, sparse: [{ what: 'frog', every: [6, 18] }], gust: ['reeds'] },
   bells: { trim: -10, wind: { f: 650, q: 0.9, db: -1, wander: 0.4 }, sparse: [], gust: ['cogs'] },
-  barrows: { trim: -11, wind: { f: 190, q: 1.6, db: 0, wander: 0.25 }, sparse: [{ what: 'owl', every: [20, 45] }], gust: [], moths: true }
+  barrows: { trim: -11, wind: { f: 190, q: 1.6, db: 0, wander: 0.25 }, sparse: [{ what: 'owl', every: [20, 45] }], gust: [], moths: true },
+  // the Lamp-room (gloam-downs-hub "Decision 8"): a low room tone, a drip from the well, and the kiln's crackle; under the Lamp-room's
+  // theme, which main.js keeps playing in the hall
+  lamproom: { trim: -12, wind: { f: 160, q: 0.5, db: -10, wander: 0.2 }, sparse: [{ what: 'drip', every: [10, 25] }, { what: 'crackle', every: [2, 6] }], gust: [], moths: true }
 };
 
 export function makeBeds(ctx, mix, { seed = 1 } = {}) {
@@ -99,6 +102,10 @@ export function makeBeds(ctx, mix, { seed = 1 } = {}) {
     whistle(t, k = 1, gd = -16) { const V = voice(t, BED.swell + 0.2, rr(-0.3, 0.3), gd); tone(V, t, BED.swell - 0.6, 'sine', rr(880, 960), rr(1000, 1080), 0.3 * k, 0.6); },
     // wings: noise beating at the wingbeat, fading as the flock goes
     wings(t, pan = 0, gd = -6) { const V = voice(t, 1.3, pan, gd), n = noise(V, t, 1.1, 'bandpass', 1500, 0.9, 0.8, 0.02), am = ctx.createOscillator(), ag = ctx.createGain(); am.type = 'square'; am.frequency.value = rr(10, 13); ag.gain.value = 0.35; am.connect(ag); ag.connect(n.g.gain); am.start(t); am.stop(t + 1.2); V.nodes.push(am, ag); V.srcs.push(am); },
+    // a drip into the well: a short falling sine and a tiny splash
+    drip(t, pan = rr(-0.4, -0.1), gd = -10) { const V = voice(t, 0.5, pan, gd); tone(V, t, 0.12, 'sine', rr(1300, 1500), rr(500, 600), 0.4, 0.004); noise(V, t + 0.01, 0.06, 'bandpass', 2600, 2, 0.08, 0.003); },
+    // the kiln's fire: a few short crackles of noise, to the right of the hall
+    crackle(t, pan = rr(0.2, 0.6), gd = -16) { const V = voice(t, 0.6, pan, gd), n = 2 + Math.floor(r() * 3); for (let i = 0; i < n; i++) noise(V, t + i * rr(0.04, 0.12), rr(0.02, 0.05), 'bandpass', rr(1800, 3800), 1.5, rr(0.2, 0.45), 0.002); noise(V, t, 0.4, 'lowpass', 300, 0.7, 0.12, 0.05, brown); },
     // a moth at a lamp: a soft, fast flutter
     moth(t, pan = 0, gd = -14) { const V = voice(t, 0.7, pan, gd), n = noise(V, t, 0.55, 'bandpass', 900, 1.2, 0.5, 0.05), am = ctx.createOscillator(), ag = ctx.createGain(); am.frequency.value = rr(28, 36); ag.gain.value = 0.4; am.connect(ag); ag.connect(n.g.gain); am.start(t); am.stop(t + 0.65); V.nodes.push(am, ag); V.srcs.push(am); }
   };
