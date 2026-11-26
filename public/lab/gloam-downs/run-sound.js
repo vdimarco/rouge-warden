@@ -3,10 +3,13 @@
 // run's scene for the score, and keeps the Sound and Music switches. Before the context exists every call is cheap and silent, and
 // the scene is kept, so the score starts in the right place. It listens to the run's events on the bus (bus.js): the place, the
 // foes that see the lamplighter and the calm after, the elite, the boss's intro, health, phases and fall, the beacon, death, the win
-// and the Lamp-room. The fight's strings start on the first tell or hit of a fight, read from the cue log.
+// and the Lamp-room. The fight's strings start on the first tell or hit of a fight, read from the cue log. The place's sound bed
+// (beds.js) follows the scene: it plays in a place, ducks while foes are awake, stops in the boss fight and the Lamp-room, and answers
+// life.js's stirs (a gust, a flock, a lamp).
 import { createMix, createSound, cueAt, CUES } from './sound.js';
 import { createMusic, TIMER, keyOf, THEMES, LOOKAHEAD, PHONE_LOOKAHEAD } from './music.js';
 import { on, EVENTS } from './bus.js';
+import { makeBeds } from './beds.js';
 
 // the cues that begin a fight as a hit does: a hit given, a plunge's landing, a hit taken
 const FIGHT_CUES = new Set(['hit', 'land', 'hurt']);
@@ -18,6 +21,7 @@ export function makeRunSound({ log, rs, phone = false, step = () => 0, ear = () 
   A.setScene = (kind, o = {}) => {
     const was = A.scene;
     A.scene = { kind, ...o };
+    A.bedScene();
     if (!A.music) return;
     const M = A.music.score;
     if (kind === 'arrive') M.arrive(o.id);
@@ -26,6 +30,15 @@ export function makeRunSound({ log, rs, phone = false, step = () => 0, ear = () 
     else if (kind === 'lamp') M.lamp(o.wait || 0);
     else if (kind === 'silent') M.silence();
     if (o.id && THEMES[o.id]) A.fx?.setKey(keyOf(o.id) - 12);
+  };
+  // the bed follows the scene: a place's own bed on arrival and in play (Barrow Crown's after the boss's fall), none in the boss
+  // fight, the Lamp-room or the silence
+  A.bedScene = () => {
+    if (!A.beds) return;
+    const sc = A.scene;
+    if ((sc.kind === 'arrive' || sc.kind === 'place') && sc.id) A.beds.place(sc.id);
+    else if (sc.kind === 'light') A.beds.place(sc.id || 'barrows');
+    else A.beds.stop();
   };
   // the first press in a run: the context, the graph and the bank
   A.start = () => {
@@ -42,6 +55,7 @@ export function makeRunSound({ log, rs, phone = false, step = () => 0, ear = () 
     A.fx = createSound(ctx, { mix: A.mix, seed });
     A.music = createMusic(ctx, { mix: A.mix, base, fetchFn, seed, lookahead: phone ? PHONE_LOOKAHEAD : LOOKAHEAD });
     A.music.step = step;
+    A.beds = makeBeds(ctx, A.mix, { seed });
     A.heard = log.length;
     A.switches();
     ctx.resume?.().catch?.(() => {});
@@ -59,6 +73,7 @@ export function makeRunSound({ log, rs, phone = false, step = () => 0, ear = () 
       A.scene = sc;
     } else A.setScene(sc.kind, sc);
     A.music.score.setFight(A.fight);
+    A.beds.duck(A.fight.awake);
     return true;
   };
   /* every later press: a context that a browser made suspended (a touch whose first event was no user activation, an iPhone that
@@ -89,6 +104,7 @@ export function makeRunSound({ log, rs, phone = false, step = () => 0, ear = () 
       if (!A.ctx || !rs.sound || A.paused || A.ctx.state !== 'running') continue;
       lay(c, cueAt(fr.t, fr.base, c.step));
     }
+    if (A.beds && A.ctx?.state === 'running' && rs.sound) A.beds.tick();
   }
   // lay one cue. A.lead keeps how far ahead of the context's clock it was laid; with the dynamics' pre-delays and the output's
   // latency it is the effects' lag behind the picture (__gloam.music().lag)
@@ -112,6 +128,7 @@ export function makeRunSound({ log, rs, phone = false, step = () => 0, ear = () 
   A.pause = on => {
     A.paused = !!on;
     if (on && A.fx) A.fx.hush();
+    A.beds?.pause(A.paused);
     A.filter();
   };
   A.setLow = low => { if (A.low !== !!low) { A.low = !!low; A.filter(); } };
@@ -127,16 +144,24 @@ export function makeRunSound({ log, rs, phone = false, step = () => 0, ear = () 
     for (const k of ['awake', 'guard', 'strings', 'elite']) if (k in o) F[k] = !!o[k];
     if (!F.awake) F.guard = F.strings = F.elite = false;
     A.music?.score.setFight(F);
+    A.beds?.duck(F.awake);
   };
   // the old switch (one release): foes awake, and a guard zone among them
   A.combat = (want, guard) => A.setFight(want ? { awake: true, guard: !!guard } : { awake: false });
   A.boss = (what, phase, share) => {
-    if (what === 'intro') { A.scene = { kind: 'boss', phase: 0 }; A.music?.score.bossIntro(); }
+    if (what === 'intro') { A.scene = { kind: 'boss', phase: 0 }; A.music?.score.bossIntro(); A.beds?.stop(); }
     else if (what === 'phase') { A.scene = { kind: 'boss', phase, share: A.scene.share }; A.music?.score.bossPhase(phase); }
     else if (what === 'health') { if (A.scene.kind === 'boss') A.scene = { ...A.scene, share }; A.music?.score.bossHealth(share); }
-    else if (what === 'fall') { A.scene = { kind: 'light', id: 'barrows' }; A.music?.score.bossFall(); }
+    else if (what === 'fall') { A.scene = { kind: 'light', id: 'barrows' }; A.music?.score.bossFall(); A.bedScene(); }
   };
-  A.sting = id => { A.music?.score.sting(id); if (id === 'death') A.scene = { kind: 'silent' }; else A.scene = { kind: 'lamp' }; };
+  A.sting = id => { A.music?.score.sting(id); if (id === 'death') A.scene = { kind: 'silent' }; else A.scene = { kind: 'lamp' }; if (id !== 'beacon') A.bedScene(); };
+  // life.js's stirs: a gust swells the wind, a flock's take-off plays wings and caws at the flock, a lamp brightening stirs moths
+  A.stir = (d = {}) => {
+    if (!A.beds || !A.ctx || A.ctx.state !== 'running' || !rs.sound) return;
+    if (d.kind === 'gust') A.beds.gust(Number.isFinite(d.k) ? d.k : 1);
+    else if (d.kind === 'crows') A.beds.crows([d.x, d.z], ear());
+    else if (d.kind === 'lamp') A.beds.lamp([d.x, d.z], ear());
+  };
   /* the run's events on the bus. Each handler only moves the score; one that throws is caught by the bus, so the game goes on.
      relic-take and combo-tier are heard (the score may answer them later) and change nothing yet */
   const HANDLERS = {
@@ -164,7 +189,8 @@ export function makeRunSound({ log, rs, phone = false, step = () => 0, ear = () 
     'ability-use': () => {},
     'ability-ready': d => A.cue('focus', { ready: d.slot ?? 0 }),
     'spark-take': () => A.cue('choice', { spark: true }),
-    'cache-open': () => A.cue('glim', { cache: true })
+    'cache-open': () => A.cue('glim', { cache: true }),
+    'life-stir': d => A.stir(d)
   };
   const offs = EVENTS.map(name => on(name, d => { A.heardEvents.push(name); if (A.heardEvents.length > 32) A.heardEvents.shift(); HANDLERS[name]?.(d || {}); }));
   // stop listening (a test that makes more than one run sound)
@@ -177,7 +203,7 @@ export function makeRunSound({ log, rs, phone = false, step = () => 0, ear = () 
       ...v, fight: { ...A.fight }, events: A.heardEvents.slice(-8), ctx: A.ctx ? A.ctx.state : null, mix: phone ? 'phone' : 'desktop', scene: { ...A.scene },
       buses: A.mix ? { fx: A.mix.fx.gain.value, music: A.mix.music.gain.value, duck: +A.mix.duckDb().toFixed(2), hp: A.mix.hp.frequency.value } : null,
       fxVoices: A.fx ? A.fx.voices() : 0, fxLive: A.fx ? A.fx.liveNames() : [], time: A.ctx ? A.ctx.currentTime : null, failed: A.failed,
-      reduction: A.mix ? A.mix.reduction() : null,
+      reduction: A.mix ? A.mix.reduction() : null, beds: A.beds ? A.beds.view() : null,
       lag: A.ctx ? { lead: A.lead, pre: A.mix.delay.fx, out: A.ctx.outputLatency || 0, base: A.ctx.baseLatency || 0 } : null
     };
   };

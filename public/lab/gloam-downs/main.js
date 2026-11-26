@@ -31,6 +31,7 @@ import { figures, poolFor, lineup, LINEUP } from './figures.js';
 import { findVeils, makeVeils, findOccluders, makeOccluders, VEIL } from './veil.js';
 import { makeCut, CUT } from './cut.js';
 import { makeFight, SPARKS } from './fight.js';
+import { makeLife } from './life.js';
 import { parseSeed, seedCode, smallSeed } from './mix.js';
 import { REEVE, REEVE_TEXT } from './boss.js';
 import { makeRunSound } from './run-sound.js';
@@ -87,6 +88,7 @@ fx.kick = shakeOn(); fx.combo = true; fx.lamp = true;
 let lastRun = { seed: 1, combo: 0 };
 const posts = [];
 let foeTargets = () => [], fight = null;
+let life = null;
 /* the run's sound (run-sound.js): no AudioContext until the first key, click or tap in a run, and none in the explorer or Wander.
    A Lamp-room opened from Wander's Map makes no sound until Begin the run or Go on with the run */
 let lampFromWander = false, bossCard = false;
@@ -1471,6 +1473,7 @@ async function go(id) {
   const n = meta.bones.names.length;
   world.anim = { bones: new Float32Array(12 * n), boned: Int32Array.from({ length: meta.bones.end - meta.bones.first }, (_, i) => meta.bones.first + i) };
   const placeCount = world.count;
+  life = makeLife(world, meta, { walk, still, rows: pendingRows, on: !LOOK && !q.has('nolife') });
   // its slots parked (at density 0 and off the bones), and the spark pool's splats after them
   pool = RUN ? makePool(world, meta, slots, { extra: LOOK ? 0 : SPARKS }) : null;
   // where the walls bring the eye close, the lamplighter thins out (play.js fadeOf), its blade kept; after the pool, which may give
@@ -1670,6 +1673,7 @@ function draw(o = {}) {
   // the fog stays at fogNear..fogFar whatever the camera's distance (the renderer spreads it over dist ± radius)
   world.radius = Math.max(6, meta.fogFar - view.dist);
   world.fog.start = Math.max(0, Math.min(0.97, (fogNear - 2 * view.dist + meta.fogFar) / (2 * world.radius)));
+  life?.draw(view, t, o.body || body.s, fightView().foes);
   try {
     renderer.render(world, { width: art.w, height: art.h, time: t, camera: view, changedRows: pool ? [...pendingRows, ...pool.rows] : [...pendingRows], colored: true });
     pendingRows.clear();
@@ -1949,6 +1953,7 @@ window.__gloam = {
     anims: document.getAnimations().filter(a => a.playState === 'running').map(a => ({ id: a.effect?.target?.id || a.effect?.target?.className || '', ms: a.effect?.getComputedTiming().endTime ?? 0 }))
   }),
   pool: () => pool && { count: world.count, boned: world.anim.boned.length, extra: pool.extra.end - pool.extra.first, slots: pool.slots.map(s => ({ i: s.i, code: s.code, awake: s.awake, first: s.first, end: s.end, base: s.base, at: s.at })) },
+  life: o => life?.test(o) ?? null,
   lineup: (o = {}) => { const r = lineup(pool, walk, { x: body.s.x, z: body.s.z, yaw: body.s.yaw }, o); if (o.draw) draw(); return r; },
   // one slot: { clip, t } poses it where it stands, { flash: true | false } and { park: true } as the run will
   slot: (i, o = {}) => {

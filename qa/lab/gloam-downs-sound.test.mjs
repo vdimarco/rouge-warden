@@ -339,12 +339,12 @@ const whats = F => F.S.view().changes.map(c => c.what);
   console.error = err;
   a(); b();
   assert.deepEqual(got, [{ zone: 'G1' }]);
-  assert.equal(EVENTS.length, 23);
+  assert.equal(EVENTS.length, 24); // with life-stir (gloam-downs-screens-life)
   const F = fake(), { A } = busRun(F);
   for (const e of EVENTS) emit(e, {});
   assert.deepEqual(A.view().events.length ? EVENTS.filter(e => !A.heardEvents.includes(e)) : ['none'], []);
   A.off();
-  pass('the bus: a listener that throws does not stop the next one; the run\'s sound subscribes to all 23 events', { events: EVENTS.length });
+  pass('the bus: a listener that throws does not stop the next one; the run\'s sound subscribes to all 24 events', { events: EVENTS.length });
 }
 { // the stingers: beacon then the Lamp-room, death then silence and the Lamp-room 2 s or more later
   const F = fake();
@@ -592,5 +592,45 @@ const swingAt = (S, t, id = 'cut1') => {
   assert(F.S.view().layers.includes('drums') && !F.S.view().layers.includes('strings'), JSON.stringify(F.S.view().layers));
   A.off();
   pass('growth sounds: pattern-found, pattern-kept, pattern-kindled, key-found, ability-ready, spark-take and cache-open play cues that exist; a bomb that misses brings no strings');
+}
+{ /* the sound beds (gloam-downs-screens-life, "Sound beds"): a gust from life.js is heard as a 2 s swell of the wind within 50 ms; a
+     flock's take-off plays wings and caws at the flock; the bed ducks while foes are awake and stops in the boss fight, the
+     Lamp-room and the silence; nothing plays before the context */
+  const { makeBeds, BEDS } = await import('../../public/lab/gloam-downs/beds.js');
+  const log = [], rs = { sound: true, music: true };
+  const A = makeRunSound({ log, rs, step: () => 0, ear: () => ({ x: 0, z: 0, yaw: 0 }) });
+  // before the first press: no bed, and a stir is dropped
+  emit('life-stir', { kind: 'gust', k: 1 });
+  assert.equal(A.view().beds, null);
+  const c = fakeCtx();
+  c.state = 'running'; c.currentTime = 4;
+  A.ctx = c; A.mix = createMix(c); A.beds = makeBeds(c, A.mix, { seed: 7 });
+  A.setScene('place', { id: 'ramparts' });
+  assert(A.beds.on && A.beds.id === 'ramparts');
+  emit('life-stir', { kind: 'gust', k: 0.8 });
+  const sw = A.beds.log.find(e => e.what === 'swell');
+  assert(sw && sw.len === 2 && sw.at - c.currentTime >= 0 && sw.at - c.currentTime <= 0.05, JSON.stringify(A.beds.log));
+  emit('life-stir', { kind: 'crows', x: 6, y: 3, z: 0, n: 4 });
+  const cr = A.beds.log.find(e => e.what === 'crows');
+  assert(cr && cr.n >= 2 && cr.n <= 3 && cr.pan > 0, `the caws at the flock (right of the camera): ${JSON.stringify(cr)}`);
+  emit('foes-alert', { zone: 'R1' });
+  assert(A.beds.ducked, 'the bed did not duck with foes awake');
+  emit('fight-calm');
+  assert(!A.beds.ducked);
+  A.setScene('lamp');
+  assert(!A.beds.on, 'the bed plays in the Lamp-room');
+  A.setScene('place', { id: 'barrows' });
+  emit('boss-intro');
+  assert(!A.beds.on, 'the bed plays in the boss fight');
+  // each place has a wind and its own sparse sounds, each with a recipe
+  for (const [id, B] of Object.entries(BEDS)) { assert(B.wind.f > 0, id); for (const s of B.sparse) assert(A.beds.sounds.includes(s.what), `${id}: ${s.what}`); for (const g of B.gust) assert(A.beds.sounds.includes(g), `${id}: ${g}`); }
+  // sound off: a stir plays nothing
+  A.setScene('place', { id: 'gaol' });
+  rs.sound = false;
+  const n0 = A.beds.log.length;
+  emit('life-stir', { kind: 'gust', k: 1 });
+  assert.equal(A.beds.log.length, n0, 'a gust swelled with Sound off');
+  A.off();
+  pass('the sound beds: a gust swells the wind for 2 s within 50 ms, a flock lifts with wings and caws at it, the bed ducks while foes are awake, stops in the Lamp-room and the boss fight, and stays quiet with Sound off', { swell: sw, crows: cr });
 }
 console.log(`PASS qa/lab/gloam-downs-sound.test.mjs: ${passed} checks`);
