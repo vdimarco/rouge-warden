@@ -219,8 +219,8 @@ export function build(seed) {
   // One skyline quad. Its peaks sit just under the tower top at the spawn camera.
   // Margins outside the block are the clear colour, flat ink, not extruded blocks.
   slices.push(slice(
-    3 * TILE, -1.2 * TILE, 4.8 * TILE,
-    14 * TILE, 2.2 * TILE,
+    3 * TILE, -1.2 * TILE, 3.7 * TILE,
+    14 * TILE, 1.6 * TILE,
     uvOf("backdrop"), 5, 0, -1, true, 2,
   ));
 

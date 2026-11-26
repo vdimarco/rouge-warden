@@ -4,6 +4,8 @@ import { atlasUrl } from "./art/atlas-data.mjs";
 import { createRenderer, lookAt, perspective, mul } from "./render.mjs";
 
 const FOV = 20 * Math.PI / 180;
+// Idle opaque box is 24/16 = 1.5 tiles. Scale the figure to 1.64.
+const RUNNER_SCALE = 1.64 / 1.5 * (1.64 / 1.66);
 // Whole-tile zoom. Ten tiles across is the step that fills a short frame at tilt 55
 // without pushing a ground corner out. Attract sits one tile further back.
 const TILES = 10;
@@ -110,7 +112,7 @@ function camera() {
   const span = Math.abs(Math.cos(yr)) + Math.abs(Math.sin(yr));
   const establishing = !attract && player.y > 4;
   const tiles = portrait
-    ? (attract ? 8.4 : establishing ? 8.2 : 7.25) * span
+    ? (attract ? 8.4 : establishing ? 6 : 7.25) * span
     : (attract ? TILES + 1 : establishing ? 10 : TILES);
   const dist = (tiles * TILE) / (2 * tan * aspect);
   const cx = (attract ? 3 : player.x) * TILE;
@@ -118,7 +120,7 @@ function camera() {
   // At the spawn, aim up the block without pulling the camera back. The runner stays
   // in the lower third. Elsewhere keep the closer camera the width checks were built on.
   const along = attract ? 16 : establishing ? TILE * (portrait ? -2 : -1.875) : 36;
-  const lift = establishing ? TILE * (portrait ? 3.75 : 3.625) : 0;
+  const lift = establishing ? TILE * (portrait ? 4.125 : 3.625) : 0;
   const focus = [cx + Math.sin(yr) * along, lift, cz + Math.cos(yr) * along];
   const cam = [
     focus[0] + Math.cos(tr) * Math.sin(yr) * dist,
@@ -234,8 +236,8 @@ function scene() {
     if (s.kind === 1) {
       s.x = player.x * TILE;
       s.z = player.y * TILE;
-      s.hx = runFr.w * (TILE / 16) / 2;
-      s.hz = runFr.h * (TILE / 16) / 2;
+      s.hx = runFr.w * (TILE / 16) / 2 * RUNNER_SCALE;
+      s.hz = runFr.h * (TILE / 16) / 2 * RUNNER_SCALE;
       s.y = s.hz;
       s.uv = frameUV(runName, facing < 0);
       const yr = yaw * Math.PI / 180;
@@ -541,7 +543,7 @@ window.__test = {
     const name = runnerFrame();
     const box = RUNNER_BOX[name];
     const f = world.frames[name];
-    const px = TILE / 16;
+    const px = TILE / 16 * RUNNER_SCALE;
     const halfW = f.w * px / 2;
     const halfH = f.h * px / 2;
     const cx = player.x * TILE;

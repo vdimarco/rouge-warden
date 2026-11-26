@@ -84,6 +84,11 @@ float ovalShade(vec2 d, float rx, float ry) {
   float e = d.x * d.x / (rx * rx) + d.y * d.y / (ry * ry);
   return e < 1.0 ? 0.78 : 1.0;
 }
+float falloff(vec2 p, vec4 L, float I) {
+  float live = step(0.15, I) * step(0.5, L.w);
+  float r = length(p - L.xz / uTile);
+  return (1.0 - smoothstep(1.0, 2.05, r)) * live;
+}
 
 void main() {
   vec4 t = texture(uAtlas, vUV);
@@ -131,7 +136,7 @@ void main() {
   if (abs(vKind - 11.0) < 0.25) {
     vec3 roof = vec3(74.0, 72.0, 82.0) / 255.0;
     float lip = step(vEdge, 1.0 / 16.0);
-    col = mix(roof, vec3(184.0, 172.0, 148.0) / 255.0, lip);
+    col = mix(roof, vec3(94.0, 91.0, 102.0) / 255.0, lip);
     o = vec4(col, 1.0);
     return;
   }
@@ -174,17 +179,21 @@ void main() {
     shade = min(shade, ovalShade(p - vec2(2.35, 1.2), 0.18, 0.12));
     shade = min(shade, ovalShade(p - vec2(3.55, 4.5), 0.22, 0.14));
     col *= shade;
-    vec3 sum = vec3(0.0);
-    float cover = 0.0;
-    for (int i = 0; i < 8; i++) {
-      float live = step(0.15, uI[i]) * step(0.5, uL[i].w);
-      vec2 d = p - uL[i].xz / uTile;
-      float cheb = max(abs(d.x), abs(d.y));
-      float w = clamp(1.0 - cheb / 1.85, 0.0, 1.0);
-      w = w * w * live;
-      if (w > cover) { cover = w; sum = uC[i].rgb; }
-    }
-    col = mix(col, sum, cover * 0.62);
+    // One soft pool per sign. Full within 1 tile, a faint edge at the 2-tile radius.
+    float w0 = falloff(p, uL[0], uI[0]);
+    float w1 = falloff(p, uL[1], uI[1]);
+    float w2 = falloff(p, uL[2], uI[2]);
+    float w3 = falloff(p, uL[3], uI[3]);
+    float w4 = falloff(p, uL[4], uI[4]);
+    float w5 = falloff(p, uL[5], uI[5]);
+    float cover = w0;
+    vec3 sum = uC[0].rgb;
+    if (w1 > cover) { cover = w1; sum = uC[1].rgb; }
+    if (w2 > cover) { cover = w2; sum = uC[2].rgb; }
+    if (w3 > cover) { cover = w3; sum = uC[3].rgb; }
+    if (w4 > cover) { cover = w4; sum = uC[4].rgb; }
+    if (w5 > cover) { cover = w5; sum = uC[5].rgb; }
+    col = mix(col, sum, cover * 0.5);
   }
   float fade = fadeOf(vSign);
   col = mix(col, mix(dark, col, fade), neon * (1.0 - dim) * (1.0 - wall));
@@ -201,6 +210,12 @@ uniform vec4 uHalo[8];
 uniform vec4 uHaloC[8];
 uniform highp float uTime;
 in vec2 vUV;
+vec3 streak(vec3 col, vec2 pix, vec4 h, vec4 c, float gap, float ground) {
+  float y0 = min(h.y, c.w);
+  float y1 = max(h.y, c.w);
+  float s = step(abs(pix.x - h.x), 0.5) * step(y0, pix.y) * step(pix.y, y1) * gap * step(0.2, h.z);
+  return mix(col, c.rgb, s * ground * 0.35);
+}
 layout(location=0) out vec4 o;
 void main() {
   vec3 col = texture(uAlb, vUV).rgb;
@@ -216,12 +231,12 @@ void main() {
   vec3 ink = vec3(26.0, 26.0, 34.0) / 255.0;
   float ground = step(0.045, length(col - sky)) * step(mx, 0.24) * step(0.06, length(col - ink));
   float gap = 1.0 - step(0.5, mod(pix.y, 2.0));
-  for (int i = 0; i < 8; i++) {
-    float y0 = min(uHalo[i].y, uHaloC[i].w);
-    float y1 = max(uHalo[i].y, uHaloC[i].w);
-    float streak = step(abs(pix.x - uHalo[i].x), 0.5) * step(y0, pix.y) * step(pix.y, y1) * gap * step(0.2, uHalo[i].z);
-    col = mix(col, uHaloC[i].rgb, streak * ground * 0.35);
-  }
+  col = streak(col, pix, uHalo[0], uHaloC[0], gap, ground);
+  col = streak(col, pix, uHalo[1], uHaloC[1], gap, ground);
+  col = streak(col, pix, uHalo[2], uHaloC[2], gap, ground);
+  col = streak(col, pix, uHalo[3], uHaloC[3], gap, ground);
+  col = streak(col, pix, uHalo[4], uHaloC[4], gap, ground);
+  col = streak(col, pix, uHalo[5], uHaloC[5], gap, ground);
   o = vec4(col, 1.0);
 }`;
 
