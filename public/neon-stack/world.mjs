@@ -211,10 +211,11 @@ export function build(seed) {
       const cover = lotH(f.nx, f.ny);
       for (let s = cover; s < storeys; s++) {
         const body = BODY[Math.floor(rand() * BODY.length)];
-        const above = signKey.has(tx + "," + ty) && s >= 2;
+        const above = signKey.has(tx + "," + ty) && s >= 2 && f === faces[0];
         let tex = body;
         if (s === 0 && f.shop) tex = rand() < 0.5 ? "shopfront" : "door";
-        else if (above || lit.has(s) || s === storeys - 1) tex = "wall_lit2";
+        else if (above) tex = "wall_lit2";
+        else if (lit.has(s) || s === storeys - 1) tex = "wall_lit1";
         let uv = uvOf(tex);
         let hx = TILE / 2;
         if (f.flip) { uv = [uv[2], uv[1], uv[0], uv[3]]; hx = -hx; }

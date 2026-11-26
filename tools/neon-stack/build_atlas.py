@@ -25,6 +25,7 @@ PALETTE_HEX = [
     "#3DE0E8",  # 6: 'C' neon cyan
     "#B6F23A",  # 7: 'G' neon acid green
     "#F2A33A",  # 8: 'A' neon amber / lit window / hoodie
+    "#C08A6A",  # 9: 'S' skin, the hood face opening
 ]
 
 CHAR_TO_IDX = {
@@ -37,6 +38,7 @@ CHAR_TO_IDX = {
     "C": 6,
     "G": 7,
     "A": 8,
+    "S": 9,
 }
 
 NEON_INDICES = {5, 6, 7, 8}
@@ -336,7 +338,13 @@ def draw_facades(atlas, frames):
     blit_ascii(atlas, 16, 32, wall_template, {"1": "K", "2": "K", "3": "A", "4": "K", "5": "K", "6": "K"})
     reg("wall_lit1", 16, 32)
 
-    blit_ascii(atlas, 32, 32, wall_template, {"1": "A", "2": "K", "3": "K", "4": "K", "5": "K", "6": "A"})
+    # One row of three texels above a plate. A is lit (#C9853A after the wall pass); K stays dark.
+    row = ["D" * 16] * 16
+    row[0] = "M" * 16
+    row[6] = "DDDDDDAKADDDDDDD"
+    row[7] = "DDDDDDAKADDDDDDD"
+    row[15] = "K" * 16
+    blit_ascii(atlas, 32, 32, row)
     reg("wall_lit2", 32, 32)
 
     door = [
@@ -989,7 +997,7 @@ def draw_heist_pieces(atlas, frames):
 
 def draw_runner(atlas, frames):
     # Hooded thief (~24px tall in 24x32 cell), facing right, NO baked outer outline.
-    # Rounded amber hood, skin-tone (L) face opening, no black visor band, backpack on the back.
+    # Rounded amber hood, #C08A6A face opening, no black visor band, backpack on the back.
 
     runner_idle = [
         "........................",
@@ -999,10 +1007,10 @@ def draw_runner(atlas, frames):
         "......M.................",
         "........AAAAA...........",
         ".......AAAAAAA..........",
-        "......AAALLLLLAA........",
-        "......AAALLLLLLA........",
-        "......AAALLLLLLA........",
-        "......AAALLLLLAA........",
+        "......AAASSSSSAA........",
+        "......AAASSSSSSA........",
+        "......AAASSSSSSA........",
+        "......AAASSSSSAA........",
         "......AAAAAAAA..........",
         ".....MDAAAAAAA..........",
         "....MDDAAAAAAAAM........",
@@ -1034,10 +1042,10 @@ def draw_runner(atlas, frames):
         ".....M..................",
         ".........AAAAA..........",
         "........AAAAAAA.........",
-        ".......AAALLLLLAA.......",
-        ".......AAALLLLLLA.......",
-        ".......AAALLLLLLA.......",
-        ".......AAALLLLLAA.......",
+        ".......AAASSSSSAA.......",
+        ".......AAASSSSSSA.......",
+        ".......AAASSSSSSA.......",
+        ".......AAASSSSSAA.......",
         ".......AAAAAAAA.........",
         ".....MDAAAAAAA..........",
         "....MDDAAAAAAAAM........",
@@ -1068,10 +1076,10 @@ def draw_runner(atlas, frames):
         "......M.................",
         "........AAAAA...........",
         ".......AAAAAAA..........",
-        "......AAALLLLLAA........",
-        "......AAALLLLLLA........",
-        "......AAALLLLLLA........",
-        "......AAALLLLLAA........",
+        "......AAASSSSSAA........",
+        "......AAASSSSSSA........",
+        "......AAASSSSSSA........",
+        "......AAASSSSSAA........",
         "......AAAAAAAA..........",
         ".....MDAAAAAAA..........",
         "....MDDAAAAAAAAM........",
@@ -1104,10 +1112,10 @@ def draw_runner(atlas, frames):
         ".....M..................",
         ".........AAAAA..........",
         "........AAAAAAA.........",
-        ".......AAALLLLLAA.......",
-        ".......AAALLLLLLA.......",
-        ".......AAALLLLLLA.......",
-        ".......AAALLLLLAA.......",
+        ".......AAASSSSSAA.......",
+        ".......AAASSSSSSA.......",
+        ".......AAASSSSSSA.......",
+        ".......AAASSSSSAA.......",
         ".......AAAAAAAA.........",
         ".....MDAAAAAAA..........",
         "....MDDAAAAAAAAM........",
@@ -1138,10 +1146,10 @@ def draw_runner(atlas, frames):
         "......M.................",
         "........AAAAA...........",
         ".......AAAAAAA..........",
-        "......AAALLLLLAA........",
-        "......AAALLLLLLA........",
-        "......AAALLLLLLA........",
-        "......AAALLLLLAA........",
+        "......AAASSSSSAA........",
+        "......AAASSSSSSA........",
+        "......AAASSSSSSA........",
+        "......AAASSSSSAA........",
         "......AAAAAAAA..........",
         ".....MDAAAAAAA..........",
         "....MDDAAAAAAAAM........",
@@ -1181,10 +1189,10 @@ def draw_runner(atlas, frames):
         ".....M..................",
         ".........AAAAA..........",
         "........AAAAAAA.........",
-        ".......AAALLLLLAA.......",
-        ".......AAALLLLLLA.......",
-        ".....MDAAALLLLLLA.......",
-        "....MDDAAALLLLLAA.......",
+        ".......AAASSSSSAA.......",
+        ".......AAASSSSSSA.......",
+        ".....MDAAASSSSSSA.......",
+        "....MDDAAASSSSSAA.......",
         "....MDDAAAAAAAA.........",
         "....MDDAAAAAAAAM........",
         "....MDDADDDDDD..........",
@@ -1209,10 +1217,10 @@ def draw_runner(atlas, frames):
         "......M.................",
         "........AAAAA...........",
         ".......AAAAAAA..........",
-        "......AAALLLLLAA........",
-        "......AAALLLLLLA........",
-        "......AAALLLLLLA........",
-        "......AAALLLLLAA........",
+        "......AAASSSSSAA........",
+        "......AAASSSSSSA........",
+        "......AAASSSSSSA........",
+        "......AAASSSSSAA........",
         "......AAAAAAAA..........",
         ".....MDAAAAAAA..........",
         "....MDDAAAAAAAAAAMM.DDD.",
@@ -1244,10 +1252,10 @@ def draw_runner(atlas, frames):
         ".....M..................",
         ".......AAAAA............",
         "......AAAAAAA...........",
-        ".....AAALLLLLAA.........",
-        ".....AAALLLLLLA.........",
-        ".....AAALLLLLLA.........",
-        ".....AAALLLLLAA.........",
+        ".....AAASSSSSAA.........",
+        ".....AAASSSSSSA.........",
+        ".....AAASSSSSSA.........",
+        ".....AAASSSSSAA.........",
         ".....AAAAAAAA...........",
         "....MDAAAAAAA......M....",
         "...MDDAAAAAAAAA...MM....",
@@ -1605,10 +1613,10 @@ def verify_outputs(atlas, atlas_path, frames):
     assert size_bytes <= 200 * 1024, f"File too large: {size_bytes} bytes"
 
     used_indices = set(atlas.get_flattened_data())
-    assert used_indices.issubset(set(range(9))), f"Unexpected palette indices: {used_indices - set(range(9))}"
+    assert used_indices.issubset(set(range(len(PALETTE_RGB)))), f"Unexpected palette indices: {used_indices - set(range(len(PALETTE_RGB)))}"
 
     pal = atlas.getpalette()
-    for i in range(1, 9):
+    for i in range(1, len(PALETTE_RGB)):
         got = tuple(pal[i * 3 : i * 3 + 3])
         exp = PALETTE_RGB[i]
         assert got == exp, f"Palette index {i} mismatch: {got} != {exp}"
