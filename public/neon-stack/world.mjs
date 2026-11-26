@@ -5,6 +5,11 @@ import frames from "./art/neon-atlas.json" with { type: "json" };
 
 export const TILE = 32;
 export const GRID = 6;
+// East edge of the street at tile (3.5, 2.5). One tile wide along the street, 1.4 tall.
+export const MACHINE = { x: 3.82, y: 2.5, hx: 0.18, hz: 0.5, h: 1.4 };
+export function hitsMachine(x, y) {
+  return Math.abs(x - MACHINE.x) < MACHINE.hx + 0.15 && Math.abs(y - MACHINE.y) < MACHINE.hz + 0.15;
+}
 const ATLAS = 1024;
 const PX = TILE / 16;
 
@@ -46,6 +51,35 @@ function uvOf(name) {
 
 function slice(x, z, y, hx, hz, uv, kind, sign, bid, low, orient) {
   return { x, z, y, hx, hz, uv, kind, sign, bid, low, orient: orient || 0 };
+}
+
+export function hackStep(state, dt, holding) {
+  const flash = state.flash || 0;
+  const cool = state.cool || 0;
+  const held = state.held || 0;
+  if (flash > 0) {
+    const left = Math.max(0, flash - dt);
+    return { held: 0, flash: left, cool: left === 0 ? 10 : 0 };
+  }
+  if (cool > 0) return { held: 0, flash: 0, cool: Math.max(0, cool - dt) };
+  if (!holding) return { held: 0, flash: 0, cool: 0 };
+  const next = held + dt;
+  if (next >= 1) return { held: 0, flash: 4, cool: 0 };
+  return { held: next, flash: 0, cool: 0 };
+}
+
+export function rayHits(x0, z0, x1, z1, box) {
+  const dx = x1 - x0, dz = z1 - z0;
+  let t0 = 0, t1 = 1;
+  const slabs = [[dx, x0, box.x - box.hx, box.x + box.hx], [dz, z0, box.z - box.hz, box.z + box.hz]];
+  for (const [d, o, min, max] of slabs) {
+    if (Math.abs(d) < 1e-8) { if (o < min || o > max) return false; continue; }
+    let a = (min - o) / d, b = (max - o) / d;
+    if (a > b) { const s = a; a = b; b = s; }
+    t0 = Math.max(t0, a); t1 = Math.min(t1, b);
+    if (t0 > t1) return false;
+  }
+  return true;
 }
 
 export function pathfind(blocked, x0, y0, x1, y1) {
@@ -144,43 +178,47 @@ export function build(seed) {
     if (name === "ac_unit" && ++ac > 6) name = rand() < 0.5 ? "water_tank" : "antenna";
     propNames.push(name);
   }
+  const lotH = (ax, ay) => {
+    for (let i = 0; i < lots.length; i++) if (lots[i][0] === ax && lots[i][1] === ay) return lots[i][2];
+    return 0;
+  };
   lots.forEach(([tx, ty, storeys], bi) => {
     blocked[tx][ty] = true;
     const x = (tx + 0.5) * TILE;
     const z = (ty + 0.5) * TILE;
     const b = { tx, ty, h: storeys, x, z, hx: TILE / 2 - 0.5, hz: TILE / 2 - 0.5, prop: propNames[bi] };
     buildings.push(b);
-    const southOpen = ty + 1 >= GRID || !lots.some(([a, c]) => a === tx && c === ty + 1);
-    const eastOpen = tx + 1 >= GRID || !lots.some(([a, c]) => a === tx + 1 && c === ty);
-    const westOpen = tx - 1 < 0 || !lots.some(([a, c]) => a === tx - 1 && c === ty);
     const streetEast = tx < 3;
     const windows = Math.min(storeys, 2);
     const lit = new Set();
     while (lit.size < windows) lit.add(Math.floor(rand() * storeys));
     const tint = bi % 3;
     const wallKind = (s) => 8 + tint * 0.03 + (storeys === 1 || s === storeys - 1 ? 0.02 : s === 0 ? 0.01 : 0);
-    for (let s = 0; s < storeys; s++) {
-      const y = (s + 0.5) * TILE;
-      const body = BODY[Math.floor(rand() * BODY.length)];
-      const shop = rand() < 0.5 ? "shopfront" : "door";
-      const above = signKey.has(tx + "," + ty) && s >= 2;
-      const win = above ? "wall_lit2" : (lit.has(s) && tx !== 4 ? "wall_lit2" : body);
-      const southTex = s === 0 ? shop : (above ? "wall_lit2" : body);
-      const wk = wallKind(s);
-      if (southOpen) {
-        slices.push(slice(x, (ty + 1) * TILE - 0.8, y, TILE / 2, TILE / 2, uvOf(southTex), wk, 0.2, bi, s === 0, 2));
-      }
-      if (streetEast && eastOpen) {
-        slices.push(slice((tx + 1) * TILE - 0.8, z, y, TILE / 2, TILE / 2, uvOf(s === 0 ? shop : win), wk, 0.2, bi, s === 0, 1));
-      }
-      if (!streetEast && westOpen) {
-        slices.push(slice(tx * TILE + 0.8, z, y, TILE / 2, TILE / 2, uvOf(s === 0 ? shop : win), wk, 0.2, bi, s === 0, 1));
-      }
-      if (!streetEast && eastOpen && s > 0) slices.push(slice((tx + 1) * TILE - 0.8, z, y, TILE / 2, TILE / 2, uvOf(above ? "wall_lit2" : body), wk, 0, bi, false, 1));
-      if (streetEast && westOpen && s > 0) slices.push(slice(tx * TILE + 0.8, z, y, TILE / 2, TILE / 2, uvOf(above ? "wall_lit2" : body), wk, 0, bi, false, 1));
-      if (s === 0 && !(streetEast ? eastOpen : westOpen)) {
-        if (westOpen) slices.push(slice(tx * TILE + 0.8, z, y, TILE / 2, TILE / 2, uvOf(shop), wk, 0.2, bi, true, 1));
-        else if (eastOpen) slices.push(slice((tx + 1) * TILE - 0.8, z, y, TILE / 2, TILE / 2, uvOf(shop), wk, 0.2, bi, true, 1));
+    // Orient 2 faces +Z when hx > 0. Orient 1 faces -X when hx > 0. East and north
+    // flip hx so the front face points outward and back-face culling keeps it.
+    const faces = [
+      { nx: tx, ny: ty + 1, px: x, pz: (ty + 1) * TILE - 0.8, orient: 2, flip: false, shop: true },
+      { nx: tx, ny: ty - 1, px: x, pz: ty * TILE + 0.8, orient: 2, flip: true, shop: false },
+      { nx: tx + 1, ny: ty, px: (tx + 1) * TILE - 0.8, pz: z, orient: 1, flip: true, shop: streetEast },
+      { nx: tx - 1, ny: ty, px: tx * TILE + 0.8, pz: z, orient: 1, flip: false, shop: !streetEast },
+    ];
+    const street = streetEast ? faces[2] : faces[3];
+    if (lotH(street.nx, street.ny) > 0) {
+      const outer = streetEast ? faces[3] : faces[2];
+      if (lotH(outer.nx, outer.ny) === 0) outer.shop = true;
+    }
+    for (const f of faces) {
+      const cover = lotH(f.nx, f.ny);
+      for (let s = cover; s < storeys; s++) {
+        const body = BODY[Math.floor(rand() * BODY.length)];
+        const above = signKey.has(tx + "," + ty) && s >= 2;
+        let tex = body;
+        if (s === 0 && f.shop) tex = rand() < 0.5 ? "shopfront" : "door";
+        else if (above || lit.has(s) || s === storeys - 1) tex = "wall_lit2";
+        let uv = uvOf(tex);
+        let hx = TILE / 2;
+        if (f.flip) { uv = [uv[2], uv[1], uv[0], uv[3]]; hx = -hx; }
+        slices.push(slice(f.px, f.pz, (s + 0.5) * TILE, hx, TILE / 2, uv, wallKind(s), 0, bi, s === 0, f.orient));
       }
     }
     slices.push(slice(x, z, storeys * TILE, TILE / 2, TILE / 2, uvOf("roof_cap"), 11, 0, bi, false, 0));
@@ -196,6 +234,48 @@ export function build(seed) {
       if (tx === 1 || tx === 4) addProp("water_tank", 6, 3);
     }
   });
+
+  // Dark filler, 3 lots deep, outside the walkable grid. One quad per exposed face.
+  // The south band stays short so the spawn camera still sees the street.
+  const depth = 3;
+  const tall = new Map();
+  const cells = [];
+  for (let ty = -depth; ty < GRID + depth; ty++) for (let tx = -depth; tx < GRID + depth; tx++) {
+    if (tx >= 0 && ty >= 0 && tx < GRID && ty < GRID) continue;
+    if (tx < -2 || tx >= GRID + 2) continue;
+    let h = 14 + ((Math.abs(tx * 5 + ty * 3) + (tx & 3) + (ty & 3)) & 3);
+    if (tx < 0 || tx >= GRID) h = 12 + (Math.abs(tx + ty) & 1);
+    if (ty < 0 && tx >= 0 && tx < GRID) h = 26 + (Math.abs(tx) & 3);
+    if (ty >= GRID && tx >= 0 && tx < GRID) h = 1 + (Math.abs(tx) & 1);
+    tall.set(tx + "," + ty, h);
+    cells.push([tx, ty, h]);
+  }
+  const coverOf = (ax, ay) => (tall.has(ax + "," + ay) ? tall.get(ax + "," + ay) : lotH(ax, ay));
+  const pushFace = (tx, ty, face, y0, y1, tex, nudge, sign) => {
+    const cx = (tx + 0.5) * TILE;
+    const cz = (ty + 0.5) * TILE;
+    let px = cx, pz = cz, orient = 2, hx = TILE / 2, uv = uvOf(tex);
+    if (face === "s") pz = (ty + 1) * TILE;
+    else if (face === "n") { pz = ty * TILE; hx = -hx; uv = [uv[2], uv[1], uv[0], uv[3]]; }
+    else if (face === "e") { px = (tx + 1) * TILE; orient = 1; hx = -hx; uv = [uv[2], uv[1], uv[0], uv[3]]; }
+    else { px = tx * TILE; orient = 1; }
+    if (nudge) {
+      if (face === "s") pz += nudge;
+      else if (face === "n") pz -= nudge;
+      else if (face === "e") px += nudge;
+      else px -= nudge;
+    }
+    slices.push(slice(px, pz, (y0 + y1) / 2, hx, (y1 - y0) / 2, uv, 8, sign, -1, false, orient));
+  };
+  for (const [tx, ty, h] of cells) {
+    for (const face of ["s", "n", "e", "w"]) {
+      const nxy = face === "s" ? [tx, ty + 1] : face === "n" ? [tx, ty - 1] : face === "e" ? [tx + 1, ty] : [tx - 1, ty];
+      const nH = coverOf(nxy[0], nxy[1]);
+      if (nH >= h) continue;
+      pushFace(tx, ty, face, nH * TILE, h * TILE, "wall_dark", 0, nH - h);
+    }
+    slices.push(slice((tx + 0.5) * TILE, (ty + 0.5) * TILE, h * TILE, TILE / 2, TILE / 2, uvOf("roof_cap"), 11, 0, -1, false, 0));
+  }
 
   // Street and sidewalks. Outside the block the ground is the clear colour, #1A1A22.
   const gy0 = -2, gy1 = GRID + 16;
@@ -216,7 +296,6 @@ export function build(seed) {
   }
 
   // One skyline quad. Its width is fitted to the frame each orientation.
-  // Margins outside the block are the clear colour, flat ink, not extruded blocks.
   slices.push(slice(
     3 * TILE, -1.2 * TILE, 3.7 * TILE,
     14 * TILE, 1.6 * TILE,
@@ -277,6 +356,20 @@ export function build(seed) {
   const runner = frames.frames.runner_idle;
   slices.push(slice(0, 0, runner.h * PX / 2, runner.w * PX / 2, runner.h * PX / 2, uvOf("runner_idle"), 1, 0, -1, true, 2));
 
+  // Corridor machine on the east edge of the street. Column 2 stays open.
+  const mx = MACHINE.x * TILE, mz = MACHINE.y * TILE, mh = MACHINE.h * TILE;
+  const boxX = MACHINE.hx * TILE, boxZ = MACHINE.hz * TILE;
+  const face = (px, pz, y, hx, hz, orient, kind, sign) => {
+    slices.push(slice(px, pz, y, hx, hz, uvOf("wall_dark"), kind, sign, -1, true, orient));
+  };
+  face(mx, mz + boxZ, mh / 2, boxX, mh / 2, 2, 14, 0);
+  face(mx, mz - boxZ, mh / 2, -boxX, mh / 2, 2, 14, 0);
+  face(mx + boxX, mz, mh / 2, -boxZ, mh / 2, 1, 14, 0);
+  face(mx - boxX, mz, mh / 2, boxZ, mh / 2, 1, 14, 0);
+  slices.push(slice(mx, mz, mh, boxX, boxZ, uvOf("wall_dark"), 14, 0, -1, true, 0));
+  face(mx, mz + boxZ + 0.35, mh * 0.58, boxX * 0.72, mh * 0.34, 2, 15, 0);
+  face(mx, mz + boxZ + 0.7, mh * 0.58, boxX * 0.5, mh * 0.22, 2, 16, 0);
+
   return {
     seed: Number(seed) || 1,
     frames: frames.frames,
@@ -287,5 +380,6 @@ export function build(seed) {
     signs: signMeta,
     spawn: { x: 2.5, y: 5.2 },
     goals: { exit: { x: 0.5, y: 4.5 }, terminal: { x: 2.5, y: 0.5 } },
+    machine: { x: mx, z: mz, hx: boxX, hz: boxZ },
   };
 }

@@ -87,7 +87,8 @@ float ovalShade(vec2 d, float rx, float ry) {
 float falloff(vec2 p, vec4 L, float I) {
   float live = step(0.15, I) * step(0.5, L.w);
   float r = length(p - L.xz / uTile);
-  return (1.0 - smoothstep(1.0, 2.0, r)) * live;
+  float u = clamp(r / 2.0, 0.0, 1.0);
+  return pow(1.0 - u, 0.55) * live;
 }
 
 void main() {
@@ -158,6 +159,13 @@ void main() {
     o = vec4(col, 1.0);
     return;
   }
+  if (abs(vKind - 14.0) < 0.25) { o = vec4(vec3(43.0, 42.0, 51.0) / 255.0, 1.0); return; }
+  if (abs(vKind - 15.0) < 0.25) { o = vec4(vec3(74.0, 72.0, 82.0) / 255.0, 1.0); return; }
+  if (abs(vKind - 16.0) < 0.25) {
+    vec3 hot = vec3(255.0, 170.0, 24.0) / 255.0;
+    o = vec4(mix(vec3(242.0, 163.0, 58.0) / 255.0, hot, clamp(vSign, 0.0, 1.0)), 1.0);
+    return;
+  }
   if (abs(vKind - 7.0) < 0.25) {
     int i = int(clamp(vSign - 0.5, 0.0, 6.0));
     col = mix(col, uC[i].rgb, 0.4 * fadeOf(vSign));
@@ -166,6 +174,16 @@ void main() {
   }
   float wall = step(abs(vKind - 8.0), 0.25);
   if (wall > 0.5 && !(t.r > 0.55 && t.g > 0.25 && t.b < 0.45 && t.r > t.b + 0.25)) {
+    if (vSign < 0.0) {
+      float row = fract(vW.y / uTile);
+      float colu = fract((vW.x + vW.z) / uTile);
+      float pane = step(0.25, colu) * step(colu, 0.42) + step(0.58, colu) * step(colu, 0.75);
+      float band = step(0.40, row) * step(row, 0.70);
+      float lit = step(0.5, fract(floor(vW.y / uTile) * 0.37 + floor((vW.x + vW.z) / uTile) * 0.17));
+      col = band * pane * lit > 0.5 ? vec3(201.0, 133.0, 58.0) / 255.0 : vec3(43.0, 42.0, 51.0) / 255.0;
+      o = vec4(col, 1.0);
+      return;
+    } else {
     float kd = vKind - 8.0;
     float tint = floor(kd / 0.03 + 0.001);
     float rem = mod(kd + 0.0001, 0.03);
@@ -181,6 +199,7 @@ void main() {
     dyed *= lum / max(0.001, dot(dyed, vec3(0.299, 0.587, 0.114)));
     // 0.92 keeps a bottom storey darker than the street face and still 12 levels above ink.
     col = top > 0.5 ? dyed : mix(dyed, dyed * 0.92, bottom);
+    }
   }
   float dim = step(abs(vKind - 4.0), 0.25);
   col = mix(col, col * 0.38, dim);
@@ -204,10 +223,11 @@ void main() {
     float w3 = falloff(p, uL[3], uI[3]);
     float w4 = falloff(p, uL[4], uI[4]);
     float w5 = falloff(p, uL[5], uI[5]);
+    float w6 = (1.0 - smoothstep(0.0, 1.0, length(p - uL[6].xz / uTile))) * step(0.15, uI[6]) * step(0.5, uL[6].w);
     vec3 glow = uC[0].rgb * w0 + uC[1].rgb * w1 + uC[2].rgb * w2
-      + uC[3].rgb * w3 + uC[4].rgb * w4 + uC[5].rgb * w5;
-    float cover = min(1.0, w0 + w1 + w2 + w3 + w4 + w5);
-    col = mix(col, clamp(glow, 0.0, 1.0), cover * 0.3);
+      + uC[3].rgb * w3 + uC[4].rgb * w4 + uC[5].rgb * w5 + uC[6].rgb * w6;
+    float cover = min(1.0, w0 + w1 + w2 + w3 + w4 + w5 + w6);
+    col = mix(col, clamp(glow, 0.0, 1.0), cover * 0.62);
   }
   float fade = fadeOf(vSign);
   col = mix(col, mix(dark, col, fade), neon * (1.0 - dim) * (1.0 - wall));
@@ -239,7 +259,10 @@ void main() {
     vec2 d = pix - uDrop[i];
     rain = max(rain, step(0.0, d.x) * step(d.x, 2.01) * step(abs(d.y + d.x), 0.1));
   }
-  col = mix(col, uSmog, rain * 0.4);
+  float amber = step(abs(col.r - 201.0 / 255.0), 18.0 / 255.0);
+  amber *= step(abs(col.g - 139.0 / 255.0), 18.0 / 255.0);
+  amber *= step(abs(col.b - 60.0 / 255.0), 18.0 / 255.0);
+  col = mix(col, uSmog, rain * 0.4 * (1.0 - amber));
   float mx = max(col.r, max(col.g, col.b));
   vec3 sky = vec3(14.0, 16.0, 32.0) / 255.0;
   vec3 ink = vec3(26.0, 26.0, 34.0) / 255.0;
@@ -550,7 +573,8 @@ export function createRenderer(canvas) {
     const { artW, artH, scale, ox, oy, backW, backH } = api.view;
     const count = upload(scene.slices);
     gl.disable(gl.BLEND);
-    gl.disable(gl.CULL_FACE);
+    gl.enable(gl.CULL_FACE);
+    gl.cullFace(gl.BACK);
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LESS);
     gl.depthMask(true);

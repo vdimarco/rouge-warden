@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """
 Procedural pixel-art texture atlas generator for Neon Stack.
-Outputs to /workspace/art/neon-stack/:
-  - neon-atlas.png  (1024x1024 indexed PNG, <= 200 KB, strict 8-colour + alpha palette)
-  - neon-atlas.json ({"tile": 16, "frames": {name: {x, y, w, h}}})
-  - atlas-preview.png (2x nearest-neighbour atlas + 390px-wide mock heist scene)
+Writes neon-atlas.json next to the game. The shipped pixels stay in atlas-data.mjs.
+Does not write neon-atlas.png or a preview under public/.
 """
 
+import base64
 import json
+import os
+import tempfile
 from pathlib import Path
 from PIL import Image, ImageDraw
 
@@ -988,7 +989,7 @@ def draw_heist_pieces(atlas, frames):
 
 def draw_runner(atlas, frames):
     # Hooded thief (~24px tall in 24x32 cell), facing right, NO baked outer outline.
-    # Two distinct cyan visor eyes (KCKCK) inside dark hood opening, backpack with M highlight & 1px antenna.
+    # Rounded amber hood, skin-tone (L) face opening, no black visor band, backpack on the back.
 
     runner_idle = [
         "........................",
@@ -998,10 +999,10 @@ def draw_runner(atlas, frames):
         "......M.................",
         "........AAAAA...........",
         ".......AAAAAAA..........",
-        "......AAAKKKKKAA........",
-        "......AAAKCKCKKA........",
-        "......AAAKKKKKKA........",
-        "......AAAKKKKKAA........",
+        "......AAALLLLLAA........",
+        "......AAALLLLLLA........",
+        "......AAALLLLLLA........",
+        "......AAALLLLLAA........",
         "......AAAAAAAA..........",
         ".....MDAAAAAAA..........",
         "....MDDAAAAAAAAM........",
@@ -1033,10 +1034,10 @@ def draw_runner(atlas, frames):
         ".....M..................",
         ".........AAAAA..........",
         "........AAAAAAA.........",
-        ".......AAAKKKKKAA.......",
-        ".......AAAKCKCKKA.......",
-        ".......AAAKKKKKKA.......",
-        ".......AAAKKKKKAA.......",
+        ".......AAALLLLLAA.......",
+        ".......AAALLLLLLA.......",
+        ".......AAALLLLLLA.......",
+        ".......AAALLLLLAA.......",
         ".......AAAAAAAA.........",
         ".....MDAAAAAAA..........",
         "....MDDAAAAAAAAM........",
@@ -1067,10 +1068,10 @@ def draw_runner(atlas, frames):
         "......M.................",
         "........AAAAA...........",
         ".......AAAAAAA..........",
-        "......AAAKKKKKAA........",
-        "......AAAKCKCKKA........",
-        "......AAAKKKKKKA........",
-        "......AAAKKKKKAA........",
+        "......AAALLLLLAA........",
+        "......AAALLLLLLA........",
+        "......AAALLLLLLA........",
+        "......AAALLLLLAA........",
         "......AAAAAAAA..........",
         ".....MDAAAAAAA..........",
         "....MDDAAAAAAAAM........",
@@ -1103,10 +1104,10 @@ def draw_runner(atlas, frames):
         ".....M..................",
         ".........AAAAA..........",
         "........AAAAAAA.........",
-        ".......AAAKKKKKAA.......",
-        ".......AAAKCKCKKA.......",
-        ".......AAAKKKKKKA.......",
-        ".......AAAKKKKKAA.......",
+        ".......AAALLLLLAA.......",
+        ".......AAALLLLLLA.......",
+        ".......AAALLLLLLA.......",
+        ".......AAALLLLLAA.......",
         ".......AAAAAAAA.........",
         ".....MDAAAAAAA..........",
         "....MDDAAAAAAAAM........",
@@ -1137,10 +1138,10 @@ def draw_runner(atlas, frames):
         "......M.................",
         "........AAAAA...........",
         ".......AAAAAAA..........",
-        "......AAAKKKKKAA........",
-        "......AAAKCKCKKA........",
-        "......AAAKKKKKKA........",
-        "......AAAKKKKKAA........",
+        "......AAALLLLLAA........",
+        "......AAALLLLLLA........",
+        "......AAALLLLLLA........",
+        "......AAALLLLLAA........",
         "......AAAAAAAA..........",
         ".....MDAAAAAAA..........",
         "....MDDAAAAAAAAM........",
@@ -1180,10 +1181,10 @@ def draw_runner(atlas, frames):
         ".....M..................",
         ".........AAAAA..........",
         "........AAAAAAA.........",
-        ".......AAAKKKKKAA.......",
-        ".......AAAKCKCKKA.......",
-        ".....MDAAAKKKKKKA.......",
-        "....MDDAAAKKKKKAA.......",
+        ".......AAALLLLLAA.......",
+        ".......AAALLLLLLA.......",
+        ".....MDAAALLLLLLA.......",
+        "....MDDAAALLLLLAA.......",
         "....MDDAAAAAAAA.........",
         "....MDDAAAAAAAAM........",
         "....MDDADDDDDD..........",
@@ -1208,10 +1209,10 @@ def draw_runner(atlas, frames):
         "......M.................",
         "........AAAAA...........",
         ".......AAAAAAA..........",
-        "......AAAKKKKKAA........",
-        "......AAAKCKCKKA........",
-        "......AAAKKKKKKA........",
-        "......AAAKKKKKAA........",
+        "......AAALLLLLAA........",
+        "......AAALLLLLLA........",
+        "......AAALLLLLLA........",
+        "......AAALLLLLAA........",
         "......AAAAAAAA..........",
         ".....MDAAAAAAA..........",
         "....MDDAAAAAAAAAAMM.DDD.",
@@ -1243,10 +1244,10 @@ def draw_runner(atlas, frames):
         ".....M..................",
         ".......AAAAA............",
         "......AAAAAAA...........",
-        ".....AAAKKKKKAA.........",
-        ".....AAAKCKCKKA.........",
-        ".....AAAKCKCKKA.........",
-        ".....AAAKKKKKAA.........",
+        ".....AAALLLLLAA.........",
+        ".....AAALLLLLLA.........",
+        ".....AAALLLLLLA.........",
+        ".....AAALLLLLAA.........",
         ".....AAAAAAAA...........",
         "....MDAAAAAAA......M....",
         "...MDDAAAAAAAAA...MM....",
@@ -1650,23 +1651,26 @@ def main():
     draw_runner(atlas, frames)
     draw_backdrop(atlas, frames)
 
-    atlas_path = OUT_DIR / "neon-atlas.png"
+    # The shipped atlas is art/atlas-data.mjs. This tool must not write a PNG under public/.
     json_path = OUT_DIR / "neon-atlas.json"
-    preview_path = OUT_DIR / "atlas-preview.png"
-
-    atlas.save(atlas_path, format="PNG", optimize=True, transparency=0)
+    public_png = OUT_DIR / "neon-atlas.png"
+    with tempfile.TemporaryDirectory() as tmp:
+        atlas_path = Path(tmp) / "neon-atlas.png"
+        atlas.save(atlas_path, format="PNG", optimize=True, transparency=0)
+        size_bytes, frame_count = verify_outputs(atlas, atlas_path, frames)
+        if os.environ.get("WRITE_ATLAS_DATA"):
+            data = base64.b64encode(atlas_path.read_bytes()).decode("ascii")
+            out = OUT_DIR / "atlas-data.mjs"
+            out.write_text('export const atlasUrl = "data:image/png;base64,' + data + '";\n')
+            print(f"Saved {out}")
     with open(json_path, "w") as f:
         json.dump({"tile": 16, "frames": frames}, f, indent=2)
         f.write("\n")
-
-    size_bytes, frame_count = verify_outputs(atlas, atlas_path, frames)
-
-    preview = build_preview(atlas, frames)
-    preview.save(preview_path, format="PNG", optimize=True)
-
-    print(f"Saved {atlas_path} ({size_bytes / 1024:.2f} KB, {frame_count} frames)")
+    if public_png.exists():
+        raise SystemExit(f"refusing to leave {public_png}")
+    print(f"Checked atlas in memory ({size_bytes / 1024:.2f} KB, {frame_count} frames)")
     print(f"Saved {json_path}")
-    print(f"Saved {preview_path} ({preview.size[0]}x{preview.size[1]})")
+    print(f"Did not write {public_png}")
 
 
 if __name__ == "__main__":

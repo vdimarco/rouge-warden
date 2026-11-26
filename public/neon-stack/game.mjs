@@ -1,5 +1,5 @@
 // Neon Stack: one loop, plain objects, camera snapped once per frame.
-import { TILE, build, pathfind, RUNNER_BOX } from "./world.mjs";
+import { TILE, build, pathfind, RUNNER_BOX, hackStep, rayHits, hitsMachine } from "./world.mjs";
 import { atlasUrl } from "./art/atlas-data.mjs";
 import { createRenderer, lookAt, perspective, mul } from "./render.mjs";
 
@@ -49,6 +49,8 @@ let ready = false;
 const dpr0 = window.devicePixelRatio || 1;
 let ratio = Math.min(dpr0, 1.5);
 let cool = 0;
+let hack = { held: 0, flash: 0, cool: 0 };
+let holding = false;
 let warmed = 0;
 const drops = new Float32Array(120);
 for (let i = 0; i < 60; i++) {
@@ -131,7 +133,7 @@ function placeSky(cam, focus, fov, aspect) {
 function solid(tx, ty) {
   return tx < 0 || ty < 0 || tx >= 6 || ty >= 6 || world.blocked[tx][ty];
 }
-function free(x, y) { return !solid(Math.floor(x), Math.floor(y)); }
+function free(x, y) { return !solid(Math.floor(x), Math.floor(y)) && !hitsMachine(x, y); }
 function viewDelta(mx, my) {
   // A shallow camera squashes screen-up. Stretch that axis by 1/sin(tilt)
   // before turning it into a ground direction, so a screen diagonal stays one.
@@ -164,6 +166,15 @@ function hits(ax, az, bx, bz, box) {
   return true;
 }
 let lastCam = [0, 0, 0];
+for (const s of world.slices) s.uv0 = s.uv.slice();
+// Orient 2 fronts +Z and orient 1 fronts -X when hx is positive. Flip the
+// winding when the camera is on the other side so culling keeps the billboard.
+function aim(s, cam, uv) {
+  const o = s.orient || 0;
+  const back = o >= 1.5 ? cam[2] < s.z : o > 0.5 && cam[0] > s.x;
+  s.hx = (back ? -1 : 1) * Math.abs(s.hx);
+  s.uv = back ? [uv[2], uv[1], uv[0], uv[3]] : uv;
+}
 let shownOutline = { on: 0, colour: [0, 0, 0] };
 function camera() {
   const tr = tilt * Math.PI / 180;
@@ -236,17 +247,26 @@ function planes(dist) {
   // The band stays tight enough that a 1-unit slice gap does not z-fight.
   return [Math.max(0.5, dist * 0.06), dist * 3.4];
 }
-function walkAt(clientX, clientY) {
+function groundAt(clientX, clientY) {
   const rect = canvas.getBoundingClientRect();
   const { ox, oy, scale, artW, artH, backH } = renderer.view;
   const bx = (clientX - rect.left) * (canvas.width / rect.width);
   const byTop = (clientY - rect.top) * (canvas.height / rect.height);
   const ax = (bx - ox) / scale;
   const ay = artH - ((backH - byTop) - oy) / scale;
-  if (ax < 0 || ay < 0 || ax >= artW || ay >= artH) return;
+  if (ax < 0 || ay < 0 || ax >= artW || ay >= artH) return null;
   const hit = renderer.unproject(ax, ay);
+  if (!hit) return null;
+  return [hit[0] / TILE, hit[1] / TILE];
+}
+function onMachine(clientX, clientY) {
+  const hit = groundAt(clientX, clientY);
+  return !!hit && hit[0] >= 3 && hit[0] < 4 && hit[1] >= 2 && hit[1] < 3;
+}
+function walkAt(clientX, clientY) {
+  const hit = groundAt(clientX, clientY);
   if (!hit) return;
-  route = pathfind((x, y) => solid(x, y), player.x, player.y, hit[0] / TILE, hit[1] / TILE);
+  route = pathfind((x, y) => solid(x, y), player.x, player.y, hit[0], hit[1]);
 }
 function lightsNow() {
   const out = world.lights.map((l) => ({ ...l }));
@@ -290,7 +310,7 @@ function scene() {
   const view = lookAt(cam, focus, [0, 1, 0]);
   const proj = perspective(renderer.view.artH > renderer.view.artW ? FOV_PORTRAIT : FOV_LAND, renderer.view.artW / renderer.view.artH, near, far);
   const cuts = new Set();
-  if (cutaway) {
+  if (cutaway && !rayHits(cam[0], cam[2], player.x * TILE, player.y * TILE, world.machine)) {
     const px = player.x * TILE, pz = player.y * TILE;
     world.buildings.forEach((b, i) => { if (hits(cam[0], cam[2], px, pz, b)) cuts.add(i); });
   }
@@ -309,6 +329,7 @@ function scene() {
       s.uv = frameUV(runName, facing < 0);
       const yr = yaw * Math.PI / 180;
       s.orient = Math.abs(Math.sin(yr)) > Math.abs(Math.cos(yr)) ? 1 : 2;
+      aim(s, cam, s.uv);
       runner.push(s);
     } else if (s.kind === 3 && s.sign >= 1) {
       const meta = world.signs[s.sign - 1];
@@ -317,6 +338,7 @@ function scene() {
       if (s.bid < 0 || !cuts.has(s.bid) || s.low) rest.push(s);
     } else if (s.kind === 6) {
       s.uv = frameUV("steam_vent_" + (Math.floor(time * 8) % 4), false);
+      aim(s, cam, s.uv);
       rest.push(s);
     } else if (s.kind === 5) {
       const placed = placeSky(cam, focus, portrait ? FOV_PORTRAIT : FOV_LAND, aspect);
@@ -331,8 +353,13 @@ function scene() {
       s.z = z;
       s.hx = placed.hx;
       s.orient = placed.orient;
+      aim(s, cam, s.uv0);
       rest.push(s);
-    } else if (s.bid < 0 || !cuts.has(s.bid) || s.low) rest.push(s);
+    } else if (s.bid < 0 || !cuts.has(s.bid) || s.low) {
+      if (s.kind === 16) s.sign = hack.flash > 0 ? 1 : 0;
+      if (s.kind === 9 || s.kind === 12) aim(s, cam, s.uv0);
+      rest.push(s);
+    }
   }
   let nearD = 2;
   let outline = [0, 0, 0];
@@ -353,6 +380,10 @@ function scene() {
   const uL = new Float32Array(32);
   const uC = new Float32Array(32);
   const uI = new Float32Array(8);
+  // Machine pool: one tile, amber, not a sign light. It stays off the alley distance list.
+  uL[24] = 3.5 * TILE; uL[25] = 26; uL[26] = 2.5 * TILE; uL[27] = TILE;
+  uC[24] = 242 / 255; uC[25] = 163 / 255; uC[26] = 58 / 255; uC[27] = 1;
+  uI[6] = 1;
   const halo = new Float32Array(32);
   const haloC = new Float32Array(32);
   const fadeU = new Float32Array(8);
@@ -448,6 +479,7 @@ function step(dt) {
     if (d <= step) { player.x = tx; player.y = ty; route.shift(); }
     else { player.x += dx / d * step; player.y += dy / d * step; }
   }
+  hack = hackStep(hack, dt, holding);
   scatterRain();
   for (let i = 0; i < 60; i++) {
     let x = drops[i * 2] + 28 * dt;
@@ -502,7 +534,8 @@ canvas.addEventListener("contextmenu", (e) => e.preventDefault());
 canvas.addEventListener("pointerdown", (e) => {
   try { canvas.setPointerCapture?.(e.pointerId); } catch (err) { /* already released */ }
   if (attract) { attract = false; eatClick = true; }
-  active.set(e.pointerId, { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, btn: e.button, drag: false });
+  active.set(e.pointerId, { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, btn: e.button, drag: false, machine: onMachine(e.clientX, e.clientY) });
+  holding = [...active.values()].some((p) => p.machine) && hack.flash <= 0 && hack.cool <= 0;
   if (active.size >= 2) { multi = true; dragged = true; }
 });
 canvas.addEventListener("pointermove", (e) => {
@@ -533,7 +566,8 @@ function endPointer(e) {
   if (active.size) return;
   stick.x = 0;
   stick.y = 0;
-  const walk = !eatClick && !dragged && !multi && (phone() || p.btn === 0);
+  const walk = !eatClick && !dragged && !multi && !p.machine && (phone() || p.btn === 0);
+  if (!active.size) holding = false;
   eatClick = false;
   dragged = false;
   multi = false;
@@ -594,6 +628,17 @@ window.__test = {
   },
   setPose: (name) => { pose = name || ""; },
   outline: () => shownOutline,
+  hack: () => ({ held: hack.held, flash: hack.flash, cool: hack.cool, holding }),
+  holdMachine: (seconds) => {
+    let left = seconds;
+    while (left > 0) {
+      const dt = Math.min(0.05, left);
+      hack = hackStep(hack, dt, true);
+      left -= dt;
+    }
+    hack = hackStep(hack, 0, false);
+    return { held: hack.held, flash: hack.flash, cool: hack.cool };
+  },
   moveInput: (dx, dy, ms = 100) => {
     attract = false;
     stick.x = Math.max(-1, Math.min(1, dx));
