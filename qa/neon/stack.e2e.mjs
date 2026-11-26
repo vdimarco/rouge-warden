@@ -461,7 +461,7 @@ async function proof(width, height, dpr, tag) {
   check(spawn.exitLight >= 2, tag + " nearest sign light to exit " + (spawn.exitLight || 0).toFixed(2));
   check(spawn.cyan && spawn.full, tag + " exit is fully visible cyan (" + (spawn.door || []).join(",") + ")");
   if (tag === "1280") {
-    check(spawn.width >= 0.34 && spawn.width <= 0.40, tag + " spawn block is " + Math.round(spawn.width * 100) + "% wide");
+    check(spawn.width >= 0.30 && spawn.width <= 0.36, tag + " spawn block is " + Math.round(spawn.width * 100) + "% wide");
     console.log("  nums  " + tag + " runner feet " + (spawn.feet == null ? "n/a" : spawn.feet));
     check(spawn.edge[0] === 26 && spawn.edge[1] === 26 && spawn.edge[2] === 34, tag + " side edge is ink (" + spawn.edge.join(",") + ")");
   }

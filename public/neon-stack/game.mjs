@@ -123,8 +123,8 @@ function camera() {
   const cz = (attract ? 3 : player.y) * TILE;
   // At the spawn, aim up the block without pulling the camera back. The runner stays
   // in the lower third. Elsewhere keep the closer camera the width checks were built on.
-  const along = attract ? 16 : establishing ? TILE * (portrait ? -2 : -1.875) : 36;
-  const lift = establishing ? TILE * (portrait ? 4.125 : 3.625) : 0;
+  const along = attract ? 16 : establishing ? TILE * (portrait ? -2 : -0.3125) : 36;
+  const lift = establishing ? TILE * (portrait ? 4.125 : 5.625) : 0;
   const focus = [cx + Math.sin(yr) * along, lift, cz + Math.cos(yr) * along];
   const cam = [
     focus[0] + Math.cos(tr) * Math.sin(yr) * dist,

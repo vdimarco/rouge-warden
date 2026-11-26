@@ -155,8 +155,11 @@ void main() {
   if (wall > 0.5 && !(t.r > 0.55 && t.g > 0.25 && t.b < 0.45 && t.r > t.b + 0.25)) {
     float kd = vKind - 8.0;
     float tint = floor(kd / 0.03 + 0.001);
-    float bottom = step(0.005, mod(kd + 0.0001, 0.03));
+    float rem = mod(kd + 0.0001, 0.03);
+    float bottom = step(0.005, rem) * step(rem, 0.015);
+    float top = step(0.015, rem);
     vec3 face = vOrient > 1.5 ? vec3(43.0, 42.0, 51.0) / 255.0 : vec3(36.0, 35.0, 44.0) / 255.0;
+    if (top > 0.5) face = vOrient > 1.5 ? vec3(48.0, 47.0, 56.0) / 255.0 : vec3(42.0, 41.0, 50.0) / 255.0;
     if (vSign > 0.1 && vSign < 0.4) face = vec3(43.0, 42.0, 51.0) / 255.0;
     vec3 dye = tint < 0.5 ? vec3(1.10, 0.84, 0.90) : tint < 1.5 ? vec3(0.84, 1.08, 0.90) : vec3(0.90, 0.94, 1.10);
     float lum = dot(face, vec3(0.299, 0.587, 0.114));
