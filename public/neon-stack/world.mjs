@@ -256,6 +256,7 @@ export function build(seed) {
     wall(x, z - hz, -(hx + ix), y0, y1, 2);
     wall(x + hx, z, -(hz + iz), y0, y1, 1);
     wall(x - hx, z, hz + iz, y0, y1, 1);
+    slices.push(slice(x, z, y1, hx + ix, hz + iz, uvOf("roof_cap"), 11, 0, bid, false, 0));
     bid++;
   };
   for (let i = 0; i < 6; i++) {
@@ -267,25 +268,6 @@ export function build(seed) {
   box(4, -3, 2, 3, 0, 4, 0.5, 0);
   box(0, 6, 2, 3, 0, 1, 0.5, 0);
   box(4, 6, 2, 3, 0, 2, 0.5, 0);
-  // One inward card per side, outside the ring, above it. The near card is the back face.
-  const card = (px, pz, span, orient, flip) => {
-    let hx = span * TILE * 0.5;
-    const y0 = 8 * TILE, y1 = 22 * TILE;
-    fillers.push({
-      x: px, z: pz,
-      hx: orient < 1.5 ? 8 : hx,
-      hz: orient < 1.5 ? hx : 8,
-      bid,
-    });
-    if (flip) hx = -hx;
-    slices.push(slice(px, pz, (y0 + y1) / 2, hx, (y1 - y0) / 2, flip ? darkF : dark, 8, -1, bid, false, orient));
-    bid++;
-  };
-  const wide = 10;
-  card(-4 * TILE, 3 * TILE, wide, 1, true);
-  card(10 * TILE, 3 * TILE, wide, 1, false);
-  card(3 * TILE, -4 * TILE, wide, 2, false);
-  card(3 * TILE, 10 * TILE, wide, 2, true);
 
   // Street and sidewalks. Outside the block the ground is the clear colour, #1A1A22.
   const gy0 = -2, gy1 = GRID + 16;
@@ -379,6 +361,25 @@ export function build(seed) {
   slices.push(slice(mx, mz, mh, boxX, boxZ, uvOf("wall_dark"), 14, 0, -1, true, 0));
   face(mx, mz + boxZ + 0.35, mh * 0.58, boxX * 0.72, mh * 0.34, 2, 15, 0);
   face(mx, mz + boxZ + 0.7, mh * 0.58, boxX * 0.5, mh * 0.22, 2, 16, 0);
+
+  // Skyline cards sit on the filler tops and draw last, so the depth test drops what the block hides.
+  const card = (px, pz, span, y0, y1, orient, flip) => {
+    let hx = span * TILE * 0.5;
+    fillers.push({
+      x: px, z: pz,
+      hx: orient < 1.5 ? 8 : hx,
+      hz: orient < 1.5 ? hx : 8,
+      bid,
+    });
+    if (flip) hx = -hx;
+    slices.push(slice(px, pz, (y0 + y1) / 2, hx, (y1 - y0) / 2, flip ? darkF : dark, 8, -1, bid, false, orient));
+    bid++;
+  };
+  const wide = 12, yTop = 8 * TILE;
+  card(-2.6 * TILE, 3 * TILE, wide, 4 * TILE, yTop, 1, true);
+  card(8.6 * TILE, 3 * TILE, wide, 4 * TILE, yTop, 1, false);
+  card(3 * TILE, -3.6 * TILE, 10, 4 * TILE, yTop, 2, false);
+  card(3 * TILE, 9.6 * TILE, 10, 1 * TILE, yTop, 2, true);
 
   return {
     seed: Number(seed) || 1,

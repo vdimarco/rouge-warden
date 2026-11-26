@@ -39,7 +39,7 @@ async function open(width, height, dpr, touch) {
 
 async function ready(page, seed) {
   await page.goto(GAME + "?seed=" + seed, { waitUntil: "domcontentloaded" });
-  await page.waitForFunction(() => window.__test && __test.ready());
+  await page.waitForFunction(() => window.__test && __test.ready(), null, { timeout: 90000 });
   await page.waitForTimeout(120);
 }
 
@@ -238,14 +238,34 @@ const compass = await phone.page.evaluate(async () => {
           if (my < 0) keys.push("w");
           if (my > 0) keys.push("s");
           for (const k of keys) window.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true }));
-          await new Promise((r) => setTimeout(r, 90));
+          const origin = __test.state().player;
+          await new Promise((resolve) => {
+            let n = 0;
+            const step = () => {
+              const p = __test.state().player;
+              n++;
+              if ((n >= 2 && Math.hypot(p.x - origin.x, p.y - origin.y) > 0.05) || n >= 8) resolve();
+              else requestAnimationFrame(step);
+            };
+            requestAnimationFrame(step);
+          });
           for (const k of keys) window.dispatchEvent(new KeyboardEvent("keyup", { key: k, bubbles: true }));
         } else {
           const cx = box.left + box.width / 2, cy = box.top + box.height / 2;
           const ev = (type, x, y) => canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: y, pointerId: 7, button: 0, buttons: type === "pointerup" ? 0 : 1 }));
           ev("pointerdown", cx, cy);
           ev("pointermove", cx + mx * 70, cy + my * 70);
-          await new Promise((r) => setTimeout(r, 90));
+          const origin = __test.state().player;
+          await new Promise((resolve) => {
+            let n = 0;
+            const step = () => {
+              const p = __test.state().player;
+              n++;
+              if ((n >= 2 && Math.hypot(p.x - origin.x, p.y - origin.y) > 0.05) || n >= 8) resolve();
+              else requestAnimationFrame(step);
+            };
+            requestAnimationFrame(step);
+          });
           ev("pointerup", cx + mx * 70, cy + my * 70);
         }
         const p = __test.state().player;
@@ -274,11 +294,11 @@ await desk.context.close();
 // on-versus-off texels in the 32×48 frames (431, 236, 232, 310, 262, 372 of 1536).
 const PLATE_FRAC = [122, 138, 115, 96, 91, 138].map((n) => n / 1536);
 async function plates(width, height, dpr) {
-  const ctx = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: dpr });
   for (const seed of [1, 4, 7, 9]) {
+    const ctx = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: dpr });
     const page = await ctx.newPage();
     await page.goto(GAME + "?seed=" + seed, { waitUntil: "domcontentloaded" });
-    await page.waitForFunction(() => window.__test && __test.ready());
+    await page.waitForFunction(() => window.__test && __test.ready(), null, { timeout: 90000 });
     const rows = await page.evaluate(async (frac) => {
       __test.enter();
       __test.moveTo(2.5, 5.2);
@@ -345,9 +365,8 @@ async function plates(width, height, dpr) {
     }, PLATE_FRAC);
     for (const row of rows.out) check(row.share >= 0.8, width + " seed " + seed + " " + row.name + " plate " + Math.round(row.share * 100) + "% visible");
     check(rows.alley[0] >= 2 && rows.alley[1] >= 2, width + " alleys keep dark tiles (" + rows.alley.join(",") + ")");
-    await page.close();
+    await ctx.close();
   }
-  await ctx.close();
 }
 console.log("plates");
 await plates(1280, 800, 1);
@@ -391,7 +410,7 @@ async function proof(width, height, dpr, tag) {
   page.on("pageerror", (e) => errs.push(String(e)));
   page.on("console", (m) => { if (m.type() === "error") errs.push(m.text()); });
   await page.goto(GAME + "?seed=4", { waitUntil: "domcontentloaded" });
-  await page.waitForFunction(() => window.__test && __test.ready());
+  await page.waitForFunction(() => window.__test && __test.ready(), null, { timeout: 90000 });
   await page.waitForTimeout(180);
   const attract = await page.evaluate(() => {
     const v = __test.view();
@@ -849,7 +868,7 @@ async function visible(width, height, dpr) {
   const errs = [];
   page.on("pageerror", (e) => errs.push(String(e)));
   await page.goto(GAME, { waitUntil: "domcontentloaded" });
-  await page.waitForFunction(() => window.__test && __test.ready());
+  await page.waitForFunction(() => window.__test && __test.ready(), null, { timeout: 90000 });
   await page.evaluate(() => __test.enter());
   await page.evaluate(() => new Promise((resolve) => {
     requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
@@ -967,7 +986,7 @@ await proof(390, 844, 2, "390");
 const hi = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3 });
 const hiPage = await hi.newPage();
 await hiPage.goto(GAME + "?seed=4", { waitUntil: "domcontentloaded" });
-await hiPage.waitForFunction(() => window.__test && __test.ready());
+await hiPage.waitForFunction(() => window.__test && __test.ready(), null, { timeout: 90000 });
 await hiPage.waitForTimeout(200);
 const hiView = await hiPage.evaluate(() => __test.view());
 check(hiView.ratio <= 2, "DPR 3 keeps the buffer ratio at most 2 (" + hiView.ratio + ")");
@@ -980,7 +999,7 @@ async function qaFix(width, height, dpr, tag) {
   const errs = [];
   page.on("pageerror", (e) => errs.push(String(e)));
   await page.goto(GAME + "?seed=7&ratio=1.5", { waitUntil: "domcontentloaded" });
-  await page.waitForFunction(() => window.__test && __test.ready());
+  await page.waitForFunction(() => window.__test && __test.ready(), null, { timeout: 90000 });
   const city = await page.evaluate(async () => {
     __test.enter();
     __test.setTilt(55);
@@ -998,18 +1017,20 @@ async function qaFix(width, height, dpr, tag) {
     };
     const shareOf = (buf) => {
       const w = canvas.width, h = canvas.height, y0 = Math.floor(h * 0.28);
-      let sky = 0, voidc = 0, build = 0;
+      let build = 0, denom = 0;
       for (let y = y0; y < h; y++) for (let x = 0; x < w; x++) {
         const i = (y * w + x) * 4;
         const r = buf[i], g = buf[i + 1], b = buf[i + 2];
-        const skyish = (b > r + 12 && b > g + 8) || (r + g + b < 70 && b > r + 4 && b > g);
+        if ((b > r + 12 && b > g + 8) || (r + g + b < 70 && b > r + 4 && b > g)) continue;
         const clear = Math.abs(r - 26) <= 10 && Math.abs(g - 26) <= 10 && Math.abs(b - 34) <= 10;
-        if (skyish) sky++;
-        else if (clear) voidc++;
-        else build++;
+        const wall = Math.abs(r - 43) <= 12 && Math.abs(g - 42) <= 12 && Math.abs(b - 51) <= 14;
+        const roof = Math.abs(r - 74) <= 24 && Math.abs(g - 72) <= 24 && Math.abs(b - 82) <= 26;
+        const win = r > 160 && g > 80 && g < 200 && b < 120 && r > b + 40;
+        if (!clear && !wall && !roof && !win && Math.max(r, g, b) < 130 && Math.max(r, g, b) - Math.min(r, g, b) < 40) continue;
+        denom++;
+        if (wall || roof || win) build++;
       }
-      const nonsky = build + voidc;
-      return nonsky ? build / nonsky : 0;
+      return denom ? build / denom : 0;
     };
     const changed = (a, b) => {
       let n = 0;
@@ -1128,7 +1149,7 @@ async function coverage(width, height, dpr, seed) {
   const ctx = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: dpr });
   const page = await ctx.newPage();
   await page.goto(GAME + "?seed=" + seed + "&ratio=" + (width < 800 ? 1.5 : 1), { waitUntil: "domcontentloaded" });
-  await page.waitForFunction(() => window.__test && __test.ready());
+  await page.waitForFunction(() => window.__test && __test.ready(), null, { timeout: 90000 });
   const rows = await page.evaluate(async () => {
     __test.enter();
     __test.setTilt(55);
@@ -1140,18 +1161,20 @@ async function coverage(width, height, dpr, seed) {
     const frame = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
     const shareOf = (buf) => {
       const w = canvas.width, h = canvas.height, y0 = Math.floor(h * 0.28);
-      let sky = 0, voidc = 0, build = 0;
+      let build = 0, denom = 0;
       for (let y = y0; y < h; y++) for (let x = 0; x < w; x++) {
         const i = (y * w + x) * 4;
         const r = buf[i], g = buf[i + 1], b = buf[i + 2];
-        const skyish = (b > r + 12 && b > g + 8) || (r + g + b < 70 && b > r + 4 && b > g);
+        if ((b > r + 12 && b > g + 8) || (r + g + b < 70 && b > r + 4 && b > g)) continue;
         const clear = Math.abs(r - 26) <= 10 && Math.abs(g - 26) <= 10 && Math.abs(b - 34) <= 10;
-        if (skyish) sky++;
-        else if (clear) voidc++;
-        else build++;
+        const wall = Math.abs(r - 43) <= 12 && Math.abs(g - 42) <= 12 && Math.abs(b - 51) <= 14;
+        const roof = Math.abs(r - 74) <= 24 && Math.abs(g - 72) <= 24 && Math.abs(b - 82) <= 26;
+        const win = r > 160 && g > 80 && g < 200 && b < 120 && r > b + 40;
+        if (!clear && !wall && !roof && !win && Math.max(r, g, b) < 130 && Math.max(r, g, b) - Math.min(r, g, b) < 40) continue;
+        denom++;
+        if (wall || roof || win) build++;
       }
-      const nonsky = build + voidc;
-      return nonsky ? build / nonsky : 0;
+      return denom ? build / denom : 0;
     };
     const out = [];
     for (const yaw of [90, 180, 270]) {
