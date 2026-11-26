@@ -5,7 +5,8 @@
 //   walks on; a roll, a drink, Heal at full health, a hit that is stored at once and a fall; the pause panel with its focus, End the
 //   run asking again, Escape and M; the beacon card, its wicks, Escape that cannot pass them and a reload at it; a mocked gamepad
 //   alone on the cards and in play (a stick held into a card moves nothing, RB faces, a tilt and B roll its way, three X make the
-//   string); and a phone with real touches: the touch buttons at the design's sizes, Look, and Roll with the stick held left.
+//   string); and a phone with real touches: the touch buttons at the design's sizes, Look, and Roll with the stick held left. First, a
+//   first visit through the title (?title): its Begin the run opens the help card, whose own Begin the run starts the run.
 // Stage 1 of the combat run: the later stages add Wander's cards, the Lamp-room and the sound log to this file.
 // The page runs with ?test: the game is stepped by __gloam.tick() and drawn by __gloam.draw(), because software WebGL takes about a
 // second a frame. Needs the site served: python3 -m http.server 8765 --bind 0.0.0.0 --directory public
@@ -52,6 +53,23 @@ const viewOff = async page => {
 };
 
 try {
+  /* ---------------- a first visit through the title (gloam-downs-screens-life): Begin the run opens the help card ---------------- */
+  {
+    const { ctx, page, errors } = await open({ viewport: { width: 390, height: 844 } }, '?run&test&fresh&seed=7&title');
+    assert(await page.isVisible('#title'), 'a first visit opens the title');
+    assert.equal(await active(page), 'bTitleBegin', 'Begin the run has the focus');
+    await page.keyboard.press('Enter');
+    assert(await page.isVisible('#runHelp') && !(await page.isVisible('#title')), 'Begin the run opens the help card on a first visit');
+    assert.match(await page.textContent('#runHelp p'), /one flask/);
+    assert.equal(await active(page), 'bBegin');
+    await page.keyboard.press('Enter');
+    const r = await run(page);
+    assert.deepEqual([r.mode, r.place, r.flasks], ['play', 'gaol', 1]);
+    assert.deepEqual(errors, []);
+    pass('a first visit: the title\'s Begin the run opens the help card ("one flask"), and its own Begin the run starts the run');
+    await ctx.close();
+  }
+
   /* ---------------- desktop: keys and mouse ---------------- */
   {
     const { ctx, page, errors } = await open({ viewport: { width: 1280, height: 720 } }, '?run&test&fresh&seed=7');

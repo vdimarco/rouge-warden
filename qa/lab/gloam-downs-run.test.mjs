@@ -874,7 +874,9 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   R.hurt(16, [0, -1], {}, ev);
   assert(ev.some(e => e.type === 'dead') && ev.some(e => e.type === 'store'), 'death stores the run at once');
   // a death keeps 10% of the 20 carried
-  assert.deepEqual(rr.ended, { won: false, place: 'ramparts', time: 0, foes: 0, kept: 2, lost: 18, banked: 2, ember: 0, opened: null, relics: [], combo: 0, seed: rr.ended.seed, patternsKept: 0, patternsLost: 0 });
+  // with the recap's fields (gloam-downs-screens-life): the place reached with its time and foes, the sparks, no pattern kept, and no hit by a foe
+  assert.deepEqual(rr.ended, { won: false, place: 'ramparts', time: 0, foes: 0, kept: 2, lost: 18, banked: 2, ember: 0, opened: null, relics: [], combo: 0, seed: rr.ended.seed, patternsKept: 0, patternsLost: 0,
+    path: [{ id: 'gaol', time: 0, foes: 0 }, { id: 'ramparts', time: 0, foes: 0 }], colours: { flame: 0, ward: 0, gloam: 0 }, patternNames: [], by: null });
   assert.equal(rr.bank, 46);
   assert.equal(R.clock.stop, 9, 'death holds the game for 9 steps');
   pass('the win at the last beacon and a death end the run and keep their figures');
@@ -921,7 +923,8 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   const fade = RS.load(storage);
   assert.equal(fade.run, null);
   // a death keeps 2 of the 20 carried (10%)
-  assert.deepEqual({ ...fade.ended, time: +fade.ended.time.toFixed(2) }, { won: false, place: 'gaol', time: 1.25, foes: 0, kept: 2, lost: 18, banked: 2, ember: 0, relics: [], combo: 0, seed: fade.ended.seed, opened: null, patternsKept: 0, patternsLost: 0 });
+  assert.deepEqual({ ...fade.ended, time: +fade.ended.time.toFixed(2), path: fade.ended.path.map(p => ({ ...p, time: +p.time.toFixed(2) })) }, { won: false, place: 'gaol', time: 1.25, foes: 0, kept: 2, lost: 18, banked: 2, ember: 0, relics: [], combo: 0, seed: fade.ended.seed, opened: null, patternsKept: 0, patternsLost: 0,
+    path: [{ id: 'gaol', time: 1.25, foes: 0 }], colours: { flame: 0, ward: 0, gloam: 0 }, patternNames: [], by: null });
   assert.equal(fade.deaths, 1);
   pass('a reload just after a hit keeps the hit, and a reload in the death fade shows the summary');
 }
@@ -1150,9 +1153,10 @@ function runFor(R, count, inp = {}, camYaw = 0) {
 }
 { // a reload at each card: the page reads the save and opens the same card, with the same figures
   const mem = new Map(), storage = { getItem: k => mem.get(k) ?? null, setItem: (k, v) => mem.set(k, String(v)) };
-  const reloadAt = rs => { RS.store(storage, rs); const s = RS.load(storage); if (s.run) reload(s.run); return { s, card: cardOnLoad(s) }; };
+  // the old first cards (gloam-downs-screens-life puts the title in their place: gloam-downs-screens.test.mjs checks it)
+  const reloadAt = rs => { RS.store(storage, rs); const s = RS.load(storage); if (s.run) reload(s.run); return { s, card: cardOnLoad(s, { title: false }), title: cardOnLoad(s) }; };
   const rs = RS.fresh();
-  assert.equal(reloadAt(rs).card, 'help', 'a first visit: the help card');
+  assert.deepEqual([reloadAt(rs).card, reloadAt(rs).title], ['help', 'title'], 'a first visit: the title, or the help card');
   rs.seen = true;
   assert.equal(reloadAt(rs).card, 'lamp', 'a later visit with no run: the Lamp-room');
   // the beacon card before the choice: the same two wicks, over the next place

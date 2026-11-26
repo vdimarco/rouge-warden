@@ -86,6 +86,19 @@ Web search worked; page fetches did not (`blog.unity.com` and `developer.nvidia.
 - Layouts: 320x640, 360x640, 390x844, 844x390, 800x600 and 1280x720. Every card inside the screen with no page scroll (the Lamp-room scrolls inside itself, as now), every button 44 px or more on its shorter side, nothing under ◀ Lab or Games.
 - Readable: text at 14 px or more; the contrast of each text colour on its card is 4.5:1 or more (checked in the e2e from computed styles).
 
+### What Builder S found while building
+- **The old checks and `?test`.** About ten older browser checks press `#bBegin` on the first card of a fresh load. With `?test` the page opens the old first cards (the help card, the Lamp-room) unless `&title` is in the address, so those checks keep their flow. Every new check of the title uses `&title`. Without `?test` the title always opens.
+- **To the Lamp-room keeps its word.** The summary's and the win card's button opens the Lamp-room over the Gaol, as its name says; the title opens on the loads after that.
+- **The flare.** A pick builds the card's next set at once (the checks press a wick and then a spark in one step), so the flare plays on a copy of the chosen card laid where it stood, which fades out over 340 ms.
+- **Numbers that roll.** The text of a rolling number is the new count at once, so a screen reader and the checks read it; what shows is a `data-roll` copy drawn over it until the roll ends.
+- **The last hit.** `run.js` records `run.lastHurt` in `hurt()` from the target nearest to where the blow came from (the nearest Pitchrook for a coal), so `foes.js`, `elites.js` and `boss.js` do not change. A fall records `fall`.
+- **Each place's time and foes.** `goTo()` keeps a split of the place left (`run.splits`: the run's time, foes and the patterns its beacon kept); `die()` and `win()` turn the splits into `path`, one entry a place with its own share.
+- **The pad.** `input.js` gives the cards only a previous and a next. On a lamp card or a title lamp, `main.js` reads the d-pad and the stick's way and moves by the grid; elsewhere the order stays as it was.
+- **The rows set.** Hook 3 hands `pendingRows` to `makeLife`, but a place load made a new set after that line, so life would write to a set the renderer no longer reads. `main.js` now clears the set in place.
+- **The quiet check.** A fresh load now opens the title, not the help card, so the Gloam Downs entry in `qa/arcade/quiet.mjs` waits for either one before it presses Enter.
+- **Colour in the glass.** A lamp card's glass takes the card's colour (`--hue` inherited), so Flame, Ward and Gloam read at a glance, not only by the border.
+- **For the merge pass.** `run-sound.js` (Builder E's) still plays `choice` on `spark-take` and `buy` on `pattern-kindled`. With the new `pick` and `kindle` cues a spark pick and a kindle sound twice; the merge pass should drop those two entries.
+
 ## Part E: places that live
 
 ### How it is drawn

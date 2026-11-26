@@ -266,7 +266,10 @@ try {
     r = await run(page);
     assert.equal(r.mode, 'dying');
     // the foes put out are the keep's three Snuffers, put out before the Gaol's beacon
-    assert.deepEqual(r.ended, { won: false, place: 'ramparts', time: r.ended.time, foes: 3, kept: 2, lost: 18, banked: 2, ember: 0, opened: null, relics: [], combo: 0, seed: r.ended.seed, patternsKept: 0, patternsLost: 0 }, 'a death keeps 10%: 2 of the 20 carried');
+    // with the recap's fields (gloam-downs-screens-life): the Gaol passed with its 3 foes, The Crow Wall where it ended, the spark taken
+    const { path, colours, patternNames, by, ...rest } = r.ended;
+    assert.deepEqual(rest, { won: false, place: 'ramparts', time: r.ended.time, foes: 3, kept: 2, lost: 18, banked: 2, ember: 0, opened: null, relics: [], combo: 0, seed: r.ended.seed, patternsKept: 0, patternsLost: 0 }, 'a death keeps 10%: 2 of the 20 carried');
+    assert.deepEqual([path.map(p => [p.id, p.foes]), colours, patternNames, by], [[['gaol', 3], ['ramparts', 0]], { flame: 1, ward: 0, gloam: 0 }, [], null]);
     await tick(page, 0.5, {});
     await G(page, () => window.__gloam.draw());
     await shot(page, 'keys-fade-1280x720');
@@ -289,8 +292,9 @@ try {
     assert.deepEqual(r.ended, ended, 'a reload in the fade shows the same figures');
     assert.equal(r.place, 'gaol');
     const sum = await page.$$eval('#summary dd', ds => ds.map(d => d.textContent));
-    // the glim banked is the glim kept, so it is said once
-    assert.deepEqual([sum[0], sum[3], sum[4], sum.length], ['II · The Crow Wall', 'kept 2 · lost 18', 'kept 0 · lost 0', 5]);
+    // the recap (gloam-downs-screens-life): the path as lamps, the Gaol lit and The Crow Wall snuffed; the glim kept and lost said once
+    assert.deepEqual(await page.$$eval('#sumPath li', ls => ls.map(l => l.className)), ['lit', 'snuffed', 'dark', 'dark', 'dark']);
+    assert.deepEqual([sum[2], sum[3], sum.length], ['kept 2 · lost 18', 'none', 6]);
     assert.equal(await text(page, '#sumT'), 'The lamp goes out');
     assert.equal(await active(page), 'bSumLamp');
     assert.deepEqual(await faults(page, 'summary'), []);
@@ -304,7 +308,8 @@ try {
     assert.equal((await stored(page)).ended, null, 'closing the summary clears the ended run');
     assert.deepEqual(await lampBtns(), ['bLampBegin', 'bLampExplore'], 'Explore beside Begin the run until Wander opens');
     assert.equal(await active(page), 'bLampBegin');
-    const rows = () => page.$$eval('#ups li', ls => ls.map(li => [li.querySelector('span').textContent, li.querySelector('button').hidden ? null : li.querySelector('button').textContent, li.querySelector('button').getAttribute('aria-disabled')]));
+    // each ware is a lamp tile (gloam-downs-screens-life): its row's words in data-label, "Mantle 0 of 8" on the tile
+    const rows = () => page.$$eval('#ups li', ls => ls.map(li => [li.dataset.label, li.querySelector('button').hidden ? null : li.querySelector('button').textContent, li.querySelector('button').getAttribute('aria-disabled')]));
     assert.deepEqual(await rows(), [
       ['Mantle 1 · +15 health · 40 glim', 'Buy', 'false'], ['Flask 1 · +1 flask · 60 glim', '11 more glim', 'true'], ['Edge 1 · +12% blade damage · 50 glim', '1 more glim', 'true'],
       ['Draught 1 · heal 45% · 45 glim', 'Buy', 'false'], ['Ash pocket 1 · keep 18% of glim at a death · 40 glim', 'Buy', 'false'],
@@ -345,7 +350,8 @@ try {
     await tick(page, 0.02, {});
     assert.equal((await run(page)).mode, 'ended');
     const ash = await page.$$eval('#summary dd', ds => ds.map(d => d.textContent));
-    assert.deepEqual([ash[0], ash[3], ash[4]], ['I · The Sunken Gaol', 'kept 3 · lost 17', 'kept 0 · lost 0']);
+    assert.deepEqual(await page.$$eval('#sumPath li', ls => ls.map(l => l.className)), ['snuffed', 'dark', 'dark', 'dark', 'dark']);
+    assert.deepEqual([ash[2], ash[3]], ['kept 3 · lost 17', 'none']);
     assert.equal((await stored(page)).bank, 12);
     pass('a death with Ash pocket 1 keeps 3 of 20 (18%); the summary comes after 72 steps of game time');
     assert.deepEqual(errors, []);
@@ -419,7 +425,10 @@ try {
       }
     }
     for (const [label, opts, list] of [['touch', TOUCH, TOUCHES], ['mouse', {}, MICE]]) {
-      const { ctx, page, errors } = await open({ viewport: { width: list[0][0], height: list[0][1] }, ...opts }, '?run&test&fresh&seed=4&nodraw');
+      const { ctx, page, errors } = await open({ viewport: { width: list[0][0], height: list[0][1] }, ...opts }, '?run&test&fresh&seed=4&nodraw&title');
+      // the title (gloam-downs-screens-life), then the help card that its Begin the run opens on a first visit
+      await each(page, list, `${label}-title`, 'title');
+      await G(page, () => document.getElementById('bTitleBegin').click());
       await each(page, list, `${label}-help`, 'runHelp');
       await G(page, () => document.getElementById('bBegin').click());
       // the widest HUD: 165/165 (Mantle 3, Long wick), 5 of 5 flasks (Flask 3, Spare oil), 5/5 wisps, 254 glim, and the longest toasts
@@ -470,7 +479,8 @@ try {
         for (const id of ['lamp', 'beaconCard']) {
           if (id === 'beaconCard') await G(page, () => document.getElementById('bLampBack').click());
           const m = (await run(page)).mode;
-          await page.touchscreen.tap(195, 830);
+          // the beacon card is a bottom sheet at 390x844 (gloam-downs-screens-life): beside it is above it
+          await page.touchscreen.tap(195, id === 'beaconCard' ? 300 : 830);
           assert(await page.isVisible(`#${id}`) && (await run(page)).mode === m, `a tap beside ${id} does nothing`);
         }
       } else await G(page, () => document.getElementById('bLampBack').click());

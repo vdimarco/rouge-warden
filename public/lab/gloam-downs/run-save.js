@@ -66,7 +66,8 @@ function cleanRun(r, s) {
     wicks, offer: null, bossDown: r.bossDown === true, entry: null,
     route: goodRoute(r.route) ? r.route.slice() : routeFor(seed, ember), ember, relics: ids(r.relics, RELIC_IDS, RELIC_MAX),
     elitesDown: ids(r.elitesDown, ORDER, ORDER.length), combo: count(r.combo, 1e5), lastUsed: r.lastUsed === true && wicks.includes('last'), shelf: r.shelf === true,
-    ...grown, sparkNow: r.sparkNow === true && grown.sparkPicks > 0, abilityOffer: null, patternsKept: count(r.patternsKept, 100), kept: ids(r.kept, PATTERN_IDS, PATTERN_IDS.length)
+    ...grown, sparkNow: r.sparkNow === true && grown.sparkPicks > 0, abilityOffer: null, patternsKept: count(r.patternsKept, 100), kept: ids(r.kept, PATTERN_IDS, PATTERN_IDS.length),
+    splits: cleanSplits(r.splits), lastHurt: byCode(r.lastHurt)
   };
   // an offer is two different known wicks not yet chosen, or nothing; Belt's offer is two different kindled abilities, or nothing
   if (Array.isArray(r.offer) && r.offer.length === 2 && r.offer[0] !== r.offer[1] && r.offer.every(w => WICK_IDS.includes(w) && !wicks.includes(w))) run.offer = r.offer.slice();
@@ -86,9 +87,27 @@ function cleanRun(r, s) {
   Object.assign(run.entry, eg);
   return run;
 }
+/* the recap's fields (gloam-downs-screens-life): the places left in a run, each once, in the run's order, with the time and foes then;
+   a place of an ended run's path with its own time and foes; who dealt the last hit, a short code */
+function cleanSplits(v) {
+  if (!Array.isArray(v)) return [];
+  const seen = new Set();
+  return v.filter(x => obj(x) && ORDER.includes(x.id) && !seen.has(x.id) && seen.add(x.id)).slice(0, ORDER.length)
+    .map(x => ({ id: x.id, time: secs(x.time), foes: count(x.foes, 1e5), kept: ids(x.kept, PATTERN_IDS, PATTERN_IDS.length) }));
+}
+const byCode = v => (typeof v === 'string' && /^[A-Za-z][a-z0-9-]{0,23}$/.test(v) ? v : null);
+function cleanPath(v) {
+  if (!Array.isArray(v)) return null;
+  const seen = new Set(), out = v.filter(x => obj(x) && ORDER.includes(x.id) && !seen.has(x.id) && seen.add(x.id)).slice(0, ORDER.length)
+    .map(x => ({ id: x.id, time: secs(x.time), foes: count(x.foes, 1e5) }));
+  return out.length ? out : null;
+}
 function cleanEnded(e, top) {
   if (!obj(e) || !ORDER.includes(e.place)) return null;
+  const path = cleanPath(e.path);
   return {
+    // a save from before the recap has no path: the summary shows the old rows (screens.js recapOf)
+    ...(path ? { path, colours: cleanSparks(e.colours), patternNames: ids(e.patternNames, PATTERN_IDS, PATTERN_IDS.length), by: byCode(e.by) } : {}),
     won: e.won === true, place: e.place, time: secs(e.time), foes: count(e.foes, 1e5), kept: Number.isFinite(e.kept) ? count(e.kept) : null, lost: count(e.lost), banked: count(e.banked),
     ember: intIn(e.ember, 0, EMBER_TOP, 0), relics: ids(e.relics, RELIC_IDS, RELIC_MAX), combo: count(e.combo, 1e5),
     seed: Number.isInteger(e.seed) && e.seed > 0 && e.seed < 2 ** 32 ? e.seed : null,

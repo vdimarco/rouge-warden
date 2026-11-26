@@ -19,7 +19,7 @@ import {
 } from '../../public/lab/gloam-downs/run.js';
 import { makePost } from '../../public/lab/gloam-downs/moves.js';
 import * as RS from '../../public/lab/gloam-downs/run-save.js';
-import { summaryOf, patternRows, paneRows, colourRow, colourLine, patternsMark, keptLine, glimLine, cardOnLoad } from '../../public/lab/gloam-downs/screens.js';
+import { summaryOf, patternRows, paneRows, colourRow, colourLine, patternsMark, keptLine, glimLine, cardOnLoad, recapOf } from '../../public/lab/gloam-downs/screens.js';
 import { PATTERNS, PATTERN_IDS, STARTERS, ABILITIES, DROPS, SPARK } from '../../public/lab/gloam-downs/growth.js';
 import { on } from '../../public/lab/gloam-downs/bus.js';
 import { makeFoes } from '../../public/lab/gloam-downs/foes.js';
@@ -490,5 +490,15 @@ const heard = names => { const got = []; const offs = names.map(k => on(k, d => 
   const now = summaryOf({ won: false, place: 'fen', time: 100, foes: 3, kept: 30, lost: 270, banked: 30 }).rows;
   assert.deepEqual(now.filter(r => r[0].startsWith('Glim')), [['Glim', 'kept 30 · lost 270']]);
   pass('the summary: an old save shows the glim banked and no "kept 0"; a death says its glim once');
+}
+{ // the recap (gloam-downs-screens-life) keeps the same glim rule: an old save falls back to the summary; a new death says its glim once
+  const old = RS.clean({ ended: { won: false, place: 'fen', time: 100, foes: 3, lost: 40, banked: 55 } });
+  const r0 = recapOf(old.ended);
+  assert(r0.old && r0.rows.some(r => r[0] === 'Glim banked'));
+  const e = RS.clean({ ended: { won: false, place: 'fen', time: 100, foes: 3, kept: 30, lost: 270, banked: 30, path: [{ id: 'gaol', time: 60, foes: 2 }, { id: 'ramparts', time: 30, foes: 1 }, { id: 'fen', time: 10, foes: 0 }], by: 'M' } }).ended;
+  const r1 = recapOf(e);
+  assert.deepEqual(r1.rows.filter(r => r[0].startsWith('Glim')), [['Glim', 'kept 30 · lost 270']]);
+  assert.deepEqual(r1.path.map(p => p.state), ['lit', 'lit', 'snuffed', 'dark', 'dark']);
+  pass('the recap: an old save shows the old rows; a new death says its glim once and lights the places it passed');
 }
 console.log(`${n} checks passed`);

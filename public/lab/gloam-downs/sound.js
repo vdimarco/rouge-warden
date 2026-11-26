@@ -36,7 +36,11 @@ export const CUES = {
   sweep: { rank: 3, hit: true, duck: [4, 4] }, shards: { rank: 2 }, shard: { rank: 2 }, lunge: { rank: 3 },
   stumble: { rank: 3, hit: true, duck: [8, 9] }, reeve: { rank: 3 }, bossBar: { rank: 2 }, light: { rank: 2 },
   // the cards
-  card: { rank: 0 }, focus: { rank: 0 }, choice: { rank: 0 }, buy: { rank: 0 }, refuse: { rank: 0 }
+  card: { rank: 0 }, focus: { rank: 0 }, choice: { rank: 0 }, buy: { rank: 0 }, refuse: { rank: 0 },
+  /* the selection screens (gloam-downs-screens-life): a glass tick on a lamp card's hover or focus (at most one each 60 ms), a shimmer
+     as a set of cards deals in, a lamp catching on a pick, a longer catch with a rising fifth on a kindle, and the tick of a number
+     that rolls (at most 12 a roll). Each is quieter than choice at its peak */
+  hover: { rank: 0, every: 0.06 }, reveal: { rank: 0 }, pick: { rank: 0 }, kindle: { rank: 0 }, tally: { rank: 0, most: 12 }
 };
 // the duck of a hit landed, by the blade's hit id
 const HIT_DUCK = { cut1: 2, cut2: 2, fin: 4, plunge: 4 };
@@ -723,6 +727,34 @@ export function createSound(ctx, { mix, seed = 1, key = 50 } = {}) {
       body(V, t, { f0: 140, f1: 90, dur: 0.1, gain: 0.35, clip: 1.4 });
       hiss(V, t, { f: 400, q: 1, dur: 0.06, gain: 0.25 });
       return 0.2;
+    },
+    // the selection screens, all in the place's key: a glass tick two octaves and a fifth up
+    hover(V, t, o, x) {
+      ring(V, t, { f: hz(S.key + 31) * x, parts: [[1, 0.05], [2.76, 0.02, 0.5]], dur: 0.12, gain: 1 });
+      return 0.15;
+    },
+    // a shimmer: the key's triad, high, rising one after another
+    reveal(V, t, o, x) {
+      [0, 4, 7].forEach((k, i) => tone(V, t + i * 0.05, { f0: hz(S.key + 36 + k) * x, dur: 0.35, gain: 0.035, attack: 0.03 }));
+      hiss(V, t, { f: 6000, q: 0.7, dur: 0.3, gain: 0.04, attack: 0.08, type: 'highpass' });
+      return 0.5;
+    },
+    // a lamp catching: a breath of noise, then a low bell on the key
+    pick(V, t, o, x) {
+      hiss(V, t, { f: 900 * x, f1: 2400 * x, q: 0.7, dur: 0.18, gain: 0.12, attack: 0.03 });
+      ring(V, t + 0.05, { f: hz(S.key + 12) * x, parts: [[1, 0.09], [2.01, 0.04, 0.7], [3.01, 0.02, 0.5]], dur: 0.8, gain: 1 });
+      return 0.9;
+    },
+    // a longer catch and a rising fifth
+    kindle(V, t, o, x) {
+      hiss(V, t, { f: 600 * x, f1: 3000 * x, q: 0.6, dur: 0.4, gain: 0.1, attack: 0.12 });
+      tone(V, t + 0.1, { f0: hz(S.key + 19) * x, dur: 0.5, gain: 0.06, attack: 0.01, type: 'triangle' });
+      tone(V, t + 0.28, { f0: hz(S.key + 26) * x, dur: 0.7, gain: 0.06, attack: 0.01, type: 'triangle' });
+      return 1.0;
+    },
+    tally(V, t, o, x) {
+      tone(V, t, { f0: hz(S.key + 43) * x, dur: 0.025, gain: 0.05, attack: 0.001 });
+      return 0.04;
     }
   };
   // a low-pass for a voice's buzzy tone
@@ -737,7 +769,8 @@ export function createSound(ctx, { mix, seed = 1, key = 50 } = {}) {
     swing: 3, strike: 2, whiff: 8, recover: -8, drop: 1, hit: -2, land: -1, out: -2, hurt: -1, roll: 2, miss: 4, plunge: 2, drink: 0, heal: 2, fall: 0, death: -8, heart: 4,
     glim: -4, wisp: 2, beacon: -2, scrape: 4, whistle: 3, hum: 4, paw: 5, rear: 1, coal: 2, pulse: 2, charge: 4, slam: 3,
     clang: -4, cracks: 2, rise: 1, reeve: -4, bossBar: -4, crook: 5, sweep: -1, cage: 5, chime: 4, shards: 3, shard: 2, crouch: 5,
-    lunge: 3, stumble: -7, light: 2, card: -2, focus: -4, choice: 0, buy: 0, refuse: 0
+    lunge: 3, stumble: -7, light: 2, card: -2, focus: -4, choice: 0, buy: 0, refuse: 0,
+    hover: -4, reveal: -4, pick: -2, kindle: -2, tally: -4
   };
 
   // the shaper's ceiling (voice units) of each heavy cue: the body sits near 0.8, so the spike over about 1 is shaped away
