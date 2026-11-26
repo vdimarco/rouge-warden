@@ -3,7 +3,8 @@ import { TILE, build, pathfind, RUNNER_BOX } from "./world.mjs";
 import { atlasUrl } from "./art/atlas-data.mjs";
 import { createRenderer, lookAt, perspective, mul } from "./render.mjs";
 
-const FOV = 20 * Math.PI / 180;
+const FOV_PORTRAIT = 20 * Math.PI / 180;
+const FOV_LAND = 30 * Math.PI / 180;
 // Idle opaque box is 24/16 = 1.5 tiles. Scale the figure to 1.64.
 const RUNNER_SCALE = 1.64 / 1.5 * (1.64 / 1.66);
 // Whole-tile zoom. Ten tiles across is the step that fills a short frame at tilt 55
@@ -107,14 +108,17 @@ function camera() {
   const tr = tilt * Math.PI / 180;
   const yr = yaw * Math.PI / 180;
   const aspect = renderer.view.artW / Math.max(1, renderer.view.artH);
-  const tan = Math.tan(FOV / 2);
   const portrait = renderer.view.artH > renderer.view.artW;
+  const fov = portrait ? FOV_PORTRAIT : FOV_LAND;
+  // Distance stays the 20° distance. Landscape only opens the lens.
+  const hold = Math.tan(FOV_PORTRAIT / 2);
+  const lens = Math.tan(fov / 2);
   const span = Math.abs(Math.cos(yr)) + Math.abs(Math.sin(yr));
   const establishing = !attract && player.y > 4;
   const tiles = portrait
     ? (attract ? 8.4 : establishing ? 6 : 7.25) * span
     : (attract ? TILES + 1 : establishing ? 10 : TILES);
-  const dist = (tiles * TILE) / (2 * tan * aspect);
+  const dist = (tiles * TILE) / (2 * hold * aspect);
   const cx = (attract ? 3 : player.x) * TILE;
   const cz = (attract ? 3 : player.y) * TILE;
   // At the spawn, aim up the block without pulling the camera back. The runner stays
@@ -132,7 +136,7 @@ function camera() {
   const rl = Math.hypot(right[0], right[1], right[2]);
   right = rl < 1e-5 ? [1, 0, 0] : right.map((v) => v / rl);
   const up = cross(right, forward);
-  const wpp = (2 * dist * Math.tan(FOV / 2)) / renderer.view.artH;
+  const wpp = (2 * dist * lens) / renderer.view.artH;
   const rel = sub(focus, cam);
   const vx = dot(rel, right), vy = dot(rel, up);
   const sx = Math.round(vx / wpp) * wpp - vx;
@@ -221,7 +225,7 @@ function scene() {
   const { cam, focus, dist } = camera();
   const [near, far] = planes(dist);
   const view = lookAt(cam, focus, [0, 1, 0]);
-  const proj = perspective(FOV, renderer.view.artW / renderer.view.artH, near, far);
+  const proj = perspective(renderer.view.artH > renderer.view.artW ? FOV_PORTRAIT : FOV_LAND, renderer.view.artW / renderer.view.artH, near, far);
   const cuts = new Set();
   if (cutaway) {
     const px = player.x * TILE, pz = player.y * TILE;

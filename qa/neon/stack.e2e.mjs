@@ -461,7 +461,7 @@ async function proof(width, height, dpr, tag) {
   check(spawn.exitLight >= 2, tag + " nearest sign light to exit " + (spawn.exitLight || 0).toFixed(2));
   check(spawn.cyan && spawn.full, tag + " exit is fully visible cyan (" + (spawn.door || []).join(",") + ")");
   if (tag === "1280") {
-    check(spawn.width >= 0.55 && spawn.width <= 0.60, tag + " spawn block is " + Math.round(spawn.width * 100) + "% wide");
+    check(spawn.width >= 0.34 && spawn.width <= 0.40, tag + " spawn block is " + Math.round(spawn.width * 100) + "% wide");
     console.log("  nums  " + tag + " runner feet " + (spawn.feet == null ? "n/a" : spawn.feet));
     check(spawn.edge[0] === 26 && spawn.edge[1] === 26 && spawn.edge[2] === 34, tag + " side edge is ink (" + spawn.edge.join(",") + ")");
   }
@@ -558,7 +558,7 @@ async function proof(width, height, dpr, tag) {
   const span = Math.max(...framed.corners.map((p) => p.x)) - Math.min(...framed.corners.map((p) => p.x));
   const blockWidth = span / view.artW;
   check(framed.inside, tag + " block corners stay inside at tilt 55 (" + framed.corners.map((p) => Math.round(p.x) + "," + Math.round(p.y)).join(" ") + ")");
-  check(blockWidth >= 0.75, tag + " block fills " + Math.round(blockWidth * 100) + "% of the canvas width");
+  check(blockWidth >= (tag === "1280" ? 0.45 : 0.75), tag + " block fills " + Math.round(blockWidth * 100) + "% of the canvas width");
   check(framed.cssW >= width * 0.95 && framed.cssH >= height * 0.95, tag + " canvas fills the viewport (" + Math.round(framed.cssW) + "x" + Math.round(framed.cssH) + " of " + framed.vw + "x" + framed.vh + ")");
   check(framed.n > 4 && framed.h > framed.w, tag + " runner is taller than wide (" + framed.w + "x" + framed.h + ", " + framed.n + " px)");
   await page.screenshot({ path: OUT + "/" + tag + "-tilt55-on.png" });
