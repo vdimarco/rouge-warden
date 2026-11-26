@@ -9,7 +9,7 @@ import { colourPower, coolShare, paneOf, kindledOf } from './run.js';
 import { emit } from './bus.js';
 import { sees } from './moves.js';
 import { mulberry, hash2 } from '../kit/rng.js';
-import { statusHit, isFoe } from './status.js';
+import { statusHit, isFoe, tickHit, heavyOf, STATES } from './status.js';
 
 const S = sec => Math.round(sec * 60);
 const wrap = a => Math.atan2(Math.sin(a), Math.cos(a));
@@ -31,7 +31,11 @@ export const AB = {
   // the Crook line's pull: its play steps, and the walker's gain of speed a step (400 m/s², foes.js physics)
   pullN: 12, pullGain: 400 / 60,
   // what can start: not while the lamplighter drinks, rolls, is hurt or plunges; Smoke step and Bell guard only on the ground
-  busy: ['drink', 'roll', 'hurt', 'hang', 'plunge', 'land'], ground: ['step', 'guard']
+  busy: ['drink', 'roll', 'hurt', 'hang', 'plunge', 'land', 'dash'], ground: ['step', 'guard', 'post', 'slick', 'tacks'],
+  /* the ten of gloam-downs-hub design.md "New abilities": each tell's length before its effect (Wick lash's line, Shard fan's shards,
+     Bell toll's ring, the moths gathering), a shard's half width, a tack's touch, how often a pool or the moths read the foes, a
+     blink's play steps, and the blink back to the post lamp */
+  tell: { lash: S(0.15), fan: S(0.12), toll: S(0.3), swarm: S(0.3) }, shard: 0.3, tack: 0.35, every: S(0.5), blinkN: S(0.1), postN: S(0.15)
 };
 // the cooldown of an ability in play steps: its seconds, Gloam's share (never under 60%), and Smoked glass's 15% off
 export const coolOf = (rs, id) => {
@@ -194,8 +198,107 @@ export function makeAbilities(R) {
     guard(a, p) {
       A.guard = { t: 0, n: S(a.time), back: a.back * p };
       return true;
+    },
+    // Wick lash: a 5 m line, 0.5 m wide, ahead (at the soft aim's foe when there is one): 14 to each foe on it and 3 s of burn
+    lash(a, p, ev) {
+      const s = sOf(), t = aim(a.range + 1), yaw = t ? Math.atan2(t.x - s.x, t.z - s.z) : s.yaw;
+      const ux = Math.sin(yaw), uz = Math.cos(yaw), len = a.range * wideOf();
+      A.effects.push({ kind: 'lash', t: 0, tell: AB.tell.lash, at: [s.x, s.y, s.z], ux, uz, len, w: a.wide * wideOf(), dmg: a.dmg * p, burn: S(a.burn) });
+      ev.push({ type: 'abilityFx', kind: 'line', id: 'lash', a: [s.x, s.y + 0.9, s.z], b: [s.x + ux * len, s.y + 0.9, s.z + uz * len], life: 0.15 });
+      return true;
+    },
+    // Shard fan: 5 shards in a 50 degree fan, 6 m: each meets the first foe on its way for 6 and 1 Char
+    fan(a, p, ev) {
+      const s = sOf(), t = aim(a.range), yaw = t ? Math.atan2(t.x - s.x, t.z - s.z) : s.yaw, arc = (a.arc * Math.PI) / 180, range = a.range * wideOf();
+      const rays = Array.from({ length: a.n }, (_, i) => yaw + (a.n > 1 ? (i / (a.n - 1) - 0.5) * arc : 0));
+      A.effects.push({ kind: 'fan', t: 0, tell: AB.tell.fan, at: [s.x, s.y, s.z], rays, range, dmg: a.dmg * p, char: a.char });
+      for (const r of rays) ev.push({ type: 'abilityFx', kind: 'line', id: 'fan', a: [s.x, s.y + 1, s.z], b: [s.x + Math.sin(r) * range, s.y + 1, s.z + Math.cos(r) * range], life: 0.12 });
+      return true;
+    },
+    // Oil slick: a 3 m pool at the feet for 6 s that slows 40%; a burn that touches it lights it for 4 s, 5 every 0.5 s
+    slick(a, p, ev) {
+      const s = sOf(), at = [s.x, ground(s.x, s.z, s.y), s.z];
+      A.effects.push({ kind: 'slick', at, t: 0, life: S(a.life), r: a.r * wideOf(), slow: 1 - a.slow, lit: 0, litFor: S(a.lit), every: S(a.every), dmg: a.dmg * p });
+      ev.push({ type: 'abilityFx', kind: 'tell', id: 'slick', at, r: a.r, life: 0.4 });
+      return true;
+    },
+    // Tack scatter: 8 tacks in a 2.5 m ring for 8 s; a foe on one takes 4, 1 Char and a 30% slow for 1 s, and the tack is spent
+    tacks(a, p, ev) {
+      const s = sOf(), r = a.r * wideOf(), pts = [];
+      for (let i = 0; i < a.n; i++) { const g = (i / a.n) * Math.PI * 2 + s.yaw, x = s.x + Math.sin(g) * r, z = s.z + Math.cos(g) * r; pts.push([x, ground(x, z, s.y), z]); }
+      A.effects.push({ kind: 'tacks', t: 0, life: S(a.life), pts, dmg: a.dmg * p, char: a.char, slow: 1 - a.slow, hold: S(a.hold) });
+      ev.push({ type: 'abilityFx', kind: 'puff', id: 'tacks', at: [s.x, s.y, s.z] });
+      return true;
+    },
+    // Bell toll: a ring rises for 0.3 s, then within 3.5 m light foes are stunned 0.8 s and heavy foes lose 40 poise
+    toll(a, p, ev) {
+      const s = sOf();
+      A.effects.push({ kind: 'toll', t: 0, tell: AB.tell.toll, r: a.r * wideOf(), stun: Math.round(S(a.stun) * p), poise: a.poise * p });
+      ev.push({ type: 'abilityFx', kind: 'tell', id: 'toll', at: [s.x, s.y, s.z], r: a.r, life: 0.3 });
+      return true;
+    },
+    // Ember shell: a 20 shell for 6 s; when it breaks or its time ends, 15 within 2.5 m and 2 s of burn
+    shell(a, p, ev) {
+      const s = sOf(), r = a.r * wideOf(), dmg = a.dmg * p;
+      const got = R.build?.addShell(a.shell * p, S(a.life), 'ember', { onEnd: e2 => shellBurst(r, dmg, S(a.burn), e2 || ev) }) ?? 0;
+      ev.push({ type: 'abilityFx', kind: 'ring', id: 'shell', at: [s.x, s.y, s.z], r: 0.9 });
+      return got > 0 || !R.build;
+    },
+    // Post lamp: a lamp planted for 10 s that heals 1.5% of the max health a second within 3 m; Use again blinks back to it
+    post(a, p, ev) {
+      const s = sOf(), at = [s.x, ground(s.x, s.z, s.y), s.z];
+      A.effects = A.effects.filter(e => e.kind !== 'post');
+      A.effects.push({ kind: 'post', at, t: 0, life: S(a.life), r: a.r * wideOf(), heal: a.heal * p, acc: 0 });
+      ev.push({ type: 'abilityFx', kind: 'core', id: 'post', at: [at[0], at[1] + 1.2, at[2]], life: 0.4 });
+      return true;
+    },
+    // Shutter: 2 s unseen (no foe starts at the lamplighter); the next blade hit within 3 s is a sure cut
+    shutter(a, p, ev) {
+      const s = sOf();
+      R.unseenUntil = clock.play + S(a.time);
+      R.build?.markSure(S(a.sure));
+      ev.push({ type: 'abilityFx', kind: 'puff', id: 'shutter', at: [s.x, s.y, s.z] });
+      return true;
+    },
+    // Moth swarm: 6 moths for 10 s; each seeks the nearest burning foe within 8 m, else the nearest, and deals 3 a second (ticks)
+    swarm(a, p, ev) {
+      const s = sOf();
+      A.effects = A.effects.filter(e => e.kind !== 'swarm');
+      A.effects.push({ kind: 'swarm', t: 0, tell: AB.tell.swarm, life: S(a.life), n: a.n, range: a.range * wideOf(), dmg: a.dmg * p, every: S(1), targets: [] });
+      ev.push({ type: 'abilityFx', kind: 'puff', id: 'swarm', at: [s.x, s.y + 0.6, s.z] });
+      return true;
+    },
+    // Gloam blink: a 5 m blink through foes, safe for 0.2 s; each foe passed gets a Mark
+    blink(a, p, ev, act, camYaw) {
+      const s = sOf(), [ux, uz] = dirOf(act, camYaw), to = reach(ux, uz, a.dist);
+      const from = [s.x, s.y, s.z];
+      if (to) {
+        A.move = { from, to, t: 0, n: AB.blinkN, yaw: s.yaw };
+        const len = Math.hypot(to[0] - from[0], to[2] - from[2]);
+        for (const t of live()) {
+          if (!isFoe(t)) continue;
+          const dx = t.x - from[0], dz = t.z - from[2], along = dx * ux + dz * uz, across = Math.abs(-dx * uz + dz * ux);
+          if (along >= -0.3 && along <= len + 0.3 && across <= 0.6 + (t.r || 0) && Math.abs(t.y - s.y) < 2) statusHit(t, 'mark', STATES.mark.life);
+        }
+      }
+      R.fighter.f.smoke = Math.max(R.fighter.f.smoke | 0, S(a.safe));
+      ev.push({ type: 'abilityFx', kind: 'puff', id: 'blink', at: from }, { type: 'abilityFx', kind: 'puff', id: 'blink', at: to || from });
+      return true;
     }
   };
+  // Wide (a trait, gear.js traitWide): the radius or range of the ability now starting, by its slot (1 until the gear lands)
+  let wideSlot = null;
+  const wideOf = () => (wideSlot && typeof A.wide === 'function' ? A.wide(wideSlot) : 1);
+  // Ember shell's burst: 15 within 2.5 m, and 2 s of burn
+  function shellBurst(r, dmg, burn, ev) {
+    const s = sOf();
+    for (const t of live()) if (Math.hypot(t.x - s.x, t.z - s.z) - (t.r || 0) <= r && Math.abs(t.y - s.y) < 2.2) {
+      hurtFoe(t, dmg, 'shell', ev, { interrupt: true });
+      statusHit(t, 'burn', burn, { dps: STATES.burnDps });
+    }
+    ev.push({ type: 'abilityFx', kind: 'burst', id: 'shell', at: [s.x, s.y, s.z], r });
+    cue(ev, 'slam', { ability: 'shell' });
+  }
   // a slot's input: a press (or one kept 0.15 s) starts its ability, or swaps it with the lamp underfoot
   function press(i, act, camYaw, ev) {
     const run = rs.run, slot = slots()[i];
@@ -215,11 +318,24 @@ export function makeAbilities(R) {
     }
     if (!slot) return false;
     const a = abilityOf(slot.id), f = R.fighter.f, s = sOf();
+    // Post lamp standing: Use again blinks back to it, safe for 0.15 s, and ends it (in its cooldown too)
+    const post = a.id === 'post' && A.effects.find(e => e.kind === 'post');
+    if (post && !AB.busy.includes(f.move) && !A.move) {
+      A.move = { from: [s.x, s.y, s.z], to: post.at.slice(), t: 0, n: AB.postN, yaw: s.yaw };
+      f.smoke = Math.max(f.smoke | 0, AB.postN);
+      A.effects.splice(A.effects.indexOf(post), 1);
+      ev.push({ type: 'abilityFx', kind: 'puff', id: 'post', at: [s.x, s.y, s.z] }, { type: 'abilityFx', kind: 'puff', id: 'post', at: post.at.slice() });
+      cue(ev, 'blink', { ability: 'post', back: true });
+      return true;
+    }
     if (A.cool[i] > 0) { cue(ev, 'refuse', { ability: slot.id, slot: i }); return true; }
     // in a drink, a roll, a hurt or a plunge, and Smoke step or Bell guard in the air: nothing but the refuse cue, and the press is spent
     if (AB.busy.includes(f.move) || (AB.ground.includes(a.id) && !s.ground) || A.move) { cue(ev, 'refuse', { ability: slot.id, slot: i, busy: true }); return true; }
     // an ability with no START yet (a row of the hub change before its builder lands) only refuses
-    if (!START[a.id]?.(a, powerOf(rs, slot), ev, act, camYaw)) { cue(ev, 'refuse', { ability: slot.id, slot: i }); return true; }
+    wideSlot = slot;
+    const ok = START[a.id]?.(a, powerOf(rs, slot), ev, act, camYaw);
+    wideSlot = null;
+    if (!ok) { cue(ev, 'refuse', { ability: slot.id, slot: i }); return true; }
     A.full[i] = A.cool[i] = coolOf(rs, a.id);
     A.lastUse = clock.play; A.lastSlot = i;
     ev.push({ type: 'ability', what: 'use', id: a.id, slot: i });
@@ -245,7 +361,8 @@ export function makeAbilities(R) {
           }
           break;
         case 'burn':
-          if (e.t % e.every === 0) { if (e.target.alive) hurtFoe(e.target, e.dmg, e.id, ev); if (--e.n <= 0 || !e.target.alive) done = true; }
+          // a burn's tick (status.js tickHit): no flinch, no poise, no combo; Ember glass's 20% on it as on any hit of an ability
+          if (e.t % e.every === 0) { if (e.target.alive) tickHit(e.target, e.dmg * (paneOf(rs, 'ember') ? 1.2 : 1), ev, { id: e.id }); if (--e.n <= 0 || !e.target.alive) done = true; }
           break;
         case 'snare': {
           if (e.t >= e.life) { done = true; break; }
@@ -312,6 +429,103 @@ export function makeAbilities(R) {
             hurtFoe(t, e.dmg * (twice ? AB.pitchTwice : 1), 'pitch', ev);
           }
           break;
+        case 'lash':
+          if (e.t >= e.tell) {
+            for (const t of live()) {
+              const dx = t.x - e.at[0], dz = t.z - e.at[2], along = dx * e.ux + dz * e.uz, across = Math.abs(-dx * e.uz + dz * e.ux);
+              if (along < -0.2 || along > e.len + (t.r || 0) || across > e.w / 2 + (t.r || 0) || Math.abs(t.y - e.at[1]) > 2.2) continue;
+              if (hurtFoe(t, e.dmg, 'lash', ev, { interrupt: true }) !== false) statusHit(t, 'burn', e.burn, { dps: STATES.burnDps });
+            }
+            done = true;
+          }
+          break;
+        case 'fan':
+          if (e.t >= e.tell) {
+            // each shard meets the nearest foe along its way, within its half width
+            for (const r of e.rays) {
+              const ux = Math.sin(r), uz = Math.cos(r);
+              let best = null, bd = Infinity;
+              for (const t of live()) {
+                const dx = t.x - e.at[0], dz = t.z - e.at[2], along = dx * ux + dz * uz, across = Math.abs(-dx * uz + dz * ux);
+                if (along < 0 || along > e.range + (t.r || 0) || across > AB.shard + (t.r || 0) || Math.abs(t.y - e.at[1]) > 2.2) continue;
+                if (along < bd) { bd = along; best = t; }
+              }
+              if (best && hurtFoe(best, e.dmg, 'fan', ev, { interrupt: true }) !== false) statusHit(best, 'char', e.char, { ev, from: [e.at[0], e.at[2]] });
+            }
+            done = true;
+          }
+          break;
+        case 'slick': {
+          if (e.t >= e.life && !(e.lit > 0)) { done = true; break; }
+          const inside = live().filter(t => dist(t, e.at) - (t.r || 0) <= e.r && Math.abs(t.y - e.at[1]) <= 1.6);
+          // a burn touches it: a burning foe in it, or a pool of pitch on it
+          if (!e.lit && (inside.some(t => t.status?.burn > 0) || A.effects.some(b => b.kind === 'pitch' && Math.hypot(b.at[0] - e.at[0], b.at[2] - e.at[2]) <= e.r + b.r))) {
+            e.lit = e.litFor; e.litAt = e.t;
+            cue(ev, 'slick', { ability: 'slick', lit: true });
+            ev.push({ type: 'abilityFx', kind: 'burst', id: 'slick', at: e.at, r: e.r });
+          }
+          if (e.t % e.every === 0) for (const t of inside) statusHit(t, 'slow', e.every + 1, { k: e.slow });
+          if (e.lit > 0) {
+            // lit: 5 every 0.5 s to each foe in it (a ground fire, as the pitch: no flinch, outside the ticks' cap)
+            if (e.t > e.litAt && (e.t - e.litAt) % e.every === 0) for (const t of inside) { tickHit(t, e.dmg * (paneOf(rs, 'ember') && t.status?.burn > 0 ? 1.2 : 1), ev, { id: 'slick', capped: false }); statusHit(t, 'burn', e.every + 1); }
+            if (--e.lit <= 0) done = true;
+          }
+          break;
+        }
+        case 'tacks': {
+          if (e.t >= e.life || !e.pts.length) { done = true; break; }
+          for (const pt of e.pts.slice()) {
+            const t = live().find(t => Math.hypot(t.x - pt[0], t.z - pt[2]) <= AB.tack + (t.r || 0) && Math.abs(t.y - pt[1]) <= 1.6);
+            if (!t) continue;
+            e.pts.splice(e.pts.indexOf(pt), 1);
+            hurtFoe(t, e.dmg, 'tacks', ev);
+            statusHit(t, 'char', e.char, { ev, from: [pt[0], pt[2]] });
+            statusHit(t, 'slow', e.hold, { k: e.slow });
+            ev.push({ type: 'abilityFx', kind: 'snap', id: 'tacks', at: pt });
+          }
+          break;
+        }
+        case 'toll':
+          if (e.t >= e.tell) {
+            const s = sOf();
+            for (const t of live()) {
+              if (!isFoe(t) || Math.hypot(t.x - s.x, t.z - s.z) - (t.r || 0) > e.r || Math.abs(t.y - s.y) > 2.5) continue;
+              if (heavyOf(t)) t.wear?.(e.poise);
+              else statusHit(t, 'stun', e.stun);
+            }
+            ev.push({ type: 'abilityFx', kind: 'flash', id: 'toll', at: [s.x, s.y + 1, s.z], r: e.r });
+            done = true;
+          }
+          break;
+        case 'post': {
+          if (e.t >= e.life) { done = true; break; }
+          const s = sOf(), run = rs.run;
+          if (run && Math.hypot(s.x - e.at[0], s.z - e.at[2]) <= e.r && Math.abs(s.y - e.at[1]) < 2) {
+            const max = R.max();
+            e.acc += (e.heal * max) / 60;
+            if (e.acc >= 1) { const n = Math.floor(e.acc); e.acc -= n; run.hp = Math.min(max, run.hp + n); }
+          }
+          break;
+        }
+        case 'swarm': {
+          if (e.t >= e.life) { done = true; break; }
+          if (e.t < e.tell) break;
+          const s = sOf(), here = [s.x, s.y, s.z], L = live().filter(t => dist(t, here) <= e.range && Math.abs(t.y - s.y) < 3);
+          // every 0.5 s the moths pick again: the nearest burning foe within 8 m, else the nearest foe
+          if ((e.t - e.tell) % AB.every === 0) {
+            const near = L.slice().sort((a, b) => dist(a, here) - dist(b, here));
+            const pick = near.find(t => t.status?.burn > 0) || near[0] || null;
+            e.targets = Array.from({ length: e.n }, () => pick);
+            if (pick) ev.push({ type: 'abilityFx', kind: 'line', id: 'moth', a: [s.x + 0.4, s.y + 1.5, s.z], b: [pick.x, pick.y + (pick.T?.chest ?? 1), pick.z], life: 0.2 });
+          }
+          // each moth deals 3 a second as a tick (no flinch, inside the cap); Ember glass adds 20% on a burning foe
+          if (e.t > e.tell && (e.t - e.tell) % e.every === 0) {
+            const by = new Map();
+            for (const t of e.targets) if (t?.alive) by.set(t, (by.get(t) || 0) + e.dmg);
+            for (const [t, n] of by) tickHit(t, n * (paneOf(rs, 'ember') && t.status?.burn > 0 ? 1.2 : 1), ev, { id: 'swarm' });
+          }
+          break;
+        }
       }
       if (done) A.effects.splice(A.effects.indexOf(e), 1);
     }
@@ -383,8 +597,24 @@ export function makeAbilities(R) {
   // a cooldown cut short on both slots (Storm, Tallow) or the other slot (Hot glass)
   const cut = (n, only = null) => { for (let i = 0; i < 2; i++) if (only === null || only === i) A.cool[i] = Math.max(0, A.cool[i] - n); };
   A.nearMiss = () => { if (paneOf(rs, 'storm')) cut(AB.storm); };
+  // the Gloam set (build.js): a cooldown cut short on one slot
+  A.coolBy = (n, only = null) => cut(n, only);
+  /* the Count wick (build.js): a free Lantern bomb at `power` of a slotted one's at a foe; it counts as an ability use (Hot glass, Clear
+     glass), and starts no cooldown */
+  A.freeBomb = (t, power = 1, ev = R.out) => {
+    const a = abilityOf('bomb'), at = [t.x, t.y, t.z], p = power * colourPower(rs.run, a.colour), s = sOf();
+    A.effects.push({ kind: 'bomb', at, t: 0, fuse: S(a.fuse), dmg: a.dmg * p, r: a.r, burn: (a.burn / AB.burnTicks) * p });
+    ev.push({ type: 'abilityFx', kind: 'throw', id: 'bomb', from: [s.x, s.y + 1, s.z], to: at }, { type: 'abilityFx', kind: 'tell', id: 'bomb', at, r: a.r, life: a.fuse });
+    A.lastUse = clock.play; A.lastSlot = 2;
+    if (paneOf(rs, 'clear')) R.clearUntil = clock.play + S(2);
+    ev.push({ type: 'ability', what: 'use', id: 'bomb', slot: -1, free: true });
+    cue(ev, a.cue, { ability: 'bomb', free: true });
+    emit('ability-use', { id: 'bomb', slot: -1, free: true });
+    return true;
+  };
   A.drink = () => { if (paneOf(rs, 'tallow')) cut(AB.tallow); };
-  A.foeOut = () => { if (paneOf(rs, 'hot') && A.lastSlot >= 0 && clock.play - A.lastUse <= AB.hot.within) cut(AB.hot.cool, 1 - A.lastSlot); };
+  // (a free bomb of the Count wick is slot 2: it cools both)
+  A.foeOut = () => { if (paneOf(rs, 'hot') && A.lastSlot >= 0 && clock.play - A.lastUse <= AB.hot.within) cut(AB.hot.cool, A.lastSlot === 2 ? null : 1 - A.lastSlot); };
   // a cache's ability lamp: a draw from the kindled abilities, at the cache -> { id, name } or null
   A.dropAt = at => { const l = dropAbility(R, at); return l ? { id: l.id, name: abilityOf(l.id)?.name || l.id } : null; };
   // a foe put out: an ability lamp drops where it fell with 3%, 1% more a Keen eye level (run.js keeps the count of 3 a run)

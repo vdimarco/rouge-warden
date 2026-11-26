@@ -50,9 +50,11 @@ export const PANES = [
   { id: 'cinder', name: 'Cinder glass', colour: 'flame', cost: 140, text: 'below 30% health, +30% damage', below: 0.3, dmg: 0.3 },
   { id: 'spill', name: 'Spill glass', colour: 'flame', cost: 120, text: 'a foe put out bursts in fire', dmg: 8, r: 2, burn: 2, chain: 3 },
   { id: 'rush', name: 'Rush glass', colour: 'gloam', cost: 110, text: 'a foe put out gives 1.5 s of haste', time: 1.5, haste: 0.25 },
-  { id: 'thirst', name: 'Thirst glass', colour: 'ward', cost: 150, text: 'below 50% health, blade hits heal', below: 0.5, heal: 0.15 },
+  // Thirst glass heals 4% of the blade's damage, not the first draft's 15% (59% more effective health in the reference duel) or 5% (27%)
+  { id: 'thirst', name: 'Thirst glass', colour: 'ward', cost: 150, text: 'below 50% health, blade hits heal', below: 0.5, heal: 0.04 },
   { id: 'shard', name: 'Shard glass', colour: 'gloam', cost: 130, text: 'a sure cut adds 2 Char', char: 2 },
-  { id: 'cracked', name: 'Cracked glass', colour: 'flame', cost: 60, text: '+35% damage, until 3 hits taken in a place', dmg: 0.35, hits: 3 }
+  // Cracked glass: +30%, not the first draft's +35%, which added 20.3% damage a second in the reference duel (the budget is 20%)
+  { id: 'cracked', name: 'Cracked glass', colour: 'flame', cost: 60, text: '+30% damage, until 3 hits taken in a place', dmg: 0.3, hits: 3 }
 ];
 export const PANE_IDS = PANES.map(p => p.id);
 export const PANE_SLOTS = { base: 1, max: 3 };

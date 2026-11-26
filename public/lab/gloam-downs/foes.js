@@ -13,7 +13,7 @@ import { STAGGER, poiseOf } from './feel.js';
 import { specialPhase } from './elites.js';
 import { heavyOf } from './status.js';
 import { comboGlim } from './combo.js';
-import { statusStep } from './status.js';
+import { statusStep, statusTick, statusOut, blindMiss, markHit } from './status.js';
 
 const S = sec => Math.round(sec * 60);
 const STEP = 1 / 60, DEG = Math.PI / 180;
@@ -243,7 +243,9 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
       wait: 0, windAdd: 0, recAdd: 0, recLeft: 0, flinches: [], braced: 0, cancels: 0, back: 0, backDir: null, orbit: k % 2 ? -1 : 1,
       flash: 0, shake: 0, shakeDir: [1, 0], push: null, shove: null, marker: null, aim: null, lane: null, prog: 0, firm: home.slice(),
       yaw: 0, x: home[0], y: home[1], z: home[2], r: T.r, alive: false, vx: 0, vz: 0, walking: 0, diedAt: null,
-      hit: (raw, how) => hitFoe(f, raw, how)
+      hit: (raw, how) => hitFoe(f, raw, how),
+      // poise worn with no damage (Bell toll): n off a heavy foe's poise, at once -> true when it broke
+      wear: n => (hittable(f) && poiseOf(f) > 0 ? breakPoise(f, n, true) : false)
     };
     if (!T.fly) f.body = makeBody(walk, { p: [home[0], home[1] + 0.5, home[2]], yaw: 0 }, bounds, { ...PARAMS, radius: T.r, walk: T.walk, run: T.close, accel: 18, jumpV: 0, stepUp: 0.35, turnRate: 0 });
     return f;
@@ -332,6 +334,8 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
   }
   F.due = blowsDue;
   function mayAttack(f, kind, hitIn = 0) {
+    // Shutter (abilities.js): while the lamplighter is unseen no foe starts at it
+    if (unseen()) return false;
     if (kind === 'coal' ? F.coal : F.melee.size >= F.tokens) return false;
     if (F.step < F.hurtWait || F.step < f.wait) return false;
     const off = offOf(f);
@@ -339,6 +343,7 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
     const at = F.step + hitIn + (off ? FAIR.offWind : 0);
     return !blowsDue().some(t => Math.abs(t - at) < FAIR.gap);
   }
+  const unseen = () => !!F.runner && F.runner.clock.play < (F.runner.unseenUntil ?? -1);
   // a blow has landed (a melee attack's first active step, a coal's landing): the spacing counts from it
   const blowNow = () => { F.blows.push(F.step); while (F.blows.length > 6) F.blows.shift(); };
   F.offOf = offOf;
@@ -370,13 +375,15 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
     else F.coal = f;
     f.windAdd = off ? FAIR.offWind : 0;
     f.state = 'move'; f.move = name; f.mt = -f.windAdd; f.landed = false; f.ready = 0; f.prog = 0; f.wall = false; f.recAdd = 0; f.recLeft = 0;
+    // blind (status.js): this attack plays and deals 0
+    f.miss = blindMiss(f);
     // a wind-up begun braced, or steeled (the first after a cancel, within 4 s), stays armored to its end; the steel is spent
     f.armorMove = f.braced > 0 || steeled(f, F.step);
     f.steelTo = -1;
     lay(f, name);
     ev.push({ type: 'cue', cue: M.cue, foe: f.id, ...(off ? { off: true } : {}) });
   }
-  function clearMove(f) { f.move = null; f.mt = 0; f.lane = null; f.windAdd = 0; f.recAdd = 0; f.recLeft = 0; f.armorMove = false; }
+  function clearMove(f) { f.move = null; f.mt = 0; f.lane = null; f.windAdd = 0; f.recAdd = 0; f.recLeft = 0; f.armorMove = false; f.miss = false; }
   /* an attack cut off (a hit, a break, a parry, a stun or a hold, a death, a sink): an elite's special move ends too, and the token
      goes back at once */
   function cancelMove(f) {
@@ -396,6 +403,9 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
   // a hit on the lamplighter: true once it has landed (in a safe time it passes, and the attack tests its later active steps)
   function strike(f, dmg, from, ev, o = {}) {
     if (f.hold || !F.runner) return false;
+    // a blind foe's attack plays and deals 0 (an elite's special move is read as its first blow comes); a coal keeps its thrower's miss
+    const miss = o.miss ?? (f.special ? (f.special.miss ??= blindMiss(f)) : f.miss);
+    if (miss) { if (!o.coal) ev.push({ type: 'blindMiss', foe: f.id }); return true; }
     const r = F.runner.hurt(dmg * FOE_HARD.dmg * SC.dmg, from, o, ev);
     // a hurt: no foe starts a wind-up for 1.0 s, and this one waits 1.2 s; a melee foe steps back 1.0 m over 0.4 s
     if (r === 'hit' || r === 'dead') {
@@ -458,7 +468,7 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
         if (ph === 'wind') { turnTo(f, Math.atan2(f.aim[0] - f.x, f.aim[2] - f.z)); return null; }
         if (ph === 'act' && at === M.release) {
           const hand = [f.x + Math.sin(f.yaw) * 0.25, f.y + 1.55, f.z + Math.cos(f.yaw) * 0.25];
-          F.coals.push({ f, from: hand, to: f.aim.slice(), t: 0, n: M.flight, R: M.ring, dmg: M.dmg, rise: M.rise });
+          F.coals.push({ f, from: hand, to: f.aim.slice(), t: 0, n: M.flight, R: M.ring, dmg: M.dmg, rise: M.rise, miss: !!f.miss });
         }
         return null;
       }
@@ -668,6 +678,8 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
 
   /* ---------------- one foe, one play step ---------------- */
   function stepFoe(f, ev) {
+    // the ticking states (status.js): Char, Soot and a state's burn deal their share, and Char, Soot, Blind and Mark count down
+    statusTick(f, { ev });
     if (f.hold) return;
     // the states abilities put on a foe (status.js): a stun or a hold stops it where it stands, and its wind-up; a slow halves its walk
     // and its wind-up
@@ -749,6 +761,15 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
    Ironback takes 50% more. A held foe takes the damage and holds its pose. */
   function hitFoe(f, raw, how = {}) {
     if (!hittable(f)) return false;
+    // a tick (status.js tickHit: Char, Soot, a burn, a moth of the swarm): the damage and a short flash, and nothing else. No flinch, no
+    // poise worn, no wind-up stopped, and it does not make the foe aware
+    if (how.tick) {
+      const n = dealt(raw);
+      f.hp = Math.max(0, f.hp - n);
+      f.flashTo = Math.max(f.flashTo ?? 0, F.game + 2);
+      if (f.hp <= 0) kill(f);
+      return n;
+    }
     const dmg = dealt(raw, (f.stunned ? f.T.stunned : 1) * (f.state === 'stagger' ? STAGGER.take : 1));
     f.hp = Math.max(0, f.hp - dmg);
     // bright on the step of the hit and the two after it (think counts the game step on after the blade's step)
@@ -758,6 +779,12 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
     const fx = how.from ? f.x - how.from[0] : Math.sin(f.yaw), fz = how.from ? f.z - how.from[1] : Math.cos(f.yaw), fl = Math.hypot(fx, fz) || 1;
     f.shakeDir = [fx / fl, fz / fl];
     if (f.hp <= 0) { kill(f); return dmg; }
+    // a Mark (status.js): this hit bursts it for 22, a hit of its own, after this one's rules
+    if (f.status?.mark > 0 && !how.state && !how.parry) { const r = hitRules(f, dmg, how); markHit(f, how, F.pending); return r; }
+    return hitRules(f, dmg, how);
+  }
+  // what a hit does by the foe's state, after its damage is taken (hitFoe)
+  function hitRules(f, dmg, how) {
     if (breakPoise(f, dmg)) return dmg;
     const heavy = heavyOf(f);
     // Ember parry: a light foe is knocked down below; a heavy foe (an Ironback, an elite) staggers for the parry's time, whatever its
@@ -827,7 +854,7 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
   }
   /* the poise (feel.js STAGGER): the damage comes off it too, twice over in a wind-up, and at 0 the foe staggers, its wind-up ended.
      -> true when the foe is in a stagger now (a hit in a stagger takes 25% more and does nothing else) */
-  function breakPoise(f, dmg) {
+  function breakPoise(f, dmg, exact = false) {
     if (f.state === 'stagger') return true;
     const max = poiseOf(f);
     if (!max || f.state === 'stun' || f.state === 'down') return false;
@@ -835,7 +862,7 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
     f.poiseAt = F.step;
     // in the 4 s after a stagger the poise holds full: the foe cannot break again, and its rim says so
     if (F.step < (f.staggerEnd ?? -1e9) + STAGGER.gap) { f.poise = max; return false; }
-    f.poise = Math.max(0, f.poise - dmg * (winding(f) ? STAGGER.wind : 1));
+    f.poise = Math.max(0, f.poise - dmg * (winding(f) && !exact ? STAGGER.wind : 1));
     if (f.poise > 0) return false;
     const was = winding(f);
     cancelMove(f);
@@ -866,8 +893,11 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
     f.diedAt = { x: f.x, y: f.y, z: f.z, yaw: f.yaw, step: F.game };
     f.out = true;
     if (shown({ state: was }) && was !== 'sink') { f.state = 'dying'; f.t = 0; } else { f.state = 'out'; freeSlot(f); }
-    (ev ? e => ev.push(e) : queue)({ type: 'foeOut', foe: f.id, x: f.x, y: f.y, z: f.z });
+    (ev ? e => ev.push(e) : queue)({ type: 'foeOut', foe: f.id, x: f.x, y: f.y, z: f.z, burning: f.status?.burn > 0 });
     (ev ? e => ev.push(e) : queue)({ type: 'cue', cue: 'out', foe: f.id });
+    // a sooted foe passes its Soot on (status.js); the last foe of a zone clears it (the Shell wick, the Ward set)
+    if (statusOut(f, F.foes).length) (ev ? e => ev.push(e) : queue)({ type: 'cue', cue: 'soot', foe: f.id });
+    if (f.zone.members.every(gone)) (ev ? e => ev.push(e) : queue)({ type: 'zoneClear', zone: f.zone.id });
     F.runner?.foeOut(comboGlim(f.T.glim, F.combo?.tier ?? 0), at, f);
   }
 
@@ -950,7 +980,7 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
       c.f.marker = c.f.move === 'lob' && phaseOf(c.f.T.moves.lob, c.f.mt) === 'wind' ? c.f.marker : null;
       ev.push({ type: 'burst', kind: 'coal', x: c.to[0], y: c.to[1], z: c.to[2], r: c.R }, { type: 'cue', cue: 'coal' });
       if (!F.blows.includes(F.step)) blowNow();
-      if (s && inRing(s, c.to[0], c.to[1], c.to[2], c.R, c.rise) && !c.f.hold) strike(c.f, c.dmg, [c.to[0], c.to[2]], ev, { coal: true });
+      if (s && inRing(s, c.to[0], c.to[1], c.to[2], c.R, c.rise) && !c.f.hold) strike(c.f, c.dmg, [c.to[0], c.to[2]], ev, { coal: true, miss: c.miss });
     }
   }
   // where a coal is in its flight: an arc from the hand to the ring's centre

@@ -50,7 +50,11 @@ export const MOVES = {
   hurt: { lock: S(0.25), safe: S(1.0), push: 1.2, stop: 5 },
   fall: { below: -25, dmg: 10, firm: 1.0, every: 4 },
   shave: { steps: S(1.0), bonus: 0.5 },
-  face: 10
+  face: 10,
+  // a sure cut (build.js): 1.5 times, after the added bonuses, and 1 step more of hit stop
+  sure: { k: 1.5, stop: 1 },
+  // Gloam dash (the key): Roll in the air dashes 3.5 m level over 0.15 s, safe all the way, once until the feet land
+  dash: { dist: 3.5, steps: S(0.15) }
 };
 
 /* ---------------- the sight test ----------------
@@ -119,7 +123,9 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
     cool: 0, safe: 0, pushV: 0, shave: 0, top: 0, firm: [s.x, s.y, s.z], firmYaw: s.yaw, firmAge: 0, queue: false, from: null,
     // the builds: the steps since the last roll ended and the play step of the last Attack press (Rising cut), whether the first cut
     // began on its own and not in a string (Ember parry), Tinder guard's time left, and Echo blade's second hits to come
-    clock: 0, rollEnd: -Infinity, pressAt: -Infinity, alone: false, tinder: 0, echoes: []
+    clock: 0, rollEnd: -Infinity, pressAt: -Infinity, alone: false, tinder: 0, echoes: [],
+    // Gloam dash: used until the feet land, and the way of the dash under way
+    dashUsed: false
   };
   const holds = (st, k, id) => (st[k] || []).includes(id);
   s.after = null;
@@ -226,7 +232,7 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
     return t;
   }
   function strike(h, targets, ev, raw, st = {}) {
-    let any = false;
+    let any = false, anySure = false;
     const on = [];
     if (h.id === 'cut1' && holds(st, 'relics', 'hooked')) { const t = pull(targets); if (t) ev.push({ type: 'relic', what: 'pull', relic: 'hooked', target: t }); }
     const bellows = h.id === 'cut2' && holds(st, 'relics', 'bellows');
@@ -234,14 +240,20 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
       const how = { from: [s.x, s.z], push: bellows ? BUILD.bellows.push : h.push, knock: bellows ? BUILD.bellows.knock : h.knock, stagger: !!h.stagger, kind: h.id };
       // Ember glass (run.js paneHit): its 20% adds to the blade's bonuses on a burning foe, and the damage still rounds once
       const more = st.extra ? st.extra(t) : 0;
-      const dmg = t.hit(more ? raw * (1 + bonusNow(st) + more) / (1 + bonusNow(st)) : raw, how);
+      // a sure cut (build.js): 1.5 times the hit with its bonuses
+      const sure = !!st.sure?.(t, h.id), k = sure ? MOVES.sure.k : 1;
+      const dmg = t.hit((more ? raw * (1 + bonusNow(st) + more) / (1 + bonusNow(st)) : raw) * k, how);
       if (dmg === false) continue;
       any = true;
+      if (sure) anySure = true;
       on.push(t.type || 'post');
-      ev.push({ type: 'hit', kind: h.id, target: t, dmg });
+      ev.push({ type: 'hit', kind: h.id, target: t, dmg, ...(sure ? { sure: true } : {}) });
     }
-    // the hit's sound: the hit id, the hit stop, and the types of the targets hit (the crunch takes the first one's material)
-    if (any) { f.landed = true; f.shave = 0; ev.push({ type: 'stop', n: h.stop }, { type: 'cue', cue: 'hit', hit: h.id, on, stop: h.stop }); }
+    // the hit's sound: the hit id, the hit stop, and the types of the targets hit (the crunch takes the first one's material); a sure
+    // cut holds 1 step longer and rings its own cue over the hit
+    const stop = h.stop + (anySure ? MOVES.sure.stop : 0);
+    if (any) { f.landed = true; f.shave = 0; ev.push({ type: 'stop', n: stop }, { type: 'cue', cue: 'hit', hit: h.id, on, stop }); }
+    if (anySure) ev.push({ type: 'cue', cue: 'sure', hit: h.id });
     // Echo blade: the finisher hits again 0.3 s later, from where it was swung, in the same arc, for half its damage
     if (any && h.id === 'fin' && holds(st, 'relics', 'echo')) f.echoes.push({ n: BUILD.echo.after, h, o: { x: s.x, y: s.y, z: s.z, yaw: s.yaw }, raw: raw * BUILD.echo.share });
   }
@@ -264,16 +276,19 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
   function land(targets, ev, st) {
     const L = MOVES.plunge, r = st.heavy ? L.heavyR : L.r, fallen = Math.max(0, f.top - s.y);
     const raw = Math.min(L.max, L.dmg + L.perM * Math.max(0, fallen - 1)) * (1 + bonusNow(st)) * (st.heavy ? L.heavy : 1);
-    let any = false;
+    let any = false, anySure = false;
     const on = [];
     for (const t of targets) {
       if (!t.alive || Math.hypot(t.x - s.x, t.z - s.z) - t.r > r || Math.abs(t.y - s.y) > L.rise) continue;
-      const dmg = t.hit(raw, { from: [s.x, s.z], push: L.push, knock: L.knock, stagger: true, kind: 'plunge' });
+      const sure = !!st.sure?.(t, 'plunge');
+      const dmg = t.hit(raw * (sure ? MOVES.sure.k : 1), { from: [s.x, s.z], push: L.push, knock: L.knock, stagger: true, kind: 'plunge' });
       if (dmg === false) continue;
       any = true;
+      if (sure) anySure = true;
       on.push(t.type || 'post');
-      ev.push({ type: 'hit', kind: 'plunge', target: t, dmg });
+      ev.push({ type: 'hit', kind: 'plunge', target: t, dmg, ...(sure ? { sure: true } : {}) });
     }
+    if (anySure) ev.push({ type: 'cue', cue: 'sure', hit: 'plunge' });
     ev.push({ type: 'ring', x: s.x, y: s.y, z: s.z, r }, { type: 'cue', cue: 'land', fallen: +fallen.toFixed(2), on, ...(any ? { stop: L.stop } : {}) });
     if (any) { f.shave = 0; ev.push({ type: 'stop', n: L.stop }); }
   }
@@ -318,6 +333,17 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
     f.since++;
     if (f.echoes.length) echoes(targets, ev);
     const canRoll = () => s.ground && f.cool === 0;
+    if (s.ground) f.dashUsed = false;
+    // Gloam dash: Roll in the air, out of no move (or a cut in the air), once until the feet land
+    if (wantRoll && st.dash && !s.ground && !f.dashUsed && f.buf.roll > 0 && (!f.move || f.move === 'hit')) {
+      const dir = heldDir(act, camYaw);
+      f.dir = dir ? [dir[0], dir[1]] : [Math.sin(s.yaw), Math.cos(s.yaw)];
+      if (dir) s.yaw = Math.atan2(dir[0], dir[1]);
+      begin('dash'); f.buf.roll = 0; f.queue = false; f.dashUsed = true;
+      const v = (MOVES.dash.dist * 60) / MOVES.dash.steps;
+      s.vx = f.dir[0] * v; s.vz = f.dir[1] * v; s.vy = 0;
+      ev.push({ type: 'cue', cue: 'dash' }, { type: 'dash', x: s.x, y: s.y, z: s.z });
+    }
     // a roll cancels a wind-up (the hit is lost), a recovery or a drink, never active time
     if (wantRoll && canRoll()) {
       const h = f.move === 'hit' ? hitOf(f.hit) : null;
@@ -379,6 +405,14 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
         }
         break;
       }
+      case 'dash': {
+        // level: no fall while it lasts, at the speed that covers 3.5 m in 0.15 s (walls stop it)
+        s.vy = 0;
+        drive((MOVES.dash.dist * 60) / MOVES.dash.steps, ...f.dir, 0);
+        s.vy = 0;
+        if (++f.t >= MOVES.dash.steps) { f.move = null; const v = Math.hypot(s.vx, s.vz); if (v > MOVES.roll.end) { s.vx *= MOVES.roll.end / v; s.vz *= MOVES.roll.end / v; } }
+        break;
+      }
       case 'hang':
         s.vy = 0;
         drive(0, ...f.dir, 0);
@@ -405,7 +439,9 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
         if (++f.t >= MOVES.hurt.lock) { s.vx = s.vz = 0; f.move = null; }
         break;
       default:
-        body.step(STEP, act, camYaw);
+        // Rush glass (build.js): walk and run faster while its haste lasts
+        if ((st.haste ?? 1) !== 1) { P.run = KEEP.run * st.haste; P.walk = KEEP.walk * st.haste; body.step(STEP, act, camYaw); Object.assign(P, KEEP); }
+        else body.step(STEP, act, camYaw);
     }
     // a move holds the jump: a press in it is not kept, and a jump held through it does not fire after
     if (moving) { s.held = !!act.jump; s.buf = 0; }
@@ -430,6 +466,8 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
       const k = ph === 'wind' ? t / h.wind : ph === 'act' ? (t - h.wind) / h.act : (t - h.wind - h.act) / h.rec;
       return { move: h.pose || h.id, ph, k: clamp(k, 0, 1), t, from: f.from };
     }
+    // Gloam dash shows the roll's pose, played over its 0.15 s
+    if (f.move === 'dash') return { move: 'roll', ph: 'roll', k: clamp(f.t / MOVES.dash.steps, 0, 1), t: f.t, from: f.from, back: false };
     const n = { roll: MOVES.roll.steps, hang: MOVES.plunge.hang, plunge: 30, land: MOVES.plunge.rec, drink: MOVES.drink.steps, hurt: MOVES.hurt.lock }[f.move];
     return { move: f.move, ph: f.move, k: clamp(f.t / n, 0, 1), t: f.t, from: f.from, back: f.move === 'roll' && f.back };
   }
@@ -450,6 +488,8 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
   function safe() {
     const [a, b] = MOVES.roll.safe;
     if (f.move === 'roll' && f.t >= a && f.t <= b) return 'roll';
+    // Gloam dash: safe all its 0.15 s, and a near miss in it counts as the roll's
+    if (f.move === 'dash') return 'roll';
     // Smoke step (abilities.js): safe for 0.3 s, and a near miss in it counts as the roll's
     if (f.smoke > 0) return 'roll';
     return f.safe > 0 ? 'hurt' : null;
@@ -468,5 +508,7 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
     f.move = null; f.t = 0; f.queue = false;
     s.act = null; s.after = null;
   }
-  return { f, step, knock, safe, nextHit, toFirm, nearMiss: () => { f.shave = MOVES.shave.steps; }, tinder: () => { f.tinder = BUILD.tinder.steps; }, parryOpen, body, walk };
+  // Rush glass: the next roll can start at once
+  const rush = () => { f.cool = 0; };
+  return { f, step, knock, safe, nextHit, toFirm, nearMiss: () => { f.shave = MOVES.shave.steps; }, tinder: () => { f.tinder = BUILD.tinder.steps; }, parryOpen, rush, body, walk };
 }

@@ -19,7 +19,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CUES, cueAt, CUE_CAP, makeVary, makeGlim, space, PENTA, createMix, createSound, db } from '../../public/lab/gloam-downs/sound.js';
-import { makeRunSound } from '../../public/lab/gloam-downs/run-sound.js';
+import { makeRunSound, KIT_CUES } from '../../public/lab/gloam-downs/run-sound.js';
 import { THEMES, STINGS, PLACES, BANK, SYNTH, gridOf, nextLine, nextBeat, onLine, lineAt, makeScore, levelOf, LOOKAHEAD, LATE } from '../../public/lab/gloam-downs/music.js';
 import { emit, on as busOn, EVENTS } from '../../public/lab/gloam-downs/bus.js';
 import { TYPES } from '../../public/lab/gloam-downs/foes.js';
@@ -37,7 +37,8 @@ const pass = (name, detail) => { passed++; console.log(`ok   ${name}${detail !==
     const src = fs.readFileSync(path.join(DIR, f), 'utf8');
     for (const re of pats) for (const m of src.matchAll(re)) found.add(m[1]);
   }
-  const missing = [...found].filter(c => !CUES[c]), unused = Object.keys(CUES).filter(c => !found.has(c));
+  // the new kit's cues (gloam-downs-hub "Sound") are laid with a recipe there now (run-sound.js KIT_CUES)
+  const missing = [...found].filter(c => !CUES[c] && !KIT_CUES[c]), unused = Object.keys(CUES).filter(c => !found.has(c));
   assert.deepEqual(missing, [], `cues with no recipe: ${missing}`);
   assert.deepEqual(unused, [], `recipes with no cue: ${unused}`);
   pass('every cue the game emits has a recipe, and every recipe has a cue', { cues: found.size });
@@ -666,5 +667,37 @@ const swingAt = (S, t, id = 'cut1') => {
   assert.equal(A.beds.log.length, n0, 'a gust swelled with Sound off');
   A.off();
   pass('the sound beds: a gust swells the wind for 2 s within 50 ms, a flock lifts with wings and caws at it, the bed ducks while foes are awake, stops in the Lamp-room and the boss fight, stops in a hidden tab or under the switcher, and stays quiet with Sound off', { swell: sw, crows: cr });
+}
+{ /* the new kit's cues (gloam-downs-hub design.md "Sound"): each is built from a recipe there now, each is logged where its event
+     happens (an ability's use by its table cue, a sure cut, a Char or Mark burst, Soot passed on, a shell that breaks, Cracked glass
+     that cracks, a Gloam dash), and the sound lays the recipe with the kit's own name in `kit` */
+  const { ABILITIES } = await import('../../public/lab/gloam-downs/growth.js');
+  const kit = ['lash', 'slick', 'tacks', 'toll', 'shell', 'post', 'shutter', 'blink', 'sure', 'char', 'soot', 'crack', 'dash'];
+  assert.deepEqual(Object.keys(KIT_CUES).sort(), kit.slice().sort());
+  for (const [k, r] of Object.entries(KIT_CUES)) { assert(CUES[r], `${k} lays ${r}, which has no recipe`); assert(!CUES[r].tell, `${k} must not sound as a foe's tell`); assert(!CUES[k], `${k} shadows a recipe`); }
+  // the ten abilities' cues: their own, or shards and wisp reused
+  const ten = ['lash', 'fan', 'slick', 'tacks', 'toll', 'shell', 'post', 'shutter', 'swarm', 'blink'];
+  for (const id of ten) { const c = ABILITIES.find(a => a.id === id).cue; assert(CUES[c] || KIT_CUES[c], `${id}: ${c}`); }
+  assert.equal(ABILITIES.find(a => a.id === 'fan').cue, 'shards');
+  assert.equal(ABILITIES.find(a => a.id === 'swarm').cue, 'wisp');
+  // where each buff's cue is logged, keyed on its own event
+  const src = f => fs.readFileSync(path.join(DIR, f), 'utf8');
+  const where = { sure: ['moves.js', /cue: 'sure'/], dash: ['moves.js', /cue: 'dash'/], char: ['status.js', /cue: 'char'/], soot: ['foes.js', /cue: 'soot'/],
+    crack: ['build.js', /cue\(ev, 'crack'/], shell: ['build.js', /cue\(ev, 'shell'/], blink: ['abilities.js', /cue\(ev, 'blink'/], slick: ['abilities.js', /cue\(ev, 'slick'/] };
+  for (const [k, [f, re]] of Object.entries(where)) assert(re.test(src(f)), `${k} is not logged in ${f}`);
+  // laid: the recipe of the map, with the kit's name kept
+  const log = [], rs = { sound: true, music: true }, played = [];
+  const A = makeRunSound({ log, rs, step: () => 0 });
+  const c = fakeCtx(); c.state = 'running'; c.currentTime = 1;
+  A.ctx = c; A.fx = { play: (name, at, o) => { played.push([name, o.kit, o.ability ?? o.pane ?? null]); return { v: 0, at, lead: 0 }; }, setEar() {} };
+  for (const k of kit) log.push({ cue: k, step: 0, play: 0, ...(ten.includes(k) ? { ability: k } : {}) });
+  log.push({ cue: 'hit', step: 0, play: 0 });
+  A.flush();
+  assert.deepEqual(played.map(p => p[0]), [...kit.map(k => KIT_CUES[k]), 'hit']);
+  assert.deepEqual(played.slice(0, kit.length).map(p => p[1]), kit);
+  assert.equal(played.at(-1)[1], undefined, 'a cue with a recipe of its own keeps it');
+  assert.equal(played[0][2], 'lash');
+  A.off();
+  pass('the kit\'s cues: 13 new names each laid with a recipe there now (never a tell), each logged where its event happens, with its id', KIT_CUES);
 }
 console.log(`PASS qa/lab/gloam-downs-sound.test.mjs: ${passed} checks`);

@@ -167,6 +167,7 @@
   .hud .life b { font: 700 13px/1 var(--body); color: #ffe2bd; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .hud .hpbar { position: relative; display: block; flex: none; width: 120px; height: 10px; background: #1c0d0b; box-shadow: 0 0 0 1px #5a3424; }
   .hud .hpbar i { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; background: linear-gradient(90deg, var(--emberd), var(--ember)); }
+  .hud .hpbar i.shell { width: 0; top: -3px; bottom: -3px; background: rgba(236, 226, 204, 0.62); box-shadow: 0 0 0 1px rgba(255, 246, 228, 0.85), 0 0 6px rgba(255, 238, 205, 0.5); }
   .hud.low .hpbar { box-shadow: 0 0 0 1px var(--ember); }
   .hud.beat .hpbar { box-shadow: 0 0 0 2px var(--ember), 0 0 8px rgba(210, 85, 28, 0.8); }
   .hud .pips { display: flex; gap: 2px; flex: none; }
@@ -542,7 +543,7 @@
 <div class="ink" id="ink" aria-hidden="true"></div>
 <div class="hud" id="hud" hidden>
   <p class="where" id="where">The Sunken Gaol</p>
-  <p class="life" id="life" aria-label="Health and flasks"><i class="hpbar"><i id="hpFill"></i></i><b id="hpN">100/100</b><i class="pips" id="pips"></i></p>
+  <p class="life" id="life" aria-label="Health and flasks"><i class="hpbar"><i id="hpFill"></i><i id="shell" class="shell" aria-hidden="true"></i></i><b id="hpN">100/100</b><i class="pips" id="pips"></i></p>
   <p class="colourRow" id="colourRow" hidden></p>
   <p class="count" id="count"><b>◆ 0/5</b> wisps · <i>beacon dark</i><i id="patternsN" hidden></i></p>
   <div class="combo" id="combo" hidden aria-live="off"><b id="comboN"></b><i id="comboPip"></i><i class="cbar"><i id="comboFill"></i></i></div>

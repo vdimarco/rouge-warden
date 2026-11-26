@@ -5,6 +5,7 @@
 // Node tests and the bot use it as it is. design.md "Relics" and "Kindlings".
 import { hash2, mulberry } from '../kit/rng.js';
 import { emit } from './bus.js';
+import { statusHit, STATES } from './status.js';
 
 const S = sec => Math.round(sec * 60);
 export const RELIC_MAX = 5;
@@ -56,6 +57,9 @@ export const FIRE = {
   spark: { range: 6, v: 20, r: 0.45, dmg: 12 },
   moth: { r: 3, kr: 4.5, dmg: 10, push: 2 },
   tongue: { dmg: 2, every: S(2 / 3), ticks: 3 },
+  // the hub's relics: Soot heel's cloud sets Soot on the foes in it every 0.5 s; Thorn roll's cut finds the foe within 1.5 m of the blow
+  soot: { every: S(0.5) },
+  thorn: { near: 1.5 },
   touch: 1.1,
   stop: 2
 };
@@ -97,6 +101,17 @@ export function makeRelics(R) {
     const r = run();
     if (!r) return;
     for (const e of ev.slice()) {
+      if (e.type === 'ring' && holds('soot')) {
+        // Soot heel: the plunge leaves a Soot cloud for 3 s, 2.5 m (3.5 m kindled with Heavy fall)
+        const R0 = relicOf('soot'), k = kindled(r, 'soot'), rr = k ? KINDLE.find(x => x.relic === 'soot').r : R0.r;
+        G.fires.push({ kind: 'soot', x: e.x, y: e.y, z: e.z, r: rr, t: 0, life: S(R0.life) });
+        ev.push({ type: 'relicFx', kind: 'ring', x: e.x, y: e.y, z: e.z, r: rr, life: R0.life, soot: true }, { type: 'cue', cue: 'soot', relic: 'soot' });
+      }
+      if (e.type === 'drink' && holds('glass') && r.flasks > 0) {
+        // Glass drink: a drink gives a 20 shell for 5 s (30 kindled with Spare oil)
+        const R0 = relicOf('glass'), n = kindled(r, 'glass') ? KINDLE.find(x => x.relic === 'glass').shell : R0.shell;
+        R.build?.addShell(n, S(R0.life), 'glass');
+      }
       if (e.type === 'relic' && e.what === 'trail') {
         let fire = G.fires.find(f => f.kind === 'trail' && f.open);
         if (e.first || !fire) {
@@ -143,6 +158,8 @@ export function makeRelics(R) {
           if (!f.pts.some(p => Math.hypot(t.x - p[0], t.z - p[2]) <= FIRE.trail.w + t.r && Math.abs(t.y - p[1]) <= 1.6)) continue;
           if (hitOn(t, FIRE.trail.dmg, [t.x, t.z], ev, 'trail') !== false) f.ticks.set(t, (f.ticks.get(t) || 0) + 1);
         }
+      } else if (f.kind === 'soot' && f.t % FIRE.soot.every === 1) {
+        for (const t of T) if (t.alive && Math.hypot(t.x - f.x, t.z - f.z) - t.r <= f.r && Math.abs(t.y - f.y) <= 1.8) statusHit(t, 'soot', STATES.soot.life);
       } else if (f.kind === 'ring' && f.t % FIRE.heel.every === 0) {
         for (const t of T) if (t.alive && Math.hypot(t.x - f.x, t.z - f.z) - t.r <= f.r && Math.abs(t.y - f.y) <= 1.6) hitOn(t, FIRE.heel.dmg, [f.x, f.z], ev, 'heel');
       }
@@ -167,10 +184,24 @@ export function makeRelics(R) {
       if (--b.left <= 0 || !b.t.alive) G.burns.splice(G.burns.indexOf(b), 1);
     }
   };
+  /* Thorn roll: a near miss cuts the foe that swung (the live target nearest the blow, within 1.5 m of where it came from) for 12 (20
+     kindled with Quick heels). It does not interrupt: no flinch, and no wind-up stopped */
+  G.thorn = (from, ev) => {
+    const r = run();
+    if (!r || !from || !holds('thorn')) return false;
+    let foe = null, best = FIRE.thorn.near;
+    for (const t of R.targets()) { const d = Math.hypot(t.x - from[0], t.z - from[1]); if (t.alive && d < best) { foe = t; best = d; } }
+    if (!foe) return false;
+    const n = kindled(r, 'thorn') ? KINDLE.find(x => x.relic === 'thorn').dmg : relicOf('thorn').dmg;
+    const dmg = foe.hit(raw(n), { from: [s().x, s().z], push: 0, knock: 0, kind: 'relic', relic: 'thorn', interrupt: false });
+    if (dmg === false) return false;
+    ev.push({ type: 'hit', kind: 'relic', relic: 'thorn', target: foe, dmg }, { type: 'stop', n: FIRE.stop }, { type: 'relicFx', kind: 'spark', from: [s().x, s().y + 0.9, s().z], to: [foe.x, foe.y + 0.9, foe.z] });
+    return dmg;
+  };
   // what the page draws (fight.js): the relic lamps on the ground, the fire lines, the burning rings and the sparks in the air
   G.view = () => ({
     ground: G.ground.map(g => ({ ...g })),
-    fires: G.fires.map(f => (f.kind === 'trail' ? { kind: 'trail', pts: f.pts.map(p => p.slice()), k: f.t / f.life } : { kind: 'ring', x: f.x, y: f.y, z: f.z, r: f.r, k: f.t / f.life })),
+    fires: G.fires.map(f => (f.kind === 'trail' ? { kind: 'trail', pts: f.pts.map(p => p.slice()), k: f.t / f.life } : { kind: f.kind === 'soot' ? 'soot' : 'ring', x: f.x, y: f.y, z: f.z, r: f.r, k: f.t / f.life })),
     sparks: G.sparks.map(k => ({ x: k.x, y: k.y + 0.9, z: k.z }))
   });
   return G;
