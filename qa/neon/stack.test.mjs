@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import zlib from "node:zlib";
 import { fileURLToPath } from "node:url";
-import { build, pathfind, TILE } from "../../public/neon-stack/world.mjs";
+import { build, pathfind, hackStep, rayHits, hitsMachine, TILE } from "../../public/neon-stack/world.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const a = build(4);
@@ -25,6 +25,61 @@ assert.deepEqual(a.signs.filter((s) => s.colour === "#B6F23A").map((s) => s.name
 
 assert.equal(a.lights.some((l) => l.type === "fire"), false);
 assert.ok(a.slices.length <= 900, a.slices.length + " slices");
+function lotH(w, x, y) {
+  const b = w.buildings.find((p) => p.tx === x && p.ty === y);
+  return b ? b.h : 0;
+}
+for (const seed of [1, 4, 7, 9]) {
+  const w = build(seed);
+  for (const b of w.buildings) {
+    const bi = w.buildings.indexOf(b);
+    const faces = [
+      [(q) => q.orient === 2 && q.z > b.z && q.hx > 0, b.tx, b.ty + 1, "s"],
+      [(q) => q.orient === 2 && q.z < b.z && q.hx < 0, b.tx, b.ty - 1, "n"],
+      [(q) => q.orient === 1 && q.x > b.x && q.hx < 0, b.tx + 1, b.ty, "e"],
+      [(q) => q.orient === 1 && q.x < b.x && q.hx > 0, b.tx - 1, b.ty, "w"],
+    ];
+    for (const [pred, nx, ny, name] of faces) {
+      const cover = lotH(w, nx, ny);
+      for (let s = cover; s < b.h; s++) {
+        const y = (s + 0.5) * TILE;
+        const hit = w.slices.some((q) => q.bid === bi && q.kind >= 8 && q.kind < 8.2 && Math.abs(q.y - y) < 1 && pred(q));
+        assert.ok(hit, "seed " + seed + " " + b.tx + "," + b.ty + " " + name + " storey " + s);
+      }
+    }
+  }
+  let minX = 1e9, maxX = -1e9, minZ = 1e9, maxZ = -1e9, filler = 0;
+  for (const q of w.slices) {
+    if (q.kind !== 8 || q.sign >= 0) continue;
+    filler++;
+    if (q.x < minX) minX = q.x;
+    if (q.x > maxX) maxX = q.x;
+    if (q.z < minZ) minZ = q.z;
+    if (q.z > maxZ) maxZ = q.z;
+  }
+  assert.ok(filler > 40, "seed " + seed + " filler walls " + filler);
+  const tower = w.buildings.find((b) => b.tx === 0 && b.ty === 0).h;
+  for (const q of w.slices) {
+    if (q.kind !== 8 || q.sign >= 0) continue;
+    const ring = q.x >= -2.5 * TILE && q.x <= 8.5 * TILE && q.z >= -3.5 * TILE && q.z <= 9.5 * TILE;
+    if (ring) assert.ok(q.y + q.hz <= tower * TILE + 0.1, "filler taller than the tower");
+    assert.ok(q.bid >= 16, "filler has a cutaway id");
+  }
+  assert.ok(minX <= -2 * TILE && maxX >= 8 * TILE, "seed " + seed + " east-west ring " + minX + " " + maxX);
+  assert.ok(minZ <= -2 * TILE && maxZ >= 8 * TILE, "seed " + seed + " north-south ring " + minZ + " " + maxZ);
+  assert.equal(w.buildings.length, 16);
+  assert.equal(w.lights.length, 6);
+  assert.equal(w.blocked[2][2], false, "column 2 row 2 stays open");
+  assert.equal(w.blocked[3][2], false, "column 3 stays a street tile");
+  assert.equal(hitsMachine(3.82, 2.5), true);
+  assert.equal(hitsMachine(3, 2.5), false);
+  assert.equal(hitsMachine(2.5, 2.5), false);
+  assert.ok(Math.hypot(3.5 - w.spawn.x, 2.5 - w.spawn.y) > 2.5);
+  assert.ok(Math.hypot(3.5 - w.goals.exit.x, 2.5 - w.goals.exit.y) >= 2);
+  assert.equal(pathfind((x, y) => w.blocked[x][y], 2.5, 2.5, 0.5, 4.5).length > 1, true);
+  assert.equal(rayHits(2 * TILE, 2.5 * TILE, 4 * TILE, 2.5 * TILE, w.machine), true);
+  assert.equal(rayHits(2 * TILE, 0.5 * TILE, 2 * TILE, 4.5 * TILE, w.machine), false);
+}
 for (const seed of [1, 4, 7, 9]) {
   const w = build(seed);
   assert.ok(w.slices.length <= 900, "seed " + seed + " slices " + w.slices.length);
@@ -91,6 +146,18 @@ const exitLight = Math.min(...a.lights.filter((l) => l.type === "neon").map((l) 
 assert.ok(exitLight >= 2, "exit light " + exitLight.toFixed(2));
 assert.ok(steps(a.spawn, a.goals.terminal) >= 1, "terminal path");
 assert.equal(a.blocked[Math.floor(a.goals.exit.x)][Math.floor(a.goals.exit.y)], false);
+let idle = { held: 0, flash: 0, cool: 0 };
+idle = hackStep(idle, 0.9, true);
+assert.equal(idle.flash, 0, "0.9s hold does nothing");
+idle = hackStep(idle, 0, false);
+idle = hackStep({ held: 0, flash: 0, cool: 0 }, 1, true);
+assert.equal(idle.flash, 4, "1.0s hold flashes");
+let cooling = hackStep(idle, 4, false);
+assert.equal(cooling.flash, 0);
+assert.equal(cooling.cool, 10);
+const ignored = hackStep(cooling, 1, true);
+assert.equal(ignored.flash, 0, "hold during cooldown does nothing");
+assert.ok(ignored.cool < 10 && ignored.cool > 8);
 assert.equal(a.blocked[Math.floor(a.goals.terminal.x)][Math.floor(a.goals.terminal.y)], false);
 
 const blocked = (x, y) => a.blocked[x][y];

@@ -1,6 +1,4 @@
 // WebGL2 sprite-stack renderer. One instanced quad, nearest sampling, no mipmaps.
-// Point lights are a second geometry pass (half resolution on narrow viewports).
-// The 4 light steps are applied after that pass is sampled, so the bands stay square.
 
 const VERT = `#version 300 es
 layout(location=0) in vec2 aC;
@@ -17,7 +15,7 @@ out vec2 vCorner;
 void main() {
   float upright = step(0.5, i2.w);
   float faceZ = step(1.5, i2.w);
-  vec3 horiz = vec3(i0.x + (aC.x - 0.5) * i0.w * 2.0, i0.z, i0.y + (aC.y - 0.5) * i1.x * 2.0);
+  vec3 horiz = vec3(i0.x + (0.5 - aC.x) * i0.w * 2.0, i0.z, i0.y + (aC.y - 0.5) * i1.x * 2.0);
   vec3 faceX = vec3(i0.x, i0.z + (aC.y - 0.5) * i1.x * 2.0, i0.y + (aC.x - 0.5) * i0.w * 2.0);
   vec3 faceZv = vec3(i0.x + (aC.x - 0.5) * i0.w * 2.0, i0.z + (aC.y - 0.5) * i1.x * 2.0, i0.y);
   vW = mix(horiz, mix(faceX, faceZv, faceZ), upright);
@@ -114,7 +112,6 @@ void main() {
   }
   if (t.a < 0.5) discard;
   vec3 col = t.rgb;
-  // Warm window texels keep their texture, shifted onto #C9853A so a dark sign is not a lit window.
   if (abs(vKind - 8.0) < 0.25 && t.r > 0.55 && t.g > 0.25 && t.b < 0.45 && t.r > t.b + 0.25) {
     float lumT = dot(t.rgb, vec3(0.299, 0.587, 0.114));
     col = clamp(vec3(201.0, 133.0, 58.0) / 255.0 * (0.82 + 0.36 * lumT), vec3(187.0, 119.0, 44.0) / 255.0, vec3(215.0, 147.0, 72.0) / 255.0);
@@ -158,6 +155,13 @@ void main() {
     o = vec4(col, 1.0);
     return;
   }
+  if (abs(vKind - 14.0) < 0.25) { o = vec4(vec3(43.0, 42.0, 51.0) / 255.0, 1.0); return; }
+  if (abs(vKind - 15.0) < 0.25) { o = vec4(vec3(74.0, 72.0, 82.0) / 255.0, 1.0); return; }
+  if (abs(vKind - 16.0) < 0.25) {
+    vec3 hot = vec3(255.0, 170.0, 24.0) / 255.0;
+    o = vec4(mix(vec3(242.0, 163.0, 58.0) / 255.0, hot, clamp(vSign, 0.0, 1.0)), 1.0);
+    return;
+  }
   if (abs(vKind - 7.0) < 0.25) {
     int i = int(clamp(vSign - 0.5, 0.0, 6.0));
     col = mix(col, uC[i].rgb, 0.4 * fadeOf(vSign));
@@ -166,21 +170,31 @@ void main() {
   }
   float wall = step(abs(vKind - 8.0), 0.25);
   if (wall > 0.5 && !(t.r > 0.55 && t.g > 0.25 && t.b < 0.45 && t.r > t.b + 0.25)) {
+    if (vSign < 0.0) {
+      float cell = 4.0;
+      float cx = floor(vW.x / cell);
+      float cy = floor(vW.y / cell);
+      float n = fract(sin(cx * 12.9898 + cy * 78.233 + floor(vW.z) * 45.164) * 43758.5453);
+      float n2 = fract(sin(cx * 39.346 + cy * 11.135) * 24634.6345);
+      float ox = floor(n2 * cell);
+      float oy = floor(fract(n2 * 7.13) * cell);
+      float here = step(abs(mod(floor(vW.x), cell) - ox), 0.0) * step(abs(mod(floor(vW.y), cell) - oy), 0.0);
+      o = vec4((here * step(0.833, n) > 0.5 ? vec3(201.0, 133.0, 58.0) : vec3(43.0, 42.0, 51.0)) / 255.0, 1.0);
+      return;
+    } else {
     float kd = vKind - 8.0;
     float tint = floor(kd / 0.03 + 0.001);
     float rem = mod(kd + 0.0001, 0.03);
     float bottom = step(0.005, rem) * step(rem, 0.015);
     float top = step(0.015, rem);
-    // Side faces share the south wall's floor. A top storey, including the only
-    // storey of a one-storey lot, is never the bottom-storey darken.
     vec3 face = vec3(43.0, 42.0, 51.0) / 255.0;
     if (top > 0.5) face = vec3(48.0, 47.0, 56.0) / 255.0;
     vec3 dye = tint < 0.5 ? vec3(1.10, 0.84, 0.90) : tint < 1.5 ? vec3(0.84, 1.08, 0.90) : vec3(0.90, 0.94, 1.10);
     float lum = dot(face, vec3(0.299, 0.587, 0.114));
     vec3 dyed = face * dye;
     dyed *= lum / max(0.001, dot(dyed, vec3(0.299, 0.587, 0.114)));
-    // 0.92 keeps a bottom storey darker than the street face and still 12 levels above ink.
     col = top > 0.5 ? dyed : mix(dyed, dyed * 0.92, bottom);
+    }
   }
   float dim = step(abs(vKind - 4.0), 0.25);
   col = mix(col, col * 0.38, dim);
@@ -197,7 +211,6 @@ void main() {
     shade = min(shade, ovalShade(p - vec2(2.35, 1.2), 0.18, 0.12));
     shade = min(shade, ovalShade(p - vec2(3.55, 4.5), 0.22, 0.14));
     col *= shade;
-    // One soft pool per sign. Full within 1 tile, a faint edge at the 2-tile radius.
     float w0 = falloff(p, uL[0], uI[0]);
     float w1 = falloff(p, uL[1], uI[1]);
     float w2 = falloff(p, uL[2], uI[2]);
@@ -207,7 +220,7 @@ void main() {
     vec3 glow = uC[0].rgb * w0 + uC[1].rgb * w1 + uC[2].rgb * w2
       + uC[3].rgb * w3 + uC[4].rgb * w4 + uC[5].rgb * w5;
     float cover = min(1.0, w0 + w1 + w2 + w3 + w4 + w5);
-    col = mix(col, clamp(glow, 0.0, 1.0), cover * 0.3);
+    col = mix(col, clamp(glow, 0.0, 1.0), cover * 0.62);
   }
   float fade = fadeOf(vSign);
   col = mix(col, mix(dark, col, fade), neon * (1.0 - dim) * (1.0 - wall));
@@ -239,7 +252,10 @@ void main() {
     vec2 d = pix - uDrop[i];
     rain = max(rain, step(0.0, d.x) * step(d.x, 2.01) * step(abs(d.y + d.x), 0.1));
   }
-  col = mix(col, uSmog, rain * 0.4);
+  float amber = step(abs(col.r - 201.0 / 255.0), 18.0 / 255.0);
+  amber *= step(abs(col.g - 139.0 / 255.0), 18.0 / 255.0);
+  amber *= step(abs(col.b - 60.0 / 255.0), 18.0 / 255.0);
+  col = mix(col, uSmog, rain * 0.4 * (1.0 - amber));
   float mx = max(col.r, max(col.g, col.b));
   vec3 sky = vec3(14.0, 16.0, 32.0) / 255.0;
   vec3 ink = vec3(26.0, 26.0, 34.0) / 255.0;
@@ -550,7 +566,8 @@ export function createRenderer(canvas) {
     const { artW, artH, scale, ox, oy, backW, backH } = api.view;
     const count = upload(scene.slices);
     gl.disable(gl.BLEND);
-    gl.disable(gl.CULL_FACE);
+    gl.enable(gl.CULL_FACE);
+    gl.cullFace(gl.BACK);
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LESS);
     gl.depthMask(true);

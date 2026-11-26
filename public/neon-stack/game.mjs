@@ -1,14 +1,11 @@
 // Neon Stack: one loop, plain objects, camera snapped once per frame.
-import { TILE, build, pathfind, RUNNER_BOX } from "./world.mjs";
+import { TILE, build, pathfind, RUNNER_BOX, hackStep, rayHits, hitsMachine } from "./world.mjs";
 import { atlasUrl } from "./art/atlas-data.mjs";
 import { createRenderer, lookAt, perspective, mul } from "./render.mjs";
 
 const FOV_PORTRAIT = 20 * Math.PI / 180;
 const FOV_LAND = 30 * Math.PI / 180;
-// Idle opaque box is 24/16 = 1.5 tiles. Scale the figure to 1.64.
 const RUNNER_SCALE = 1.64 / 1.5 * (1.64 / 1.66);
-// Whole-tile zoom. Ten tiles across is the step that fills a short frame at tilt 55
-// without pushing a ground corner out. Attract sits one tile further back.
 const TILES = 10;
 const SUN = norm([0.48, 0.84, 0.26]);
 const HAZE = [0x1f / 255, 0x2a / 255, 0x3a / 255];
@@ -47,8 +44,11 @@ let frameMs = 0;
 let fps = 0;
 let ready = false;
 const dpr0 = window.devicePixelRatio || 1;
-let ratio = Math.min(dpr0, 1.5);
+const locked = params.get("ratio");
+let ratio = locked ? Math.min(Number(locked), dpr0) : Math.min(dpr0, 1.5);
 let cool = 0;
+let hack = { held: 0, flash: 0, cool: 0 };
+let holding = false;
 let warmed = 0;
 const drops = new Float32Array(120);
 for (let i = 0; i < 60; i++) {
@@ -131,10 +131,8 @@ function placeSky(cam, focus, fov, aspect) {
 function solid(tx, ty) {
   return tx < 0 || ty < 0 || tx >= 6 || ty >= 6 || world.blocked[tx][ty];
 }
-function free(x, y) { return !solid(Math.floor(x), Math.floor(y)); }
+function free(x, y) { return !solid(Math.floor(x), Math.floor(y)) && !hitsMachine(x, y); }
 function viewDelta(mx, my) {
-  // A shallow camera squashes screen-up. Stretch that axis by 1/sin(tilt)
-  // before turning it into a ground direction, so a screen diagonal stays one.
   const yr = yaw * Math.PI / 180;
   const sy = my / Math.max(0.25, Math.sin(tilt * Math.PI / 180));
   const upx = -Math.sin(yr);
@@ -164,6 +162,13 @@ function hits(ax, az, bx, bz, box) {
   return true;
 }
 let lastCam = [0, 0, 0];
+for (const s of world.slices) s.uv0 = s.uv.slice();
+function aim(s, cam, uv) {
+  const o = s.orient || 0;
+  const back = o >= 1.5 ? cam[2] < s.z : o > 0.5 && cam[0] > s.x;
+  s.hx = (back ? -1 : 1) * Math.abs(s.hx);
+  s.uv = back ? [uv[2], uv[1], uv[0], uv[3]] : uv;
+}
 let shownOutline = { on: 0, colour: [0, 0, 0] };
 function camera() {
   const tr = tilt * Math.PI / 180;
@@ -171,7 +176,6 @@ function camera() {
   const aspect = renderer.view.artW / Math.max(1, renderer.view.artH);
   const portrait = renderer.view.artH > renderer.view.artW;
   const fov = portrait ? FOV_PORTRAIT : FOV_LAND;
-  // Distance stays the 20° distance. Landscape only opens the lens.
   const hold = Math.tan(FOV_PORTRAIT / 2);
   const lens = Math.tan(fov / 2);
   const span = Math.abs(Math.cos(yr)) + Math.abs(Math.sin(yr));
@@ -182,8 +186,6 @@ function camera() {
   const dist = (tiles * TILE) / (2 * hold * aspect);
   const cx = (attract ? 3 : player.x) * TILE;
   const cz = (attract ? 3 : player.y) * TILE;
-  // At the spawn, aim up the block without pulling the camera back. The runner stays
-  // in the lower third. Elsewhere keep the closer camera the width checks were built on.
   const along = attract ? 16 : establishing ? TILE * (portrait ? -2 : -0.3125) : 36;
   const lift = establishing ? TILE * (portrait ? 4.125 : 5.625) : 0;
   const focus = [cx + Math.sin(yr) * along, lift, cz + Math.cos(yr) * along];
@@ -232,21 +234,42 @@ function fit() {
   }
 }
 function planes(dist) {
-  // Tilt 20 still looks down, so the far ground is a few multiples of the camera distance.
-  // The band stays tight enough that a 1-unit slice gap does not z-fight.
   return [Math.max(0.5, dist * 0.06), dist * 3.4];
 }
-function walkAt(clientX, clientY) {
+function groundAt(clientX, clientY) {
   const rect = canvas.getBoundingClientRect();
   const { ox, oy, scale, artW, artH, backH } = renderer.view;
   const bx = (clientX - rect.left) * (canvas.width / rect.width);
   const byTop = (clientY - rect.top) * (canvas.height / rect.height);
   const ax = (bx - ox) / scale;
   const ay = artH - ((backH - byTop) - oy) / scale;
-  if (ax < 0 || ay < 0 || ax >= artW || ay >= artH) return;
+  if (ax < 0 || ay < 0 || ax >= artW || ay >= artH) return null;
   const hit = renderer.unproject(ax, ay);
+  if (!hit) return null;
+  return [hit[0] / TILE, hit[1] / TILE];
+}
+function onMachine(clientX, clientY) {
+  const g = groundAt(clientX, clientY);
+  if (!g) return false;
+  const m = world.machine;
+  const o = lastCam;
+  const d = [g[0] * TILE - o[0], 0.05 - o[1], g[1] * TILE - o[2]];
+  const span = [[m.x - m.hx, m.x + m.hx], [0, m.h], [m.z - m.hz, m.z + m.hz]];
+  let t0 = 0, t1 = 1;
+  for (let i = 0; i < 3; i++) {
+    if (Math.abs(d[i]) < 1e-6) { if (o[i] < span[i][0] || o[i] > span[i][1]) return false; continue; }
+    let a = (span[i][0] - o[i]) / d[i], b = (span[i][1] - o[i]) / d[i];
+    if (a > b) { const s = a; a = b; b = s; }
+    t0 = Math.max(t0, a);
+    t1 = Math.min(t1, b);
+    if (t0 > t1) return false;
+  }
+  return t0 <= 1;
+}
+function walkAt(clientX, clientY) {
+  const hit = groundAt(clientX, clientY);
   if (!hit) return;
-  route = pathfind((x, y) => solid(x, y), player.x, player.y, hit[0] / TILE, hit[1] / TILE);
+  route = pathfind((x, y) => solid(x, y), player.x, player.y, hit[0], hit[1]);
 }
 function lightsNow() {
   const out = world.lights.map((l) => ({ ...l }));
@@ -290,9 +313,10 @@ function scene() {
   const view = lookAt(cam, focus, [0, 1, 0]);
   const proj = perspective(renderer.view.artH > renderer.view.artW ? FOV_PORTRAIT : FOV_LAND, renderer.view.artW / renderer.view.artH, near, far);
   const cuts = new Set();
-  if (cutaway) {
+  if (cutaway && !rayHits(cam[0], cam[2], player.x * TILE, player.y * TILE, world.machine)) {
     const px = player.x * TILE, pz = player.y * TILE;
     world.buildings.forEach((b, i) => { if (hits(cam[0], cam[2], px, pz, b)) cuts.add(i); });
+    world.fillers.forEach((b) => { if (hits(cam[0], cam[2], px, pz, b)) cuts.add(b.bid); });
   }
   const lights = lightsNow();
   const runner = [];
@@ -309,6 +333,7 @@ function scene() {
       s.uv = frameUV(runName, facing < 0);
       const yr = yaw * Math.PI / 180;
       s.orient = Math.abs(Math.sin(yr)) > Math.abs(Math.cos(yr)) ? 1 : 2;
+      aim(s, cam, s.uv);
       runner.push(s);
     } else if (s.kind === 3 && s.sign >= 1) {
       const meta = world.signs[s.sign - 1];
@@ -317,6 +342,7 @@ function scene() {
       if (s.bid < 0 || !cuts.has(s.bid) || s.low) rest.push(s);
     } else if (s.kind === 6) {
       s.uv = frameUV("steam_vent_" + (Math.floor(time * 8) % 4), false);
+      aim(s, cam, s.uv);
       rest.push(s);
     } else if (s.kind === 5) {
       const placed = placeSky(cam, focus, portrait ? FOV_PORTRAIT : FOV_LAND, aspect);
@@ -331,8 +357,19 @@ function scene() {
       s.z = z;
       s.hx = placed.hx;
       s.orient = placed.orient;
+      aim(s, cam, s.uv0);
       rest.push(s);
-    } else if (s.bid < 0 || !cuts.has(s.bid) || s.low) rest.push(s);
+    } else if (s.bid < 0 || !cuts.has(s.bid) || s.low) {
+      if (s.kind === 8 && s.sign < 0) {
+        const zFace = (s.orient || 0) >= 1.5;
+        const nx = zFace ? 0 : (s.hx < 0 ? 1 : -1);
+        const nz = zFace ? (s.hx < 0 ? -1 : 1) : 0;
+        if (nx * (cam[0] - s.x) + nz * (cam[2] - s.z) <= 0) continue;
+      }
+      if (s.kind === 16) s.sign = hack.flash > 0 ? 1 : 0;
+      if (s.kind === 9 || s.kind === 12) aim(s, cam, s.uv0);
+      rest.push(s);
+    }
   }
   let nearD = 2;
   let outline = [0, 0, 0];
@@ -448,6 +485,7 @@ function step(dt) {
     if (d <= step) { player.x = tx; player.y = ty; route.shift(); }
     else { player.x += dx / d * step; player.y += dy / d * step; }
   }
+  hack = hackStep(hack, dt, holding);
   scatterRain();
   for (let i = 0; i < 60; i++) {
     let x = drops[i * 2] + 28 * dt;
@@ -490,7 +528,7 @@ function frame(now) {
   warmed++;
   cool -= dt;
   const cap = Math.min(window.devicePixelRatio || 1, 2);
-  if (warmed > 90 && cool <= 0) {
+  if (!locked && warmed > 90 && cool <= 0) {
     if (frameMs < 12 && ratio + 0.25 <= cap + 1e-4) { ratio = Math.round((ratio + 0.25) * 4) / 4; cool = 2.5; fit(); }
     else if (frameMs > 28 && ratio - 0.25 >= 1) { ratio = Math.round((ratio - 0.25) * 4) / 4; cool = 2.5; fit(); }
   }
@@ -502,7 +540,8 @@ canvas.addEventListener("contextmenu", (e) => e.preventDefault());
 canvas.addEventListener("pointerdown", (e) => {
   try { canvas.setPointerCapture?.(e.pointerId); } catch (err) { /* already released */ }
   if (attract) { attract = false; eatClick = true; }
-  active.set(e.pointerId, { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, btn: e.button, drag: false });
+  active.set(e.pointerId, { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, btn: e.button, drag: false, machine: onMachine(e.clientX, e.clientY) });
+  holding = [...active.values()].some((p) => p.machine) && hack.flash <= 0 && hack.cool <= 0;
   if (active.size >= 2) { multi = true; dragged = true; }
 });
 canvas.addEventListener("pointermove", (e) => {
@@ -533,7 +572,8 @@ function endPointer(e) {
   if (active.size) return;
   stick.x = 0;
   stick.y = 0;
-  const walk = !eatClick && !dragged && !multi && (phone() || p.btn === 0);
+  const walk = !eatClick && !dragged && !multi && !p.machine && (phone() || p.btn === 0);
+  if (!active.size) holding = false;
   eatClick = false;
   dragged = false;
   multi = false;
@@ -594,6 +634,17 @@ window.__test = {
   },
   setPose: (name) => { pose = name || ""; },
   outline: () => shownOutline,
+  hack: () => ({ held: hack.held, flash: hack.flash, cool: hack.cool, holding }),
+  holdMachine: (seconds) => {
+    let left = seconds;
+    while (left > 0) {
+      const dt = Math.min(0.05, left);
+      hack = hackStep(hack, dt, true);
+      left -= dt;
+    }
+    hack = hackStep(hack, 0, false);
+    return { held: hack.held, flash: hack.flash, cool: hack.cool };
+  },
   moveInput: (dx, dy, ms = 100) => {
     attract = false;
     stick.x = Math.max(-1, Math.min(1, dx));

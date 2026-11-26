@@ -39,7 +39,7 @@ async function open(width, height, dpr, touch) {
 
 async function ready(page, seed) {
   await page.goto(GAME + "?seed=" + seed, { waitUntil: "domcontentloaded" });
-  await page.waitForFunction(() => window.__test && __test.ready());
+  await page.waitForFunction(() => window.__test && __test.ready(), null, { timeout: 90000 });
   await page.waitForTimeout(120);
 }
 
@@ -238,14 +238,34 @@ const compass = await phone.page.evaluate(async () => {
           if (my < 0) keys.push("w");
           if (my > 0) keys.push("s");
           for (const k of keys) window.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true }));
-          await new Promise((r) => setTimeout(r, 90));
+          const origin = __test.state().player;
+          await new Promise((resolve) => {
+            let n = 0;
+            const step = () => {
+              const p = __test.state().player;
+              n++;
+              if ((n >= 2 && Math.hypot(p.x - origin.x, p.y - origin.y) > 0.05) || n >= 8) resolve();
+              else requestAnimationFrame(step);
+            };
+            requestAnimationFrame(step);
+          });
           for (const k of keys) window.dispatchEvent(new KeyboardEvent("keyup", { key: k, bubbles: true }));
         } else {
           const cx = box.left + box.width / 2, cy = box.top + box.height / 2;
           const ev = (type, x, y) => canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: y, pointerId: 7, button: 0, buttons: type === "pointerup" ? 0 : 1 }));
           ev("pointerdown", cx, cy);
           ev("pointermove", cx + mx * 70, cy + my * 70);
-          await new Promise((r) => setTimeout(r, 90));
+          const origin = __test.state().player;
+          await new Promise((resolve) => {
+            let n = 0;
+            const step = () => {
+              const p = __test.state().player;
+              n++;
+              if ((n >= 2 && Math.hypot(p.x - origin.x, p.y - origin.y) > 0.05) || n >= 8) resolve();
+              else requestAnimationFrame(step);
+            };
+            requestAnimationFrame(step);
+          });
           ev("pointerup", cx + mx * 70, cy + my * 70);
         }
         const p = __test.state().player;
@@ -274,11 +294,11 @@ await desk.context.close();
 // on-versus-off texels in the 32×48 frames (431, 236, 232, 310, 262, 372 of 1536).
 const PLATE_FRAC = [122, 138, 115, 96, 91, 138].map((n) => n / 1536);
 async function plates(width, height, dpr) {
-  const ctx = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: dpr });
   for (const seed of [1, 4, 7, 9]) {
+    const ctx = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: dpr });
     const page = await ctx.newPage();
     await page.goto(GAME + "?seed=" + seed, { waitUntil: "domcontentloaded" });
-    await page.waitForFunction(() => window.__test && __test.ready());
+    await page.waitForFunction(() => window.__test && __test.ready(), null, { timeout: 90000 });
     const rows = await page.evaluate(async (frac) => {
       __test.enter();
       __test.moveTo(2.5, 5.2);
@@ -345,9 +365,8 @@ async function plates(width, height, dpr) {
     }, PLATE_FRAC);
     for (const row of rows.out) check(row.share >= 0.8, width + " seed " + seed + " " + row.name + " plate " + Math.round(row.share * 100) + "% visible");
     check(rows.alley[0] >= 2 && rows.alley[1] >= 2, width + " alleys keep dark tiles (" + rows.alley.join(",") + ")");
-    await page.close();
+    await ctx.close();
   }
-  await ctx.close();
 }
 console.log("plates");
 await plates(1280, 800, 1);
@@ -391,7 +410,7 @@ async function proof(width, height, dpr, tag) {
   page.on("pageerror", (e) => errs.push(String(e)));
   page.on("console", (m) => { if (m.type() === "error") errs.push(m.text()); });
   await page.goto(GAME + "?seed=4", { waitUntil: "domcontentloaded" });
-  await page.waitForFunction(() => window.__test && __test.ready());
+  await page.waitForFunction(() => window.__test && __test.ready(), null, { timeout: 90000 });
   await page.waitForTimeout(180);
   const attract = await page.evaluate(() => {
     const v = __test.view();
@@ -849,7 +868,7 @@ async function visible(width, height, dpr) {
   const errs = [];
   page.on("pageerror", (e) => errs.push(String(e)));
   await page.goto(GAME, { waitUntil: "domcontentloaded" });
-  await page.waitForFunction(() => window.__test && __test.ready());
+  await page.waitForFunction(() => window.__test && __test.ready(), null, { timeout: 90000 });
   await page.evaluate(() => __test.enter());
   await page.evaluate(() => new Promise((resolve) => {
     requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
@@ -967,12 +986,217 @@ await proof(390, 844, 2, "390");
 const hi = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3 });
 const hiPage = await hi.newPage();
 await hiPage.goto(GAME + "?seed=4", { waitUntil: "domcontentloaded" });
-await hiPage.waitForFunction(() => window.__test && __test.ready());
+await hiPage.waitForFunction(() => window.__test && __test.ready(), null, { timeout: 90000 });
 await hiPage.waitForTimeout(200);
 const hiView = await hiPage.evaluate(() => __test.view());
 check(hiView.ratio <= 2, "DPR 3 keeps the buffer ratio at most 2 (" + hiView.ratio + ")");
 check(hiView.artW >= 256 && hiView.artW <= 320, "DPR 3 art width " + hiView.artW);
 await hi.close();
+
+async function qaFix(width, height, dpr, tag) {
+  const ctx = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: dpr, hasTouch: width < 800, isMobile: width < 800 });
+  const page = await ctx.newPage();
+  const errs = [];
+  page.on("pageerror", (e) => errs.push(String(e)));
+  await page.goto(GAME + "?seed=7&ratio=1.5", { waitUntil: "domcontentloaded" });
+  await page.waitForFunction(() => window.__test && __test.ready(), null, { timeout: 90000 });
+  const city = await page.evaluate(async () => {
+    __test.enter();
+    __test.setTilt(55);
+    __test.moveTo(2.6, 1.8);
+    __test.forceCutaway(true);
+    __test.setPose("idle");
+    const canvas = document.querySelector("canvas");
+    const gl = canvas.getContext("webgl2");
+    const frame = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    const read = () => {
+      const b = new Uint8Array(canvas.width * canvas.height * 4);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, b);
+      return b;
+    };
+    const shareOf = (buf) => {
+      const w = canvas.width, h = canvas.height, y0 = Math.floor(h * 0.28);
+      let build = 0, denom = 0;
+      for (let y = y0; y < h; y++) for (let x = 0; x < w; x++) {
+        const i = (y * w + x) * 4;
+        const r = buf[i], g = buf[i + 1], b = buf[i + 2];
+        if ((b > r + 12 && b > g + 8) || (r + g + b < 70 && b > r + 4 && b > g)) continue;
+        const clear = Math.abs(r - 26) <= 10 && Math.abs(g - 26) <= 10 && Math.abs(b - 34) <= 10;
+        const wall = Math.abs(r - 43) <= 12 && Math.abs(g - 42) <= 12 && Math.abs(b - 51) <= 14;
+        const roof = Math.abs(r - 74) <= 24 && Math.abs(g - 72) <= 24 && Math.abs(b - 82) <= 26;
+        const win = r > 160 && g > 80 && g < 200 && b < 120 && r > b + 40;
+        if (!clear && !wall && !roof && !win && Math.max(r, g, b) < 130 && Math.max(r, g, b) - Math.min(r, g, b) < 40) continue;
+        denom++;
+        if (wall || roof || win) build++;
+      }
+      return denom ? build / denom : 0;
+    };
+    const changed = (a, b) => {
+      let n = 0;
+      for (let i = 0; i < a.length; i += 4) if (a[i] !== b[i] || a[i + 1] !== b[i + 1] || a[i + 2] !== b[i + 2]) n++;
+      return n;
+    };
+    const rows = [];
+    for (const yaw of [0, 90, 180, 270]) {
+      __test.setYaw(yaw);
+      __test.setPose("idle");
+      await frame();
+      const idle = read();
+      __test.setPose("crouch");
+      await frame();
+      const crouch = read();
+      rows.push({ yaw, share: shareOf(idle), crouch: changed(idle, crouch) });
+      __test.setPose("idle");
+    }
+    return rows;
+  });
+  for (const row of city) {
+    if (row.yaw !== 0) check(row.share >= 0.7, tag + " yaw " + row.yaw + " building share " + (row.share * 100).toFixed(1) + "%");
+    if (tag === "390" && row.yaw !== 0) check(row.crouch >= 2900, tag + " yaw " + row.yaw + " crouch changes " + row.crouch + " px");
+    console.log("  nums  " + tag + " yaw " + row.yaw + " share=" + (row.share * 100).toFixed(1) + "% crouch=" + row.crouch);
+  }
+  if (tag === "390") {
+    const ground = await page.evaluate(async () => {
+      __test.moveTo(2.5, 5.2);
+      __test.setYaw(0);
+      __test.setTilt(55);
+      __test.forceCutaway(false);
+      for (let i = 0; i < 6; i++) __test.setSign(i, null);
+      await new Promise((r) => setTimeout(r, 300));
+      const canvas = document.querySelector("canvas");
+      const gl = canvas.getContext("webgl2");
+      const read = () => {
+        const b = new Uint8Array(canvas.width * canvas.height * 4);
+        gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, b);
+        return b;
+      };
+      const on = read();
+      const v = __test.view();
+      const street = __test.project(3, 2, 0);
+      const sx = Math.max(0, Math.min(canvas.width - 1, Math.round(v.ox + street.x * v.scale)));
+      const sy = Math.max(0, Math.min(canvas.height - 1, Math.round(v.oy + (v.artH - street.y) * v.scale)));
+      const si = (sy * canvas.width + sx) * 4;
+      const asphalt = !(Math.abs(on[si] - 26) <= 8 && Math.abs(on[si + 1] - 26) <= 8 && Math.abs(on[si + 2] - 34) <= 8);
+      for (let i = 0; i < 6; i++) __test.setSign(i, false);
+      await new Promise((r) => setTimeout(r, 420));
+      const off = read();
+      let ch = 0;
+      for (let i = 0; i < on.length; i += 4) {
+        if (Math.abs(on[i] - off[i]) + Math.abs(on[i + 1] - off[i + 1]) + Math.abs(on[i + 2] - off[i + 2]) > 18) ch++;
+      }
+      for (let i = 0; i < 6; i++) __test.setSign(i, null);
+      return { pool: ch / (on.length / 4), asphalt };
+    });
+    check(ground.asphalt, tag + " street pixel is asphalt");
+    check(ground.pool >= 0.042, tag + " sign pools brighten " + (ground.pool * 100).toFixed(2) + "% of the frame");
+    console.log("  nums  " + tag + " pool=" + (ground.pool * 100).toFixed(2) + "%");
+    const hits = await page.evaluate(async () => {
+      const canvas = document.querySelector("canvas");
+      const frame = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const tap = async (x, y) => {
+        canvas.dispatchEvent(new PointerEvent("pointerdown", { clientX: x, clientY: y, pointerId: 7, bubbles: true, button: 0 }));
+        await frame();
+        const holding = __test.hack().holding;
+        canvas.dispatchEvent(new PointerEvent("pointerup", { clientX: x, clientY: y, pointerId: 7, bubbles: true, button: 0 }));
+        await frame();
+        return holding;
+      };
+      const face = () => {
+        const p = __test.project(3.82, 2.5, 22);
+        const v = __test.view();
+        const gl = canvas.getContext("webgl2");
+        const sx = Math.max(0, Math.min(canvas.width - 1, Math.round(v.ox + p.x * v.scale)));
+        const sy = Math.max(0, Math.min(canvas.height - 1, Math.round(v.oy + (v.artH - p.y) * v.scale)));
+        const buf = new Uint8Array(4);
+        gl.readPixels(sx, sy, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, buf);
+        return Math.abs(buf[0] - 43) <= 4 && Math.abs(buf[1] - 42) <= 4 && Math.abs(buf[2] - 51) <= 4;
+      };
+      const out = [];
+      for (const yaw of [0, 90, 180]) {
+        __test.setYaw(yaw);
+        __test.setTilt(55);
+        __test.moveTo(2.6, 1.8);
+        __test.forceCutaway(true);
+        await frame();
+        const body = __test.client(3.82, 2.5, 22);
+        const beside = __test.client(2.15, 1.15, 2);
+        out.push({ yaw, body: await tap(body.x, body.y), beside: await tap(beside.x, beside.y), seen: face() });
+      }
+      return out;
+    });
+    for (const row of hits) {
+      check(row.body === true, tag + " yaw " + row.yaw + " tap on the machine starts the hold");
+      check(row.beside === false, tag + " yaw " + row.yaw + " tap on empty ground does not");
+      if (row.yaw !== 0) check(row.seen, tag + " yaw " + row.yaw + " machine body is on screen");
+      console.log("  nums  " + tag + " yaw " + row.yaw + " machine seen=" + row.seen);
+    }
+    for (const yaw of [0, 90, 180, 270]) {
+      await page.evaluate((yaw) => { __test.setYaw(yaw); __test.setTilt(55); __test.moveTo(2.6, 1.8); __test.forceCutaway(true); __test.setPose("idle"); }, yaw);
+      await page.waitForTimeout(120);
+      await page.screenshot({ path: OUT + "/yaw-" + yaw + "-390.png" });
+    }
+  }
+  check(errs.length === 0, tag + " qa fix stays quiet");
+  await ctx.close();
+}
+
+console.log("qa fix 390 and 1280");
+await qaFix(390, 844, 2, "390");
+await qaFix(1280, 800, 1, "1280");
+
+async function coverage(width, height, dpr, seed) {
+  const ctx = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: dpr });
+  const page = await ctx.newPage();
+  await page.goto(GAME + "?seed=" + seed + "&ratio=" + (width < 800 ? 1.5 : 1), { waitUntil: "domcontentloaded" });
+  await page.waitForFunction(() => window.__test && __test.ready(), null, { timeout: 90000 });
+  const rows = await page.evaluate(async () => {
+    __test.enter();
+    __test.setTilt(55);
+    __test.moveTo(2.6, 1.8);
+    __test.forceCutaway(true);
+    __test.setPose("idle");
+    const canvas = document.querySelector("canvas");
+    const gl = canvas.getContext("webgl2");
+    const frame = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    const shareOf = (buf) => {
+      const w = canvas.width, h = canvas.height, y0 = Math.floor(h * 0.28);
+      let build = 0, denom = 0;
+      for (let y = y0; y < h; y++) for (let x = 0; x < w; x++) {
+        const i = (y * w + x) * 4;
+        const r = buf[i], g = buf[i + 1], b = buf[i + 2];
+        if ((b > r + 12 && b > g + 8) || (r + g + b < 70 && b > r + 4 && b > g)) continue;
+        const clear = Math.abs(r - 26) <= 10 && Math.abs(g - 26) <= 10 && Math.abs(b - 34) <= 10;
+        const wall = Math.abs(r - 43) <= 12 && Math.abs(g - 42) <= 12 && Math.abs(b - 51) <= 14;
+        const roof = Math.abs(r - 74) <= 24 && Math.abs(g - 72) <= 24 && Math.abs(b - 82) <= 26;
+        const win = r > 160 && g > 80 && g < 200 && b < 120 && r > b + 40;
+        if (!clear && !wall && !roof && !win && Math.max(r, g, b) < 130 && Math.max(r, g, b) - Math.min(r, g, b) < 40) continue;
+        denom++;
+        if (wall || roof || win) build++;
+      }
+      return denom ? build / denom : 0;
+    };
+    const out = [];
+    for (const yaw of [90, 180, 270]) {
+      __test.setYaw(yaw);
+      await frame();
+      const buf = new Uint8Array(canvas.width * canvas.height * 4);
+      gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, buf);
+      out.push({ yaw, share: shareOf(buf) });
+    }
+    return out;
+  });
+  for (const row of rows) {
+    check(row.share >= 0.7, width + " seed " + seed + " yaw " + row.yaw + " building share " + (row.share * 100).toFixed(1) + "%");
+  }
+  console.log("  nums  " + width + " seed " + seed + " " + rows.map((r) => r.yaw + ":" + (r.share * 100).toFixed(1) + "%").join(" "));
+  await ctx.close();
+}
+console.log("skyline coverage");
+for (const seed of [1, 4, 7, 9]) {
+  await coverage(390, 844, 2, seed);
+  await coverage(1280, 800, 1, seed);
+}
 
 await browser.close();
 console.log(failed ? "FAIL " + failed : "PASS neon stack e2e");
