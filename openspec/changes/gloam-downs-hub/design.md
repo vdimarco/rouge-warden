@@ -1,7 +1,7 @@
 # Design: Gloam Downs, the walk-through Lamp-room, and more to gain
 
 ## The request
-The player said: "the lamp room looks ugly make it a walk thru environmewnt" and "with more types of buffs and abilities thatr can be gained". So there are two parts. Part H turns the Lamp-room into a place you walk through. Part B adds abilities and buffs of kinds the game lacks. This design fits the code on `9e243098`. The fair-fight change (`gloam-downs-fair-fight`, in progress) changes `foes.js`, `run.js`, `moves.js`, `feel.js`, `boss.js`, `mix.js` and the bot; the build starts after it merges (section "Who builds what").
+The player said: "the lamp room looks ugly make it a walk thru environmewnt" and "with more types of buffs and abilities thatr can be gained", and then "like different categoies like deadcells". So there are three parts. Part H turns the Lamp-room into a place you walk through. Part C sorts everything the player can gain into clear categories, with slots, colours, quality tiers and traits. Part B adds abilities and buffs of kinds the game lacks, each in its category. This design fits the code on `9e243098`. The fair-fight change (`gloam-downs-fair-fight`, in progress) changes `foes.js`, `run.js`, `moves.js`, `feel.js`, `boss.js`, `mix.js` and the bot; the build starts after it merges (section "Who builds what").
 
 ## What is there now
 - **The Lamp-room** is `#lamp` in `index.html`: a card over the last frame of the place. `screens.js` (`upgradeRows`, `lampButtons`, `LAMP_LABELS`) and `main.js` (`openLamp`, `fillLamp`) fill it. `cards.js` keeps the focus in the card and scrolls it. It holds the wares (`run.js` `UPGRADES`, 9 wares), the patterns to kindle (`growth.js` `PATTERNS`), the panes, the unlocks (`UNLOCKS`, 7) and the Ember row. It opens from the title (`bTitleLamp`), after a run's end (`afterEnd = 'lamp'`) and at a beacon (`bSpend`, then `openLamp('beacon')`).
@@ -15,7 +15,7 @@ The player said: "the lamp room looks ugly make it a walk thru environmewnt" and
 From a read of the tables above:
 1. Only one state deals damage over time (burn). Nothing stacks, and nothing spreads.
 2. No sure hits (crits), so a stun or a hold has no payoff beyond safety.
-3. One blade. No weapon to swap.
+3. One blade. No weapon to swap, and no second hand.
 4. No shield on the lamplighter: only Lead glass and Bell guard.
 5. One summon (Moth wisp).
 6. Few traps (Ember snare, Pitch pour).
@@ -23,6 +23,7 @@ From a read of the tables above:
 8. The combo counter scales nothing.
 9. No trade-off picks.
 10. Colours scale numbers but give no set bonus.
+11. No clear categories. Abilities have slots and a bright form, but panes, wicks, relics, wares and unlocks share one long card, and nothing found has a quality beyond bright.
 
 ## Sources
 Page fetches failed in this session: `deadcells.wiki.gg`, `hades.wiki.fextralife.com`, `blog.unity.com`, `enterthegungeon.wiki.gg`, `childrenofmorta.fandom.com` and `www.touchtapplay.com` did not resolve. Web search worked. [S] marks a claim read in search result extracts on 2026-11-26. [M] marks a claim from memory, to check when the network allows.
@@ -43,7 +44,11 @@ No new rendering technique. The hall is baked with the same Ink Studio splat pip
 - [M] Dead Cells: bleed and poison that stack or tick, and crits on a stunned or frozen foe. We took: a stacking state (Char), a ticking state that spreads (Soot), and sure cuts on a stunned, held or blind foe.
 - [M] Hades: boons of one god that pair into a stronger "duo" boon. We took: colour sets and kindlings, with our own rules.
 - [M] Risk of Rain 2 (Hopoo Games, 2020): kill effects that chain, capped so they end. We took: Spill glass with a chain cap.
-- No name, item, number, art or layout is copied. Every name here is our own and on the lamp theme.
+
+### The categories
+- [M] Dead Cells sorts what you find into main weapons, a second weapon or a shield, two skills, mutations picked at stations, an amulet, scrolls that raise one of three colour stats, and blueprints that open items for later runs. Each find has a colour and a quality, and may roll extra affixes. We took: fixed slots by kind, one colour on every find that grows with its colour level, quality tiers that rise with depth, rolled traits, and plans that open items for later runs. We did not take its names, numbers, item lists, or its split of stats by colour.
+- [M] Hades: each weapon has its own move set and feel. We took: each blade has its own string, speed, reach and damage.
+- No name, item, number, art or layout is copied. Every name here is our own and on the lamp theme. "Category", "slot" and "tier" are plain words; no item, tier or trait name of another game is used.
 
 ## Part H: the walk-through Lamp-room
 
@@ -72,7 +77,7 @@ A downs place is 232,607 to 245,198 splats and 1.22 to 1.36 MB. So the hall is b
 | Part | Budget |
 |---|---|
 | The hall's scenery | at most 160,000 splats |
-| Growth objects, all baked | at most 40,000 splats |
+| Growth objects, all baked | at most 46,000 splats |
 | Life | at most 1,200 dabs (`life.js` `MAX`) |
 | Whole place | at most 210,000 splats, under the 250,000 of a place |
 | Download | at most 0.40 MB gzip, walk file at most 4 KB |
@@ -90,17 +95,19 @@ A stone hall 20 m wide (x from -10 to 10) and 14 m deep (z from -7 to 7) on flat
 | Spawn | (0, 5) | a worn mat | where the lamplighter stands at first, facing the door |
 | Well | (-3, 2) | a stone well with water | the bank, and the last run's recap |
 | Wick rack | (-6.5, 3.5) | a rack of 9 hooks | the unlocks |
-| Temper rack | (6.5, 3.5) | a rack of 4 blades | the blade tempers |
-| Training post | (3.5, 1) | a post on a sand ring | try the build |
+| Blade rack | (6.5, 3.5) | a rack of 4 hooks | the blades: pick the start blade |
+| Off-hand stand | (-6, 0.5) | a stand with 6 pegs | the off-hands: pick the start one |
+| Ability post | (3.5, 1) | a post on a sand ring, a rack of ability lamps | the abilities: try any two |
 | Lamp shelf | (-8.5, -2) | 3 bays of 4 glass lamps | the lasting wares |
 | Pane window | (9.3, -2) | a leaded window, 3 slots, a sill | the panes |
-| Kiln | (6, -4.5) | a kiln with a hood of 4 rows of 8 hooks | kindle patterns |
+| Kiln | (6, -4.5) | a kiln with a hood of 5 rows of 8 hooks | kindle patterns of every category |
 | Trophy wall | (-4, -6.7) | 3 key plaques, 5 elite plaques | keys and elites put out |
 | Ember bell | (3, -5.8) | a bell on a frame | the Ember level |
 | Map table | (0, -4.5) | a table with the route as five lamps | the seed's route, Wander, Explore |
 | Run door | (0, -7) | a tall door | begin the run |
 
 - The path from the spawn to the door is 12 m: 2 s at a run (6.4 m/s), 4 s at a walk.
+- 12 stations in all, one a category or a lasting family (Part C "Hall stations by category").
 - One run door and a map table, not five place doors. A run's route is fixed by the seed (`routeFor`), so five doors would offer a choice that does not exist. The map table shows the route, and the explorer's Map stays in Wander.
 - The stations' marks go in the biome as `ctx.mark('station', { id, at, face })`. `meta.stations` gives each one's point, its face and its use radius (1.6 m).
 
@@ -110,20 +117,21 @@ Every growth object is baked, each as one contiguous range of splats, listed in 
 | Station | Growth ranges | Shown when |
 |---|---|---|
 | Lamp shelf | for each ware, 8 glass rings, unlit and lit | ring k lit when the level is at least k |
-| Kiln | for each pattern, an unlit lamp on the ledge and a lit lamp on the hood | the unlit one when found and not kindled, the lit one when kindled |
+| Kiln | for each pattern, an unlit lamp on the ledge and a lit lamp on the hood (5 rows of 8 hooks) | the unlit one when found and not kindled, the lit one when kindled |
 | Pane window | for each pane, coloured glass in each of 3 slots; a shutter for each slot | the glass of the pane set in that slot; the shutter on a slot not bought |
 | Wick rack | for each unlock, a lit wick | bought |
-| Temper rack | for each temper, a blade | kindled |
+| Blade rack | for each blade, the blade on its hook | kindled; the start blade glows |
+| Off-hand stand | for each off-hand, the item on its peg | kindled; the start one glows |
 | Trophy wall | for each key, its trophy; for each elite, a plaque | key held; elite put out once |
 | Ember bell | 6 rings of light round the bell | levels open |
 
-- About 1,600 splats a ware (8 rings of 200), 250 a lamp, 400 a pane glass. In all about 38,000 splats, inside the 40,000 budget.
+- About 1,600 splats a ware (8 rings of 200), 250 a lamp, 400 a pane glass, 400 a blade or off-hand. With 37 patterns, 4 blades and 6 off-hands, about 43,000 splats in all, inside the 46,000 budget.
 - A new light is lit with a 0.4 s glow and the `kindle` or `buy` cue. With reduced motion it is lit at once.
 - The glass rings are a shape, not a colour ramp, so the level reads on a grey screen too.
 
 ### Decision 6: station cards
 - Within 1.6 m of a station, facing it within 70 degrees, a prompt shows its name and the key: "E Use" on keys, "A Use" on a pad, a Use button on touch. Use opens that station's card.
-- The card holds only that station's rows, built from the same row makers as today (`upgradeRows`, the pattern and pane rows, the unlock rows), so the rules of Buy, Kindle and Set stay one.
+- The card holds only that station's rows, built from the same row makers as today (`upgradeRows`, the pattern and pane rows, the unlock rows) and the new blade and off-hand rows, so the rules of Buy, Kindle, Set and Pick stay one. Every row shows its category as Part C "The cards by category" says.
 - **Where it shows** (`cards.js` `anchor(card, x, y)`), from the station's screen point:
   - 800 by 600 and 1280 by 720: beside the station, at most 360 px wide, kept 16 px inside the screen, never over the station itself.
   - 320 by 640, 360 by 640 and 390 by 844: a bottom sheet at most 55% of the height; the camera lifts so the station shows above it.
@@ -141,7 +149,7 @@ Every growth object is baked, each as one contiguous range of splats, listed in 
 | Pad | A | B | View | d-pad or left stick |
 | Touch | the Use button | the close button, or walk away | the List button | tap |
 
-The training post: Attack, Roll and both abilities work in the hall. Ability cooldowns are a quarter of their length there, and damage numbers float over the post. Nothing spent there costs anything.
+The ability post: Attack, Roll, the off-hand and both abilities work in the hall. Ability cooldowns are a quarter of their length there, and damage numbers float over the post. Nothing spent there costs anything.
 
 ### Decision 8: life, sound and reduced motion
 - `life.js` `LIFE.lamproom`: dust that twinkles in the torch light, the kiln's fire on the fire slots 34 to 37, a slow bob on the well's water, and the shelf lamps that brighten within `RULES.near` of the lamplighter. No crows, no gusts.
@@ -186,7 +194,7 @@ All are patterns kindled at the kiln. Cooldown in s, and the cost in glim.
 - Drawn with the spark dabs, rings and lines `fight.js` and `sparks.js` already draw. A tell comes before every effect.
 
 ### New buffs
-29 in all.
+Each sits in its category (Part C). Here: 6 panes, 4 wicks, 4 relics and their 4 kindlings, 2 wares, 2 unlocks, 1 key and 3 colour sets. The 3 blades, 6 off-hands, 3 tiers and 10 traits are in Part C.
 
 **Panes** (patterns, set at the pane window):
 | id | Name | Colour | Cost | Rule |
@@ -219,21 +227,14 @@ All are patterns kindled at the kiln. Cooldown in s, and the cost in glim.
 |---|---|---|---|---|
 | whet | Whetstone | Flame | 90, 200, 360 | 4% chance a level that any blade hit is a sure cut |
 | horn | Horn lamp | Ward | 120, 280 | shells 20% bigger a level |
-| rack | Temper rack | | 150 | opens the temper rack; tempers join the pattern drops |
+| rack | Blade rack | | 150 | the Hook blade, Twin knives and Bell maul join the pattern drops (was Temper rack) |
 | crate | Wick crate | | 180 | Count wick and Shell wick join the wick pool |
 
 **The key** (`keys.js`): **Gloam dash** (Gloam), from the Fen-wick's first fall. Roll in the air dashes 3.5 m level, safe 0.15 s, once until you land. It reaches the existing ledge caches another way. No new caches without a rebake.
 
-**Blade tempers** (patterns of kind `temper`, once Temper rack is bought; picked at the temper rack and kept until changed; the Lamp blade is the default):
-| id | Name | Colour | Cost | Rule |
-|---|---|---|---|---|
-| hook | Hook temper | Flame | 160 | reach +0.6 m, the string 15% slower, damage x1.1, the finisher sweeps 180 degrees and pulls light foes 1 m in |
-| twin | Twin temper | Gloam | 160 | a 4-cut string, each cut 25% faster and at 65% damage; the 4th cut adds 1 Char |
-| bell | Bell temper | Ward | 200 | a 2-cut string, 30% slower, damage x1.6, poise worn twice as fast; hold Attack 0.5 s to slam: 30 in 2.5 m |
+**Blades** are now their own category, Part C "Blades". The three tempers of the first draft are the Hook blade, Twin knives and Bell maul there.
 
-Tempers are drawn with the cut poses there now at other speeds and the blade bone scaled (Hook 1.4 long, Twin 0.7, Bell 1.2 and wider). The 4th twin cut reuses the first cut; the slam reuses the plunge's landing. No new poses are baked.
-
-**Colour sets** (`build.js`): count the run's colours over the slotted abilities, the set panes, the held relics (by `MOVE_COLOUR` of their move) and the temper. Three of one colour turns its set on:
+**Colour sets** (`build.js`): count the run's colours over the held blade, the held off-hand, the slotted abilities, the set panes and the held relics (by `MOVE_COLOUR` of their move). Three of one colour turns its set on:
 | Set | Rule |
 |---|---|
 | Flame | a burning foe put out passes 2 s of burn to the nearest foe within 2 m |
@@ -245,15 +246,16 @@ The HUD's colour row rings a colour whose set is on.
 ### Gaining them
 | Way | What |
 |---|---|
-| Pattern drops, kindled at the kiln | the 10 abilities, the 6 panes, the 3 tempers (after Temper rack) |
+| Pattern drops, kindled at the kiln | the 10 abilities, the 6 panes, the 3 blades (after Blade rack), the 5 off-hands |
+| Gear drops in a run | kindled blades, off-hands and abilities, with a tier and traits (Part C "Drop tables") |
 | Relic drops from elites | the 4 relics |
 | Wick offers | the 4 wicks (2 after Wick crate) |
-| Wares and unlocks | Whetstone, Horn lamp, Temper rack, Wick crate |
+| Wares and unlocks | Whetstone, Horn lamp, Blade rack, Wick crate |
 | An elite's first fall | Gloam dash |
 | Caches | a `pattern` cache may give any new pattern; an `ability` cache any kindled ability |
 | Sparks | the colour sets, by the colours held |
 
-- The pattern pool grows from 13 to 32. To keep a new pattern within reach, a pattern drop picks an ability, pane or temper with odds 50:35:15 (50:50:0 before Temper rack), then one of that kind from the seed's `pattern` stream.
+- The pattern pool grows from 13 to 37. To keep a new pattern within reach, a pattern drop picks a kind first (Part C "Drop tables"), then one of that kind from the seed's `pattern` stream.
 - Whetstone's chance draws from its own seed stream, `sure`, so the same seed gives the same sure cuts.
 - Seeded tests that pin a wick, relic or pattern draw are updated with the new tables.
 
@@ -264,7 +266,7 @@ The HUD's colour row rings a colour whose set is on.
 | Ember tongue, Ember glass, Pitch pour | Moth swarm | moths go to burning foes, and Ember glass adds 20% to their hits |
 | Flare, Ember snare, Bell toll, Shutter | Sure hand | stunned, held or blind foes take sure cuts |
 | Sure hand, Whetstone | Shard glass | each sure cut adds 2 Char |
-| Char edge, Char wick, Twin temper, Shard fan, Tack scatter | Char | stacks come from many moves and burst sooner |
+| Char edge, Char wick, Twin knives, Sling, Charring, Shard fan, Tack scatter | Char | stacks come from many moves and burst sooner |
 | Lead glass, Bell guard | Ember shell, Shell wick, Glass drink | a Ward build that takes blows on a shell |
 | Ember glass, Ember tongue | Spill glass, Flame set | burn passes from foe to foe |
 | Quick heels, Ember trail | Rush glass | a kill gives a free roll, so more trail |
@@ -272,41 +274,203 @@ The HUD's colour row rings a colour whose set is on.
 | Cinder glass | Thirst glass | a low-health build that heals as it hits |
 | Hot glass, Clear glass | Count wick | the free bomb counts as an ability use |
 | Smoke step, Clear glass | Gloam blink | two safe steps, and the Mark adds 22 |
-| Hooked cut | Hook temper | the pull is 1 m longer |
-| Bell guard, Bell toll | Bell temper | poise breaks fast |
+| Hooked cut | Hook blade | the pull is 1 m longer |
+| Bell guard, Bell toll, Iron cuff | Bell maul | poise breaks fast |
+| Sure hand, Shard glass | Buckler | a parry readies a sure cut, and the sure cut adds 2 Char |
+| Shade lamp | Sure hand | blind foes take sure cuts |
+| Lamp chain | Gloam blink, Mark | the chain's Mark adds 22 to the next hit |
+| Oil slick, Pitch pour | Fire pot | the pot's burn lights the slick |
 | Crow step | Gloam dash | jump, jump again, then dash |
 
 ### Balance
 The fair-fight change is changing the foe curve, the interrupts, the poise and the attack tokens right now. These rules keep the new pool inside a budget until both are measured together:
 - **One buff:** at most +20% damage a second on the bot's reference string against a Snuffer, or at most +25% effective health, when held alone. Node test `gloam-downs-kit.test.mjs` measures each one.
-- **Adding up:** damage bonuses add within one sum (Flame, Edge, Keen edge, Cinder, Cracked, Ember glass), and a sure cut multiplies after. Ticks are capped at 8 a second a foe, a Spill chain at 3, a shell at 40% (50%).
-- **Pacing SHALL be rechecked after both changes land.** Run `node qa/lab/gloam-downs-bot.mjs` with 60 bots a skill on the merged code. The fair-fight targets must still hold (skill 0.3: place 2 in 80% of first runs, first win in run 8 to 20; 0.5: run 3 to 8; 0.9: run 1 to 2). No build family may clear a place more than 15% faster than the mean of all families. If one does, its numbers here move, and this file says so.
+- **Adding up:** damage bonuses add within one sum (the held blade's colour, Edge, Keen edge, Cinder, Cracked, Ember glass), then the tier's power multiplies, and a sure cut multiplies after. The gear has its own budget (Part C "Gear budget"). Ticks are capped at 8 a second a foe, a Spill chain at 3, a shell at 40% (50%).
+- **Pacing SHALL be rechecked after both changes land.** Run `node qa/lab/gloam-downs-bot.mjs` with 60 bots a skill on the merged code. The fair-fight targets must still hold (skill 0.3: place 2 in 80% of first runs, first win in run 8 to 20; 0.5: run 3 to 8; 0.9: run 1 to 2). No build family may clear a place more than 15% faster than the mean of all families. A build family is the run's main colour with its blade and off-hand. If one does, its numbers here move, and this file says so.
 
 ### Sound
 New cues in `run-sound.js`, built from the recipes there now: `lash`, `slick`, `tacks`, `toll`, `shell`, `post`, `shutter`, `blink`, `sure`, `char` (the burst), `soot`, `crack` (Cracked glass), `dash`. `shards` and `wisp` are reused. Each keys on a bus event with the ability or buff id.
+The gear's cues (Part C): `buckler` and `parry`, `cuff`, `sling`, `pot`, `chain`, `shade`, `swap` (a blade or off-hand taken from the ground), and `slam` (Bell maul). A bright or blazing drop rings `bright` or `blazing` as it lands. Each keys on a bus event with the item id and its tier.
+
+## Part C: what you gain, in categories
+The player asked for "different categoies like deadcells". Everything the player can gain now sits in one category, each with its own slot or rule, its own station in the hall and its own mark on the HUD and the cards.
+
+### The categories
+| Category | Slots | Gained from | Set where | Colour | Tier and traits |
+|---|---|---|---|---|---|
+| Blade | 1 | gear drops; the start blade | swapped on the ground; the blade rack picks the start blade | yes | yes |
+| Off-hand | 1 | gear drops; the start off-hand | swapped on the ground; the off-hand stand picks the start one | yes | yes |
+| Abilities | 2 | gear drops (today's ability lamps); Belt's start offer | swapped on the ground, as today; tried at the ability post | yes | yes |
+| Panes | 1, up to 3 with Lantern panes | patterns kindled at the kiln | the pane window; a beacon shrine | yes | no |
+| Wicks | one pick a beacon, at most 5 a run | the start pick (Wick shelf) and beacon offers | kept for the run | no | no |
+| Relics | at most 5 a run | elites | taken on touch, kept for the run | by its move | no |
+| Sparks | Flame, Ward and Gloam levels | spark picks, caches, First spark | in the run | they are the colours | no |
+| Patterns | none (plans) | pattern lamps | kindled at the kiln, then in the drops | the item's | no |
+| Lasting | wares, unlocks, keys, Ember | the Lamp-room, an elite's first fall | the hall's stations | some | no |
+
+Refinements of the proposal:
+- **A wick stays one pick a beacon**, up to 5 a run, as today (`run-save.js` keeps 5). One wick a run would take power the player has now.
+- **The top tier is "blazing", not "kindled".** "Kindled" already means a pattern bought at the kiln and a relic with its wick.
+- **Tiers and traits are only on the gear**: the blade, the off-hand and the two abilities. Panes, wicks and relics stay fixed picks, so a build is planned, not only rolled.
+- **The ability post is the training post.** It shows the abilities and lets the player try any two. The run's start abilities stay as today (the seed, then Belt's offer).
+
+### Colour growth
+Every blade, off-hand and ability has one colour, and its numbers grow with that colour's level by `colourPower(run, colour)`, as abilities do today. The blade's colour share moves from Flame alone (`flameBonus` in `bladeBonus`) to the held blade's colour, so the Lamp blade (Flame) keeps today's numbers. All three colours give 10% power a level (`SPARK`), so no colour of blade is behind. Sparks stay the only way to raise a colour.
+
+### Blades (`gear.js` `BLADES`)
+The tempers of the first draft become blades. A blade is the main weapon: one is held, and a found one is swapped on the ground. Each has its own string, speed, reach, damage and colour. All use today's cut poses at other speeds with the blade bone scaled; no new poses are baked.
+
+| id | Name | Colour | Pattern cost | String | Rule |
+|---|---|---|---|---|---|
+| lamp | Lamp blade | Flame | from the first run | 2 cuts and a finisher | today's string (`moves.js` `HITS`) |
+| hook | Hook blade | Flame | 160 | 2 cuts and a finisher, 15% slower | reach +0.6 m, damage x1.1; the finisher sweeps 180 degrees and pulls light foes 1 m in; the bone 1.4 long |
+| twin | Twin knives | Gloam | 160 | 4 cuts, each 25% faster | each cut at 65% damage; the 4th reuses the first cut and adds 1 Char; the bone 0.7 long |
+| bell | Bell maul | Ward | 200 | 2 cuts, 30% slower | damage x1.6, poise worn twice as fast; hold Attack 0.5 s to slam: 30 in 2.5 m, with the plunge's landing pose; the bone 1.2 long and wider |
+
+- **Blade rack** (the unlock, 150, was Temper rack) puts the Hook blade, Twin knives and Bell maul in the pattern drops. The rack stands in the hall from the first visit, with the Lamp blade on it.
+- **In a run** a blade drop lies stuck in the ground with a glow in its colour. Standing on it shows the compare toast. Holding Attack 0.4 s takes it; a tap still cuts. The old blade lies where the new one was, with its tier and traits. While a blade lies underfoot, Bell maul's slam waits.
+- **At the start** the run holds the blade picked at the blade rack, plain, with no traits.
+
+### Off-hands (`gear.js` `OFFHANDS`)
+The new slot: one held, with its own button and cooldown.
+
+| id | Name | Colour | Pattern cost | Cool s | Rule | Cue |
+|---|---|---|---|---|---|---|
+| buckler | Buckler | Ward | from the first run | 1.2 | raised for 0.6 s; a blow in the first 0.2 s is parried: 0 damage, a light foe staggers 0.6 s, a heavy foe loses 30 poise, and the next cut is sure; a blow later in the raise deals 40% | `buckler`, `parry` |
+| cuff | Iron cuff | Ward | 120 | 3 | a bash 1.5 m ahead: 6, 30 poise, light foes pushed 1.5 m | `cuff` |
+| sling | Sling | Flame | 100 | 1.5 | a stone at the nearest foe ahead within 9 m: 8; a burning foe also gets 1 Char | `sling` |
+| pot | Fire pot | Flame | 130 | 5 | a pot thrown 5 m ahead bursts in 1.5 m: 10 and 3 s of burn | `pot` |
+| chain | Lamp chain | Gloam | 150 | 6 | a chain to the nearest foe within 7 m pulls you to it in 0.2 s, safe on the way: 6 and a Mark | `chain` |
+| shade | Shade lamp | Gloam | 140 | 8 | a hooded lamp raised 0.4 s: foes in a 4 m, 60 degree cone are Blind | `shade` |
+
+- **Input:** V or O on keys, the middle mouse button, RB on a pad, and an Off-hand touch button of at least 44 px beside the two ability buttons. RB faces the foe today; facing moves to R3, the right stick's press. If the player wants RB kept for facing, the off-hand takes R3 instead; the tests read the map from `input.js`.
+- An off-hand's hit is not blade damage (Edge and Keen edge do not raise it), takes 2 steps of hit stop inside the cap, and follows the fair-fight rules. The Buckler's parry follows the fair-fight interrupts.
+- A tell comes before every off-hand effect. The item shows as a small group of dabs at the left hand, drawn with the dabs `sparks.js` draws; no new pose is baked.
+- **At the start** the run holds the off-hand picked at the off-hand stand, plain, or none. A new save has the Buckler picked.
+- **A found off-hand** swaps as a blade does: hold Off-hand 0.4 s on it; a tap still uses the one held.
+
+### Quality tiers (`gear.js` `TIERS`)
+| Tier | Mark | Power | Traits |
+|---|---|---|---|
+| plain | none | x1.0 | 0 |
+| bright | one pip and a gold rim | x1.25 (today's bright) | 1 |
+| blazing | two pips and a double rim | x1.4 | 2 |
+
+- Power multiplies the item's damage, heals and shell points, after its colour. It never changes a cooldown, a time or a reach.
+- Today's bright ability is the bright tier. An old save's `bright: true` reads as bright with no trait.
+- The marks are shapes, so a tier reads on a grey screen too.
+
+### Drop tables by place depth (`gear.js` `DEPTH_TIERS`)
+Depth is the place's index in the run's route (`depthOf`): 0 for the first place, 4 for Barrow Crown.
+
+| Depth | plain | bright | blazing |
+|---|---|---|---|
+| 0 | 90 | 10 | 0 |
+| 1 | 75 | 22 | 3 |
+| 2 | 60 | 32 | 8 |
+| 3 | 45 | 40 | 15 |
+| 4 | 35 | 42 | 23 |
+| 5 (an elite or cache at depth 4) | 25 | 45 | 30 |
+
+- An elite's drop and a cache use the next row down.
+- Each Keen eye level moves 4 points from plain to bright (today's `BRIGHT.perKeen`); each Ember level moves 2 points from plain to blazing. Plain never goes under 10.
+- **Gear drops:** each foe put out rolls once, with a 3% chance and 1% more a Keen eye level (today's ability lamp rate), and 60% for an elite. At most 3 gear drops a place (today's `abilityMax`). The kind is ability 50, blade 25, off-hand 25 (ability 65, off-hand 35 before Blade rack). The item is one kindled item of that kind; the item held may drop again at a better tier.
+- **Pattern drops** keep today's chance (`DROPS.pattern`). A pattern drop picks a kind with odds ability 40, pane 30, blade 15, off-hand 15 (45:35:0:20 before Blade rack), then one of that kind; a kind with none left passes to the next in that order. The pool grows from 13 to 37 (17 abilities, 12 panes, 3 blades, 5 off-hands).
+- **Seed streams:** the kind and item from the seed's `gear` stream, the tier from `tier`, the traits from `trait`. Each has its own counter in the run, so no other draw moves. Ability lamps move from the `ability` stream to `gear`, so seeded tests that pin an ability lamp are updated.
+
+### Traits (`gear.js` `TRAITS`)
+A bright item rolls 1 trait and a blazing item 2 different ones, from those that fit its kind.
+
+| id | Name | Fits | Rule |
+|---|---|---|---|
+| smoulder | Smouldering | blade, off-hand, ability | its hits burn 2 s |
+| steady | Steady | blade, off-hand, ability | 6% of its hits are sure cuts, from the seed's `sure` stream |
+| glean | Gleaning | blade, off-hand, ability | a foe it puts out heals 2% of max health |
+| char | Charring | blade, off-hand, ability | each 3rd hit adds 1 Char |
+| quick | Quick | blade, off-hand, ability | a blade's string 8% faster; an off-hand's or ability's cooldown 10% shorter |
+| wide | Wide | blade, off-hand, ability | a blade's reach +0.3 m; an off-hand's or ability's radius or range +15% |
+| weight | Weighted | blade, off-hand | poise worn 30% faster |
+| hoard | Hoarding | blade, off-hand, ability | a foe it puts out gives 1 more glim |
+| shelling | Shelling | blade, off-hand, ability | a foe it puts out gives a 6 shell for 4 s |
+| dim | Dimming | blade, off-hand | each 4th hit blinds the foe 1.5 s; never the Barrow Reeve |
+
+- Traits on two items add. Their ticks count in the 8-a-second cap, their shells in the shell cap, and Steady's chance adds to Whetstone's.
+- An ability's hits are the ones it deals itself, so Smouldering on Moth swarm burns with each moth's hit.
+- An item with traits reads "Hook blade, Smouldering, Wide" on the HUD label, the cards and the recap.
+
+### Patterns for every category
+A pattern is the plan of any category item that is not there from the first run: abilities, panes, blades and off-hands. Kindled at the kiln, it joins that category's gear drops, and a blade or off-hand also joins the rack or stand. Wicks still open by unlocks, relics stay in every elite's pool, and sparks are not plans.
+
+### Gear budget
+- One trait alone keeps the one-buff rule of "Balance": at most +20% damage a second or +25% effective health.
+- Each off-hand held alone keeps the one-buff rule.
+- Each plain blade deals within 10% of the Lamp blade's damage a second on the bot's reference string against a Snuffer.
+- A bright item with its trait adds at most 40%, and a blazing item with its two traits at most 60%, to the damage a second of the same item plain.
+- Node test `gloam-downs-gear.test.mjs` measures each one. The bot's pacing check (merge pass) includes the gear.
+
+### The HUD by category (`hud-gear.js`, `gear.css`)
+- **The gear row** (`#gear`, in the HUD, in place of `#abilities`): four slot tiles in order, Blade, Off-hand, Ability 1, Ability 2; then one small tile for each open pane slot; then the wick count. The relic row stays as it is.
+- **Each tile** shows the category glyph (a blade, a round shield, a lamp flame, a leaded square, a wick), the colour edge (a 3 px rim in the colour's hue, and the colour's shape in a corner: Flame a triangle, Ward a square, Gloam a diamond), and the tier mark (none, one pip, two pips). The off-hand and ability tiles show the cooldown as a dark sweep and the seconds left. An empty slot is a dashed outline with its glyph.
+- **The label** names every slot for a screen reader: "Blade: Hook blade, bright, Smouldering. Off-hand: Buckler, plain. Ability 1: ...". It changes on a swap, and at most once a second.
+- **Layouts:** at 1280x720 and 800x600 the gear row sits at the bottom left, tiles 40 px, pane tiles 24 px. At 390x844, 360x640 and 320x640 it sits under the life row in one line of at most 300 px, tiles 32 px, pane tiles 20 px. At 844x390 it sits under the life row, tiles 28 px. It never covers the Lab bar, the boss bar, the stick or a touch button.
+- The tiles are not buttons. The touch buttons Off-hand, Ability 1 and Ability 2 show the same glyph, colour edge and tier mark, at 44 px or more.
+- **The pause card** gains a Gear list: each category with its items, tier, traits and main numbers, reachable with keys and a pad.
+
+### The cards by category
+- Every choice card (`cards.js` `lcard`) and every station row starts with the category glyph and word (Blade, Off-hand, Ability, Pane, Wick, Relic, Spark, Ware, Unlock, Key), has the colour edge, the tier mark when it has a tier, and one line a trait: "+ Smouldering: its hits burn 2 s".
+- **The compare toast** (`#compare`): on a ground blade, off-hand or ability lamp, it shows the held item over the found one, each with its tier, traits and main number, and how to swap: "Hold Attack to swap", "Hold Off-hand to swap", "Press an ability to swap". At 320x640 it is two lines with no numbers. It never covers the touch buttons.
+- **The quick list** (the restyled `#lamp`) groups its rows under headings in this order: Blades, Off-hands, Abilities, Panes, Patterns, Wares, Unlocks, Keys, Ember.
+- **The well's recap** lists the run's last gear by category, with tiers and traits.
+
+### Hall stations by category
+| Station | Category | Its card |
+|---|---|---|
+| Blade rack | Blade | the kindled blades with their strings and numbers; Pick sets the start blade |
+| Off-hand stand | Off-hand | the kindled off-hands and None; Pick sets the start one |
+| Ability post | Abilities | the kindled abilities by colour; put any two in the slots to try at the post, in the hall only |
+| Pane window | Panes | set panes in the open slots |
+| Kiln | Patterns | kindle a found pattern of any category |
+| Wick rack | Unlocks | the unlocks, Blade rack and Wick crate among them |
+| Lamp shelf | Wares | the lasting wares |
+| Trophy wall | Keys | the keys and elites put out |
+
+The ability post is the training post with a rack of ability lamps. Attack, Roll, the off-hand and both abilities work at it, with cooldowns at a quarter of their length.
+
+### Save fields (`run-save.js`, v4)
+- **Lasting:** `blade` (the start blade id, kindled, default `lamp`); `offhand` (the start off-hand id, kindled, or null; `buckler` on a new save); blade and off-hand ids in `kindled` and `patterns`. `lamp` and `buckler` are starters.
+- **In a run:** `blade: { id, tier, traits }`; `offhand: { id, tier, traits }` or null; `abilities: [{ id, tier, traits } or null, the same]`, in place of `bright`; `abilityLamps` gain `tier` and `traits`; `gearLamps: [{ kind, id, tier, traits, place, x, y, z }]`, at most 6, in this place; `offCool`; and the counters `gearRolls`, `tierRolls` and `traitRolls`. The entry keeps copies, as it does for the abilities.
+- **The recap:** `ended` gains `gear`: the run's last blade, off-hand and abilities with tiers and traits.
+- **`clean()`:** an unknown tier is plain; traits are known, different, fit the kind, and at most the tier's count; an unknown blade is the Lamp blade, plain; an unknown off-hand is none.
+- **A v3 save** becomes v4 with its numbers kept: the Lamp blade picked, the Buckler kindled and picked, a run in progress holding the Lamp blade plain and no off-hand, and each `bright: true` as the bright tier with no trait.
 
 ## Tests
 | Test | Covers |
 |---|---|
 | `node games/gloam-downs/bake.mjs lamproom --check` | the hub bake, its budget and its checks |
-| `qa/lab/gloam-downs-hub.test.mjs` | stations, growth ranges by the save, station rows, the shrine, the quick list, the budget numbers |
-| `qa/lab/gloam-downs-hub.e2e.mjs` | walk to each station, open its card with keys, pad, mouse and touch, buy and see the hall change, begin the run at the door, the phone load |
+| `qa/lab/gloam-downs-hub.test.mjs` | stations, growth ranges by the save, station rows by category, the shrine, the quick list's headings, the budget numbers |
+| `qa/lab/gloam-downs-hub.e2e.mjs` | walk to each station, open its card with keys, pad, mouse and touch, buy and see the hall change, pick a start blade and off-hand, begin the run at the door, the phone load |
 | `qa/lab/gloam-downs-hub-layout.e2e.mjs` | station cards and the quick list at 320x640, 390x844, 360x640, 844x390, 800x600 and 1280x720, reduced motion |
 | `qa/lab/gloam-downs-life.test.mjs` and `node qa/lab/gloam-downs-music-demo.mjs beds` | the hall's life and bed |
 | `qa/lab/gloam-downs-states.test.mjs` | Char, Soot, Blind, Mark, ticks that never interrupt, the tick cap |
-| `qa/lab/gloam-downs-kit.test.mjs` | each new ability, pane, wick, relic, ware, unlock, the key, tempers, sets, sure cuts, the shell, the power budget |
-| `qa/lab/gloam-downs-run.kit.e2e.mjs` | each new ability's tell and effect in a place, a temper's string, Gloam dash |
-| `qa/lab/gloam-downs-sound.test.mjs` | the new cues |
-| `qa/lab/gloam-downs-bot.mjs` | pacing after both changes |
+| `qa/lab/gloam-downs-kit.test.mjs` | each new ability, pane, wick, relic, ware, unlock, the key, sets, sure cuts, the shell, the power budget |
+| `qa/lab/gloam-downs-run.kit.e2e.mjs` | each new ability's tell and effect in a place, Gloam dash |
+| `qa/lab/gloam-downs-gear.test.mjs` | the blades' strings, each off-hand, tiers, the depth tables, traits, the gear and pattern kind odds, the seed streams, colour growth, the save fields and the v3 to v4 move, the gear budget |
+| `qa/lab/gloam-downs-run.gear.e2e.mjs` | a blade and an off-hand swapped on the ground with keys, a pad, a mouse and touch, the Buckler's parry, the Twin string, the Bell slam, the compare toast |
+| `qa/lab/gloam-downs-gear-hud.e2e.mjs` | the gear row, the touch buttons' marks, the compare toast and the cards by category at the six layouts, on a grey screen, and the screen reader label; screenshots under `SHOTS` |
+| `qa/lab/gloam-downs-sound.test.mjs` | the new cues, the gear's among them |
+| `qa/lab/gloam-downs-bot.mjs` | pacing after all three builders, with the gear |
 
 ## Who builds what
-Two builders in parallel worktrees, after the fair-fight change merges into the work branch. Both start from one commit that adds the new tables (task 0.1). Each runs its own checks before it hands over. The merge pass runs every check.
+Three builders in parallel worktrees, after the fair-fight change merges into the work branch. All three start from one commit that adds the new tables (task 0.1). Each runs its own checks before it hands over. The merge pass runs every check. A builder may import and call another builder's exports, and stubs them until that builder lands; it writes another builder's file only with the hook lines below.
 
 ### Hub builder (H)
-Owns: `games/gloam-downs/biomes/lamproom.mjs`, the `hub` set in `bake.mjs` and `lib/check.mjs`, `public/lab/gloam-downs/worlds/lamproom.*`, `hub.js` (new), `places.js`, `save.js`, `cards.js`, `input.js`, `index.html`, `screens.js`, `main.js`, `life.js`, `beds.js`, `qa/lab/gloam-downs-hub*.mjs`. Reads the tables in `growth.js` and `run.js`, never writes them.
+Owns: `games/gloam-downs/biomes/lamproom.mjs`, the `hub` set in `bake.mjs` and `lib/check.mjs`, `public/lab/gloam-downs/worlds/lamproom.*`, `hub.js` (new), `places.js`, `save.js`, `cards.js`, `input.js`, `index.html`, `screens.js`, `main.js`, `life.js`, `beds.js`, `qa/lab/gloam-downs-hub*.mjs`. Reads the tables in `growth.js`, `run.js` and `gear.js`, never writes them. Also builds every input: Use, the quick list, and the Off-hand input (`input.off`: V or O, the middle mouse button, RB, facing moved to R3, and the touch button `#bOff`).
 
 ### Buffs builder (B)
-Owns: `growth.js` (after 0.1), `run.js`, `status.js`, `abilities.js`, `relics.js`, `keys.js`, `build.js` (new), `foes.js`, `fight.js`, `sparks.js`, `moves.js`, `run-sound.js`, `qa/lab/gloam-downs-bot.mjs`, `qa/lab/gloam-downs-states.test.mjs`, `gloam-downs-kit.test.mjs`, `gloam-downs-run.kit.e2e.mjs`.
+Owns: `growth.js` (after 0.1), `run.js`, `status.js`, `abilities.js`, `relics.js`, `keys.js`, `build.js` (new), `foes.js`, `fight.js`, `sparks.js`, `moves.js`, `run-sound.js`, `qa/lab/gloam-downs-bot.mjs`, `qa/lab/gloam-downs-states.test.mjs`, `gloam-downs-kit.test.mjs`, `gloam-downs-run.kit.e2e.mjs`. Exports for G: `markSure(R)` and `addShell(R, n, steps, from)` in `build.js`; `statusHit` in `status.js` takes `char`, `soot`, `blind` and `mark`.
+
+### Gear builder (G)
+Owns: `gear.js` (after 0.1: `BLADES`, `OFFHANDS`, `TIERS`, `DEPTH_TIERS`, `TRAITS`, `rollGear`, `tierPower`, `traitCool`, `traitWide`, `bladeHit`, `bladeHold`, `patternKind`, `startGear`, `chooseBlade`, `chooseOffhand`, `cleanGear`), `gear-play.js` (new: `makeGear(R)`, the held blade and off-hand, the off-hand moves and tells, gear drops and the swap, traits on hits, the compare toast's data, `R.gear.view()`), `hud-gear.js` (new: `gearRow`, `gearMark`, `compareToast`), `gear.css` (new), `run-save.js` (v4), and the tests `gloam-downs-gear.test.mjs`, `gloam-downs-run.gear.e2e.mjs` and `gloam-downs-gear-hud.e2e.mjs`. The off-hand's cues go in `run-sound.js` through B's hook rule: one handler a cue.
 
 ### The hooks
 B may add only these lines to H's files, one line each, at the place named:
@@ -326,11 +490,73 @@ $('shell').style.width = (100 * shellShare(build)).toFixed(1) + '%';
 ```
 - `input.js`: none. Gloam dash reads Roll in the air in `moves.js`.
 
-H reads B's tables and calls one function, with no line in B's files:
-- `hub.js` reads `ABILITIES`, `PANES`, `TEMPERS`, `LAMP_KEYS` and `PATTERNS` from `growth.js`, and `UPGRADES` and `UNLOCKS` from `run.js`. New rows show up at their stations with no hook.
-- `hub.js`, at the temper rack: `rack: id => chooseTemper(rs, id),` with `chooseTemper` written by B in `run.js`. Until B lands, H stubs it in `hub.js`.
+G may add only these lines to H's files, at the place named:
+```js
+// main.js, with the imports
+import { gearRow, compareToast } from './hud-gear.js';
+// main.js, in the HUD update, in place of the line that fills #abilities
+gearRow($('gear'), R);
+// main.js, where the growth toasts are shown
+compareToast($('compare'), R);
+```
+```html
+<!-- index.html, in the head, after the page's own style -->
+<link rel="stylesheet" href="./gear.css">
+<!-- index.html, inside #hud, in place of #abilities -->
+<div class="gear" id="gear" role="img" aria-label="Gear"></div>
+<!-- index.html, after #hud -->
+<div class="compare" id="compare" hidden aria-live="polite"></div>
+```
 
-Lines in files neither owns:
+G may add only these lines to B's files, at the place named:
+```js
+// run.js, with the imports
+import { makeGear } from './gear-play.js';
+import { startGear, patternKind } from './gear.js';
+// run.js, startRun, on the line after the run object is made
+Object.assign(run, startGear(rs));
+// run.js, makeRunner, on the line after R.abilities is made
+R.gear = makeGear(R);
+// run.js, makeRunner's step, on the line after R.abilities?.step(a, camYaw, ev)
+R.gear.step(a, ev);
+// run.js, bladeBonus: a colour argument in place of Flame alone
+export const bladeBonus = (up, wicks, sparks = null, colour = 'flame') => PACE.blade - 1 + 0.12 * (up.edge || 0) + (has(wicks, 'keen') ? 0.15 : 0) + SPARK[colour].power * levelGain(sparks?.[colour] | 0);
+// run.js, in stats() and in R.bonus, the fourth argument of bladeBonus
+R.gear?.colour()
+// run.js, in stats(), the held blade
+blade: R.gear?.blade(),
+// run.js, drawPattern, before an id is picked: the kind first
+const kind = patternKind(rs, r);
+```
+```js
+// moves.js, with the imports
+import { bladeHit, bladeHold } from './gear.js';
+// moves.js, makeFighter, where a cut of the string starts: the held blade's row, or today's
+const hit = bladeHit(stats().blade, i) || hitOf(i);
+// moves.js, makeFighter, where a held Attack is read
+if (bladeHold(stats().blade, held, f)) return;
+```
+```js
+// abilities.js, with the imports
+import { tierPower, traitCool, traitWide, rollGear } from './gear.js';
+// abilities.js, powerOf, in place of (slot.bright ? BRIGHT.power : 1)
+tierPower(slot)
+// abilities.js, coolOf, a factor at the end
+* traitCool(slot)
+// abilities.js, where an effect's radius or range is read
+* traitWide(slot)
+// abilities.js, drawAbility, in place of bright: r() < brightChance(rs)
+...rollGear(rs, 'ability')
+```
+B may add one line to G's `run-save.js`, in `cleanRun`: `cracked: intIn(r.cracked, 0, 3, 0),` (Cracked glass's hits taken in the place).
+
+H reads the tables and calls these functions, with no line in B's or G's files:
+- `hub.js` reads `ABILITIES`, `PANES`, `LAMP_KEYS` and `PATTERNS` from `growth.js`, `UPGRADES` and `UNLOCKS` from `run.js`, and `BLADES` and `OFFHANDS` from `gear.js`. New rows show up at their stations with no hook.
+- `hub.js`, at the blade rack: `pick: id => chooseBlade(rs, id),` and at the off-hand stand: `pick: id => chooseOffhand(rs, id),` from `gear.js`.
+- `screens.js`, in every row maker: `gearMark(item)` from `hud-gear.js` gives the glyph, the colour edge and the tier mark.
+- Until G lands, H stubs `chooseBlade`, `chooseOffhand` and `gearMark` in `hub.js`.
+
+Lines in files no builder owns:
 - `foes.js` (B, after the fair-fight merge), one line at each of three places:
 ```js
 // in the foe step, before its mind runs
@@ -340,7 +566,7 @@ statusOut(f, ctx.foes);
 // where a foe starts an attack
 if (blindMiss(f)) attack.miss = true;
 ```
-- `run-sound.js` (B): one handler a new cue, keyed on its bus event.
+- `run-sound.js` (B): one handler a new cue, keyed on its bus event; G's cues the same way.
 
 ### The merge pass
-Merge H, then B. Run every check in "Tests", the Gloam Downs checks in AGENTS.md, and the bot's pacing. Update this file with the measured numbers.
+Merge H, then B, then G. Run every check in "Tests", the Gloam Downs checks in AGENTS.md, and the bot's pacing. Update this file with the measured numbers.
