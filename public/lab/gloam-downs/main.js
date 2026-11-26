@@ -34,10 +34,15 @@ import { makeFight, SPARKS } from './fight.js';
 import { parseSeed, seedCode, smallSeed } from './mix.js';
 import { REEVE, REEVE_TEXT } from './boss.js';
 import { makeRunSound } from './run-sound.js';
-import { emit } from './bus.js';
+import { emit, on } from './bus.js';
+// the selection screens (gloam-downs-screens-life): the title, the lamp cards, the Lamp-room's tiles and the recap
+import { titleView } from './menu-scene.js';
+import { titleLamps, titleLine, seedLine, emberStep, wareTiles, recapOf, pickColour } from './screens.js';
+import { PAD } from './input.js';
 // growth (gloam-downs-growth): the page parts in cards.js, bound to the page's state with getters
 const { bindGrowth, updateGrowth, fillGrowthLamp, sparkButtons, abilityButtons, growthView, setGrowth } = cards;
-bindGrowth({ rs: () => rs, runner: () => runner, mode: () => mode, audio: () => audio, toast: (h, ms) => toast(h, ms), storeRun: () => storeRun(), fillLamp: () => fillLamp(), updateHud: () => updateHud(), openBeacon: () => openBeacon() });
+bindGrowth({ rs: () => rs, runner: () => runner, mode: () => mode, audio: () => audio, toast: (h, ms) => toast(h, ms), storeRun: () => storeRun(), fillLamp: () => fillLamp(), updateHud: () => updateHud(), openBeacon: () => openBeacon(),
+  picked: (kind, id, b) => picked(kind, id, b), kindled: id => kindledTile(id) });
 
 const $ = id => document.getElementById(id);
 const canvas = $('view'), loading = $('loading'), loadLine = $('loadLine'), barFill = $('barFill'), bar = $('bar');
@@ -240,7 +245,12 @@ function pollPad(dt) {
   const edge = k => n[k] && !was[k];
   if (cards.current() || mode === 'loading') {
     const d = navStep(nav, n, dt);
-    if (d) cards.move(d);
+    // on lamp cards and the title's lamps the d-pad and the stick move by the grid (cards.js moveDir); elsewhere in the card's order
+    if (d) {
+      const dn = p.down || new Set(), dx = dn.has(PAD.RIGHT) || p.mx > 0.5 ? 1 : dn.has(PAD.LEFT) || p.mx < -0.5 ? -1 : 0, dy = dn.has(PAD.DOWN) || p.mz < -0.5 ? 1 : dn.has(PAD.UP) || p.mz > 0.5 ? -1 : 0;
+      if ((dx || dy) && document.activeElement?.closest?.('.lcard, .lamp')) cards.moveDir(dx, dy);
+      else cards.move(d);
+    }
     if (edge('a')) { if (cards.press()) inp.swallowAll(); }
     else if (edge('b')) back();
     else if (edge('start')) startButton();
@@ -435,6 +445,7 @@ function buyUnlockRow(id) {
   audio?.cue('buy');
   storeRun();
   fillLamp();
+  flashTile($('unlocks').querySelector(`li[data-unlock="${id}"]`));
   showControls();
   // a bought row has no Buy button: the focus goes on to the next Buy button, or to the main button
   if (had && btn.hidden) {
@@ -630,8 +641,10 @@ function openCard(id, m, main, backFn = null) {
   audio?.cue('card');
 }
 document.addEventListener('focusin', e => {
-  if (!audio || quietFocus || !(e.target instanceof HTMLButtonElement) || !cards.current()?.el.contains(e.target)) return;
-  audio.cue('focus');
+  if (quietFocus || !(e.target instanceof HTMLButtonElement) || !cards.current()?.el.contains(e.target)) return;
+  // a lamp card or a title lamp plays hover (and tells the world, for the beacon's glow); other buttons keep focus
+  if (e.target.closest('.lcard, .lamp')) return hovered(e.target);
+  audio?.cue('focus');
 });
 function hideCard(id) { $(id).hidden = true; cards.shut($(id)); if (linesStale && !cards.current()) setLines(); }
 function closeCard(id) {
@@ -645,6 +658,130 @@ function closeCard(id) {
   retake();
 }
 function openRunHelp() { openCard('runHelp', 'help', () => $('bBegin')); }
+
+/* ---------------- the selection screens (gloam-downs-screens-life) ----------------
+   The title screen over the live place: the title, the place line, the places as lamps, the seed and Ember line, Begin the run (the
+   explorer: Walk, Fight, How to play). The place drifts behind it (menu-scene.js titleView, in draw). With ?test the old first cards
+   open unless &title is in the address, so the older checks keep their flow */
+const TITLED = !q.has('test') || q.has('title');
+let titleAt = 0, titleSeed = null;
+const screenLog = [];
+// the bus's screen events, kept for ?test (__gloam.screens)
+for (const k of ['screen-hover', 'screen-pick']) on(k, d => { if (screenLog.length < 200) screenLog.push({ name: k, ...d }); });
+let hoverAt = -1e9, hoverBusAt = -1e9;
+// hover and focus on a lamp card or a title lamp: hover at most once each 60 ms, screen-hover at most once each 150 ms
+function hovered(b) {
+  const now = performance.now();
+  if (now - hoverAt >= 60) { hoverAt = now; audio?.cue('hover'); }
+  const kind = b.dataset.wick ? 'wick' : b.dataset.spark ? 'spark' : b.dataset.ability ? 'ability' : null;
+  if (kind && now - hoverBusAt >= 150) { hoverBusAt = now; emit('screen-hover', { kind, colour: pickColour(kind, b.dataset[kind]) }); }
+  if (b.classList.contains('lamp')) lampLine(b);
+}
+document.addEventListener('pointerover', e => {
+  const b = e.target instanceof Element ? e.target.closest('.lcard, .lamp') : null;
+  if (!b || b.disabled || !cards.current()?.el.contains(b) || (e.relatedTarget instanceof Node && b.contains(e.relatedTarget))) return;
+  hovered(b);
+});
+// a pick: on the press itself; then the card flares, pick plays, and the bus hears screen-pick (Builder E's life lights the beacon)
+function picked(kind, id, b) {
+  audio?.cue('pick');
+  emit('screen-pick', { kind, colour: pickColour(kind, id) });
+  cards.flare(b, [...(b.parentNode?.children || [])], still);
+  if (!still) pendingDeal = 200;
+}
+// the next set of cards deals in 200 ms after a pick (the pick itself is never delayed)
+let pendingDeal = 0;
+function deal(box) {
+  const list = [...box.querySelectorAll('button.lcard')];
+  if (!list.length) return;
+  audio?.cue('reveal');
+  const a = cards.dealIn(list, still);
+  if (pendingDeal) for (const x of a) if (x) x.effect.updateTiming({ delay: (x.effect.getTiming().delay || 0) + pendingDeal });
+}
+// the title's lamps: in a run the route of five, lit for each place reached in any run; in the explorer the places to go to
+function titleSet(el, rows, group) {
+  el.textContent = '';
+  if (group) { const g = document.createElement('p'); g.className = 'gname'; g.textContent = group; el.appendChild(g); }
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'path'); svg.setAttribute('viewBox', '0 0 100 20'); svg.setAttribute('preserveAspectRatio', 'none'); svg.setAttribute('aria-hidden', 'true');
+  svg.innerHTML = '<path d="M0 12 C 15 4, 30 18, 50 10 S 85 4, 100 11"/>';
+  el.appendChild(svg);
+  for (const r of rows) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = `lamp${r.lit ? ' lit' : ''}`;
+    b.dataset.place = r.id;
+    b.dataset.line = r.line;
+    b.disabled = !!r.locked;
+    b.setAttribute('aria-label', `${r.line}${r.lit ? ', reached' : ''}`);
+    b.innerHTML = '<i class="glass" aria-hidden="true"><i class="flame"></i></i><span class="n"></span>';
+    b.querySelector('.n').textContent = r.n;
+    b.addEventListener('click', () => (RUN ? lampLine(b) : titleGo(r.id)));
+    el.appendChild(b);
+  }
+}
+// the line under the lamps names the lamp under the pointer or the focus, and that lamp lights fully
+function lampLine(b) {
+  for (const x of $('title').querySelectorAll('.lamp.on')) if (x !== b) x.classList.remove('on');
+  b.classList.add('on');
+  const [head, ...rest] = b.dataset.line.split('. ');
+  $('titleLine').innerHTML = '';
+  const hb = document.createElement('b');
+  hb.textContent = head;
+  $('titleLine').append(hb, rest.length ? `. ${rest.join('. ')}` : '');
+}
+const TITLE_REST = { run: 'Five dark places on the downs. Light the beacon in each.', explore: 'Choose a place to walk, with no foes.' };
+function fillTitle() {
+  const here = meta?.id, explorer = !RUN;
+  $('titlePlace').textContent = here ? (ORDER.includes(here) ? titleLine(here) : `${placeName(here)}. ${meta.sub || ''}`) : '';
+  if (RUN) {
+    titleSet($('titleLamps'), titleLamps(rs));
+    $('titleLattice').hidden = true;
+    titleSeed ??= seed();
+    $('titleSeed').textContent = seedLine(seedCode(titleSeed), rs.ember | 0);
+    $('bEmberDown').hidden = $('bEmberUp').hidden = (rs.emberTop | 0) < 1;
+    $('bEmberDown').setAttribute('aria-disabled', String(emberStep(rs, -1) === null));
+    $('bEmberUp').setAttribute('aria-disabled', String(emberStep(rs, 1) === null));
+  } else {
+    const [downs, lattice] = mapGroups(save, here);
+    const rowsOf = g => g.rows.map(r => ({ id: r.id, n: r.n, line: r.open ? (ORDER.includes(r.id) ? titleLine(r.id) : `${r.n} · ${r.name}`) : `${r.n} · Locked. Light the beacon before it`, lit: r.open, locked: !r.open }));
+    titleSet($('titleLamps'), rowsOf(downs), 'The downs');
+    titleSet($('titleLattice'), rowsOf(lattice), 'The Gilt Lattice');
+    $('titleLattice').hidden = false;
+  }
+  $('seedRow').hidden = explorer;
+  $('titleRun').hidden = $('titleMore').hidden = explorer;
+  $('titleWalkRow').hidden = $('titleWalkMore').hidden = !explorer;
+  $('titleLine').textContent = TITLE_REST[explorer ? 'explore' : 'run'];
+}
+function openTitle() {
+  fillTitle();
+  titleAt = time;
+  emit('lamp-room', { wait: 0 });
+  openCard('title', 'title', () => $(RUN ? 'bTitleBegin' : 'bTitleWalk'));
+}
+// Begin the run: on a first visit the help card first (its own Begin starts the run); after that at once
+$('bTitleBegin').addEventListener('click', () => {
+  if (!rs) return;
+  if (!rs.seen) { hideCard('title'); soundPress(); audio?.cue('choice'); return openRunHelp(); }
+  beginRun('title');
+});
+$('bTitleLamp').addEventListener('click', () => { audio?.cue('choice'); hideCard('title'); openLamp(); });
+$('bTitleHelp').addEventListener('click', () => { audio?.cue('choice'); hideCard('title'); openRunHelp(); });
+$('bTitleExplore').addEventListener('click', () => toMode('explore'));
+for (const [id, d] of [['bEmberDown', -1], ['bEmberUp', 1]]) $(id).addEventListener('click', () => {
+  const n = emberStep(rs, d);
+  if (n === null || !setEmber(rs, n)) { audio?.cue('refuse'); return; }
+  audio?.cue('choice');
+  storeRun();
+  fillTitle();
+});
+// the explorer's title: Walk closes it, Fight opens the run, How to play the help card, and a lamp goes to its place
+function titleClose() { save.seen = true; store(disk, save); hideCard('title'); mode = 'play'; inp.swallowAll(); canvas.focus?.(); retake(); }
+function titleGo(id) { titleClose(); if (id !== meta.id) go(id); }
+$('bTitleWalk').addEventListener('click', titleClose);
+$('bTitleFight').addEventListener('click', () => toMode('run'));
+$('bTitleHelp2').addEventListener('click', () => { hideCard('title'); helpLines(); $('help').hidden = false; mode = 'help'; showCard({ el: $('help'), main: () => $('bStart') }); });
 // a new run starts in the Gaol: on the place as it loaded, or on the Gaol loaded again once this place has been played
 function beginRun(card) {
   lampFromWander = false;
@@ -652,7 +789,8 @@ function beginRun(card) {
   audio?.cue('choice');
   rs.seen = true;
   // at the Ember level chosen in the Lamp-room, in its route; with Wick shelf the beacon card first offers two starting wicks
-  startRun(rs, seed(), rs.ember | 0);
+  startRun(rs, titleSeed ?? seed(), rs.ember | 0);
+  titleSeed = null;
   storeRun();
   closeCard(card);
   if (meta.id !== rs.run.place || !placeFresh) return go(rs.run.place);
@@ -751,7 +889,11 @@ function openBeacon() {
     $('beaconT').textContent = 'A spark';
     $('beaconLine').textContent = 'Choose a spark. It raises one colour for the rest of the run.';
     $('beaconBank').hidden = $('beaconRow').hidden = true;
-    return openCard('beaconCard', 'beacon', () => $('sparks').querySelector('button'));
+    $('sparks').classList.add('cards');
+    openCard('beaconCard', 'beacon', () => $('sparks').querySelector('button'));
+    deal($('beaconCard'));
+    pendingDeal = 0;
+    return;
   }
   for (const id of offer || []) {
     const b = document.createElement('button'), name = document.createElement('b');
@@ -759,13 +901,14 @@ function openBeacon() {
     b.className = 'wick';
     b.dataset.wick = id;
     name.textContent = wickName(id);
-    b.append(name, wickLine(id).slice(name.textContent.length));
+    // a lamp card in the wick's amber (gloam-downs-screens-life "Lamp cards")
+    cards.lampCard(b, { name: name.textContent, text: wickLine(id).slice(name.textContent.length + 3), hue: '#ff9a32', label: wickLine(id) });
     // a wick that kindles a relic the run holds says so
     const k = kindleLine(run, id);
     if (k) { const em = document.createElement('em'); em.className = 'kindle'; em.textContent = k; b.append(em); }
     b.addEventListener('click', () => {
       if (!rs.run?.offer || !chooseWick(rs, id)) return;
-      audio?.cue('choice');
+      picked('wick', id, b);
       storeRun();
       updateHud();
       // Wick shelf's starting wick: the card closes and the run starts in the Gaol, unless First spark or Belt still ask
@@ -783,7 +926,11 @@ function openBeacon() {
   $('beaconBank').hidden = $('beaconRow').hidden = waiting;
   // before the picks are made only a pick button closes the card: it has no back action. The Lamp-room theme follows the stinger
   emit('lamp-room', { wait: 0 });
+  box.classList.toggle('cards', !!box.children.length);
+  $('sparks').classList.add('cards');
   openCard('beaconCard', 'beacon', () => (rs.run?.offer || rs.run?.abilityOffer ? box.querySelector('button') : (rs.run?.sparkPicks | 0) > 0 ? $('sparks').querySelector('button') : $('bWalkOn')));
+  deal($('beaconCard'));
+  pendingDeal = 0;
 }
 // Walk on loads the next place; after a reload at the card, the card already shows over it
 $('bWalkOn').addEventListener('click', () => { audio?.cue('choice'); if (meta.id === rs.run.place) return closeCard('beaconCard'); hideCard('beaconCard'); retake(); go(rs.run.place); });
@@ -800,27 +947,40 @@ function openLamp(from = null) {
   if (!lampFromWander) emit('lamp-room', { wait: 0 });
   const b = lampButtons(rs, from, wanderOpen());
   for (const [k, id] of Object.entries(LAMP)) $(id).hidden = !b.list.includes(k);
+  cards.freshLamp();
   fillLamp();
   openCard('lamp', 'lamp', () => $(LAMP[b.main]), b.back ? () => $(LAMP[b.back]).click() : null);
 }
+/* the Lamp-room's wares as lamp tiles (screens.js wareTile): a glass that fills by level / levels, "Mantle 2 of 8", the next gift, its
+   cost and Buy. The glim line's numbers roll from the old count to the new over 400 ms with tally ticks (at most 12); with reduced
+   motion they change at once */
 function fillLamp() {
+  const was = [...$('lampLine').querySelectorAll('b.bank')].map(b => parseInt(b.textContent, 10));
   $('lampLine').innerHTML = glimLine(rs, 'lamp').replace(/(\d+ glim)/g, '<b class="bank">$1</b>');
+  rollGlim(was);
   fillGrowthLamp();
   const list = $('ups');
-  for (const row of upgradeRows(rs)) {
+  for (const row of wareTiles(rs)) {
     let li = list.querySelector(`li[data-up="${row.id}"]`);
     if (!li) {
       li = document.createElement('li');
+      li.className = 'tile';
       li.dataset.up = row.id;
-      li.innerHTML = '<span></span><b class="lv"></b><button type="button"></button>';
+      li.innerHTML = '<i class="glass" aria-hidden="true"><i class="fill"></i><i class="flame"></i></i><b class="nm"></b><span class="gift"></span><span class="cost"></span><button type="button"></button><i class="flash" aria-hidden="true"></i>';
       li.querySelector('button').addEventListener('click', () => buyUp(row.id));
       list.appendChild(li);
     }
     li.classList.toggle('top', row.top);
-    li.querySelector('span').textContent = row.label;
-    const lv = li.querySelector('.lv');
-    lv.innerHTML = Array.from({ length: row.max }, (_, i) => `<i${i < row.lvl ? ' class="on"' : ''}></i>`).join('');
-    lv.setAttribute('aria-label', `level ${row.lvl} of ${row.max}`);
+    li.dataset.label = row.label;
+    li.dataset.fill = row.fill.toFixed(4);
+    li.style.setProperty('--fill', row.fill.toFixed(4));
+    // the name, then "2 of 8" on its own line (the tile's text still reads "Mantle 2 of 8")
+    const of = row.level.slice(row.name.length + 1);
+    li.querySelector('.nm').innerHTML = '';
+    li.querySelector('.nm').append(row.name, ...(of ? [' ', Object.assign(document.createElement('span'), { className: 'of', textContent: of })] : []));
+    li.querySelector('.gift').textContent = row.gift;
+    li.querySelector('.cost').textContent = row.costText;
+    li.querySelector('.cost').hidden = !row.costText;
     const btn = li.querySelector('button');
     btn.hidden = row.top;
     btn.textContent = row.buy || '';
@@ -829,12 +989,45 @@ function fillLamp() {
   }
   fillBuilds();
 }
+let rolls = [];
+function rollGlim(was) {
+  for (const r of rolls) cancelAnimationFrame(r);
+  rolls = [];
+  const els = [...$('lampLine').querySelectorAll('b.bank')];
+  let ticks = 0;
+  els.forEach((el, i) => {
+    const to = parseInt(el.textContent, 10), from = was[i];
+    if (!Number.isFinite(from) || from === to || still) return;
+    // the text is the new count at once (for a reader and the checks); what shows is data-roll, drawn over it (index.html)
+    const t0 = performance.now(), tail = el.textContent.replace(/^\d+/, ''), n = Math.min(12 - ticks, Math.abs(to - from), 12);
+    let shown = 0;
+    ticks += n;
+    el.dataset.roll = `${from}${tail}`;
+    const stepRoll = now => {
+      const k = Math.min(1, (now - t0) / 400), v = Math.round(from + (to - from) * k);
+      if (k < 1) el.dataset.roll = `${v}${tail}`; else delete el.dataset.roll;
+      while (shown < Math.floor(k * n)) { shown++; audio?.cue('tally'); }
+      if (k < 1) rolls.push(requestAnimationFrame(stepRoll));
+    };
+    rolls.push(requestAnimationFrame(stepRoll));
+  });
+}
+// a buy's flash on its tile: a white-gold burst over 180 ms (a 150 ms fade with reduced motion)
+function flashTile(li) {
+  li?.querySelector('.flash')?.animate?.([{ opacity: 0 }, { opacity: 1, offset: still ? 0.5 : 0.25 }, { opacity: 0 }], { duration: still ? 150 : 180, easing: 'ease-out' });
+}
+// a kindle: kindle plays and the tile's lamp catches (index.html: its flame grows from nothing over 400 ms, at once with reduced motion)
+function kindledTile(id) {
+  audio?.cue('kindle');
+  queueMicrotask(() => flashTile($('patterns').querySelector(`li[data-pattern="${id}"]`)));
+}
 function buyUp(id) {
   const btn = $('ups').querySelector(`li[data-up="${id}"] button`), had = document.activeElement === btn;
   if (!buy(rs, id)) { audio?.cue('refuse'); return; }
   audio?.cue('buy');
   storeRun();
   fillLamp();
+  flashTile($('ups').querySelector(`li[data-up="${id}"]`));
   updateHud();
   // at its top level a row has no Buy button: the focus goes on to the next Buy button, or to the main button
   if (had && btn.hidden) {
@@ -857,18 +1050,90 @@ $('bLampExplore').addEventListener('click', () => toMode('explore'));
 function openSummary() {
   // the run summary plays the Lamp-room theme after 2 s of silence
   emit('lamp-room', { wait: 2 });
-  // the rows as summaryOf gives them, with the glim and the patterns kept and lost ("Glim kept 12 · lost 113")
-  const s = summaryOf(rs.ended), dl = $('summary').querySelector('dl');
+  // the recap (screens.js recapOf): the path as lamps, then the rows; a save from before the recap shows summaryOf's rows
+  const s = recapOf(rs.ended), dl = $('summary').querySelector('dl');
   $('sumT').textContent = s.title;
-  dl.textContent = '';
-  for (const [k, v] of s.rows) { const dt = document.createElement('dt'), dd = document.createElement('dd'); dt.textContent = k; dd.textContent = v; dl.append(dt, dd); }
+  fillPath($('sumPath'), s.path);
+  $('sumBy').hidden = !s.by;
+  $('sumBy').textContent = s.by || '';
+  fillRows(dl, s.rows, s.sparks);
   $('sumSeed').textContent = seedLineOf(rs.ended);
   openCard('summary', 'ended', () => $('bSumLamp'));
+  recapIn($('summary'));
 }
+// the recap's path: a lamp a place, lit, snuffed, bright or dark, with its time and foes under it
+function fillPath(ol, path) {
+  ol.hidden = !path.length;
+  ol.textContent = '';
+  for (const p of path) {
+    const li = document.createElement('li');
+    li.className = p.state;
+    li.dataset.place = p.id;
+    li.setAttribute('aria-label', `${p.n} · ${p.name}: ${p.state === 'snuffed' ? 'the lamp went out here' : p.state === 'bright' ? 'lit, the win' : p.state === 'lit' ? 'passed' : 'not reached'}${p.time ? `, ${p.time}, ${p.foes} foes` : ''}`);
+    li.innerHTML = '<i class="glass" aria-hidden="true"><i class="flame"></i></i><span class="n"></span><span class="ft t"></span><span class="ft f"></span>';
+    li.querySelector('.n').textContent = p.n;
+    li.querySelector('.t').textContent = p.time;
+    li.querySelector('.f').textContent = p.foes ? `${p.foes} foes` : '';
+    ol.appendChild(li);
+  }
+}
+function fillRows(dl, rows, sparks) {
+  dl.textContent = '';
+  for (const [k, v] of rows) {
+    const dt = document.createElement('dt'), dd = document.createElement('dd');
+    dt.textContent = k;
+    // the sparks in their hues
+    if (k === 'Sparks' && sparks) sparks.forEach((c, i) => { const x = document.createElement('i'); x.style.cssText = `color:${c.hue};font-style:normal`; x.textContent = `${c.name} ${c.n}`; dd.append(...(i ? [' · '] : []), x); });
+    else dd.textContent = v;
+    dl.append(dt, dd);
+  }
+}
+/* the recap comes in: the lamps light one after another, 180 ms apart, then the rows fade in and their numbers count up over 600 ms
+   with tally. The main button works at once, and a press ends the motion. Reduced motion: all at once, one 150 ms fade */
+let recapAnims = [];
+function recapIn(panel) {
+  for (const a of recapAnims) a?.finish?.();
+  recapAnims = [];
+  const box = panel.querySelector('.box');
+  if (still) { recapAnims.push(box.animate?.([{ opacity: 0 }, { opacity: 1 }], { duration: 150 })); return; }
+  const lamps = [...panel.querySelectorAll('.rpath li')], rows = [...panel.querySelectorAll('dl dt, dl dd, p.by')];
+  lamps.forEach((li, i) => recapAnims.push(li.animate?.([{ opacity: 0.25, filter: 'brightness(0.4)' }, { opacity: 1, filter: 'brightness(1)' }], { duration: 260, delay: i * 180, fill: 'backwards', easing: 'ease-out' })));
+  const after = lamps.length * 180;
+  rows.forEach(el => recapAnims.push(el.animate?.([{ opacity: 0 }, { opacity: 1 }], { duration: 240, delay: after, fill: 'backwards' })));
+  // the numbers count up: each dd that is a plain number, over 600 ms after the rows show, with up to 12 tally ticks in all
+  const nums = [...panel.querySelectorAll('dl dd')].filter(d => /^\d+$/.test(d.textContent));
+  let ticks = 0;
+  for (const dd of nums) {
+    const to = +dd.textContent, n = Math.min(12 - ticks, to);
+    ticks += n;
+    if (!to) continue;
+    let shown = 0;
+    const t0 = performance.now() + after, done = () => { delete dd.dataset.roll; shown = n; };
+    // the text is the count at once; data-roll is what shows while it counts up (index.html)
+    dd.dataset.roll = '0';
+    const stepN = now => {
+      if (!panel.hidden && dd.isConnected) {
+        const k = Math.max(0, Math.min(1, (now - t0) / 600));
+        dd.dataset.roll = String(Math.round(to * k));
+        while (shown < Math.floor(k * n)) { shown++; audio?.cue('tally'); }
+        if (k < 1) { recapAnims.push({ finish: done, id: requestAnimationFrame(stepN) }); return; }
+      }
+      done();
+    };
+    recapAnims.push({ finish: done, id: requestAnimationFrame(stepN) });
+  }
+}
+// a press during the motion ends it
+const recapEnd = () => { for (const a of recapAnims) { if (a?.id) cancelAnimationFrame(a.id); a?.finish?.(); } recapAnims = []; };
+for (const id of ['summary', 'winCard']) $(id).addEventListener('pointerdown', recapEnd, true);
+addEventListener('keydown', () => { if (mode === 'ended') recapEnd(); }, true);
+// To the Lamp-room keeps its word: over the Gaol the Lamp-room opens, not the title (afterEnd)
+let afterEnd = null;
 $('bSumLamp').addEventListener('click', () => {
   rs.ended = null;
   storeRun();
   hideCard('summary');
+  afterEnd = 'lamp';
   go(ORDER[0]);
 });
 /* the win card: the time, the best winning time, the glim banked in this run, the runs and the deaths. It opens the Lamp-room, where
@@ -876,25 +1141,31 @@ $('bSumLamp').addEventListener('click', () => {
 function openWin() {
   emit('lamp-room', { wait: 0 });
   // the rows as winOf gives them: above Ember 0 the level first, and that level's best time; and the level a win opened
-  const w = winOf(rs), dl = $('winCard').querySelector('dl');
-  dl.textContent = '';
-  for (const [k, v] of w.rows) { const dt = document.createElement('dt'), dd = document.createElement('dd'); dt.textContent = k; dd.textContent = v; dl.append(dt, dd); }
+  const w = winOf(rs), dl = $('winCard').querySelector('dl'), r = recapOf(rs.ended || {});
+  // the win's recap: the path with every place lit and the last bright, then winOf's rows and the recap's patterns, sparks and combo
+  fillPath($('winPath'), r.path);
+  fillRows(dl, [...w.rows, ...r.old ? [] : r.rows.filter(([k]) => ['Patterns kept', 'Sparks', 'Best combo'].includes(k))], r.sparks);
   $('winOpened').hidden = !w.opened;
   $('winOpened').textContent = w.opened;
   $('bWinWander').hidden = !wanderOpen();
   openCard('winCard', 'ended', () => $('bWinLamp'));
+  recapIn($('winCard'));
 }
 $('bWinLamp').addEventListener('click', () => {
   rs.ended = null;
   storeRun();
   hideCard('winCard');
+  afterEnd = 'lamp';
   go(ORDER[0]);
 });
 $('bWinWander').addEventListener('click', () => { rs.ended = null; storeRun(); toWander(); });
 // the card that a load of the page opens over the place (screens.js cardOnLoad)
 function openOnLoad() {
-  const card = cardOnLoad(rs);
-  if (card === 'win') openWin();
+  const card = cardOnLoad(rs, { title: TITLED }), was = afterEnd;
+  afterEnd = null;
+  if (card === 'title' && was === 'lamp') openLamp();
+  else if (card === 'title') openTitle();
+  else if (card === 'win') openWin();
   else if (card === 'summary') openSummary();
   else if (card === 'help') openRunHelp();
   else if (card === 'lamp') openLamp();
@@ -1264,6 +1535,10 @@ async function go(id) {
     storeRun();
     // the boss files come while The Bell Knoll plays, or once play starts in Barrow Crown; never after the boss's fall
     if (!LOOK && rs.run && routeOfRun(rs.run).indexOf(id) >= 3 && !rs.run.bossDown) fetchBoss();
+  } else if (!save.seen && TITLED) {
+    // the explorer's first visit opens the title, where the lamps choose the place
+    helpLines();
+    openTitle();
   } else if (!save.seen) {
     helpLines();
     $('help').hidden = false;
@@ -1380,6 +1655,8 @@ function draw(o = {}) {
   if (!view) { view = cam.follow(body.s, 0, input); blend.reset(); }
   const t = Number.isFinite(o.time) ? o.time : time, view0 = view;
   if (o.view) view = o.view;
+  // behind the title the place drifts (menu-scene.js); the follow camera is not stepped by it
+  if (mode === 'title') view = titleView(view, time - titleAt, still);
   drawn = view; { const db = o.body || body.s; drawnBody = { x: db.x, y: db.y, z: db.z }; }
   pose(world.anim.bones, meta.bones, o.body || body.s, t, still);
   if (fight) {
@@ -1602,6 +1879,11 @@ window.__gloam = {
     if (run && Array.isArray(o.abilities)) run.abilities = [0, 1].map(i => { const a = o.abilities[i]; return a && abilityOf(a.id) ? { id: a.id, bright: !!a.bright } : null; });
     if (Array.isArray(o.cool)) runner?.abilities?.setCool(o.cool);
     if (Array.isArray(o.keys)) rs.keys = [...new Set(o.keys.filter(k => k === 'leap' || k === 'drop'))];
+    // the title's lamps: the furthest place reached and the runs played
+    if (Number.isInteger(o.furthest)) rs.furthest = Math.max(0, Math.min(ORDER.length - 1, o.furthest));
+    if (Number.isInteger(o.runs)) rs.runs = Math.max(0, o.runs);
+    if (o.seen === true || o.seen === false) rs.seen = o.seen;
+    if (mode === 'title') fillTitle();
     if (run && Array.isArray(o.abilityLamps)) run.abilityLamps = o.abilityLamps.filter(l => abilityOf(l.id)).map(l => ({ id: l.id, bright: !!l.bright, place: run.place, x: +l.x, y: +l.y, z: +l.z }));
     if (Array.isArray(o.abilities) || Array.isArray(o.keys)) showControls();
     updateHud();
@@ -1660,6 +1942,12 @@ window.__gloam = {
   notches: () => (fight ? fight.showNotches(view || cam.follow(body.s, 0, input), mode === 'play').map(n => ({ kind: n.kind, foe: n.foe, edge: n.edge, x: n.x, y: n.y, fill: n.fill, bearing: n.bearing, rect: { ...n.rect } })) : []),
   combat: fightView,
   // ?run: the pool's slots, and (with ?test&lineup) one of each figure stood in a row in front of the lamplighter
+  // the selection screens (?test): the bus's screen events, the title's lamps and its line, and the open card's motion
+  screens: () => ({
+    bus: screenLog.map(e => ({ ...e })), titleAt, line: $('titleLine').textContent, seed: $('titleSeed').textContent,
+    lamps: [...$('titleLamps').querySelectorAll('.lamp')].map(b => ({ id: b.dataset.place, lit: b.classList.contains('lit'), on: b.classList.contains('on'), disabled: b.disabled })),
+    anims: document.getAnimations().filter(a => a.playState === 'running').map(a => ({ id: a.effect?.target?.id || a.effect?.target?.className || '', ms: a.effect?.getComputedTiming().endTime ?? 0 }))
+  }),
   pool: () => pool && { count: world.count, boned: world.anim.boned.length, extra: pool.extra.end - pool.extra.first, slots: pool.slots.map(s => ({ i: s.i, code: s.code, awake: s.awake, first: s.first, end: s.end, base: s.base, at: s.at })) },
   lineup: (o = {}) => { const r = lineup(pool, walk, { x: body.s.x, z: body.s.z, yaw: body.s.yaw }, o); if (o.draw) draw(); return r; },
   // one slot: { clip, t } poses it where it stands, { flash: true | false } and { park: true } as the run will

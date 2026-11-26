@@ -316,7 +316,9 @@ export function startRun(rs, seed, em = rs.ember | 0) {
     // growth (gloam-downs-growth): the colours, the spark picks left (First spark gives them at the start), the two ability slots and
     // Belt's offer, the patterns carried and on the ground, the caches opened, the ability lamps, and the rolls and counts of the drops
     sparks: { flame: 0, ward: 0, gloam: 0 }, sparkPicks: Math.min(9, rs.up.first | 0), sparkNow: false, abilities: start.slots, abilityOffer: start.offer,
-    carriedPatterns: [], groundPatterns: [], caches: [], abilityLamps: [], patternRolls: 0, abilityRolls: 0, foePatterns: 0, abilityDrops: 0, patternsKept: 0, kept: []
+    carriedPatterns: [], groundPatterns: [], caches: [], abilityLamps: [], patternRolls: 0, abilityRolls: 0, foePatterns: 0, abilityDrops: 0, patternsKept: 0, kept: [],
+    // the recap (gloam-downs-screens-life): each place left, with the run's time, foes and patterns kept as it was left, and what hit last
+    splits: [], lastHurt: null
   };
   // Wick shelf: the run starts with a choice of two wicks, on the beacon card's own buttons
   if ((rs.unlocks || []).includes('shelf')) rs.run.offer = startOffer(s, rs.unlocks);
@@ -351,6 +353,9 @@ export function reload(run) {
 }
 // move the run to the start of a place, as Walk on does: the entry snapshot is taken from the values now
 export function goTo(rs, id) {
+  // the recap's split of the place left: the run's time and foes then, and the patterns its beacon kept
+  const sp = (rs.run.splits ||= []);
+  if (rs.run.place !== id && !sp.some(x => x.id === rs.run.place)) sp.push({ id: rs.run.place, time: rs.run.time, foes: rs.run.foes, kept: (rs.run.kept || []).slice() });
   rs.run.place = id;
   rs.furthest = Math.max(rs.furthest || 0, routeOfRun(rs.run).indexOf(id));
   // the lamps left lying in the last place are gone
@@ -416,6 +421,17 @@ export function lightBeacon(rs) {
   goTo(rs, route[i + 1]);
   return { next: run.place, offer: run.offer.slice(), kept: run.kept.slice() };
 }
+/* the recap's fields of an ended run (gloam-downs-screens-life "The summary and the win card"): path, one { id, time, foes } a place
+   reached, each its own share of the run's time and foes; colours, the sparks; patternNames, the ids kept in the whole run; by, the
+   type code of the last hit taken ('S', 'P', 'M', 'I', 'B', an elite's id, or 'fall'), or null */
+function recapFields(run, keptNow = []) {
+  const path = [], sp = (run.splits || []).filter(x => x && ORDER.includes(x.id));
+  let t = 0, f = 0;
+  for (const x of sp) { path.push({ id: x.id, time: Math.max(0, x.time - t), foes: Math.max(0, x.foes - f) }); t = x.time; f = x.foes; }
+  if (!path.some(x => x.id === run.place)) path.push({ id: run.place, time: Math.max(0, run.time - t), foes: Math.max(0, run.foes - f) });
+  const names = [...new Set([...sp.flatMap(x => x.kept || []), ...keptNow])];
+  return { path, colours: { ...sparksOf(run) }, patternNames: names, by: run.lastHurt ?? null };
+}
 // a win at the top open level opens the next one, up to Ember 5; the best time is kept for each level
 export function win(rs) {
   const run = rs.run, em = emberOf(run);
@@ -435,7 +451,7 @@ export function win(rs) {
   rs.bestCombo = Math.max(rs.bestCombo | 0, run.combo | 0);
   rs.ended = {
     won: true, place: run.place, time: run.time, foes: run.foes, kept: glim, lost: 0, banked: run.banked, ember: em, opened: opened ? em + 1 : null, relics: (run.relics || []).slice(), combo: run.combo | 0, seed: run.seed,
-    patternsKept: run.patternsKept | 0, patternsLost: 0
+    patternsKept: run.patternsKept | 0, patternsLost: 0, ...recapFields(run, kept)
   };
   rs.run = null;
   return { won: true, kept };
@@ -450,7 +466,7 @@ export function die(rs) {
   rs.bestCombo = Math.max(rs.bestCombo | 0, run.combo | 0);
   rs.ended = {
     won: false, place: run.place, time: run.time, foes: run.foes, kept, lost: run.carried - kept, banked: run.banked + kept, ember: emberOf(run), opened: null, relics: (run.relics || []).slice(), combo: run.combo | 0, seed: run.seed,
-    patternsKept: run.patternsKept | 0, patternsLost: (run.carriedPatterns || []).length
+    patternsKept: run.patternsKept | 0, patternsLost: (run.carriedPatterns || []).length, ...recapFields(run)
   };
   rs.run = null;
   return rs.ended;
@@ -549,6 +565,7 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
     if (paneOf(rs, 'lead')) R.lead = false;
     const d = Math.round(dmg * ember(emberOf(run)).dmg * (lead ? PANE_RULES.lead : 1));
     run.hp = Math.max(0, run.hp - d);
+    run.lastHurt = byOf(from, o);
     fighter.knock(from, o.push ?? MOVES.hurt.push);
     R.hurtAt = clock.step;
     stop(MOVES.hurt.stop);
@@ -564,6 +581,20 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
     }
     if (run.hp <= 0) { kill(ev); return 'dead'; }
     return 'hit';
+  }
+  /* who dealt a hit: o.by when the caller says; a coal is the nearest Pitchrook's; else the target nearest to where the blow came from
+     (within 3 m). An elite is named by its id, the boss by 'B', a foe by its type */
+  function byOf(from, o = {}) {
+    if (typeof o.by === 'string') return o.by;
+    const s = body.s, list = R.targets().filter(t => t && (t.type || t.code));
+    const at = o.coal ? [s.x, s.z] : from;
+    let best = null, d0 = o.coal ? 40 : 3;
+    for (const t of list) {
+      if (o.coal && (t.type || t.code) !== 'P') continue;
+      const d = at ? Math.hypot(t.x - at[0], t.z - at[1]) : 0;
+      if (d < d0) { d0 = d; best = t; }
+    }
+    return best ? (best.elite?.id || best.type || best.code) : o.coal ? 'P' : null;
   }
   function parried(from, ev) {
     if (!from || !(rs.unlocks || []).includes('parry') || !fighter.parryOpen()) return false;
@@ -650,6 +681,7 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
       if (rs.run && s.y < MOVES.fall.below) {
         fighter.toFirm();
         rs.run.hp = Math.max(1, rs.run.hp - MOVES.fall.dmg);
+        rs.run.lastHurt = 'fall';
         fighter.f.safe = MOVES.hurt.safe;
         R.hurtAt = clock.step;
         ev.push({ type: 'fall', hp: rs.run.hp }, { type: 'store' });

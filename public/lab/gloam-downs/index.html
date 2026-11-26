@@ -308,6 +308,181 @@
   .loading .row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
   @media (max-height: 420px) { .arrive { top: 40%; } .arrive p { display: none; } }
   @media (prefers-reduced-motion: reduce) { .arrive, .veil, .loading, .bar i { transition: none; } }
+  /* ---------------- the selection screens (gloam-downs-screens-life) ----------------
+     The veil is a vignette per card; a card's box has a warm inner glow at its top and a 1 px gilt rule. The glass of a lamp is a CSS
+     radial gradient with a flame of two stacked shapes, in its colour (--hue). Motion is CSS transitions and the Web Animations API
+     (main.js), none on a timer while a card is idle; with reduced motion only fades of 150 ms or less */
+  :root { --gilt: #b88a46; --glass: rgba(18, 13, 12, 0.92); }
+  .panel .box { border-color: #6a3e26; border-top-color: var(--gilt); box-shadow: 0 16px 50px #000, inset 0 18px 26px -20px rgba(255, 154, 50, 0.32); }
+  .glass { --hue: var(--ember); --g: 0.45; position: relative; display: block; flex: none; width: 26px; height: 34px; box-sizing: border-box; border-radius: 12px 12px 7px 7px / 15px 15px 7px 7px;
+    background: radial-gradient(70% 60% at 50% 68%, color-mix(in srgb, var(--hue) calc(var(--g) * 70%), transparent), var(--glass) 78%);
+    box-shadow: inset 0 0 0 1px rgba(232, 226, 208, 0.24), 0 0 14px -3px color-mix(in srgb, var(--hue) calc(var(--g) * 100%), transparent); transition: box-shadow 0.12s, background 0.12s; }
+  .glass::before { content: ''; position: absolute; left: 22%; right: 22%; top: -3px; height: 4px; border-radius: 2px; background: #3a2a20; box-shadow: 0 0 0 1px rgba(232, 226, 208, 0.18); }
+  .glass .flame { position: absolute; left: 50%; bottom: 6px; width: 10px; height: 17px; margin-left: -5px; border-radius: 50% 50% 46% 46% / 64% 64% 36% 36%; transform-origin: 50% 100%;
+    background: radial-gradient(circle at 50% 72%, #fff3cf 0 22%, var(--hue) 58%, transparent 74%); opacity: calc(0.35 + var(--g) * 0.65); transition: transform 0.12s, opacity 0.12s; }
+  .glass .flame::after { content: ''; position: absolute; left: 30%; right: 30%; bottom: 2px; height: 45%; border-radius: 50%; background: #fffbe8; opacity: 0.85; }
+  /* a lamp card: a wick, a spark, an ability. The glow is its own element, so its opacity can be read */
+  .panel button.lcard { position: relative; display: grid; grid-template-rows: auto auto 1fr; justify-items: center; align-content: start; gap: 4px; width: auto; text-align: center; padding: 10px 8px 9px;
+    min-height: 44px; border-radius: 12px; background: linear-gradient(180deg, rgba(34, 22, 17, 0.95), rgba(12, 10, 14, 0.96)); border: 1px solid color-mix(in srgb, var(--hue) 45%, #3a2a20);
+    color: var(--bone); transition: transform 0.12s ease-out, border-color 0.12s, opacity 0.16s; line-height: 1.2; }
+  .lcard .glow { position: absolute; inset: -1px; border-radius: inherit; pointer-events: none; box-shadow: 0 0 20px -3px var(--hue), inset 0 0 16px -8px var(--hue); opacity: 0.4; transition: opacity 0.12s; }
+  .lcard b { font: 700 16px/1.15 var(--title); color: #f2d7a6; }
+  .lcard .gift { font: 500 14px/1.25 var(--body); color: #d9d1bc; }
+  .lcard .sep { display: none; }
+  .wicks .lcard em.kindle { margin: 0; font-size: 14px; }
+  .panel button.lcard:hover, .panel button.lcard:focus { transform: translateY(-4px); border-color: var(--hue); outline: none; }
+  .panel button.lcard:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
+  .lcard:hover .glow, .lcard:focus .glow { opacity: 1; }
+  .lcard:hover .glass, .lcard:focus .glass { --g: 1; }
+  .lcard:hover .flame, .lcard:focus .flame { transform: scale(1.15); }
+  .panel button.lcard.bright { border-color: #e8c35a; }
+  .lcard.bright .glass { box-shadow: inset 0 0 0 2px #e8c35a, 0 0 16px -2px #e8c35a; }
+  .panel button.lcard.faded { opacity: 0.3; }
+  .wicks.cards { grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); }
+  #sparks.cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  /* the beacon card: a bottom sheet on a portrait phone (its top at 58% of the height or lower), at the right on a wide or landscape
+     screen in at most 46% of the width; the veil leaves the beacon's part of the picture clear */
+  body.run #beaconCard { background: linear-gradient(to top, rgba(2, 2, 6, 0.7), rgba(2, 2, 6, 0.12) 55%); place-items: end center; }
+  body.run #beaconCard .box { max-height: calc(42dvh - var(--sab) - 12px); padding: 10px 14px; }
+  #beaconCard h2 { font-size: 22px; }
+  #beaconCard p { margin: 2px 0 6px; font-size: 14px; line-height: 1.32; }
+  #beaconCard .wicks { margin: 6px 0; }
+  @media (min-aspect-ratio: 1/1), (min-width: 521px) {
+    body.run #beaconCard { place-items: center end; background: linear-gradient(to left, rgba(2, 2, 6, 0.72), rgba(2, 2, 6, 0.12) 60%); }
+    body.run #beaconCard .box { width: min(440px, 46vw); max-height: calc(100dvh - var(--sat) - var(--sab) - 72px); }
+  }
+  /* the title screen: the live place behind, the title over a brush rule, the places as lamps on a path, the seed and Ember line, and
+     the buttons. Its box has no fill: the foot's own shade carries the text */
+  .panel#title { background: radial-gradient(120% 85% at 50% 40%, rgba(2, 2, 6, 0.15) 0 40%, rgba(2, 2, 6, 0.7) 100%); place-items: stretch center; box-sizing: border-box; padding: calc(var(--sat) + 60px) 12px calc(var(--sab) + 12px); }
+  .panel#title .box.tbox { width: min(560px, calc(100vw - 24px)); max-height: none; height: 100%; padding: 0; background: none; border: 0; box-shadow: none; display: flex; flex-direction: column; justify-content: space-between; overflow: visible; }
+  .tbrand { text-align: center; padding-top: 2vh; }
+  .panel h1.brand { margin: 0; font: 700 44px/1.05 var(--title); letter-spacing: 0.06em; background: linear-gradient(180deg, #f2d7a6 20%, #e08a3c 95%); -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 0 16px rgba(255, 140, 50, 0.4)) drop-shadow(0 3px 0 #2a0c06); }
+  @media (max-width: 359px) { .panel h1.brand { font-size: 34px; } }
+  .brush { display: block; width: min(240px, 70%); height: 14px; margin: 4px auto 0; overflow: visible; }
+  .brush path { fill: none; stroke: var(--gilt); stroke-width: 3; stroke-linecap: round; opacity: 0.9; }
+  .panel#title .tplace { margin: 8px 0 0; text-align: center; color: #e6d6b4; font: 600 15px/1.3 var(--body); text-shadow: 0 2px 0 #000, 0 0 10px #000; }
+  .tfoot { position: relative; isolation: isolate; padding: 22px 14px 12px; }
+  /* the foot's shade: wider than its buttons and soft at its edges, so it reads as lamplight falling off, not a box */
+  .tfoot::before { content: ''; position: absolute; z-index: -1; inset: -30px max(-90px, calc((100% - 100vw) / 2)) 0; pointer-events: none;
+    background: radial-gradient(60% 72% at 50% 78%, rgba(8, 7, 12, 0.95) 58%, rgba(8, 7, 12, 0.6) 78%, rgba(8, 7, 12, 0) 100%); }
+  .lamps { position: relative; display: flex; justify-content: space-between; gap: 4px; margin: 0 0 4px; }
+  .lamps[hidden] { display: none; }
+  .lamps .path { position: absolute; left: 6%; top: 50%; width: 88%; height: 20px; transform: translateY(-50%); pointer-events: none; overflow: visible; }
+  .lamps .path path { fill: none; stroke: #6a4a2e; stroke-width: 2; stroke-dasharray: 3 5; }
+  .lamps .gname { position: absolute; left: 0; top: -19px; margin: 0; font: 700 12px/1.2 var(--body); letter-spacing: 0.14em; text-transform: uppercase; color: #ffd77a; }
+  .panel .lamps button.lamp { position: relative; display: grid; justify-items: center; align-content: center; gap: 5px; width: 56px; height: 66px; min-width: 44px; padding: 4px 0;
+    border-radius: 12px; background: rgba(10, 9, 14, 0.84); border: 1px solid rgba(232, 226, 208, 0.14); color: #a8a29a; transition: transform 0.12s ease-out, border-color 0.12s; }
+  .lamp .glass { --g: 0.1; }
+  .lamp .n { font: 700 14px/1 var(--title); }
+  .lamp.lit .glass { --g: 0.6; }
+  .panel .lamps button.lamp.lit { color: #f2d7a6; }
+  .panel .lamps button.lamp:hover, .panel .lamps button.lamp:focus, .panel .lamps button.lamp.on { border-color: var(--ember); color: #ffe2bd; transform: translateY(-3px); outline: none; }
+  .panel .lamps button.lamp:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
+  .lamp:hover .glass, .lamp:focus .glass, .lamp.on .glass { --g: 1; }
+  .panel .lamps button.lamp:disabled { opacity: 0.5; cursor: default; transform: none; }
+  .lamps.lattice { margin-top: 26px; justify-content: center; gap: 14px; }
+  .lamps.lattice .glass { --hue: #ffd77a; }
+  .panel#title .tline { min-height: 2.7em; margin: 6px 0 4px; text-align: center; color: #e6dcc6; font: 500 14px/1.35 var(--body); }
+  .panel#title .tline b { color: #f2d7a6; font-family: var(--title); }
+  .seedrow { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0 0 8px; }
+  .panel .seedrow p { margin: 0; color: #c9c2ae; font: 600 14px/1.2 var(--body); letter-spacing: 0.02em; white-space: nowrap; }
+  .seedrow button[hidden] { display: none; }
+  .panel#title .row { flex-wrap: wrap; }
+  .panel#title .row + .row { margin-top: 8px; }
+  .panel#title .row[hidden] { display: none; }
+  .panel#title #bTitleBegin, .panel#title #bTitleWalk { flex-basis: 100%; min-height: 50px; font-size: 16px; }
+  @media (max-height: 700px) { .tbrand { padding-top: 0; } .tfoot { padding-top: 14px; } .panel#title .tline { margin: 4px 0 2px; } .seedrow { margin-bottom: 6px; } .panel#title .row + .row { margin-top: 6px; } .panel#title #bTitleBegin, .panel#title #bTitleWalk { min-height: 46px; } }
+  @media (max-height: 460px) {
+    .panel#title .box.tbox { flex-direction: row; align-items: flex-end; width: min(820px, calc(100vw - 24px)); gap: 12px; }
+    .tbrand { flex: 0 0 34%; align-self: center; } .panel h1.brand { font-size: 34px; } .tfoot { flex: 1; padding: 10px 12px; }
+    .tfoot::before { inset: -20px 0 0 -40px; background: radial-gradient(70% 80% at 55% 60%, rgba(8, 7, 12, 0.94) 60%, rgba(8, 7, 12, 0) 100%); }
+    .panel .lamps button.lamp { height: 56px; }
+    .lamps.lattice { margin-top: 8px; }
+    .lamps.lattice .gname { position: static; align-self: center; }
+  }
+  /* the Lamp-room: three headed shelves; a ware is a lamp tile whose light fills by its level; 2 columns under 520 px, 3 to 900, 4 above */
+  .panel#lamp .box { width: min(440px, calc(100vw - 24px)); }
+  @media (min-width: 520px) { .panel#lamp .box { width: min(640px, calc(100vw - 24px)); } }
+  @media (min-width: 900px) { .panel#lamp .box { width: min(860px, calc(100vw - 24px)); } }
+  .panel h3.shelf { margin: 8px 0 2px; padding-bottom: 3px; font: 700 12px/1.2 var(--title); letter-spacing: 0.14em; text-transform: uppercase; color: #f2d7a6; border-bottom: 1px solid rgba(184, 138, 70, 0.35); }
+  .panel h3.shelf[hidden] { display: none; }
+  .panel ul.tiles { list-style: none; margin: 6px 0 10px; padding: 0; display: grid; gap: 8px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (min-width: 520px) { .panel ul.tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (min-width: 900px) { .panel ul.tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .panel ul.tiles[hidden] { display: none; }
+  .tiles li.tile { --hue: var(--ember); position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto 1fr auto; gap: 2px 9px; align-items: start; padding: 9px 9px 8px;
+    min-height: 0; border-radius: 12px; border: 1px solid #3a2a20; background: linear-gradient(180deg, rgba(30, 20, 16, 0.92), rgba(12, 10, 14, 0.95)); }
+  .tile .glass { grid-row: 1 / span 3; width: 28px; height: 42px; overflow: hidden; --g: 0.2; }
+  .tile .glass .fill { position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--fill, 0) * 100%); background: linear-gradient(to top, rgba(210, 85, 28, 0.85), rgba(255, 154, 50, 0.5)); transition: height 0.3s ease-out; }
+  .tile .glass .flame { bottom: calc(var(--fill, 0) * 22px + 3px); opacity: var(--fill, 0); transition: bottom 0.3s ease-out, opacity 0.3s; }
+  .tiles .tile b.nm { font: 700 15px/1.2 var(--title); color: #f2d7a6; overflow-wrap: anywhere; }
+  .tiles .tile span.gift { font: 500 14px/1.25 var(--body); color: #d9d1bc; overflow-wrap: anywhere; }
+  .tiles .tile span.cost { font: 700 14px/1.2 var(--body); color: #ffd77a; }
+  .panel .tiles li.tile button { grid-column: 1 / -1; grid-row: auto; min-width: 0; min-height: 44px; margin-top: 4px; padding: 4px 8px; line-height: 1.15; white-space: normal; }
+  .panel .tiles li.tile button[aria-disabled="true"] { color: var(--ash); border-color: var(--edge); background: rgba(20, 18, 26, 0.9); cursor: default; font-weight: 600; font-size: 14px; }
+  .tiles li.tile.top { border-color: #6a4a2e; }
+  .tiles li.tile.top span.gift { color: var(--ash); }
+  .tiles li.tile .flash { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: radial-gradient(circle at 24px 30px, rgba(255, 244, 210, 0.9), rgba(255, 190, 90, 0.35) 40%, transparent 70%); opacity: 0; }
+  #patterns li.tile button { grid-row: auto; }
+  #sparks button.lcard { border-left: 1px solid color-mix(in srgb, var(--hue) 45%, #3a2a20); }
+  #sparks button.lcard:hover, #sparks button.lcard:focus { border-left-color: var(--hue); }
+  #patterns li.tile .glass { --g: 0.25; }
+  #patterns li.tile .glass .flame { opacity: 0; }
+  #patterns li.tile.kindled { border-color: var(--hue); }
+  #patterns li.tile.kindled .glass { --g: 1; }
+  #patterns li.tile.kindled .glass .flame { bottom: 8px; opacity: 1; animation: catch 0.4s ease-out; }
+  @keyframes catch { from { transform: scale(0); } to { transform: scale(1); } }
+  /* the recap: the run's path as lamps, each place passed lit with its time and foes, the end snuffed on a death or bright on a win */
+  ol.rpath { list-style: none; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; margin: 10px 0 8px; padding: 0; }
+  ol.rpath[hidden] { display: none; }
+  .panel .rpath li { display: grid; justify-items: center; align-content: start; gap: 3px; min-width: 0; color: var(--ash); font: 600 14px/1.15 var(--body); text-align: center; }
+  .rpath li .glass { --g: 0.08; }
+  .rpath li .n { font: 700 14px/1 var(--title); color: #c9c2ae; }
+  .rpath li.lit .glass, .rpath li.bright .glass { --g: 0.9; }
+  .rpath li.bright .glass { --hue: #ffd77a; box-shadow: inset 0 0 0 2px #e8c35a, 0 0 18px -2px #ffd77a; }
+  .rpath li.snuffed .glass { --g: 0; --hue: #6a6478; }
+  .rpath li.snuffed .glass .flame { opacity: 0; }
+  .rpath li.dark .glass .flame { opacity: 0.1; }
+  .panel .rpath li.lit, .panel .rpath li.bright { color: var(--bone); }
+  .rpath li span { display: block; white-space: nowrap; }
+  .panel p.by { margin: 0 0 10px; color: #ffb27a; font-weight: 700; }
+  .panel p.by[hidden] { display: none; }
+  .panel#winCard .box { border-top-color: #e8c35a; box-shadow: 0 16px 50px #000, inset 0 22px 30px -20px rgba(255, 215, 122, 0.4); }
+  .panel#winCard h2 { color: #ffd77a; }
+  /* the title stands alone over the place: the HUD, the tools and the touch buttons hide under it */
+  body:has(#title:not([hidden])) :is(.hud, .tools, .act, .jump, .stick, .mousehint, .toast, .arrive) { visibility: hidden; }
+  .lamp:not(.lit):not(:hover):not(:focus):not(.on) .flame { opacity: 0.1; }
+  /* in a run the touch buttons wait under every card, so a bottom sheet or a side card has nothing peeking past it */
+  body.run:has(.panel:not([hidden])) :is(.act, .jump, .stick) { visibility: hidden; }
+  .tiles .tile b.nm .of { display: block; font: 600 14px/1.2 var(--body); color: #e0b98a; }
+  /* readable (gloam-downs-screens-life "Inputs and layouts"): every line of text on the screens at 14 px or more */
+  .panel h3.unlocksT, .panel h3.shelf { font-size: 14px; }
+  .panel .ups li span, .panel .ups li button[aria-disabled="true"] { font-size: 14px; }
+  .panel .panes .paneSlot > b, .panel .panes button, .panel .panes button b { font-size: 14px; }
+  .panel p.emberLine, #lamp p.colours, #summary p.seed { font-size: 14px; }
+  /* a number that rolls: its text is the new count at once, and data-roll is what shows over it while it rolls */
+  [data-roll] { position: relative; color: transparent !important; }
+  [data-roll]::after { content: attr(data-roll); position: absolute; top: 0; right: 0; color: var(--roll, var(--bone)); white-space: nowrap; }
+  b.bank[data-roll]::after { left: 0; right: auto; --roll: #ffd77a; }
+  .panel button.lcard.ghost { transform: none; }
+  .ghost .glow { opacity: 1; }
+  /* a short landscape window (844x390): the recap goes wide, its rows in two pairs of columns and its lamps smaller, so it fits */
+  @media (max-height: 460px) {
+    .panel#summary .box, .panel#winCard .box { width: min(760px, calc(100vw - 24px)); }
+    .panel#summary dl.score, .panel#winCard dl.score { grid-template-columns: auto 1fr auto 1fr; gap: 2px 14px; margin: 4px 0 8px; }
+    .panel ol.rpath { margin: 4px 0 6px; }
+    .rpath li .glass { width: 20px; height: 26px; }
+    .panel#winCard .box > p:not([class]) { display: none; }
+    .panel#summary h2, .panel#winCard h2 { margin-bottom: 0; }
+  }
+  /* reduced motion: no rise, no scale, no drift, no flare; fades of 150 ms or less (the glow on focus stays: it is not motion) */
+  @media (prefers-reduced-motion: reduce) {
+    .panel button.lcard, .panel button.lcard:hover, .panel button.lcard:focus, .panel .lamps button.lamp, .panel .lamps button.lamp:hover, .panel .lamps button.lamp:focus, .panel .lamps button.lamp.on { transform: none; transition: opacity 0.15s, border-color 0.15s; }
+    .lcard:hover .flame, .lcard:focus .flame { transform: none; }
+    .glass, .glass .flame, .lcard .glow, .tile .glass .fill, .tile .glass .flame { transition: none; }
+    #patterns li.tile.kindled .glass .flame { animation: none; }
+  }
 </style>
 </head>
 <body class="toy">
@@ -341,6 +516,24 @@
 
 <div class="arrive off" id="arrive" aria-live="polite"><small id="arriveN">I · The first place</small><h1 id="arriveName">The Sunken Gaol</h1><p id="arriveSub"></p></div>
 <p class="toast" id="toast" role="status"></p>
+
+<div class="panel" id="title" hidden><div class="box tbox" role="dialog" aria-labelledby="titleT">
+  <div class="tbrand">
+    <h1 class="brand" id="titleT">Gloam Downs</h1>
+    <svg class="brush" viewBox="0 0 240 14" aria-hidden="true"><path d="M4 9 C 40 3, 70 12, 112 7 S 190 4, 236 8"/></svg>
+    <p class="tplace" id="titlePlace"></p>
+  </div>
+  <div class="tfoot">
+    <div class="lamps" id="titleLamps" role="group" aria-label="The five places"></div>
+    <div class="lamps lattice" id="titleLattice" role="group" aria-label="The Gilt Lattice" hidden></div>
+    <p class="tline" id="titleLine" aria-live="polite"></p>
+    <div class="seedrow" id="seedRow"><button type="button" id="bEmberDown" aria-label="Ember level down" hidden>◀</button><p id="titleSeed"></p><button type="button" id="bEmberUp" aria-label="Ember level up" hidden>▶</button></div>
+    <div class="row" id="titleRun"><button type="button" class="go" id="bTitleBegin">Begin the run</button></div>
+    <div class="row" id="titleMore"><button type="button" id="bTitleLamp">Lamp-room</button><button type="button" id="bTitleHelp">How to play</button><button type="button" id="bTitleExplore">Explore</button></div>
+    <div class="row" id="titleWalkRow" hidden><button type="button" class="go" id="bTitleWalk">Walk</button></div>
+    <div class="row" id="titleWalkMore" hidden><button type="button" id="bTitleFight" title="Fight through the five places: attack, roll and heal">Fight</button><button type="button" id="bTitleHelp2">How to play</button></div>
+  </div>
+</div></div>
 
 <div class="panel" id="help" hidden><div class="box" role="dialog" aria-labelledby="helpT">
   <h2 id="helpT">Gloam Downs</h2>
@@ -381,7 +574,7 @@
 
 <div class="panel" id="runHelp" hidden><div class="box" role="dialog" aria-labelledby="runHelpT">
   <h2 id="runHelpT">Gloam Downs</h2>
-  <p>A run through five dark places, with a blade, a roll and two flasks. Put out each beacon's keepers, then light it. At a lit beacon, spend the glim you carry in the Lamp-room, on wares that last, or carry it on. A death keeps only a little of it.</p>
+  <p>A run through five dark places, with a blade, a roll and one flask. Put out each beacon's keepers, then light it. At a lit beacon, spend the glim you carry in the Lamp-room, on wares that last, or carry it on. A death keeps only a little of it.</p>
   <ul id="runControls"></ul>
   <p id="exploreLine">Explore walks the places with no foes.</p>
   <div class="row"><button type="button" class="go" id="bBegin">Begin the run</button><button type="button" id="bExplore" title="Walk the five places with no foes">Explore</button></div>
@@ -415,11 +608,12 @@
   <h2 id="lampT">The Lamp-room</h2>
   <p id="lampLine">Banked: 0 glim. What you buy here lasts for every run.</p>
   <p class="colours" id="colours" hidden></p>
-  <ul class="ups" id="ups"></ul>
-  <h3 class="unlocksT" id="patternsT">Patterns</h3><ul class="ups" id="patterns" aria-labelledby="patternsT"></ul>
+  <h3 class="shelf" id="waresT">Wares</h3>
+  <ul class="ups tiles" id="ups" aria-labelledby="waresT"></ul>
+  <h3 class="shelf" id="patternsT">Patterns</h3><ul class="ups tiles" id="patterns" aria-labelledby="patternsT"></ul>
   <h3 class="unlocksT" id="unlocksT">Unlocks</h3>
   <ul class="ups" id="unlocks" aria-labelledby="unlocksT"></ul>
-  <h3 class="unlocksT" id="panesT">Lantern panes</h3><div class="panes" id="paneRow" role="group" aria-labelledby="panesT"></div>
+  <h3 class="shelf" id="panesT">Panes</h3><div class="panes" id="paneRow" role="group" aria-labelledby="panesT"></div>
   <p class="emberLine" id="emberLine" hidden></p>
   <div class="row" id="emberRow" role="group" aria-label="Ember level" hidden></div>
   <div class="row" id="lampRow"><button type="button" class="go" id="bLampBack" hidden>Back to the beacon</button><button type="button" class="go" id="bLampBegin" hidden>Begin the run</button><button type="button" class="go" id="bLampGoOn" hidden>Go on with the run</button><button type="button" id="bLampWander" hidden>Wander</button><button type="button" id="bLampToWander" hidden>Back to Wander</button><button type="button" id="bLampExplore" hidden>Explore</button></div>
@@ -428,6 +622,7 @@
 <div class="panel" id="winCard" hidden><div class="box" role="dialog" aria-labelledby="winT">
   <h2 id="winT">The downs are lit</h2>
   <p>The last light of the downs burns over Barrow Crown, and every beacon is lit.</p>
+  <ol class="rpath" id="winPath" aria-label="The run's path" hidden></ol>
   <dl class="score"><dt>Time</dt><dd id="winTime"></dd><dt>Best winning time</dt><dd id="winBest"></dd><dt>Glim banked</dt><dd id="winBanked"></dd><dt>Runs</dt><dd id="winRuns"></dd><dt>Deaths</dt><dd id="winDeaths"></dd></dl>
   <p class="opened" id="winOpened" hidden></p>
   <div class="row"><button type="button" class="go" id="bWinLamp">To the Lamp-room</button><button type="button" id="bWinWander" hidden>Wander</button></div>
@@ -435,6 +630,8 @@
 
 <div class="panel" id="summary" hidden><div class="box" role="dialog" aria-labelledby="sumT">
   <h2 id="sumT">The lamp goes out</h2>
+  <ol class="rpath" id="sumPath" aria-label="The run's path" hidden></ol>
+  <p class="by" id="sumBy" hidden></p>
   <dl class="score"><dt>Reached</dt><dd id="sumPlace"></dd><dt>Time</dt><dd id="sumTime"></dd><dt>Foes put out</dt><dd id="sumFoes"></dd><dt>Glim lost</dt><dd id="sumLost"></dd><dt>Glim banked</dt><dd id="sumBanked"></dd></dl>
   <p class="seed" id="sumSeed"></p>
   <div class="row"><button type="button" class="go" id="bSumLamp">To the Lamp-room</button></div>

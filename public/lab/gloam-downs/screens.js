@@ -5,11 +5,18 @@ import { ORDER } from './save.js';
 import { WICKS, UPGRADES, UNLOCKS, EMBER, BASE, maxOf, flasksOf, keepShare, purse, sparksOf, paneSlots, kindledOf, patternOf, startPicks } from './run.js';
 import { relicOf, kindled, KINDLE } from './relics.js';
 import { COLOURS, PATTERNS, PANES, ABILITIES } from './growth.js';
+import { ELITE_LIST } from './elites.js';
 
 export const NUMERAL = ['I', 'II', 'III', 'IV', 'V'];
 export const NAMES = { gaol: 'The Sunken Gaol', ramparts: 'The Crow Wall', fen: 'Lantern Fen', bells: 'The Bell Knoll', barrows: 'Barrow Crown' };
 export const fmt = t => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
 export const placeLine = id => `${NUMERAL[ORDER.indexOf(id)]} · ${NAMES[id]}`;
+// each place's subtitle, as baked in worlds/<id>.json (the screens test checks they match)
+export const SUBS = {
+  gaol: 'Cells cut into the moor, and the keep on the hill', ramparts: 'A broken wall rides the downs as the storm light dies',
+  fen: 'Stilt huts over black water, and the mill on the hill', bells: 'A bronze bell on a hill of sunk cogs, at a blood-red dusk',
+  barrows: 'Mounds of the old dead, and the keep on the crowned hill'
+};
 
 /* ---------------- game time ----------------
    In a run the toasts, the arrival card, the fade to ink and the waits before the beacon card and the summary count steps of the game
@@ -211,10 +218,69 @@ export const ASKS = {
    The card that shows over the place when the page loads: the summary of an ended run (also after a reload in the fade), the beacon
    card while its two wicks wait (the same two, from the save), the help card on a first visit, the Lamp-room on a later visit with no
    run, or none while a run goes on. A won run shows the win card again until it closes. Wander's stage adds rs.wander */
-export function cardOnLoad(rs) {
+export function cardOnLoad(rs, o = {}) {
   if (rs.ended) return rs.ended.won ? 'win' : 'summary';
-  if (!rs.run) return rs.seen ? 'lamp' : 'help';
+  // the title screen (gloam-downs-screens-life) opens where the help card or the Lamp-room did; o.title false keeps the old cards
+  if (!rs.run) return o.title === false ? (rs.seen ? 'lamp' : 'help') : 'title';
   // the picks still waiting: a wick, a spark (a beacon's, First spark's or a cache's) or Belt's ability
   if (startPicks(rs.run)) return 'beacon';
   return null;
+}
+
+/* ---------------- the selection screens (gloam-downs-screens-life) ----------------
+   The title screen: the five places of the run as lamps on a path, lit for each place reached in any run (rs.furthest, once a run has
+   been played), and the line that a lamp under the pointer or the focus shows; the seed and Ember line */
+export const titleLine = id => (SUBS[id] ? `${placeLine(id)}. ${SUBS[id]}` : placeLine(id));
+export function titleLamps(rs) {
+  const far = (rs.runs | 0) > 0 || rs.run ? rs.furthest | 0 : -1;
+  return ORDER.map((id, i) => ({ id, n: NUMERAL[i], name: NAMES[id], sub: SUBS[id], line: titleLine(id), lit: i <= far }));
+}
+export const seedLine = (code, ember = 0) => `Seed ${code} · Ember ${ember | 0}`;
+// the Ember level one step down or up from the title's ◀ and ▶, within the open levels, or null at an end
+export function emberStep(rs, d) {
+  const n = (rs.ember | 0) + d;
+  return n < 0 || n > (rs.emberTop | 0) ? null : n;
+}
+
+/* the Lamp-room's ware tile: a glass whose light fills by level / levels, the name and "Mantle 2 of 8", the next gift, its cost and
+   Buy (as upgradeRow's). At the top level the gift reads "all bought" and there is no Buy */
+export function wareTile(rs, id) {
+  const r = upgradeRow(rs, id), u = UPGRADES.find(x => x.id === id);
+  return {
+    ...r, name: u.name, fill: r.max ? r.lvl / r.max : 0,
+    level: r.max > 1 ? `${u.name} ${r.lvl} of ${r.max}` : `${u.name}${r.lvl ? ' · bought' : ''}`,
+    gift: r.top ? 'all bought' : GIVES[id](r.lvl + 1), costText: r.top ? '' : `${r.cost} glim`
+  };
+}
+export const wareTiles = rs => UPGRADES.map(u => wareTile(rs, u.id));
+// the colour of an ability or a pane (growth.js), and the hue of its tile
+export const colourOf = id => [...ABILITIES, ...PANES].find(x => x.id === id)?.colour || 'gloam';
+export const patternHue = id => (COLOURS.find(c => c.id === colourOf(id)) || COLOURS[2]).hue;
+// the colour words a pick sends on the bus (screen-pick, screen-hover): a wick's, or a spark's or an ability's colour
+export const pickColour = (kind, id) => (kind === 'wick' ? 'wick' : kind === 'spark' ? id : colourOf(id));
+
+/* the recap of an ended run (the summary and the win card): the run's path as lamps, each place passed lit with its time and foes, the
+   end place snuffed on a death or bright on a win, then the rows. A save from before the recap (no path) gives the old summary's rows */
+export const BY = { S: 'a Snuffer', P: 'a Pitchrook', M: 'a Mirelight', I: 'an Ironback', B: 'the Barrow Reeve', fall: 'a fall' };
+export const byLine = by => (!by ? '' : BY[by] ? `Put out by ${BY[by]}` : ELITE_LIST.some(x => x.id === by) ? `Put out by ${ELITE_LIST.find(x => x.id === by).name}` : '');
+export function recapOf(e, route = ORDER) {
+  if (!e || !Array.isArray(e.path) || !e.path.length) return { old: true, path: [], ...summaryOf(e, route) };
+  const ids = [...e.path.map(p => p.id), ...route.filter(id => !e.path.some(p => p.id === id))];
+  const path = ids.map(id => {
+    const p = e.path.find(x => x.id === id), end = id === e.place, i = ORDER.indexOf(id);
+    return {
+      id, n: NUMERAL[i], name: NAMES[id], state: end ? (e.won ? 'bright' : 'snuffed') : p ? 'lit' : 'dark',
+      time: p ? fmt(p.time) : '', foes: p ? String(p.foes) : ''
+    };
+  });
+  const sparks = COLOURS.map(c => ({ id: c.id, name: c.name, hue: c.hue, n: e.colours?.[c.id] | 0 }));
+  const names = (e.patternNames || []).map(growthName);
+  const rows = [
+    ['Time', fmt(e.time)], ['Foes put out', String(e.foes)],
+    ...(e.kept === null || e.kept === undefined ? [] : [['Glim', `kept ${e.kept | 0} · lost ${e.lost | 0}`]]),
+    ['Patterns kept', names.length ? names.join(', ') : 'none'],
+    ['Sparks', sparks.map(c => `${c.name} ${c.n}`).join(' · ')],
+    ['Best combo', (e.combo | 0) >= 2 ? `×${e.combo | 0}` : '–']
+  ];
+  return { title: e.won ? 'The downs are lit' : 'The lamp goes out', won: !!e.won, path, rows, sparks, by: e.won ? '' : byLine(e.by) };
 }

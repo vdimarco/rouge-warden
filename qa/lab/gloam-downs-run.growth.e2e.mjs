@@ -150,14 +150,17 @@ try {
     assert(await page.isVisible('#lamp'));
     assert.match(await text(page, '#lampLine'), /^Carried: 40 glim · Banked: 0 glim\./);
     assert.match(await text(page, '#colours'), /Flame 0 · Ward 1 · Gloam 0/);
-    const row = () => page.$$eval('#patterns li', ls => ls.map(l => [l.querySelector('span').textContent, l.querySelector('button').textContent]));
+    // a pattern is an unlit lamp tile (gloam-downs-screens-life): its row's words in data-label, and Kindle
+    const row = () => page.$$eval('#patterns li:not(.kindled)', ls => ls.map(l => [l.dataset.label, l.querySelector('button').textContent]));
     assert.deepEqual(await row(), [['Rime lamp · a cone slows foes · 120 glim', '80 more glim']]);
     await G(page, () => window.__gloam.set({ bank: 150 }));
     assert.deepEqual(await row(), [['Rime lamp · a cone slows foes · 120 glim', 'Kindle']]);
     await page.click('#patterns li[data-pattern="rime"] button');
     r = await run(page);
     assert.deepEqual([r.carried, r.bank, r.patterns, r.kindledAll.includes('rime')], [0, 70, [], true]);
-    assert(!(await page.isVisible('#patterns')) && !(await page.isVisible('#patternsT')), 'no pattern left to kindle');
+    // no pattern left to kindle: the kindled one stays on its shelf as a lit lamp with no button, until the Lamp-room opens again
+    assert.deepEqual(await row(), [], 'no pattern left to kindle');
+    assert.deepEqual(await page.$$eval('#patterns li.kindled', ls => ls.map(l => [l.dataset.pattern, l.querySelector('button').hidden])), [['rime', true]]);
     // the focus stays in the Lamp-room's growth rows (a pane button here), not on a Buy button of the wares
     assert(await G(page, () => !!document.activeElement?.closest('#paneRow, #patterns')), `the focus after Kindle: ${await G(page, () => document.activeElement?.textContent)}`);
     pass('kindle: the Rime lamp\'s row says "80 more glim" with 40 carried, then Kindle takes the 40 carried and 80 of the bank', { bank: r.bank });
