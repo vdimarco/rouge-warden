@@ -50,7 +50,7 @@
   /* dialogs: map, help, beacon, end */
   .panel { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; background: rgba(2, 2, 6, 0.6); }
   .panel[hidden] { display: none; }
-  .panel .box { width: min(440px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow: auto; box-sizing: border-box; padding: 18px; border-radius: 14px; background: rgba(10, 9, 14, 0.97); border: 1px solid #5a3424; box-shadow: 0 16px 50px #000; color: var(--bone); }
+  .panel .box { width: min(440px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow: auto; box-sizing: border-box; padding: 18px; border-radius: 14px; background: rgba(10, 9, 14, 0.99); border: 1px solid #5a3424; box-shadow: 0 16px 50px #000; color: var(--bone); }
   .panel h2 { margin: 0 0 4px; font: 700 26px/1.1 var(--title); color: #f2d7a6; }
   .panel p { margin: 6px 0 12px; color: #c9c2ae; font: 500 15px/1.4 var(--body); }
   .panel ul { margin: 0 0 14px; padding-left: 20px; color: #c9c2ae; font: 500 14px/1.45 var(--body); }
@@ -319,12 +319,13 @@
     box-shadow: inset 0 0 0 1px rgba(232, 226, 208, 0.24), 0 0 14px -3px color-mix(in srgb, var(--hue) calc(var(--g) * 100%), transparent); transition: box-shadow 0.12s, background 0.12s; }
   .glass::before { content: ''; position: absolute; left: 22%; right: 22%; top: -3px; height: 4px; border-radius: 2px; background: #3a2a20; box-shadow: 0 0 0 1px rgba(232, 226, 208, 0.18); }
   .glass .flame { position: absolute; left: 50%; bottom: 6px; width: 10px; height: 17px; margin-left: -5px; border-radius: 50% 50% 46% 46% / 64% 64% 36% 36%; transform-origin: 50% 100%;
-    background: radial-gradient(circle at 50% 72%, #fff3cf 0 22%, var(--hue) 58%, transparent 74%); opacity: calc(0.35 + var(--g) * 0.65); transition: transform 0.12s, opacity 0.12s; }
-  .glass .flame::after { content: ''; position: absolute; left: 30%; right: 30%; bottom: 2px; height: 45%; border-radius: 50%; background: #fffbe8; opacity: 0.85; }
+    background: radial-gradient(circle at 50% 72%, #fff3cf 0 12%, color-mix(in srgb, var(--hue) 75%, #fff3cf) 32%, var(--hue) 58%, transparent 76%); opacity: calc(0.35 + var(--g) * 0.65); transition: transform 0.12s, opacity 0.12s; }
+  .glass .flame::after { content: ''; position: absolute; left: 36%; right: 36%; bottom: 2px; height: 34%; border-radius: 50%; background: #fffbe8; opacity: 0.7; }
   /* a lamp card: a wick, a spark, an ability. The glow is its own element, so its opacity can be read */
   .panel button.lcard { position: relative; display: grid; grid-template-rows: auto auto 1fr; justify-items: center; align-content: start; gap: 4px; width: auto; text-align: center; padding: 10px 8px 9px;
     min-height: 44px; border-radius: 12px; background: linear-gradient(180deg, rgba(34, 22, 17, 0.95), rgba(12, 10, 14, 0.96)); border: 1px solid color-mix(in srgb, var(--hue) 45%, #3a2a20);
     color: var(--bone); transition: transform 0.12s ease-out, border-color 0.12s, opacity 0.16s; line-height: 1.2; }
+  .lcard .glass { --hue: inherit; } /* the card's colour (cards.js lampCard sets it), not the glass's amber default */
   .lcard .glow { position: absolute; inset: -1px; border-radius: inherit; pointer-events: none; box-shadow: 0 0 20px -3px var(--hue), inset 0 0 16px -8px var(--hue); opacity: 0.4; transition: opacity 0.12s; }
   .lcard b { font: 700 16px/1.15 var(--title); color: #f2d7a6; }
   .lcard .gift { font: 500 14px/1.25 var(--body); color: #d9d1bc; }

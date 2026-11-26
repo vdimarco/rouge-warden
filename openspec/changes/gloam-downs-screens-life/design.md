@@ -94,6 +94,9 @@ Web search worked; page fetches did not (`blog.unity.com` and `developer.nvidia.
 - **The last hit.** `run.js` records `run.lastHurt` in `hurt()` from the target nearest to where the blow came from (the nearest Pitchrook for a coal), so `foes.js`, `elites.js` and `boss.js` do not change. A fall records `fall`.
 - **Each place's time and foes.** `goTo()` keeps a split of the place left (`run.splits`: the run's time, foes and the patterns its beacon kept); `die()` and `win()` turn the splits into `path`, one entry a place with its own share.
 - **The pad.** `input.js` gives the cards only a previous and a next. On a lamp card or a title lamp, `main.js` reads the d-pad and the stick's way and moves by the grid; elsewhere the order stays as it was.
+- **The rows set.** Hook 3 hands `pendingRows` to `makeLife`, but a place load made a new set after that line, so life would write to a set the renderer no longer reads. `main.js` now clears the set in place.
+- **The quiet check.** A fresh load now opens the title, not the help card, so the Gloam Downs entry in `qa/arcade/quiet.mjs` waits for either one before it presses Enter.
+- **Colour in the glass.** A lamp card's glass takes the card's colour (`--hue` inherited), so Flame, Ward and Gloam read at a glance, not only by the border.
 - **For the merge pass.** `run-sound.js` (Builder E's) still plays `choice` on `spark-take` and `buy` on `pattern-kindled`. With the new `pick` and `kindle` cues a spark pick and a kindle sound twice; the merge pass should drop those two entries.
 
 ## Part E: places that live

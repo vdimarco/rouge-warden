@@ -1488,7 +1488,7 @@ async function go(id) {
   const faded = new Set([...(veils?.list || []), ...(occluders?.list || [])].flatMap(v => v.ids ?? [v.i]));
   cut = makeCut(world.data, { count: placeCount, skip: [[meta.bones.first, meta.bones.end], ...meta.beacon.fire, ...meta.wisps.map(w => w.ids)], except: faded.size ? faded : null });
   saved.clear();
-  pendingRows = new Set();
+  pendingRows.clear(); // cleared in place: life.js (makeLife rows) holds this set
   if (RUN) {
     // in a run the place starts again: every wisp is back and the beacon is dark
     beaconLit = false;
@@ -1516,7 +1516,7 @@ async function go(id) {
     if (ORDER.includes(id) && !save.reached.includes(id)) save.reached.push(id);
     store(disk, save);
   }
-  pendingRows = new Set(); // the whole world is uploaded on its first frame anyway
+  pendingRows.clear(); // the whole world is uploaded on its first frame anyway
   updateHud();
   progress(1);
   loading.classList.add('done');
