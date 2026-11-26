@@ -77,7 +77,12 @@ export const WICKS = [
   { id: 'shave', name: 'Close shave', text: '+50% after a near miss' },
   { id: 'tongue', name: 'Ember tongue', text: 'blade hits burn for 6 more', unlock: 'tongue' },
   { id: 'heart', name: 'Glim heart', text: 'each glim heals 1', unlock: 'heart' },
-  { id: 'last', name: 'Last ember', text: 'stand again once, at 25%', unlock: 'last' }
+  { id: 'last', name: 'Last ember', text: 'stand again once, at 25%', unlock: 'last' },
+  // the four of gloam-downs-hub design.md "New buffs"
+  { id: 'sure', name: 'Sure hand', colour: 'flame', text: 'a hit on a stunned, held or blind foe is a sure cut' },
+  { id: 'charw', name: 'Char wick', colour: 'flame', text: 'the finisher adds 2 Char', char: 2 },
+  { id: 'count', name: 'Count wick', colour: 'gloam', text: 'each 12th hit of a combo throws a free bomb', unlock: 'crate', every: 12, power: 0.75, range: 6 },
+  { id: 'shellw', name: 'Shell wick', colour: 'ward', text: 'a 15 shell at each start and each zone cleared', unlock: 'crate', shell: 15 }
 ];
 /* the lasting wares: each level costs more. The first levels of Mantle, Flask, Edge and Draught keep the costs and gifts they had, so an
    old save keeps its power (gloam-downs-growth design.md "Lasting wares") */
@@ -90,7 +95,9 @@ export const UPGRADES = [
   { id: 'belt', name: 'Belt', costs: [90, 220, 420] },
   { id: 'keen', name: 'Keen eye', costs: [70, 140, 230, 340, 480] },
   { id: 'panes', name: 'Lantern panes', costs: [300, 700] },
-  { id: 'first', name: 'First spark', costs: [120, 260, 450] }
+  { id: 'first', name: 'First spark', costs: [120, 260, 450] },
+  { id: 'whet', name: 'Whetstone', colour: 'flame', costs: [90, 200, 360], sure: 0.04 },
+  { id: 'horn', name: 'Horn lamp', colour: 'ward', costs: [120, 280], shell: 0.2 }
 ];
 // the unlocks: each is bought once in the Lamp-room, and lasts for every run
 export const UNLOCKS = [
@@ -100,7 +107,9 @@ export const UNLOCKS = [
   { id: 'shelf', name: 'Wick shelf', text: 'start each run with a wick', cost: 160 },
   { id: 'kflask', name: 'Kindled flask', text: 'an elite fills a flask', cost: 80 },
   { id: 'rising', name: 'Rising cut', text: 'attack as a roll ends', cost: 140 },
-  { id: 'parry', name: 'Ember parry', text: 'a first cut turns a blow', cost: 200 }
+  { id: 'parry', name: 'Ember parry', text: 'a first cut turns a blow', cost: 200 },
+  { id: 'rack', name: 'Blade rack', text: 'new blades join the pattern drops', cost: 150 },
+  { id: 'crate', name: 'Wick crate', text: 'two new wicks: Count and Shell', cost: 180 }
 ];
 export const UNLOCK_IDS = UNLOCKS.map(u => u.id);
 export const UP_MAX = Object.fromEntries(UPGRADES.map(u => [u.id, u.costs.length]));

@@ -92,14 +92,14 @@ function untilSpecial(W, E, max = 600) {
 
 /* ---------------- names ---------------- */
 {
-  assert.deepEqual(WICKS.map(w => w.name), ['Long wick', 'Keen edge', 'Quick heels', 'Heavy fall', 'Spare oil', 'Close shave', 'Ember tongue', 'Glim heart', 'Last ember']);
-  assert.deepEqual(UPGRADES.map(u => u.name), ['Mantle', 'Flask', 'Edge', 'Draught', 'Ash pocket', 'Belt', 'Keen eye', 'Lantern panes', 'First spark']);
-  assert.deepEqual(UNLOCKS.map(u => u.name), ['Ember tongue', 'Glim heart', 'Last ember', 'Wick shelf', 'Kindled flask', 'Rising cut', 'Ember parry']);
-  assert.deepEqual(RELICS.map(r => r.name), ['Ember trail', 'Spark third', 'Coal heel', 'Hooked cut', 'Bellows cut', 'Moth lamp', 'Tinder guard', 'Echo blade']);
+  assert.deepEqual(WICKS.map(w => w.name), ['Long wick', 'Keen edge', 'Quick heels', 'Heavy fall', 'Spare oil', 'Close shave', 'Ember tongue', 'Glim heart', 'Last ember', 'Sure hand', 'Char wick', 'Count wick', 'Shell wick']);
+  assert.deepEqual(UPGRADES.map(u => u.name), ['Mantle', 'Flask', 'Edge', 'Draught', 'Ash pocket', 'Belt', 'Keen eye', 'Lantern panes', 'First spark', 'Whetstone', 'Horn lamp']);
+  assert.deepEqual(UNLOCKS.map(u => u.name), ['Ember tongue', 'Glim heart', 'Last ember', 'Wick shelf', 'Kindled flask', 'Rising cut', 'Ember parry', 'Blade rack', 'Wick crate']);
+  assert.deepEqual(RELICS.map(r => r.name), ['Ember trail', 'Spark third', 'Coal heel', 'Hooked cut', 'Bellows cut', 'Moth lamp', 'Tinder guard', 'Echo blade', 'Char edge', 'Soot heel', 'Glass drink', 'Thorn roll']);
   assert.deepEqual(ELITE_LIST.map(e => e.name), ['The Wardmother', 'The Rookchief', 'The Fen-wick', 'The Bellwether', 'The Cairnwarden']);
-  assert.deepEqual(UNLOCKS.map(u => u.cost), [90, 100, 220, 160, 80, 140, 200]);
-  assert.equal(UNLOCKS.reduce((a, u) => a + u.cost, 0), 990, 'the unlocks cost 990 glim in all');
-  pass('names: nine wicks, nine wares, seven unlocks, eight relics and five elites, with these names and no others');
+  assert.deepEqual(UNLOCKS.map(u => u.cost), [90, 100, 220, 160, 80, 140, 200, 150, 180]);
+  assert.equal(UNLOCKS.reduce((a, u) => a + u.cost, 0), 1320, 'the unlocks cost 1,320 glim in all');
+  pass('names: thirteen wicks, eleven wares, nine unlocks, twelve relics and five elites, with these names and no others');
 }
 
 /* ---------------- a death keeps 10%, and Ash pocket 8% more a level (gloam-downs-growth) ---------------- */
@@ -142,7 +142,9 @@ function untilSpecial(W, E, max = 600) {
   const seen = new Set();
   for (let seed = 1; seed <= 200; seed++) for (const id of drawOffer(seed, 0, [], ['tongue', 'heart', 'last'])) seen.add(id);
   assert(['tongue', 'heart', 'last'].every(id => seen.has(id)));
-  assert.equal(offerable(['tongue']).length, 7);
+  // the eight of every run (Sure hand and Char wick among them) and Ember tongue; Count and Shell wick wait for the Wick crate
+  assert.equal(offerable(['tongue']).length, 9);
+  assert(!offerable([]).includes('count') && offerable(['crate']).includes('count') && offerable(['crate']).includes('shellw'));
   pass('the wicks from unlocks: never offered before they are bought; each offered once bought');
 }
 { // Last ember: at 0 health the run goes on with 25, and the next hit to 0 ends it
@@ -277,7 +279,7 @@ function untilSpecial(W, E, max = 600) {
   const a = { relics: ['trail'], wicks: ['heels'] }, b = { relics: ['heel'], wicks: ['heavy'] };
   assert(kindled(a, 'trail') && kindled(b, 'heel') && !kindled(a, 'heel') && !kindled({ relics: ['trail'], wicks: [] }, 'trail'));
   assert.equal(relicLine('trail', a), 'Ember trail · the roll leaves fire · Kindled');
-  assert.equal(KINDLE.length, 4);
+  assert.equal(KINDLE.length, 8);
   pass('kindlings: Quick heels with Ember trail and Heavy fall with Coal heel kindle, and the toast says "Kindled"');
 }
 { // the relic draw: from the seed's own stream, never one the run holds; the same seed gives the same relics

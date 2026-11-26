@@ -127,8 +127,8 @@ export function clean(raw) {
   s.ember = Number.isInteger(raw.ember) && raw.ember >= 0 && raw.ember <= s.emberTop ? raw.ember : 0;
   if (Array.isArray(raw.bestByEmber)) s.bestByEmber = s.bestByEmber.map((_, i) => secs(raw.bestByEmber[i]));
   s.bestCombo = count(raw.bestCombo, 1e5);
-  // growth: the starters are always kindled; a pattern found is not yet kindled; panes are kindled ones, each once, in the open slots
-  s.kindled = [...new Set([...STARTERS, ...ids(raw.kindled, [...ABILITY_IDS, ...PANE_IDS], 40)])];
+  // growth: the starters are always kindled (a blade or off-hand pattern kindled is kept too); a pattern found is not yet kindled; panes are kindled ones, each once, in the open slots
+  s.kindled = [...new Set([...STARTERS, ...ids(raw.kindled, [...STARTERS, ...PATTERN_IDS], STARTERS.length + PATTERN_IDS.length)])];
   s.patterns = ids(raw.patterns, PATTERN_IDS.filter(p => !s.kindled.includes(p)), PATTERN_IDS.length);
   s.keys = ids(raw.keys, LAMP_KEY_IDS, LAMP_KEY_IDS.length);
   const slots = paneSlots(s), seen = new Set();

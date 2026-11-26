@@ -217,12 +217,13 @@ const heard = names => { const got = []; const offs = names.map(k => on(k, d => 
   assert(b3.run.abilities.every(a => a.bright));
   pass('Belt: two abilities offered for slot 1, slot 2 drawn by the seed at Belt 2, bright at Belt 3, slot 1 alone without Belt', { offer, two: rs.run.abilities[1].id });
 }
-{ // Costs grow: each level costs more; the whole catalogue with the unlocks and the patterns is 10,000 to 13,000 glim
+{ // Costs grow: each level costs more; the whole catalogue with the unlocks and the patterns is 15,000 to 18,000 glim (gloam-downs-hub
+  // design.md "Balance": the new wares, unlocks and patterns raise it from 11,725)
   for (const u of UPGRADES) for (let k = 1; k < u.costs.length; k++) assert(u.costs[k] > u.costs[k - 1], `${u.name} ${k + 1}`);
   const wares = UPGRADES.reduce((a, u) => a + u.costs.reduce((x, y) => x + y, 0), 0), unlocks = UNLOCKS.reduce((a, u) => a + u.cost, 0), pats = PATTERNS.reduce((a, p) => a + p.cost, 0);
   const all = wares + unlocks + pats;
-  assert.deepEqual([wares, unlocks, pats], [9115, 990, 1620]);
-  assert(all >= 10000 && all <= 13000, `${all}`);
+  assert.deepEqual([wares, unlocks, pats], [10165, 1320, 4830]);
+  assert(all >= 15000 && all <= 18000, `${all}`);
   // Keen eye, Lantern panes and First spark do what they say
   const rs = RS.fresh();
   rs.up.first = 2;
@@ -399,7 +400,7 @@ const heard = names => { const got = []; const offs = names.map(k => on(k, d => 
   mem.set('gloam-downs.run.v2', JSON.stringify(v2));
   mem.set('gloam-downs.run.v1', JSON.stringify({ bank: 5 }));
   const s = RS.load(storage);
-  assert.deepEqual([s.v, s.up.mantle, s.up.ash, s.up.flask, s.bank, s.kindled, s.unlocks], [3, 3, 2, 1, 70, ['bomb', 'step', 'thick', 'hot'], ['shelf']]);
+  assert.deepEqual([s.v, s.up.mantle, s.up.ash, s.up.flask, s.bank, s.kindled, s.unlocks], [3, 3, 2, 1, 70, ['bomb', 'step', 'thick', 'hot', 'lamp', 'buckler'], ['shelf']]);
   assert(mem.has('gloam-downs.run.v3'));
   // the run in progress keeps its place, with sparks 0 and slot 1 from the seed's start stream
   assert.deepEqual([s.run.place, s.run.carried, s.run.sparks, s.run.abilities], ['fen', 12, { flame: 0, ward: 0, gloam: 0 }, startAbilities(99, s).slots]);
@@ -417,7 +418,7 @@ const heard = names => { const got = []; const offs = names.map(k => on(k, d => 
     ended: { place: 'gaol', kept: -2, patternsKept: 'x' }
   };
   const s = RS.clean(raw);
-  assert.deepEqual([s.patterns, s.kindled, s.keys, s.panes], [['rime'], ['bomb', 'step', 'thick', 'hot', 'flare'], ['leap'], ['thick']]);
+  assert.deepEqual([s.patterns, s.kindled, s.keys, s.panes], [['rime'], ['bomb', 'step', 'thick', 'hot', 'lamp', 'buckler', 'flare'], ['leap'], ['thick']]);
   assert.deepEqual([s.up.belt, s.up.keen, s.up.panes, s.up.first], [3, 0, 1, 0]);
   assert.deepEqual([s.run.sparks, s.run.abilities, s.run.carriedPatterns, s.run.sparkPicks, s.run.caches, s.run.abilityLamps], [{ flame: 40, ward: 0, gloam: 0 }, [null, { id: 'flare', bright: false }], [], 9, ['ok-1'], []]);
   assert.deepEqual([s.ended.kept, s.ended.patternsKept], [0, 0]);

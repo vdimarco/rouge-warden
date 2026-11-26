@@ -59,7 +59,9 @@ const GIVES = {
   belt: next => ['a choice of two start abilities', 'slot 2 starts filled', 'the start abilities are bright'][next - 1],
   keen: () => 'better drops',
   panes: next => `${next + 1} pane slots`,
-  first: next => `${next} spark ${next === 1 ? 'pick' : 'picks'} at the start`
+  first: next => `${next} spark ${next === 1 ? 'pick' : 'picks'} at the start`,
+  whet: next => `${4 * next}% of blade hits are sure cuts`,
+  horn: next => `shells ${20 * next}% bigger`
 };
 // the glim a Lamp-room spends: in a run the glim carried first, then the bank
 const purseOf = rs => purse(rs);

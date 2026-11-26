@@ -16,7 +16,12 @@ export const RELICS = [
   { id: 'bellows', name: 'Bellows cut', move: 'second cut', text: 'the second cut blows foes back', mark: 'Be' },
   { id: 'moth', name: 'Moth lamp', move: 'flask', text: 'a drink sends out a pulse', mark: 'Mo' },
   { id: 'tinder', name: 'Tinder guard', move: 'near miss', text: 'a near miss readies the finisher', mark: 'Ti' },
-  { id: 'echo', name: 'Echo blade', move: 'finisher', text: 'the finisher strikes twice', mark: 'Ec' }
+  { id: 'echo', name: 'Echo blade', move: 'finisher', text: 'the finisher strikes twice', mark: 'Ec' },
+  // the four of gloam-downs-hub design.md "New buffs"
+  { id: 'charedge', name: 'Char edge', move: 'first cut', text: 'the first cut adds 1 Char', mark: 'Ch', char: 1 },
+  { id: 'soot', name: 'Soot heel', move: 'plunge', text: 'the plunge leaves a Soot cloud', mark: 'So', r: 2.5, life: 3 },
+  { id: 'glass', name: 'Glass drink', move: 'flask', text: 'a drink gives a shell', mark: 'Gd', shell: 20, life: 5 },
+  { id: 'thorn', name: 'Thorn roll', move: 'near miss', text: 'a near miss cuts the foe that swung', mark: 'Th', dmg: 12 }
 ];
 export const RELIC_IDS = RELICS.map(r => r.id);
 export const relicOf = id => RELICS.find(r => r.id === id) || null;
@@ -25,7 +30,11 @@ export const KINDLE = [
   { wick: 'heels', relic: 'trail', text: 'the trail lasts 2.5 s' },
   { wick: 'heavy', relic: 'heel', text: 'the ring is 2.5 m and lasts 3 s' },
   { wick: 'keen', relic: 'spark', text: 'the spark passes through to a second foe' },
-  { wick: 'oil', relic: 'moth', text: 'the pulse is 4.5 m' }
+  { wick: 'oil', relic: 'moth', text: 'the pulse is 4.5 m' },
+  { wick: 'charw', relic: 'charedge', text: 'the first cut adds 2 Char', char: 2 },
+  { wick: 'heavy', relic: 'soot', text: 'the cloud is 3.5 m', r: 3.5 },
+  { wick: 'oil', relic: 'glass', text: 'the shell is 30', shell: 30 },
+  { wick: 'heels', relic: 'thorn', text: 'the cut deals 20', dmg: 20 }
 ];
 export const kindled = (run, relic) => KINDLE.some(k => k.relic === relic && (run?.relics || []).includes(relic) && (run?.wicks || []).includes(k.wick));
 export const kindlings = run => KINDLE.filter(k => (run?.relics || []).includes(k.relic) && (run?.wicks || []).includes(k.wick)).map(k => k.relic);

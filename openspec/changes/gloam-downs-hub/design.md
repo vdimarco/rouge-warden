@@ -88,26 +88,30 @@ A downs place is 232,607 to 245,198 splats and 1.22 to 1.36 MB. So the hall is b
 - While the hall shows, `main.js` fetches the bytes of the run's first place (not its GPU upload), so Begin the run is quick. The hall is dropped when the run's first place loads, so only one place is on the GPU at a time.
 
 ### Decision 4: the plan of the hall
-A stone hall 20 m wide (x from -10 to 10) and 14 m deep (z from -7 to 7) on flat ground. The front (z = 7, the camera's side) is open with a 0.6 m parapet and two pillars. The back wall holds the run door. Torches and the stations' own lamps light it.
+A stone hall 14 m wide (x from -7 to 7) and 14 m deep (z from -7 to 7) on flat ground. The front (z = 7, the camera's side) is open with a 0.6 m parapet and two pillars. The back wall holds the run door. Torches and the stations' own lamps light it.
+
+"Where" is the station's point: the spot the lamplighter stands on to use it. The object stands just behind it, along the station's face; the lamp shelf and the pane window stand against the side walls, 1.5 m behind their points.
 
 | Station | Where (x, z) | The object | What it does |
 |---|---|---|---|
 | Spawn | (0, 5) | a worn mat | where the lamplighter stands at first, facing the door |
-| Well | (-3, 2) | a stone well with water | the bank, and the last run's recap |
-| Wick rack | (-6.5, 3.5) | a rack of 9 hooks | the unlocks |
-| Blade rack | (6.5, 3.5) | a rack of 4 hooks | the blades: pick the start blade |
-| Off-hand stand | (-6, 0.5) | a stand with 6 pegs | the off-hands: pick the start one |
-| Ability post | (3.5, 1) | a post on a sand ring, a rack of ability lamps | the abilities: try any two |
-| Lamp shelf | (-8.5, -2) | 3 bays of 4 glass lamps | the lasting wares |
-| Pane window | (9.3, -2) | a leaded window, 3 slots, a sill | the panes |
-| Kiln | (6, -4.5) | a kiln with a hood of 5 rows of 8 hooks | kindle patterns of every category |
-| Trophy wall | (-4, -6.7) | 3 key plaques, 5 elite plaques | keys and elites put out |
-| Ember bell | (3, -5.8) | a bell on a frame | the Ember level |
-| Map table | (0, -4.5) | a table with the route as five lamps | the seed's route, Wander, Explore |
+| Well | (-2.5, 2.5) | a stone well with water | the bank, and the last run's recap |
+| Wick rack | (-5.5, 4.5) | a rack of 9 hooks | the unlocks |
+| Blade rack | (5.5, 4.5) | a rack of 4 hooks | the blades: pick the start blade |
+| Off-hand stand | (-5.5, 1) | a stand with 6 pegs | the off-hands: pick the start one |
+| Ability post | (2.5, 1.5) | a post on a sand ring, a rack of ability lamps | the abilities: try any two |
+| Lamp shelf | (-5.5, -2.5) | 3 bays of 4 glass lamps, on the left wall | the lasting wares |
+| Pane window | (5.5, -0.5) | a leaded window, 3 slots, a sill, in the right wall | the panes |
+| Kiln | (5.5, -4) | a kiln with a hood of 5 rows of 8 hooks | kindle patterns of every category |
+| Trophy wall | (-3.5, -6.7) | 3 key plaques, 5 elite plaques | keys and elites put out |
+| Ember bell | (3.2, -6.6) | a bell on a frame | the Ember level |
+| Map table | (0, -3.6) | a table with the route as five lamps | the seed's route, Wander, Explore |
 | Run door | (0, -7) | a tall door | begin the run |
 
 - The path from the spawn to the door is 12 m: 2 s at a run (6.4 m/s), 4 s at a walk.
 - 12 stations in all, one a category or a lasting family (Part C "Hall stations by category").
+- Every station's point is at most 5.5 m from the spawn-to-door path (x = 0, z from -7 to 5), inside the 6 m rule with 0.5 m to spare. The first plan put the lamp shelf at x = -8.5, the pane window at x = 9.3 and both racks at x = 6.5, which broke that rule; the hall is narrower now so they stand closer.
+- Any two station points are at least 3.2 m apart, so two use radii (1.6 m) never overlap and one prompt shows at a time.
 - One run door and a map table, not five place doors. A run's route is fixed by the seed (`routeFor`), so five doors would offer a choice that does not exist. The map table shows the route, and the explorer's Map stays in Wander.
 - The stations' marks go in the biome as `ctx.mark('station', { id, at, face })`. `meta.stations` gives each one's point, its face and its use radius (1.6 m).
 
@@ -287,6 +291,7 @@ The fair-fight change is changing the foe curve, the interrupts, the poise and t
 - **One buff:** at most +20% damage a second on the bot's reference string against a Snuffer, or at most +25% effective health, when held alone. Node test `gloam-downs-kit.test.mjs` measures each one.
 - **Adding up:** damage bonuses add within one sum (the held blade's colour, Edge, Keen edge, Cinder, Cracked, Ember glass), then the tier's power multiplies, and a sure cut multiplies after. The gear has its own budget (Part C "Gear budget"). Ticks are capped at 8 a second a foe, a Spill chain at 3, a shell at 40% (50%).
 - **Pacing SHALL be rechecked after both changes land.** Run `node qa/lab/gloam-downs-bot.mjs` with 60 bots a skill on the merged code. The fair-fight targets must still hold (skill 0.3: place 2 in 80% of first runs, first win in run 8 to 20; 0.5: run 3 to 8; 0.9: run 1 to 2). No build family may clear a place more than 15% faster than the mean of all families. A build family is the run's main colour with its blade and off-hand. If one does, its numbers here move, and this file says so.
+- **The whole catalogue** (every ware level, every unlock and every pattern) costs 16,315 glim, up from 11,725: wares 10,165, unlocks 1,320, patterns 4,830. `gloam-downs-growth.test.mjs` pins these and keeps the total between 15,000 and 18,000.
 
 ### Sound
 New cues in `run-sound.js`, built from the recipes there now: `lash`, `slick`, `tacks`, `toll`, `shell`, `post`, `shutter`, `blink`, `sure`, `char` (the burst), `soot`, `crack` (Cracked glass), `dash`. `shards` and `wisp` are reused. Each keys on a bus event with the ability or buff id.

@@ -808,7 +808,7 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   // the blade +60%, a death keeps 50% of the glim
   const rs = RS.fresh();
   rs.bank = UPGRADES.reduce((a, u) => a + u.costs.reduce((x, y) => x + y, 0), 0);
-  assert.equal(rs.bank, 9115, 'all the wares cost 9,115 glim');
+  assert.equal(rs.bank, 10165, 'all the wares cost 10,165 glim (Whetstone and Horn lamp among them)');
   for (const u of UPGRADES) for (let k = 0; k < u.costs.length; k++) assert(buy(rs, u.id));
   assert(!buy(rs, 'mantle'), 'no level past the top');
   assert.equal(rs.bank, 0);
@@ -1045,12 +1045,13 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   assert.deepEqual(WICKS.map(w => wickLine(w.id)), [
     'Long wick · +20 health', 'Keen edge · +15% blade damage', 'Quick heels · roll again after 0.12 s', 'Heavy fall · plunge ×1.5 and wider',
     'Spare oil · +1 flask', 'Close shave · +50% after a near miss', 'Ember tongue · blade hits burn for 6 more', 'Glim heart · each glim heals 1',
-    'Last ember · stand again once, at 25%'
+    'Last ember · stand again once, at 25%', 'Sure hand · a hit on a stunned, held or blind foe is a sure cut', 'Char wick · the finisher adds 2 Char',
+    'Count wick · each 12th hit of a combo throws a free bomb', 'Shell wick · a 15 shell at each start and each zone cleared'
   ]);
-  assert.deepEqual(UPGRADES.map(u => u.name), ['Mantle', 'Flask', 'Edge', 'Draught', 'Ash pocket', 'Belt', 'Keen eye', 'Lantern panes', 'First spark']);
+  assert.deepEqual(UPGRADES.map(u => u.name), ['Mantle', 'Flask', 'Edge', 'Draught', 'Ash pocket', 'Belt', 'Keen eye', 'Lantern panes', 'First spark', 'Whetstone', 'Horn lamp']);
   // every level of every ware, bought in turn with enough glim: what the next level gives, then "all bought" and no Buy button
   const rs = RS.fresh();
-  rs.bank = 9115;
+  rs.bank = 10165;
   const seen = [];
   for (const u of UPGRADES) {
     for (let k = 0; k < u.costs.length; k++) {
@@ -1076,7 +1077,9 @@ function runFor(R, count, inp = {}, camYaw = 0) {
     'Keen eye 1 · better drops · 70 glim', 'Keen eye 2 · better drops · 140 glim', 'Keen eye 3 · better drops · 230 glim', 'Keen eye 4 · better drops · 340 glim',
     'Keen eye 5 · better drops · 480 glim', 'Keen eye 5 · all bought',
     'Lantern panes 1 · 2 pane slots · 300 glim', 'Lantern panes 2 · 3 pane slots · 700 glim', 'Lantern panes 2 · all bought',
-    'First spark 1 · 1 spark pick at the start · 120 glim', 'First spark 2 · 2 spark picks at the start · 260 glim', 'First spark 3 · 3 spark picks at the start · 450 glim', 'First spark 3 · all bought'
+    'First spark 1 · 1 spark pick at the start · 120 glim', 'First spark 2 · 2 spark picks at the start · 260 glim', 'First spark 3 · 3 spark picks at the start · 450 glim', 'First spark 3 · all bought',
+    'Whetstone 1 · 4% of blade hits are sure cuts · 90 glim', 'Whetstone 2 · 8% of blade hits are sure cuts · 200 glim', 'Whetstone 3 · 12% of blade hits are sure cuts · 360 glim',
+    'Whetstone 3 · all bought', 'Horn lamp 1 · shells 20% bigger · 120 glim', 'Horn lamp 2 · shells 40% bigger · 280 glim', 'Horn lamp 2 · all bought'
   ]);
   // not enough glim: the Buy button is off and says how much more is needed; Mantle with 50 banked leaves 10 and level 1
   const poor = RS.fresh();
@@ -1168,12 +1171,14 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   assert.deepEqual([r.card, r.s.run.offer, r.s.run.place, r.s.bank, r.s.run.carried], ['beacon', offer, 'ramparts', 0, 30], 'the beacon keeps the 30 carried');
   // the Lamp-room from the beacon card after the choice and a buy (each stored at once): play at the next place, the buy kept
   rs.bank = 50;
-  chooseWick(rs, 'heavy');
+  // a wick of the offer that does not change the health or the flasks
+  const still = offer.find(w => !['long', 'oil'].includes(w));
+  assert(chooseWick(rs, still));
   buy(rs, 'mantle');
   rs.run.sparkPicks = rs.run.entry.sparkPicks = 0;
   r = reloadAt(rs);
   // Mantle 1 (40) takes the 30 carried first, then 10 of the bank
-  assert.deepEqual([r.card, r.s.run.place, r.s.run.wicks, r.s.run.hp, maxOf(r.s), r.s.bank, r.s.run.carried, r.s.run.entry.carried], [null, 'ramparts', ['heavy'], 75, 115, 40, 0, 0]);
+  assert.deepEqual([r.card, r.s.run.place, r.s.run.wicks, r.s.run.hp, maxOf(r.s), r.s.bank, r.s.run.carried, r.s.run.entry.carried], [null, 'ramparts', [still], 75, 115, 40, 0, 0]);
   // the pause panel: the run as stored, and the sound switch
   rs.sound = false;
   r = reloadAt(rs);

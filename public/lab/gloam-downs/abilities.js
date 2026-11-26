@@ -218,7 +218,8 @@ export function makeAbilities(R) {
     if (A.cool[i] > 0) { cue(ev, 'refuse', { ability: slot.id, slot: i }); return true; }
     // in a drink, a roll, a hurt or a plunge, and Smoke step or Bell guard in the air: nothing but the refuse cue, and the press is spent
     if (AB.busy.includes(f.move) || (AB.ground.includes(a.id) && !s.ground) || A.move) { cue(ev, 'refuse', { ability: slot.id, slot: i, busy: true }); return true; }
-    if (!START[a.id](a, powerOf(rs, slot), ev, act, camYaw)) { cue(ev, 'refuse', { ability: slot.id, slot: i }); return true; }
+    // an ability with no START yet (a row of the hub change before its builder lands) only refuses
+    if (!START[a.id]?.(a, powerOf(rs, slot), ev, act, camYaw)) { cue(ev, 'refuse', { ability: slot.id, slot: i }); return true; }
     A.full[i] = A.cool[i] = coolOf(rs, a.id);
     A.lastUse = clock.play; A.lastSlot = i;
     ev.push({ type: 'ability', what: 'use', id: a.id, slot: i });
