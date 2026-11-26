@@ -154,9 +154,10 @@ export function makeInput(els, { run = () => false, play = () => false, hold = p
     // keys steer the lamplighter only in play. In a card, on the end card and on the loading screen they are the page's (Space and
     // Enter press the focused button), and a key pressed there stays out of play until it is let go
     if (!play() || e.target.closest?.('.panel:not([hidden])')) {
-      // the keys that move stay live, so a direction held into a card (or pressed in one) walks on after it
-      if (MOVE_KEYS.has(k)) keys.add(k);
-      else swallowed.add(k);
+      // the keys that move stay live, so a direction held into a card walks on after it. The arrows are the card's own there (they
+      // move its focus): an arrow pressed or repeating in a card does nothing in play until it is let go
+      if (MOVE_KEYS.has(k) && !k.startsWith('arrow')) keys.add(k);
+      else { keys.add(k); swallowed.add(k); }
       return;
     }
     if ([' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) e.preventDefault();

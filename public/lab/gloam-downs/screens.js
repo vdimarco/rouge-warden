@@ -232,8 +232,9 @@ export function cardOnLoad(rs, o = {}) {
    been played), and the line that a lamp under the pointer or the focus shows; the seed and Ember line */
 export const titleLine = id => (SUBS[id] ? `${placeLine(id)}. ${SUBS[id]}` : placeLine(id));
 export function titleLamps(rs) {
-  const far = (rs.runs | 0) > 0 || rs.run ? rs.furthest | 0 : -1;
-  return ORDER.map((id, i) => ({ id, n: NUMERAL[i], name: NAMES[id], sub: SUBS[id], line: titleLine(id), lit: i <= far }));
+  const played = (rs.runs | 0) > 0 || !!rs.run;
+  const reached = new Set(Array.isArray(rs.reached) ? rs.reached : ORDER.slice(0, (rs.furthest | 0) + 1));
+  return ORDER.map((id, i) => ({ id, n: NUMERAL[i], name: NAMES[id], sub: SUBS[id], line: titleLine(id), lit: played && reached.has(id) }));
 }
 export const seedLine = (code, ember = 0) => `Seed ${code} · Ember ${ember | 0}`;
 // the Ember level one step down or up from the title's ◀ and ▶, within the open levels, or null at an end

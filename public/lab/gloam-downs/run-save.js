@@ -15,7 +15,7 @@ export const OLD_KEY = 'gloam-downs.run.v1';
 export const fresh = () => ({
   v: 3, bank: 0, up: Object.fromEntries(UPGRADES.map(u => [u.id, 0])), unlocks: [], ember: 0, emberTop: 0, bestByEmber: [0, 0, 0, 0, 0, 0], bestCombo: 0,
   patterns: [], kindled: STARTERS.slice(), keys: [], panes: [],
-  runs: 0, wins: 0, deaths: 0, furthest: 0, bestWin: 0, sound: true, music: true, shake: null, seen: false, wander: false, run: null, ended: null
+  runs: 0, wins: 0, deaths: 0, furthest: 0, reached: [], bestWin: 0, sound: true, music: true, shake: null, seen: false, wander: false, run: null, ended: null
 });
 const WICK_IDS = WICKS.map(w => w.id);
 const obj = v => v && typeof v === 'object' && !Array.isArray(v);
@@ -138,6 +138,8 @@ export function clean(raw) {
   s.wins = count(raw.wins, 1e6);
   s.deaths = count(raw.deaths, 1e6);
   s.furthest = intIn(raw.furthest, 0, ORDER.length - 1, 0);
+  // the places reached in any run (the title's lit lamps); a save from before it had only the furthest, in the downs' order
+  s.reached = Array.isArray(raw.reached) ? ids(raw.reached, ORDER, ORDER.length) : ORDER.slice(0, s.furthest + 1);
   s.bestWin = secs(raw.bestWin);
   if (!s.bestByEmber[0] && s.bestWin) s.bestByEmber[0] = s.bestWin;
   s.sound = raw.sound !== false;

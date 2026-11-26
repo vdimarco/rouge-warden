@@ -351,13 +351,19 @@ export function reload(run) {
   run.sparkNow = false;
   return run;
 }
+// a place reached: its lamp on the title is lit (rs.reached), and rs.furthest is the furthest in the downs' order
+export function reach(rs, id) {
+  if (!ORDER.includes(id)) return;
+  rs.reached = [...new Set([...(rs.reached || []), id])];
+  rs.furthest = Math.max(rs.furthest || 0, ORDER.indexOf(id));
+}
 // move the run to the start of a place, as Walk on does: the entry snapshot is taken from the values now
 export function goTo(rs, id) {
   // the recap's split of the place left: the run's time and foes then, and the patterns its beacon kept
   const sp = (rs.run.splits ||= []);
   if (rs.run.place !== id && !sp.some(x => x.id === rs.run.place)) sp.push({ id: rs.run.place, time: rs.run.time, foes: rs.run.foes, kept: (rs.run.kept || []).slice() });
   rs.run.place = id;
-  rs.furthest = Math.max(rs.furthest || 0, routeOfRun(rs.run).indexOf(id));
+  reach(rs, id);
   // the lamps left lying in the last place are gone
   if (rs.run.groundPatterns) rs.run.groundPatterns = [];
   if (rs.run.abilityLamps) rs.run.abilityLamps = [];

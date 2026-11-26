@@ -288,6 +288,34 @@ No one listened to the beds on speakers or headphones; the levels are measured o
 
 Over all 15 views: 1.003 (at most 1.05). Worst view: 1.011 (at most 1.08). Explorer 0.994. Life's own median: 0.1 ms (at most 0.25). Life can be seen: 526 pixels moved with life against 285 without (1.85 times, 1.13% of the picture). No real phone, real pad or listening test ran.
 
+## Checker round 2: what was fixed
+A checker looked at the merged round on every layout and input. Each item below was seen in the code or a picture first, and each fix has a check that fails on the code before it.
+
+- **The pause card at 844x390 (high).** The card was 460 px in a 316 px box, with all six buttons below the fold. A landscape window of 520 px or less now lays the pause card in two columns, the route on the left and the controls on the right, with the six buttons in one row under both. How to play does the same. A portrait window of 700 px or less leaves the pause card's controls out, since the touch buttons name them. The explorer's map on a landscape phone puts its title and line on one line and Close and Fight under the shorter Gilt Lattice. The screens e2e layout part now checks the pause card, How to play and the map at the six layouts.
+- **The lamplighter under the title (medium).** At 800x600, 320x640 and 844x390 the lamps or the right-hand stack covered the lamplighter. `menu-scene.js` gains `titleSpot` (the nearest spot where the figure's box touches none of the title's words, lamps and buttons) and `frameAt` (the same view moved sideways and up or down so a point draws at a screen spot, never turned). The title draws the drift, then frames the lamplighter there. The spot is found when the title opens or fills and on a resize. The cutaway and the near fade now use this same drawn view, which also fixes the cut worked out for the undrifted eye. Source: the screen-position composer of Unity's Cinemachine (its Screen X and Screen Y place the target at a point on the screen by moving the camera), and the composition rule of lead room in film. From memory.
+- **Pale squares on the 1280x720 title, and the Gaol's static (medium).** Motes were 0.026 to 0.04 m, so at the lamplighter's distance on a desktop they drew as soft squares of 12 to 16 px. Motes are now 0.016 to 0.026 m everywhere. The Gaol's 140 motes and 70 drips spread over the whole keep; it now has 56 motes within 3.5 m of its lamps and braziers, at a lower density, and 36 drips. The Gaol's embers are two a fire with a short rise, so no warm dab floats in its middle ground. This is the Death's Door idea the design named: life gathers where the light is.
+- **Hover and focus on two cards (medium).** The mouse now moves the focus (`pointerover` focuses the card), and the cards light on `:focus` only, so the one lit card is the one Enter or A takes. An arrow moves the focus and the light with it. The Lamp-room's ware tiles warm their rim and glass under the mouse or the focus.
+- **The place's name over the HUD (medium).** At 844x390 and 800x600 the arriving name ran over the hint. The hint now waits while the name shows, and on a landscape phone the name sits in the band under the Lab bar at 38 px, clear of the HUD, the buttons and the lamplighter.
+- **The bed in a hidden tab (medium).** `run-sound.js` gains `away(on)`, which pauses the bed and stops the score. `main.js` calls it when the tab hides or shows and when the game switcher opens or closes (checked each frame, before the frozen frame returns).
+- **The life budget gate (medium).** The SwiftShader frame-time ratio cannot see life's cost: a draw spreads by about 15%, and life's own time is about 0.02 ms. The gate is now life's own time on the frames where it writes rows: a Node check runs 3,600 draws a place with gusts, a flight and the hush (median 0.1 ms or less, 99th percentile 1 ms or less, 4 rows or fewer), and the browser check starts a gust in each timed block and gates life's own median (1 ms) and 99th percentile (3 ms; the browser's timer is coarse and SwiftShader shares the CPU, so it read 0.2 to 0.7 ms at the median where Node reads 0.02 to 0.03 ms). The frame-time ratio stays as a gross check: 1.08 or less over all views and 1.15 or less in each.
+- **Cheap lows.** The title's lamps light by the places reached (`rs.reached`), so a shuffled Ember route no longer lights a place never reached. The deal-in's 200 ms wait is kept as the pick's time, so a pick that closed its card leaves no wait for a later card. A touch's press on a lamp card plays no hover. An arrow pressed in a card does not walk the lamplighter after the card closes. Life allocates less a frame (one dirty set, a ring of times, the hit states once). The title's top line reads "Here: ...". How to play from the title has Back. The route tags, the map's lines and the help's keys are 14 px. The title's small buttons, the pause switches and the spark names keep their words on one line at 320 px. The summary's snuffed lamp has a red rim and a wisp of smoke.
+
+### Measured in round 2
+- **Node, life's own time** over 3,600 draws a place with gusts, a flight and the hush: median 0.018 to 0.029 ms, 99th percentile 0.13 to 0.20 ms, at most 3 rows a draw.
+- **Browser, 390x844 with touch, SwiftShader** (`gloam-downs-life.e2e.mjs`). With `WARM=2 DRAWS=8 BLOCK=2` (seen, crows, hush and still passed in the same run) the 15 views' ratios were 0.971 to 1.069 and the explorer's 1.023, with life's own time 0.2 to 0.7 ms; that run stopped on the old 0.25 ms gate. With `ONLY=time WARM=1 DRAWS=4 BLOCK=2` on the gate above: over all views 0.999, worst view 1.053 (Lantern Fen at a lamp), explorer 1.004, life's own 0.6 ms at the median of the views, one draw of 2.1 ms, 2 rows at most. A draw took 6.6 to 8.1 s.
+- **Life seen:** 463 pixels changed with life against 285 without (0.99% of the picture).
+
+### Not fixed in round 2
+- The wick pick's beat with an empty card before the sparks deal in.
+- The Lamp-room's panes and unlock rows, and the HUD peeking past the Lamp-room at 844x390.
+- The end cards over near-black, not the world.
+- The recap's colour line and a ware tile can still break a word from its number at 320 px.
+- The title's view snaps from the drift to the follow camera when the title closes.
+- The Fen's lamp halos and the remaining embers are warm dabs near fights; the hush covers them once a foe is awake.
+- `main.js` still builds the awake foes' list for life each frame.
+- The Gilt Lattice has no life, by the spec.
+- First-time players still see five dim lamps; a breathing lamp would keep an animation running, which the screens checks wait out.
+
 ## Risks
 - **The title adds a screen.** A returning player pressed Begin in the Lamp-room before; now they press Begin on the title. The count of presses is the same.
 - **Life near tells.** If the hush is too slow, a mote can shine by a wind-up. The fight e2e's tell check is the guard.

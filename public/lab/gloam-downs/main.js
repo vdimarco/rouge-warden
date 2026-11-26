@@ -17,7 +17,7 @@ import { NUMERAL, NAMES, fmt, stepsOf, INK, inkAt, TIMED, hudOf, wickLine, wickN
 import { makeInput, navStep, readPads, heldNav } from './input.js';
 import { makeAbilities, groundAbilities, abilityOf } from './abilities.js';
 import { makeKeys, groundSpots, keysLine } from './keys.js';
-import { groundPatterns } from './run.js';
+import { groundPatterns, reach } from './run.js';
 import * as cards from './cards.js';
 // the builds (relics, unlocks, Ember): builder BC's hooks
 import { relicEvent, RELIC_IDS, groundRelics } from './relics.js';
@@ -37,7 +37,7 @@ import { REEVE, REEVE_TEXT } from './boss.js';
 import { makeRunSound } from './run-sound.js';
 import { emit, on } from './bus.js';
 // the selection screens (gloam-downs-screens-life): the title, the lamp cards, the Lamp-room's tiles and the recap
-import { titleView } from './menu-scene.js';
+import { titleView, frameAt, titleSpot } from './menu-scene.js';
 import { titleLamps, titleLine, seedLine, emberStep, wareTiles, recapOf, pickColour } from './screens.js';
 import { PAD } from './input.js';
 // growth (gloam-downs-growth): the page parts in cards.js, bound to the page's state with getters
@@ -645,7 +645,11 @@ function openCard(id, m, main, backFn = null) {
 document.addEventListener('focusin', e => {
   if (quietFocus || !(e.target instanceof HTMLButtonElement) || !cards.current()?.el.contains(e.target)) return;
   // a lamp card or a title lamp plays hover (and tells the world, for the beacon's glow); other buttons keep focus
-  if (e.target.closest('.lcard, .lamp')) return hovered(e.target);
+  if (e.target.closest('.lcard, .lamp')) {
+    // a touch's press focuses the card it picks: no hover cue and no screen-hover for it (a title lamp still shows its line)
+    if (cards.pressFocus()) { if (e.target.classList.contains('lamp')) lampLine(e.target); return; }
+    return hovered(e.target);
+  }
   audio?.cue('focus');
 });
 function hideCard(id) { $(id).hidden = true; cards.shut($(id)); if (linesStale && !cards.current()) setLines(); }
@@ -659,7 +663,13 @@ function closeCard(id) {
   canvas.focus?.();
   retake();
 }
-function openRunHelp() { openCard('runHelp', 'help', () => $('bBegin')); }
+// fromTitle: opened from the title, so Back (and Escape or B) goes back to it
+function openRunHelp(fromTitle = false) {
+  $('bHelpBack').hidden = !fromTitle;
+  openCard('runHelp', 'help', () => $('bBegin'), fromTitle ? () => helpBack() : undefined);
+}
+function helpBack() { audio?.cue('choice'); hideCard('runHelp'); openTitle(); }
+$('bHelpBack').addEventListener('click', helpBack);
 
 /* ---------------- the selection screens (gloam-downs-screens-life) ----------------
    The title screen over the live place: the title, the place line, the places as lamps, the seed and Ember line, Begin the run (the
@@ -682,23 +692,28 @@ function hovered(b) {
 document.addEventListener('pointerover', e => {
   const b = e.target instanceof Element ? e.target.closest('.lcard, .lamp') : null;
   if (!b || b.disabled || !cards.current()?.el.contains(b) || (e.relatedTarget instanceof Node && b.contains(e.relatedTarget))) return;
-  hovered(b);
+  // the mouse takes the focus: one card is lit, the one Enter or A takes (focusin plays hover)
+  if (e.pointerType === 'mouse' && document.activeElement !== b) return b.focus({ preventScroll: true });
+  if (e.pointerType === 'mouse') hovered(b);
 });
 // a pick: on the press itself; then the card flares, pick plays, and the bus hears screen-pick (Builder E's life lights the beacon)
 function picked(kind, id, b) {
   audio?.cue('pick');
   emit('screen-pick', { kind, colour: pickColour(kind, id) });
   cards.flare(b, [...(b.parentNode?.children || [])], still);
-  if (!still) pendingDeal = 200;
+  if (!still) pickAt = performance.now();
 }
-// the next set of cards deals in 200 ms after a pick (the pick itself is never delayed)
-let pendingDeal = 0;
+// the next set of cards deals in 200 ms after a pick (the pick itself is never delayed). It is kept as the pick's time, so a pick
+// that closed its card leaves no wait for a card opened later
+let pickAt = -1e9;
 function deal(box) {
   const list = [...box.querySelectorAll('button.lcard')];
   if (!list.length) return;
   audio?.cue('reveal');
   const a = cards.dealIn(list, still);
-  if (pendingDeal) for (const x of a) if (x) x.effect.updateTiming({ delay: (x.effect.getTiming().delay || 0) + pendingDeal });
+  const wait = Math.max(0, 200 - (performance.now() - pickAt));
+  pickAt = -1e9;
+  if (wait) for (const x of a) if (x) x.effect.updateTiming({ delay: (x.effect.getTiming().delay || 0) + wait });
 }
 // the title's lamps: in a run the route of five, lit for each place reached in any run; in the explorer the places to go to
 function titleSet(el, rows, group) {
@@ -733,9 +748,41 @@ function lampLine(b) {
   $('titleLine').append(hb, rest.length ? `. ${rest.join('. ')}` : '');
 }
 const TITLE_REST = { run: 'Five dark places on the downs. Light the beacon in each.', explore: 'Choose a place to walk, with no foes.' };
+/* the title's view: the drift (menu-scene.js titleView), then moved so the lamplighter stands in the clear space between the title's
+   words and its lamps (titleSpot, frameAt). The spot is found again when the title opens or fills, and on a resize; the cutaway and
+   the near-fade use this same view */
+let titleWant = null, titleStale = true;
+const FOV0 = (38 * Math.PI) / 180;
+const figPoint = () => { const b = body.s; return [b.x, b.y + 0.9, b.z]; };
+function titleRects() {
+  const R = el => el.getBoundingClientRect(), out = [];
+  for (const el of $('title').querySelectorAll('.tbrand h1, .tbrand .brush, .tbrand .tplace, .tfoot')) {
+    if (!el.getClientRects().length) continue;
+    const r = R(el), pad = el.classList.contains('tfoot') ? 24 : 6;
+    out.push({ left: r.left - 6, top: r.top - pad, right: r.right + 6, bottom: r.bottom + 6 });
+  }
+  return out;
+}
+function spotFor(v) {
+  const b = body.s, mid = project(figPoint(), v), head = project([b.x, b.y + 1.9, b.z], v), feet = project([b.x, b.y, b.z], v);
+  if (!mid || !head || !feet) return null;
+  const at = titleSpot(titleRects(), innerWidth, innerHeight, mid, Math.abs(feet[1] - head[1]));
+  if (!at) return null;
+  const r = canvas.getBoundingClientRect();
+  return [((at[0] - r.left) / r.width) * 2 - 1, 1 - ((at[1] - r.top) / r.height) * 2];
+}
+function titleDrawn(v) {
+  let tv = titleView(v, time - titleAt, still);
+  if (titleStale && !$('title').hidden) { titleStale = false; titleWant = spotFor(tv); }
+  if (titleWant) tv = frameAt(tv, figPoint(), titleWant, Math.tan((tv.fov ?? FOV0) / 2), art.w / art.h, world.anim?.zoom || 1);
+  return tv;
+}
+addEventListener('resize', () => { titleStale = true; });
 function fillTitle() {
+  titleStale = true;
   const here = meta?.id, explorer = !RUN;
-  $('titlePlace').textContent = here ? (ORDER.includes(here) ? titleLine(here) : `${placeName(here)}. ${meta.sub || ''}`) : '';
+  // the place the lamplighter stands in, marked Here, so a focused lamp's line under the lamps reads as another place, not this one
+  $('titlePlace').textContent = here ? `Here: ${ORDER.includes(here) ? titleLine(here) : `${placeName(here)}. ${meta.sub || ''}`}` : '';
   if (RUN) {
     titleSet($('titleLamps'), titleLamps(rs));
     $('titleLattice').hidden = true;
@@ -765,11 +812,11 @@ function openTitle() {
 // Begin the run: on a first visit the help card first (its own Begin starts the run); after that at once
 $('bTitleBegin').addEventListener('click', () => {
   if (!rs) return;
-  if (!rs.seen) { hideCard('title'); soundPress(); audio?.cue('choice'); return openRunHelp(); }
+  if (!rs.seen) { hideCard('title'); soundPress(); audio?.cue('choice'); return openRunHelp(true); }
   beginRun('title');
 });
 $('bTitleLamp').addEventListener('click', () => { audio?.cue('choice'); hideCard('title'); openLamp(); });
-$('bTitleHelp').addEventListener('click', () => { audio?.cue('choice'); hideCard('title'); openRunHelp(); });
+$('bTitleHelp').addEventListener('click', () => { audio?.cue('choice'); hideCard('title'); openRunHelp(true); });
 $('bTitleExplore').addEventListener('click', () => toMode('explore'));
 for (const [id, d] of [['bEmberDown', -1], ['bEmberUp', 1]]) $(id).addEventListener('click', () => {
   const n = emberStep(rs, d);
@@ -894,7 +941,6 @@ function openBeacon() {
     $('sparks').classList.add('cards');
     openCard('beaconCard', 'beacon', () => $('sparks').querySelector('button'));
     deal($('beaconCard'));
-    pendingDeal = 0;
     return;
   }
   for (const id of offer || []) {
@@ -932,7 +978,6 @@ function openBeacon() {
   $('sparks').classList.add('cards');
   openCard('beaconCard', 'beacon', () => (rs.run?.offer || rs.run?.abilityOffer ? box.querySelector('button') : (rs.run?.sparkPicks | 0) > 0 ? $('sparks').querySelector('button') : $('bWalkOn')));
   deal($('beaconCard'));
-  pendingDeal = 0;
 }
 // Walk on loads the next place; after a reload at the card, the card already shows over it
 $('bWalkOn').addEventListener('click', () => { audio?.cue('choice'); if (meta.id === rs.run.place) return closeCard('beaconCard'); hideCard('beaconCard'); retake(); go(rs.run.place); });
@@ -1510,7 +1555,7 @@ async function go(id) {
     newRunner();
     gallery = null;
     if (LOOK && !manual) startGallery();
-    rs.furthest = Math.max(rs.furthest, ORDER.indexOf(id));
+    reach(rs, id);
   } else {
     for (const i of save.wisps[id] || []) setLit([meta.wisps[i].ids], false);
     beaconLit = !!save.lit[id];
@@ -1659,7 +1704,7 @@ function draw(o = {}) {
   const t = Number.isFinite(o.time) ? o.time : time, view0 = view;
   if (o.view) view = o.view;
   // behind the title the place drifts (menu-scene.js); the follow camera is not stepped by it
-  if (mode === 'title') view = titleView(view, time - titleAt, still);
+  if (mode === 'title') view = titleDrawn(view);
   drawn = view; { const db = o.body || body.s; drawnBody = { x: db.x, y: db.y, z: db.z }; }
   pose(world.anim.bones, meta.bones, o.body || body.s, t, still);
   if (fight) {
@@ -1693,6 +1738,7 @@ function frame(now) {
   last = now;
   // a cue logged outside the frame's steps (a test hook, a card) is laid now
   audio?.flush();
+  awayCheck();
   if (manual || paused || lost || document.hidden || window.GameSwitch?.isOpen) return;
   // the pads are read on the loading screen and in the cards too
   pollPad(dtRaw);
@@ -1709,7 +1755,7 @@ function frame(now) {
   // the frame between two steps: blended by the share of a step since the last one, with the mouse's turn not yet stepped on top
   const k = acc / STEP, v = blend.view(k, input.dyaw, input.dpitch) ?? view, b = blend.body(body.s, k);
   // the cut eases by the frame's own time (no more than a slow frame's 15 steps)
-  if (v) seen(v, b, Math.min(dtRaw, 15 * STEP));
+  if (v) seen(mode === 'title' ? titleDrawn(v) : v, b, Math.min(dtRaw, 15 * STEP));
   draw({ view: v ?? undefined, body: b });
   if (!RUN && frames % 120 === 0) store(disk, save);
   // slow machine: if frames come slower than 45 ms for two seconds, draw a smaller picture
@@ -1726,13 +1772,16 @@ function frame(now) {
 canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); lost = true; });
 canvas.addEventListener('webglcontextrestored', () => { lost = false; });
 const keep = () => { if (!place) return; if (RUN) storeRun(); else store(disk, save); };
-document.addEventListener('visibilitychange', () => { last = 0; if (document.hidden) keep(); });
+// a hidden tab or the open game switcher freezes the frame loop; the sound bed and the score stop with it
+let wasAway = false;
+function awayCheck() { const a = document.hidden || !!window.GameSwitch?.isOpen; if (a !== wasAway) { wasAway = a; audio?.away(a); } }
+document.addEventListener('visibilitychange', () => { last = 0; awayCheck(); if (document.hidden) keep(); });
 addEventListener('pagehide', keep);
 
 // where a world point lands on the screen, in CSS px (null behind the eye)
-function project([x, y, z]) {
+function project([x, y, z], v = null) {
   if (!view) view = cam.follow(body.s, 0, input);
-  const c = viewCamera(world, { camera: view }, art.w, art.h), V = c.view, Pm = c.projection;
+  const c = viewCamera(world, { camera: v || view }, art.w, art.h), V = c.view, Pm = c.projection;
   const mv = i => V[i] * x + V[4 + i] * y + V[8 + i] * z + V[12 + i], e = [mv(0), mv(1), mv(2), mv(3)];
   const cl = i => Pm[i] * e[0] + Pm[4 + i] * e[1] + Pm[8 + i] * e[2] + Pm[12 + i] * e[3], w = cl(3);
   if (w <= 1e-6) return null;
@@ -1788,7 +1837,7 @@ window.__gloam = {
     // pitch is the player's; view is what is drawn (with the rise over walls), want the layout's distance, foe the combat camera's
     // drawn: the view the last frame drew (between steps, the blend of the last two with the mouse's turn since on top), and where it
     // drew the lamplighter
-    cam: cam ? { drawn: drawn ? { yaw: drawn.yaw, pitch: drawn.pitch, dist: drawn.dist, target: drawn.target.slice(), cut: !!drawn.cut, body: drawnBody && { ...drawnBody } } : null, yaw: cam.c.yaw, dist: cam.c.dist, pitch: cam.c.pitch, want: cam.c.want, fov: cam.c.fov, aim: cam.c.aim, lift: cam.c.lift, view: view ? view.pitch : null, foe: combat?.foe?.id ?? null, turning: cam.c.turning, idle: cam.c.idle,
+    cam: cam ? { drawn: drawn ? { yaw: drawn.yaw, pitch: drawn.pitch, dist: drawn.dist, fov: drawn.fov, target: drawn.target.slice(), cut: !!drawn.cut, body: drawnBody && { ...drawnBody } } : null, yaw: cam.c.yaw, dist: cam.c.dist, pitch: cam.c.pitch, want: cam.c.want, fov: cam.c.fov, aim: cam.c.aim, lift: cam.c.lift, view: view ? view.pitch : null, foe: combat?.foe?.id ?? null, turning: cam.c.turning, idle: cam.c.idle,
       boss: bossCam ? { on: bossCam.b.on, w: bossCam.b.w, dist: view?.dist ?? null, aim: view?.target ?? null, goal: bossCam.b.goal?.dist ?? null, cur: bossCam.b.cur?.dist ?? null, room: bossCam.b.dist, lift: bossCam.b.lift, clear: bossCam.b.goal?.clear ?? null } : null } : null,
     // the pieces of scenery faded in front of the boss's marker (veil.js makeOccluders), or null away from Barrow Crown's run
     occluded: occluders ? occluders.faded() : null,
@@ -1885,7 +1934,8 @@ window.__gloam = {
     if (Array.isArray(o.cool)) runner?.abilities?.setCool(o.cool);
     if (Array.isArray(o.keys)) rs.keys = [...new Set(o.keys.filter(k => k === 'leap' || k === 'drop'))];
     // the title's lamps: the furthest place reached and the runs played
-    if (Number.isInteger(o.furthest)) rs.furthest = Math.max(0, Math.min(ORDER.length - 1, o.furthest));
+    if (Number.isInteger(o.furthest)) { rs.furthest = Math.max(0, Math.min(ORDER.length - 1, o.furthest)); rs.reached = ORDER.slice(0, rs.furthest + 1); }
+    if (Array.isArray(o.reached)) { rs.reached = []; for (const id of o.reached) reach(rs, id); }
     if (Number.isInteger(o.runs)) rs.runs = Math.max(0, o.runs);
     if (o.seen === true || o.seen === false) rs.seen = o.seen;
     if (mode === 'title') fillTitle();

@@ -54,15 +54,15 @@
   .panel h2 { margin: 0 0 4px; font: 700 26px/1.1 var(--title); color: #f2d7a6; }
   .panel p { margin: 6px 0 12px; color: #c9c2ae; font: 500 15px/1.4 var(--body); }
   .panel ul { margin: 0 0 14px; padding-left: 20px; color: #c9c2ae; font: 500 14px/1.45 var(--body); }
-  .panel kbd { font: 700 12px/1 ui-monospace, monospace; padding: 2px 5px; border-radius: 4px; border: 1px solid var(--edge); color: var(--bone); }
+  .panel kbd { font: 700 14px/1 ui-monospace, monospace; padding: 2px 5px; border-radius: 4px; border: 1px solid var(--edge); color: var(--bone); }
   .panel .row { display: flex; gap: 8px; }
   .panel .row button { flex: 1; }
   .panel button.go { background: #5a2214; border-color: var(--emberd); color: #ffe2bd; }
   .places { display: grid; gap: 6px; margin: 10px 0 12px; }
   .places button { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 2px 10px; padding: 8px 12px; text-align: left; width: 100%; }
   .places button b { font: 700 15px/1.2 var(--title); color: #f2d7a6; }
-  .places button small { grid-column: 2; font: 500 12px/1.3 var(--body); color: var(--ash); }
-  .places button em { grid-row: span 2; font: 700 12px/1 var(--body); font-style: normal; color: var(--wisp); white-space: nowrap; }
+  .places button small { grid-column: 2; font: 500 14px/1.3 var(--body); color: var(--ash); }
+  .places button em { grid-row: span 2; font: 700 14px/1 var(--body); font-style: normal; color: var(--wisp); white-space: nowrap; }
   .places button .n { grid-row: span 2; font: 700 18px/1 var(--title); color: var(--ember); width: 1.4em; text-align: center; }
   .places button[aria-current="true"] { border-color: var(--emberd); }
   .places button:disabled { opacity: 0.45; cursor: default; }
@@ -71,7 +71,7 @@
   .groups { display: grid; gap: 4px 16px; margin: 6px 0 12px; }
   .groups .group { min-width: 0; }
   .groups .places { margin: 6px 0 0; }
-  .groups h3 { margin: 4px 0 0; font: 700 13px/1.2 var(--body); letter-spacing: 0.16em; text-transform: uppercase; color: var(--ember); }
+  .groups h3 { margin: 4px 0 0; font: 700 14px/1.2 var(--body); letter-spacing: 0.16em; text-transform: uppercase; color: var(--ember); }
   .groups .lattice h3 { color: #ffd77a; }
   @media (min-width: 760px) {
     #map .box { width: min(760px, calc(100vw - 24px)); }
@@ -82,15 +82,15 @@
     #map { box-sizing: border-box; padding: calc(var(--sat) + 60px) 0 calc(var(--sab) + 6px); }
     #map .box { padding: 10px 12px; max-height: 100%; }
     #map h2 { font-size: 20px; }
-    #map p { margin: 2px 0 4px; font-size: 13px; line-height: 1.3; }
+    #map p { margin: 2px 0 4px; font-size: 14px; line-height: 1.3; }
     .groups { margin: 2px 0 8px; gap: 2px 16px; }
-    .groups h3 { margin: 2px 0 0; font-size: 11px; }
+    .groups h3 { margin: 2px 0 0; font-size: 14px; }
     .groups .places { margin: 3px 0 0; gap: 4px; }
     #map .places button { grid-template-columns: auto minmax(0, 1fr) auto auto; height: 44px; padding: 0 10px; gap: 0 8px; }
     #map .places button .n { grid-row: auto; font-size: 15px; }
-    #map .places button b { font-size: 13px; line-height: 1.1; }
+    #map .places button b { font-size: 14px; line-height: 1.1; }
     #map .places button em { grid-row: auto; }
-    #map .places button small { grid-column: auto; font-size: 11px; line-height: 1.1; max-width: 6.5em; }
+    #map .places button small { grid-column: auto; font-size: 14px; line-height: 1.05; max-width: 8em; }
   }
   dl.score { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 6px 0 16px; }
   dl.score dt { color: var(--ash); } dl.score dd { margin: 0; text-align: right; font-weight: 700; }
@@ -143,7 +143,7 @@
   .route { list-style: none; margin: 8px 0 10px; padding: 0; display: grid; gap: 4px; }
   .route li { display: grid; grid-template-columns: 1.8em 1fr auto; gap: 8px; align-items: center; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--edge); font: 600 14px/1.2 var(--body); color: var(--ash); }
   .route li span { font: 700 15px/1 var(--title); color: var(--ember); text-align: center; }
-  .route li em { font: 700 11px/1 var(--body); font-style: normal; text-transform: uppercase; letter-spacing: 0.1em; }
+  .route li em { font: 700 14px/1 var(--body); font-style: normal; text-transform: uppercase; letter-spacing: 0.1em; }
   .route li.here { color: var(--bone); border-color: var(--emberd); }
   .route li.passed { color: #c9c2ae; }
   .wicks { display: grid; gap: 8px; margin: 8px 0 12px; }
@@ -197,7 +197,7 @@
   .hud .combo[data-tier="3"] #comboPip { background: #ffd77a; border-color: #ffd77a; }
   .hud .combo .cbar { position: relative; display: block; width: 48px; height: 4px; background: #1c0d0b; box-shadow: 0 0 0 1px #5a3424; }
   .hud .combo #comboFill { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; background: #d2551c; }
-  .panel p.seed { color: var(--ash); font: 600 13px/1.2 var(--body); letter-spacing: 0.08em; margin: 2px 0 8px; }
+  .panel p.seed { color: var(--ash); font: 600 14px/1.2 var(--body); letter-spacing: 0.08em; margin: 2px 0 8px; }
   #bShake[aria-pressed="false"] { color: var(--ash); }
   @media (prefers-reduced-motion: reduce) { .hud .combo { transition: none; } }
   @media (max-width: 520px) {
@@ -286,9 +286,9 @@
     body.run .panel .box { padding: 12px 14px; }
     body.run .panel h2 { font-size: 22px; }
     body.run .panel p { margin: 4px 0 8px; font-size: 14px; }
-    body.run .panel ul:not(.ups) { margin-bottom: 8px; font-size: 13px; line-height: 1.35; }
+    body.run .panel ul:not(.ups) { margin-bottom: 8px; font-size: 14px; line-height: 1.3; }
     body.run .route { margin: 4px 0 6px; gap: 3px; }
-    body.run .route li { padding: 4px 10px; font-size: 13px; }
+    body.run .route li { padding: 3px 10px; font-size: 14px; }
     .panel .ups { margin: 6px 0 8px; gap: 4px; }
     .ups li span { font-size: 13px; }
   }
@@ -306,7 +306,44 @@
   /* in a run the Lab bar stays above the loading screen, so ◀ Lab and Games can be reached while it waits (the boss files) */
   body.run .labbar { z-index: 41; }
   .loading .row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
-  @media (max-height: 420px) { .arrive { top: 40%; } .arrive p { display: none; } }
+  /* a landscape phone: the place's name sits in the band under the Lab bar, clear of the HUD on the left, the buttons on the right and
+     the lamplighter in the middle */
+  @media (max-height: 420px) { .arrive { top: calc(var(--sat) + 54px); transform: translate(-50%, 0); width: min(52vw, 440px); } .arrive h1 { font-size: 38px; } .arrive p { display: none; } }
+  /* while the place's name shows, the HUD's hint waits (they shared a line at 844x390 and 800x600) */
+  .hud .hint { transition: opacity 0.3s; }
+  body:has(#arrive:not(.off)) .hud .hint { opacity: 0; }
+  @media (prefers-reduced-motion: reduce) { .hud .hint { transition: none; } }
+  /* the pause card on a short window. A portrait phone of 700 px or less leaves the controls out (the touch buttons name them); a
+     landscape one lays the card in two columns, the route on the left and the controls on the right, with its six buttons in a row */
+  @media (max-height: 700px) and (max-aspect-ratio: 1/1) { #pauseControls { display: none; } }
+  @media (max-height: 520px) and (min-aspect-ratio: 1/1) {
+    body.run #pause .box { width: min(820px, calc(100vw - 24px)); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); column-gap: 18px; align-content: start; }
+    #pause .box > * { grid-column: 1; }
+    #pause #pauseControls { grid-column: 2; grid-row: 1 / span 5; align-self: start; margin: 6px 0 6px; }
+    #pause #pauseRow, #pause #askRow { grid-column: 1 / -1; }
+    #pauseRow { grid-template-columns: 1fr 1fr; }
+    body.run #pause .route li { padding: 2px 10px; }
+    body.run #pause p { margin: 2px 0 4px; }
+    body.run #pause h2 { margin-bottom: 0; }
+    /* How to play: its controls beside the words */
+    body.run #runHelp .box { width: min(820px, calc(100vw - 24px)); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 18px; align-content: start; }
+    #runHelp .box > * { grid-column: 1; }
+    #runHelp #runControls { grid-column: 2; grid-row: 1 / span 3; align-self: start; margin-top: 6px; }
+    #runHelp .row { grid-column: 1 / -1; }
+  }
+  /* the explorer's map on a landscape phone: the title and its line on one line, and Close and Fight under the shorter Gilt Lattice */
+  @media (max-height: 460px) and (min-width: 760px) {
+    #map .box { position: relative; }
+    #map h2 { display: inline; margin-right: 10px; }
+    #map p#mapLine { display: inline; }
+    #map .groups { margin-top: 6px; }
+    #map .box > .row { position: absolute; right: 12px; bottom: 10px; width: calc(50% - 20px); margin: 0; }
+  }
+  /* 320 px: the title's three small buttons and the pause card's switches keep their words on one line */
+  @media (max-width: 359px) {
+    .panel#title #titleMore button, body.run #pauseRow :is(#bSound, #bMusic, #bShake) { padding: 4px 6px; white-space: nowrap; }
+  }
+  #sparks .lcard b { white-space: nowrap; }
   @media (prefers-reduced-motion: reduce) { .arrive, .veil, .loading, .bar i { transition: none; } }
   /* ---------------- the selection screens (gloam-downs-screens-life) ----------------
      The veil is a vignette per card; a card's box has a warm inner glow at its top and a 1 px gilt rule. The glass of a lamp is a CSS
@@ -331,11 +368,12 @@
   .lcard .gift { font: 500 14px/1.25 var(--body); color: #d9d1bc; }
   .lcard .sep { display: none; }
   .wicks .lcard em.kindle { margin: 0; font-size: 14px; }
-  .panel button.lcard:hover, .panel button.lcard:focus { transform: translateY(-4px); border-color: var(--hue); outline: none; }
+  /* the mouse moves the focus (main.js pointerover), so the one card lit is the one Enter or A takes; :hover alone lights nothing */
+  .panel button.lcard:focus { transform: translateY(-4px); border-color: var(--hue); outline: none; }
   .panel button.lcard:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
-  .lcard:hover .glow, .lcard:focus .glow { opacity: 1; }
-  .lcard:hover .glass, .lcard:focus .glass { --g: 1; }
-  .lcard:hover .flame, .lcard:focus .flame { transform: scale(1.15); }
+  .lcard:focus .glow { opacity: 1; }
+  .lcard:focus .glass { --g: 1; }
+  .lcard:focus .flame { transform: scale(1.15); }
   .panel button.lcard.bright { border-color: #e8c35a; }
   .lcard.bright .glass { box-shadow: inset 0 0 0 2px #e8c35a, 0 0 16px -2px #e8c35a; }
   .panel button.lcard.faded { opacity: 0.3; }
@@ -378,9 +416,9 @@
   .lamp .n { font: 700 14px/1 var(--title); }
   .lamp.lit .glass { --g: 0.6; }
   .panel .lamps button.lamp.lit { color: #f2d7a6; }
-  .panel .lamps button.lamp:hover, .panel .lamps button.lamp:focus, .panel .lamps button.lamp.on { border-color: var(--ember); color: #ffe2bd; transform: translateY(-3px); outline: none; }
+  .panel .lamps button.lamp:focus, .panel .lamps button.lamp.on { border-color: var(--ember); color: #ffe2bd; transform: translateY(-3px); outline: none; }
   .panel .lamps button.lamp:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
-  .lamp:hover .glass, .lamp:focus .glass, .lamp.on .glass { --g: 1; }
+  .lamp:focus .glass, .lamp.on .glass { --g: 1; }
   .panel .lamps button.lamp:disabled { opacity: 0.5; cursor: default; transform: none; }
   .lamps.lattice { margin-top: 26px; justify-content: center; gap: 14px; }
   .lamps.lattice .glass { --hue: #ffd77a; }
@@ -423,11 +461,14 @@
   .panel .tiles li.tile button { grid-column: 1 / -1; grid-row: auto; min-width: 0; min-height: 44px; margin-top: 4px; padding: 4px 8px; line-height: 1.15; white-space: normal; }
   .panel .tiles li.tile button[aria-disabled="true"] { color: var(--ash); border-color: var(--edge); background: rgba(20, 18, 26, 0.9); cursor: default; font-weight: 600; font-size: 14px; }
   .tiles li.tile.top { border-color: #6a4a2e; }
+  /* a ware under the mouse or the focus: its rim and its glass warm, so the room answers before anything is bought */
+  .tiles li.tile:hover, .tiles li.tile:focus-within { border-color: color-mix(in srgb, var(--hue) 70%, #3a2a20); }
+  .tiles li.tile:hover .glass, .tiles li.tile:focus-within .glass { --g: 0.55; }
   .tiles li.tile.top span.gift { color: var(--ash); }
   .tiles li.tile .flash { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: radial-gradient(circle at 24px 30px, rgba(255, 244, 210, 0.9), rgba(255, 190, 90, 0.35) 40%, transparent 70%); opacity: 0; }
   #patterns li.tile button { grid-row: auto; }
   #sparks button.lcard { border-left: 1px solid color-mix(in srgb, var(--hue) 45%, #3a2a20); }
-  #sparks button.lcard:hover, #sparks button.lcard:focus { border-left-color: var(--hue); }
+  #sparks button.lcard:focus { border-left-color: var(--hue); }
   #patterns li.tile .glass { --g: 0.25; }
   #patterns li.tile .glass .flame { opacity: 0; }
   #patterns li.tile.kindled { border-color: var(--hue); }
@@ -444,6 +485,10 @@
   .rpath li.bright .glass { --hue: #ffd77a; box-shadow: inset 0 0 0 2px #e8c35a, 0 0 18px -2px #ffd77a; }
   .rpath li.snuffed .glass { --g: 0; --hue: #6a6478; }
   .rpath li.snuffed .glass .flame { opacity: 0; }
+  /* the lamp that went out: a red rim and a wisp of smoke, so it reads apart from the places not reached */
+  .rpath li.snuffed .glass { box-shadow: inset 0 0 0 2px #8a2814; }
+  .rpath li.snuffed .glass::after { content: ''; position: absolute; left: 50%; top: 8%; width: 3px; height: 40%; margin-left: -1px; border-radius: 2px; background: linear-gradient(to top, rgba(160, 150, 170, 0.75), rgba(160, 150, 170, 0)); }
+  .rpath li.snuffed .n { color: #e07a5a; }
   .rpath li.dark .glass .flame { opacity: 0.1; }
   .panel .rpath li.lit, .panel .rpath li.bright { color: var(--bone); }
   .rpath li span { display: block; white-space: nowrap; }
@@ -453,7 +498,7 @@
   .panel#winCard h2 { color: #ffd77a; }
   /* the title stands alone over the place: the HUD, the tools and the touch buttons hide under it */
   body:has(#title:not([hidden])) :is(.hud, .tools, .act, .jump, .stick, .mousehint, .toast, .arrive) { visibility: hidden; }
-  .lamp:not(.lit):not(:hover):not(:focus):not(.on) .flame { opacity: 0.1; }
+  .lamp:not(.lit):not(:focus):not(.on) .flame { opacity: 0.1; }
   /* in a run the touch buttons wait under every card, so a bottom sheet or a side card has nothing peeking past it */
   body.run:has(.panel:not([hidden])) :is(.act, .jump, .stick) { visibility: hidden; }
   .tiles .tile b.nm .of { display: block; font: 600 14px/1.2 var(--body); color: #e0b98a; }
@@ -479,8 +524,8 @@
   }
   /* reduced motion: no rise, no scale, no drift, no flare; fades of 150 ms or less (the glow on focus stays: it is not motion) */
   @media (prefers-reduced-motion: reduce) {
-    .panel button.lcard, .panel button.lcard:hover, .panel button.lcard:focus, .panel .lamps button.lamp, .panel .lamps button.lamp:hover, .panel .lamps button.lamp:focus, .panel .lamps button.lamp.on { transform: none; transition: opacity 0.15s, border-color 0.15s; }
-    .lcard:hover .flame, .lcard:focus .flame { transform: none; }
+    .panel button.lcard, .panel button.lcard:hover, .panel button.lcard:focus, .panel .lamps button.lamp, .panel .lamps button.lamp:focus, .panel .lamps button.lamp.on { transform: none; transition: opacity 0.15s, border-color 0.15s; }
+    .lcard:focus .flame { transform: none; }
     .glass, .glass .flame, .lcard .glow, .tile .glass .fill, .tile .glass .flame { transition: none; }
     #patterns li.tile.kindled .glass .flame { animation: none; }
   }
@@ -578,7 +623,7 @@
   <p>A run through five dark places, with a blade, a roll and one flask. Put out each beacon's keepers, then light it. At a lit beacon, spend the glim you carry in the Lamp-room, on wares that last, or carry it on. A death keeps only a little of it.</p>
   <ul id="runControls"></ul>
   <p id="exploreLine">Explore walks the places with no foes.</p>
-  <div class="row"><button type="button" class="go" id="bBegin">Begin the run</button><button type="button" id="bExplore" title="Walk the five places with no foes">Explore</button></div>
+  <div class="row"><button type="button" class="go" id="bBegin">Begin the run</button><button type="button" id="bExplore" title="Walk the five places with no foes">Explore</button><button type="button" id="bHelpBack" hidden>Back</button></div>
 </div></div>
 
 <div class="panel" id="pause" hidden><div class="box" role="dialog" aria-labelledby="pauseT">

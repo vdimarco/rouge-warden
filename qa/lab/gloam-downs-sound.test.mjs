@@ -623,6 +623,15 @@ const swingAt = (S, t, id = 'cut1') => {
   assert(A.beds.ducked, 'the bed did not duck with foes awake');
   emit('fight-calm');
   assert(!A.beds.ducked);
+  // a hidden tab or the open game switcher: the bed stops with the frozen game and comes back with the player, under the pause too
+  A.away(true);
+  assert(A.beds.paused, 'the bed plays on in a hidden tab');
+  A.away(false);
+  assert(!A.beds.paused, 'the bed did not come back');
+  A.pause(true); A.away(true); A.away(false);
+  assert(A.beds.paused, 'coming back from the tab lifted the pause panel\'s hush');
+  A.pause(false);
+  assert(!A.beds.paused);
   A.setScene('lamp');
   assert(!A.beds.on, 'the bed plays in the Lamp-room');
   A.setScene('place', { id: 'barrows' });
@@ -637,6 +646,6 @@ const swingAt = (S, t, id = 'cut1') => {
   emit('life-stir', { kind: 'gust', k: 1 });
   assert.equal(A.beds.log.length, n0, 'a gust swelled with Sound off');
   A.off();
-  pass('the sound beds: a gust swells the wind for 2 s within 50 ms, a flock lifts with wings and caws at it, the bed ducks while foes are awake, stops in the Lamp-room and the boss fight, and stays quiet with Sound off', { swell: sw, crows: cr });
+  pass('the sound beds: a gust swells the wind for 2 s within 50 ms, a flock lifts with wings and caws at it, the bed ducks while foes are awake, stops in the Lamp-room and the boss fight, stops in a hidden tab or under the switcher, and stays quiet with Sound off', { swell: sw, crows: cr });
 }
 console.log(`PASS qa/lab/gloam-downs-sound.test.mjs: ${passed} checks`);

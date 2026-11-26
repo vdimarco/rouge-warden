@@ -209,6 +209,21 @@ try {
     await tick(page, 0.5, {});
     pass('a direction held through the pause panel walks on after Resume');
 
+    // an arrow in a card moves the card's focus; held when Enter closes the card, it does not walk the lamplighter
+    await page.keyboard.press('p');
+    assert(await page.isVisible('#pause'));
+    await page.keyboard.down('ArrowUp');
+    await G(page, () => document.getElementById('bResume').focus());
+    await page.keyboard.press('Enter');
+    assert(!(await page.isVisible('#pause')));
+    const a0 = await state(page);
+    await tick(page, 0.5, 'live');
+    const a1 = await state(page);
+    await page.keyboard.up('ArrowUp');
+    assert(Math.hypot(a1.x - a0.x, a1.z - a0.z) < 0.05, `an arrow held from a card walked: ${Math.hypot(a1.x - a0.x, a1.z - a0.z)}`);
+    await tick(page, 0.3, {});
+    pass('an arrow held in a card does not walk the lamplighter after Enter closes it');
+
     // the roll: no direction held, straight back from the facing
     // open ground more than 10 m from every zone, so no foe wakes and hooks the lamplighter in these checks (the yard by the cells, used
     // before the foes fought back, wakes two Snuffers now)

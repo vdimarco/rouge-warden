@@ -36,3 +36,15 @@ Two builders work in parallel worktrees from `720edbba`. design.md "Who builds w
 - [x] 3.6 `openspec validate gloam-downs-screens-life --strict`. Say in the report that no real phone, real pad or audio listening test ran, if none did.
 
 The merge pass is written up in design.md "Merge pass: what was done". No real phone, real pad or listening test ran.
+
+## 4. Checker round 2
+- [x] 4.1 Pause card, How to play and map fit at 844x390; the layout part checks them at six layouts.
+- [x] 4.2 The lamplighter framed clear of the title (`titleSpot`, `frameAt`); the cutaway uses the drawn view.
+- [x] 4.3 Smaller motes; the Gaol's motes at its lamps, fewer drips, shorter embers.
+- [x] 4.4 The mouse moves the focus; one lit card; ware tiles answer the mouse.
+- [x] 4.5 The place's name clear of the HUD and the lamplighter.
+- [x] 4.6 The bed stops in a hidden tab and under the switcher.
+- [x] 4.7 The life budget gate on life's own time with gusts, flights and the hush.
+- [x] 4.8 Cheap lows: `rs.reached`, the deal wait, touch hover, arrows in a card, life's allocations, "Here:", Back on How to play, 14 px text, 320 px line breaks, the snuffed lamp.
+- [x] 4.9 Every check of the merge pass again; spec, design.md and validate.
+

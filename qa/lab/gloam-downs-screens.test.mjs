@@ -10,10 +10,11 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { makeWalk, makeBody, PARAMS } from '../../public/lab/gloam-downs/play.js';
-import { startRun, goTo, die, win, makeRunner, kindle } from '../../public/lab/gloam-downs/run.js';
+import { startRun, goTo, die, win, makeRunner, kindle, reach } from '../../public/lab/gloam-downs/run.js';
 import * as RS from '../../public/lab/gloam-downs/run-save.js';
 import { cardOnLoad, titleLamps, titleLine, seedLine, emberStep, wareTile, recapOf, summaryOf, SUBS, NAMES, byLine, pickColour, patternHue } from '../../public/lab/gloam-downs/screens.js';
-import { titleView, DRIFT } from '../../public/lab/gloam-downs/menu-scene.js';
+import { titleView, DRIFT, frameAt, titleSpot } from '../../public/lab/gloam-downs/menu-scene.js';
+import { makeCamera } from '../../public/lab/gloam-downs/ink/webgl/view.mjs';
 import { CUES } from '../../public/lab/gloam-downs/sound.js';
 import { ORDER } from '../../public/lab/gloam-downs/save.js';
 
@@ -58,12 +59,35 @@ const DEG = Math.PI / 180;
   pass('titleView: 6 s moves the yaw by 1 to 9 degrees; never more than 9 degrees or 4% of the distance; reduced motion keeps the start view', { dy: +dy.toFixed(2) });
 }
 
+{ // the lamplighter clear of the title: frameAt moves the view (never turns it) so a point draws where it is wanted; titleSpot finds
+  // the nearest clear spot, or none when the figure already stands clear
+  const v = { target: [3, 8.2, 25.5], yaw: 0.3, pitch: 0.32, dist: 8.5, fov: 0.84 }, p = [3, 8.3, 25.5], W = 844, H = 390;
+  const ndc = view => { const c = makeCamera({}, { camera: view }, W, H), V = c.view, P = c.projection, e = [0, 1, 2, 3].map(i => V[i] * p[0] + V[4 + i] * p[1] + V[8 + i] * p[2] + V[12 + i]), cl = i => P[i] * e[0] + P[4 + i] * e[1] + P[8 + i] * e[2] + P[12 + i] * e[3]; return [cl(0) / cl(3), cl(1) / cl(3)]; };
+  const f = frameAt(v, p, [-0.4, 0.35], Math.tan(v.fov / 2), W / H);
+  const got = ndc(f);
+  assert(Math.abs(got[0] + 0.4) < 1e-3 && Math.abs(got[1] - 0.35) < 1e-3, `frameAt put the point at ${got}`);
+  assert.deepEqual([f.yaw, f.pitch, f.dist], [v.yaw, v.pitch, v.dist], 'frameAt does not turn or move the eye nearer');
+  const foot = { left: 300, top: 120, right: 840, bottom: 390 }, brand = { left: 10, top: 160, right: 290, bottom: 270 };
+  assert.equal(titleSpot([foot, brand], W, H, [150, 330], 90), null, 'a figure already clear stays');
+  const at = titleSpot([foot, brand], W, H, [420, 200], 90), hw = 27, hh = 49;
+  assert(at && [foot, brand].every(r => at[0] + hw <= r.left || at[0] - hw >= r.right || at[1] + hh <= r.top || at[1] - hh >= r.bottom), `titleSpot gave ${at}`);
+  pass('frameAt draws the lamplighter where it is wanted without turning the view; titleSpot finds the nearest clear spot', { at });
+}
+
 { // Places as lamps: none lit before any run; after runs, lit up to the furthest place reached; the line names the place and its subtitle
   const rs = RS.fresh();
   assert.deepEqual(titleLamps(rs).map(l => l.lit), [false, false, false, false, false]);
-  rs.runs = 2; rs.furthest = 1;
+  rs.runs = 2; reach(rs, 'gaol'); reach(rs, 'ramparts');
   const lamps = titleLamps(rs);
   assert.deepEqual(lamps.map(l => [l.n, l.lit]), [['I', true], ['II', true], ['III', false], ['IV', false], ['V', false]]);
+  // a shuffled route (an Ember level's): Lantern Fen reached second lights lamp III, not lamp II, which was never reached
+  const sh = RS.fresh();
+  sh.runs = 1;
+  sh.run = { place: 'gaol', route: ['gaol', 'fen', 'ramparts', 'bells', 'barrows'] };
+  reach(sh, 'gaol'); goTo(sh, 'fen');
+  assert.deepEqual(titleLamps(sh).map(l => l.lit), [true, false, true, false, false], JSON.stringify(sh.reached));
+  // a save from before rs.reached: its furthest lights the lamps up to it
+  assert.deepEqual(titleLamps({ ...RS.clean({ runs: 1, furthest: 2 }) }).map(l => l.lit), [true, true, true, false, false]);
   assert.equal(lamps[1].line, 'II · The Crow Wall. A broken wall rides the downs as the storm light dies');
   assert.equal(titleLine('ramparts'), lamps[1].line);
   // the subtitles are the baked ones

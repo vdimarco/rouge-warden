@@ -13,6 +13,8 @@ const unit = v => { const l = Math.hypot(...v) || 1; return v.map(x => x / l); }
 // the motion kinds life uses (the splat shader's numbers), and the flags of the kind field: 16 no outline, 32 glows
 export const K = { still: 0, twinkle: 1, fall: 2, rise: 3, bob: 6, glow: 7, flap: 8, wander: 11, sway: 14, flutter: 15 };
 const ND = 16, EM = 32;
+// a foe in one of these states is being hit: a flock near it lifts
+const HIT = new Set(['stagger', 'stun', 'down']);
 export const MAX = 1200;
 // no life dab is ever one of these: the fire slots of the tells (design.md "The fire rule")
 export const FIRE = [34, 35, 36, 37];
@@ -36,9 +38,11 @@ export const LIFE = {
   gaol: {
     tuft: { name: 'moss', slots: [23, 24], n: 130, h: [0.2, 0.36] }, tuftOn: [9, 10, 11, 12, 13, 23, 24],
     mist: { name: 'fog', slots: [6], n: 80 },
-    fall: { name: 'moon', slots: [30], n: 70, kind: K.fall, rg: [1.2, 1.8], sp: [0.4, 0.6], s: 0.018, at: 'hollow' }, // drips in the cells
-    mote: { name: 'moon', slots: [30, 31], n: 140, glow: true }, // moonlit motes over the moor
-    ember: { slots: [EMBER], per: 4 },
+    fall: { name: 'moon', slots: [30], n: 36, kind: K.fall, rg: [1.2, 1.8], sp: [0.4, 0.6], s: 0.016, at: 'hollow' }, // drips in the cells
+    // motes that gather in the light: round the lamps and braziers, not spread over the keep like static (Death's Door's dust in the
+    // shafts of light)
+    mote: { name: 'moon', slots: [30, 31], n: 56, glow: true, at: 'lamp', d: 1.3 },
+    ember: { slots: [EMBER], per: 2 }, // two short-lived embers a fire, kept close over it (no warm dab adrift in the middle ground)
     crow: { name: 'ink', slots: [7], flocks: 2 }
   },
   ramparts: {
@@ -215,7 +219,7 @@ export function makeLife(world, meta, { walk, still = false, rows = new Set(), o
   }
   // C: embers, fireflies, motes, mist, the falling, rags
   if (L.ember) for (const [ai, c] of anchors.entries()) if (c.fire) for (let e = 0; e < L.ember.per; e++)
-    add({ use: 'ember', x: c.x + rnd(-0.2, 0.2), y: c.y + rnd(0, 0.2), z: c.z + rnd(-0.2, 0.2), s: 0.03, d: 2.4, ci: EMBER, kind: mot(K.rise), ph: rnd(0, 1), sp: rnd(0.25, 0.5), rg: rnd(1.2, 2.4), ex: 0.4, flags: ND + EM, bright: true, group: ai });
+    add({ use: 'ember', x: c.x + rnd(-0.2, 0.2), y: c.y + rnd(0, 0.2), z: c.z + rnd(-0.2, 0.2), s: 0.03, d: 2.4, ci: EMBER, kind: mot(K.rise), ph: rnd(0, 1), sp: rnd(0.25, 0.5), rg: rnd(0.6, 1.2), ex: 0.4, flags: ND + EM, bright: true, group: ai });
   // what floats stands 2.5 m or more off the route: the follow camera rides the route a few metres behind the lamplighter, and a mote
   // a metre from the eye draws as a big pale ball, not a fleck
   const air = flat.filter(c => c.d <= 14 && c.d >= 2.5);
@@ -223,9 +227,18 @@ export function makeLife(world, meta, { walk, still = false, rows = new Set(), o
     const over = hollows.filter(c => c.d >= 2.5).length ? hollows.filter(c => c.d >= 2.5) : air;
     for (let t = 0; t < L.firefly.n; t++) { const c = spot(over, 14); add({ use: 'firefly', x: c.x + rnd(-0.3, 0.3), y: c.y + rnd(0.4, 1.6), z: c.z + rnd(-0.3, 0.3), s: 0.03, d: 2.6, ci: L.firefly.slots[0], kind: mot(K.twinkle), ph: rnd(0, TAU), sp: TAU * rnd(0.4, 1.1), flags: ND + EM, bright: true }); }
   }
+  // a mote at a lamp: within 1 to 3.5 m of a lamp anchor, off the route by 1.5 m or more, at about the lamp's height
+  const lit = anchors.filter(c => toRoute(c.x, c.z) <= 16);
+  const atLamp = () => {
+    for (let t = 0; t < 8; t++) {
+      const c = pick(lit), a = rnd(0, TAU), r = rnd(1, 3.5), x = c.x + Math.sin(a) * r, z = c.z + Math.cos(a) * r;
+      if (toRoute(x, z) >= 1.5) return { x, z, y: Math.max(walk.top(x, z), c.y - 1.2) - 0.6 };
+    }
+    return null;
+  };
   if (L.mote) for (let t = 0; t < L.mote.n; t++) {
-    const c = spotStart(air, 14, t), wander = L.mote.wander || rnd0() < 0.5;
-    add({ use: 'mote', x: c.x + rnd(-0.3, 0.3), y: c.y + rnd(0.6, 2.4), z: c.z + rnd(-0.3, 0.3), s: rnd(0.026, 0.04), d: L.mote.glow ? 2 : 1.6, ci: pick(L.mote.slots), kind: mot(wander ? K.wander : K.bob), ph: rnd(0, TAU), sp: wander ? rnd(0.6, 1.3) : rnd(0.9, 1.6), rg: rnd(0.08, 0.15), flags: L.mote.glow ? ND + EM : ND, bright: !!L.mote.glow });
+    const c = (L.mote.at === 'lamp' && lit.length && atLamp()) || spotStart(air, 14, t), wander = L.mote.wander || rnd0() < 0.5;
+    add({ use: 'mote', x: c.x + rnd(-0.3, 0.3), y: c.y + rnd(0.6, 2.4), z: c.z + rnd(-0.3, 0.3), s: rnd(0.016, 0.026), d: L.mote.d ?? (L.mote.glow ? 2 : 1.6), ci: pick(L.mote.slots), kind: mot(wander ? K.wander : K.bob), ph: rnd(0, TAU), sp: wander ? rnd(0.6, 1.3) : rnd(0.9, 1.6), rg: rnd(0.08, 0.15), flags: L.mote.glow ? ND + EM : ND, bright: !!L.mote.glow });
   }
   if (L.mist) {
     const low = hollows.length ? hollows : flat.filter(c => c.d <= 16);
@@ -292,9 +305,11 @@ export function makeLife(world, meta, { walk, still = false, rows = new Set(), o
     }
     groups[d.group].dabs.push(i);
   }
-  const touched = new Set();
+  const touched = new Set(), DIRTY = new Set();
   let enabled = true, written = 0, writes = 0, maxRows = 0, lastT = null, nextGust = null, gust = null, gusts = 0, answer = null, pendingAnswer = null, hushed = 0;
-  const times = [];
+  // the last 240 draws' own times, in a ring
+  const times = new Float64Array(240);
+  let timeN = 0;
   const D = () => world.data;
   // write dab i from its own values and the answers on it now
   function put(i) {
@@ -338,7 +353,8 @@ export function makeLife(world, meta, { walk, still = false, rows = new Set(), o
      past the lamplighter less 0.5 m. A crossing writes that dab's row on that frame only */
   const floaters = [];
   for (let i = 0; i < n; i++) if (['mote', 'firefly', 'fall', 'shed', 'mist'].includes(dabs[i].use)) floaters.push(i);
-  const eyeOfView = v => { const cp = Math.cos(v.pitch); return [v.target[0] + v.dist * Math.sin(v.yaw) * cp, v.target[1] + v.dist * Math.sin(v.pitch), v.target[2] + v.dist * Math.cos(v.yaw) * cp]; };
+  const EYE = [0, 0, 0];
+  const eyeOfView = v => { const cp = Math.cos(v.pitch); EYE[0] = v.target[0] + v.dist * Math.sin(v.yaw) * cp; EYE[1] = v.target[1] + v.dist * Math.sin(v.pitch); EYE[2] = v.target[2] + v.dist * Math.cos(v.yaw) * cp; return EYE; };
   let eyeHidden = 0;
   function nearEye(view, dirty) {
     if (!view?.target || !Number.isFinite(view.dist)) return;
@@ -365,7 +381,8 @@ export function makeLife(world, meta, { walk, still = false, rows = new Set(), o
     if (lastT === null) { lastT = t; nextGust = t + rnd(...RULES.gust); }
     const dt = Math.max(0, Math.min(0.5, t - lastT));
     lastT = t;
-    const dirty = new Set();
+    const dirty = DIRTY;
+    dirty.clear();
     // the lamps near the lamplighter, and their pulses
     if (pendingChain) {
       const near = anchors.map((c, i) => [i, Math.hypot(c.x - bp[0], c.y - bp[1], c.z - bp[2])]).filter(([, r]) => r <= RULES.chainR).sort((a, b) => a[1] - b[1]);
@@ -383,7 +400,7 @@ export function makeLife(world, meta, { walk, still = false, rows = new Set(), o
       c.want = want;
       c.near = want ? Math.min(1, c.near + dt / RULES.up) : Math.max(0, c.near - dt / RULES.down);
       let lit = 0;
-      c.pulse = c.pulse.filter(p0 => t - p0 < 0.6);
+      if (c.pulse.length) c.pulse = c.pulse.filter(p0 => t - p0 < 0.6);
       for (const p0 of c.pulse) { const u = (t - p0) / 0.6; if (u >= 0) lit = Math.max(lit, Math.sin(Math.PI * u)); }
       const wasLit = c.lit;
       c.lit = lit;
@@ -392,7 +409,7 @@ export function makeLife(world, meta, { walk, still = false, rows = new Set(), o
     // the hush: every bright dab within 8 m of an awake foe fades out in a quarter second, and is back 2 s after the calm there
     hushed = 0;
     for (const g of groups) {
-      const near = foes.some(f => Math.hypot(f.x - g.x, f.z - g.z) <= RULES.hush + g.r);
+      const near = foes.length > 0 && foes.some(f => Math.hypot(f.x - g.x, f.z - g.z) <= RULES.hush + g.r);
       if (near) { g.calm = 0; g.want = 0; } else { g.calm += dt; if (g.calm >= RULES.hushBack) g.want = 1; }
       const h = g.want ? Math.min(1, g.h + dt / RULES.hushUp) : Math.max(0, g.h - dt / RULES.hushIn);
       if (h !== g.h) { g.h = h; for (const i of g.dabs) dirty.add(i); }
@@ -402,8 +419,8 @@ export function makeLife(world, meta, { walk, still = false, rows = new Set(), o
     for (const f of flocks) {
       if (f.state === 'perched') {
         const lamp = body && Math.hypot(f.x - body.x, f.z - body.z) <= RULES.crowNear && Math.abs(f.y - body.y) < 5;
-        const foe = foes.some(o => Math.hypot(f.x - o.x, f.z - o.z) <= RULES.crowFoe);
-        const hit = foes.some(o => ['stagger', 'stun', 'down'].includes(o.state) && Math.hypot(f.x - o.x, f.z - o.z) <= RULES.crowHit);
+        const foe = foes.length > 0 && foes.some(o => Math.hypot(f.x - o.x, f.z - o.z) <= RULES.crowFoe);
+        const hit = foes.length > 0 && foes.some(o => HIT.has(o.state) && Math.hypot(f.x - o.x, f.z - o.z) <= RULES.crowHit);
         if (lamp || foe || hit) {
           f.state = 'flying'; f.t0 = t;
           const from = lamp ? body : (foes.find(o => Math.hypot(f.x - o.x, f.z - o.z) <= RULES.crowHit) || body || { x: f.x - 1, z: f.z });
@@ -479,10 +496,10 @@ export function makeLife(world, meta, { walk, still = false, rows = new Set(), o
     for (const r of touched) rows.add(r);
     written = touched.size; writes += written; maxRows = Math.max(maxRows, written);
     touched.clear();
-    times.push((typeof performance !== 'undefined' ? performance.now() : Date.now()) - t0);
-    if (times.length > 240) times.shift();
+    times[timeN++ % 240] = (typeof performance !== 'undefined' ? performance.now() : Date.now()) - t0;
   };
   const med = a => { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y); return s[s.length >> 1]; };
+  const timesNow = () => times.slice(0, Math.min(timeN, 240));
   /* test(o): o.on turns life on or off (off parks every dab; on puts them back); o.near [x, y, z] and o.r list the dabs there;
      o.reset clears the timing. -> the state */
   api.test = (o = {}) => {
@@ -492,14 +509,16 @@ export function makeLife(world, meta, { walk, still = false, rows = new Set(), o
       for (const r of touched) rows.add(r);
       touched.clear();
     }
-    if (o?.reset) { times.length = 0; writes = 0; maxRows = 0; }
+    if (o?.reset) { timeN = 0; writes = 0; maxRows = 0; }
+    // o.gust: a gust on the next draw (the budget's checks time the frames where life writes rows)
+    if (o?.gust) nextGust = -Infinity;
     const kinds = {};
     for (let i = 0; i < n; i++) { const k = D()[(first + i) * 16 + 11] % 16; kinds[k] = (kinds[k] || 0) + 1; }
     const uses = {};
     for (const d of dabs) uses[d.use] = (uses[d.use] || 0) + 1;
     const out = {
       on: enabled, place: id, count: n, first, still, kinds, uses, anchors: anchors.length, gusts, hushed, rows: { last: written, max: maxRows, total: writes }, eyeHidden,
-      ms: +med(times).toFixed(4), draws: times.length,
+      ms: +med(timesNow()).toFixed(4), p99: +(() => { const a = [...timesNow()].sort((x, y) => x - y); return a.length ? a[Math.min(a.length - 1, Math.floor(a.length * 0.99))] : 0; })().toFixed(4), draws: Math.min(timeN, 240),
       halos: anchors.map(c => { const i = c.halo[0], w = D(), q = (first + i) * 16; return { x: c.x, y: c.y, z: c.z, s: +Math.sqrt(w[q + 4]).toFixed(4), pale: PK.indexOf(w[q + 7]), near: +c.near.toFixed(2) }; }),
       flocks: flocks.map(f => ({ x: f.x, y: f.y, z: f.z, n: f.birds.length, state: f.state, shown: f.birds.reduce((s, b) => s + b.dabs.filter(i => D()[(first + i) * 16 + 3] > 0).length, 0) })),
       beacon: { shown: beacon.filter(i => D()[(first + i) * 16 + 3] > 0).length, ci: answer?.ci ?? null, slot: (() => { const c = D()[(first + beacon[0]) * 16 + 7]; return PK.indexOf(c); })() },

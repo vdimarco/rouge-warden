@@ -70,9 +70,12 @@ addEventListener('keydown', e => {
   moveDir(d[0], d[1]);
 }, true);
 // touch has no hover: the focus style shows on the press itself
+// (pressFocus() is true while that focus lands, so the page plays no hover for it: touch has no hover)
+let pressing = false;
+export const pressFocus = () => pressing;
 addEventListener('pointerdown', e => {
   const c = current(), b = e.target instanceof Element ? e.target.closest('button') : null;
-  if (c && b && c.el.contains(b) && e.pointerType !== 'mouse') b.focus({ preventScroll: true });
+  if (c && b && c.el.contains(b) && e.pointerType !== 'mouse') { pressing = true; try { b.focus({ preventScroll: true }); } finally { pressing = false; } }
 }, true);
 // press the focused button, or the main button when the focus is outside the card -> the button pressed
 export function press() {

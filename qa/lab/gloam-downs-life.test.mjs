@@ -91,6 +91,23 @@ function run(L, t, secs, body, foes = [], each = null) {
   return { t, rowsMax };
 }
 const foes = figureFile('foes'), boss = figureFile('boss');
+{ /* motes are flecks, not pale squares, and the Gaol's gather in the light (the checker's 1280x720 title and the Gaol's static): every
+     mote is 0.026 m or smaller, the Gaol's lie within 3.8 m of a lamp anchor, and the Gaol's floaters (motes and drips) are under 100 */
+  const near = {};
+  for (const id of PLACES) {
+    const L = place(id), all = L.life.test({ all: true }).all, motes = all.filter(d => d.use === 'mote');
+    for (const [i, d] of all.entries()) if (d.use === 'mote') { const q = (L.life.first + i) * 16; assert(Math.sqrt(L.world.data[q + 4]) <= 0.0261, `${id}: a mote of ${Math.sqrt(L.world.data[q + 4]).toFixed(3)} m`); }
+    if (id !== 'gaol') continue;
+    const A = all.filter(d => d.use === 'halo'), lamps = [];
+    for (const h of A) if (!lamps.some(l => l.group === h.group)) lamps.push(h);
+    const far = motes.filter(m => !lamps.some(l => Math.hypot(m.x - l.x, m.z - l.z) <= 3.8));
+    assert.equal(far.length, 0, `gaol: ${far.length} of ${motes.length} motes away from the light`);
+    const floaters = all.filter(d => d.use === 'mote' || d.use === 'fall').length;
+    assert(floaters < 100, `gaol: ${floaters} motes and drips`);
+    near[id] = { motes: motes.length, floaters };
+  }
+  pass('motes are 0.026 m or smaller; the Gaol\'s motes gather within 3.8 m of a lamp, with fewer than 100 motes and drips', near);
+}
 const counts = {};
 for (const id of PLACES) {
   const L = place(id), s = L.life.test(), { meta, world, life } = L;
@@ -271,5 +288,36 @@ pass('the budget: life 1,200 splats or fewer, the place with its pool, the spark
   life.draw(view(7.8), 1.2, body, []);
   assert(w()[q + 3] > 0, 'a mote 7.8 m from the eye, the lamplighter 8 m off, stays hidden');
   pass('what floats nearer the eye than the lamplighter less 1 m hides, and shows again past the lamplighter less 0.5 m; a still eye writes no row', { hidden: hid });
+}
+{ /* Life budget, life's own CPU time: 3,600 draws a place with the lamplighter walking the route, a gust every 10 s, a flock lifted and
+     three foes awake by a lamp for 10 s (the frames where life writes rows, which a SwiftShader frame time cannot see). The median draw
+     is 0.1 ms or less, the 99th percentile 1 ms or less, and no draw writes more than 4 rows of 512 */
+  const out = {};
+  for (const id of PLACES) {
+    const L = place(id), { life, walk, meta } = L, s0 = life.test(), f = s0.flocks[0], a = s0.halos[Math.floor(s0.halos.length / 2)];
+    const sp = meta.spawn.p, bp = meta.beacon.p, times = [];
+    let rowsMax = 0, writing = 0;
+    for (let k = 0; k < 3600; k++) {
+      const t = k / 60, u = (k % 1200) / 1200;
+      let body = stand(walk, sp[0] + (bp[0] - sp[0]) * u, sp[2] + (bp[2] - sp[2]) * u);
+      if (k >= 1200 && k < 1260 && f) body = stand(walk, f.x + 3, f.z);
+      const foes = k >= 2000 && k < 2600 ? [0, 1, 2].map(j => ({ x: a.x + j, z: a.z + 1, state: j === 2 ? 'stagger' : 'chase' })) : [];
+      if (k % 600 === 300) life.test({ gust: true });
+      const t0 = performance.now();
+      life.draw({ target: [body.x, body.y + 0.8, body.z], yaw: 0, pitch: 0.3, dist: 9 }, t, body, foes);
+      times.push(performance.now() - t0);
+      const r = life.test().rows.last;
+      rowsMax = Math.max(rowsMax, r);
+      if (r) writing++;
+    }
+    times.sort((x, y) => x - y);
+    const medT = times[1800], p99 = times[Math.floor(3600 * 0.99)];
+    assert(medT <= 0.1, `${id}: life's median draw is ${medT.toFixed(3)} ms`);
+    assert(p99 <= 1, `${id}: life's 99th percentile draw is ${p99.toFixed(3)} ms`);
+    assert(rowsMax <= 4, `${id}: a draw wrote ${rowsMax} rows`);
+    assert(writing > 60, `${id}: only ${writing} draws wrote rows, so the busy frames were not timed`);
+    out[id] = { med: +medT.toFixed(3), p99: +p99.toFixed(3), rows: rowsMax, writing };
+  }
+  pass('life\'s own time over 3,600 draws with gusts, a flight and the hush: median 0.1 ms or less, 99th percentile 1 ms or less, 4 rows or fewer', out);
 }
 console.log(`PASS qa/lab/gloam-downs-life.test.mjs: ${n} checks`);

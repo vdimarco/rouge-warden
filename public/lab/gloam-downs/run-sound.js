@@ -56,6 +56,7 @@ export function makeRunSound({ log, rs, phone = false, step = () => 0, ear = () 
     A.music = createMusic(ctx, { mix: A.mix, base, fetchFn, seed, lookahead: phone ? PHONE_LOOKAHEAD : LOOKAHEAD });
     A.music.step = step;
     A.beds = makeBeds(ctx, A.mix, { seed });
+    if (A.gone) A.beds.pause(true);
     A.heard = log.length;
     A.switches();
     ctx.resume?.().catch?.(() => {});
@@ -128,8 +129,17 @@ export function makeRunSound({ log, rs, phone = false, step = () => 0, ear = () 
   A.pause = on => {
     A.paused = !!on;
     if (on && A.fx) A.fx.hush();
-    A.beds?.pause(A.paused);
+    A.beds?.pause(A.paused || A.gone);
     A.filter();
+  };
+  /* away: the tab is hidden or the game switcher is open, and the frame loop is frozen. The bed's wind and water stop with the score,
+     and come back when the player does */
+  A.gone = false;
+  A.away = on => {
+    if (A.gone === !!on) return;
+    A.gone = !!on;
+    if (on) { A.fx?.hush(); A.music?.score.stop(); }
+    A.beds?.pause(A.paused || A.gone);
   };
   A.setLow = low => { if (A.low !== !!low) { A.low = !!low; A.filter(); } };
   A.filter = () => {

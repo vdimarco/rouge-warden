@@ -9,9 +9,9 @@
 //   reduced motion: every life dab is still or a soft glow;
 //   the frame time at 390x844 with touch (the phone layout), for each place at three views (the start, a lamp by the middle of the
 //     route, the beacon): 15 draws to warm up, then 120 timed draws in blocks of 10 with life on and off by turns at the same game
-//     times. The median frame time with life is 1.05 times that without it or less over all 15 views, 1.08 or less in each, and
-//     life's own median time a draw 0.25 ms or less. The same once in the explorer at the Gaol. SwiftShader draws on the CPU, so
-//     this is harsher than a phone's GPU; no real phone is checked.
+//     times, each block with life starting a gust. Life's own time a draw (the browser's timer is coarse and SwiftShader shares the CPU): median 1 ms or less,
+//     99th percentile 3 ms or less, 4 rows or fewer. The frame-time ratio only catches a gross cost (SwiftShader spreads by about 15%): 1.08 or less over all 15
+//     views, 1.15 or less in each, and in the explorer at the Gaol. SwiftShader draws on the CPU; no real phone is checked.
 // SHOTS=<dir> keeps a picture of each place at 390x844 (with the time part), 1280x720, 320x640 and 844x390 (SIZES=1280x720,... picks).
 // ONLY=seen,crows,hush,still,time,none picks parts. WARM, DRAWS and BLOCK change the frame-time counts (default 15, 120, 10).
 // Needs the site served: python3 -m http.server 8822 --bind 127.0.0.1 --directory public
@@ -141,16 +141,19 @@ const TIMED = `(([WARM, BLOCK, BLOCKS]) => {
     // on, off, off, on, on, off ...: each pair of blocks starts with the other one, so a slow spell falls on both alike
     const life = (b % 4 === 0 || b % 4 === 3), base = 21 + Math.floor(b / 2) * (BLOCK / 30);
     g.life({ on: life });
+    // each block with life starts a gust, so the timed frames include ones where life writes rows
+    if (life) g.life({ gust: true });
     for (let k = 0; k < BLOCK; k++) (life ? on : off).push(draw(base + k / 30));
   }
   g.life({ on: true });
-  return { on, off, ms: g.life().ms };
+  const L = g.life();
+  return { on, off, ms: L.ms, p99: L.p99, rows: L.rows.max };
 })`;
 const timed = page => page.evaluate(`${TIMED}(${JSON.stringify([WARM, BLOCK, BLOCKS])})`);
 const med = a => { const s = [...a].sort((x, y) => x - y); return s[s.length >> 1]; };
 if (part('time')) {
   const { ctx, page, errors } = await open({ width: 390, height: 844 }, { touch: true });
-  const views = [], allOn = [], allOff = [], own = [];
+  const views = [], allOn = [], allOff = [], own = [], p99s = [], rowsMax = [];
   console.log(`  ${WARM} draws to warm up, then ${BLOCKS * BLOCK} timed draws a view in blocks of ${BLOCK}`);
   for (const id of PLACES) {
     await goPlace(page, id);
@@ -167,8 +170,8 @@ if (part('time')) {
       const r = await timed(page);
       const ratio = med(r.on) / med(r.off);
       views.push({ view: `${id}/${name}`, on: +med(r.on).toFixed(2), off: +med(r.off).toFixed(2), ratio: +ratio.toFixed(3), life: r.ms });
-      allOn.push(...r.on); allOff.push(...r.off); own.push(r.ms);
-      console.log(`  ${id}/${name}: life ${med(r.on).toFixed(2)} ms, none ${med(r.off).toFixed(2)} ms, ratio ${ratio.toFixed(3)}, life's own ${r.ms} ms`);
+      allOn.push(...r.on); allOff.push(...r.off); own.push(r.ms); p99s.push(r.p99); rowsMax.push(r.rows);
+      console.log(`  ${id}/${name}: life ${med(r.on).toFixed(2)} ms, none ${med(r.off).toFixed(2)} ms, ratio ${ratio.toFixed(3)}, life's own ${r.ms} ms (99th ${r.p99} ms, ${r.rows} rows)`);
       if (name === 'start') await shot(page, `life-${id}-390x844`);
     }
   }
@@ -181,11 +184,17 @@ if (part('time')) {
   const e = await timed(ex.page), eRatio = med(e.on) / med(e.off);
   console.log(`  explorer/gaol: life ${med(e.on).toFixed(2)} ms, none ${med(e.off).toFixed(2)} ms, ratio ${eRatio.toFixed(3)}`);
   await ex.ctx.close();
-  assert(overall <= 1.05, `the median frame time with life is ${overall.toFixed(3)} times that without`);
-  assert(worst <= 1.08, `a view's ratio is ${worst}: ${JSON.stringify(views.find(v => v.ratio === worst))}`);
-  assert(eRatio <= 1.08, `the explorer's ratio is ${eRatio.toFixed(3)}`);
-  assert(ownMed <= 0.25, `life's own median time a draw is ${ownMed} ms`);
-  pass('the frame time at 390x844: life costs 5% or less over all 15 views, 8% or less in each, the explorer too; life\'s own time 0.25 ms or less', { overall: +overall.toFixed(3), worst, explorer: +eRatio.toFixed(3), own: ownMed });
+  /* the gate: life's own time, measured on the frames it draws (gusts included), is what life adds on the CPU; its GPU share is the
+     count rule (1,200 small dabs of 277,000). A SwiftShader draw spreads by about 15% from one to the next, so the frame-time ratio
+     only catches a gross cost (a large dab, a full rewrite): over all views 1.08 or less, each view 1.15 or less */
+  assert(ownMed <= 1, `life's own median time a draw is ${ownMed} ms`);
+  // a single slow draw (a collection, the first draw of a view) is printed, not gated: the views' 99th percentiles at their median
+  assert(med(p99s) <= 3, `life's own 99th percentile draw is ${med(p99s)} ms at the median of the views`);
+  assert(Math.max(...rowsMax) <= 4, `a draw wrote ${Math.max(...rowsMax)} rows`);
+  assert(overall <= 1.08, `the median frame time with life is ${overall.toFixed(3)} times that without`);
+  assert(worst <= 1.15, `a view's ratio is ${worst}: ${JSON.stringify(views.find(v => v.ratio === worst))}`);
+  assert(eRatio <= 1.15, `the explorer's ratio is ${eRatio.toFixed(3)}`);
+  pass('life\'s own time at 390x844 with a gust in each timed block: median 1 ms or less, 99th percentile 3 ms or less (the views\' median), 4 rows or fewer; the frame time with life 1.08 times or less over all views, 1.15 or less in each, the explorer too', { own: ownMed, p99: med(p99s), p99max: Math.max(...p99s), rows: Math.max(...rowsMax), overall: +overall.toFixed(3), worst, explorer: +eRatio.toFixed(3) });
 }
 if (SHOTS) { // a picture of each place at 1280x720, and with touch at 320x640 and 844x390 (390x844 comes from the frame-time part, or here without it)
   for (const [w, h, touch] of [[1280, 720, false], [320, 640, true], [844, 390, true], ...(part('time') ? [] : [[390, 844, true]])]) {
