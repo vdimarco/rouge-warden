@@ -13,7 +13,7 @@ out vec3 vW;
 flat out float vKind;
 flat out float vSign;
 flat out float vOrient;
-out float vEdge;
+out vec2 vCorner;
 void main() {
   float upright = step(0.5, i2.w);
   float faceZ = step(1.5, i2.w);
@@ -25,7 +25,7 @@ void main() {
   vKind = i2.y;
   vSign = i2.z;
   vOrient = i2.w;
-  vEdge = min(min(aC.x, 1.0 - aC.x), min(aC.y, 1.0 - aC.y));
+  vCorner = aC;
   gl_Position = uVP * vec4(vW, 1.0);
   if (abs(i2.y - 1.0) < 0.25) gl_Position.z -= 0.02 * gl_Position.w;
 }`;
@@ -50,7 +50,7 @@ in vec3 vW;
 flat in float vKind;
 flat in float vSign;
 flat in float vOrient;
-in float vEdge;
+in vec2 vCorner;
 layout(location=0) out vec4 o;
 
 float fadeOf(float s) {
@@ -135,7 +135,8 @@ void main() {
   if (abs(vKind - 10.0) < 0.25) { o = vec4(ink, 1.0); return; }
   if (abs(vKind - 11.0) < 0.25) {
     vec3 roof = vec3(74.0, 72.0, 82.0) / 255.0;
-    float lip = step(vEdge, 1.0 / 16.0);
+    float edgeDist = min(min(vCorner.x, 1.0 - vCorner.x), min(vCorner.y, 1.0 - vCorner.y));
+    float lip = step(edgeDist, 1.0 / 16.0);
     col = mix(roof, vec3(94.0, 91.0, 102.0) / 255.0, lip);
     o = vec4(col, 1.0);
     return;
@@ -158,14 +159,16 @@ void main() {
     float rem = mod(kd + 0.0001, 0.03);
     float bottom = step(0.005, rem) * step(rem, 0.015);
     float top = step(0.015, rem);
-    vec3 face = vOrient > 1.5 ? vec3(43.0, 42.0, 51.0) / 255.0 : vec3(36.0, 35.0, 44.0) / 255.0;
-    if (top > 0.5) face = vOrient > 1.5 ? vec3(48.0, 47.0, 56.0) / 255.0 : vec3(42.0, 41.0, 50.0) / 255.0;
-    if (vSign > 0.1 && vSign < 0.4) face = vec3(43.0, 42.0, 51.0) / 255.0;
+    // Side faces share the south wall's floor. A top storey, including the only
+    // storey of a one-storey lot, is never the bottom-storey darken.
+    vec3 face = vec3(43.0, 42.0, 51.0) / 255.0;
+    if (top > 0.5) face = vec3(48.0, 47.0, 56.0) / 255.0;
     vec3 dye = tint < 0.5 ? vec3(1.10, 0.84, 0.90) : tint < 1.5 ? vec3(0.84, 1.08, 0.90) : vec3(0.90, 0.94, 1.10);
     float lum = dot(face, vec3(0.299, 0.587, 0.114));
     vec3 dyed = face * dye;
     dyed *= lum / max(0.001, dot(dyed, vec3(0.299, 0.587, 0.114)));
-    col = mix(dyed, dyed * 0.80, bottom);
+    // 0.92 keeps a bottom storey darker than the street face and still 12 levels above ink.
+    col = top > 0.5 ? dyed : mix(dyed, dyed * 0.92, bottom);
   }
   float dim = step(abs(vKind - 4.0), 0.25);
   col = mix(col, col * 0.38, dim);
