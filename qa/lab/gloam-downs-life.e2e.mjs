@@ -12,7 +12,8 @@
 //     times. The median frame time with life is 1.05 times that without it or less over all 15 views, 1.08 or less in each, and
 //     life's own median time a draw 0.25 ms or less. The same once in the explorer at the Gaol. SwiftShader draws on the CPU, so
 //     this is harsher than a phone's GPU; no real phone is checked.
-// SHOTS=<dir> keeps a picture of each place at 390x844 and 1280x720. ONLY=seen,crows,hush,still,time picks parts.
+// SHOTS=<dir> keeps a picture of each place at 390x844 (with the time part), 1280x720, 320x640 and 844x390 (SIZES=1280x720,... picks).
+// ONLY=seen,crows,hush,still,time,none picks parts. WARM, DRAWS and BLOCK change the frame-time counts (default 15, 120, 10).
 // Needs the site served: python3 -m http.server 8822 --bind 127.0.0.1 --directory public
 // Run: NODE_PATH=qa/browser/node_modules node qa/lab/gloam-downs-life.e2e.mjs   (SITE_URL to point elsewhere)
 import assert from 'node:assert/strict';
@@ -126,24 +127,31 @@ if (part('still')) { // reduced motion: still life
 }
 /* ---------------- the frame time ---------------- */
 // one view: 15 draws to warm up, then 120 timed draws in blocks of 10, life on and off by turns at the same game times
-const TIMED = `(() => {
+// WARM, DRAWS and BLOCK change the counts (default 15, 120 and 10, as the spec says) for a machine where SwiftShader takes seconds a
+// draw; the run prints the counts it used
+const WARM = Number(process.env.WARM) || 15, BLOCK = Number(process.env.BLOCK) || 10;
+const BLOCKS = Math.max(2, 2 * Math.round((Number(process.env.DRAWS) || 120) / BLOCK / 2));
+const TIMED = `(([WARM, BLOCK, BLOCKS]) => {
   const g = window.__gloam, c = document.getElementById('view'), gl = c.getContext('webgl2'), one = new Uint8Array(4);
   const draw = t => { const t0 = performance.now(); g.draw({ time: t }); gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, one); return performance.now() - t0; };
-  for (let k = 0; k < 15; k++) draw(20 + k / 30);
+  for (let k = 0; k < WARM; k++) draw(20 + k / 30);
   g.life({ reset: true });
   const on = [], off = [];
-  for (let b = 0; b < 12; b++) {
-    const life = b % 2 === 0, base = 21 + Math.floor(b / 2) * (10 / 30);
+  for (let b = 0; b < BLOCKS; b++) {
+    // on, off, off, on, on, off ...: each pair of blocks starts with the other one, so a slow spell falls on both alike
+    const life = (b % 4 === 0 || b % 4 === 3), base = 21 + Math.floor(b / 2) * (BLOCK / 30);
     g.life({ on: life });
-    for (let k = 0; k < 10; k++) (life ? on : off).push(draw(base + k / 30));
+    for (let k = 0; k < BLOCK; k++) (life ? on : off).push(draw(base + k / 30));
   }
   g.life({ on: true });
   return { on, off, ms: g.life().ms };
 })`;
+const timed = page => page.evaluate(`${TIMED}(${JSON.stringify([WARM, BLOCK, BLOCKS])})`);
 const med = a => { const s = [...a].sort((x, y) => x - y); return s[s.length >> 1]; };
 if (part('time')) {
   const { ctx, page, errors } = await open({ width: 390, height: 844 }, { touch: true });
   const views = [], allOn = [], allOff = [], own = [];
+  console.log(`  ${WARM} draws to warm up, then ${BLOCKS * BLOCK} timed draws a view in blocks of ${BLOCK}`);
   for (const id of PLACES) {
     await goPlace(page, id);
     const spots = await G(page, () => {
@@ -156,7 +164,7 @@ if (part('time')) {
     });
     for (const [name, at] of Object.entries(spots)) {
       if (at) await G(page, ([x, z, yaw]) => { window.__gloam.teleport(x, z, yaw); window.__gloam.tick(0.4, {}); }, at);
-      const r = await page.evaluate(TIMED + '()');
+      const r = await timed(page);
       const ratio = med(r.on) / med(r.off);
       views.push({ view: `${id}/${name}`, on: +med(r.on).toFixed(2), off: +med(r.off).toFixed(2), ratio: +ratio.toFixed(3), life: r.ms });
       allOn.push(...r.on); allOff.push(...r.off); own.push(r.ms);
@@ -170,7 +178,7 @@ if (part('time')) {
   // the explorer, once at the Gaol
   const ex = await open({ width: 390, height: 844 }, { touch: true, url: '?explore&test&place=gaol' });
   await G(ex.page, () => { window.__gloam.close?.(); window.__gloam.tick(1, {}); });
-  const e = await ex.page.evaluate(TIMED + '()'), eRatio = med(e.on) / med(e.off);
+  const e = await timed(ex.page), eRatio = med(e.on) / med(e.off);
   console.log(`  explorer/gaol: life ${med(e.on).toFixed(2)} ms, none ${med(e.off).toFixed(2)} ms, ratio ${eRatio.toFixed(3)}`);
   await ex.ctx.close();
   assert(overall <= 1.05, `the median frame time with life is ${overall.toFixed(3)} times that without`);
@@ -179,10 +187,14 @@ if (part('time')) {
   assert(ownMed <= 0.25, `life's own median time a draw is ${ownMed} ms`);
   pass('the frame time at 390x844: life costs 5% or less over all 15 views, 8% or less in each, the explorer too; life\'s own time 0.25 ms or less', { overall: +overall.toFixed(3), worst, explorer: +eRatio.toFixed(3), own: ownMed });
 }
-if (SHOTS) { // a picture of each place at 1280x720
-  const { ctx, page } = await open({ width: 1280, height: 720 });
-  for (const id of PLACES) { await goPlace(page, id); await G(page, () => window.__gloam.draw()); await shot(page, `life-${id}-1280x720`); }
-  await ctx.close();
+if (SHOTS) { // a picture of each place at 1280x720, and with touch at 320x640 and 844x390 (390x844 comes from the frame-time part)
+  for (const [w, h, touch] of [[1280, 720, false], [320, 640, true], [844, 390, true]]) {
+    if (process.env.SIZES && !process.env.SIZES.split(',').includes(`${w}x${h}`)) continue;
+    const { ctx, page, errors } = await open({ width: w, height: h }, { touch });
+    for (const id of PLACES) { await goPlace(page, id); await G(page, () => window.__gloam.draw()); await shot(page, `life-${id}-${w}x${h}`); }
+    assert.deepEqual(errors, []);
+    await ctx.close();
+  }
 }
 await browser.close();
 console.log(`PASS qa/lab/gloam-downs-life.e2e.mjs: ${n} checks`);

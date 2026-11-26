@@ -194,7 +194,7 @@ Builder S keeps these five lines where they are when it changes main.js, and if 
 
 ## Builder E: what was built, and what changed from the plan
 - **Sizes.** The art is drawn at about 46,000 pixels on a phone and 100,000 on a desktop, so a pixel is about 3 to 4 cm at the follow camera's distance. Dabs of 1.5 cm did not show. Tuft blades are 2.2 cm wide, motes 2.6 to 4 cm, embers and fireflies 3 cm, moths 2.6 cm, crows 1.4 times the first sketch. The halo keeps 0.04 to 0.07 m.
-- **Where.** Tufts stand within 10 m of the route. A third of the motes and of what falls stands within 12 m of the start, where the player looks first.
+- **Where.** Tufts stand within 10 m of the route. A third of the motes and of what falls stands within 12 m of the start, where the player looks first. Motes, fireflies and what falls in the air stand 2.5 m or more off the route: the follow camera rides the route, and a mote a metre from the eye drew as a big pale ball in the first pictures.
 - **The Gaol** also has moonlit motes (`moon`, slots 30 and 31). Its drips are in `moon` 30, not `fog`, because a fog-coloured drip does not show against the fog. Every other place keeps the table in "Per place".
 - **Life can be seen.** The baked fires and embers already move about 0.8% of the Gaol's start picture between 0 s and 1 s. Life makes it 1.4% (1.86 times as much), so the check asks for 1.5 times, not 3. More dabs to reach 3 times cluttered the picture.
 - **The hush** fades the bright dabs (embers, motes, fireflies, moths, halos). Tufts, rags, leaves and crows stay, so the ground does not go bare by a fight.

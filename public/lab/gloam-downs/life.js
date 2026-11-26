@@ -215,9 +215,11 @@ export function makeLife(world, meta, { walk, still = false, rows = new Set(), o
   // C: embers, fireflies, motes, mist, the falling, rags
   if (L.ember) for (const [ai, c] of anchors.entries()) if (c.fire) for (let e = 0; e < L.ember.per; e++)
     add({ use: 'ember', x: c.x + rnd(-0.2, 0.2), y: c.y + rnd(0, 0.2), z: c.z + rnd(-0.2, 0.2), s: 0.03, d: 2.4, ci: EMBER, kind: mot(K.rise), ph: rnd(0, 1), sp: rnd(0.25, 0.5), rg: rnd(1.2, 2.4), ex: 0.4, flags: ND + EM, bright: true, group: ai });
-  const air = flat.filter(c => c.d <= 14);
+  // what floats stands 2.5 m or more off the route: the follow camera rides the route a few metres behind the lamplighter, and a mote
+  // a metre from the eye draws as a big pale ball, not a fleck
+  const air = flat.filter(c => c.d <= 14 && c.d >= 2.5);
   if (L.firefly) {
-    const over = hollows.length ? hollows : air;
+    const over = hollows.filter(c => c.d >= 2.5).length ? hollows.filter(c => c.d >= 2.5) : air;
     for (let t = 0; t < L.firefly.n; t++) { const c = spot(over, 14); add({ use: 'firefly', x: c.x + rnd(-0.3, 0.3), y: c.y + rnd(0.4, 1.6), z: c.z + rnd(-0.3, 0.3), s: 0.03, d: 2.6, ci: L.firefly.slots[0], kind: mot(K.twinkle), ph: rnd(0, TAU), sp: TAU * rnd(0.4, 1.1), flags: ND + EM, bright: true }); }
   }
   if (L.mote) for (let t = 0; t < L.mote.n; t++) {
