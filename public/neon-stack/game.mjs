@@ -67,6 +67,22 @@ function cross(a, b) { return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b
 function wrap(d) { return ((d % 360) + 360) % 360; }
 function clampTilt(d) { return Math.max(20, Math.min(87, d)); }
 function phone() { return window.innerWidth < 800; }
+// Half-width of the skyline plane so it meets both side edges and no further.
+function skyHalf(cam, focus, fov, aspect, sky) {
+  const f = norm(sub(focus, cam));
+  let right = cross(f, [0, 1, 0]);
+  const rl = Math.hypot(right[0], right[1], right[2]) || 1;
+  right = right.map((v) => v / rl);
+  const rel = sub(sky, cam);
+  const A = dot(rel, right);
+  const B = Math.max(1, dot(rel, f));
+  const tanH = Math.tan(fov / 2) * aspect;
+  const rx = right[0], fx = f[0];
+  const hxR = (tanH * B - A) / (rx - tanH * fx || 1e-4);
+  const hxL = (-tanH * B - A) / (rx + tanH * fx || 1e-4);
+  const hx = Math.max(Math.abs(hxR), Math.abs(hxL)) * 1.08;
+  return Math.min(36 * TILE, Math.max(2 * TILE, hx));
+}
 function solid(tx, ty) {
   return tx < 0 || ty < 0 || tx >= 6 || ty >= 6 || world.blocked[tx][ty];
 }
@@ -223,6 +239,8 @@ function runnerFrame() {
 function scene() {
   fit();
   const { cam, focus, dist } = camera();
+  const aspect = renderer.view.artW / Math.max(1, renderer.view.artH);
+  const portrait = renderer.view.artH > renderer.view.artW;
   const [near, far] = planes(dist);
   const view = lookAt(cam, focus, [0, 1, 0]);
   const proj = perspective(renderer.view.artH > renderer.view.artW ? FOV_PORTRAIT : FOV_LAND, renderer.view.artW / renderer.view.artH, near, far);
@@ -265,6 +283,7 @@ function scene() {
       const c = Math.cos(a), sn = Math.sin(a);
       s.x = px + ox * c - oz * sn;
       s.z = pz + ox * sn + oz * c;
+      s.hx = skyHalf(cam, focus, portrait ? FOV_PORTRAIT : FOV_LAND, aspect, [s.x, s.y, s.z]);
       rest.push(s);
     } else if (s.bid < 0 || !cuts.has(s.bid) || s.low) rest.push(s);
   }
@@ -514,7 +533,7 @@ window.__test = {
   goals: () => world.goals,
   sky: () => {
     const s = world.slices.find((sl) => sl.kind === 5);
-    return { x: s.x / TILE, y: s.z / TILE, h: s.y };
+    return { x: s.x / TILE, y: s.z / TILE, h: s.y, hx: s.hx / TILE };
   },
   solid: (x, y) => solid(Math.floor(x), Math.floor(y)),
   project: (x, y, z) => renderer.project([x * TILE, z, y * TILE]),

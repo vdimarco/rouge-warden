@@ -195,13 +195,7 @@ export function build(seed) {
     }
   });
 
-  // Ink only outside the paved streets, so the frame edges are #1A1A22.
-  const ink = (x, z, hx, hz) => slices.push(slice(x, z, 0.02, hx, hz, uvOf("side_face"), 10, 0, -1, true, 0));
-  ink(0, 640, 80 * TILE, 400);
-  ink(-700, 80, 700, 500);
-  ink(900, 80, 700, 500);
-  ink(0, -400, 80 * TILE, 330);
-  // Street and sidewalks. Outside the block the ground is ink, so the frame edges are not grey.
+  // Street and sidewalks. Outside the block the ground is the clear colour, #1A1A22.
   const gy0 = -2, gy1 = GRID + 16;
   for (let ty = gy0; ty < gy1; ty++) for (let tx = -6; tx < GRID + 4; tx++) {
     const street = tx === 2 || tx === 3;
@@ -209,7 +203,6 @@ export function build(seed) {
     const inside = tx >= 0 && ty >= 0 && tx < GRID && ty < GRID;
     const x = (tx + 0.5) * TILE;
     const z = (ty + 0.5) * TILE;
-    if (street && ty >= 7) continue;
     if (!street && !inside) continue;
     let name = "asphalt_1";
     if (street && ty % 2 === 0) name = "lane_dash";
@@ -220,11 +213,11 @@ export function build(seed) {
     slices.push(slice(x, z, 0.15, TILE / 2, TILE / 2, uvOf(name), 0, 0, -1, true, 0));
   }
 
-  // One skyline quad. Its peaks sit just under the tower top at the spawn camera.
+  // One skyline quad. Its width is fitted to the frame each orientation.
   // Margins outside the block are the clear colour, flat ink, not extruded blocks.
   slices.push(slice(
     3 * TILE, -1.2 * TILE, 3.7 * TILE,
-    48 * TILE, 1.6 * TILE,
+    14 * TILE, 1.6 * TILE,
     uvOf("backdrop"), 5, 0, -1, true, 2,
   ));
 
