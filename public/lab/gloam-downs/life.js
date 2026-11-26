@@ -25,7 +25,8 @@ export const RULES = {
   crowNear: 5, crowFoe: 3, crowHit: 6, fly: 2.5, fade: 1, // when a flock lifts, its flight, and its fade in place with reduced motion
   hush: 8, hushIn: 0.25, hushBack: 2, hushUp: 0.5, // the hush near awake foes
   gust: [9, 20], gustLen: 2, shed: [6, 12], // a gust every 9 to 20 s, 2 s long, and the leaves it sheds
-  answerHover: 0.3, answerPick: 0.5, chain: 0.12, chainR: 15 // the beacon's answers, and the chain of lamps on beacon-lit
+  answerHover: 0.3, answerPick: 0.5, chain: 0.12, chainR: 15, // the beacon's answers, and the chain of lamps on beacon-lit
+  eye: [1, 0.5] // what floats hides nearer the drawn eye than the lamplighter less 1 m, and shows again past the lamplighter less 0.5 m
 };
 
 /* LIFE: per place, the palette slots of each use (the place's own palette, read off the biome's order in
@@ -305,6 +306,7 @@ export function makeLife(world, meta, { walk, still = false, rows = new Set(), o
     if (d.use === 'halo') { const c = anchors[d.group], a = Math.max(c.near, c.lit); s = RULES.halo[0] + (RULES.halo[1] - RULES.halo[0]) * a; if (d.pale && a >= 0.5) ci = LAMP_PALE; dens *= 1 + 0.4 * a; }
     if (d.use === 'tuft' && gust) rg *= gust.f;
     if (d.fade !== undefined) dens *= d.fade;
+    if (d.eyeHid) dens = 0;
     if (d.use === 'beacon') { if (!answer) dens = 0; else { const u = answer.u; dens = 2.6 * (answer.pick ? 1 - u * u : Math.sin(Math.PI * Math.min(1, u))); s = answer.pick ? 0.06 + 0.06 * Math.sin(Math.PI * Math.min(1, u * 1.4)) : 0.05; ci = answer.ci; } }
     if (d.wx !== undefined) { x = d.wx; y = d.wy; z = d.wz; }
     w[o] = x; w[o + 1] = y; w[o + 2] = z; w[o + 3] = dens;
@@ -329,6 +331,25 @@ export function makeLife(world, meta, { walk, still = false, rows = new Set(), o
   for (const f of flocks) for (const b of f.birds) poseBird(b, b.x, b.y, b.z, b.yaw, false);
   for (let i = 0; i < n; i++) put(i);
   touched.clear();
+
+  /* what floats between the eye and the lamplighter: the cameras ride 8.5 to 15 m behind the lamplighter and the title's drift swings
+     them off the route, so a mote or a drip there draws as a big pale square, not a fleck. Life lives at the lamplighter's distance and
+     beyond: a floater (and the mist, whose wide dabs do the same) nearer the eye than the lamplighter less 1 m hides, and shows again
+     past the lamplighter less 0.5 m. A crossing writes that dab's row on that frame only */
+  const floaters = [];
+  for (let i = 0; i < n; i++) if (['mote', 'firefly', 'fall', 'shed', 'mist'].includes(dabs[i].use)) floaters.push(i);
+  const eyeOfView = v => { const cp = Math.cos(v.pitch); return [v.target[0] + v.dist * Math.sin(v.yaw) * cp, v.target[1] + v.dist * Math.sin(v.pitch), v.target[2] + v.dist * Math.cos(v.yaw) * cp]; };
+  let eyeHidden = 0;
+  function nearEye(view, dirty) {
+    if (!view?.target || !Number.isFinite(view.dist)) return;
+    const [ex, ey, ez] = eyeOfView(view), lo = view.dist - RULES.eye[0], hi = view.dist - RULES.eye[1];
+    eyeHidden = 0;
+    for (const i of floaters) {
+      const d = dabs[i], r = Math.hypot(d.x - ex, d.y - ey, d.z - ez), hid = d.eyeHid ? r < hi : r < lo;
+      if (hid !== !!d.eyeHid) { d.eyeHid = hid; dirty.add(i); }
+      if (hid) eyeHidden++;
+    }
+  }
 
   /* ---------------- the answers ---------------- */
   const hear = (name, fn) => offs.push(busOn(name, fn));
@@ -453,6 +474,7 @@ export function makeLife(world, meta, { walk, still = false, rows = new Set(), o
     if (!enabled || !n) return;
     const t0 = typeof performance !== 'undefined' ? performance.now() : Date.now();
     const dirty = step(t, body, foes || []);
+    nearEye(view, dirty);
     for (const i of dirty) put(i);
     for (const r of touched) rows.add(r);
     written = touched.size; writes += written; maxRows = Math.max(maxRows, written);
@@ -476,7 +498,7 @@ export function makeLife(world, meta, { walk, still = false, rows = new Set(), o
     const uses = {};
     for (const d of dabs) uses[d.use] = (uses[d.use] || 0) + 1;
     const out = {
-      on: enabled, place: id, count: n, first, still, kinds, uses, anchors: anchors.length, gusts, hushed, rows: { last: written, max: maxRows, total: writes },
+      on: enabled, place: id, count: n, first, still, kinds, uses, anchors: anchors.length, gusts, hushed, rows: { last: written, max: maxRows, total: writes }, eyeHidden,
       ms: +med(times).toFixed(4), draws: times.length,
       halos: anchors.map(c => { const i = c.halo[0], w = D(), q = (first + i) * 16; return { x: c.x, y: c.y, z: c.z, s: +Math.sqrt(w[q + 4]).toFixed(4), pale: PK.indexOf(w[q + 7]), near: +c.near.toFixed(2) }; }),
       flocks: flocks.map(f => ({ x: f.x, y: f.y, z: f.z, n: f.birds.length, state: f.state, shown: f.birds.reduce((s, b) => s + b.dabs.filter(i => D()[(first + i) * 16 + 3] > 0).length, 0) })),

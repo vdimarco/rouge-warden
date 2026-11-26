@@ -576,12 +576,18 @@ const swingAt = (S, t, id = 'cut1') => {
 { // growth (gloam-downs-growth): each new bus event plays a cue that exists, and a bomb that misses does not bring the strings in
   const F = fake(), { A, log } = busRun(F);
   F.S.arrive('gaol'); F.run(0.3); F.S.placeTheme('gaol'); F.run(3);
-  const want = { 'pattern-found': 'glim', 'pattern-kept': 'buy', 'pattern-kindled': 'buy', 'key-found': 'light', 'ability-ready': 'focus', 'spark-take': 'choice', 'cache-open': 'glim' };
+  const want = { 'pattern-found': 'glim', 'pattern-kept': 'buy', 'key-found': 'light', 'ability-ready': 'focus', 'cache-open': 'glim' };
   for (const [ev, cue] of Object.entries(want)) {
     const n = log.length;
     emit(ev, { id: 'rime', slot: 0, colour: 'ward', spot: 'gaol-ledge1', prize: 'glim' });
     assert(log.slice(n).some(c => c.cue === cue), `${ev} plays ${cue}`);
     assert(CUES[cue], `${cue} has a recipe`);
+  }
+  // a spark and a kindle play once, from the screens (pick and kindle in main.js): the bus adds no second cue
+  for (const ev of ['spark-take', 'pattern-kindled']) {
+    const n = log.length;
+    emit(ev, { id: 'rime', colour: 'ward' });
+    assert(log.length === n, `${ev} plays no cue of its own (${JSON.stringify(log.slice(n))})`);
   }
   emit('ability-use', { id: 'bomb', slot: 0 });
   assert(A.view().events.includes('ability-use') && A.view().events.includes('cache-open'));
@@ -591,7 +597,7 @@ const swingAt = (S, t, id = 'cut1') => {
   A.flush(); F.run(3);
   assert(F.S.view().layers.includes('drums') && !F.S.view().layers.includes('strings'), JSON.stringify(F.S.view().layers));
   A.off();
-  pass('growth sounds: pattern-found, pattern-kept, pattern-kindled, key-found, ability-ready, spark-take and cache-open play cues that exist; a bomb that misses brings no strings');
+  pass('growth sounds: pattern-found, pattern-kept, key-found, ability-ready and cache-open play cues that exist; spark-take and pattern-kindled leave their cue to the screens; a bomb that misses brings no strings');
 }
 { /* the sound beds (gloam-downs-screens-life, "Sound beds"): a gust from life.js is heard as a 2 s swell of the wind within 50 ms; a
      flock's take-off plays wings and caws at the flock; the bed ducks while foes are awake and stops in the boss fight, the

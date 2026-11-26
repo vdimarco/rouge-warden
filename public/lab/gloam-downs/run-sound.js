@@ -184,11 +184,12 @@ export function makeRunSound({ log, rs, phone = false, step = () => 0, ear = () 
     // own cue (wisp) and each ability's cue with `ability: <id>`; these add the rest
     'pattern-found': () => A.cue('glim', { pattern: true }),
     'pattern-kept': () => A.cue('buy', { pattern: true }),
-    'pattern-kindled': () => A.cue('buy', { kindled: true }),
+    // the screens play pick on a spark and kindle on a kindle (main.js), so these two stay quiet here
+    'pattern-kindled': () => {},
     'key-found': () => A.cue('light', { key: true }),
     'ability-use': () => {},
     'ability-ready': d => A.cue('focus', { ready: d.slot ?? 0 }),
-    'spark-take': () => A.cue('choice', { spark: true }),
+    'spark-take': () => {},
     'cache-open': () => A.cue('glim', { cache: true }),
     'life-stir': d => A.stir(d)
   };

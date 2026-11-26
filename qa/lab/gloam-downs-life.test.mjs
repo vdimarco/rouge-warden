@@ -253,4 +253,23 @@ pass('the budget: life 1,200 splats or fewer, the place with its pool, the spark
   for (let k = 1; k < order.length; k++) assert(order[k] >= order[k - 1] - 1e-9, `lamp ${k} lit before a nearer one`);
   pass('the beacon answers: a Flame pick in slot 33 (8 dabs, gone by 0.6 s), a Gloam hover in slot 39, a wick pick in 46; beacon-lit lights the near lamps nearest first', { chain: near.length });
 }
+{ // what floats hides between the eye and the lamplighter: with the lamplighter 8 m from the eye, a mote 1 m from the eye hides, a
+  // mote 7.2 m off (past 8 less 1 m, short of 8 less 0.5 m) stays hidden, one 7.8 m off shows; a still eye writes no row after the crossing
+  const L = place('gaol'), { life, world } = L, body = { x: 500, y: 0, z: 500 };
+  const m = life.test({ all: true }).all.findIndex(d => d.use === 'mote' && d.d > 0), q = (life.first + m) * 16, w = () => world.data;
+  const at = [w()[q], w()[q + 1], w()[q + 2]];
+  // a view whose eye sits 1 m behind the mote (yaw 0, pitch 0: the eye is dist along +z from the target)
+  const view = (r) => ({ target: [at[0], at[1], at[2] + r - 8], dist: 8, yaw: 0, pitch: 0 });
+  life.draw(view(1), 1, body, []);
+  assert.equal(w()[q + 3], 0, 'a mote 1 m from the eye still shows');
+  const hid = life.test().eyeHidden;
+  assert(hid >= 1, `eyeHidden ${hid}`);
+  life.draw(view(1), 1 + 1 / 60, body, []);
+  assert.equal(life.test().rows.last, 0, 'a still eye wrote rows after the crossing');
+  life.draw(view(7.2), 1.1, body, []);
+  assert.equal(w()[q + 3], 0, 'a mote 7.2 m off, the lamplighter 8 m off, shows again before 7.5 m');
+  life.draw(view(7.8), 1.2, body, []);
+  assert(w()[q + 3] > 0, 'a mote 7.8 m from the eye, the lamplighter 8 m off, stays hidden');
+  pass('what floats nearer the eye than the lamplighter less 1 m hides, and shows again past the lamplighter less 0.5 m; a still eye writes no row', { hidden: hid });
+}
 console.log(`PASS qa/lab/gloam-downs-life.test.mjs: ${n} checks`);

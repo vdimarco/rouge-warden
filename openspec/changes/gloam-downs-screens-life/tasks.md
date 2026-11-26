@@ -28,9 +28,11 @@ Two builders work in parallel worktrees from `720edbba`. design.md "Who builds w
 - [x] 2.10 Run `gloam-downs-run.fight.e2e.mjs` (the phone tell check with life on), `gloam-downs-foes.test.mjs`, `gloam-downs.test.mjs`, `gloam-downs-run.test.mjs` and `node qa/arcade/quiet.mjs --only=lab/gloam-downs`.
 
 ## 3. Merge pass
-- [ ] 3.1 Merge E onto S. Check that Builder E's five hook lines and the `bus.js` line are in place once each.
-- [ ] 3.2 Node: every `qa/lab/gloam-downs*.test.mjs`, `node qa/lab/gloam-downs-zones.mjs`.
-- [ ] 3.3 Browser, with the site served: every `qa/lab/gloam-downs*.e2e.mjs` but the uniforms check (the renderer does not change; run it only if a renderer file changed), `CHROMIUM_PATH=/opt/pw-browsers/chromium QUIET_URL=http://127.0.0.1:8765 node qa/arcade/quiet.mjs --only=lab/gloam-downs`, and the music demo's `beds` group.
-- [ ] 3.4 Look at the pictures: the title, the beacon card, the Lamp-room and the summary at 390x844 and 1280x720, and each place's life at 390x844. Check them against "What is dull today" in design.md, and that the look is still painted lamplight in the dark.
-- [ ] 3.5 Update `games/gloam-downs/README.md` and the Gloam Downs line in `AGENTS.md` with the new modules and checks. Write the measured frame-time ratios and the bed levels into design.md.
-- [ ] 3.6 `openspec validate gloam-downs-screens-life --strict`. Say in the report that no real phone, real pad or audio listening test ran, if none did.
+- [x] 3.1 Merge E onto S. Check that Builder E's five hook lines and the `bus.js` line are in place once each.
+- [x] 3.2 Node: every `qa/lab/gloam-downs*.test.mjs`, `node qa/lab/gloam-downs-zones.mjs`.
+- [x] 3.3 Browser, with the site served: every `qa/lab/gloam-downs*.e2e.mjs` but the uniforms check (the renderer does not change; run it only if a renderer file changed), `CHROMIUM_PATH=/opt/pw-browsers/chromium QUIET_URL=http://127.0.0.1:8765 node qa/arcade/quiet.mjs --only=lab/gloam-downs`, and the music demo's `beds` group.
+- [x] 3.4 Look at the pictures: the title, the beacon card, the Lamp-room and the summary at 390x844 and 1280x720, and each place's life at 390x844. Check them against "What is dull today" in design.md, and that the look is still painted lamplight in the dark.
+- [x] 3.5 Update `games/gloam-downs/README.md` and the Gloam Downs line in `AGENTS.md` with the new modules and checks. Write the measured frame-time ratios and the bed levels into design.md.
+- [x] 3.6 `openspec validate gloam-downs-screens-life --strict`. Say in the report that no real phone, real pad or audio listening test ran, if none did.
+
+The merge pass is written up in design.md "Merge pass: what was done". No real phone, real pad or listening test ran.

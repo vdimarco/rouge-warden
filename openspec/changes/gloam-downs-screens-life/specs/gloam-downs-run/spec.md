@@ -103,7 +103,7 @@ The cues `hover`, `reveal`, `pick`, `kindle` and `tally` SHALL be in `CUES` with
 - **THEN** each new cue's peak is under `choice`'s, and none clips. Check: e2e `gloam-downs-screen-sound.e2e.mjs`.
 
 ### Requirement: Ambient life
-Each of the five places SHALL have ambient life in its own palette and mood, as design.md "Per place" lists: moths at lamps, embers or motes, falling leaves, flakes or ash, mist in hollows, flicker at lamps, and grass or rags that sway. The life SHALL move by the splat shader's own motion kinds, with no change to the renderer. It SHALL show in the run and in the explorer.
+Each of the five places SHALL have ambient life in its own palette and mood, as design.md "Per place" lists: moths at lamps, embers or motes, falling leaves, flakes or ash, mist in hollows, flicker at lamps, and grass or rags that sway. The life SHALL move by the splat shader's own motion kinds, with no change to the renderer. It SHALL show in the run and in the explorer. What floats SHALL not draw between the eye and the lamplighter.
 
 #### Scenario: Each place has its life
 - **WHEN** each place is built with `makeLife` from its baked files
@@ -112,6 +112,10 @@ Each of the five places SHALL have ambient life in its own palette and mood, as 
 #### Scenario: Life can be seen
 - **WHEN** the Gaol is drawn at the same view at game times 0 s and 1 s, with no foe awake
 - **THEN** at least 0.2% of the picture's pixels differ between the two, and at least 1.5 times as many as with `__gloam.life({ on: false })` (the baked fires and embers already move about 0.8% of it). Check: e2e `gloam-downs-life.e2e.mjs`.
+
+#### Scenario: No pale squares in front of the lamplighter
+- **WHEN** a mote, drip, firefly, leaf or mist dab is nearer the drawn eye than the lamplighter less 1 m, on the title's drift or the follow camera at any layout
+- **THEN** its density is 0, and it shows again once it is farther than the lamplighter less 0.5 m; a still eye writes no row after the crossing. Check: Node test `gloam-downs-life.test.mjs`, and the title pictures at 1280x720 and 390x844 from `gloam-downs-screens.e2e.mjs` with `SHOTS`.
 
 ### Requirement: Life answers the lamplighter
 A crow flock SHALL take off when the lamplighter comes within 5 m, a foe within 3 m or a hit lands within 6 m, fly away over 2.5 s and stay gone until the place is entered again. A lamp's halo SHALL brighten within 4 m of the lamplighter. A gust every 9 to 20 s SHALL lean the tufts and shed leaves. Each SHALL emit `life-stir`.
@@ -136,7 +140,7 @@ No life dab SHALL use palette slots 34 to 37. Lamp halos SHALL use 46 and 47 onl
 - **THEN** after 0.3 s no bright life dab (ember, mote, firefly, moth, halo) within 8 m of it has density over 0, and the phone tell check passes with life on. Check: e2e `gloam-downs-run.fight.e2e.mjs` and `gloam-downs-life.e2e.mjs`.
 
 ### Requirement: Life budget
-Life SHALL use at most 1,200 splats in a place, and the place with its pool, the sparks and life SHALL stay at or under 277,000. In steady play life SHALL write no row; with a flock in flight or a gust, at most 4 rows of 512 a frame. At 390x844 the median frame time with life SHALL be at most 1.05 times that without it, and at most 1.08 in any one view.
+Life SHALL use at most 1,200 splats in a place, and the place with its pool, the sparks and life SHALL stay at or under 277,000. In steady play with a still eye life SHALL write no row; with a flock in flight or a gust, at most 4 rows of 512 a frame. At 390x844 the median frame time with life SHALL be at most 1.05 times that without it, and at most 1.08 in any one view.
 
 #### Scenario: The count
 - **WHEN** each place is built with its pool, the sparks and life

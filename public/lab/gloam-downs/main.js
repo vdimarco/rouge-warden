@@ -1810,7 +1810,8 @@ window.__gloam = {
   // in a run, light() acts as a touch on the beacon, so it obeys the run's rules
   light: () => (RUN ? runner.light([]).forEach(runEvent) : lightBeacon()),
   points: () => (meta ? { spawn: meta.spawn, beacon: meta.beacon.p, wisps: meta.wisps.map(w => w.p) } : null),
-  close: () => closePanels(),
+  // the title counts as a panel here, so the checks that open the page without ?test can close it as they close the help
+  close: () => { if (!$('title').hidden) titleClose(); closePanels(); },
   // ?test: free the mouse as a card does (no pause panel), so a test can click the tools with the cursor
   release: () => { inp.free(); return inp.locked; },
   /* ?test only: step the game by `seconds` at 60 steps a second with these held (mx, mz, jump, slow, ox, attack, roll, heal, look),

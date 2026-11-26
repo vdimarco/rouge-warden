@@ -254,6 +254,40 @@ Bed levels (music demo `beds` group, 30 s, two gusts and one flock, integrated L
 
 No one listened to the beds on speakers or headphones; the levels are measured only.
 
+## Merge pass: what was done
+- **The merge.** `gloam-screens-2` then `gloam-life-2` merged onto the branch with no conflict. Builder E's five hooks in `main.js` and the `life-stir` line in `bus.js` are each there once. The two `pendingRows = new Set()` lines were already `pendingRows.clear()` (Builder S).
+- **One sound a pick.** `run-sound.js` no longer plays `choice` on `spark-take` or `buy` on `pattern-kindled`. Every spark pick goes through the card's `picked()` (`pick`) and every kindle through `kindledTile()` (`kindle`), so each sounded twice before. The sound test now checks that those two events add no cue.
+- **Pale squares in front of the lamplighter.** On the 1280x720 title, motes and drips near the drifting camera drew as pale squares of 16 to 20 px. Builder E kept them 2.5 m off the route, but the desktop camera rides 8.5 m behind the lamplighter and the title's drift swings it off the route. Now a floater (mote, firefly, drip, leaf, mist) nearer the drawn eye than the lamplighter less 1 m hides, and shows again past the lamplighter less 0.5 m (`RULES.eye`, `nearEye` in `life.js`). A crossing writes that dab's row on that frame only. This is the usual near-plane fade for particles (soft or near-faded particles in engine docs, such as Unity's particle "Near fade" and Unreal's camera depth fade), done on the CPU per dab because life writes its own rows. A Node check and a spec scenario cover it.
+- **The checks that met life.** `gloam-downs-run.lineup.e2e.mjs` counted the Gaol's splats without life's block (1,010 splats after the place, in the run and the explorer). It now reads life's count from `__gloam.life()`.
+- **The checks that met the title.** `gloam-downs-camera.e2e.mjs` opens `?explore` without `?test`, which now opens the title, so its mouse turn did nothing. `__gloam.close()` now closes the title as it closes the help (a test hook only).
+- **Left for later.** On the 1280x720 title two motes to the left of the lamplighter still draw as squares of about 12 px: they stand beside the lamplighter, not in front of it, so the rule keeps them.
+- **The music demo under load.** The full demo, run beside the screens check, measured the Gaol's music 1.5 LU quieter with its bed than without. The `beds` group alone measured the usual figures (lift 0.1 to 0.4 LU), and every other group passed in the full run.
+- **A flake under load.** `gloam-downs-run.boss.e2e.mjs` once missed the focus on Try again while two other browser checks ran beside it. It passed alone, the fail part and the whole check.
+
+### Measured in the merge pass (SwiftShader, 390x844 with touch, nothing else running)
+`gloam-downs-life.e2e.mjs` with `WARM=3 DRAWS=32 BLOCK=4` (the spec's 15, 120 and 10 would take about 4 hours at 7 s a draw). Life on and off by turns:
+
+| View | With life (ms) | Without (ms) | Ratio | Life's own (ms) |
+|---|---|---|---|---|
+| gaol/start | 7272 | 7202 | 1.010 | 0.2 |
+| gaol/lamp | 6933 | 6929 | 1.001 | 0.2 |
+| gaol/beacon | 6319 | 6324 | 0.999 | 0.3 |
+| ramparts/start | 7118 | 7177 | 0.992 | 0.2 |
+| ramparts/lamp | 6479 | 6422 | 1.009 | 0.2 |
+| ramparts/beacon | 6192 | 6196 | 0.999 | 0.2 |
+| fen/start | 6841 | 6870 | 0.996 | 0.1 |
+| fen/lamp | 6384 | 6385 | 1.000 | 0.1 |
+| fen/beacon | 6279 | 6292 | 0.998 | 0.2 |
+| bells/start | 7208 | 7357 | 0.980 | 0.1 |
+| bells/lamp | 7041 | 7115 | 0.990 | 0.1 |
+| bells/beacon | 7057 | 6983 | 1.011 | 0.1 |
+| barrows/start | 7574 | 7612 | 0.995 | 0.1 |
+| barrows/lamp | 6613 | 6601 | 1.002 | 0.1 |
+| barrows/beacon | 6284 | 6242 | 1.007 | 0.1 |
+| explorer/gaol | 6724 | 6764 | 0.994 | |
+
+Over all 15 views: 1.003 (at most 1.05). Worst view: 1.011 (at most 1.08). Explorer 0.994. Life's own median: 0.1 ms (at most 0.25). Life can be seen: 526 pixels moved with life against 285 without (1.85 times, 1.13% of the picture). No real phone, real pad or listening test ran.
+
 ## Risks
 - **The title adds a screen.** A returning player pressed Begin in the Lamp-room before; now they press Begin on the title. The count of presses is the same.
 - **Life near tells.** If the hush is too slow, a mote can shine by a wind-up. The fight e2e's tell check is the guard.
