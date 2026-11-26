@@ -171,8 +171,15 @@ void main() {
   float wall = step(abs(vKind - 8.0), 0.25);
   if (wall > 0.5 && !(t.r > 0.55 && t.g > 0.25 && t.b < 0.45 && t.r > t.b + 0.25)) {
     if (vSign < 0.0) {
-      float on = step(0.84, fract(floor(vW.y / uTile) * 0.37 + floor((vW.x + vW.z) / uTile) * 0.17));
-      o = vec4((on > 0.5 ? vec3(201.0, 133.0, 58.0) : vec3(43.0, 42.0, 51.0)) / 255.0, 1.0);
+      float cell = 4.0;
+      float cx = floor(vW.x / cell);
+      float cy = floor(vW.y / cell);
+      float n = fract(sin(cx * 12.9898 + cy * 78.233 + floor(vW.z) * 45.164) * 43758.5453);
+      float n2 = fract(sin(cx * 39.346 + cy * 11.135) * 24634.6345);
+      float ox = floor(n2 * cell);
+      float oy = floor(fract(n2 * 7.13) * cell);
+      float here = step(abs(mod(floor(vW.x), cell) - ox), 0.0) * step(abs(mod(floor(vW.y), cell) - oy), 0.0);
+      o = vec4((here * step(0.833, n) > 0.5 ? vec3(201.0, 133.0, 58.0) : vec3(43.0, 42.0, 51.0)) / 255.0, 1.0);
       return;
     } else {
     float kd = vKind - 8.0;

@@ -244,28 +244,29 @@ export function build(seed) {
   for (const b of buildings) if (b.h > top) top = b.h;
   const dark = uvOf("wall_dark");
   const darkF = [dark[2], dark[1], dark[0], dark[3]];
-  const wall = (px, pz, hx, y1, orient) => {
-    slices.push(slice(px, pz, y1 * 0.5, hx, y1 * 0.5, hx < 0 ? darkF : dark, 8, -1, bid, false, orient));
+  const wall = (px, pz, hx, y0, y1, orient) => {
+    slices.push(slice(px, pz, (y0 + y1) / 2, hx, (y1 - y0) / 2, hx < 0 ? darkF : dark, 8, -1, bid, false, orient));
   };
-  const box = (tx, ty, tw, td, h, ix, iz) => {
+  const box = (tx, ty, tw, td, s0, s1, ix, iz) => {
     const x = (tx + tw * 0.5) * TILE, z = (ty + td * 0.5) * TILE;
-    const hx = tw * TILE * 0.5 - ix, hz = td * TILE * 0.5 - iz, y1 = Math.min(h, top) * TILE;
+    const hx = tw * TILE * 0.5 - ix, hz = td * TILE * 0.5 - iz;
+    const y0 = s0 * TILE, y1 = Math.min(s1, top) * TILE;
     fillers.push({ x, z, hx: hx + ix, hz: hz + iz, bid });
-    wall(x, z + hz, hx + ix, y1, 2);
-    wall(x, z - hz, -(hx + ix), y1, 2);
-    wall(x + hx, z, -(hz + iz), y1, 1);
-    wall(x - hx, z, hz + iz, y1, 1);
+    wall(x, z + hz, hx + ix, y0, y1, 2);
+    wall(x, z - hz, -(hx + ix), y0, y1, 2);
+    wall(x + hx, z, -(hz + iz), y0, y1, 1);
+    wall(x - hx, z, hz + iz, y0, y1, 1);
     bid++;
   };
   for (let i = 0; i < 6; i++) {
     const ty = -3 + i * 2;
-    box(-2, ty, 2, 2, 4, 0, 0.5);
-    box(6, ty, 2, 2, 4, 0, 0.5);
+    box(-2, ty, 2, 2, 0, 4, 0, 0.5);
+    box(6, ty, 2, 2, 0, 4, 0, 0.5);
   }
-  box(0, -3, 2, 3, 4, 0.5, 0);
-  box(4, -3, 2, 3, 4, 0.5, 0);
-  box(0, 6, 2, 3, 1, 0.5, 0);
-  box(4, 6, 2, 3, 2, 0.5, 0);
+  box(0, -3, 2, 3, 0, 4, 0.5, 0);
+  box(4, -3, 2, 3, 0, 4, 0.5, 0);
+  box(0, 6, 2, 3, 0, 1, 0.5, 0);
+  box(4, 6, 2, 3, 0, 2, 0.5, 0);
 
   // Street and sidewalks. Outside the block the ground is the clear colour, #1A1A22.
   const gy0 = -2, gy1 = GRID + 16;

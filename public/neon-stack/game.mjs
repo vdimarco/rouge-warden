@@ -360,6 +360,12 @@ function scene() {
       aim(s, cam, s.uv0);
       rest.push(s);
     } else if (s.bid < 0 || !cuts.has(s.bid) || s.low) {
+      if (s.kind === 8 && s.sign < 0) {
+        const zFace = (s.orient || 0) >= 1.5;
+        const nx = zFace ? 0 : (s.hx < 0 ? 1 : -1);
+        const nz = zFace ? (s.hx < 0 ? -1 : 1) : 0;
+        if (nx * (cam[0] - s.x) + nz * (cam[2] - s.z) <= 0) continue;
+      }
       if (s.kind === 16) s.sign = hack.flash > 0 ? 1 : 0;
       if (s.kind === 9 || s.kind === 12) aim(s, cam, s.uv0);
       rest.push(s);
