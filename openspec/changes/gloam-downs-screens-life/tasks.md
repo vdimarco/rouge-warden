@@ -16,15 +16,15 @@ Two builders work in parallel worktrees from `720edbba`. design.md "Who builds w
 - [ ] 1.11 Update `gloam-downs-run.test.mjs`, `gloam-downs-growth.test.mjs`, `gloam-downs-run.cards.e2e.mjs`, `gloam-downs-run.growth.e2e.mjs`, `gloam-downs-run.input.e2e.mjs` and `gloam-downs.e2e.mjs` for the title and the new markup. Run them, and `gloam-downs-run.fight.e2e.mjs`, `gloam-downs-mouse.e2e.mjs` and `gloam-downs-clicks.e2e.mjs`.
 
 ## 2. Builder E: life and beds
-- [ ] 2.1 `life.js` (new): `makeLife(world, meta, o)`: the anchors, tufts, perches, hollows and route from the baked data and walk map; the block of rows after the place's splats; `world.moving` for kinds 2 and 3; `LIFE` per place with its palette slots.
-- [ ] 2.2 `life.js`: the per-place life of design.md "Per place", within 1,200 splats.
-- [ ] 2.3 `life.js`: crows that take off, lamps that brighten, gusts, the hush near awake foes, the answers to `screen-hover`, `screen-pick`, `spark-take`, `pattern-kindled` and `beacon-lit`, and `life-stir`.
-- [ ] 2.4 `life.js`: reduced motion (`still`), and `test(o)` (on and off, counts, rows written, its own time, the halos and flocks).
-- [ ] 2.5 The five hooks in `main.js`, exactly as design.md writes them, and `'life-stir'` at the end of `EVENTS` in `bus.js`.
-- [ ] 2.6 `beds.js` (new) and `run-sound.js`: a bed per place, the gust swell, the flock's wings and caws at the flock, the duck in a fight, the stop in the boss fight and the Lamp-room.
-- [ ] 2.7 `qa/lab/gloam-downs-life.test.mjs` (new): the Node scenarios of Ambient life, Life answers the lamplighter, Life never looks like a tell (no fire slot), Life budget (the count), Life with reduced motion and The world answers the screens; it prints each place's count. `GLOAM_WORLDS=0` skips the baked places.
+- [x] 2.1 `life.js` (new): `makeLife(world, meta, o)`: the anchors, tufts, perches, hollows and route from the baked data and walk map; the block of rows after the place's splats; `world.moving` for kinds 2 and 3; `LIFE` per place with its palette slots.
+- [x] 2.2 `life.js`: the per-place life of design.md "Per place", within 1,200 splats.
+- [x] 2.3 `life.js`: crows that take off, lamps that brighten, gusts, the hush near awake foes, the answers to `screen-hover`, `screen-pick`, `spark-take`, `pattern-kindled` and `beacon-lit`, and `life-stir`.
+- [x] 2.4 `life.js`: reduced motion (`still`), and `test(o)` (on and off, counts, rows written, its own time, the halos and flocks).
+- [x] 2.5 The five hooks in `main.js`, exactly as design.md writes them, and `'life-stir'` at the end of `EVENTS` in `bus.js`.
+- [x] 2.6 `beds.js` (new) and `run-sound.js`: a bed per place, the gust swell, the flock's wings and caws at the flock, the duck in a fight, the stop in the boss fight and the Lamp-room.
+- [x] 2.7 `qa/lab/gloam-downs-life.test.mjs` (new): the Node scenarios of Ambient life, Life answers the lamplighter, Life never looks like a tell (no fire slot), Life budget (the count), Life with reduced motion and The world answers the screens; it prints each place's count. `GLOAM_WORLDS=0` skips the baked places.
 - [ ] 2.8 `qa/lab/gloam-downs-life.e2e.mjs` (new): life can be seen, crows lift, the hush, reduced motion, and the frame-time check of design.md "Budget and the measured check", which prints each view's ratio. `SHOTS=<dir>` keeps a picture of each place at 390x844 and 1280x720.
-- [ ] 2.9 `gloam-downs-sound.test.mjs`: the bed scenarios. `gloam-downs-music-demo.mjs`: the `beds` group and its targets.
+- [x] 2.9 `gloam-downs-sound.test.mjs`: the bed scenarios. `gloam-downs-music-demo.mjs`: the `beds` group and its targets.
 - [ ] 2.10 Run `gloam-downs-run.fight.e2e.mjs` (the phone tell check with life on), `gloam-downs-foes.test.mjs`, `gloam-downs.test.mjs`, `gloam-downs-run.test.mjs` and `node qa/arcade/quiet.mjs --only=lab/gloam-downs`.
 
 ## 3. Merge pass

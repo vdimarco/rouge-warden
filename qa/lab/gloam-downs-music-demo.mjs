@@ -13,7 +13,9 @@
 //   fight-desktop/phone     the scripted 40 s fight in the Gaol, in both mixes, and fight-fx / fight-music (each bus alone)
 // Then it measures each file with ffmpeg's ebur128 filter (integrated, momentary maximum, true peak) and, for the hits, the energy
 // of the three layers in the first 120 ms, writes loudness.json and index.txt, and exits with an error when a target is missed.
-//   NODE_PATH=qa/browser/node_modules node qa/lab/gloam-downs-music-demo.mjs [cues power themes layers boss stings fight]
+//   bed-<place>.mp3         the beds group: each place's sound bed alone for 30 s with two gusts and one flock, and its explore
+//                           music for 30 s with and without the bed (bedmusic-, music-), so the bed's share of the level is seen
+//   NODE_PATH=qa/browser/node_modules node qa/lab/gloam-downs-music-demo.mjs [cues power themes layers boss stings fight beds]
 // Environment: DEMO (the folder; default <system temp>/gloam-downs-sound), PORT (default 8842; it serves public/ itself when nothing
 // answers), KBPS (default 160), FFMPEG (default /usr/bin/ffmpeg), CHROMIUM_PATH (default /opt/pw-browsers/chromium).
 import fs from 'node:fs';
@@ -85,6 +87,9 @@ await page.evaluate(() => {
     if (spec.key) fx.setKey(spec.key);
     const m = createMusic(c, { mix, base: '/lab/gloam-downs/audio/', fetchFn: cachedFetch, seed: 7, latency: 0 });
     await m.load();
+    // a place's sound bed (beds.js), started at 0: acts { t, bed: 'gust' | 'crows', args }
+    let bed = null;
+    if (spec.bed) { const { makeBeds } = await import('/lab/gloam-downs/beds.js'); bed = makeBeds(c, mix, { seed: 7 }); bed.place(spec.bed, 0); }
     const acts = (spec.acts || []).slice().sort((a, b) => a.t - b.t);
     let ai = 0;
     const plays = [];
@@ -95,7 +100,9 @@ await page.evaluate(() => {
         else if (a.score) m.score[a.score](...(a.args || []));
         else if (a.note) m.note(a.note, Math.max(a.t, c.currentTime));
         else if (a.filter) m.setFilter(...a.filter);
+        else if (a.bed) bed?.[a.bed](...(a.args || []), Math.max(a.t, c.currentTime));
       }
+      bed?.tick(t);
       if (!spec.tone) m.score.tick();
       const rd = mix.reduction();
       red.push([+t.toFixed(3), +rd.lim.toFixed(2)]);
@@ -443,6 +450,16 @@ if (want('fight')) {
   await render('fight-phone-fx', { len: 40, phone: true, bus: 'fx', acts }, 'the effects alone, phone mix');
   await render('fight-phone-music', { len: 40, phone: true, bus: 'music', acts }, 'the music alone, phone mix');
 }
+// ---- the beds (gloam-downs-screens-life design.md "Sound beds"): each bed alone, and its place's explore music with and without it
+if (want('beds')) {
+  for (const id of info.places) {
+    const acts = [{ t: 8, bed: 'gust', args: [0.8] }, { t: 14, bed: 'crows', args: [[5, -3], { x: 0, z: 0, yaw: 0 }] }, { t: 20, bed: 'gust', args: [1] }];
+    await render(`bed-${id}`, { len: 30, bed: id, acts }, 'the bed alone: gusts at 0:08 and 0:20, a flock at 0:14');
+    const theme = [{ t: 0, score: 'arrive', args: [id] }, { t: 0.3, score: 'placeTheme', args: [id] }];
+    await render(`music-${id}`, { len: 30, acts: theme }, 'the explore music alone');
+    await render(`bedmusic-${id}`, { len: 30, bed: id, acts: [...theme, ...acts] }, 'the explore music with the bed');
+  }
+}
 await browser.close();
 server?.kill();
 
@@ -459,6 +476,13 @@ fs.writeFileSync(path.join(OUT, 'index.txt'), index.join('\n') + '\n');
 const fails = [];
 const need = (ok, what) => { if (!ok) fails.push(what); };
 for (const [k, v] of Object.entries(all)) need(v.TP <= -1, `${k}: true peak ${v.TP} dBTP over -1`);
+// each bed alone 10 LU or more under its place's explore music (and over -52 LUFS, so it is heard with the music off), and the music
+// moved by 0.5 LU or less with it
+for (const id of info.places) {
+  if (!all[`bed-${id}`]) continue;
+  need(all[`music-${id}`].I - all[`bed-${id}`].I >= 9.5 && all[`bed-${id}`].I >= -52, `bed-${id}: ${all[`bed-${id}`].I} LUFS, the music ${all[`music-${id}`].I}: not 10 LU under it, or under -52`);
+  need(Math.abs(all[`bedmusic-${id}`].I - all[`music-${id}`].I) <= 0.5, `the bed moves ${id}'s music by ${(all[`bedmusic-${id}`].I - all[`music-${id}`].I).toFixed(2)} LU, over 0.5`);
+}
 if (all['fight-desktop']) {
   need(Math.abs(all['fight-desktop'].I - FIGHT_LUFS) <= 2, `fight-desktop: ${all['fight-desktop'].I} LUFS, not ${FIGHT_LUFS} ±2`);
   need(Math.abs(all['fight-phone'].I - PHONE_LUFS) <= 2, `fight-phone: ${all['fight-phone'].I} LUFS, not ${PHONE_LUFS} ±2`);

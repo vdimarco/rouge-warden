@@ -192,6 +192,22 @@ Builder S keeps these five lines where they are when it changes main.js, and if 
 - Merge E onto S. Run every check in tasks.md section 3. Update `games/gloam-downs/README.md` ("The run in the page": `life.js`, `beds.js`, `menu-scene.js`; "Checks": the new tests) and the AGENTS.md Gloam Downs line with the new checks.
 - Take the screenshots for the pull request: the title, the beacon card, the Lamp-room and the summary at 390x844 and 1280x720, and each place's life at 390x844.
 
+## Builder E: what was built, and what changed from the plan
+- **Sizes.** The art is drawn at about 46,000 pixels on a phone and 100,000 on a desktop, so a pixel is about 3 to 4 cm at the follow camera's distance. Dabs of 1.5 cm did not show. Tuft blades are 2.2 cm wide, motes 2.6 to 4 cm, embers and fireflies 3 cm, moths 2.6 cm, crows 1.4 times the first sketch. The halo keeps 0.04 to 0.07 m.
+- **Where.** Tufts stand within 10 m of the route. A third of the motes and of what falls stands within 12 m of the start, where the player looks first.
+- **The Gaol** also has moonlit motes (`moon`, slots 30 and 31). Its drips are in `moon` 30, not `fog`, because a fog-coloured drip does not show against the fog. Every other place keeps the table in "Per place".
+- **Life can be seen.** The baked fires and embers already move about 0.8% of the Gaol's start picture between 0 s and 1 s. Life makes it 1.4% (1.86 times as much), so the check asks for 1.5 times, not 3. More dabs to reach 3 times cluttered the picture.
+- **The hush** fades the bright dabs (embers, motes, fireflies, moths, halos). Tufts, rags, leaves and crows stay, so the ground does not go bare by a fight.
+- **Crows** lift on a foe in `stagger`, `stun` or `down` within 6 m: that is how a landed hit shows to life.
+- **Gusts with reduced motion** still emit `life-stir`, so the beds still swell, but nothing moves or sheds.
+- **`life-stir` kinds:** `gust`, `crows`, and `lamp` (a lamp brightening by the lamplighter, which the Barrow Crown bed answers with moth wings). A buy has no bus event, so only `pattern-kindled` pulses the lamps.
+- **Bed levels.** The explore music of the places measures -31 to -39 LUFS. A bed at -38 LUFS would lift the Fen's music by about 3 LU, so the two targets of "Sound beds" could not both hold. The beds keep the rule that matters: each is 10 LU or more under its place's explore music (and over -52 LUFS), and lifts it by 0.5 LU or less. Each place has its own trim in `BEDS`.
+- **Merge item: the rows hook.** Hook 3 passes `pendingRows`, but `go()` then replaces it twice with `pendingRows = new Set()`. Life's row marks go to the old set, so a life write reaches the GPU only when its rows are uploaded for another reason (it happened to work in the tests, because the pool's rows share the upload). The merge must change those two lines to `pendingRows.clear();`, or pass life's rows to the renderer.
+- **The bus count.** `gloam-downs-builds.test.mjs` and `gloam-downs-sound.test.mjs` counted 23 bus events; with `life-stir` they count 24.
+
+### Measured (Builder E, SwiftShader, 390x844 with touch)
+MEASURED_TABLE
+
 ## Risks
 - **The title adds a screen.** A returning player pressed Begin in the Lamp-room before; now they press Begin on the title. The count of presses is the same.
 - **Life near tells.** If the hush is too slow, a mote can shine by a wind-up. The fight e2e's tell check is the guard.
