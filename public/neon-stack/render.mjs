@@ -87,7 +87,7 @@ float ovalShade(vec2 d, float rx, float ry) {
 float falloff(vec2 p, vec4 L, float I) {
   float live = step(0.15, I) * step(0.5, L.w);
   float r = length(p - L.xz / uTile);
-  return (1.0 - smoothstep(1.0, 2.05, r)) * live;
+  return (1.0 - smoothstep(1.0, 2.0, r)) * live;
 }
 
 void main() {
@@ -125,10 +125,22 @@ void main() {
   vec3 dark = vec3(0.290, 0.282, 0.322);
   if (runner > 0.5) { o = vec4(col, 1.0); return; }
   vec3 ink = vec3(0.102, 0.102, 0.133);
-  float depth = clamp(length(vW.xz - uCam) / (7.0 * uTile), 0.0, 1.0) * 0.30;
   if (abs(vKind - 5.0) < 0.25) {
-    col = mix(col, col * 0.22, neon);
-    col = mix(col, ink, depth);
+    float u = vCorner.x;
+    float v = vCorner.y;
+    float h = 0.16;
+    h = max(h, step(abs(u - 0.07), 0.028) * 0.58);
+    h = max(h, step(abs(u - 0.16), 0.045) * 0.82);
+    h = max(h, step(abs(u - 0.28), 0.03) * 0.46);
+    h = max(h, step(abs(u - 0.40), 0.05) * 0.68);
+    h = max(h, step(abs(u - 0.52), 0.018) * 0.94);
+    h = max(h, step(abs(u - 0.64), 0.042) * 0.52);
+    h = max(h, step(abs(u - 0.76), 0.032) * 0.74);
+    h = max(h, step(abs(u - 0.88), 0.036) * 0.42);
+    float tower = max(step(v, h), step(abs(u - 0.52), 0.007) * step(v, 0.99));
+    vec3 sky = vec3(16.0, 26.0, 46.0) / 255.0;
+    vec3 sil = vec3(8.0, 9.0, 14.0) / 255.0;
+    col = mix(sky, sil, tower);
     o = vec4(col, 1.0);
     return;
   }
@@ -192,14 +204,10 @@ void main() {
     float w3 = falloff(p, uL[3], uI[3]);
     float w4 = falloff(p, uL[4], uI[4]);
     float w5 = falloff(p, uL[5], uI[5]);
-    float cover = w0;
-    vec3 sum = uC[0].rgb;
-    if (w1 > cover) { cover = w1; sum = uC[1].rgb; }
-    if (w2 > cover) { cover = w2; sum = uC[2].rgb; }
-    if (w3 > cover) { cover = w3; sum = uC[3].rgb; }
-    if (w4 > cover) { cover = w4; sum = uC[4].rgb; }
-    if (w5 > cover) { cover = w5; sum = uC[5].rgb; }
-    col = mix(col, sum, cover * 0.5);
+    vec3 glow = uC[0].rgb * w0 + uC[1].rgb * w1 + uC[2].rgb * w2
+      + uC[3].rgb * w3 + uC[4].rgb * w4 + uC[5].rgb * w5;
+    float cover = min(1.0, w0 + w1 + w2 + w3 + w4 + w5);
+    col = mix(col, clamp(glow, 0.0, 1.0), cover * 0.3);
   }
   float fade = fadeOf(vSign);
   col = mix(col, mix(dark, col, fade), neon * (1.0 - dim) * (1.0 - wall));

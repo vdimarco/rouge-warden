@@ -67,8 +67,8 @@ function cross(a, b) { return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b
 function wrap(d) { return ((d % 360) + 360) % 360; }
 function clampTilt(d) { return Math.max(20, Math.min(87, d)); }
 function phone() { return window.innerWidth < 800; }
-// Half-width of the skyline plane so it meets both side edges and no further.
-function skyHalf(cam, focus, fov, aspect, sky) {
+// In-plane half-width so the skyline meets both side edges. axis 0 extends in X, 1 in Z.
+function skyHalf(cam, focus, fov, aspect, sky, axis) {
   const f = norm(sub(focus, cam));
   let right = cross(f, [0, 1, 0]);
   const rl = Math.hypot(right[0], right[1], right[2]) || 1;
@@ -77,11 +77,56 @@ function skyHalf(cam, focus, fov, aspect, sky) {
   const A = dot(rel, right);
   const B = Math.max(1, dot(rel, f));
   const tanH = Math.tan(fov / 2) * aspect;
-  const rx = right[0], fx = f[0];
+  const ax = axis === 0 ? [1, 0, 0] : [0, 0, 1];
+  const rx = dot(ax, right), fx = dot(ax, f);
   const hxR = (tanH * B - A) / (rx - tanH * fx || 1e-4);
   const hxL = (-tanH * B - A) / (rx + tanH * fx || 1e-4);
-  const hx = Math.max(Math.abs(hxR), Math.abs(hxL)) * 1.08;
-  return Math.min(36 * TILE, Math.max(2 * TILE, hx));
+  const hx = Math.max(Math.abs(hxR), Math.abs(hxL)) * 1.06;
+  return Math.min(28 * TILE, Math.max(2 * TILE, hx));
+}
+// One quad past the far side of the block, facing the camera, so a turn cannot
+// swing it across a lot. Depth test keeps every building in front.
+function placeSky(cam, focus, fov, aspect) {
+  const f = norm(sub(focus, cam));
+  const depthOf = (x, y, z) => (x - cam[0]) * f[0] + (y - cam[1]) * f[1] + (z - cam[2]) * f[2];
+  const span = 6 * TILE;
+  let farD = -1e9;
+  for (const x of [0, span]) for (const z of [0, span]) for (const y of [0, 7 * TILE]) {
+    farD = Math.max(farD, depthOf(x, y, z));
+  }
+  const fl = Math.hypot(f[0], f[2]) || 1;
+  const fx = f[0] / fl, fz = f[2] / fl;
+  const axisX = Math.abs(fx) >= Math.abs(fz);
+  const sign = axisX ? (fx >= 0 ? 1 : -1) : (fz >= 0 ? 1 : -1);
+  const y0 = 3.7 * TILE, hz = 1.6 * TILE;
+  let gap = 0.6 * TILE;
+  let sx = 3 * TILE, sz = -1.2 * TILE, hx = 8 * TILE, orient = 2;
+  for (let n = 0; n < 10; n++) {
+    const plane = sign > 0 ? span + gap : -gap;
+    if (axisX) {
+      const denom = Math.abs(f[0]) < 1e-4 ? 1e-4 : f[0];
+      const t = (plane - cam[0]) / denom;
+      sx = plane;
+      sz = cam[2] + f[2] * t;
+      orient = 1;
+    } else {
+      const denom = Math.abs(f[2]) < 1e-4 ? 1e-4 : f[2];
+      const t = (plane - cam[2]) / denom;
+      sz = plane;
+      sx = cam[0] + f[0] * t;
+      orient = 2;
+    }
+    hx = skyHalf(cam, focus, fov, aspect, [sx, y0, sz], axisX ? 1 : 0);
+    const pts = [];
+    for (const du of [-hx, hx]) for (const dy of [-hz, hz]) {
+      pts.push(axisX ? [sx, y0 + dy, sz + du] : [sx + du, y0 + dy, sz]);
+    }
+    const nearest = Math.min(...pts.map((p) => depthOf(p[0], p[1], p[2])));
+    if (nearest > farD + 2) break;
+    gap += TILE;
+  }
+  const plane = sign > 0 ? span + gap : -gap;
+  return { x: sx, z: sz, hx, orient, sign, plane: axisX ? sx : sz, axisX };
 }
 function solid(tx, ty) {
   return tx < 0 || ty < 0 || tx >= 6 || ty >= 6 || world.blocked[tx][ty];
@@ -274,16 +319,18 @@ function scene() {
       s.uv = frameUV("steam_vent_" + (Math.floor(time * 8) % 4), false);
       rest.push(s);
     } else if (s.kind === 5) {
-      if (s.restX === undefined) { s.restX = s.x; s.restZ = s.z; }
-      const px = world.spawn.x * TILE + (player.x - world.spawn.x) * TILE * 0.7;
-      const pz = world.spawn.y * TILE + (player.y - world.spawn.y) * TILE * 0.7;
-      const ox = s.restX - world.spawn.x * TILE;
-      const oz = s.restZ - world.spawn.y * TILE;
-      const a = -yaw * Math.PI / 180 * 0.78;
-      const c = Math.cos(a), sn = Math.sin(a);
-      s.x = px + ox * c - oz * sn;
-      s.z = pz + ox * sn + oz * c;
-      s.hx = skyHalf(cam, focus, portrait ? FOV_PORTRAIT : FOV_LAND, aspect, [s.x, s.y, s.z]);
+      const placed = placeSky(cam, focus, portrait ? FOV_PORTRAIT : FOV_LAND, aspect);
+      // Follow most of the walk so the sky shifts about a third as far as the lots,
+      // and never cross back onto the block.
+      const follow = 0.62;
+      let x = placed.x + (player.x - world.spawn.x) * TILE * follow;
+      let z = placed.z + (player.y - world.spawn.y) * TILE * follow;
+      if (placed.axisX) x = placed.sign > 0 ? Math.max(x, placed.plane) : Math.min(x, placed.plane);
+      else z = placed.sign > 0 ? Math.max(z, placed.plane) : Math.min(z, placed.plane);
+      s.x = x;
+      s.z = z;
+      s.hx = placed.hx;
+      s.orient = placed.orient;
       rest.push(s);
     } else if (s.bid < 0 || !cuts.has(s.bid) || s.low) rest.push(s);
   }

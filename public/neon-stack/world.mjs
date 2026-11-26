@@ -163,10 +163,12 @@ export function build(seed) {
       const y = (s + 0.5) * TILE;
       const body = BODY[Math.floor(rand() * BODY.length)];
       const shop = rand() < 0.5 ? "shopfront" : "door";
-      const win = lit.has(s) && tx !== 4 ? "wall_lit2" : body;
+      const above = signKey.has(tx + "," + ty) && s >= 2;
+      const win = above ? "wall_lit2" : (lit.has(s) && tx !== 4 ? "wall_lit2" : body);
+      const southTex = s === 0 ? shop : (above ? "wall_lit2" : body);
       const wk = wallKind(s);
       if (southOpen) {
-        slices.push(slice(x, (ty + 1) * TILE - 0.8, y, TILE / 2, TILE / 2, uvOf(s === 0 ? shop : body), wk, 0.2, bi, s === 0, 2));
+        slices.push(slice(x, (ty + 1) * TILE - 0.8, y, TILE / 2, TILE / 2, uvOf(southTex), wk, 0.2, bi, s === 0, 2));
       }
       if (streetEast && eastOpen) {
         slices.push(slice((tx + 1) * TILE - 0.8, z, y, TILE / 2, TILE / 2, uvOf(s === 0 ? shop : win), wk, 0.2, bi, s === 0, 1));
@@ -174,8 +176,8 @@ export function build(seed) {
       if (!streetEast && westOpen) {
         slices.push(slice(tx * TILE + 0.8, z, y, TILE / 2, TILE / 2, uvOf(s === 0 ? shop : win), wk, 0.2, bi, s === 0, 1));
       }
-      if (!streetEast && eastOpen && s > 0) slices.push(slice((tx + 1) * TILE - 0.8, z, y, TILE / 2, TILE / 2, uvOf(body), wk, 0, bi, false, 1));
-      if (streetEast && westOpen && s > 0) slices.push(slice(tx * TILE + 0.8, z, y, TILE / 2, TILE / 2, uvOf(body), wk, 0, bi, false, 1));
+      if (!streetEast && eastOpen && s > 0) slices.push(slice((tx + 1) * TILE - 0.8, z, y, TILE / 2, TILE / 2, uvOf(above ? "wall_lit2" : body), wk, 0, bi, false, 1));
+      if (streetEast && westOpen && s > 0) slices.push(slice(tx * TILE + 0.8, z, y, TILE / 2, TILE / 2, uvOf(above ? "wall_lit2" : body), wk, 0, bi, false, 1));
       if (s === 0 && !(streetEast ? eastOpen : westOpen)) {
         if (westOpen) slices.push(slice(tx * TILE + 0.8, z, y, TILE / 2, TILE / 2, uvOf(shop), wk, 0.2, bi, true, 1));
         else if (eastOpen) slices.push(slice((tx + 1) * TILE - 0.8, z, y, TILE / 2, TILE / 2, uvOf(shop), wk, 0.2, bi, true, 1));
@@ -224,12 +226,12 @@ export function build(seed) {
   // 15×32 plates on storeys 1–2. Cross and arrow hang into the street from the
   // same lots as noodle and bar, so each plate stays 15 wide and the pairs do not overlap.
   const signs = [
-    { name: "noodle", colour: "#FF3D8B", frame: "sign_0", tx: 1, ty: 1, street: true, lx: 2.15, ly: 0.7, x: 47 },
-    { name: "cross", colour: "#B6F23A", frame: "sign_2", tx: 1, ty: 1, street: true, lx: 2.15, ly: 1.2, x: 79 },
-    { name: "bar", colour: "#3DE0E8", frame: "sign_1", tx: 4, ty: 1, street: true, lx: 3.85, ly: 0.7, x: 144 },
-    { name: "arrow", colour: "#F2A33A", frame: "sign_3", tx: 4, ty: 1, street: true, lx: 3.85, ly: 1.2, x: 114 },
-    { name: "eye", colour: "#FF3D8B", frame: "sign_4", tx: 0, ty: 1, street: false, buzz: true, lx: 2.7, ly: 2.05, x: 16 },
-    { name: "glyph", colour: "#3DE0E8", frame: "sign_5", tx: 5, ty: 1, street: false, lx: 5.55, ly: 0.35, x: 176 },
+    { name: "noodle", colour: "#FF3D8B", frame: "sign_0", tx: 1, ty: 1, street: true, lx: 1.7, ly: 0.25, x: 47 },
+    { name: "cross", colour: "#B6F23A", frame: "sign_2", tx: 1, ty: 1, street: true, lx: 1.05, ly: 0.85, x: 79 },
+    { name: "bar", colour: "#3DE0E8", frame: "sign_1", tx: 4, ty: 1, street: true, lx: 4.3, ly: 0.25, x: 144 },
+    { name: "arrow", colour: "#F2A33A", frame: "sign_3", tx: 4, ty: 1, street: true, lx: 5.15, ly: 0.35, x: 114 },
+    { name: "eye", colour: "#FF3D8B", frame: "sign_4", tx: 0, ty: 1, street: false, buzz: true, lx: 2.9, ly: 0.4, x: 16 },
+    { name: "glyph", colour: "#3DE0E8", frame: "sign_5", tx: 5, ty: 1, street: false, lx: 5.8, ly: 0.3, x: 176 },
   ];
   signs.forEach((def, si) => {
     const fr = frames.frames[def.frame + "_on"];
