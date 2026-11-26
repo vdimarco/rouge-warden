@@ -18,7 +18,7 @@ Each task is done only when its code and its checks pass. Run the Node tests wit
 - [x] 2.4 `run.js` or `moves.js`: safe time 1.0 s after a hit; the blink for its length.
 
 ## 3. The curve
-- [x] 3.1 `foes.js` `FOE_HARD` 1.1 and 1.15; `run.js` `PACE` (`depthDmg 0.1`, `depthHp 0.2`, `depthPow 1`, `sparkDmg 0.015`, `sparkHp 0.03`, `sparkCap 12`) and `foeScale` with the sparks held at load.
+- [x] 3.1 `foes.js` `FOE_HARD` and `run.js` `PACE` and `foeScale` with the sparks held at load (first pass: 1.1 and 1.15, a line of 0.1 and 0.2; the second pass replaced them, task 5.4).
 - [x] 3.2 `mix.js`: `depth` in `mixZones`, one foe more from depth 2, two kinds in a zone of 3 or more, Ember 3's extra from depth 0, at most one extra a zone; the Gaol's G1 kept. `qa/lab/gloam-downs-zones.mjs` and `gloam-downs-seed.test.mjs` for seeds 1 to 200.
 
 ## 4. Checks
@@ -30,3 +30,12 @@ Each task is done only when its code and its checks pass. Run the Node tests wit
 - [x] 4.6 Bot runs: 60 bots at 0.3, 0.5 and 0.9 with the rules alone, then with the curve; tune in the order of design.md; write each run in design.md "Pacing results" with its levers; say which target misses, if any, and why. Then `MAXRUNS=30 AFTER=30 node qa/lab/gloam-downs-bot.mjs 10 0.5 1` for the catalogue quarters. Done: the run-count targets at 0.3 and 0.5 and the death-rate ratio miss (too easy for the bot); design.md says why and what to try after a playtest.
 - [x] 4.7 `node qa/lab/gloam-downs-boss.sim.mjs` with the Reeve's poise; the music demo (`cues` group); `node qa/arcade/quiet.mjs --only=lab/gloam-downs`; every `qa/lab/gloam-downs*.test.mjs`, and the run e2e checks.
 - [x] 4.8 `openspec validate gloam-downs-fair-fight --strict`. Say which checks could not run: a real phone, a real pad, listening on speakers, and a run played by hand.
+
+## 5. Second pass (after the checker)
+- [x] 5.1 `elites.js` `K.end` and `foes.js` `cancelMove`: a special move cut off (put out, a poise break, a parry, a stun or a hold, a sink for a guard) ends at once and gives its token back; `blowsDue` (`F.due`) counts every active phase of a special and a lob until its coal leaves the hand, and nothing from a foe put out or held.
+- [x] 5.2 `foes.js`: the snap's stop and cue once a step (`first` on the event, `fight.js` kicks once); the flinch and the brace count on in a stun or a hold; a knock-down in a wind-up counts as a cancel; the poise holds full in the 4 s after a stagger.
+- [x] 5.3 `foes.js`: steeled (4 s, the 2-dab rim, the next wind-up armored); the brace 1.5 s and holding (no knock-down); every heavy wind-up armored. `fight.js`: the hook's ground tell (`HOOK_TELL`, 7 dabs in slot 35) and the snap's ground ring; `main.js` `fx.tell`; `index.html` the poise line 4 px.
+- [x] 5.4 The curve: `FOE_HARD` 1.25 and 1.3, `PACE.dmgAt` [1, 1.45, 1.72, 2.3, 2.05], `depthHp` 0.35; the tests that quote the numbers (`gloam-downs-foes.test.mjs`, `gloam-downs-fair.test.mjs`, `gloam-downs-run.fight.e2e.mjs`).
+- [x] 5.5 The bot: roll from armored wind-ups unless the next cut breaks a heavy foe; the damage by source and place; the Reeve's damage apart from damage per foe; the levers `STEEL`, `BRACE`, `BRACE_N`, `BRACE_HOLDS`, `DMG_AT`. Tuning runs and the final runs in design.md "Second pass".
+- [x] 5.6 `qa/lab/gloam-downs-fair-checks.test.mjs` (new, 17 checks, all but the steel's lapse failed on the code before); the hook's tell in `gloam-downs-run.interrupt.e2e.mjs` in six layouts; the poise line's height in `gloam-downs-run.boss.e2e.mjs`.
+- [x] 5.7 Rerun the Node tests, the run e2e checks, the bots (60 a skill) and `openspec validate gloam-downs-fair-fight --strict`. The run-count targets at 0.3 (run 4) and 0.5 (run 1) still miss; design.md says why.

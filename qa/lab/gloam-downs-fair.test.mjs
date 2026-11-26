@@ -332,17 +332,17 @@ const recOf = (W, S) => { let rec = 0; run(W, 200, {}, () => { if (S.move === 'h
 }
 
 /* ---------------- Foe growth with sparks ---------------- */
-{ // eight sparks at The Fen, depth 2: a Snuffer has 100 health, a hook deals 24
+{ // eight sparks at The Fen, depth 2: a Snuffer has 137 health (50 × 1.3 × 1.7 × 1.24), a hook deals 39 (16 × 1.25 × 1.72 × 1.12)
   const run8 = { place: 'fen', route: ['gaol', 'ramparts', 'fen', 'bells', 'barrows'], sparks: { flame: 4, ward: 3, gloam: 1 } };
   const sc = foeScale(run8);
-  assert.equal(Math.round(TYPES.S.hp * FOE_HARD.hp * sc.hp), 100);
-  assert.equal(Math.round(TYPES.S.moves.hook.dmg * FOE_HARD.dmg * sc.dmg), 24);
+  assert.equal(Math.round(TYPES.S.hp * FOE_HARD.hp * sc.hp), 137);
+  assert.equal(Math.round(TYPES.S.moves.hook.dmg * FOE_HARD.dmg * sc.dmg), 39);
   assert.equal(tokensOf(run8), 2);
   assert.deepEqual(PACE.tokens, [1, 1, 2, 2, 2]);
   // more than 12 sparks count as 12
   const sc20 = foeScale({ ...run8, sparks: { flame: 20 } });
-  assert(near(sc20.hp, 1.4 * (1 + 0.03 * 12), 1e-9));
-  pass('eight sparks at The Fen: a Snuffer has 100 health and its hook deals 24; sparks count up to 12', { hp: 100, hook: 24 });
+  assert(near(sc20.hp, 1.7 * (1 + 0.03 * 12), 1e-9));
+  pass('eight sparks at The Fen: a Snuffer has 137 health and its hook deals 39; sparks count up to 12', { hp: 137, hook: 39 });
 }
 { // a spark is worth it: after a Flame spark the hits a Snuffer takes do not rise, and after a Ward spark the hooks to go down do not fall
   const route = ['gaol', 'ramparts', 'fen', 'bells', 'barrows'];

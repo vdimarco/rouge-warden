@@ -1,6 +1,6 @@
 // Gloam Downs: the foes fight back, in a real browser (public/lab/gloam-downs/?run&test), on software WebGL 2:
 //   in the Gaol, a Snuffer's zone wakes with ember cracks, the Snuffer rises, winds up with its pole back and its cup aglow (the tell
-//   adds fire pixels in its box), hooks the lamplighter and takes 18 health (16 × 1.1 at Ember 0); the lamplighter rolls through a hook unhurt; the string
+//   adds fire pixels in its box), hooks the lamplighter and takes 20 health (16 × 1.25 at Ember 0); the lamplighter rolls through a hook unhurt; the string
 //   puts a Snuffer out, and its 3 glim fly in; the beacon will not catch while the keep's Snuffers stand (the toast names the keep, and
 //   a notch points to them), and lights once they are out, its keepers' glim carried on (a lit beacon no longer banks);
 //   a Snuffer winding up 6 m beside the lamplighter on a phone gives a notch at the right edge that fills over the wind-up;
@@ -107,9 +107,9 @@ const nearArc = (x, y, z, r, yaw) => Array.from({ length: 9 }, (_, k) => { const
     assert(tell.fire >= 3 * rest.fire && tell.fire >= rest.fire + 8, `the tell's fire: ${rest.fire} at rest, ${tell.fire} at the end of the wind-up`);
     assert.equal(await G(page, () => window.__gloam.run().fx.tell), 1, 'at 1280x720 the tells keep their size');
     const d = await G(page, id => { const g = window.__gloam; g.hold(id, null); g.tick(0.3, {}); return { hp: g.run().hp, sounds: g.sounds().filter(s => ['scrape', 'hurt'].includes(s.cue)) }; }, c.id);
-    assert.equal(d.hp, 82, `the hook took ${100 - d.hp} (16 × 1.1 at Ember 0, foes.js FOE_HARD)`);
+    assert.equal(d.hp, 80, `the hook took ${100 - d.hp} (16 × 1.25 at Ember 0, foes.js FOE_HARD)`);
     assert(d.sounds.some(s => s.cue === 'hurt'));
-    pass('in the Gaol: the yard wakes with cracks, the Snuffer rises, winds up with its glow, and its hook takes 18 health', { cracks: cracks.fire - dark.fire, fire: [rest.fire, tell.fire] });
+    pass('in the Gaol: the yard wakes with cracks, the Snuffer rises, winds up with its glow, and its hook takes 20 health', { cracks: cracks.fire - dark.fire, fire: [rest.fire, tell.fire] });
   }
   { // the lamplighter rolls through a hook unhurt, and the string puts a Snuffer out; its 3 glim fly in
     const r = await G(page, () => {
@@ -207,9 +207,9 @@ const nearArc = (x, y, z, r, yaw) => Array.from({ length: 9 }, (_, k) => { const
     const hit = await G(page, id => { const g = window.__gloam, hp = g.run().hp; g.hold(id, null); g.tick(0.25, {}); g.draw(); return { hp, coal: true }; }, r.f.id);
     await shot(page, 'desk-ramparts-coal');
     const land = await G(page, hp => { const g = window.__gloam; g.tick(1, {}); return hp - g.run().hp; }, hit.hp);
-    // the run's second place with the spark the beacon card's first spark button took: 18 × 1.1 × 1.1 × 1.015, rounded
-    assert.equal(land, 22, `the coal took ${land} (18 × 1.1 at Ember 0, ×1.1 in the run's second place, ×1.015 for its spark)`);
-    pass('The Crow Wall: a Pitchrook lobs onto a ring laid where the lamplighter stood, and its coal takes 22 (18 × 1.1 at Ember 0, ×1.1 in the second place)', { ring: after.fire - before.fire });
+    // the run's second place with the spark the beacon card's first spark button took: 18 × 1.25 × 1.45 × 1.015, rounded
+    assert.equal(land, 33, `the coal took ${land} (18 × 1.25 at Ember 0, ×1.45 in the run's second place, ×1.015 for its spark)`);
+    pass('The Crow Wall: a Pitchrook lobs onto a ring laid where the lamplighter stood, and its coal takes 33 (18 × 1.25 at Ember 0, ×1.45 in the second place)', { ring: after.fire - before.fire });
   }
   { // Lantern Fen: a Mirelight floats over the water, swells and pulses a ring on the water's surface
     await to('fen', ['F1']);

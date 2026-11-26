@@ -8,7 +8,7 @@ Each foe SHALL have a weight. The Pitchrook and the Mirelight SHALL be light, th
 - **THEN** S is medium with 21 steps of stun, P light with 27, M light with 30, I heavy, and each elite heavy. Check: Node test `gloam-downs-fair.test.mjs`.
 
 ### Requirement: A hit interrupts
-A blade hit, a plunge and a hit of Lantern bomb, Moth wisp, Crook line or Ember snare SHALL make a light or medium foe flinch for its hit stun. In its wind-up, the attack SHALL be cancelled: no blow, no ring, no coal. The foe SHALL give back its token and wait 0.6 s after the stun before a new wind-up. Burn and pitch ticks SHALL not interrupt. The Ember parry and knock-downs SHALL work as before.
+A blade hit, a plunge and a hit of Lantern bomb, Moth wisp, Crook line or Ember snare SHALL make a light or medium foe flinch for its hit stun. In its wind-up, the attack SHALL be cancelled: no blow, no ring, no coal. The foe SHALL give back its token and wait 0.6 s after the stun. A knock-down in a wind-up SHALL count as a cancel. Burn and pitch ticks SHALL not interrupt. A flinch SHALL count on while a stun or a hold stops the foe.
 
 #### Scenario: Cut into a hook
 - **WHEN** a Snuffer in the Gaol starts its hook 1.6 m in front of the lamplighter, and the player presses Attack 0.2 s later, with keys, mouse, pad or touch
@@ -21,6 +21,10 @@ A blade hit, a plunge and a hit of Lantern bomb, Moth wisp, Crook line or Ember 
 #### Scenario: A coal never thrown
 - **WHEN** a cut lands on a Pitchrook 0.5 s into its lob
 - **THEN** no coal flies, its ring goes from the ground, and the coal token is free for another Pitchrook. Check: Node test `gloam-downs-fair.test.mjs`.
+
+#### Scenario: A flinch in a hold
+- **WHEN** a cut flinches a Snuffer and an Ember snare then holds it for 2 s
+- **THEN** its 21 steps of flinch are over within the first 40 steps of the hold, and a finisher in a hook's wind-up counts one cancel. Check: Node test `gloam-downs-fair-checks.test.mjs`.
 
 #### Scenario: Ticks do not interrupt
 - **WHEN** a Snuffer stands in Pitch pour and winds up its hook
@@ -38,18 +42,22 @@ A hit on a light or medium foe outside its wind-up SHALL flinch it too. While it
 - **THEN** its recovery is 1.1 s (0.7 s and at most 0.4 s more). Check: Node test `gloam-downs-fair.test.mjs`.
 
 ### Requirement: The brace
-A light or medium foe that flinches three times within 3 s SHALL be braced for 1.0 s, counted while it stands. A cancel and a knock-down SHALL each count as a flinch. A braced foe SHALL take damage and its knock back, but SHALL not flinch, and a wind-up it starts braced SHALL not be cancelled by a plain hit. The finisher and the plunge SHALL still knock it down. A braced foe SHALL show the armor glow.
+A light or medium foe that flinches three times within 3 s SHALL be braced for 1.5 s, counted while it stands. A cancel and a knock-down SHALL each count as a flinch. A braced foe SHALL take damage and its knock back, but SHALL not flinch, SHALL not be knocked down by the finisher or the plunge, and a wind-up it starts braced SHALL be armored. A braced foe SHALL show the armor glow.
 
 #### Scenario: No endless flinch
 - **WHEN** a bot with seed 7 turns to the nearest of three Snuffers with 500 health each and swings for 10 s, with no pause and no roll
 - **THEN** at least 2 hooks hit the lamplighter, and each came from a braced Snuffer or one the bot had not hit in the second before. Check: Node test `gloam-downs-fair.test.mjs`.
 
+#### Scenario: The brace holds
+- **WHEN** a braced Snuffer takes the finisher
+- **THEN** it takes the damage standing and is not knocked down. Check: Node test `gloam-downs-fair-checks.test.mjs`.
+
 #### Scenario: The third flinch
 - **WHEN** cut1, cut2 and the finisher land on a Snuffer within 1 s
-- **THEN** after the knock-down, `__gloam.foes()` shows it braced for its 1.0 s, and it glows. Check: Node test `gloam-downs-fair.test.mjs`.
+- **THEN** after the knock-down, `__gloam.foes()` shows it braced for its 1.5 s, and it glows. Check: Node test `gloam-downs-fair.test.mjs`.
 
 ### Requirement: Armor that shows
-A heavy foe SHALL show a rim of cold dabs in palette slot 39 round its body, one dab for each 10 poise left, rounded up, so the rim thins as the poise drains. In an armored wind-up the rim SHALL double and brighten over the wind-up. No armor dab SHALL use a fire slot (34 to 37) or the lamp's slots (46 and 47). With reduced motion the rim SHALL not pulse.
+A heavy foe SHALL show a rim of cold dabs in palette slot 39 round its body, one dab for each 10 poise left, rounded up, so the rim thins as the poise drains. A steeled foe SHALL show 2 dabs. In an armored wind-up the rim SHALL double and brighten over the wind-up. No armor dab SHALL use a fire slot (34 to 37) or the lamp's slots (46 and 47). With reduced motion the rim SHALL not pulse.
 
 #### Scenario: The rim drains
 - **WHEN** an Ironback with 40 poise takes 21 damage
@@ -60,14 +68,36 @@ A heavy foe SHALL show a rim of cold dabs in palette slot 39 round its body, one
 - **THEN** the draw holds 8 armor dabs in slot 39 round it, and none in slots 34 to 37. Check: e2e `gloam-downs-run.interrupt.e2e.mjs`.
 
 ### Requirement: Armored attacks
-The Ironback's charge, the Bellwether's bent charge, the Cairnwarden's sweep and the Wardmother's second hook SHALL be armored. In an armored wind-up a hit SHALL not cancel the attack. Its poise SHALL still wear, and a poise break SHALL still cancel it. A braced light or medium foe's wind-up SHALL also be armored.
+Every wind-up of a heavy foe SHALL be armored: the Ironback's charge and slam, and every elite's plain moves and special move. A light or medium foe's wind-up begun braced or steeled SHALL also be armored. In an armored wind-up a hit SHALL not cancel the attack. A heavy foe's poise SHALL still wear, and a poise break SHALL still cancel it.
+
+#### Scenario: Every heavy wind-up shows
+- **WHEN** an Ironback winds up its slam, and the Wardmother winds up a plain hook
+- **THEN** each is armored and its rim shows 8 dabs. Check: Node test `gloam-downs-fair-checks.test.mjs`.
 
 #### Scenario: Cut into a charge
 - **WHEN** one cut lands on an Ironback in its charge wind-up
 - **THEN** the charge runs, and the Ironback's poise is 20 lower. Check: Node test `gloam-downs-fair.test.mjs`.
 
+### Requirement: Steeled
+A light or medium foe whose wind-up is cancelled SHALL be steeled: its next wind-up begun within 4 s SHALL be armored, so a cut does not stop it. The steel SHALL be spent by that wind-up, or lapse after 4 s. So a hit stops one attack of a foe, and the next must be dodged or outlasted.
+
+#### Scenario: The hook after a cancel
+- **WHEN** a cut cancels a Snuffer's hook, and the Snuffer starts its next hook within 4 s
+- **THEN** the Snuffer shows 2 rim dabs until then, the next hook is armored with 8 dabs, a cut does not stop it, it lands, and the hook after it can be cut off again. Check: Node test `gloam-downs-fair-checks.test.mjs`.
+
+#### Scenario: The steel lapses
+- **WHEN** a Snuffer cut out of its hook starts no wind-up for 4 s
+- **THEN** its rim is gone and its next hook can be cut off. Check: Node test `gloam-downs-fair-checks.test.mjs`.
+
+### Requirement: A hook that shows
+In a hook's wind-up, a Snuffer's or the Wardmother's, an arc of 7 dabs in fire slot 35 SHALL lie on the ground in front of the foe, across the hook's arc at 1.3 m, growing over the wind-up. With reduced motion the dabs SHALL keep their full size. It SHALL say which foe of a group is about to hook.
+
+#### Scenario: The tell in every layout
+- **WHEN** a Snuffer is held in its hook's wind-up in view at 320 by 640, 390 by 844, 360 by 640, 800 by 600, 1280 by 720 and 844 by 390
+- **THEN** the draw holds 7 tell dabs in slot 35, and none after the wind-up ends. Check: e2e `gloam-downs-run.interrupt.e2e.mjs`, and Node test `gloam-downs-fair-checks.test.mjs`.
+
 ### Requirement: The Reeve's poise
-The Barrow Reeve SHALL have 150 poise. Every hit SHALL wear it. At 0 the Reeve SHALL flinch for 1.0 s: a wind-up is cancelled, and a move in its active time ends when that time does. A break SHALL come at most once every 8 s, never in a stumble or the intro. Poise SHALL fill 4 s after the last hit. The boss bar SHALL show the poise as a thin line under the health.
+The Barrow Reeve SHALL have 150 poise. Every hit SHALL wear it. At 0 the Reeve SHALL flinch for 1.0 s: a wind-up is cancelled, and a move in its active time ends when that time does. A break SHALL come at most once every 8 s, never in a stumble or the intro. Poise SHALL fill 4 s after the last hit. The boss bar SHALL show the poise as a line 4 px tall under the health.
 
 #### Scenario: Break the Reeve
 - **WHEN** a test lands hits of 150 in all on the Reeve in the wind-up of its cage slam, 9 s after its last break
@@ -75,14 +105,18 @@ The Barrow Reeve SHALL have 150 poise. Every hit SHALL wear it. At 0 the Reeve S
 
 #### Scenario: The poise line fits
 - **WHEN** the boss bar shows at 320 by 640, 390 by 844, 360 by 640, 800 by 600, 1280 by 720 and 844 by 390
-- **THEN** the poise line sits under the health inside the bar and overlaps no control. Check: e2e `gloam-downs-run.boss.e2e.mjs`.
+- **THEN** the poise line is 4 px tall, sits under the health inside the bar, and overlaps no control. Check: e2e `gloam-downs-run.boss.e2e.mjs`.
 
 ### Requirement: Interrupt feel
-A cancel or a poise break SHALL give a hit stop of 5 steps, inside the cap of 9 steps in any 30. It SHALL play the new cue `snap`, a dry knock with a short crackle, once a step at most. It SHALL throw a burst of sparks in slot 35 at the foe's chest, and add 0.06 to the camera kick. A plain flinch outside a wind-up SHALL keep the cut's own feel.
+A cancel or a poise break SHALL give a hit stop of 5 steps, play the cue `snap` and add 0.06 to the camera kick, each once a step at most however many foes it stops. Each foe stopped SHALL throw sparks in slot 35 at its chest and a ring of sparks in slot 36 on the ground round it. A plain flinch outside a wind-up SHALL keep the cut's own feel.
 
 #### Scenario: The snap
 - **WHEN** a cut cancels a Snuffer's hook
 - **THEN** `__gloam.run().stop` holds the game for 5 steps, and the cue log has `snap` with the foe's type. Check: e2e `gloam-downs-run.interrupt.e2e.mjs`, and Node test `gloam-downs-sound.test.mjs`.
+
+#### Scenario: Two foes in one step
+- **WHEN** one step's cuts cancel the hooks of two Snuffers
+- **THEN** that step has one hit stop, one `snap` cue and one kick, and two bursts of sparks. Check: Node test `gloam-downs-fair-checks.test.mjs`.
 
 #### Scenario: Snap in the demo
 - **WHEN** `qa/lab/gloam-downs-music-demo.mjs cues` runs
@@ -96,11 +130,15 @@ With reduced motion, an interrupt SHALL add no camera kick and the stunned foe S
 - **THEN** `fx.kick` stays [0, 0, 0], the Snuffer's `shake` is [0, 0, 0], the flinch pose is drawn, and the rim's dabs keep their size over the wind-up. Check: e2e `gloam-downs-run.interrupt.e2e.mjs`.
 
 ### Requirement: Blow spacing
-The hits of any two foe attacks on the lamplighter SHALL be at least 0.6 s apart: a melee blow's first active step, or a coal's landing. A foe whose blow would come sooner SHALL wait to start its wind-up. After a foe hurts the lamplighter, no foe SHALL start a wind-up for 1.0 s.
+The hits of any two foe attacks on the lamplighter SHALL be at least 0.6 s apart: each melee blow's first active step (every active phase of an elite's special move), or a coal's landing (counted from the lob's start until it lands). A foe put out has no blow on its way. A foe whose blow would come sooner SHALL wait to start its wind-up. After a foe hurts the lamplighter, no foe SHALL start a wind-up for 1.0 s.
 
 #### Scenario: Two Snuffers
 - **WHEN** at depth 2 two Snuffers and a Pitchrook fight a lamplighter who stands still for 30 s
 - **THEN** no two blows' first active steps or landings are under 36 steps apart, and no wind-up starts in the 60 steps after a hurt. Check: Node test `gloam-downs-fair.test.mjs`.
+
+#### Scenario: Blows still to come
+- **WHEN** the Wardmother's first hook has begun, and a Pitchrook's lob is in its active time before its coal leaves the hand
+- **THEN** the blows on their way hold her second hook and the coal's landing. Check: Node test `gloam-downs-fair-checks.test.mjs`.
 
 ### Requirement: Backing off
 A foe that hurts the lamplighter SHALL step back 1.0 m over 0.4 s, and SHALL wait at least 1.2 s before its next wind-up. Foes that wait for a token SHALL circle the lamplighter at 0.8 m/s, 3.2 to 3.8 m away, and keep their spread.
@@ -121,7 +159,7 @@ At load, each foe's health SHALL be ×(1 + 0.03 s) and its damage ×(1 + 0.015 s
 
 #### Scenario: Eight sparks
 - **WHEN** a run with 8 sparks loads The Fen at Ember 0, depth 2
-- **THEN** a Snuffer has 100 health (50 × 1.15 × 1.4 × 1.24, rounded) and its hook deals 24 (16 × 1.1 × 1.2 × 1.12, rounded). Check: Node test `gloam-downs-fair.test.mjs`.
+- **THEN** a Snuffer has 137 health (50 × 1.3 × 1.7 × 1.24, rounded) and its hook deals 39 (16 × 1.25 × 1.72 × 1.12, rounded). Check: Node test `gloam-downs-fair.test.mjs`.
 
 #### Scenario: A spark is worth it
 - **WHEN** the Node test compares a run before and after one Flame spark, and one Ward spark, at each depth
@@ -144,7 +182,7 @@ With `?test`, `__gloam.foes()` SHALL also give each foe's `weight`, `stun` (step
 ## MODIFIED Requirements
 
 ### Requirement: Hits on foes
-A hit SHALL follow the foe's weight ("Foe weights"): a light or medium foe flinches and its wind-up is cancelled ("A hit interrupts"), unless it is braced; a heavy foe and an elite lose poise and do not flinch until it breaks; the Reeve flinches only at a poise break. The finisher and the plunge SHALL knock a light or medium foe down. Heavy foes SHALL take no knock back.
+A hit SHALL follow the foe's weight ("Foe weights"): a light or medium foe flinches and its wind-up is cancelled ("A hit interrupts"), unless it is braced; a heavy foe and an elite lose poise and do not flinch until it breaks; the Reeve flinches only at a poise break. The finisher and the plunge SHALL knock a light or medium foe down unless it is braced. Heavy foes SHALL take no knock back.
 
 #### Scenario: Finisher stops a hook
 - **WHEN** the finisher lands on a Snuffer that is not braced, during its hook's wind-up
@@ -155,22 +193,30 @@ A hit SHALL follow the foe's weight ("Foe weights"): a light or medium foe flinc
 - **THEN** it does not flinch and its poise is 10 lower. Check: Node test `gloam-downs-fair.test.mjs`.
 
 ### Requirement: Poise and stagger
-The Ironback SHALL have 40 poise, an elite 40, and the Bellwether 70. Each hit SHALL take its damage from the poise, twice over in a wind-up. At 0 the foe SHALL stagger for 1.2 s: it stops, its wind-up ends, its crack glows in slot 33, and it takes 25% more damage. Poise SHALL fill 3 s after the last hit. A stagger SHALL not start again within 4 s of its end.
+The Ironback SHALL have 40 poise, an elite 40, and the Bellwether 70. Each hit SHALL take its damage from the poise, twice over in a wind-up. At 0 the foe SHALL stagger for 1.2 s: it stops, its wind-up ends, its crack glows in slot 33, and it takes 25% more damage. Poise SHALL fill 3 s after the last hit. In the 4 s after a stagger the poise SHALL hold full, so the rim shows that no stagger can come.
 
 #### Scenario: Break an Ironback
 - **WHEN** cut1 and cut2 land on an Ironback in its charge wind-up
 - **THEN** the Ironback staggers on cut2 (20 and then 22 off its 40 poise), its charge does not run, and `__gloam.foes()` shows `stagger` for 72 steps. Check: Node test `gloam-downs-feel.test.mjs`.
+
+#### Scenario: After a stagger
+- **WHEN** an Ironback that staggered 0.1 s ago takes two hits of 21
+- **THEN** it does not stagger, and its rim still shows 4 dabs. Check: Node test `gloam-downs-fair-checks.test.mjs`.
 
 #### Scenario: One string outside a wind-up
 - **WHEN** cut1, cut2 and the finisher land on a walking Ironback
 - **THEN** it staggers on the finisher (43 damage against 40 poise). Check: Node test `gloam-downs-feel.test.mjs`.
 
 ### Requirement: Fair crowds
-At most one melee attack SHALL be under way at once at depth 0 and 1, and two from depth 2. At most one coal SHALL be in the air. A melee token SHALL be held from the start of the wind-up to the end of the recovery; a cancelled attack SHALL give it back at once. Foes that wait SHALL circle 3.2 to 3.8 m away ("Backing off").
+At most one melee attack SHALL be under way at once at depth 0 and 1, and two from depth 2. At most one coal SHALL be in the air. A melee token SHALL be held from the start of the wind-up to the end of the recovery. An attack cut off SHALL give its token back at once, an elite's special move too: put out, broken, parried, stunned, held, or sunk for a guard. Foes that wait SHALL circle 3.2 to 3.8 m away ("Backing off").
 
 #### Scenario: A group in the Gaol
 - **WHEN** three Snuffers fight the lamplighter in the Gaol for 30 s
 - **THEN** no two hooks are in a wind-up, active time or recovery at the same step. Check: Node test `gloam-downs-foes-ai.test.mjs`.
+
+#### Scenario: An elite put out in its special move
+- **WHEN** the Wardmother is put out in her double hook's wind-up, or the Rookchief in its three coals' wind-up, or either's poise breaks or a Flare stuns it there
+- **THEN** its special move ends at once, its token is free, and a new Snuffer hooks or a new Pitchrook lobs. Check: Node test `gloam-downs-fair-checks.test.mjs`.
 
 #### Scenario: A group in The Fen
 - **WHEN** at depth 2 three Snuffers and a Pitchrook fight the lamplighter
@@ -181,14 +227,14 @@ With no Mantle level and no wick, the lamplighter SHALL have 100 health at the s
 
 #### Scenario: Hit by a hook
 - **WHEN** a Snuffer's hook lands on the lamplighter with 100 health in the Gaol at Ember 0
-- **THEN** health shows 82, and the lamplighter slides back 1.2 m, ±0.15 m, and blinks. A second blow within 1.0 s does no damage. Check: Node test `gloam-downs-run.test.mjs` (the push, the blink and the 1.0 s), and e2e `gloam-downs-run.fight.e2e.mjs` (82).
+- **THEN** health shows 80, and the lamplighter slides back 1.2 m, ±0.15 m, and blinks. A second blow within 1.0 s does no damage. Check: Node test `gloam-downs-run.test.mjs` (the push, the blink and the 1.0 s), and e2e `gloam-downs-run.fight.e2e.mjs` (80).
 
 #### Scenario: Walk into a foe
 - **WHEN** the lamplighter walks into a Snuffer that is not attacking
 - **THEN** it takes no damage, and the two push apart. Check: Node test `gloam-downs-run.test.mjs`.
 
 ### Requirement: Harder Ember 0
-At Ember 0, foes SHALL deal 10% more damage than their base numbers and have 15% more health, and the Barrow Reeve SHALL deal 20% more. The Ember 4 factor SHALL multiply these. The run SHALL start with 100 health, 1 flask and 35% heals; each Flask level SHALL add a flask.
+At Ember 0, foes SHALL deal 25% more damage than their base numbers and have 30% more health, and the Barrow Reeve SHALL deal 20% more. The Ember 4 factor SHALL multiply these. The run SHALL start with 100 health, 1 flask and 35% heals; each Flask level SHALL add a flask.
 
 #### Scenario: A first run
 - **WHEN** a run starts with no ware bought
@@ -196,18 +242,18 @@ At Ember 0, foes SHALL deal 10% more damage than their base numbers and have 15%
 
 #### Scenario: A Snuffer's hook
 - **WHEN** at Ember 0 a Snuffer's hook lands on a lamplighter with no roll in the run's first place
-- **THEN** it deals 18 (16 × 1.1, rounded). Check: Node test `gloam-downs-foes.test.mjs`.
+- **THEN** it deals 20 (16 × 1.25). Check: Node test `gloam-downs-foes.test.mjs`.
 
 ### Requirement: Harder later places
-At place depth d (the run's first place 0, Barrow Crown 4), foes SHALL deal ×(1 + 0.1 d) damage and have ×(1 + 0.2 d) health, on top of the Ember 0 factors and "Foe growth with sparks". Later places SHALL bring new foe kinds from their pools, more foes ("More foes before more damage") and a second melee token before more damage. The Reeve SHALL have 5% more health a spark.
+At place depth d (the run's first place 0, Barrow Crown 4), foes SHALL deal ×1, ×1.45, ×1.72, ×2.3 and ×2.05 damage and have ×(1 + 0.35 d) health, on top of the Ember 0 factors and "Foe growth with sparks". Later places SHALL bring new foe kinds from their pools, more foes ("More foes before more damage") and a second melee token before more damage. The Reeve SHALL have 5% more health a spark.
 
 #### Scenario: The Crow Wall
 - **WHEN** at Ember 0 with no spark, a Snuffer in The Crow Wall hooks a lamplighter with no roll
-- **THEN** it has 69 health and the hook deals 19 (16 × 1.1 × 1.1, rounded). Check: Node test `gloam-downs-foes.test.mjs`.
+- **THEN** it has 88 health and the hook deals 29 (16 × 1.25 × 1.45, rounded). Check: Node test `gloam-downs-foes.test.mjs`.
 
 #### Scenario: Barrow Crown
 - **WHEN** a run with no spark reaches Barrow Crown at Ember 0
-- **THEN** a hook deals 25 (16 × 1.1 × 1.4), so a lamplighter with 100 health takes 4 hooks or more to go down, and a Snuffer has 103 health (50 × 1.15 × 1.8). Check: Node test `gloam-downs-foes.test.mjs`.
+- **THEN** a hook deals 41 (16 × 1.25 × 2.05, rounded), so a lamplighter with 100 health takes 3 hooks or more to go down, and a Snuffer has 156 health (50 × 1.3 × 2.4). Check: Node test `gloam-downs-foes.test.mjs`.
 
 #### Scenario: The table
 - **WHEN** `node qa/lab/gloam-downs-bot.mjs` starts
@@ -222,11 +268,11 @@ A bot SHALL play the run with the page's foe rules (interrupts, braces, armor, t
 
 #### Scenario: No death spike
 - **WHEN** the bot prints each place's death rate (deaths there over runs that reached it) and its median damage taken per foe put out, at each skill
-- **THEN** no place before Barrow Crown has a death rate above 1.5 times the mean of those four places, Barrow Crown's is under 2 times, and each place's damage per foe is 0.9 to 1.6 times the place's before it. Check: the bot, `gloam-downs-bot.mjs`.
+- **THEN** no place before Barrow Crown has a death rate above 1.5 times the mean of those four places, Barrow Crown's is under 2 times, and each place's damage per foe of its zones (the Reeve's fight apart) is 0.9 to 1.6 times the place's before it. Check: the bot, `gloam-downs-bot.mjs`.
 
 #### Scenario: The bot interrupts
 - **WHEN** the bot reads a wind-up of a foe in reach that is not armored
-- **THEN** it cuts into it with a chance of 0.3 + 0.6 × skill, and rolls from armored ones; the bot's line "interrupts a run" is above 3 at skill 0.5. Check: the bot, `gloam-downs-bot.mjs`.
+- **THEN** it cuts into it with a chance of 0.3 + 0.6 × skill, and rolls from armored ones unless the next cut breaks a heavy foe's poise; the bot's line "interrupts a run" is above 3 at skill 0.5. Check: the bot, `gloam-downs-bot.mjs`.
 
 #### Scenario: Steady growth
 - **WHEN** `MAXRUNS=30 AFTER=30 node qa/lab/gloam-downs-bot.mjs 10 0.5 1` runs

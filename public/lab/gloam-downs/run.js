@@ -125,15 +125,16 @@ const has = (wicks, id) => (wicks || []).includes(id);
 /* the pacing levers (gloam-downs-fair-fight design.md "A natural curve" and "Pacing results"). The run starts with 1 flask (BASE), and
    Flask levels give the rest back. Foes in the later places of the run come in new kinds, more of them (mix.js) and with a second
    melee token (tokens, by depth) before they hit harder: at place depth d (the run's first place 0, Barrow Crown 4) damage
-   ×(1 + depthDmg d^depthPow) and health ×(1 + depthHp d^depthPow). They also grow with the run's sparks held at the place's load (s,
+   ×dmgAt[d] (a table: each step at most 1.45 times the one before; Barrow Crown steps back a little, as the Reeve is its test) and health ×(1 + depthHp d^depthPow). They also grow with the run's sparks held at the place's load (s,
    counted up to sparkCap): damage ×(1 + sparkDmg s) and health ×(1 + sparkHp s), less than a spark gives the lamplighter. The Barrow
    Reeve has bossSpark more health for each spark the run holds. blade is the blade's share at the start */
-export const PACE = { blade: 1, depthDmg: 0.1, depthHp: 0.2, depthPow: 1, sparkDmg: 0.015, sparkHp: 0.03, sparkCap: 12, bossSpark: 0.05, tokens: [1, 1, 2, 2, 2] };
+export const PACE = { blade: 1, dmgAt: [1, 1.45, 1.72, 2.3, 2.05], depthHp: 0.35, depthPow: 1, sparkDmg: 0.015, sparkHp: 0.03, sparkCap: 12, bossSpark: 0.05, tokens: [1, 1, 2, 2, 2] };
 export const depthOf = run => Math.max(0, routeOfRun(run).indexOf(run?.place));
 export const sparkCount = run => Object.values(run?.sparks || {}).reduce((a, n) => a + (n | 0), 0);
 export const foeScale = run => {
-  const d = depthOf(run) ** PACE.depthPow, s = Math.min(PACE.sparkCap, sparkCount(run));
-  return { dmg: (1 + PACE.depthDmg * d) * (1 + PACE.sparkDmg * s), hp: (1 + PACE.depthHp * d) * (1 + PACE.sparkHp * s) };
+  const k = depthOf(run), d = k ** PACE.depthPow, s = Math.min(PACE.sparkCap, sparkCount(run));
+  const dmg = PACE.dmgAt[Math.min(k, PACE.dmgAt.length - 1)];
+  return { dmg: dmg * (1 + PACE.sparkDmg * s), hp: (1 + PACE.depthHp * d) * (1 + PACE.sparkHp * s) };
 };
 // the melee attacks under way at once at the run's place: 1 in the first two places, 2 from the third
 export const tokensOf = run => PACE.tokens[Math.min(PACE.tokens.length - 1, depthOf(run))] ?? 1;

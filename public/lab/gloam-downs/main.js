@@ -1832,7 +1832,9 @@ const runState = () => {
       low: !!fight?.feel.low, beats: fight?.feel.beats ?? 0, tell: fight?.grow ?? 1,
       shakes: fight ? fight.feel.shakes() : !!fx.kick, lamp: fight ? fight.lamp ?? 1 : 1, halo: fight ? fight.halo.filter(g => g.kind === 'halo').map(g => g.ci) : [],
       // the armor rims' dabs of this draw (gloam-downs-fair-fight "Armor that shows"): slot and size
-      armor: fight ? fight.halo.filter(g => g.kind === 'armor').map(g => ({ ci: g.ci, s: +g.s.toFixed(4), x: +g.x.toFixed(2), y: +g.y.toFixed(2), z: +g.z.toFixed(2) })) : []
+      armor: fight ? fight.halo.filter(g => g.kind === 'armor').map(g => ({ ci: g.ci, s: +g.s.toFixed(4), x: +g.x.toFixed(2), y: +g.y.toFixed(2), z: +g.z.toFixed(2) })) : [],
+      // the hooks' ground tells of this draw (gloam-downs-fair-fight "A hook that shows")
+      hookTell: fight ? fight.halo.filter(g => g.kind === 'tell').map(g => ({ ci: g.ci, s: +g.s.toFixed(4), x: +g.x.toFixed(2), y: +g.y.toFixed(2), z: +g.z.toFixed(2) })) : []
     },
     // the attack tokens: melee held of max, the coal, and the steps before any foe may start a wind-up
     tokens: fight ? fight.foes.tokenView() : null,

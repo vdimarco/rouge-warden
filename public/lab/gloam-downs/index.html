@@ -303,7 +303,7 @@
   .bossbar #bossFill { width: 100%; background: linear-gradient(90deg, #8a2814, var(--emberd)); }
   .bossbar .tick { width: 2px; margin-left: -1px; background: rgba(5, 6, 12, 0.85); }
   /* the Reeve's poise: a thin cold line under the health, full when it is fresh and empty when a few more hits will make it flinch */
-  .bossbar .bpoise { position: relative; display: block; height: 2px; margin-top: -3px; background: #0d1318; }
+  .bossbar .bpoise { position: relative; display: block; height: 4px; margin-top: -3px; background: #0d1318; box-shadow: 0 0 0 1px #2a3a44; }
   .bossbar #bossPoise { position: absolute; top: 0; bottom: 0; left: 0; display: block; width: 100%; background: #9fc4d0; }
   body.run:has(.panel:not([hidden])) .bossbar { visibility: hidden; }
   /* in a run the Lab bar stays above the loading screen, so ◀ Lab and Games can be reached while it waits (the boss files) */

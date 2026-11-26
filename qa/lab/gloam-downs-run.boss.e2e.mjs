@@ -352,7 +352,7 @@ function layoutFaults() {
   const pl = document.querySelector('#bossBar .bpoise'), hb = document.querySelector('#bossBar .bbar');
   if (rect.boss && pl && hb) {
     const p = R(pl), h = R(hb);
-    if (!(p.height >= 1 && p.top >= h.bottom - 0.5 && p.left >= rect.boss.left - 0.5 && p.right <= rect.boss.right + 0.5 && p.bottom <= rect.boss.bottom + 0.5)) out.push(`the poise line ${r4(p)} is not under the health ${r4(h)} inside the bar ${r4(rect.boss)}`);
+    if (!(p.height >= 4 - 0.01 && p.top >= h.bottom - 0.5 && p.left >= rect.boss.left - 0.5 && p.right <= rect.boss.right + 0.5 && p.bottom <= rect.boss.bottom + 0.5)) out.push(`the poise line ${r4(p)} is not under the health ${r4(h)} inside the bar ${r4(rect.boss)}`);
   } else if (rect.boss) out.push('no poise line');
   return { out, boss: r4(rect.boss), hud: r4(rect.hud), tools: r4(rect.tools), lab: r4(rect.lab), games: r4(rect.games), cls: document.getElementById('hud').classList.contains('boss'), hint: shown(document.querySelector('#hud .hint')), poise: pl ? r4(R(pl)) : null };
 }

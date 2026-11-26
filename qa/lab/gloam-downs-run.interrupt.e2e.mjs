@@ -3,8 +3,8 @@
 //   cut into a hook: a Snuffer 1.6 m in front of the lamplighter starts its hook, and 0.2 s later Attack is pressed by J, by a left
 //     click, by a mocked pad's X and by a touch on ATTACK; the first cut lands in the wind-up, the hook is cancelled with 21 steps of
 //     stun, the flinch pose, the snap in the cue log and a hit stop of 5 steps, and no health is lost in the next second;
-//   the armor: an Ironback winding up its charge holds 8 rim dabs in slot 39 and none in fire slots 34 to 37, at 320x640, 390x844,
-//     360x640, 800x600, 1280x720 and 844x390;
+//   the armor: an Ironback winding up its charge holds 8 rim dabs in slot 39 and none in fire slots 34 to 37, and a Snuffer in its
+//     hook's wind-up lays its ground tell of 7 dabs in slot 35, at 320x640, 390x844, 360x640, 800x600, 1280x720 and 844x390;
 //   a Snuffer 2.4 m to the right of the lamplighter at 390x844 with the view narrowed, off screen: its hook winds up 48 steps, its
 //     tell is logged off screen at its first step, and a notch shows at the right edge;
 //   the tokens in The Crow Wall: two Snuffers 2 m away, one winds up and the other circles with no move (melee 1 of 1);
@@ -207,21 +207,28 @@ function checkCut(at, rest, how) {
       g.tick(0.1, {});
       // 5.4 m away and off to the side, so its lane runs across the view and the rim stands clear of it
       const sp = g.spawn('I', -3.5, 13.5, 0);
+      // and a Snuffer in its hook's wind-up on the other side, for the hook's ground tell
+      const sn = g.spawn('S', 2.0, 15.5, 0);
       g.tick(1 / 60, {});
       g.hold(sp.id, 'charge', 0.5);
+      g.hold(sn.id, 'hook', 0.3);
       g.tick(1 / 60, {});
       g.draw();
       const fx = g.run().fx, f = g.foes().find(x => x.id === sp.id);
-      return { armor: fx.armor, f: { move: f.move, armor: f.armor, rim: f.rim }, id: sp.id };
+      const tell = fx.hookTell;
+      return { armor: fx.armor, tell, f: { move: f.move, armor: f.armor, rim: f.rim }, id: sp.id };
     });
     const cold = r.armor.filter(d => d.ci === 39).length, fire = r.armor.filter(d => d.ci >= 34 && d.ci <= 37).length;
     assert.equal(r.f.armor, true, `${w}x${h}: the charge is armored`);
     assert.equal(cold, 8, `${w}x${h}: ${cold} rim dabs in slot 39`);
     assert.equal(fire, 0, `${w}x${h}: ${fire} rim dabs in fire`);
-    seen[`${w}x${h}`] = cold;
+    // the hook's ground tell: 7 fire dabs (slot 35), on the ground in front of the Snuffer
+    assert.equal(r.tell.length, 7, `${w}x${h}: ${r.tell.length} tell dabs`);
+    assert(r.tell.every(d => d.ci === 35), `${w}x${h}: the tell in slot 35`);
+    seen[`${w}x${h}`] = [cold, r.tell.length];
     if ((w === 390 && h === 844) || (w === 1280 && h === 720)) await shot(page, `armor-${w}x${h}`);
   }
-  pass('an Ironback winding up its charge: 8 rim dabs in slot 39 and none in fire slots 34 to 37 in six layouts', seen);
+  pass('an Ironback winding up its charge: 8 rim dabs in slot 39 and none in fire slots 34 to 37, and a Snuffer\'s hook tell of 7 dabs in slot 35, in six layouts', seen);
   await page.setViewportSize({ width: 1280, height: 720 });
   // the tokens in The Crow Wall: two Snuffers 2 m away; one winds up, the other circles with no move
   await go(page, 'ramparts');

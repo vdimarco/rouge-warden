@@ -147,6 +147,7 @@ export function eliteKit(F, ctx) {
     f.pick = null;
     return sp;
   }
+  K.end = end;
   K.think = (f, ev) => {
     tidy();
     if (!f.embered) emberOnce(f);

@@ -68,14 +68,15 @@ The game had only light and heavy. "Medium" is new and means a shorter stun, not
 - **Wind-up:** cancel. No blow, no ring, no coal. The token goes back at once. The foe flinches for its stun, then waits 0.6 s more before any new wind-up. The 0.6 s keeps the player's string safe: a string takes 0.77 s to the finisher.
 - **Active time:** committed. The blow goes on and may land. The hit adds 0.2 s to the recovery. This keeps the roll worth having and matches the genre: a blow that has started finishes.
 - **Recovery:** each hit adds 0.2 s, at most 0.4 s a move. A foe cannot be held in recovery for ever.
-- **Brace:** three flinches in 3 s (a cancel and a knock-down count) brace the foe for 1.0 s: damage and knock back, but no flinch and no cancel by a plain hit. The finisher and the plunge still knock it down. So mashing wins a single foe, but a group's braced foe can still answer. The brace replaces the old "once every 1.5 s" flinch gap.
+- **Brace:** three flinches in 3 s (a cancel and a knock-down count) brace the foe for 1.5 s: damage and knock back, but no flinch, no knock-down and no cancel. (Second pass: it was 1.0 s, and the finisher still knocked a braced foe down.) The brace replaces the old "once every 1.5 s" flinch gap.
+- **Steeled** (second pass): a foe cut out of its attack comes back steeled. Its next wind-up begun within 4 s is armored, and its rim shows 2 dabs until then. So a hit stops one attack of a foe, and the next must be dodged or outlasted.
 - **What interrupts:** each cut, the finisher, the plunge, and the hits of Lantern bomb, Moth wisp, Crook line and Ember snare (`how.interrupt` on the hit). Burn and pitch ticks do not. Flare's and Rime's states keep their own rules (`status.js`).
 
 ### 3. Poise and armor
 - Poise numbers drop (Ironback 60 to 40, elite 50 to 40, Bellwether 90 to 70), so one string breaks an Ironback outside a wind-up (43 against 40).
 - A hit in a wind-up takes twice its damage off the poise. Two cuts in an Ironback's charge wind-up break it (20 + 22). This rewards the read, as an interrupt does on a small foe.
-- The stagger keeps its 1.2 s, its 25% more damage, the 3 s refill and the 4 s gap.
-- **Armored attacks:** the Ironback's charge, the Bellwether's bent charge, the Cairnwarden's sweep and the Wardmother's second hook. In them a hit does not cancel, but poise still wears and a break still cancels. A braced foe's wind-up is armored too.
+- The stagger keeps its 1.2 s, its 25% more damage, the 3 s refill and the 4 s gap. In the gap the poise holds full (second pass), so the rim does not drain to nothing while the foe cannot break.
+- **Armored attacks:** every wind-up of a heavy foe: the Ironback's charge and slam, and every elite's plain moves and special move (second pass: at first only the charge, the bent charge, the sweep and the Wardmother's second hook). In them a hit does not cancel, but poise still wears and a break still cancels. A braced or steeled foe's wind-up is armored too.
 - **The rim:** a heavy foe shows a ring of dabs round its body in slot 39, one for each 10 poise left, rounded up. In an armored wind-up the ring doubles and brightens over the wind-up, so the player sees "this one will not stop" before the blow. A braced foe shows the same ring (4 dabs) for its brace.
 - **Why slot 39:** it is the Mirelight's pale cold pulse. Fire (34 to 37) is the warning colour of every tell and must stay the brightest; 33 is the stagger crack; 46 and 47 are the lamp; 38 is Rime's frost. Slot 39 also marks Gloam sparks on the ground, but those lie flat on the floor and the rim stands round a body at chest height, so they do not meet. The e2e checks the slot in every layout.
 - With reduced motion the rim does not pulse or grow; it holds its count and size.
@@ -83,11 +84,12 @@ The game had only light and heavy. "Medium" is new and means a shorter stun, not
 ### 4. The Barrow Reeve
 - 150 poise, worn by every hit. At 0 a 1.0 s flinch: a wind-up is cancelled; a move in its active time ends with that time.
 - At most once every 8 s, never in a stumble (hits do no damage there) or the intro. It fills 4 s after the last hit.
-- The boss bar gets a thin poise line under the health. It needs a layout check in the six layouts.
+- The boss bar gets a poise line, 4 px tall (second pass: it was 2 px), under the health. It needs a layout check in the six layouts.
 - No rim on the Reeve: its moves read by their own markers, and a rim on every move would say nothing.
 
 ### 5. Interrupt feel
-- A cancel or a poise break: a hit stop of 5 steps (as the finisher), inside the existing cap of 9 in any 30; a burst of sparks in slot 35 at the chest; 0.06 camera kick (`FEEL.add.snap`), none with reduced motion; the knock back; and the cue `snap`.
+- A cancel or a poise break: a hit stop of 5 steps (as the finisher), inside the existing cap of 9 in any 30; a burst of sparks in slot 35 at the chest and a ring of sparks in slot 36 on the ground round the foe; 0.06 camera kick (`FEEL.add.snap`), none with reduced motion; the knock back; and the cue `snap`. The stop, the kick and the cue come once a step however many foes one hit stops; the sparks come for each.
+- **The hook's ground tell** (second pass): in a hook's wind-up, a Snuffer's or the Wardmother's, an arc of 7 fire dabs (slot 35) lies on the ground in front of the foe at 1.3 m, growing over the wind-up. The other attacks already had a ring or a lane; the hook had only the body's glow, so in a group nothing said which Snuffer would hook.
 - `snap` is new in `sound.js`: a dry wooden knock (a short filtered noise burst, 40 ms) with a crackle tail (sparse clicks over 120 ms), panned to the foe. Rank 2, a hit cue, at most once a step. It goes in the sample bank and the music demo's `cues` group.
 - A plain flinch outside a wind-up keeps the cut's own 3-step hit stop and sound, so the snap means "you stopped it".
 
@@ -102,6 +104,8 @@ The game had only light and heavy. "Medium" is new and means a shorter stun, not
 - **Kept:** a hit still stops the lamplighter's own move. With the spacing and the safe time, it no longer chains, so there is no need to change it.
 
 ### 7. A natural curve
+(The numbers below are the first pass. The second pass changed them: see "Second pass" near the end.)
+
 The curve now has four parts, and raw damage comes last:
 1. **New kinds** from the baked pools, as now: the Gaol has Snuffers only, The Crow Wall adds the Pitchrook, The Fen the Mirelight, The Bell Knoll the Ironback.
 2. **More foes and mixed zones:** from depth 2, each zone the mix may change gets one foe more when the pool and the cap allow, and a zone of 3 or more foes holds two kinds when the pool has them (`mix.js` takes `depth`). Ember 3's extra foe applies from depth 0, still at most one extra a zone.
@@ -127,7 +131,7 @@ The levers are in `run.js` `PACE`: `depthDmg 0.1`, `depthHp 0.2`, `depthPow 1`, 
 ### 8. Pacing and the bot
 **The bot uses the real rules.** It already steps `foes.js` and `elites.js`, so interrupts, braces, armor, tokens and spacing come from the game's own code. What changes is the bot's own play:
 - On a wind-up it has read, of a foe in reach (1.8 m plus the foe's radius) that is not armored or braced, with at least 0.23 s left before the hit (cut1's 0.18 s to land and a margin), it cuts in with a chance of 0.3 + 0.6 × skill. Otherwise it rolls as now.
-- It rolls from every armored wind-up it reads, unless the poise left is under what its next two hits would take off (then it cuts, at the same chance).
+- It rolls from every armored wind-up it reads, unless the foe is heavy and its next cut breaks it (poise left 20 or less, and not in the 4 s after a stagger); then it cuts, at the same chance. (Second pass: the first rule cut whenever the poise left was under two cuts' wear, 42, which is every heavy foe's full poise, so it cut into the Wardmother and never rolled.)
 - It prints `interrupts a run`, `cancels taken by foes a run` and `hooks from braced foes a run`.
 
 **What it prints for the targets:**
@@ -232,8 +236,94 @@ What the steps showed:
 - **The run-count targets need the old shape.** Only a curve as steep as the one the player found too hard (H: power 1.5, ×4.2 damage at Barrow Crown) brings the 0.5 bot to run 6 and the 0.3 bot to run 17, and then 70% of the runs that reach Barrow Crown die there: the wall the player asked to remove.
 - **The "no death spike" target and the run counts cannot both hold** with these levers: places 1 and 2 kill almost no bot at any setting, so any setting with enough deaths for the run counts puts them in the last two places.
 
+## Second pass (after the checker)
+A checker played the first build and reran the bots. What it found, and what changed:
+
+**The fight was too easy, and mashing won it.** Every bot won its first run, and nearly all of the 44 interrupts a run came from swinging at whatever stood near, not from a chosen cut-in. So reading a wind-up hardly mattered until the Ironback, the elites and the Reeve.
+
+Measured before tuning (0.5 bot, the first build's curve, 60 bots), each lever alone:
+
+| Lever | 0.5 first win | Death rates, places 1 to 5 | Note |
+|---|---|---|---|
+| none (first build, with the token fixes) | run 1 | 0, 0, 0, 0, 0% | damage taken a run 257 |
+| steeled, 4 s | run 1 | 0, 0, 0, 0, 0% | 1.8 steeled hooks a run |
+| health ×1.6, tokens 2,2,2,3,3 | run 1 | 0, 0, 0.3, 0, 0% | |
+| a Snuffer's wind-up only delayed by hits, never cancelled | run 1 | 0, 0.5, 0.8, 0, 0.3% | Snuffers die before the delayed hook |
+| brace at 2 flinches, 2.5 s | run 1 | 0, 0, 0, 0, 0% | |
+| blow gap 0.3 s, hurt wait 0.5 s, tokens 2,2,2,3,3 | run 1 | 0, 0, 0.6, 0, 0.3% | |
+| damage ×2.0, health ×1.5 | run 1 | 10.2, 2.6, 2.9, 1.2, 3.8% | the Gaol spikes |
+
+What the bot's source lines showed: Snuffers deal most of the damage in every place, the Gaol's Snuffers more for each foe than any later place's (the first fights of a run, before any ability or spark), and the Bell Knoll little (few fights). No rule alone made the bot lose; only damage did, and damage alone put the deaths in the Gaol.
+
+**What changed in the rules:**
+- **Steeled:** a foe cut out of its attack has its next wind-up within 4 s armored, with a 2-dab rim until then.
+- **The brace holds:** a braced foe is not knocked down by the finisher or the plunge, and the brace lasts 1.5 s. Mashing one Snuffer now ends in a hook that lands unless the player rolls: the third flinch braces it, it stands, and its next wind-up is armored.
+- **Every heavy wind-up is armored** and doubles its rim, so the bigger Snuffer (the Wardmother) reads as one that will not stop.
+- **The rules for the token, the blows and the feel** are fixed (below).
+
+**The curve** (the levers in `run.js` `PACE` and `foes.js` `FOE_HARD`): damage ×1.25 and health ×1.3 at Ember 0; damage by depth from a table, `dmgAt: [1, 1.45, 1.72, 2.3, 2.05]`, in place of the line; health ×(1 + 0.35 d). The table is the plain way to say "each place a step, none a wall": the steps are 1.45, 1.19, 1.34, and Barrow Crown steps back a little, as the Reeve is its test. The spark growth is unchanged. At Ember 0 with no spark (the bot's factor table):
+
+| Depth | Hook | Coal | Slam | Charge | Hooks to down 100 / 160 | Snuffer health (strings) | Ironback health |
+|---|---|---|---|---|---|---|---|
+| 0 The Sunken Gaol | 20 | 23 | 25 | 30 | 5 / 8 | 65 (1.5) | 156 |
+| 1 The Crow Wall | 29 | 33 | 36 | 44 | 4 / 6 | 88 (2.0) | 211 |
+| 2 The Fen | 34 | 39 | 43 | 52 | 3 / 5 | 111 (2.6) | 265 |
+| 3 The Bell Knoll | 46 | 52 | 57 | 69 | 3 / 4 | 133 (3.1) | 320 |
+| 4 Barrow Crown | 41 | 46 | 51 | 61 | 3 / 4 | 156 (3.6) | 374 |
+
+Before this change (at 9e243098) a hook dealt 21, 28, 41, 59 and 79.
+
+**Tuning runs** (60 bots, seed 1; the rules of the second pass; "B" is the brace at 3 flinches, 1.5 s, holding). Death rates by place, 1 to 5:
+
+| Step | Levers | 0.3 first win | 0.3 reach 2 / 3 | 0.3 death rates | 0.5 first win | 0.5 death rates |
+|---|---|---|---|---|---|---|
+| k | brace at 2 flinches; ×2.0, line 0.25 | | | | 4 | 19.7, 10.9, 9.8, 6.7, 21.8 |
+| l | brace at 2; ×1.5, line 0.45 | 22 | 43% / 20% | 52.6, 38.7, 31.9, 14.4, 57.8 | 2 | 4.9, 6.3, 11.0, 8.1, 25.2 |
+| m | B; ×1.7, line 0.4 | 12 | 50% / 35% | 43.0, 17.7, 24.3, 17.7, 58.8 | 2 | 2.8, 2.4, 7.8, 8.5, 28.9 |
+| n | B; ×1.3, 0.54 d^0.68 | 2 | 78% / 67% | 20.5, 12.2, 13.8, 5.6, 16.9 | 1 | 0.8, 1.1, 3.2, 2.0, 5.2 |
+| q | B; ×1.25, table 1, 1.3, 2.0, 2.4, 2.6 | 7 | 85% / 70% | 14.0, 9.3, 32.2, 16.9, 41.6 | 1 | 0.8, 0, 8.9, 4.5, 11.6 |
+| t | B; ×1.25, table 1, 1.45, 1.72, 2.3, 2.3 | 5 | 85% / 60% | 17.3, 15.3, 18.3, 12.3, 35.5 | 1 | 1.0, 0.8, 4.1, 5.5, 7.8 |
+| **final** | B; ×1.25, table 1, 1.45, 1.72, 2.3, 2.05 | **4** | **85% / 60%** | **18.0, 16.3, 20.3, 14.4, 28.4** | **1** | **1.0, 1.0, 4.5, 5.4, 5.4** |
+
+**The game as committed** (`WORKERS=4 node qa/lab/gloam-downs-bot.mjs 60 <skill> 1`):
+
+| Skill | First run reaches place 2 / 3 | Median first win | Runs (won) | Death rate by place, 1 to 5 | Damage per foe by place (median, zones only) | Interrupts a run (chosen) | Damage taken a run |
+|---|---|---|---|---|---|---|---|
+| 0.3 | 85% / 60% | run 4 (60 of 60) | 649 (209) | 18.0, 16.3, 20.3, 14.4, 28.4% | 13.3, 7.5, 9.8, 16.3, 28.8 | 32.6 (0.1) | 541 |
+| 0.5 | 95% / 92% | run 1 (60 of 60) | 388 (318) | 1.0, 1.0, 4.5, 5.4, 5.4% | 7.3, 3.9, 5.3, 7.0, 15.5 | 44.9 (0.8) | 461 |
+| 0.9 | 100% / 100% | run 1 (60 of 60) | 370 (338) | 0, 0, 3.0, 1.1, 1.7% | 1.4, 2.0, 2.1, 0, 9.3 | 48.6 (28.4) | 209 |
+
+Hooks from braced foes a run: 3.24, 1.64 and 0.12; from steeled foes: 2.83, 2.16 and 0.15. The 0.9 bot cuts into an armored wind-up 2.9 times a run, each a heavy foe its next cut breaks. The catalogue at 0.5 (`MAXRUNS=30 AFTER=30 WORKERS=4 node qa/lab/gloam-downs-bot.mjs 10 0.5 1`): 25% bought by run 8, 50% by run 15, 75% by run 22, all of it by run 28; 265 of 300 runs had a buy.
+
+Against the targets:
+- At 0.3, place 2 in 80% of first runs and place 3 in 40%: **met** (85%, 60%).
+- At 0.3, the median first win in run 8 to 20: **missed**, run 4 (it was run 1).
+- At 0.5, run 3 to 8: **missed**, run 1.
+- At 0.9, run 1 to 2: **met**.
+- No death spike at 0.3: **met** (places 1 to 4 at 1.05, 0.94, 1.18, 0.83 times their mean, Barrow Crown 1.65). At 0.5 **missed** at the Bell Knoll (1.80 times a mean of 3.0%); at 0.9 **missed** at the Fen (2.89 times a mean of 1.0%). Both are a few deaths in a few hundred visits.
+- Damage per foe rising 0.9 to 1.6 times a place: **missed** at 0.3 (0.56, 1.31, 1.66, 1.77) and 0.5 (0.53, 1.38, 1.31, 2.22). It falls after the Gaol at every setting tried: the Gaol's fights come first in a run, before any ability or spark.
+- The 0.5 bot interrupts more than 3 times a run: **met** (44.9). A buy in two of three runs: **met** (265 of 300).
+
+**Why the 0.5 target still misses.** The 0.3 bot reads a wind-up 0.57 s after it starts on average (±0.1 s), mostly later than a hook's 0.55 s, so it seldom rolls from a hook; the 0.5 bot reads it at 0.48 s and rolls in time. That gap makes the two bots far apart. Every setting that brought the 0.5 bot to run 3 or later (k) put the 0.3 bot's first-run deaths in the Gaol over 50% (l, at a lower damage, was already at 53%), against the target of 20% or less. The two targets cannot both hold with this bot, and the 0.3 targets were kept: they are the closest to a player who found the game hard. The next step is still a playtest.
+
+**The fixes the checker asked for** (each has a check in `qa/lab/gloam-downs-fair-checks.test.mjs` that failed before):
+- An elite's special move cut off (put out, a poise break, a parry, a stun or a hold, or its zone sunk for a guard) ends at once, and its token comes back: `cancelMove` ends the special too (`elites.js` `K.end`). Before, a Wardmother put out in her double hook kept the one melee token of the Gaol for the rest of the place, and a Rookchief the coal token.
+- The blows on their way count every active phase of a special (the second hook, the second pulse), a lob until its coal leaves the hand, and nothing from a foe put out or held (`F.due`).
+- The snap's hit stop, cue and kick come once a step.
+- A stun or a hold lets the flinch and the brace count on, and a knock-down in a wind-up counts as a cancel.
+- The poise holds full in the 4 s after a stagger, so the rim does not empty while the foe cannot break.
+- The bot rolls from armored wind-ups (above).
+
+**Not changed:**
+- `tellFree` is still left to the page's default (always true), and the bot passes neither `onScreen` nor `tellFree`, so its foes are always on screen: it never sees the 0.25 s longer off-screen wind-up. Its numbers are for a player who keeps the fight in view.
+- A sideways roll started 12 steps before a Snuffer's hook lands can still be hit as the roll ends (the hook's step and its tracking reach past the roll's safe time). Rolling earlier, later, back or in place is safe.
+- A press in the last 0.1 s of a wind-up trades badly: the cut lands after the blow. That is the timing of the genre.
+- The cancel picture: the ground ring of sparks and the hook's tell help, but on the step of the cancel a Snuffer behind the lamplighter is still hidden by it.
+
 ## Checks
-Run on the finished code, on 2026-11-26. The e2e checks ran on software WebGL (SwiftShader) in Chromium, with the site served by `python3 -m http.server`.
+**Second pass**, run on the finished code: every `qa/lab/gloam-downs*.test.mjs` passes (fair-checks 17, new; fair 18, foes 32, foes-ai 44, feel 12, run 70, boss 29, sound 31, seed 10, growth 29, builds 34, abilities 28, camera 49, keys 9, lattice 16, life 13, mouse 11, screens 11, stairs 1, uniform-blocks 10, the explorer's 33); `qa/lab/gloam-downs-zones.mjs` 177 ok; the boss sim as before (38 of 40 bots at 0.3 first win, 40 of 40 at 0.5 to 0.9); browser (software WebGL): run.interrupt 7, run.fight 8, run.boss 24, run.feel 5, run.abilities 9, run.growth 4, run.cards 12, run.sound 19, run.builds 7, run.input 17, run.swing 2; `qa/arcade/quiet.mjs --only=lab/gloam-downs` 35 of 35; `openspec validate --strict` valid. Not rerun in the second pass: run.lineup, camera, mouse, clicks, cutaway, screens, the explorer's e2e, life and the music demo (none of their code changed; the `snap` cue is the same). Not run at all: a real phone, a real pad, listening on speakers, and a run played by hand.
+
+**First pass**, run on 2026-11-26. The e2e checks ran on software WebGL (SwiftShader) in Chromium, with the site served by `python3 -m http.server`.
 - Node: every `qa/lab/gloam-downs*.test.mjs` passes: fair 18 (new), foes 32, foes-ai 44, feel 12, run 70, boss 29, sound 31, seed 10, growth 29, builds 34, abilities 28, camera 49, keys 9, lattice 16, life 13, mouse 11, screens 11, stairs 1, uniform-blocks 10, and the explorer's 33. `qa/lab/gloam-downs-zones.mjs`: 177 ok, no failure.
 - The boss sim (`node qa/lab/gloam-downs-boss.sim.mjs`, the Reeve with its poise): first win for 38 of 40 bots at 0.3 (median 2 tries) and 40 of 40 at 0.5, 0.7 and 0.9.
 - The music demo, `cues` group: 134 files, every target met; `snap` at -18.9 LUFS momentary, between cut 1 (-21.1) and the boss slam (-13.3), its three bands within 15 dB. Its first recipe (a 40 ms knock) measured -25.8, under cut 1, so the knock and the crackle were made longer and louder.

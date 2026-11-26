@@ -29,7 +29,8 @@
 //   The fair fight (gloam-downs-fair-fight): the foes' interrupts, braces, armor, tokens and blow spacing are foes.js's own. On a
 //   wind-up it reads, of a light or medium foe in reach (1.8 m and the foe's radius) that is not braced or armored, with 0.23 s or more
 //   before the hit, the bot cuts in with a chance of 0.3 + 0.6k (CUT_IN sets it, for a what-if run only) and does not roll from it; it
-//   rolls from an armored wind-up unless the poise left is under what its next two cuts take off (then it cuts in, at the same chance).
+//   rolls from an armored wind-up (braced, steeled, or any heavy foe's) unless the foe is heavy and its next cut breaks its poise (then
+//   it cuts in, at the same chance). It prints who hurt it in each place (S, P, M, I, E and the type for an elite, coal, B the Reeve).
 //   It prints the interrupts a run, the hooks from braced foes, and for each place of the route its death rate and its damage taken
 //   per foe put out.
 // Run: node qa/lab/gloam-downs-bot.mjs [bots = 20] [skill = 0.5] [first seed = 1]   (MAXRUNS=40, AFTER=5 runs after the first win, VERBOSE=1,
@@ -65,14 +66,14 @@ const SIDE = 24, WALK = 3.0; // a skilled bot's reach off the way for a wisp or 
 if (process.env.HARD_DMG) FOE_HARD.dmg = +process.env.HARD_DMG;
 if (process.env.HARD_HP) FOE_HARD.hp = +process.env.HARD_HP;
 if (process.env.REEVE_HARD) REEVE.hard = +process.env.REEVE_HARD;
-// and the growth levers (run.js BASE and PACE): START_HP, START_FL, HEAL, BLADE, DEPTH_DMG, DEPTH_HP, BOSS_SPARK, REEVE_HP, THICK
+// and the growth levers (run.js BASE and PACE): START_HP, START_FL, HEAL, BLADE, DMG_AT (the damage table by depth, as 1,1.3,1.75,2.05,2.05), DEPTH_HP, DEPTH_POW, BOSS_SPARK, REEVE_HP, THICK
 if (process.env.START_HP) BASE.hp = +process.env.START_HP;
 if (process.env.START_FL) BASE.flasks = +process.env.START_FL;
 if (process.env.HEAL) BASE.heal = +process.env.HEAL;
 if (process.env.BLADE) PACE.blade = +process.env.BLADE;
-if (process.env.DEPTH_DMG) PACE.depthDmg = +process.env.DEPTH_DMG;
 if (process.env.DEPTH_HP) PACE.depthHp = +process.env.DEPTH_HP;
 if (process.env.DEPTH_POW) PACE.depthPow = +process.env.DEPTH_POW;
+if (process.env.DMG_AT) PACE.dmgAt = process.env.DMG_AT.split(',').map(Number);
 if (process.env.BOSS_SPARK) PACE.bossSpark = +process.env.BOSS_SPARK;
 if (process.env.REEVE_HP) REEVE.hp = +process.env.REEVE_HP;
 if (process.env.THICK) PANE_RULES.thick = +process.env.THICK;
@@ -84,6 +85,11 @@ if (process.env.HURT_WAIT) FAIR.hurtWait = Math.round(+process.env.HURT_WAIT * 6
 if (process.env.SPARK_DMG) PACE.sparkDmg = +process.env.SPARK_DMG;
 if (process.env.SPARK_HP) PACE.sparkHp = +process.env.SPARK_HP;
 if (process.env.SPARK_CAP) PACE.sparkCap = +process.env.SPARK_CAP;
+// STEEL (s, the steeled time after a cancel; 0 turns it off) and BRACE_N (the flinches in 3 s that brace a foe)
+if (process.env.STEEL) FAIR.steel = Math.round(+process.env.STEEL * 60);
+if (process.env.BRACE_N) FAIR.braceN = +process.env.BRACE_N;
+if (process.env.BRACE_HOLDS) FAIR.braceHolds = true;
+if (process.env.BRACE) FAIR.brace = Math.round(+process.env.BRACE * 60);
 const CUT_IN = process.env.CUT_IN != null ? +process.env.CUT_IN : null;
 const why = { route: 0, foe: 0, wisp: 0, zone: 0 }; // the nudges by kind, and the wisps and zones a skilled bot gave up
 
@@ -149,12 +155,27 @@ function playPlace(rs, id, bot) {
   const R = makeRunner({ walk, meta, body, rs, targets, lightable: B ? B.lightable : F.lightable, drop: F.drop, think, onLight: F.bank, abilities: makeAbilities, keys: makeKeys });
   F.bind(R);
   B?.bind(R);
+  // who hurt the lamplighter: the foe whose blow came from that point (a coal by its ring), its type, E for an elite, B for the Reeve
+  {
+    const hurt = R.hurt;
+    R.hurt = (dmg, from, o = {}, ev) => {
+      const r = hurt(dmg, from, o, ev);
+      if ((r === 'hit' || r === 'dead') && from) {
+        let who = o.coal ? 'coal' : 'B';
+        for (const f of F.foes) if (!f.out && Math.hypot(f.x - from[0], f.z - from[1]) < 0.05) who = f.elite ? `E${f.type}` : f.type;
+        const key = `${depth}:${who}`;
+        bot.src[key] = (bot.src[key] || 0) + dmg;
+        if (who === 'B') reeveDmg += dmg;
+      }
+      return r;
+    };
+  }
   const brain = B ? bossBrain({ B, R, rs, body, skill: k, rnd, C: arena.c }) : null;
   const s = body.s, route = ROUTES[id].map(p => p.slice());
   // the spots of this place: a cache its keys open, given up after two tries; a spot under way: { sp, t, tries }
   const spotsDone = new Set();
   let spotRun = null;
-  let wi = 1, t0 = rs.run.time, best = Infinity, bestAt = 0, nudges = 0, steps = 0, out = null, dark = null, lastHit = 0, placeDmg = 0, placeFoes = 0;
+  let wi = 1, t0 = rs.run.time, best = Infinity, bestAt = 0, nudges = 0, steps = 0, out = null, dark = null, lastHit = 0, placeDmg = 0, placeFoes = 0, reeveDmg = 0;
   const depth = depthOf(rs.run);
   const read = new Map(); // a wind-up read: its foe and start step -> { at, miss }
   const wisps = new Set(), seen = new Set(); // wisps taken or given up; zones woken or given up
@@ -233,16 +254,17 @@ function playPlace(rs, id, bot) {
     }
     return a;
   }
-  /* a wind-up it may cut into: a light or medium foe in reach, not braced, not armored (or a heavy one whose poise left is under its
-     next two cuts, twice over in a wind-up), with 0.23 s or more before the hit */
-  const cutCut = 21 * STAGGER.wind;
+  /* a wind-up it may cut into: a light or medium foe in reach, not braced, steeled or otherwise armored, or a heavy one (every heavy
+     wind-up is armored) whose poise left its next cut breaks (cut1's 10, twice over in a wind-up), with 0.23 s or more before the hit.
+     From any other armored wind-up it rolls */
+  const cutCut = 10 * STAGGER.wind;
   function cuttable(t) {
     const f = t.f, reach = 1.8 + f.r, d = Math.hypot(f.x - s.x, f.z - s.z);
     if (d > reach || t.hit < 14 || f.move === 'lob' || f.special?.def.kind === 'coals' || Math.abs(f.y - s.y) > 1.6) return false;
     const heavy = !f.T.light || !!f.elite;
     if (!heavy) return !(f.braced > 0) && !armored(f);
     const left = f.poise === undefined || F.step - (f.poiseAt ?? -1e9) >= STAGGER.refill ? poiseOf(f) : f.poise;
-    return left <= cutCut;
+    return left <= cutCut && F.step >= (f.staggerEnd ?? -1e9) + STAGGER.gap;
   }
   function act0() {
     const run = rs.run, hp = run.hp / maxOf(rs), live = F.targets();
@@ -253,7 +275,7 @@ function playPlace(rs, id, bot) {
       if (r.miss || t.at < r.at) continue;
       // the cut-in: face the foe and press Attack; it keeps cutting while the wind-up lasts, and rolls late only if it still stands
       if (r.cut && (r.cutting || cuttable(t))) {
-        if (!r.cutting) { r.cutting = true; bot.cutins++; }
+        if (!r.cutting) { r.cutting = true; bot.cutins++; if (armored(t.f)) bot.armorCuts++; }
         if (t.hit > 6) {
           const f = t.f, off = Math.abs(Math.atan2(Math.sin(Math.atan2(f.x - s.x, f.z - s.z) - s.yaw), Math.cos(Math.atan2(f.x - s.x, f.z - s.z) - s.yaw)));
           return { attack: steps % 2 === 0, ...toward([f.x, f.y, f.z], off > 0.4), ...(off > 0.4 ? {} : { mx: 0, mz: 0 }), fight: true };
@@ -350,9 +372,10 @@ function playPlace(rs, id, bot) {
         // a hook from a braced foe: the foe in its active time nearest the lamplighter is braced
         const near = F.foes.filter(f => f.state === 'move' && f.move && phaseOf(f.T.moves[f.move], f.mt) === 'act').sort((a, b) => Math.hypot(a.x - s.x, a.z - s.z) - Math.hypot(b.x - s.x, b.z - s.z))[0];
         if (near && near.braced > 0) bot.bracedHits++;
+        else if (near && near.armorMove && near.T.light && !near.elite) bot.steelHits++;
       }
       if (e.type === 'snap') { if (e.kind === 'B') bot.bossBreaks++; else bot.snaps++; }
-      if (e.type === 'foeOut' || (e.type === 'boss' && e.what === 'fall')) placeFoes++;
+      if (e.type === 'foeOut') placeFoes++;
       if (e.type === 'wisp') wisps.add(e.i);
       if (e.type === 'beacon' || e.type === 'win') out = e;
       if (e.type === 'dead') out = e;
@@ -392,14 +415,15 @@ function playPlace(rs, id, bot) {
   combo.end();
   bot.abilities += usedAb;
   // a bot stuck for 12 minutes (a keeper it cannot reach) is put out, but that is the bot's, not the fight's: it is counted apart
-  bot.places.push({ depth, dmg: placeDmg, foes: placeFoes, died: out?.type === 'dead' && !out.stuck, stuck: !!out?.stuck });
+  // the damage per foe counts the zones' foes only: the Reeve's fight is its own (its damage a run is in the source lines)
+  bot.places.push({ depth, dmg: placeDmg - reeveDmg, foes: placeFoes, died: out?.type === 'dead' && !out.stuck, stuck: !!out?.stuck });
   return { out, time: (rs.run?.time ?? rs.ended?.time ?? 0) - t0, nudges, elite: R.eliteDown || false, share: rs.run ? rs.run.hp / maxOf(rs) : 0, depth };
 }
 
 /* ---------------- one bot ---------------- */
 function playBot(b) {
   const rs = RS.fresh();
-  const bot = { skill: SKILL, rnd: mulberry(hash2(b, 0xb07, 7)), bossFights: [], arrive: [], hurt: 0, caches: 0, abilities: 0, bossAt: null, nudgeTime: 0, snaps: 0, cutins: 0, bracedHits: 0, bossBreaks: 0, places: [] };
+  const bot = { skill: SKILL, rnd: mulberry(hash2(b, 0xb07, 7)), bossFights: [], arrive: [], hurt: 0, caches: 0, abilities: 0, bossAt: null, nudgeTime: 0, snaps: 0, cutins: 0, armorCuts: 0, bracedHits: 0, steelHits: 0, src: {}, bossBreaks: 0, places: [] };
   const runs = [];
   for (let r = 0; r < MAXRUNS; r++) {
     shop(rs);
@@ -432,7 +456,7 @@ function playBot(b) {
     if (bot.firstWin != null && r + 1 >= bot.firstWin + AFTER) break;
   }
   return { runs, firstWin: bot.firstWin ?? null, boss: bot.bossFights, arrive: bot.arrive, hurt: bot.hurt, caches: bot.caches, abilities: bot.abilities, nudgeTime: bot.nudgeTime, keys: (rs.keys || []).slice(),
-    snaps: bot.snaps, cutins: bot.cutins, bracedHits: bot.bracedHits, bossBreaks: bot.bossBreaks, places: bot.places };
+    snaps: bot.snaps, cutins: bot.cutins, armorCuts: bot.armorCuts, src: bot.src, steelHits: bot.steelHits, bracedHits: bot.bracedHits, bossBreaks: bot.bossBreaks, places: bot.places };
 }
 
 /* ---------------- the threads ----------------
@@ -503,7 +527,7 @@ console.log(`nudges a run (mean): ${(bots.flatMap(x => x.runs).reduce((a, r) => 
   const first = bots.map(x => x.runs[0]);
   const p2 = first.filter(r => r.depth >= 1).length, p3 = first.filter(r => r.depth >= 2).length;
   console.log(`first run reaches place 2: ${p2} of ${BOTS} (${Math.round((100 * p2) / BOTS)}%), place 3: ${p3} of ${BOTS} (${Math.round((100 * p3) / BOTS)}%)`);
-  console.log(`interrupts a run (mean) ${(bots.reduce((a, x) => a + x.snaps, 0) / nRuns).toFixed(1)} (cut-ins chosen ${(bots.reduce((a, x) => a + x.cutins, 0) / nRuns).toFixed(1)}); hooks from braced foes a run ${(bots.reduce((a, x) => a + x.bracedHits, 0) / nRuns).toFixed(2)}; the Reeve's poise breaks a fight ${(bots.reduce((a, x) => a + x.bossBreaks, 0) / Math.max(1, bots.reduce((a, x) => a + x.boss.length, 0))).toFixed(2)}`);
+  console.log(`interrupts a run (mean) ${(bots.reduce((a, x) => a + x.snaps, 0) / nRuns).toFixed(1)} (cut-ins chosen ${(bots.reduce((a, x) => a + x.cutins, 0) / nRuns).toFixed(1)}, of them into an armored wind-up ${(bots.reduce((a, x) => a + x.armorCuts, 0) / nRuns).toFixed(2)}); hooks from braced foes a run ${(bots.reduce((a, x) => a + x.bracedHits, 0) / nRuns).toFixed(2)}, from steeled ones ${(bots.reduce((a, x) => a + x.steelHits, 0) / nRuns).toFixed(2)}; the Reeve's poise breaks a fight ${(bots.reduce((a, x) => a + x.bossBreaks, 0) / Math.max(1, bots.reduce((a, x) => a + x.boss.length, 0))).toFixed(2)}`);
   const visits = bots.flatMap(x => x.places), rates = [], per = [];
   for (let d = 0; d < 5; d++) {
     const at = visits.filter(v => v.depth === d), died = at.filter(v => v.died).length;
@@ -511,6 +535,10 @@ console.log(`nudges a run (mean): ${(bots.flatMap(x => x.runs).reduce((a, r) => 
     per.push(med(at.filter(v => v.foes > 0).map(v => v.dmg / v.foes)) ?? 0);
     console.log(`place ${d + 1}: reached ${at.length}, deaths ${died}, death rate ${at.length ? ((100 * died) / at.length).toFixed(1) : '-'}%, damage per foe (median) ${per[d].toFixed(1)}; the bot stuck ${at.filter(v => v.stuck).length}`);
   }
+  // the damage taken a run by place and source (S, P, M, I; E and the type for an elite; coal; B the Reeve)
+  const src = {};
+  for (const x of bots) for (const [k, v] of Object.entries(x.src)) src[k] = (src[k] || 0) + v;
+  for (let d = 0; d < 5; d++) console.log(`place ${d + 1} damage a run by source: ${Object.entries(src).filter(([k]) => k.startsWith(d + ':')).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k.slice(2)} ${(v / nRuns).toFixed(1)}`).join(', ')}`);
   const mean4 = rates.slice(0, 4).reduce((a, b) => a + b, 0) / 4;
   const spike = rates.slice(0, 4).map(r => r / (mean4 || 1)), crown = rates[4] / (mean4 || 1), steps = per.slice(1).map((v, i) => v / (per[i] || 1));
   console.log(`spike: places 1 to 4 at ${spike.map(v => v.toFixed(2)).join(', ')} times their mean (under 1.5), Barrow Crown ${crown.toFixed(2)} (under 2); damage per foe steps ${steps.map(v => v.toFixed(2)).join(', ')} (0.9 to 1.6)`);

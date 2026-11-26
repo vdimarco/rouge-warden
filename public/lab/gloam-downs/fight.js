@@ -4,7 +4,7 @@
 // cracks, the bursts and the glim motes, and shows the ember notches at the screen's edge for wind-ups out of view and toward a dark
 // beacon's keepers. At Barrow Crown it does the same for the Barrow Reeve (boss.js): its slot, its markers and shards, the grave
 // candles, and the caged light that rides at the lantern after the fall. main.js makes one for each place of a run.
-import { makeFoes, poseOf, phaseOf, ringAt, laneAt, MARKERS, rimOf, ARMOR } from './foes.js';
+import { makeFoes, poseOf, phaseOf, ringAt, laneAt, MARKERS, rimOf, ARMOR, hookWind } from './foes.js';
 import { makeBoss, poseOfBoss, lightAt, lanternOf, REEVE, ATTACKS } from './boss.js';
 import { makeSparks, OVER } from './sparks.js';
 import { makeFeel, gradeFloats, FEEL } from './feel.js';
@@ -52,6 +52,10 @@ const app = (a, v) => [a[0] * v[0] + a[1] * v[1] + a[2] * v[2], a[3] * v[0] + a[
 // the armor rim: its dabs' size, how far out from the body (m), its lift, and its spin; in an armored wind-up larger by 1.3 and up to 40% more
 export const RIM = { s: 0.032, out: 0.18, lift: 0.08, spin: 0.6, spinArmor: 2.2, armorS: 1.3, grow: 0.4 };
 export const HALO = { r: 0.24, s: 0.028, spin: 1.6, bob: 0.03, crown: 6, crownR: 0.2, crownS: 0.03, relic: 5, relicR: 0.1, relicS: 0.035 };
+/* the hook's ground tell (gloam-downs-fair-fight "A hook that shows"): in a Snuffer's hook wind-up, an arc of 7 fire dabs (slot 35) on
+   the ground in front of it, across the hook's 120 degrees at 1.3 m, growing from 0.6 to 1 of their size over the wind-up (with
+   reduced motion they hold their full size). It says which foe of a group is about to hook */
+export const HOOK_TELL = { n: 7, r: 1.3, arc: 60 * (Math.PI / 180), s: 0.075, lift: 0.08, slot: 35 };
 
 /* makeFight({ walk, meta, world, pool, rs, max, still, fx, project, doc, mix, emit, dressOf, groundRelics }): max() is the run's
    maximum health; fx holds the effect flags (stop, flash, kick, zoom, grade, shake; kick is the Shake switch); project([x, y, z])
@@ -290,9 +294,14 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
         break;
       case 'foeOut': sparks?.drops(e.x, e.y + 0.6, e.z, 33, 10, 1.8, 2.5); break;
       // a hit stops an attack, or breaks a poise: a kick of 0.06 (none with reduced motion) and a burst of fire sparks at the chest
+      // the kick comes once a step (foes.js marks the others first: false); a ring of sparks bursts on the ground round the foe, so a cancel
+      // reads when the foe stands behind the lamplighter or its trail
       case 'snap':
-        feel.snap();
-        if (sparks) { sparks.sparks(e.x, e.y, e.z, 35, 12, 3.8); sparks.flash(e.x, e.y, e.z, 35, 0.3, 0.08); }
+        if (e.first !== false) feel.snap();
+        if (sparks) {
+          sparks.sparks(e.x, e.y, e.z, 35, 12, 3.8); sparks.flash(e.x, e.y, e.z, 35, 0.3, 0.08);
+          if (e.gy !== undefined) sparks.ring(e.x, e.gy + OVER, e.z, 36, 0.3, 1.3, 0.3, 16, 0.04);
+        }
         break;
       // a poise broken: a kick of 0.08, and an ember ring at its chest
       case 'stagger':
@@ -543,6 +552,17 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
       for (let i = 0; i < rim.n; i++) {
         const a = (i / rim.n) * Math.PI * 2 + (still ? 0 : t * (rim.armor ? RIM.spinArmor : RIM.spin));
         out.push({ kind: 'armor', x: f.x + Math.sin(a) * R, y: y + (i % 2 ? RIM.lift : -RIM.lift), z: f.z + Math.cos(a) * R, ci: ARMOR.slot, s });
+      }
+    }
+    // the hook's ground tell: which foe is about to hook (a plain hook's wind-up, or the Wardmother's)
+    for (const f of foes.foes) {
+      if (f.state === 'dying' || !foes.shown(f)) continue;
+      const k = hookWind(f);
+      if (k === null) continue;
+      const size = dressOf(f)?.size || 1, s = HOOK_TELL.s * (still ? 1 : 0.6 + 0.4 * k), gy = foes.floorUnder(f) + HOOK_TELL.lift;
+      for (let i = 0; i < HOOK_TELL.n; i++) {
+        const a = f.yaw + HOOK_TELL.arc * (2 * i / (HOOK_TELL.n - 1) - 1), R = HOOK_TELL.r * size;
+        out.push({ kind: 'tell', x: f.x + Math.sin(a) * R, y: gy, z: f.z + Math.cos(a) * R, ci: HOOK_TELL.slot, s });
       }
     }
     for (const f of foes.foes) {

@@ -565,8 +565,8 @@ if (check) {
 }
 
 // the curve's numbers (gloam-downs-fair-fight design.md "A natural curve"), as the spec's scenarios quote them
-const CURVE = { hard: [1.1, 1.15, 1.2], pace: [1, 0.1, 0.2, 1, 0.015, 0.03, 12, 0.05], hook0: 18, crow: { hp: 69, hook: 19 }, crown: { hook: 25, hp: 103 } };
-{ // Harder Ember 0: a Snuffer's hook deals 18 (16 × 1.1, rounded), it has 58 health (50 × 1.15), and the Reeve's blows deal 20% more
+const CURVE = { hard: [1.25, 1.3, 1.2], pace: [1, [1, 1.45, 1.72, 2.3, 2.05], 0.35, 1, 0.015, 0.03, 12, 0.05], hook0: 20, crow: { hp: 88, hook: 29 }, crown: { hook: 41, hp: 156 } };
+{ // Harder Ember 0: a Snuffer's hook deals 20 (16 × 1.25), it has 65 health (50 × 1.3), and the Reeve's blows deal 20% more
   assert.deepEqual([FOE_HARD.dmg, FOE_HARD.hp, REEVE.hard], CURVE.hard);
   const info = { x0: -20, z0: -20, step: 0.25, nx: 161, nz: 161 }, walk = makeWalk(info, new Int16Array(2 * 161 * 161));
   const rs = RS.fresh(); startRun(rs, 3);
@@ -575,16 +575,16 @@ const CURVE = { hard: [1.1, 1.15, 1.2], pace: [1, 0.1, 0.2, 1, 0.015, 0.03, 12, 
   const R = makeRunner({ walk, meta: { wisps: [], beacon: { p: [90, 0, 90], r: 1 } }, body, rs, targets: F.targets, think: F.think });
   F.bind(R);
   const f = F.find(F.spawn('S', 0, 1.6, Math.PI).id);
-  assert.equal(f.hp, Math.round(TYPES.S.hp * 1.15));
+  assert.equal(f.hp, Math.round(TYPES.S.hp * 1.3));
   let hurt = null;
   for (let i = 0; i < 240 && !hurt; i++) hurt = R.step({}, 0).find(e => e.type === 'hurt') || null;
   assert(hurt && hurt.dmg === CURVE.hook0, `the hook dealt ${hurt?.dmg}`);
-  pass(`Harder Ember 0: a Snuffer has 58 health and its hook deals ${CURVE.hook0}; the Reeve deals 20% more`, { hook: hurt.dmg, hp: f.hp });
+  pass(`Harder Ember 0: a Snuffer has 65 health and its hook deals ${CURVE.hook0}; the Reeve deals 20% more`, { hook: hurt.dmg, hp: f.hp });
 }
 
-{ /* Harder later places: at place depth d foes deal ×(1 + 0.1 d) and have ×(1 + 0.2 d) health, the Gaol is as before, and the Reeve
-     has 5% more health for each spark the run holds */
-  assert.deepEqual([PACE.blade, PACE.depthDmg, PACE.depthHp, PACE.depthPow, PACE.sparkDmg, PACE.sparkHp, PACE.sparkCap, PACE.bossSpark], CURVE.pace);
+{ /* Harder later places: at place depth d foes deal ×[1, 1.45, 1.72, 2.3, 2.05][d] and have ×(1 + 0.35 d) health, the Gaol is as
+     before, and the Reeve has 5% more health for each spark the run holds */
+  assert.deepEqual([PACE.blade, PACE.dmgAt, PACE.depthHp, PACE.depthPow, PACE.sparkDmg, PACE.sparkHp, PACE.sparkCap, PACE.bossSpark], CURVE.pace);
   const rs = RS.fresh(); startRun(rs, 3);
   assert.deepEqual([depthOf(rs.run), foeScale(rs.run)], [0, { dmg: 1, hp: 1 }], 'the Gaol: no change');
   rs.run.place = 'barrows';
@@ -592,7 +592,7 @@ const CURVE = { hard: [1.1, 1.15, 1.2], pace: [1, 0.1, 0.2, 1, 0.015, 0.03, 12, 
   assert.equal(depthOf(rs.run), 4);
   assert.equal(Math.round(16 * FOE_HARD.dmg * top.dmg), CURVE.crown.hook, 'Barrow Crown: the hook');
   assert.equal(Math.round(50 * FOE_HARD.hp * top.hp), CURVE.crown.hp, 'Barrow Crown: a Snuffer');
-  assert(Math.ceil(100 / CURVE.crown.hook) >= 4, 'four hooks or more to go down from 100');
+  assert(Math.ceil(100 / CURVE.crown.hook) >= 3, 'three hooks or more to go down from 100');
   rs.run.sparks = { flame: 4, ward: 2, gloam: 2 };
   assert.deepEqual([sparkCount(rs.run), +bossScale(rs.run).toFixed(2), bossLines(bossScale(rs.run)).max], [8, 1.4, 1820], 'the Reeve with 8 sparks: 1,820 health');
   // a Snuffer in The Crow Wall (the second place), no spark

@@ -48,8 +48,8 @@ export const TYPES = {
 };
 // the markers as baked (lib/foes.mjs): a ring's radius at k = 1, and the Ironback's lane: width, piece length, pieces
 /* Ember 0 (gloam-downs-fair-fight design.md "A natural curve"): every foe's blow deals `dmg` times its number, and every foe has `hp`
-   times its health. The Ember 4 factor multiplies on top. The range the pacing tune may use: dmg 1.0 to 1.2 */
-export const FOE_HARD = { dmg: 1.1, hp: 1.15 };
+   times its health. The Ember 4 factor multiplies on top (the second pass of the pacing tune set 1.25 and 1.3) */
+export const FOE_HARD = { dmg: 1.25, hp: 1.3 };
 export const MARKERS = { P: { ring: 1.4 }, M: { ring: 2.2 }, I: { ring: 3.0, lane: [1.6, 1.4, 5] } };
 
 export const RULES = {
@@ -59,27 +59,33 @@ export const RULES = {
   glimWait: S(0.4), glimReach: 6, glimTake: 0.35, flash: 3, shake: 6, spawnLeash: 4
 };
 /* the fair fight (gloam-downs-fair-fight design.md): after a cancel a foe waits 0.6 s past its stun; a hit in the active time or the
-   recovery adds 0.2 s to the recovery, at most 0.4 s a move; three flinches in 3 s brace a foe for 1.0 s; two blows land at least 0.6 s
+   recovery adds 0.2 s to the recovery, at most 0.4 s a move; three flinches in 3 s brace a foe for 1.5 s; two blows land at least 0.6 s
    apart; no wind-up starts for 1.0 s after a hurt; the foe that hit steps back 1.0 m over 0.4 s and waits 1.2 s; waiting foes circle
    at 0.8 m/s; a foe off screen winds up 0.25 s longer */
 export const FAIR = {
-  stunWait: S(0.6), recAdd: S(0.2), recMax: S(0.4), braceN: 3, braceIn: S(3.0), brace: S(1.0), gap: S(0.6), hurtWait: S(1.0),
+  stunWait: S(0.6), recAdd: S(0.2), recMax: S(0.4), braceN: 3, braceIn: S(3.0), brace: S(1.5), gap: S(0.6), hurtWait: S(1.0),
+  // a braced foe is not knocked down by the finisher or the plunge: it takes the blow and can answer
+  braceHolds: true,
   back: 1.0, backSteps: S(0.4), backWait: S(1.2), circle: 0.8, offWind: S(0.25), snapStop: 5,
+  // a foe cut out of its attack comes back steeled: its next wind-up begun within 4 s is armored (gloam-downs-fair-fight "Steeled")
+  steel: S(4.0),
   // the hits that interrupt: the blade's cuts, its finisher, the Rising cut and the plunge (an ability says so on its own hit)
   blade: ['cut1', 'cut2', 'fin', 'rise', 'plunge']
 };
-// the rim of a heavy foe (fight.js draws it): one dab in slot 39 for each 10 poise left, rounded up; a braced foe shows 4
-export const ARMOR = { per: 10, slot: 39, braced: 4 };
-// the armored attacks: the Ironback's charge, the Bellwether's bent charge, the Cairnwarden's sweep and the Wardmother's second hook
+// the rim of a heavy foe (fight.js draws it): one dab in slot 39 for each 10 poise left, rounded up; a braced foe shows 4, a steeled
+// one 2 until its steel is spent or lapses
+export const ARMOR = { per: 10, slot: 39, braced: 4, steeled: 2 };
+/* the armored wind-ups: every wind-up of a heavy foe (the Ironback's, and every elite's, its special move's too), and a light or
+   medium foe's wind-up begun braced or steeled. A hit does not cancel one; a heavy foe's poise still wears, and a break still cancels */
 export function armored(f) {
   if (!f) return false;
-  if (f.state === 'move' && f.move && phaseOf(f.T.moves[f.move], f.mt) === 'wind') return f.move === 'charge' || f.braced > 0 || !!f.armorMove;
+  if (f.state === 'move' && f.move && phaseOf(f.T.moves[f.move], f.mt) === 'wind') return heavyOf(f) || f.braced > 0 || !!f.armorMove;
   const sp = f.special;
   if (!sp) return false;
-  const P = specialPhase(sp.def, sp.t);
-  if (P.ph !== 'w') return false;
-  return sp.def.kind === 'bent' || sp.def.kind === 'sweep' || (sp.def.kind === 'hooks' && P.i === 2) || f.braced > 0;
+  return specialPhase(sp.def, sp.t).ph === 'w';
 }
+// steeled now: cut out of an attack in the last 4 s, its next wind-up not yet begun
+export const steeled = (f, step) => !!f && !heavyOf(f) && step < (f.steelTo ?? -1);
 // in a wind-up now: its own move's, or an elite's special move's
 export function winding(f) {
   if (f.state === 'move' && f.move) return phaseOf(f.T.moves[f.move], f.mt) === 'wind';
@@ -97,7 +103,15 @@ export function rimOf(f, step) {
     const n = Math.ceil(left / ARMOR.per - 1e-9);
     return n > 0 ? { n: arm ? n * 2 : n, armor: arm, k: windK(f) } : null;
   }
-  if (f.braced > 0) return { n: arm ? ARMOR.braced * 2 : ARMOR.braced, armor: arm, k: windK(f) };
+  if (f.braced > 0 || (arm && f.armorMove)) return { n: arm ? ARMOR.braced * 2 : ARMOR.braced, armor: arm, k: windK(f) };
+  if (steeled(f, step)) return { n: ARMOR.steeled, armor: false, k: 0 };
+  return null;
+}
+// in a hook's wind-up (a Snuffer's, or the Wardmother's hooks): how far into it, 0..1, else null (fight.js lays the ground tell from it)
+export function hookWind(f) {
+  if (!f || f.out) return null;
+  if (f.state === 'move' && f.move === 'hook') return phaseOf(f.T.moves.hook, f.mt) === 'wind' ? windK(f) : null;
+  if (f.special?.def.kind === 'hooks') { const P = specialPhase(f.special.def, f.special.t); return P.ph === 'w' ? clamp(P.at / P.n, 0, 1) : null; }
   return null;
 }
 function windK(f) {
@@ -291,21 +305,32 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
    of another blow (landed, or on its way). A foe off screen starts only when its tell can be heard (tellFree), and winds up 0.25 s
    longer. hitIn: the steps from the wind-up's start to its blow, on screen */
   const offOf = f => !onScreen(f.x, f.y + f.T.chest, f.z);
+  /* the steps of the blows on their way: each melee move's first active step and each coal's landing (a lob until its coal leaves the
+     hand), every active phase of an elite's special move still to come, and the coals in the air. A foe put out or held has none */
   function blowsDue() {
     const out = F.blows.slice();
     for (const g of F.foes) {
-      if (g.state === 'move' && g.move && !g.hold) {
+      if (g.out || g.hold) continue;
+      if (g.state === 'move' && g.move) {
         const M = g.T.moves[g.move];
-        if (g.mt < M.wind) out.push(F.step + (M.wind - g.mt) + (M.kind === 'coal' ? M.release + M.flight : 0));
+        if (M.kind === 'coal') { if (g.mt < M.wind + M.release) out.push(F.step + (M.wind + M.release - g.mt) + M.flight); }
+        else if (g.mt < M.wind) out.push(F.step + (M.wind - g.mt));
       } else if (g.special) {
+        const d = g.special.def;
         let t = 0;
-        for (const [ph, n] of g.special.def.phases) { if (ph === 'a') break; t += n; }
-        if (g.special.t < t) out.push(F.step + (t - g.special.t) + (g.special.def.kind === 'coals' ? g.special.def.release + g.special.def.flight : 0));
+        for (const [ph, n] of d.phases) {
+          if (ph === 'a') {
+            const at = d.kind === 'coals' ? t + d.release : t;
+            if (g.special.t < at) out.push(F.step + (at - g.special.t) + (d.kind === 'coals' ? d.flight : 0));
+          }
+          t += n;
+        }
       }
     }
     for (const c of F.coals) out.push(F.step + (c.n - c.t));
     return out;
   }
+  F.due = blowsDue;
   function mayAttack(f, kind, hitIn = 0) {
     if (kind === 'coal' ? F.coal : F.melee.size >= F.tokens) return false;
     if (F.step < F.hurtWait || F.step < f.wait) return false;
@@ -345,13 +370,17 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
     else F.coal = f;
     f.windAdd = off ? FAIR.offWind : 0;
     f.state = 'move'; f.move = name; f.mt = -f.windAdd; f.landed = false; f.ready = 0; f.prog = 0; f.wall = false; f.recAdd = 0; f.recLeft = 0;
-    // a wind-up begun braced stays armored to its end
-    f.armorMove = f.braced > 0;
+    // a wind-up begun braced, or steeled (the first after a cancel, within 4 s), stays armored to its end; the steel is spent
+    f.armorMove = f.braced > 0 || steeled(f, F.step);
+    f.steelTo = -1;
     lay(f, name);
     ev.push({ type: 'cue', cue: M.cue, foe: f.id, ...(off ? { off: true } : {}) });
   }
   function clearMove(f) { f.move = null; f.mt = 0; f.lane = null; f.windAdd = 0; f.recAdd = 0; f.recLeft = 0; f.armorMove = false; }
+  /* an attack cut off (a hit, a break, a parry, a stun or a hold, a death, a sink): an elite's special move ends too, and the token
+     goes back at once */
   function cancelMove(f) {
+    if (f.special) EK.end(f);
     if (f.move) release(f);
     if (!F.coals.some(c => c.f === f)) f.marker = null;
     clearMove(f);
@@ -643,18 +672,18 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
     // the states abilities put on a foe (status.js): a stun or a hold stops it where it stands, and its wind-up; a slow halves its walk
     // and its wind-up
     const st = statusStep(f);
-    if (st.stop && ['idle', 'chase', 'home', 'move'].includes(f.state)) {
-      if (f.state === 'move') cancelMove(f);
-      if (f.cool > 0) f.cool--;
-      physics(f, { hard: [0, 0] });
-      return;
-    }
     // a hit lands in the blade's step, before this think: its flinch or knock-down counts from the next play step
     const fresh = f.hitAt === F.step;
     if (f.cool > 0) f.cool--;
+    // the flinch and the brace count on in a stun or a hold too; the brace counts while the foe stands (not while it is down), so a
+    // braced foe gets up still braced and can answer
     if (f.flinch > 0 && !fresh) f.flinch--;
-    // the brace counts while the foe stands (not while it is down), so a braced foe gets up still braced and can answer
     if (f.braced > 0 && !fresh && f.state !== 'down') f.braced--;
+    if (st.stop && ['idle', 'chase', 'home', 'move'].includes(f.state)) {
+      if (f.state === 'move' || f.special) cancelMove(f);
+      physics(f, { hard: [0, 0] });
+      return;
+    }
     let want = null;
     switch (f.state) {
       case 'asleep': case 'out': return;
@@ -715,7 +744,7 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
    which stops anything. Any other hit that interrupts (the blade's, or an ability's with how.interrupt) flinches it for its hit stun
    with its knock back while it chases, and in its wind-up cancels the attack: no blow, its token back at once, and a wait of 0.6 s
    past the stun. A blow in its active time goes on, and a hit there or in the recovery holds the recovery 0.2 s longer, at most 0.4 s
-   a move. Three flinches in 3 s (a cancel and a knock-down count) brace it for 1.0 s: no flinch and no cancel by a plain hit. A heavy
+   a move. Three flinches in 3 s (a cancel and a knock-down count) brace it for 1.5 s: no flinch, no knock-down and no cancel. A heavy
    foe (the Ironback, or any elite) never flinches: its poise wears, twice as fast in a wind-up, and breaks into a stagger. A stunned
    Ironback takes 50% more. A held foe takes the damage and holds its pose. */
   function hitFoe(f, raw, how = {}) {
@@ -747,9 +776,9 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
     f.hitAt = F.step + 1;
     f.aware = true;
     let push = 0;
-    if (how.knock) {
-      // the finisher and the plunge knock it down, braced or not; one in a wind-up is a cancel
-      if (ph === 'wind') snap(f, 'knock');
+    if (how.knock && !(FAIR.braceHolds && f.braced > 0)) {
+      // the finisher and the plunge knock it down unless it is braced; one in a wind-up is a cancel, and steels the foe
+      if (ph === 'wind') { snap(f, 'knock'); f.cancels++; f.steelTo = F.step + FAIR.steel; }
       cancelMove(f);
       f.state = 'down'; f.t = 0; f.downFor = how.knock; f.flinch = 0;
       flinched(f);
@@ -768,6 +797,8 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
         cancelMove(f);
         f.cancels++;
         f.wait = Math.max(f.wait, F.step + 1 + T.stun + FAIR.stunWait);
+        // steeled: its next wind-up begun within 4 s is armored (the rim shows 2 dabs until then)
+        f.steelTo = F.step + FAIR.steel;
         snap(f, 'cancel');
       }
       f.flinch = T.stun;
@@ -785,10 +816,14 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
     if (f.flinches.length >= FAIR.braceN) { f.braced = FAIR.brace; f.flinches = []; }
   }
   /* a cancel or a poise break: a hit stop of 5 steps, the snap (sound.js) and its sparks and kick (fight.js) */
+  /* the hit stop, the cue and the kick come once a step at most, however many foes a hit stops (a Lantern bomb, a cut that meets two
+     wind-ups); every foe it stops gets its sparks (first: false on the others) */
   function snap(f, why) {
-    queue({ type: 'stop', n: FAIR.snapStop });
-    queue({ type: 'snap', foe: f.id, kind: f.type, why, x: f.x, y: f.y + f.T.chest * (f.size || 1), z: f.z });
-    queue({ type: 'cue', cue: 'snap', foe: f.id, kind: f.type, why });
+    const first = F.snapAt !== F.step;
+    F.snapAt = F.step;
+    if (first) queue({ type: 'stop', n: FAIR.snapStop });
+    queue({ type: 'snap', foe: f.id, kind: f.type, why, x: f.x, y: f.y + f.T.chest * (f.size || 1), z: f.z, gy: f.y, first });
+    if (first) queue({ type: 'cue', cue: 'snap', foe: f.id, kind: f.type, why });
   }
   /* the poise (feel.js STAGGER): the damage comes off it too, twice over in a wind-up, and at 0 the foe staggers, its wind-up ended.
      -> true when the foe is in a stagger now (a hit in a stagger takes 25% more and does nothing else) */
@@ -798,8 +833,10 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
     if (!max || f.state === 'stun' || f.state === 'down') return false;
     if (f.poise === undefined || F.step - (f.poiseAt ?? -1e9) >= STAGGER.refill) f.poise = max;
     f.poiseAt = F.step;
+    // in the 4 s after a stagger the poise holds full: the foe cannot break again, and its rim says so
+    if (F.step < (f.staggerEnd ?? -1e9) + STAGGER.gap) { f.poise = max; return false; }
     f.poise = Math.max(0, f.poise - dmg * (winding(f) ? STAGGER.wind : 1));
-    if (f.poise > 0 || F.step < (f.staggerEnd ?? -1e9) + STAGGER.gap) return false;
+    if (f.poise > 0) return false;
     const was = winding(f);
     cancelMove(f);
     f.hold = null; f.push = null; f.flinch = 0;
