@@ -3,7 +3,10 @@ import { TILE, build, pathfind, RUNNER_BOX } from "./world.mjs";
 import { atlasUrl } from "./art/atlas-data.mjs";
 import { createRenderer, lookAt, perspective, mul } from "./render.mjs";
 
-const FOV = 20 * Math.PI / 180;
+const FOV_PORTRAIT = 20 * Math.PI / 180;
+const FOV_LAND = 30 * Math.PI / 180;
+// Idle opaque box is 24/16 = 1.5 tiles. Scale the figure to 1.64.
+const RUNNER_SCALE = 1.64 / 1.5 * (1.64 / 1.66);
 // Whole-tile zoom. Ten tiles across is the step that fills a short frame at tilt 55
 // without pushing a ground corner out. Attract sits one tile further back.
 const TILES = 10;
@@ -64,6 +67,67 @@ function cross(a, b) { return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b
 function wrap(d) { return ((d % 360) + 360) % 360; }
 function clampTilt(d) { return Math.max(20, Math.min(87, d)); }
 function phone() { return window.innerWidth < 800; }
+// In-plane half-width so the skyline meets both side edges. axis 0 extends in X, 1 in Z.
+function skyHalf(cam, focus, fov, aspect, sky, axis) {
+  const f = norm(sub(focus, cam));
+  let right = cross(f, [0, 1, 0]);
+  const rl = Math.hypot(right[0], right[1], right[2]) || 1;
+  right = right.map((v) => v / rl);
+  const rel = sub(sky, cam);
+  const A = dot(rel, right);
+  const B = Math.max(1, dot(rel, f));
+  const tanH = Math.tan(fov / 2) * aspect;
+  const ax = axis === 0 ? [1, 0, 0] : [0, 0, 1];
+  const rx = dot(ax, right), fx = dot(ax, f);
+  const hxR = (tanH * B - A) / (rx - tanH * fx || 1e-4);
+  const hxL = (-tanH * B - A) / (rx + tanH * fx || 1e-4);
+  const hx = Math.max(Math.abs(hxR), Math.abs(hxL)) * 1.06;
+  return Math.min(28 * TILE, Math.max(2 * TILE, hx));
+}
+// One quad past the far side of the block, facing the camera, so a turn cannot
+// swing it across a lot. Depth test keeps every building in front.
+function placeSky(cam, focus, fov, aspect) {
+  const f = norm(sub(focus, cam));
+  const depthOf = (x, y, z) => (x - cam[0]) * f[0] + (y - cam[1]) * f[1] + (z - cam[2]) * f[2];
+  const span = 6 * TILE;
+  let farD = -1e9;
+  for (const x of [0, span]) for (const z of [0, span]) for (const y of [0, 7 * TILE]) {
+    farD = Math.max(farD, depthOf(x, y, z));
+  }
+  const fl = Math.hypot(f[0], f[2]) || 1;
+  const fx = f[0] / fl, fz = f[2] / fl;
+  const axisX = Math.abs(fx) >= Math.abs(fz);
+  const sign = axisX ? (fx >= 0 ? 1 : -1) : (fz >= 0 ? 1 : -1);
+  const y0 = 3.7 * TILE, hz = 1.6 * TILE;
+  let gap = 0.6 * TILE;
+  let sx = 3 * TILE, sz = -1.2 * TILE, hx = 8 * TILE, orient = 2;
+  for (let n = 0; n < 10; n++) {
+    const plane = sign > 0 ? span + gap : -gap;
+    if (axisX) {
+      const denom = Math.abs(f[0]) < 1e-4 ? 1e-4 : f[0];
+      const t = (plane - cam[0]) / denom;
+      sx = plane;
+      sz = cam[2] + f[2] * t;
+      orient = 1;
+    } else {
+      const denom = Math.abs(f[2]) < 1e-4 ? 1e-4 : f[2];
+      const t = (plane - cam[2]) / denom;
+      sz = plane;
+      sx = cam[0] + f[0] * t;
+      orient = 2;
+    }
+    hx = skyHalf(cam, focus, fov, aspect, [sx, y0, sz], axisX ? 1 : 0);
+    const pts = [];
+    for (const du of [-hx, hx]) for (const dy of [-hz, hz]) {
+      pts.push(axisX ? [sx, y0 + dy, sz + du] : [sx + du, y0 + dy, sz]);
+    }
+    const nearest = Math.min(...pts.map((p) => depthOf(p[0], p[1], p[2])));
+    if (nearest > farD + 2) break;
+    gap += TILE;
+  }
+  const plane = sign > 0 ? span + gap : -gap;
+  return { x: sx, z: sz, hx, orient, sign, plane: axisX ? sx : sz, axisX };
+}
 function solid(tx, ty) {
   return tx < 0 || ty < 0 || tx >= 6 || ty >= 6 || world.blocked[tx][ty];
 }
@@ -105,20 +169,23 @@ function camera() {
   const tr = tilt * Math.PI / 180;
   const yr = yaw * Math.PI / 180;
   const aspect = renderer.view.artW / Math.max(1, renderer.view.artH);
-  const tan = Math.tan(FOV / 2);
   const portrait = renderer.view.artH > renderer.view.artW;
+  const fov = portrait ? FOV_PORTRAIT : FOV_LAND;
+  // Distance stays the 20° distance. Landscape only opens the lens.
+  const hold = Math.tan(FOV_PORTRAIT / 2);
+  const lens = Math.tan(fov / 2);
   const span = Math.abs(Math.cos(yr)) + Math.abs(Math.sin(yr));
   const establishing = !attract && player.y > 4;
   const tiles = portrait
-    ? (attract ? 8.4 : 7.25) * span
-    : (attract ? TILES + 1 : establishing ? 7.4 : TILES);
-  const dist = (tiles * TILE) / (2 * tan * aspect);
+    ? (attract ? 8.4 : establishing ? 6 : 7.25) * span
+    : (attract ? TILES + 1 : establishing ? 10 : TILES);
+  const dist = (tiles * TILE) / (2 * hold * aspect);
   const cx = (attract ? 3 : player.x) * TILE;
   const cz = (attract ? 3 : player.y) * TILE;
-  // At the spawn, look up the street so the tower and the skyline sit in frame.
-  // Elsewhere keep the closer camera the width checks were built on.
-  const along = attract ? 16 : establishing ? TILE * (portrait ? -0.4 : -0.05) : 36;
-  const lift = establishing ? TILE * (portrait ? 2.4 : 4.2) : 0;
+  // At the spawn, aim up the block without pulling the camera back. The runner stays
+  // in the lower third. Elsewhere keep the closer camera the width checks were built on.
+  const along = attract ? 16 : establishing ? TILE * (portrait ? -2 : -0.3125) : 36;
+  const lift = establishing ? TILE * (portrait ? 4.125 : 5.625) : 0;
   const focus = [cx + Math.sin(yr) * along, lift, cz + Math.cos(yr) * along];
   const cam = [
     focus[0] + Math.cos(tr) * Math.sin(yr) * dist,
@@ -130,7 +197,7 @@ function camera() {
   const rl = Math.hypot(right[0], right[1], right[2]);
   right = rl < 1e-5 ? [1, 0, 0] : right.map((v) => v / rl);
   const up = cross(right, forward);
-  const wpp = (2 * dist * Math.tan(FOV / 2)) / renderer.view.artH;
+  const wpp = (2 * dist * lens) / renderer.view.artH;
   const rel = sub(focus, cam);
   const vx = dot(rel, right), vy = dot(rel, up);
   const sx = Math.round(vx / wpp) * wpp - vx;
@@ -217,9 +284,11 @@ function runnerFrame() {
 function scene() {
   fit();
   const { cam, focus, dist } = camera();
+  const aspect = renderer.view.artW / Math.max(1, renderer.view.artH);
+  const portrait = renderer.view.artH > renderer.view.artW;
   const [near, far] = planes(dist);
   const view = lookAt(cam, focus, [0, 1, 0]);
-  const proj = perspective(FOV, renderer.view.artW / renderer.view.artH, near, far);
+  const proj = perspective(renderer.view.artH > renderer.view.artW ? FOV_PORTRAIT : FOV_LAND, renderer.view.artW / renderer.view.artH, near, far);
   const cuts = new Set();
   if (cutaway) {
     const px = player.x * TILE, pz = player.y * TILE;
@@ -234,8 +303,8 @@ function scene() {
     if (s.kind === 1) {
       s.x = player.x * TILE;
       s.z = player.y * TILE;
-      s.hx = runFr.w * (TILE / 16) / 2;
-      s.hz = runFr.h * (TILE / 16) / 2;
+      s.hx = runFr.w * (TILE / 16) / 2 * RUNNER_SCALE;
+      s.hz = runFr.h * (TILE / 16) / 2 * RUNNER_SCALE;
       s.y = s.hz;
       s.uv = frameUV(runName, facing < 0);
       const yr = yaw * Math.PI / 180;
@@ -248,6 +317,20 @@ function scene() {
       if (s.bid < 0 || !cuts.has(s.bid) || s.low) rest.push(s);
     } else if (s.kind === 6) {
       s.uv = frameUV("steam_vent_" + (Math.floor(time * 8) % 4), false);
+      rest.push(s);
+    } else if (s.kind === 5) {
+      const placed = placeSky(cam, focus, portrait ? FOV_PORTRAIT : FOV_LAND, aspect);
+      // Follow most of the walk so the sky shifts about a third as far as the lots,
+      // and never cross back onto the block.
+      const follow = 0.62;
+      let x = placed.x + (player.x - world.spawn.x) * TILE * follow;
+      let z = placed.z + (player.y - world.spawn.y) * TILE * follow;
+      if (placed.axisX) x = placed.sign > 0 ? Math.max(x, placed.plane) : Math.min(x, placed.plane);
+      else z = placed.sign > 0 ? Math.max(z, placed.plane) : Math.min(z, placed.plane);
+      s.x = x;
+      s.z = z;
+      s.hx = placed.hx;
+      s.orient = placed.orient;
       rest.push(s);
     } else if (s.bid < 0 || !cuts.has(s.bid) || s.low) rest.push(s);
   }
@@ -317,6 +400,8 @@ function scene() {
   return {
     vp, slices: runner.concat(rest), runnerCount: runner.length, runnerPaper: false,
     outline, outlineOn,
+    camXZ: [cam[0], cam[2]],
+    runnerXZ: [player.x, player.y],
     frame: [runFr.x / 1024, 1 - (runFr.y + runFr.h) / 1024, (runFr.x + runFr.w) / 1024, 1 - runFr.y / 1024],
     sun: SUN, haze: HAZE, smog: SMOG,
     rim: [rimx / rl, rimz / rl],
@@ -492,6 +577,11 @@ window.__test = {
     name: s.name, colour: s.colour, tx: s.tx, ty: s.ty,
     plate: s.plate, light: [s.x, s.y],
   })),
+  goals: () => world.goals,
+  sky: () => {
+    const s = world.slices.find((sl) => sl.kind === 5);
+    return { x: s.x / TILE, y: s.z / TILE, h: s.y, hx: s.hx / TILE };
+  },
   solid: (x, y) => solid(Math.floor(x), Math.floor(y)),
   project: (x, y, z) => renderer.project([x * TILE, z, y * TILE]),
   pixel: (x, y) => renderer.pixel(x, y),
@@ -523,7 +613,7 @@ window.__test = {
     const name = runnerFrame();
     const box = RUNNER_BOX[name];
     const f = world.frames[name];
-    const px = TILE / 16;
+    const px = TILE / 16 * RUNNER_SCALE;
     const halfW = f.w * px / 2;
     const halfH = f.h * px / 2;
     const cx = player.x * TILE;

@@ -808,82 +808,85 @@ def draw_street_props(atlas, frames):
 def draw_signs(atlas, frames):
     sign_colors = ["P", "C", "G", "A", "P", "C"]
 
-    def make_sign_plate(glyph_rects, accent_rects=None):
-        grid = [["." for _ in range(32)] for _ in range(48)]
+    def plate(strokes):
+        # 2 px dark margin. Glyph strokes are 1 px and span about 60% of the plate.
+        grid = [["D" for _ in range(32)] for _ in range(48)]
         for y in range(48):
             for x in range(32):
-                if x in (0, 31) or y in (0, 47):
-                    grid[y][x] = "M"
-                elif x in (1, 30) or y in (1, 46):
+                if x < 2 or x > 29 or y < 2 or y > 45:
                     grid[y][x] = "K"
-                else:
-                    grid[y][x] = "D"
-        for bx in (4, 5, 26, 27):
-            grid[0][bx] = "L"
-        for (rx, ry, rw, rh) in glyph_rects:
-            for yy in range(ry, ry + rh):
-                for xx in range(rx, rx + rw):
-                    if 2 <= xx < 30 and 2 <= yy < 46:
-                        grid[yy][xx] = "X"
-        if accent_rects:
-            for (rx, ry, rw, rh) in accent_rects:
-                for yy in range(ry, ry + rh):
-                    for xx in range(rx, rx + rw):
-                        if 2 <= xx < 30 and 2 <= yy < 46:
-                            grid[yy][xx] = "X"
+        def px(x, y):
+            if 2 <= x <= 29 and 2 <= y <= 45:
+                grid[y][x] = "X"
+        def hline(x0, x1, y):
+            for x in range(min(x0, x1), max(x0, x1) + 1):
+                px(x, y)
+        def vline(x, y0, y1):
+            for y in range(min(y0, y1), max(y0, y1) + 1):
+                px(x, y)
+        strokes(hline, vline)
         return ["".join(row) for row in grid]
 
-    s0_rects = [
-        (8, 5, 16, 2), (16, 3, 2, 10), (14, 11, 4, 2), (10, 7, 6, 2), (8, 9, 4, 2),
-        (9, 15, 14, 2), (7, 19, 18, 2), (15, 21, 2, 4),
-        (9, 27, 14, 2), (7, 30, 18, 2), (15, 32, 2, 4), (22, 26, 2, 2), (25, 26, 2, 2),
-        (8, 38, 16, 2), (16, 36, 2, 8), (13, 42, 4, 2),
-    ]
-    s0_acc = [(4, 4, 2, 40), (26, 4, 2, 40)]
+    # Box x 6..25 (20 px, 62%) and y 9..37 (29 px, 60%).
+    def noodle(h, v):
+        h(6, 25, 30)
+        v(6, 18, 30)
+        v(25, 18, 30)
+        h(6, 25, 18)
+        v(10, 9, 16)
+        v(16, 11, 37)
+        v(22, 9, 16)
+        h(6, 25, 37)
+    def bar(h, v):
+        v(15, 9, 37)
+        h(6, 25, 9)
+        h(8, 22, 20)
+        h(6, 25, 37)
+        v(6, 20, 37)
+        v(25, 20, 37)
+    def cross(h, v):
+        h(6, 25, 23)
+        v(15, 9, 37)
+        h(6, 25, 14)
+        h(6, 25, 32)
+        v(9, 9, 37)
+        v(21, 9, 37)
+    def arrow(h, v):
+        v(10, 16, 37)
+        h(10, 25, 16)
+        h(6, 25, 9)
+        h(18, 25, 23)
+        v(25, 9, 23)
+        h(6, 25, 37)
+    def eye(h, v):
+        h(6, 25, 18)
+        h(6, 25, 28)
+        v(6, 18, 28)
+        v(25, 18, 28)
+        v(15, 9, 37)
+        h(12, 18, 23)
+    def glyph(h, v):
+        h(6, 25, 9)
+        h(6, 25, 37)
+        v(6, 9, 37)
+        v(25, 9, 37)
+        h(6, 25, 23)
+        v(15, 9, 37)
 
-    s1_rects = [
-        (15, 5, 2, 3), (9, 8, 14, 2), (19, 10, 2, 3), (11, 10, 4, 2), (15, 10, 2, 7), (19, 13, 4, 2),
-        (9, 20, 14, 2), (21, 20, 2, 9), (14, 18, 2, 11), (11, 27, 4, 2),
-        (9, 33, 5, 2), (10, 35, 4, 2), (10, 41, 12, 2), (18, 37, 4, 2), (20, 35, 3, 2),
-    ]
-    s1_acc = [(5, 4, 22, 1), (5, 43, 22, 1)]
+    all_signs = [plate(fn) for fn in (noodle, bar, cross, arrow, eye, glyph)]
 
-    s2_rects = [
-        (8, 7, 16, 2), (11, 4, 2, 8), (19, 4, 2, 10), (16, 13, 4, 2),
-        (18, 18, 4, 2), (14, 20, 4, 2), (10, 22, 4, 2), (16, 21, 2, 8),
-        (11, 33, 2, 9), (19, 33, 2, 7), (21, 39, 3, 3), (23, 32, 2, 2), (26, 32, 2, 2),
-    ]
-    s2_acc = [(5, 4, 1, 40), (26, 4, 1, 40)]
-
-    s3_rects = [
-        (10, 5, 12, 2), (8, 9, 16, 2), (22, 11, 2, 4), (14, 14, 8, 2),
-        (18, 19, 2, 10), (16, 23, 2, 4), (11, 21, 10, 2), (10, 27, 6, 2),
-        (9, 33, 3, 4), (20, 33, 3, 6), (17, 39, 4, 2), (12, 41, 6, 2),
-    ]
-    s3_acc = [(4, 4, 24, 1), (4, 43, 24, 1), (4, 5, 1, 38), (27, 5, 1, 38)]
-
-    s4_rects = [
-        (6, 5, 20, 2), (13, 8, 6, 2), (11, 10, 10, 2), (13, 12, 6, 2),
-        (10, 18, 12, 2), (10, 20, 2, 4), (20, 20, 2, 7), (12, 23, 8, 2), (13, 27, 7, 2),
-        (9, 33, 13, 2), (10, 37, 12, 2), (9, 41, 14, 2),
-    ]
-    s4_acc = [(4, 15, 24, 1)]
-
-    s5_rects = [
-        (9, 6, 14, 2), (21, 8, 2, 8), (9, 14, 14, 2),
-        (15, 19, 2, 10),
-        (12, 32, 2, 11), (14, 36, 6, 2), (20, 38, 3, 2), (22, 32, 2, 2), (25, 32, 2, 2),
-    ]
-    s5_acc = [(4, 4, 2, 40), (26, 4, 2, 40), (4, 4, 24, 2), (4, 42, 24, 2)]
-
-    all_signs = [
-        make_sign_plate(s0_rects, s0_acc),
-        make_sign_plate(s1_rects, s1_acc),
-        make_sign_plate(s2_rects, s2_acc),
-        make_sign_plate(s3_rects, s3_acc),
-        make_sign_plate(s4_rects, s4_acc),
-        make_sign_plate(s5_rects, s5_acc),
-    ]
+    counts = []
+    for rows in all_signs:
+        xs, ys = [], []
+        n = 0
+        for y, row in enumerate(rows):
+            for x, ch in enumerate(row):
+                if ch == "X":
+                    n += 1
+                    xs.append(x)
+                    ys.append(y)
+        counts.append((n, max(xs) - min(xs) + 1, max(ys) - min(ys) + 1))
+    print("sign strokes", counts)
 
     for i, (rows, col) in enumerate(zip(all_signs, sign_colors)):
         ox = i * 32
@@ -943,19 +946,19 @@ def draw_heist_pieces(atlas, frames):
     exit_locked = [
         "................",
         ".MMMMMMMMMMMMMM.",
-        ".MDDDDDDDDDDDDM.",
-        ".MDKKDDDDDDKKDM.",
-        ".MDKKKKKKKKKKDM.",
-        ".MDKMMKKKKMMKDM.",
-        ".MDKMMKKKKMMKDM.",
-        ".MDKKKKKKKKKKDM.",
-        ".MDKKKKKKKKKKDM.",
-        ".MDKMMKKKKMMKDM.",
-        ".MDKMMKKKKMMKDM.",
-        ".MDKKKKKKKKKKDM.",
-        ".MDKKDDDDDDKKDM.",
-        ".MDDDDDDDDDDDDM.",
-        ".KKKKKKKKKKKKKK.",
+        ".MCCCCCCCCCCCCM.",
+        ".MCCCCCCCCCCCCM.",
+        ".MCCCCCCCCCCCCM.",
+        ".MCCMMMMMMMMCCM.",
+        ".MCCMMCCCCMMCCM.",
+        ".MCCMMCCCCMMCCM.",
+        ".MCCMMCCCCMMCCM.",
+        ".MCCMMCCCCMMCCM.",
+        ".MCCMMMMMMMMCCM.",
+        ".MCCCCCCCCCCCCM.",
+        ".MCCCCCCCCCCCCM.",
+        ".MCCCCCCCCCCCCM.",
+        ".MMMMMMMMMMMMMM.",
         "................",
     ]
     blit_ascii(atlas, 32, 256, exit_locked)
@@ -1277,6 +1280,29 @@ def draw_runner(atlas, frames):
         ("runner_hack", runner_hack),
         ("runner_spotted", runner_spotted),
     ]
+
+    def sharpen(rows):
+        # Drop the antenna, close the visor, and put a point on the hood.
+        kept = []
+        for i, line in enumerate(rows):
+            if i < 8 and line.count("M") == 1 and "A" not in line and "K" not in line and "C" not in line:
+                continue
+            kept.append(line.replace("KCKCK", "KKKKK"))
+        for i, line in enumerate(kept):
+            if "A" not in line:
+                continue
+            chars = list(line)
+            idxs = [j for j, ch in enumerate(chars) if ch == "A"]
+            if len(idxs) < 4:
+                break
+            mid = idxs[len(idxs) // 2]
+            peak = ["."] * len(chars)
+            peak[mid] = "A"
+            kept.insert(i, "".join(peak))
+            break
+        return kept
+
+    poses = [(name, sharpen(rows)) for name, rows in poses]
 
     for i, (name, rows) in enumerate(poses):
         non_empty = [r for r, line in enumerate(rows) if any(ch != "." for ch in line)]
