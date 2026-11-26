@@ -631,7 +631,7 @@ function runFor(R, count, inp = {}, camYaw = 0) {
 }
 
 /* ---------------- a hit on the lamplighter, and falls ---------------- */
-{ // a hook of 16 on 100 health: 84, a push of 1.2 m, a blink; a second hook within 0.9 s does nothing
+{ // a hook of 16 on 100 health: 84, a push of 1.2 m, a blink; a second hook within 1.0 s does nothing
   const { R, rs, s } = runnerAt(FLAT, 0, 0);
   const ev = [];
   assert.equal(R.hurt(16, [0, -1], {}, ev), 'hit');
@@ -645,15 +645,15 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   assert(at[39][0] > 0.1, 'and then the stick moves it again');
   // the blink on the game clock: hidden on steps 0..3 after the hit, shown on 4..7 (step 1 of the loop is game step 1)
   assert.deepEqual(blink.slice(0, 12), [1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0]);
-  assert.equal(R.hurt(16, [0, -1], {}, []), 'safe', 'within 0.9 s');
-  runFor(R, 60);
+  assert.equal(R.hurt(16, [0, -1], {}, []), 'safe', 'within 1.0 s');
+  runFor(R, 66);
   assert.equal(R.hurt(16, [0, -1], {}, []), 'hit', 'after it');
-  // the safe time is 54 play steps: a hit 53 play steps after the last one passes, one 55 steps after lands
+  // the safe time is 60 play steps: a hit 59 play steps after the last one passes, one 61 steps after lands
   const p0 = R.clock.play;
-  while (R.clock.play - p0 < 53) R.step({}, 0);
-  assert.equal(R.hurt(16, [0, -1], {}, []), 'safe', '53 play steps after a hit: still safe');
-  while (R.clock.play - p0 < 55) R.step({}, 0);
-  assert.equal(R.hurt(16, [0, -1], {}, []), 'hit', '55 play steps after: the hit lands');
+  while (R.clock.play - p0 < 59) R.step({}, 0);
+  assert.equal(R.hurt(16, [0, -1], {}, []), 'safe', '59 play steps after a hit: still safe');
+  while (R.clock.play - p0 < 61) R.step({}, 0);
+  assert.equal(R.hurt(16, [0, -1], {}, []), 'hit', '61 play steps after: the hit lands');
   // the Ironback's charge pushes 3 m
   const b = runnerAt(FLAT, -10, 10);
   b.R.hurt(24, [-10, 9], { push: 3 }, []);

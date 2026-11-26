@@ -88,7 +88,9 @@ export function makeAbilities(R) {
   const slots = () => rs.run?.abilities || [null, null];
   const cue = (ev, name, more = {}) => { const c = { cue: name, step: clock.step, play: clock.play, ...more }; R.log.push(c); ev.push({ type: 'cue', ...c, logged: true }); };
   const ground = (x, z, y) => { const g = R.fighter.walk.support(x, z, y + 1.2); return g === null ? y : g; };
-  // a hit by an ability: its power, Ember glass on a burning foe, rounded once by the target. -> the damage, or false
+  /* a hit by an ability: its power, Ember glass on a burning foe, rounded once by the target. how.interrupt: the hit flinches a light
+     or medium foe and cancels its wind-up (Lantern bomb, Moth wisp, Crook line, Ember snare); a burn or pitch tick does not. -> the
+     damage, or false */
   function hurtFoe(t, raw, id, ev, how = {}) {
     if (!t || !t.alive) return false;
     const ember = paneOf(rs, 'ember') && t.status?.burn > 0 ? 0.2 : 0;
@@ -233,7 +235,7 @@ export function makeAbilities(R) {
         case 'bomb':
           if (e.t >= e.fuse) {
             for (const t of live()) if (dist(t, e.at) - (t.r || 0) <= e.r && Math.abs(t.y - e.at[1]) < 2.2) {
-              hurtFoe(t, e.dmg, 'bomb', ev);
+              hurtFoe(t, e.dmg, 'bomb', ev, { interrupt: true });
               if (statusHit(t, 'burn', AB.burnEvery * AB.burnTicks)) A.effects.push({ kind: 'burn', target: t, t: 0, n: AB.burnTicks, every: AB.burnEvery, dmg: e.burn, id: 'bomb' });
             }
             ev.push({ type: 'abilityFx', kind: 'burst', id: 'bomb', at: e.at, r: e.r }, { type: 'stop', n: AB.stop });
@@ -252,7 +254,7 @@ export function makeAbilities(R) {
           const t = inside[0];
           if (t) {
             if (isFoe(t)) statusHit(t, 'hold', e.hold, { slowK: e.slow });
-            hurtFoe(t, e.dmg, 'snare', ev);
+            hurtFoe(t, e.dmg, 'snare', ev, { interrupt: true });
             ev.push({ type: 'abilityFx', kind: 'snap', id: 'snare', at: e.at });
             done = true;
           }
@@ -268,7 +270,7 @@ export function makeAbilities(R) {
             for (const t of live()) { const d = Math.hypot(t.x - s.x, t.z - s.z); if (d < bd && (t.aware !== false)) { bd = d; e.target = t; } }
             if (e.target) ev.push({ type: 'abilityFx', kind: 'line', id: 'moth', a: [s.x + 0.4, s.y + 1.5, s.z], b: [e.target.x, e.target.y + (e.target.T?.chest ?? 1), e.target.z], life: 0.2 });
           }
-          if (e.t >= e.next) { if (e.target?.alive) hurtFoe(e.target, e.dmg, 'moth', ev); e.target = null; e.next += e.every; }
+          if (e.t >= e.next) { if (e.target?.alive) hurtFoe(e.target, e.dmg, 'moth', ev, { interrupt: true }); e.target = null; e.next += e.every; }
           break;
         }
         case 'crook': {
@@ -287,7 +289,7 @@ export function makeAbilities(R) {
             const to = reach(ux, uz, Math.max(0, d - (t.r || 0) - 1.0));
             if (to) body().place([to[0], to[1] + 0.05, to[2]], Math.atan2(ux, uz));
           }
-          hurtFoe(t, e.dmg, 'crook', ev);
+          hurtFoe(t, e.dmg, 'crook', ev, { interrupt: true });
           break;
         }
         case 'flare':

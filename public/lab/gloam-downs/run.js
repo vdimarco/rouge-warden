@@ -122,16 +122,21 @@ export const ember = n => ({
   special: n >= 4 ? 2 : 1, dmg: n >= 4 ? 1.2 : 1, bossHp: n >= 5 ? 1.25 : 1, phase3: n >= 5 ? 0.4 : null, beaconFlasks: n >= 5 ? 1 : Infinity
 });
 const has = (wicks, id) => (wicks || []).includes(id);
-/* the pacing levers (gloam-downs-growth design.md "Pacing results"). The run starts with 1 flask (BASE), and Flask levels give the rest
-   back. Foes in the later places of the run hit harder and have more health: at place depth d (the Gaol, or the run's first place, is
-   0, Barrow Crown 4) damage ×(1 + 0.35 d^1.5) and health ×(1 + 0.4 d^1.5), so ×1.35 and ×1.4 in the second place and ×3.8 and ×4.2 in
-   Barrow Crown; the sparks, wicks and relics of the run and the lasting wares carry the lamplighter through them. The Barrow Reeve has
-   5% more health for each spark the run holds. blade is the blade's share at the start: a lower one was measured and broke the
-   skill 0.3 target, so it stays 1 */
-export const PACE = { blade: 1, depthDmg: 0.35, depthHp: 0.4, depthPow: 1.5, bossSpark: 0.05 };
+/* the pacing levers (gloam-downs-fair-fight design.md "A natural curve" and "Pacing results"). The run starts with 1 flask (BASE), and
+   Flask levels give the rest back. Foes in the later places of the run come in new kinds, more of them (mix.js) and with a second
+   melee token (tokens, by depth) before they hit harder: at place depth d (the run's first place 0, Barrow Crown 4) damage
+   ×(1 + depthDmg d^depthPow) and health ×(1 + depthHp d^depthPow). They also grow with the run's sparks held at the place's load (s,
+   counted up to sparkCap): damage ×(1 + sparkDmg s) and health ×(1 + sparkHp s), less than a spark gives the lamplighter. The Barrow
+   Reeve has bossSpark more health for each spark the run holds. blade is the blade's share at the start */
+export const PACE = { blade: 1, depthDmg: 0.1, depthHp: 0.2, depthPow: 1, sparkDmg: 0.015, sparkHp: 0.03, sparkCap: 12, bossSpark: 0.05, tokens: [1, 1, 2, 2, 2] };
 export const depthOf = run => Math.max(0, routeOfRun(run).indexOf(run?.place));
-export const foeScale = run => { const d = depthOf(run) ** PACE.depthPow; return { dmg: 1 + PACE.depthDmg * d, hp: 1 + PACE.depthHp * d }; };
 export const sparkCount = run => Object.values(run?.sparks || {}).reduce((a, n) => a + (n | 0), 0);
+export const foeScale = run => {
+  const d = depthOf(run) ** PACE.depthPow, s = Math.min(PACE.sparkCap, sparkCount(run));
+  return { dmg: (1 + PACE.depthDmg * d) * (1 + PACE.sparkDmg * s), hp: (1 + PACE.depthHp * d) * (1 + PACE.sparkHp * s) };
+};
+// the melee attacks under way at once at the run's place: 1 in the first two places, 2 from the third
+export const tokensOf = run => PACE.tokens[Math.min(PACE.tokens.length - 1, depthOf(run))] ?? 1;
 export const bossScale = run => ember(emberOf(run)).bossHp * (1 + PACE.bossSpark * sparkCount(run));
 // Ward: 10 more health a level (full up to level 5, half a level after that)
 export const wardHp = sparks => SPARK.ward.hp * levelGain(sparks?.ward | 0);
@@ -541,7 +546,7 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
     cue(ev, 'beacon');
     return ev;
   }
-  /* a hit on the lamplighter from a foe: in the roll's safe time it passes (a near miss, which Close shave rewards), in the 0.9 s
+  /* a hit on the lamplighter from a foe: in the roll's safe time it passes (a near miss, which Close shave rewards), in the 1.0 s
      after a hit it does nothing, else it takes its damage, pushes the lamplighter (1.2 m, or o.push), stops the game for 5 steps and
      stores the run at once. -> 'hit', 'safe', 'dead' or 'none' */
   function hurt(dmg, from, o = {}, ev = R.out) {
@@ -550,7 +555,7 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
     // Ember parry: a melee hit from in front in the first 0.1 s of a first cut is turned aside, and the foe staggers for 1 s
     if (parried(from, ev)) return 'none';
     const safe = fighter.safe();
-    // Bell guard (abilities.js): the blow is turned aside. A blow that would not hurt anyway (in the roll's safe time or the 0.9 s
+    // Bell guard (abilities.js): the blow is turned aside. A blow that would not hurt anyway (in the roll's safe time or the 1.0 s
     // after a hit) does not spend it, and a roll's near miss stays a near miss
     if (!safe && R.abilities?.turn(from, ev, o)) return 'none';
     if (safe) {

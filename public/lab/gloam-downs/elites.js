@@ -186,20 +186,24 @@ export function eliteKit(F, ctx) {
     start(f, s, ev);
     return { want: null };
   };
+  // the steps from a special move's start to its first blow (a coal's landing for the three coals), for the spacing (foes.js)
+  const firstBlow = sp => { let t = 0; for (const [ph, n] of sp.phases) { if (ph === 'a') break; t += n; } return t + (sp.kind === 'coals' ? sp.release + sp.flight : 0); };
   function ready(f, s) {
     const sp = f.elite.special, d = Math.hypot(s.x - f.x, s.z - f.z), level = Math.abs(s.y - f.y) < 1.6;
     if (sp.kind === 'coals') {
       if (!(d >= sp.min && d <= sp.range && ctx.sees(f, s))) { f.ready = 0; return false; }
       f.ready++;
-      return ctx.mayAttack(f, 'coal');
+      return ctx.mayAttack(f, 'coal', firstBlow(sp));
     }
     const ok = sp.kind === 'bent' ? d >= sp.min && d <= sp.range && level && ctx.sees(f, s) : d <= sp.range && level && ctx.sees(f, s);
     if (!ok) { f.ready = 0; return false; }
     f.ready++;
-    return ctx.mayAttack(f, 'melee');
+    return ctx.mayAttack(f, 'melee', firstBlow(sp));
   }
   function start(f, s, ev) {
-    const sp = f.elite.special;
+    const sp0 = f.elite.special, off = F.offOf(f);
+    // off screen, the first wind-up is 0.25 s longer (foes.js FAIR.offWind), and its tell keeps a voice
+    const sp = off ? { ...sp0, phases: sp0.phases.map(([ph, n], i) => [ph, i === 0 ? n + S(0.25) : n]) } : sp0;
     if (sp.kind === 'coals') F.coal = f;
     else F.melee.add(f);
     f.special = { def: sp, t: 0, at: F.step, landed: false, glow: null };
@@ -215,7 +219,7 @@ export function eliteKit(F, ctx) {
     } else if (sp.kind === 'bent') {
       lane(f, s);
     }
-    ev.push({ type: 'cue', cue: { hooks: 'scrape', coals: 'whistle', pulses: 'hum', bent: 'paw', sweep: 'rear' }[sp.kind], foe: f.id, elite: sp.kind });
+    ev.push({ type: 'cue', cue: { hooks: 'scrape', coals: 'whistle', pulses: 'hum', bent: 'paw', sweep: 'rear' }[sp.kind], foe: f.id, elite: sp.kind, ...(off ? { off: true } : {}) });
   }
   // the bent charge's lane: a first part along the facing, and a second bent by up to 40° toward the lamplighter at its end
   function lane(f, s) {
@@ -229,8 +233,11 @@ export function eliteKit(F, ctx) {
     const sp = f.special, d = sp.def, P = specialPhase(d, sp.t);
     sp.t++;
     if (P.ph === 'end') { end(f); f.cool = ctx.coolOf(f.T); return null; }
-    if (P.ph === 'r') F.melee.delete(f);
+    // the token is held to the end of the recovery (end gives it back); each blow's first active step counts for the spacing
+    if (P.ph === 'a' && P.at === 0 && d.kind !== 'coals') F.blowNow();
     if (P.ph === 'w' && P.at === 0) sp.landed = false;
+    // an elite that hit steps back in its recovery
+    if (P.ph === 'r' && f.back > 0) return F.backOff(f);
     sp.glow = P.ph === 'w' && P.i > 0 ? { k: P.at / P.n } : null;
     switch (d.kind) {
       case 'hooks': {

@@ -488,6 +488,25 @@ const swingAt = (S, t, id = 'cut1') => {
   assert(ahead.lead >= 0 && ahead.lead <= 0.02 + 1e-9, `a cue 20 ms ahead: lead ${ahead.lead}`);
   pass('a cue\'s lead is read on the same clock reading as its time: never below 0 when the clock moves during play()', { late: late.lead, ahead: +ahead.lead.toFixed(4) });
 }
+{ /* the snap (gloam-downs-fair-fight "Interrupt feel"): a hit cue of rank 3 with its own recipe, a dry knock and a crackle under 0.25 s;
+     and an off-screen tell keeps its voice when the 24 voices are full of hit cues, where a tell on screen takes the oldest hit's */
+  assert.deepEqual([CUES.snap.rank, CUES.snap.hit], [3, true]);
+  const { c, S } = fakeSound();
+  const r = S.play('snap', 0.1, { kind: 'S', why: 'cancel' });
+  assert(r, 'the snap plays');
+  assert(S.liveNames().includes('snap'));
+  const { S: S2 } = fakeSound();
+  for (let i = 0; i < 24; i++) S2.play('hit', 0.1 + i * 0.001, { hit: 'cut1', on: ['S'], stop: 3 });
+  assert.equal(S2.voices(), 24);
+  const off = S2.play('scrape', 0.2, { off: true, pos: [6, 0] });
+  assert(off, 'the off-screen tell has a voice');
+  assert(S2.liveNames().includes('scrape'));
+  // a full set of off-screen tells: a hit cue cannot take one's voice
+  const { S: S3 } = fakeSound();
+  for (let i = 0; i < 24; i++) S3.play('scrape', 0.1 + i * 0.001, { off: true });
+  assert.equal(S3.play('hit', 0.2, { hit: 'fin', on: ['S'], stop: 5 }), null, 'a hit gives way to the kept tells');
+  pass('the snap plays as a hit cue; an off-screen tell keeps its voice when the voice limit is full of hits', { voices: S2.voices() });
+}
 { // the landing stops the plunge's fall; a hit taken stops it too
   for (const cue of ['land', 'hurt']) {
     const { c, S } = fakeSound();

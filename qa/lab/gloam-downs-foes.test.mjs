@@ -564,9 +564,10 @@ if (check) {
   pass('the guard\'s second wave: G5\'s three Snuffers out, two rise 1.5 s later with cracks first, and the beacon waits for them');
 }
 
-{ // Ember 0 is harder (gloam-downs-growth): a Snuffer's hook deals 21 (16 × 1.3, rounded), it has 58 health (50 × 1.15), and the Reeve's
-  // blows deal 20% more
-  assert.deepEqual([FOE_HARD.dmg, FOE_HARD.hp, REEVE.hard], [1.3, 1.15, 1.2]);
+// the curve's numbers (gloam-downs-fair-fight design.md "A natural curve"), as the spec's scenarios quote them
+const CURVE = { hard: [1.1, 1.15, 1.2], pace: [1, 0.1, 0.2, 1, 0.015, 0.03, 12, 0.05], hook0: 18, crow: { hp: 69, hook: 19 }, crown: { hook: 25, hp: 103 } };
+{ // Harder Ember 0: a Snuffer's hook deals 18 (16 × 1.1, rounded), it has 58 health (50 × 1.15), and the Reeve's blows deal 20% more
+  assert.deepEqual([FOE_HARD.dmg, FOE_HARD.hp, REEVE.hard], CURVE.hard);
   const info = { x0: -20, z0: -20, step: 0.25, nx: 161, nz: 161 }, walk = makeWalk(info, new Int16Array(2 * 161 * 161));
   const rs = RS.fresh(); startRun(rs, 3);
   const body = makeBody(walk, { p: [0, 0.5, 0], yaw: 0 }, 20, { ...PARAMS });
@@ -577,21 +578,24 @@ if (check) {
   assert.equal(f.hp, Math.round(TYPES.S.hp * 1.15));
   let hurt = null;
   for (let i = 0; i < 240 && !hurt; i++) hurt = R.step({}, 0).find(e => e.type === 'hurt') || null;
-  assert(hurt && hurt.dmg === 21, `the hook dealt ${hurt?.dmg}`);
-  pass('Ember 0 is harder: a Snuffer has 58 health and its hook deals 21; the Reeve deals 20% more', { hook: hurt.dmg, hp: f.hp });
+  assert(hurt && hurt.dmg === CURVE.hook0, `the hook dealt ${hurt?.dmg}`);
+  pass(`Harder Ember 0: a Snuffer has 58 health and its hook deals ${CURVE.hook0}; the Reeve deals 20% more`, { hook: hurt.dmg, hp: f.hp });
 }
 
-{ /* the later places (gloam-downs-growth design.md "Pacing results"): at place depth d foes deal ×(1 + 0.35 d^1.5) and have
-     ×(1 + 0.4 d^1.5) health, the Gaol is as before, and the Reeve has 5% more health for each spark the run holds */
-  assert.deepEqual([PACE.blade, PACE.depthDmg, PACE.depthHp, PACE.depthPow, PACE.bossSpark], [1, 0.35, 0.4, 1.5, 0.05]);
+{ /* Harder later places: at place depth d foes deal ×(1 + 0.1 d) and have ×(1 + 0.2 d) health, the Gaol is as before, and the Reeve
+     has 5% more health for each spark the run holds */
+  assert.deepEqual([PACE.blade, PACE.depthDmg, PACE.depthHp, PACE.depthPow, PACE.sparkDmg, PACE.sparkHp, PACE.sparkCap, PACE.bossSpark], CURVE.pace);
   const rs = RS.fresh(); startRun(rs, 3);
   assert.deepEqual([depthOf(rs.run), foeScale(rs.run)], [0, { dmg: 1, hp: 1 }], 'the Gaol: no change');
   rs.run.place = 'barrows';
   const top = foeScale(rs.run);
-  assert.deepEqual([depthOf(rs.run), +top.dmg.toFixed(2), +top.hp.toFixed(2)], [4, 3.8, 4.2], 'Barrow Crown: ×3.8 damage, ×4.2 health');
+  assert.equal(depthOf(rs.run), 4);
+  assert.equal(Math.round(16 * FOE_HARD.dmg * top.dmg), CURVE.crown.hook, 'Barrow Crown: the hook');
+  assert.equal(Math.round(50 * FOE_HARD.hp * top.hp), CURVE.crown.hp, 'Barrow Crown: a Snuffer');
+  assert(Math.ceil(100 / CURVE.crown.hook) >= 4, 'four hooks or more to go down from 100');
   rs.run.sparks = { flame: 4, ward: 2, gloam: 2 };
   assert.deepEqual([sparkCount(rs.run), +bossScale(rs.run).toFixed(2), bossLines(bossScale(rs.run)).max], [8, 1.4, 1820], 'the Reeve with 8 sparks: 1,820 health');
-  // a Snuffer in The Crow Wall (the second place): its health ×1.4 and its hook ×1.35
+  // a Snuffer in The Crow Wall (the second place), no spark
   rs.run.place = 'ramparts'; rs.run.sparks = { flame: 0, ward: 0, gloam: 0 };
   const sc = foeScale(rs.run);
   const info = { x0: -20, z0: -20, step: 0.25, nx: 161, nz: 161 }, walk = makeWalk(info, new Int16Array(2 * 161 * 161));
@@ -600,10 +604,10 @@ if (check) {
   const R = makeRunner({ walk, meta: { wisps: [], beacon: { p: [90, 0, 90], r: 1 } }, body, rs, targets: F.targets, think: F.think });
   F.bind(R);
   const f = F.find(F.spawn('S', 0, 1.6, Math.PI).id);
-  assert.equal(f.hp, Math.round(TYPES.S.hp * FOE_HARD.hp * 1.4));
+  assert.equal(f.hp, CURVE.crow.hp);
   let hurt = null;
   for (let i = 0; i < 240 && !hurt; i++) hurt = R.step({}, 0).find(e => e.type === 'hurt') || null;
-  assert(hurt && hurt.dmg === Math.round(16 * FOE_HARD.dmg * 1.35), `the hook dealt ${hurt?.dmg}`);
-  pass('the later places: the Gaol as before, Barrow Crown ×3.8 damage and ×4.2 health; a Crow Wall Snuffer has 80 health and its hook deals 28; the Reeve +5% a spark', { hook: hurt.dmg, hp: f.hp });
+  assert(hurt && hurt.dmg === CURVE.crow.hook, `the hook dealt ${hurt?.dmg}`);
+  pass(`Harder later places: the Gaol as before; a Crow Wall Snuffer has ${CURVE.crow.hp} health and its hook deals ${CURVE.crow.hook}; at Barrow Crown a hook deals ${CURVE.crown.hook} and a Snuffer has ${CURVE.crown.hp}; the Reeve +5% a spark`, { hook: hurt.dmg, hp: f.hp });
 }
 console.log(`${n} checks passed`);

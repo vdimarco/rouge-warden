@@ -12,7 +12,7 @@ import { fits, foesOf, poolCounts } from './foes.js';
    zone), and the elite's type (design.md "Elites") */
 export const NEWEST = { gaol: 'S', ramparts: 'P', fen: 'M', bells: 'I', barrows: 'I' };
 export const ELITE = { gaol: 'S', ramparts: 'P', fen: 'M', bells: 'I', barrows: 'S' };
-export const MIX = { tries: 20, near: 20, weightNew: 3, extraFrom: 3, routeFrom: 1 };
+export const MIX = { tries: 20, near: 20, weightNew: 3, extraFrom: 3, routeFrom: 1, depthFrom: 2, kinds: 3 };
 /* the page zones (gloam-downs-growth design.md "More to do in each place"): zones that are not baked, added to each place's zones
    before the mix, at every Ember level. Their foes come from the place's pool, so they need no new baked foe, and the mix draws them
    as any other zone (each fits the pool with every zone within 20 m as baked, as the seed check asks). Each centre is on the walk map's floor by the way, at least 8 m from a baked zone and the beacon (7 m in The Fen and
@@ -50,11 +50,12 @@ const dist = (a, b) => Math.hypot(a.c[0] - b.c[0], a.c[2] - b.c[2]);
 const mixable = (z, i, place) => !z.guard && !z.boss && !(place === 'gaol' && i === 0);
 
 /* the zones of a place once mixed, as copies of meta.zones with foes redrawn and `baked` kept, and the elite's zone marked with
-   `elite` (the index of the elite in its foes). opts: { ember } (from Ember 3 a zone that may change has one foe more, when the pool
-   and the cap allow). Each draw is kept only when every zone fits the pool alone, every two zones that are not guards or the arena
-   and stand within 20 m fit together, the newest type is in a zone and the elite has a zone; else it draws again, up to 20 times, and then keeps the
-   baked foes */
-export function mixZones(place, zones = [], slots = '', seed = 1, { ember = 0 } = {}) {
+   `elite` (the index of the elite in its foes). opts: { ember, depth } (from Ember 3, or from the run's third place, depth 2, a zone
+   that may change has one foe more when the pool and the cap allow: one more at most, whatever both say; and from depth 2 a zone of 3
+   foes or more holds two kinds when the pool has them, gloam-downs-fair-fight "A natural curve"). Each draw is kept only when every
+   zone fits the pool alone, every two zones that are not guards or the arena and stand within 20 m fit together, the newest type is
+   in a zone and the elite has a zone; else it draws again, up to 20 times, and then keeps the baked foes */
+export function mixZones(place, zones = [], slots = '', seed = 1, { ember = 0, depth = 0 } = {}) {
   const pool = typeof slots === 'string' ? poolCounts(slots) : slots;
   const types = Object.keys(pool).filter(t => 'SPMI'.includes(t));
   const copy = withExtra(place, zones).map(z => ({ ...z, c: z.c.slice(), baked: z.baked ?? z.foes }));
@@ -71,15 +72,24 @@ export function mixZones(place, zones = [], slots = '', seed = 1, { ember = 0 } 
       for (let i = 0; i < types.length; i++) { r -= ws[i]; if (r < 0) { t = types[i]; break; } }
       left[t]--; out.push(t);
     }
-    return out.join('');
+    return kinds(out, left).join('');
   };
-  const extra = ember >= MIX.extraFrom ? 1 : 0;
+  // from depth 2, a zone of 3 or more holds two kinds: its last foe becomes the type with the most free slots left (the newest first)
+  const deep = depth >= MIX.depthFrom;
+  function kinds(out, left) {
+    if (!deep || out.length < MIX.kinds || new Set(out).size > 1) return out;
+    const other = types.filter(t => t !== out[0] && (left[t] ?? 0) > 0).sort((a, b) => (b === newest) - (a === newest) || left[b] - left[a])[0];
+    if (other) out[out.length - 1] = other;
+    return out;
+  }
+  const extra = ember >= MIX.extraFrom || deep ? 1 : 0;
   // Ember 3's foe more, one zone at a time, where the rules still hold (and the elite still has a zone, when it had one)
   const addExtra = zones => {
     const need = eliteChoices(place, zones, pool).length > 0;
     for (const [i, z] of zones.entries()) {
       if (!mixable(z, i, place)) continue;
-      const more = { ...z, foes: z.foes + (newest && pool[newest] ? newest : types[0]) };
+      const add = newest && pool[newest] ? newest : types[0], kin = foesOf(z), other = types.find(t => t !== kin[0] && pool[t] > 0);
+      const more = { ...z, foes: z.foes + (deep && kin.length + 1 >= MIX.kinds && new Set([...kin, add]).size === 1 && other ? other : add) };
       const trial = zones.map(q => (q === z ? more : q));
       if (keep(place, trial, pool, need)) zones[i] = more;
     }

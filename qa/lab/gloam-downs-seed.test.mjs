@@ -20,7 +20,7 @@ let n = 0;
 const pass = (name, data) => { n++; console.log('PASS ' + name + (data ? ' ' + JSON.stringify(data) : '')); };
 const dist = (a, b) => Math.hypot(a.c[0] - b.c[0], a.c[2] - b.c[2]);
 const PLACES = ORDER;
-const mixOf = (id, seed, ember = 0) => mixZones(id, ZONES[id], POOLS[id], seed, { ember });
+const mixOf = (id, seed, ember = 0, depth = 0) => mixZones(id, ZONES[id], POOLS[id], seed, { ember, depth });
 
 { // the streams stand apart: each name gives its own numbers, and mixing a place moves no other choice
   const first = name => stream(42, name)();
@@ -72,14 +72,46 @@ const mixOf = (id, seed, ember = 0) => mixZones(id, ZONES[id], POOLS[id], seed, 
   pass('the foe mix fits for seeds 1 to 200 in all five places at Ember 0 and 3, and every place has its newest type and an elite', stats);
 }
 
+{ /* the mix grows (gloam-downs-fair-fight "More foes before more damage"): seeds 1 to 200 at Ember 0, each place at depth 2, 3 and 4:
+     zones hold on average more foes than as baked, every zone of 3 or more foes holds two kinds when its pool does, at most one foe more
+     a zone (and the elite's), and every mix fits as above; at depth 0 and 1 the counts stay as baked */
+  const grow = {};
+  for (const id of PLACES) for (const depth of [0, 2, 3, 4]) {
+    const pool = poolCounts(POOLS[id]), base = withExtra(id, ZONES[id]), kinds = Object.keys(pool).filter(t => 'SPMI'.includes(t)).length;
+    let baked = 0, mixed = 0, single = 0;
+    for (let seed = 1; seed <= 200; seed++) {
+      const zs = mixOf(id, seed, 0, depth);
+      zs.forEach((z, i) => {
+        const b = base[i];
+        if (z.boss) return;
+        assert(fits(z, [], pool), `${id} depth ${depth} seed ${seed}: ${z.id} ${z.foes}`);
+        const fixed = z.guard || (id === 'gaol' && i === 0);
+        if (fixed) { assert.equal(z.foes, b.foes); return; }
+        const k = foesOf(z).length, b0 = foesOf(b).length;
+        baked += b0; mixed += k;
+        assert(k <= b0 + (depth >= 2 ? 1 : 0) + (Number.isInteger(z.elite) ? 1 : 0), `${id} depth ${depth} seed ${seed}: ${z.id} ${z.foes} from ${b.foes}`);
+        if (depth >= 2 && k >= MIX.kinds && kinds > 1 && new Set(foesOf(z)).size < 2) single++;
+      });
+      const free = zs.filter(z => !z.guard && !z.boss);
+      for (let a = 0; a < free.length; a++) for (let c = a + 1; c < free.length; c++)
+        if (dist(free[a], free[c]) <= MIX.near) assert(fits(free[a], [free[c]], pool), `${id} depth ${depth} seed ${seed}: ${free[a].id} and ${free[c].id}`);
+    }
+    grow[`${id}@${depth}`] = +(mixed / baked).toFixed(3);
+    if (depth >= 2) assert(mixed > baked, `${id} at depth ${depth}: ${mixed} foes against ${baked} baked`);
+    assert.equal(single, 0, `${id} at depth ${depth}: ${single} zones of 3 or more with one kind`);
+  }
+  pass('the mix grows from depth 2: more foes than as baked, two kinds in every zone of 3 or more, and every mix fits', grow);
+}
+
 { // the zone walk of each route with the mixed zones: never more than 6 awake, never more of a type than the pool holds
   const saved = Object.fromEntries(PLACES.map(id => [id, ZONES[id].slice()]));
   const most = {};
   try {
     for (const id of PLACES) {
       const pool = poolCounts(POOLS[id]);
-      for (let seed = 1; seed <= 60; seed++) for (const ember of [0, 3]) {
-        ZONES[id].splice(0, ZONES[id].length, ...mixOf(id, seed, ember));
+      // at Ember 0 and 3, and at depth 2 (one foe more, gloam-downs-fair-fight)
+      for (let seed = 1; seed <= 60; seed++) for (const [ember, depth] of [[0, 0], [3, 0], [0, 2]]) {
+        ZONES[id].splice(0, ZONES[id].length, ...mixOf(id, seed, ember, depth));
         for (const mode of ['runner', 'fighter']) {
           const r = walkRoute(id, mode);
           assert(r.most <= RULES.cap, `${id} seed ${seed}: ${r.most} awake`);

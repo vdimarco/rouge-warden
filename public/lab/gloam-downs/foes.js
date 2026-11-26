@@ -10,6 +10,8 @@ import { stream } from './run.js';
 import { eliteKit } from './elites.js';
 import { mixWave, WAVE } from './mix.js';
 import { STAGGER, poiseOf } from './feel.js';
+import { specialPhase } from './elites.js';
+import { heavyOf } from './status.js';
 import { comboGlim } from './combo.js';
 import { statusStep } from './status.js';
 
@@ -24,19 +26,19 @@ const LAMP_R = PARAMS.radius;
    lamplighter whose centre is inside it. ring is the marker's radius at the end of the wind-up (as baked); ring0 where it starts */
 export const TYPES = {
   S: {
-    code: 'S', title: 'Snuffer', light: true, r: 0.4, hp: 50, walk: 1.6, close: 3.4, turn: 6, glim: 3, cool: [0.8, 1.4], eye: 1.2, chest: 0.9,
+    code: 'S', title: 'Snuffer', light: true, weight: 'medium', stun: S(0.35), knock: 0.4, r: 0.4, hp: 50, walk: 1.6, close: 3.4, turn: 6, glim: 3, cool: [0.8, 1.4], eye: 1.2, chest: 0.9,
     moves: { hook: { kind: 'melee', range: 3.2, wind: S(0.55), act: S(0.15), rec: S(0.7), dmg: 16, reach: 2.2, step: 1.0, arc: 60 * DEG, track: 1.2, cue: 'scrape' } }
   },
   P: {
-    code: 'P', title: 'Pitchrook', light: true, r: 0.4, hp: 30, walk: 1.6, close: 1.6, turn: 2.5, glim: 4, cool: [1.6, 2.2], eye: 1.5, chest: 1.1, keep: [5, 9], back: 3.5,
+    code: 'P', title: 'Pitchrook', light: true, weight: 'light', stun: S(0.45), knock: 0.6, r: 0.4, hp: 30, walk: 1.6, close: 1.6, turn: 2.5, glim: 4, cool: [1.6, 2.2], eye: 1.5, chest: 1.1, keep: [5, 9], back: 3.5,
     moves: { lob: { kind: 'coal', min: 3, range: 11, wind: S(0.8), act: S(0.15), rec: S(0.4), release: 4, flight: S(0.65), dmg: 18, ring: 1.4, ring0: 0.2, rise: 1.6, cue: 'whistle' } }
   },
   M: {
-    code: 'M', title: 'Mirelight', light: true, fly: true, r: 0.35, hp: 14, walk: 2.6, close: 2.6, turn: 6, glim: 2, cool: [1.6, 1.6], eye: 1.3, chest: 1.3,
+    code: 'M', title: 'Mirelight', light: true, weight: 'light', stun: S(0.5), knock: 0.8, fly: true, r: 0.35, hp: 14, walk: 2.6, close: 2.6, turn: 6, glim: 2, cool: [1.6, 1.6], eye: 1.3, chest: 1.3,
     moves: { pulse: { kind: 'melee', range: 2.0, wind: S(0.7), act: S(0.15), rec: S(0.6), dmg: 18, ring: 2.2, ring0: 0, rise: 1.8, drift: 3, cue: 'hum' } }
   },
   I: {
-    code: 'I', title: 'Ironback', light: false, r: 0.7, hp: 120, walk: 1.2, close: 1.2, turn: 3, glim: 8, cool: [1.0, 1.6], eye: 1.2, chest: 1.0, stunned: 1.5,
+    code: 'I', title: 'Ironback', light: false, weight: 'heavy', stun: 0, knock: 0, r: 0.7, hp: 120, walk: 1.2, close: 1.2, turn: 3, glim: 8, cool: [1.0, 1.6], eye: 1.2, chest: 1.0, stunned: 1.5,
     moves: {
       // the lane follows the aim for its first 0.6 s, growing to 7 m, and stands still for the last 0.3 s before the run
       charge: { kind: 'melee', min: 3, range: 9, wind: S(0.9), grow: S(0.6), act: S(0.7), rec: S(1.4), dmg: 24, push: 3, v: 10, width: 1.6, len: 7, past: 3, drop: 0.6, stun: S(2.0), cue: 'paw' },
@@ -45,17 +47,64 @@ export const TYPES = {
   }
 };
 // the markers as baked (lib/foes.mjs): a ring's radius at k = 1, and the Ironback's lane: width, piece length, pieces
-/* Ember 0 is harder (gloam-downs-growth design.md "Ember 0 is harder"): every foe's blow deals `dmg` times its number, and every foe
-   has `hp` times its health. The Ember 4 factor multiplies on top. The ranges the pacing tune may use: dmg 1.15 to 1.5, hp 1.0 to 1.3 */
-export const FOE_HARD = { dmg: 1.3, hp: 1.15 };
+/* Ember 0 (gloam-downs-fair-fight design.md "A natural curve"): every foe's blow deals `dmg` times its number, and every foe has `hp`
+   times its health. The Ember 4 factor multiplies on top. The range the pacing tune may use: dmg 1.0 to 1.2 */
+export const FOE_HARD = { dmg: 1.1, hp: 1.15 };
 export const MARKERS = { P: { ring: 1.4 }, M: { ring: 2.2 }, I: { ring: 3.0, lane: [1.6, 1.4, 5] } };
 
 export const RULES = {
   wake: 10, sleep: 16, cap: 6, notice: 8, near: 3, chase: 8, home: S(4), off: S(4), below: 2, outBelow: 6, fall: -25,
-  cracks: S(0.6), rise: S(0.9), sink: S(0.6), dying: S(0.6), flinch: S(0.4), flinchGap: S(1.5), melee: 2,
-  hold: 3.5, band: 0.3, spread: 50 * DEG, offWait: S(0.4), probe: 0.7, pushSteps: 8, homeGap: 1.2, sight: 6,
+  cracks: S(0.6), rise: S(0.9), sink: S(0.6), dying: S(0.6), melee: 1,
+  hold: 3.5, band: 0.3, spread: 50 * DEG, probe: 0.7, pushSteps: 8, homeGap: 1.2, sight: 6,
   glimWait: S(0.4), glimReach: 6, glimTake: 0.35, flash: 3, shake: 6, spawnLeash: 4
 };
+/* the fair fight (gloam-downs-fair-fight design.md): after a cancel a foe waits 0.6 s past its stun; a hit in the active time or the
+   recovery adds 0.2 s to the recovery, at most 0.4 s a move; three flinches in 3 s brace a foe for 1.0 s; two blows land at least 0.6 s
+   apart; no wind-up starts for 1.0 s after a hurt; the foe that hit steps back 1.0 m over 0.4 s and waits 1.2 s; waiting foes circle
+   at 0.8 m/s; a foe off screen winds up 0.25 s longer */
+export const FAIR = {
+  stunWait: S(0.6), recAdd: S(0.2), recMax: S(0.4), braceN: 3, braceIn: S(3.0), brace: S(1.0), gap: S(0.6), hurtWait: S(1.0),
+  back: 1.0, backSteps: S(0.4), backWait: S(1.2), circle: 0.8, offWind: S(0.25), snapStop: 5,
+  // the hits that interrupt: the blade's cuts, its finisher, the Rising cut and the plunge (an ability says so on its own hit)
+  blade: ['cut1', 'cut2', 'fin', 'rise', 'plunge']
+};
+// the rim of a heavy foe (fight.js draws it): one dab in slot 39 for each 10 poise left, rounded up; a braced foe shows 4
+export const ARMOR = { per: 10, slot: 39, braced: 4 };
+// the armored attacks: the Ironback's charge, the Bellwether's bent charge, the Cairnwarden's sweep and the Wardmother's second hook
+export function armored(f) {
+  if (!f) return false;
+  if (f.state === 'move' && f.move && phaseOf(f.T.moves[f.move], f.mt) === 'wind') return f.move === 'charge' || f.braced > 0 || !!f.armorMove;
+  const sp = f.special;
+  if (!sp) return false;
+  const P = specialPhase(sp.def, sp.t);
+  if (P.ph !== 'w') return false;
+  return sp.def.kind === 'bent' || sp.def.kind === 'sweep' || (sp.def.kind === 'hooks' && P.i === 2) || f.braced > 0;
+}
+// in a wind-up now: its own move's, or an elite's special move's
+export function winding(f) {
+  if (f.state === 'move' && f.move) return phaseOf(f.T.moves[f.move], f.mt) === 'wind';
+  return !!f.special && specialPhase(f.special.def, f.special.t).ph === 'w';
+}
+/* the rim's dabs now: n dabs, and armor true in an armored wind-up (the count doubles). A heavy foe's poise refills 3 s after its
+   last hit, so the count reads it as full then. -> { n, armor, k } (k: how far into the wind-up, 0..1) or null */
+export function rimOf(f, step) {
+  if (!f || f.out) return null;
+  const arm = armored(f);
+  if (heavyOf(f) && f.state !== 'stagger' && f.state !== 'stun') {
+    const max = poiseOf(f);
+    if (!max) return null;
+    const left = f.poise === undefined || step - (f.poiseAt ?? -1e9) >= STAGGER.refill ? max : f.poise;
+    const n = Math.ceil(left / ARMOR.per - 1e-9);
+    return n > 0 ? { n: arm ? n * 2 : n, armor: arm, k: windK(f) } : null;
+  }
+  if (f.braced > 0) return { n: arm ? ARMOR.braced * 2 : ARMOR.braced, armor: arm, k: windK(f) };
+  return null;
+}
+function windK(f) {
+  if (f.state === 'move' && f.move) { const M = f.T.moves[f.move]; return clamp((f.mt + (f.windAdd | 0)) / (M.wind + (f.windAdd | 0)), 0, 1); }
+  if (f.special) { const P = specialPhase(f.special.def, f.special.t); return P.ph === 'w' ? clamp(P.at / P.n, 0, 1) : 0; }
+  return 0;
+}
 
 /* ---------------- the zone rules ----------------
    The page and the zone check (qa/lab/gloam-downs-zones.mjs) share these. A zone here is { c, foes } with foes a string of types
@@ -150,11 +199,13 @@ export const laneAt = (M, mt) => M.len * clamp((mt + 1) / M.grow, 0, 1);
    3). slots is the pool's slot codes in order ('SSSSP' or pool.slots' codes): a foe takes the slot of its type that is free when it
    rises, and gives it back when it sleeps or goes out. runner is the run's runner (run.js makeRunner; bind() may set it later):
    the foes hurt the lamplighter through runner.hurt, and a foe put out counts through runner.foeOut. onScreen(x, y, z) says whether
-   a point is in the view (the page projects it; a foe off screen waits 0.4 s longer for an attack token). water is the place's water
-   surface, or undefined: the Mirelight floats over it.
+   a point is in the view (the page projects it; a foe off screen winds up 0.25 s longer, and starts only when tellFree(f) says its tell
+   can be heard). tokens is the melee tokens of the place (run.js tokensOf). water is the place's water surface, or undefined: the
+   Mirelight floats over it.
    think(ev, play) runs on every game step after the lamplighter, as the runner's think; ev gets the cues and what the page draws:
-   { type: 'cracks', pts }, 'rise', 'burst' (a coal, a pulse, a slam or a charge into a wall), 'foeOut' and 'glim'. */
-export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null, onScreen = () => true, water, place = meta.id || 'place', bounds = meta.bounds ?? 34, combo = null, scale = null }) {
+   { type: 'cracks', pts }, 'rise', 'burst' (a coal, a pulse, a slam or a charge into a wall), 'foeOut', 'glim', 'stagger' and 'snap'
+   (a hit that stopped an attack or broke a poise, with a hit stop of 5 steps). */
+export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null, onScreen = () => true, water, place = meta.id || 'place', bounds = meta.bounds ?? 34, combo = null, scale = null, tokens = RULES.melee, tellFree = () => true }) {
   // the run's later places: foes hit harder and have more health (run.js foeScale)
   const SC = { dmg: scale?.dmg ?? 1, hp: scale?.hp ?? 1 };
   const rng = stream(seed, `foes/${place}`);
@@ -162,7 +213,10 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
   const lim = bounds - 0.6;
   const F = {
     zones: [], foes: [], melee: new Set(), coal: null, coals: [], motes: [], pending: [], step: 0, game: 0, runner, spawned: 0,
-    codes, holders, counts, water, combo
+    codes, holders, counts, water, combo,
+    // the melee tokens (run.js tokensOf: 1 in the first two places, 2 after), the steps before any foe may start a wind-up (a hurt),
+    // and the steps of the blows that have landed, for the spacing
+    tokens: Math.max(1, tokens | 0), hurtWait: 0, blows: []
   };
   const lamp = () => F.runner?.fighter.body.s;
   const coolOf = T => S(T.cool[0] + (T.cool[1] - T.cool[0]) * rng());
@@ -171,7 +225,8 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
     const T = TYPES[type];
     const f = {
       id: `${zone.id}.${k}`, type, T, zone, k, home, hp: Math.round(T.hp * FOE_HARD.hp * SC.hp), out: false, state: 'asleep', t: 0, aware: false, away: 0, offT: 0,
-      move: null, mt: 0, landed: false, cool: 0, ready: 0, flinch: 0, since: 999, downFor: 0, stunned: false, hold: null, slot: -1,
+      move: null, mt: 0, landed: false, cool: 0, ready: 0, flinch: 0, downFor: 0, stunned: false, hold: null, slot: -1,
+      wait: 0, windAdd: 0, recAdd: 0, recLeft: 0, flinches: [], braced: 0, cancels: 0, back: 0, backDir: null, orbit: k % 2 ? -1 : 1,
       flash: 0, shake: 0, shakeDir: [1, 0], push: null, shove: null, marker: null, aim: null, lane: null, prog: 0, firm: home.slice(),
       yaw: 0, x: home[0], y: home[1], z: home[2], r: T.r, alive: false, vx: 0, vz: 0, walking: 0, diedAt: null,
       hit: (raw, how) => hitFoe(f, raw, how)
@@ -231,13 +286,38 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
   const EK = eliteKit(F, { walk, meta, seed, placeId: meta.id || 'place', lamp, mayAttack, strike, groundY, faceLamp, turnTo, towards, inLeash, sees, hookReaches, coolOf, inRing, makeFoe, homeSpots, placeFoe: place, freeOf, putOut });
 
   /* ---------------- the tokens ----------------
-   At most 2 melee attacks at once (from the wind-up to the end of the active time), and 1 coal (from the lob's wind-up to the coal's
-   landing). A foe off screen waits 0.4 s longer, so a phone player sees a warning before most melee wind-ups start */
-  function mayAttack(f, kind) {
-    if (kind === 'coal') return !F.coal;
-    if (F.melee.size >= RULES.melee) return false;
-    return f.ready > (onScreen(f.x, f.y + f.T.chest, f.z) ? 0 : RULES.offWait);
+   At most F.tokens melee attacks at once (from the wind-up to the end of the recovery), and 1 coal (from the lob's wind-up to the
+   coal's landing). No foe starts a wind-up within 1.0 s of a hurt, or before its own wait; and none whose blow would land within 0.6 s
+   of another blow (landed, or on its way). A foe off screen starts only when its tell can be heard (tellFree), and winds up 0.25 s
+   longer. hitIn: the steps from the wind-up's start to its blow, on screen */
+  const offOf = f => !onScreen(f.x, f.y + f.T.chest, f.z);
+  function blowsDue() {
+    const out = F.blows.slice();
+    for (const g of F.foes) {
+      if (g.state === 'move' && g.move && !g.hold) {
+        const M = g.T.moves[g.move];
+        if (g.mt < M.wind) out.push(F.step + (M.wind - g.mt) + (M.kind === 'coal' ? M.release + M.flight : 0));
+      } else if (g.special) {
+        let t = 0;
+        for (const [ph, n] of g.special.def.phases) { if (ph === 'a') break; t += n; }
+        if (g.special.t < t) out.push(F.step + (t - g.special.t) + (g.special.def.kind === 'coals' ? g.special.def.release + g.special.def.flight : 0));
+      }
+    }
+    for (const c of F.coals) out.push(F.step + (c.n - c.t));
+    return out;
   }
+  function mayAttack(f, kind, hitIn = 0) {
+    if (kind === 'coal' ? F.coal : F.melee.size >= F.tokens) return false;
+    if (F.step < F.hurtWait || F.step < f.wait) return false;
+    const off = offOf(f);
+    if (off && !tellFree(f)) return false;
+    const at = F.step + hitIn + (off ? FAIR.offWind : 0);
+    return !blowsDue().some(t => Math.abs(t - at) < FAIR.gap);
+  }
+  // a blow has landed (a melee attack's first active step, a coal's landing): the spacing counts from it
+  const blowNow = () => { F.blows.push(F.step); while (F.blows.length > 6) F.blows.shift(); };
+  F.offOf = offOf;
+  F.blowNow = blowNow;
   function release(f) {
     F.melee.delete(f);
     if (F.coal === f && !F.coals.some(c => c.f === f)) F.coal = null;
@@ -257,24 +337,30 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
       f.marker = { kind: 'lane', x: f.x, y: f.y, z: f.z, yaw: f.yaw, full: M.len };
     }
   }
+  /* a move starts at mt 0, or at mt -15 off screen: its wind-up is 0.25 s longer, and its tell plays at its first step on a voice the
+     sound keeps for it (off: true) */
   function startMove(f, name, ev) {
-    const M = f.T.moves[name];
+    const M = f.T.moves[name], off = offOf(f);
     if (M.kind === 'melee') F.melee.add(f);
     else F.coal = f;
-    f.state = 'move'; f.move = name; f.mt = 0; f.landed = false; f.ready = 0; f.prog = 0; f.wall = false;
+    f.windAdd = off ? FAIR.offWind : 0;
+    f.state = 'move'; f.move = name; f.mt = -f.windAdd; f.landed = false; f.ready = 0; f.prog = 0; f.wall = false; f.recAdd = 0; f.recLeft = 0;
+    // a wind-up begun braced stays armored to its end
+    f.armorMove = f.braced > 0;
     lay(f, name);
-    ev.push({ type: 'cue', cue: M.cue, foe: f.id });
+    ev.push({ type: 'cue', cue: M.cue, foe: f.id, ...(off ? { off: true } : {}) });
   }
+  function clearMove(f) { f.move = null; f.mt = 0; f.lane = null; f.windAdd = 0; f.recAdd = 0; f.recLeft = 0; f.armorMove = false; }
   function cancelMove(f) {
     if (f.move) release(f);
     if (!F.coals.some(c => c.f === f)) f.marker = null;
-    f.move = null; f.mt = 0; f.lane = null;
+    clearMove(f);
     if (f.state === 'move') f.state = f.aware ? 'chase' : 'idle';
   }
   function endMove(f) {
     release(f);
     if (!F.coals.some(c => c.f === f)) f.marker = null;
-    f.move = null; f.mt = 0; f.lane = null;
+    clearMove(f);
     f.state = 'chase';
     f.cool = coolOf(f.T);
   }
@@ -282,8 +368,27 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
   function strike(f, dmg, from, ev, o = {}) {
     if (f.hold || !F.runner) return false;
     const r = F.runner.hurt(dmg * FOE_HARD.dmg * SC.dmg, from, o, ev);
+    // a hurt: no foe starts a wind-up for 1.0 s, and this one waits 1.2 s; a melee foe steps back 1.0 m over 0.4 s
+    if (r === 'hit' || r === 'dead') {
+      F.hurtWait = F.step + FAIR.hurtWait;
+      f.wait = Math.max(f.wait, F.step + FAIR.backWait);
+      const s = lamp();
+      if (!o.coal && s && f.move !== 'charge' && !(f.special && f.special.def.kind === 'bent')) {
+        const dx = f.x - s.x, dz = f.z - s.z, l = Math.hypot(dx, dz) || 1;
+        f.back = FAIR.backSteps; f.backDir = [dx / l, dz / l];
+      }
+    }
     return r === 'hit' || r === 'dead' || r === 'none';
   }
+  // a step of backing off, when one is under way: the velocity 1.0 m over 0.4 s away from the lamplighter, inside the leash
+  function backOff(f) {
+    if (!(f.back > 0) || !f.backDir) return null;
+    f.back--;
+    const v = (FAIR.back * 60) / FAIR.backSteps, c = f.zone.c, nx = f.x + f.backDir[0] * v * STEP, nz = f.z + f.backDir[1] * v * STEP;
+    if (Math.hypot(nx - c[0], nz - c[2]) > f.zone.leash) { f.back = 0; return { hard: [0, 0] }; }
+    return { hard: [f.backDir[0] * v, f.backDir[1] * v] };
+  }
+  F.backOff = backOff;
   function hookReaches(f, M, s) {
     const d = Math.hypot(s.x - f.x, s.z - f.z);
     if (d - LAMP_R > M.reach || Math.abs(s.y - f.y) > 1.6) return false;
@@ -294,11 +399,15 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
      { hard: [vx, vz] } for a drive that brakes and turns at once (the charge, the hook's step) */
   function runMove(f, ev) {
     const s = lamp(), T = f.T, M = T.moves[f.move];
+    // a hit in the active time or the recovery holds the recovery 0.2 s longer (the pose holds where it is)
+    if (f.recLeft > 0 && phaseOf(M, f.mt) === 'rec') { f.recLeft--; return backOff(f) || { hard: [0, 0] }; }
     f.mt++;
     const ph = phaseOf(M, f.mt), at = f.mt - (ph === 'act' ? M.wind : ph === 'rec' ? M.wind + M.act : 0);
     if (ph === 'end') { endMove(f); return null; }
-    // a melee token comes back when the active time is over
-    if (ph === 'rec' && M.kind === 'melee') F.melee.delete(f);
+    // the token is held to the end of the recovery (endMove gives it back); a melee blow's first active step counts for the spacing
+    if (ph === 'act' && at === 0 && M.kind === 'melee') blowNow();
+    // the foe that hit steps back (the charge runs on)
+    if (f.back > 0 && f.move !== 'charge' && f.move !== 'lob' && (ph === 'rec' || (ph === 'act' && f.landed))) return backOff(f);
     switch (f.move) {
       case 'hook': {
         if (ph === 'wind') {
@@ -384,10 +493,10 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
   function stopCharge(f, M, wall, ev) {
     const b = f.body.s;
     b.vx = b.vz = 0;
-    F.melee.delete(f);
     f.marker = null;
     if (wall) {
-      f.state = 'stun'; f.t = 0; f.stunned = true; f.move = null; f.marker = null; f.lane = null;
+      F.melee.delete(f);
+      f.state = 'stun'; f.t = 0; f.stunned = true; clearMove(f); f.marker = null;
       ev.push({ type: 'burst', kind: 'clang', x: b.x + Math.sin(f.yaw) * f.T.r, y: b.y + 1.2, z: b.z + Math.cos(f.yaw) * f.T.r, r: 0.8 }, { type: 'cue', cue: 'clang', foe: f.id });
       return { hard: [0, 0] };
     }
@@ -406,8 +515,16 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
       if (Math.abs(d) < RULES.spread) push += Math.sign(d || (f.k - o.k) || 1) * (RULES.spread - Math.abs(d)) * 0.5;
     }
     const [x, z] = inLeash(f, s.x + Math.sin(b + push) * RULES.hold, s.z + Math.cos(b + push) * RULES.hold);
-    // it stands while it is in the band and the others leave it room (a turn of 3° or less)
-    if (Math.abs(Math.hypot(f.x - s.x, f.z - s.z) - RULES.hold) < RULES.band && Math.abs(push) < 3 * DEG) return null;
+    /* in the band (3.2 to 3.8 m) it circles the lamplighter at 0.8 m/s, turning the way that keeps its 50° from the others, and turns
+       back at its leash; out of the band it walks to its spot on the ring */
+    if (push) f.orbit = Math.sign(push);
+    const r = Math.hypot(f.x - s.x, f.z - s.z);
+    if (Math.abs(r - RULES.hold) < RULES.band) {
+      const v = FAIR.circle, c = f.zone.c, k = clamp((RULES.hold - r) * 2, -0.6, 0.6);
+      const vx = Math.cos(b) * f.orbit * v + Math.sin(b) * k, vz = -Math.sin(b) * f.orbit * v + Math.cos(b) * k;
+      if (Math.hypot(f.x + vx * 0.5 - c[0], f.z + vz * 0.5 - c[2]) > f.zone.leash - 0.1) { f.orbit = -f.orbit; return null; }
+      return [vx, vz];
+    }
     return towards(f, x, z, f.T.walk);
   }
   function approach(f, s, want, v) {
@@ -425,7 +542,7 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
       if (++f.away >= RULES.home) { f.aware = false; f.away = 0; f.state = 'home'; }
     } else f.away = 0;
     if (F.calm) f.aware = false;
-    if (f.flinch > 0) return null;
+    if (f.flinch > 0) return { hard: [0, 0] };
     if (!f.aware) {
       if (atHome(f)) { f.state = 'idle'; return null; }
       f.state = 'home';
@@ -434,22 +551,26 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
     }
     f.state = 'chase';
     faceLamp(f, s);
-    const off = f.cool > 0;
+    // a foe on its cooldown, or waiting after a cancel or a blow it landed, holds back
+    const off = f.cool > 0 || F.step < f.wait;
     switch (f.type) {
       case 'S': case 'M': {
         const M = T.moves[f.type === 'S' ? 'hook' : 'pulse'], name = f.type === 'S' ? 'hook' : 'pulse';
         if (!off && d <= M.range && Math.abs(s.y - f.y) < 1.6 && sees(f, s)) {
           f.ready++;
-          if (mayAttack(f, 'melee')) { startMove(f, name, ev); return null; }
+          /* a Snuffer that comes in from the circle (3.2 to 3.8 m) steps in to 2.9 m first, so its hook can reach: it starts at the
+             edge of its range only when it has stood there 20 steps and cannot come nearer */
+          const close = f.type !== 'S' || d <= M.range - 0.3 || f.ready >= 20;
+          if (close && mayAttack(f, 'melee', M.wind)) { startMove(f, name, ev); return null; }
         } else f.ready = 0;
-        if (!off && F.melee.size < RULES.melee) return approach(f, s, M.range - 0.4, T.close);
+        if (!off && F.melee.size < F.tokens) return approach(f, s, M.range - 0.4, T.close);
         return holdRing(f, s);
       }
       case 'P': {
         const M = T.moves.lob;
         if (!off && d >= M.min && d <= M.range && sees(f, s)) {
           f.ready++;
-          if (mayAttack(f, 'coal')) { startMove(f, 'lob', ev); return null; }
+          if (mayAttack(f, 'coal', M.wind + M.release + M.flight)) { startMove(f, 'lob', ev); return null; }
         } else f.ready = 0;
         if (d < T.back) { const dx = f.x - s.x, dz = f.z - s.z, l = d || 1; return towards(f, ...inLeash(f, s.x + (dx / l) * T.keep[0], s.z + (dz / l) * T.keep[0]), T.walk); }
         if (d > T.keep[1]) return approach(f, s, T.keep[1] - 0.5, T.walk);
@@ -460,9 +581,9 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
         const want = d <= Sl.range && Math.abs(s.y - f.y) < 1.6 ? 'slam' : d >= C.min && d <= C.range && Math.abs(s.y - f.y) < 1.6 && sees(f, s) ? 'charge' : null;
         if (!off && want) {
           f.ready++;
-          if (mayAttack(f, 'melee')) { startMove(f, want, ev); return null; }
+          if (mayAttack(f, 'melee', T.moves[want].wind)) { startMove(f, want, ev); return null; }
         } else f.ready = 0;
-        if (!off && F.melee.size < RULES.melee && d > C.range) return approach(f, s, C.range - 1, T.walk);
+        if (!off && F.melee.size < F.tokens && d > C.range) return approach(f, s, C.range - 1, T.walk);
         return holdRing(f, s);
       }
     }
@@ -532,7 +653,8 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
     const fresh = f.hitAt === F.step;
     if (f.cool > 0) f.cool--;
     if (f.flinch > 0 && !fresh) f.flinch--;
-    f.since++;
+    // the brace counts while the foe stands (not while it is down), so a braced foe gets up still braced and can answer
+    if (f.braced > 0 && !fresh && f.state !== 'down') f.braced--;
     let want = null;
     switch (f.state) {
       case 'asleep': case 'out': return;
@@ -589,11 +711,13 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
   }
 
   /* ---------------- hits on a foe ----------------
-   A plain hit never stops a wind-up. The finisher and the plunge (how.knock) knock a light foe down, which stops anything. Outside a
-   wind-up a light foe flinches for 0.4 s, at most once every 1.5 s; the flinch holds its place and its next choice, but not its
-   recovery, so it cannot hide in an endless flinch. Light foes take the push, but not from a plain hit in their wind-up or active
-   time; the Ironback, heavy, takes none and never flinches. A stunned Ironback takes 50% more. A held foe takes the damage and holds
-   its pose. */
+   By weight (design.md "What a hit does, by state"). A light or medium foe: the finisher and the plunge (how.knock) knock it down,
+   which stops anything. Any other hit that interrupts (the blade's, or an ability's with how.interrupt) flinches it for its hit stun
+   with its knock back while it chases, and in its wind-up cancels the attack: no blow, its token back at once, and a wait of 0.6 s
+   past the stun. A blow in its active time goes on, and a hit there or in the recovery holds the recovery 0.2 s longer, at most 0.4 s
+   a move. Three flinches in 3 s (a cancel and a knock-down count) brace it for 1.0 s: no flinch and no cancel by a plain hit. A heavy
+   foe (the Ironback, or any elite) never flinches: its poise wears, twice as fast in a wind-up, and breaks into a stagger. A stunned
+   Ironback takes 50% more. A held foe takes the damage and holds its pose. */
   function hitFoe(f, raw, how = {}) {
     if (!hittable(f)) return false;
     const dmg = dealt(raw, (f.stunned ? f.T.stunned : 1) * (f.state === 'stagger' ? STAGGER.take : 1));
@@ -606,9 +730,10 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
     f.shakeDir = [fx / fl, fz / fl];
     if (f.hp <= 0) { kill(f); return dmg; }
     if (breakPoise(f, dmg)) return dmg;
+    const heavy = heavyOf(f);
     // Ember parry: a light foe is knocked down below; a heavy foe (an Ironback, an elite) staggers for the parry's time, whatever its
     // poise, and its blow is cut off. The run's parry has its own clang, so no cue here
-    if (how.parry && !f.T.light) {
+    if (how.parry && heavy) {
       cancelMove(f);
       f.hold = null; f.push = null; f.flinch = 0;
       f.state = 'stagger'; f.t = 0; f.staggerFor = how.knock || STAGGER.steps; f.aware = true;
@@ -616,36 +741,75 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
       queue({ type: 'stagger', foe: f.id, x: f.x, y: f.y + f.T.chest, z: f.z, parry: true });
       return dmg;
     }
-    if (f.hold || !f.T.light) return dmg;
-    const ph = f.state === 'move' ? phaseOf(f.T.moves[f.move], f.mt) : null, winding = ph === 'wind';
+    if (f.hold || heavy) return dmg;
+    const ph = f.state === 'move' ? phaseOf(f.T.moves[f.move], f.mt) : null, T = f.T;
+    const interrupt = how.interrupt ?? FAIR.blade.includes(how.kind);
     f.hitAt = F.step + 1;
+    f.aware = true;
+    let push = 0;
     if (how.knock) {
+      // the finisher and the plunge knock it down, braced or not; one in a wind-up is a cancel
+      if (ph === 'wind') snap(f, 'knock');
       cancelMove(f);
       f.state = 'down'; f.t = 0; f.downFor = how.knock; f.flinch = 0;
-    } else if (!winding && f.since >= RULES.flinchGap) { f.flinch = RULES.flinch; f.since = 0; }
-    // in its wind-up and active time a foe braces against a plain hit: a push there would carry the hook out of reach, and so stop
-    // the wind-up after all. The finisher's and the plunge's push always land
-    if (how.push && (how.knock || (ph !== 'wind' && ph !== 'act'))) f.push = { ux: f.shakeDir[0], uz: f.shakeDir[1], v: (how.push * 60) / RULES.pushSteps, n: RULES.pushSteps };
-    f.aware = true;
+      flinched(f);
+      push = how.push || 0;
+    } else if (!interrupt || f.state === 'down') {
+      // a tick (burn, pitch), or a foe already down: the damage only
+    } else if (f.braced > 0 || (f.armorMove && ph === 'wind')) {
+      // braced: the damage and the knock back, but no flinch and no cancel (none in a wind-up or active time, which would carry the
+      // blow out of reach)
+      if (ph !== 'wind' && ph !== 'act') push = T.knock;
+    } else if (ph === 'act' || ph === 'rec') {
+      const add = Math.max(0, Math.min(FAIR.recAdd, FAIR.recMax - f.recAdd));
+      f.recAdd += add; f.recLeft += add;
+    } else {
+      if (ph === 'wind') {
+        cancelMove(f);
+        f.cancels++;
+        f.wait = Math.max(f.wait, F.step + 1 + T.stun + FAIR.stunWait);
+        snap(f, 'cancel');
+      }
+      f.flinch = T.stun;
+      flinched(f);
+      push = T.knock;
+    }
+    // (a push under way, as the Crook line's pull, is not cut short)
+    if (push > 0 && !f.push) f.push = { ux: f.shakeDir[0], uz: f.shakeDir[1], v: (push * 60) / RULES.pushSteps, n: RULES.pushSteps };
     return dmg;
   }
-  /* the poise (feel.js STAGGER): the damage comes off it too, and at 0 the foe staggers, its wind-up ended. -> true when the foe is
-     in a stagger now (a hit in a stagger takes 25% more and does nothing else) */
+  // a flinch counts toward the brace: the third in 3 s braces the foe for 1.0 s
+  function flinched(f) {
+    f.flinches = f.flinches.filter(t => F.step - t < FAIR.braceIn);
+    f.flinches.push(F.step);
+    if (f.flinches.length >= FAIR.braceN) { f.braced = FAIR.brace; f.flinches = []; }
+  }
+  /* a cancel or a poise break: a hit stop of 5 steps, the snap (sound.js) and its sparks and kick (fight.js) */
+  function snap(f, why) {
+    queue({ type: 'stop', n: FAIR.snapStop });
+    queue({ type: 'snap', foe: f.id, kind: f.type, why, x: f.x, y: f.y + f.T.chest * (f.size || 1), z: f.z });
+    queue({ type: 'cue', cue: 'snap', foe: f.id, kind: f.type, why });
+  }
+  /* the poise (feel.js STAGGER): the damage comes off it too, twice over in a wind-up, and at 0 the foe staggers, its wind-up ended.
+     -> true when the foe is in a stagger now (a hit in a stagger takes 25% more and does nothing else) */
   function breakPoise(f, dmg) {
     if (f.state === 'stagger') return true;
     const max = poiseOf(f);
     if (!max || f.state === 'stun' || f.state === 'down') return false;
     if (f.poise === undefined || F.step - (f.poiseAt ?? -1e9) >= STAGGER.refill) f.poise = max;
     f.poiseAt = F.step;
-    f.poise = Math.max(0, f.poise - dmg);
+    f.poise = Math.max(0, f.poise - dmg * (winding(f) ? STAGGER.wind : 1));
     if (f.poise > 0 || F.step < (f.staggerEnd ?? -1e9) + STAGGER.gap) return false;
+    const was = winding(f);
     cancelMove(f);
     f.hold = null; f.push = null; f.flinch = 0;
     f.state = 'stagger'; f.t = 0; f.poise = max; f.aware = true; f.staggerFor = null;
     f.hitAt = F.step + 1;
+    if (was) f.cancels++;
     // the event the fight feels and draws (fight.js), and its sound: the clang of a broken guard (sound.js), marked as a stagger
     queue({ type: 'stagger', foe: f.id, x: f.x, y: f.y + f.T.chest, z: f.z });
     queue({ type: 'cue', cue: 'clang', foe: f.id, stagger: true });
+    snap(f, 'break');
     return true;
   }
   // put out: its glim drops (on its last firm ground when it is off its ground or in the air), and its slot frees after its parts fall
@@ -748,6 +912,7 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
       if (F.coal === c.f) F.coal = null;
       c.f.marker = c.f.move === 'lob' && phaseOf(c.f.T.moves.lob, c.f.mt) === 'wind' ? c.f.marker : null;
       ev.push({ type: 'burst', kind: 'coal', x: c.to[0], y: c.to[1], z: c.to[2], r: c.R }, { type: 'cue', cue: 'coal' });
+      if (!F.blows.includes(F.step)) blowNow();
       if (s && inRing(s, c.to[0], c.to[1], c.to[2], c.R, c.rise) && !c.f.hold) strike(c.f, c.dmg, [c.to[0], c.to[2]], ev, { coal: true });
     }
   }
@@ -861,15 +1026,20 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
   F.target = () => { const t = F.runner?.fighter.f.target; return t && F.foes.includes(t) && hittable(t) ? t.id : null; };
   // the wind-ups under way, for the off-screen notches: how full each notch is
   F.windups = () => F.foes.filter(f => f.state === 'move' && phaseOf(f.T.moves[f.move], f.mt) === 'wind').map(f => ({
-    id: f.id, type: f.type, x: f.x, y: f.y + f.T.chest, z: f.z, fill: clamp(f.mt / f.T.moves[f.move].wind, 0, 1)
+    id: f.id, type: f.type, x: f.x, y: f.y + f.T.chest, z: f.z, fill: clamp((f.mt + f.windAdd) / (f.T.moves[f.move].wind + f.windAdd), 0, 1)
   }));
   F.find = q => (typeof q === 'number' ? F.list()[q]?.ref : F.foes.find(f => f.id === q)) || null;
   // the ?test view of each awake foe: id, type, zone, x, y, z, hp, move (its move, or its state), t (seconds in the move), flash
   F.list = () => F.foes.filter(f => shown(f)).map(f => ({
     ref: f, id: f.id, type: f.type, zone: f.zone.id, x: f.x, y: f.y, z: f.z, yaw: f.yaw, hp: f.hp, state: f.state,
     move: f.move || f.state, t: (f.move ? f.mt : f.t) / 60, flash: f.flash, held: !!f.hold, stunned: f.stunned, cool: f.cool,
-    elite: !!f.elite, poise: poiseOf(f) ? (f.poise ?? poiseOf(f)) : null, stagger: f.state === 'stagger' ? (f.staggerFor ?? STAGGER.steps) - f.t : 0
+    elite: !!f.elite, poise: poiseOf(f) ? (f.poise === undefined || F.step - (f.poiseAt ?? -1e9) >= STAGGER.refill ? poiseOf(f) : f.poise) : null,
+    stagger: f.state === 'stagger' ? (f.staggerFor ?? STAGGER.steps) - f.t : 0,
+    weight: f.elite ? 'heavy' : f.T.weight, stun: f.flinch, braced: f.braced, armor: armored(f), cancels: f.cancels, wait: Math.max(0, f.wait - F.step),
+    rec: f.recAdd, off: f.windAdd > 0, rim: rimOf(f, F.step)
   }));
+  // the tokens, for ?test: melee held of max, the coal held, and the steps before any foe may start a wind-up
+  F.tokenView = () => ({ melee: F.melee.size, max: F.tokens, coal: F.coal ? 1 : 0, wait: Math.max(0, F.hurtWait - F.step) });
 
   /* ---------------- ?test hooks ---------------- */
   // wake a zone now, in free slots (a guard takes the room it needs). -> { ok, why }
@@ -953,14 +1123,15 @@ export function poseOf(f, time = 0) {
     case 'stagger': return T.light ? { clip: 'hurt', t: 0.12 + 0.03 * Math.sin(f.t * 0.35) } : { clip: 'stun', t: Math.min(f.t, 60) / 60 };
     case 'move': {
       const M = T.moves[f.move], ph = phaseOf(M, f.mt);
-      if (ph === 'wind') return { clip: `${f.move}.windup`, t: f.mt / 60 };
+      if (ph === 'wind') return { clip: `${f.move}.windup`, t: Math.max(0, f.mt) / 60 };
       if (ph === 'act') return { clip: `${f.move}.attack`, t: (f.mt - M.wind) / 60 };
       return { clip: `${f.move}.recover`, t: (f.mt - M.wind - M.act) / 60 };
     }
     default:
       // stunned by a Flare or held by a snare (status.js): it stands in a stagger's pose, rocking a little, until the state ends
       if (f.status && (f.status.stun > 0 || f.status.hold > 0)) return T.light ? { clip: 'hurt', t: 0.12 + 0.03 * Math.sin(time * 6) } : { clip: 'stun', t: 0.5 };
-      if (f.flinch > 0 && T.light) return { clip: 'hurt', t: (RULES.flinch - f.flinch) / 60 };
+      // the flinch of every light and medium foe: the hurt clip over its hit stun
+      if (f.flinch > 0 && T.light) return { clip: 'hurt', t: Math.max(0, (T.stun || 21) - f.flinch) / 60 };
       return f.walking > 0.3 ? { clip: 'walk', t: time } : { clip: 'rest', t: time + f.k * 0.7 };
   }
 }

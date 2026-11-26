@@ -22,7 +22,7 @@ import * as cards from './cards.js';
 // the builds (relics, unlocks, Ember): builder BC's hooks
 import { relicEvent, RELIC_IDS, groundRelics } from './relics.js';
 import { dressOf, eliteClip } from './elites.js';
-import { UNLOCK_IDS, buyUnlock, setEmber, routeOfRun, emberOf } from './run.js';
+import { UNLOCK_IDS, buyUnlock, setEmber, routeOfRun, emberOf, depthOf } from './run.js';
 import { unlockRows, emberRow, relicMarks, kindleLine, moveLines } from './screens.js';
 import { glimLine, keptLine } from './screens.js';
 import { startPicks } from './run.js';
@@ -299,8 +299,17 @@ function placeBossBar() {
 function fillBossBar() {
   const B = fight?.boss;
   if (B) $('bossFill').style.width = `${((B.hp / B.max) * 100).toFixed(1)}%`;
+  fillPoise();
   // the boss music builds with the share of health left, while the bar shows
   if (B && !$('bossBar').hidden) emit('boss-health', { share: B.hp / B.max, phase: B.phase });
+}
+// the Reeve's poise line under the health (gloam-downs-fair-fight "The Reeve's poise"), each frame while the bar shows
+let poiseShown = -1;
+function fillPoise() {
+  const B = fight?.boss;
+  if (!B || $('bossBar').hidden) return;
+  const k = Math.round((B.poiseNow() / B.poiseMax) * 1000);
+  if (k !== poiseShown) { poiseShown = k; $('bossPoise').style.width = `${(k / 10).toFixed(1)}%`; }
 }
 function bossBar(on) {
   if (!RUN) return;
@@ -1307,7 +1316,7 @@ function lightBeacon() {
 function newRunner() {
   // the foes of this place, with the place: every foe back, and the foes put out kept for this place only. The seed mixes them
   // (mix.js); with ?test they stand as baked (the checks of each place rely on them) unless &mix asks for the mix
-  fight = pool && !LOOK && rs.run ? makeFight({ walk, meta, world, pool, rs, max: () => maxOf(rs), still, fx, project, doc: document, mix: q.has('test') && !q.has('mix') ? false : { ember: rs.run.ember ?? 0 },
+  fight = pool && !LOOK && rs.run ? makeFight({ walk, meta, world, pool, rs, max: () => maxOf(rs), still, fx, project, doc: document, mix: q.has('test') && !q.has('mix') ? false : { ember: rs.run.ember ?? 0, depth: depthOf(rs.run) },
     emit, dressOf, clipOf: eliteClip, groundRelics: () => groundRelics(runner),
     groundAbilities: () => groundAbilities(runner), groundPatterns: () => groundPatterns(runner), groundSpots: () => groundSpots(runner) }) : null;
   lastRun = { seed: rs.run?.seed ?? lastRun.seed, combo: rs.run?.combo ?? 0 };
@@ -1709,6 +1718,7 @@ function draw(o = {}) {
   pose(world.anim.bones, meta.bones, o.body || body.s, t, still);
   if (fight) {
     fight.draw(view, { time: Number.isFinite(o.time) ? o.time : undefined, pool: o.pool, art: art.h });
+    fillPoise();
     fxNow.kick = fight.kick; fxNow.zoom = fight.zoom; fxNow.bars = fight.bars;
     fight.showNotches(view, mode === 'play');
     // the abilities' cooldown sweeps and seconds, each frame (only what changed is written)
@@ -1820,8 +1830,12 @@ const runState = () => {
     fx: {
       kick: fxNow.kick.slice(), zoom: fight ? fight.feel.zoom() : fxNow.zoom, bars: fight ? fight.feel.bars() : fxNow.bars, grade: (fight?.cols || meta?.pal || []).slice(), blink: !!body?.s.hide,
       low: !!fight?.feel.low, beats: fight?.feel.beats ?? 0, tell: fight?.grow ?? 1,
-      shakes: fight ? fight.feel.shakes() : !!fx.kick, lamp: fight ? fight.lamp ?? 1 : 1, halo: fight ? fight.halo.filter(g => g.kind === 'halo').map(g => g.ci) : []
+      shakes: fight ? fight.feel.shakes() : !!fx.kick, lamp: fight ? fight.lamp ?? 1 : 1, halo: fight ? fight.halo.filter(g => g.kind === 'halo').map(g => g.ci) : [],
+      // the armor rims' dabs of this draw (gloam-downs-fair-fight "Armor that shows"): slot and size
+      armor: fight ? fight.halo.filter(g => g.kind === 'armor').map(g => ({ ci: g.ci, s: +g.s.toFixed(4), x: +g.x.toFixed(2), y: +g.y.toFixed(2), z: +g.z.toFixed(2) })) : []
     },
+    // the attack tokens: melee held of max, the coal, and the steps before any foe may start a wind-up
+    tokens: fight ? fight.foes.tokenView() : null,
     ...feelView()
   };
 };

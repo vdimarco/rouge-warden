@@ -171,5 +171,74 @@ In the unarchived changes, these requirements are replaced by the MODIFIED ones 
 - **Slot 39 on a Fen map.** The Fen's palette may put 39 near its water. The e2e checks the armor dabs read on every place's palette with the colour distance test of "Colour distance".
 - **Sound limit.** A reserved voice for off-screen tells could cut a hit cue. The sound test checks a crowded step.
 
+## What was built, and where it differs from the plan
+Built on `ccr-43aa269a-y8yo7l` from the design commit `c2914bb8`, on 2026-11-26.
+- **Weights, stun and knock back** are in `foes.js` `TYPES` (`weight`, `stun`, `knock`). The Snuffer keeps `light: true` (its shove and its down clip), and `weight: 'medium'` gives its shorter stun.
+- **Hits by state** (`foes.js` `hitFoe`): as planned. A hit in the active time or the recovery holds the recovery where it is for 0.2 s (`recLeft`), at most 0.4 s a move; the pose holds too. The old "once every 1.5 s" flinch gap is gone.
+- **The brace counts only while the foe stands.** As planned, the third flinch is nearly always the finisher, whose knock-down lasts 0.6 s: a 1.0 s brace that counted through the knock-down left 0.4 s, under the 0.8 s cooldown after a knock-down, so a braced foe never answered and the "No endless flinch" check found one hook in 10 s. Now the brace starts counting when the foe gets up, and a wind-up begun braced stays armored to its end (`armorMove`).
+- **A Snuffer steps in from the circle.** Waiting foes circle 3.2 to 3.8 m away, and the hook's range is 3.2 m, so a Snuffer given the token at the circle's edge started its hook out of reach and missed. It now starts within 2.9 m, or after 20 steps in range when it cannot come nearer.
+- **Circling** turns the way that keeps the 50° spread (the sign of the spread's push) and turns back at the leash.
+- **The off-screen tell's voice.** In place of a separate reserved voice, an off-screen tell (`off: true` on the cue) plays at rank 4 (`sound.js` `TELL_RANK`), over every other cue, so the 24-voice limit drops a hit cue first. `makeFoes` takes `tellFree(f)`; the page leaves it true, as a rank-4 voice is always free.
+- **The off-screen check in the browser narrows the view.** In the open, a phone held upright shows everything within 15 m of the lamplighter, so no foe in hook range is ever off screen; the e2e narrows the view (fov 0.3) to put a Snuffer 2.4 m to the side outside it.
+- **The snap** is synthesized in `sound.js` like the other cues. The sample bank (`qa/lab/gloam-downs-bank.mjs`) holds only the score's instruments, so it does not change; the music demo renders `snap` with the hit cues and checks it sits between cut 1 and the boss slam.
+- **The Reeve's flinch** poses the first lurch of its stumble clip; its poise line is `#bossPoise` under the health in the boss bar.
+- **The bot**: the cut-in and the roll from armor as planned; a read wind-up it does not cut into, it stops swinging at and waits for the roll. It counts a place where it was stuck for 12 minutes (a keeper it cannot reach, mostly at the Fen's mill) apart from the deaths, and `WORKERS=4` plays the bots on four threads with the same results.
+
 ## Pacing results
-To be filled in by the build, with each run's levers, as in gloam-downs-growth.
+Each line is `WORKERS=4 node qa/lab/gloam-downs-bot.mjs 60 <skill> 1` with only the named levers changed from the game as built. "Reach 2/3" is the share of first runs at 0.3 that reach place 2 and place 3; "won" the median first-win run; the death rates are by place, 1 to 5, deaths there over the runs that reached it, with the bot's stuck runs left out (from step "final" on; before it they count as deaths, about 3% at place 3).
+
+| Step | Levers | 0.3 reach 2/3 | 0.3 won | 0.5 won | 0.9 won | Death rates at 0.5 (places 1 to 5) |
+|---|---|---|---|---|---|---|
+| rules | the fight rules with the old curve: ×1.3 damage, depth 0.35/0.4 at power 1.5, 2 tokens, no foe more at depth, no spark growth | 93% / 92% | 10 | 2 | 1 | 0.9, 0.4, 4.1, 6.8, 52.8% |
+| curve | the game as designed: ×1.1, depth 0.1/0.2 linear, sparks 1.5%/3%, tokens 1,1,2,2,2, a foe more from depth 2 | 97% / 97% | 1 | 1 | 1 | 0, 0, 2.8, 0, 0% |
+| A | depth 0.25/0.4 | | | 1 | | 0, 0, 3.3, 0.3, 1.1% |
+| B | depth 0.35/0.6 | | | 1 | | 0.3, 0, 4.0, 1.4, 5.4% |
+| C | depth 0.35/0.6, ×1.2 | | | 1 | | 0, 0.3, 4.7, 1.4, 10.5% |
+| D | depth 0.5/0.8, ×1.2 | | | 1 | | 0.2, 0.2, 6.7, 4.5, 31.3% |
+| E | tokens 2 everywhere | | | 1 | | 0.6, 0, 3.1, 0, 0% |
+| F | tokens 2,2,3,3,3, depth 0.35/0.6, ×1.2 | | | 1 | | 1.3, 0, 3.3, 0.6, 8.2% |
+| G | depth 0.6/1.0 at power 1.5, ×1.2, tokens 2 | 98% / 85% | 34 (40 of 60) | 17 | | 0, 0.2, 12.8, 38.9, 77.7% |
+| H | depth 0.4/0.6 at power 1.5, ×1.2 | 97% / 90% | 17 | 6 | | 0.1, 0, 4.5, 15.3, 69.3% |
+| I | depth 0.2/0.35 at power 1.5 | 97% / 95% | 3 | 1 | | 0, 0.3, 0.8, 1.7, 11.1% |
+| **final** | the game as designed (as "curve"), measured again on the finished code (the bot's back-off from a read it does not cut into; stuck runs apart) | **97% / 97%** | **1** | **1** | **1** | 0, 0, 0, 0, 0% |
+
+The "rules" row ran while the brace, the circle and the Snuffer's step-in were being fixed (its 0.5 run on the code before them, its 0.9 and 0.3 runs after), so it is a guide, not an exact figure.
+
+**The game as committed** (the "final" row), 60 bots a skill:
+
+| Skill | First run reaches place 2 / 3 | Median first win | Runs (won) | Death rate by place, 1 to 5 | Damage per foe by place (median) | Interrupts a run | The Reeve's poise breaks a fight | Winning run |
+|---|---|---|---|---|---|---|---|---|
+| 0.3 | 58 / 58 of 60 (97%, 97%) | run 1 (60 of 60) | 370 (334) | 3.5, 0.3, 0.8, 0.6, 1.5% | 9.8, 2.5, 2.6, 2.7, 15.1 | 44.1 | 3.8 | 5.0 min |
+| 0.5 | 60 / 60 | run 1 (60 of 60) | 361 (351) | 0, 0, 0, 0, 0% | 6.0, 1.3, 1.4, 0.0, 10.0 | 45.7 | 3.8 | 5.2 min |
+| 0.9 | 60 / 60 | run 1 (60 of 60) | 364 (339) | 0, 0, 0.8, 0, 0.3% | 1.3, 0, 0, 0, 4.4 | 46.9 | 4.1 | 9.0 min |
+
+Stuck runs (the bot cannot reach a keeper, almost all at the Fen's mill; counted apart): 12 at 0.3, 10 at 0.5, 21 at 0.9. Hooks from braced foes a run: 0.19, 0.08 and 0.01. The catalogue at 0.5 (`MAXRUNS=30 AFTER=30 WORKERS=4 node qa/lab/gloam-downs-bot.mjs 10 0.5 1`): 25% bought by run 8, 50% by run 15, 75% by run 22, all of it by run 28; 267 of 300 runs had a buy.
+
+Against the targets:
+- At 0.3, place 2 in 80% of first runs: **met** (97%). Place 3 in 40%: **met** (97%).
+- At 0.3, the median first win in run 8 to 20: **missed**, run 1. Too easy for the bot.
+- At 0.5, run 3 to 8: **missed**, run 1. Too easy for the bot.
+- At 0.9, run 1 to 2: **met**, run 1.
+- No death spike: **missed by the ratio test** at 0.3 (the Gaol's 3.5% is 2.7 times the mean of places 1 to 4, 1.3%) and 0.9 (the Fen's 0.8% is 4 times a mean of 0.2%); at 0.5 no bot dies, so there is nothing to compare. No place kills more than 3.5% of the runs that reach it, at any skill, and Barrow Crown is under 2 times the mean at every skill.
+- Damage per foe rising 0.9 to 1.6 times a place: **missed**. It falls after the Gaol (the run's first fights, before any growth) and jumps at Barrow Crown (the Reeve counts as one foe).
+- The 0.5 bot interrupts more than 3 times a run: **met** (45.7).
+- A buy in two of three runs: **met** (267 of 300).
+
+**Why the gentle curve stays.** The run-count targets were set before the interrupts were measured. With them, the bot stops nearly every wind-up of a Snuffer, a Pitchrook or a Mirelight that comes near it, so only the Ironback's armored charge, the coals, the elites' specials and the Barrow Reeve can hurt it. Every setting that met the run counts (H, and G past them) did it by putting a wall at The Bell Knoll and Barrow Crown (69% of the 0.5 runs that reach Barrow Crown die there in H), which is the "unnatural" scaling the player asked to remove, and G and H hit harder at Barrow Crown than the game before this change. The curve as designed keeps every place fair and lets the player's interrupts carry them, as asked. A bot is not a person: it swings on every other step and never hesitates, so a person will take more hits than these numbers show. The next step is a playtest by the player: if it now feels too easy, H's shape at a lower damage (depth damage 0.25 to 0.3 at power 1.5) is the lever to try first, and the bot will show where its deaths fall.
+
+What the steps showed:
+- **The interrupts change everything.** With the old curve and the fight rules alone (step "rules"), a 0.5 bot first wins in run 2 (it was run 9 before this change), and the slow bot in run 10 (it was run 30, 11 of 60 within 40 runs). The bot stops 40 to 55 wind-ups a run. It swings at every foe in reach, and a cut lands in about 0.12 s, well inside a hook's 0.55 s wind-up, so a Snuffer that winds up beside it is cut off whatever the bot's skill; the cut-in chance only matters for a wind-up it reads before it is in reach.
+- **A linear curve cannot bring deaths back.** Steps A to F raise the depth line up to ×3.0 damage and ×4.2 health at Barrow Crown, and two or three tokens: the 0.5 bot still wins its first run. The early places never kill (their foes are cut off), so all the deaths that come back come at Barrow Crown.
+- **The run-count targets need the old shape.** Only a curve as steep as the one the player found too hard (H: power 1.5, ×4.2 damage at Barrow Crown) brings the 0.5 bot to run 6 and the 0.3 bot to run 17, and then 70% of the runs that reach Barrow Crown die there: the wall the player asked to remove.
+- **The "no death spike" target and the run counts cannot both hold** with these levers: places 1 and 2 kill almost no bot at any setting, so any setting with enough deaths for the run counts puts them in the last two places.
+
+## Checks
+Run on the finished code, on 2026-11-26. The e2e checks ran on software WebGL (SwiftShader) in Chromium, with the site served by `python3 -m http.server`.
+- Node: every `qa/lab/gloam-downs*.test.mjs` passes: fair 18 (new), foes 32, foes-ai 44, feel 12, run 70, boss 29, sound 31, seed 10, growth 29, builds 34, abilities 28, camera 49, keys 9, lattice 16, life 13, mouse 11, screens 11, stairs 1, uniform-blocks 10, and the explorer's 33. `qa/lab/gloam-downs-zones.mjs`: 177 ok, no failure.
+- The boss sim (`node qa/lab/gloam-downs-boss.sim.mjs`, the Reeve with its poise): first win for 38 of 40 bots at 0.3 (median 2 tries) and 40 of 40 at 0.5, 0.7 and 0.9.
+- The music demo, `cues` group: 134 files, every target met; `snap` at -18.9 LUFS momentary, between cut 1 (-21.1) and the boss slam (-13.3), its three bands within 15 dB. Its first recipe (a 40 ms knock) measured -25.8, under cut 1, so the knock and the crackle were made longer and louder.
+- `node qa/arcade/quiet.mjs --only=lab/gloam-downs`: 35 of 35.
+- `openspec validate gloam-downs-fair-fight --strict` and `gloam-downs-growth --strict`: valid (each notes that an archive would refuse its MODIFIED requirements until `gloam-downs-run` has a canonical spec; this change must be archived after the earlier ones).
+- Browser: `gloam-downs-run.interrupt.e2e.mjs` (new) 7 checks; run.fight 8, run.boss 24 (the poise line at 390x844, 320x640, 360x640, 800x600 and 844x390 on touch, 1280x720 and 800x600 with a mouse), run.abilities 9, run.growth 4, run.cards 12, run.input 17, run.builds 7, run.feel 5, run.sound 19, run.lineup 15, run.swing 2, camera 8, mouse 8, clicks 46, cutaway 1, screens 18, and the explorer's `gloam-downs.e2e.mjs` 17. `gloam-downs-life.e2e.mjs`: its four parts that show life (seen, crows, hush, reduced motion) pass; its frame-time part was measured for 10 views with `WARM=2 DRAWS=20 BLOCK=5` (life against none from 0.986 to 1.034 times) and then stopped by the session's 30-minute limit for a background job, as software WebGL draws about one frame in 10 s. `life.js` and `beds.js` do not change here.
+- Pictures (390x844 and 1280x720): a flinch, an armored wind-up (the Ironback's rim of 8 cold dabs round its body, clear of its lane) and a cancelled hook (the snap's sparks at the Snuffer).
+- Not run: a real phone, a real pad (the pad was mocked), listening on speakers (the snap was measured, not heard), and a run played by hand. The run-count targets were measured only with the bot, and a person plays less evenly than it does.

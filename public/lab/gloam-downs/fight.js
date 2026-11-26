@@ -4,7 +4,7 @@
 // cracks, the bursts and the glim motes, and shows the ember notches at the screen's edge for wind-ups out of view and toward a dark
 // beacon's keepers. At Barrow Crown it does the same for the Barrow Reeve (boss.js): its slot, its markers and shards, the grave
 // candles, and the caged light that rides at the lantern after the fall. main.js makes one for each place of a run.
-import { makeFoes, poseOf, phaseOf, ringAt, laneAt, MARKERS } from './foes.js';
+import { makeFoes, poseOf, phaseOf, ringAt, laneAt, MARKERS, rimOf, ARMOR } from './foes.js';
 import { makeBoss, poseOfBoss, lightAt, lanternOf, REEVE, ATTACKS } from './boss.js';
 import { makeSparks, OVER } from './sparks.js';
 import { makeFeel, gradeFloats, FEEL } from './feel.js';
@@ -13,7 +13,7 @@ import { writeBone, rotX, rotZ } from './pool.js';
 import { bladeAt, SWINGS } from './play.js';
 import { makeCombo, COMBO } from './combo.js';
 import { mixZones } from './mix.js';
-import { ember, emberOf, foeScale, bossScale } from './run.js';
+import { ember, emberOf, foeScale, bossScale, tokensOf } from './run.js';
 
 
 const STEP = 1 / 60;
@@ -49,6 +49,8 @@ const app = (a, v) => [a[0] * v[0] + a[1] * v[1] + a[2] * v[2], a[3] * v[0] + a[
 /* the lamp's halo at a combo tier (combo.js): its dabs ring the lantern in lamp slots 46 and 47, never fire 37, so fire stays the
    brightest colour; an elite's crown of 6 dabs in slot 34 circles its head; a relic on the ground is a small lamp of 5 dabs (46, 47).
    With reduced motion the halo and the crown stand still */
+// the armor rim: its dabs' size, how far out from the body (m), its lift, and its spin; in an armored wind-up larger by 1.3 and up to 40% more
+export const RIM = { s: 0.032, out: 0.18, lift: 0.08, spin: 0.6, spinArmor: 2.2, armorS: 1.3, grow: 0.4 };
 export const HALO = { r: 0.24, s: 0.028, spin: 1.6, bob: 0.03, crown: 6, crownR: 0.2, crownS: 0.03, relic: 5, relicR: 0.1, relicS: 0.035 };
 
 /* makeFight({ walk, meta, world, pool, rs, max, still, fx, project, doc, mix, emit, dressOf, groundRelics }): max() is the run's
@@ -108,7 +110,7 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
   // the seed's foe mix and the elite's zone; the arena and the guard zones stay as baked
   const zones = mix && meta.zones ? mixZones(meta.id, meta.zones, codes.join(''), seed, mix) : meta.zones;
   const combo = makeCombo({ emit, best: rs.run?.combo ?? 0 });
-  const foes = makeFoes({ walk, meta: { ...meta, zones }, slots: codes, seed, onScreen, water, combo, scale: rs.run ? foeScale(rs.run) : null });
+  const foes = makeFoes({ walk, meta: { ...meta, zones }, slots: codes, seed, onScreen, water, combo, scale: rs.run ? foeScale(rs.run) : null, tokens: rs.run ? tokensOf(rs.run) : 1 });
   const sparks = pool.extra && pool.extra.end > pool.extra.first ? makeSparks(world, pool.extra.first, pool.extra.end - pool.extra.first, meta.pal, { glow: 64 }) : null;
   const feel = makeFeel({ pal: meta.pal, still, fx });
   const fits = new Map(); // a foe's marker laid on the ground: its fit, kept while the marker stands where it is
@@ -287,6 +289,11 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
         }
         break;
       case 'foeOut': sparks?.drops(e.x, e.y + 0.6, e.z, 33, 10, 1.8, 2.5); break;
+      // a hit stops an attack, or breaks a poise: a kick of 0.06 (none with reduced motion) and a burst of fire sparks at the chest
+      case 'snap':
+        feel.snap();
+        if (sparks) { sparks.sparks(e.x, e.y, e.z, 35, 12, 3.8); sparks.flash(e.x, e.y, e.z, 35, 0.3, 0.08); }
+        break;
       // a poise broken: a kick of 0.08, and an ember ring at its chest
       case 'stagger':
         feel.stagger();
@@ -524,6 +531,20 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
       const a = (i / n) * Math.PI * 2 + t * HALO.spin, r = HALO.r * k, b = still ? 0 : HALO.bob * Math.sin(t * 5 + i);
       out.push({ kind: 'halo', x: L[0] + Math.sin(a) * r, y: L[1] + b + (i % 2 ? 0.05 : -0.05), z: L[2] + Math.cos(a) * r, ci: i % 2 ? 47 : 46, s: HALO.s * k });
     }
+    /* the armor rim (gloam-downs-fair-fight "Armor that shows"): a ring of cold dabs in slot 39 round a heavy or braced foe's body at
+       its chest, one for each 10 poise left; in an armored wind-up twice as many, growing a little over the wind-up and turning (with
+       reduced motion it holds its size and stands still). It comes before the crowns, so the cap of steady dabs never cuts it */
+    for (const f of foes.foes) {
+      if (f.state === 'dying' || !foes.shown(f)) continue;
+      const rim = rimOf(f, foes.step);
+      if (!rim) continue;
+      const size = dressOf(f)?.size || 1, y = f.y + f.T.chest * size, R = (f.T.r + RIM.out) * (f.elite ? 1 : size);
+      const s = RIM.s * (rim.armor && !still ? 1 + RIM.grow * rim.k : 1) * (rim.armor ? RIM.armorS : 1);
+      for (let i = 0; i < rim.n; i++) {
+        const a = (i / rim.n) * Math.PI * 2 + (still ? 0 : t * (rim.armor ? RIM.spinArmor : RIM.spin));
+        out.push({ kind: 'armor', x: f.x + Math.sin(a) * R, y: y + (i % 2 ? RIM.lift : -RIM.lift), z: f.z + Math.cos(a) * R, ci: ARMOR.slot, s });
+      }
+    }
     for (const f of foes.foes) {
       const d = f.state !== 'dying' && foes.shown(f) ? dressOf(f) : null;
       if (!d?.crown) continue;
@@ -692,9 +713,10 @@ transform-origin:3px 6px;transform:rotate(var(--a)) translateX(14px)}
   /* ---------------- ?test ---------------- */
   // __gloam.foes(): each awake foe with its pose's shake
   G.list = () => [
-    ...foes.list().map(({ ref, ...f }) => ({ ...f, shake: shakeOf(ref), size: dressOf(ref)?.size || 1 })),
+    ...foes.list().map(({ ref, ...f }) => ({ ...f, shake: shakeOf(ref), size: dressOf(ref)?.size || 1, pose: (clipOf(ref) || poseOf(ref, G.game / 60)).clip })),
     ...(boss?.shown() ? [{ id: boss.id, type: 'B', zone: 'arena', x: boss.x, y: boss.y, z: boss.z, yaw: boss.yaw, hp: boss.hp, state: boss.state, phase: boss.phase,
-      move: boss.move || boss.state, t: (boss.move ? boss.mt : boss.t) / 60, flash: boss.flash, held: !!boss.hold, shake: shakeOf(boss) }] : [])
+      move: boss.move || boss.state, t: (boss.move ? boss.mt : boss.t) / 60, flash: boss.flash, held: !!boss.hold, shake: shakeOf(boss),
+      weight: 'boss', poise: boss.poiseNow(), poiseMax: boss.poiseMax, flinch: boss.state === 'flinch' ? REEVE.poise.flinch - boss.t : 0 }] : [])
   ];
   const isBoss = q => !!boss && (q === boss.id || q === 'B' || q === boss);
   G.hooks = {

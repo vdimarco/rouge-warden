@@ -131,26 +131,30 @@ function pageFight(walk, { codes = 'SSSPMI', still = false, fx = {}, hp } = {}) 
 }
 
 /* ---------------- poise and stagger ---------------- */
-{ /* two strings of three hits (86 damage) on an Ironback held in its charge's wind-up: it staggers, its charge never runs, and
-     __gloam.foes() (fight.list) shows the stagger for 72 steps */
+{ /* break an Ironback (gloam-downs-fair-fight "Poise and stagger"): cut1 and cut2 on an Ironback held in its charge's wind-up take
+     20 and 22 off its 40 poise (twice their damage in a wind-up): it staggers on cut2, its charge never runs, and __gloam.foes()
+     (fight.list) shows the stagger for 72 steps */
   const P = pageFight(FLAT, { hp: 1000 });
   const r = P.G.hooks.spawn('I', 0, -5, 0);
   const I = P.G.foes.find(r.id);
-  assert.equal(poiseOf(I), 60);
+  assert.equal(poiseOf(I), 40);
   P.G.hooks.hold(r.id, 'charge', 0.3);
   P.step({});
-  const raws = [...HITS.map(h => h.dmg), ...HITS.map(h => h.dmg)], dealtHp = [];
+  P.G.hooks.hold(r.id, null);
+  const raws = [HITS[0].dmg, HITS[1].dmg, HITS[2].dmg], dealtHp = [], poise = [];
   let at = null;
   for (const [i, raw] of raws.entries()) {
     const before = I.hp;
-    I.hit(raw, { from: [P.s.x, P.s.z], kind: HITS[i % 3].id });
+    I.hit(raw, { from: [P.s.x, P.s.z], kind: HITS[i].id });
     dealtHp.push(before - I.hp);
+    poise.push(I.poise);
     if (I.state === 'stagger' && at === null) at = i;
+    if (i === 0) { assert.equal(I.poise, 20, 'cut1 takes 20 off in the wind-up'); assert.equal(I.move, 'charge'); }
     P.step({});
   }
-  assert.equal(raws.reduce((a, b) => a + b, 0), 86);
-  assert.equal(at, 4, `the poise breaks on the 5th hit (${at})`);
-  assert.equal(dealtHp[5], Math.round(22 * STAGGER.take), 'a hit in the stagger takes 25% more');
+  assert.equal(at, 1, `the poise breaks on cut2 (${at})`);
+  assert.equal(dealtHp[2], Math.round(22 * STAGGER.take), 'a hit in the stagger takes 25% more');
+  assert(P.all.some(e => e.type === 'snap'), 'the break snaps');
   assert(!I.hold && I.move === null, 'the wind-up ends');
   const left = [];
   let charged = false;
@@ -161,11 +165,27 @@ function pageFight(walk, { codes = 'SSSPMI', still = false, fx = {}, hp } = {}) 
     P.step({});
   }
   const steps = left.filter(x => x > 0).length, first = left[0];
-  assert(steps >= 66 && steps <= 72 && first <= 72, `the stagger shows for ${steps} steps (from ${first})`);
+  // 72 play steps; the snap's hit stop of 5 game steps holds it too
+  assert(steps >= 66 && steps <= 72 + 5 && first <= 72, `the stagger shows for ${steps} steps (from ${first})`);
   assert(!P.all.some(e => e.type === 'cue' && e.cue === 'charge'), 'the charge never ran');
   assert(P.all.some(e => e.type === 'stagger'), 'the stagger event');
   // the stagger kicks the camera, and its crack glows ember: some sparks in slot 33 were laid
-  pass('an Ironback broken in its wind-up staggers for 72 steps (1.2 s), takes 25% more, and its charge never runs', { at, dealt: dealtHp, charged });
+  pass('break an Ironback: cut1 and cut2 in its charge wind-up break its 40 poise, it staggers for 72 steps (1.2 s), takes 25% more, and its charge never runs', { at, dealt: dealtHp, charged });
+}
+{ // one string outside a wind-up: cut1, cut2 and the finisher on a walking Ironback; it staggers on the finisher (43 against 40)
+  const P = pageFight(FLAT, { hp: 1000 });
+  const r = P.G.hooks.spawn('I', 0, -8, 0);
+  const I = P.G.foes.find(r.id);
+  I.cool = 1e6;
+  P.step({});
+  let at = null;
+  for (const [i, h] of HITS.entries()) {
+    I.hit(h.dmg, { from: [P.s.x, P.s.z], kind: h.id, knock: h.knock, push: h.push });
+    if (I.state === 'stagger' && at === null) at = i;
+    P.step({});
+  }
+  assert.equal(at, 2, `it staggers on the finisher (${at})`);
+  pass('one string outside a wind-up: a walking Ironback staggers on the finisher (43 damage against 40 poise)', { at });
 }
 { // no stagger again within 4 s of its end; the poise fills 3 s after the last hit
   const P = pageFight(FLAT, { hp: 1000 });
@@ -192,9 +212,9 @@ function pageFight(walk, { codes = 'SSSPMI', still = false, fx = {}, hp } = {}) 
   s.hp = 1000;
   for (let i = 0; i < 6; i++) { s.hit(30, {}); P.step({}); }
   assert.notEqual(s.state, 'stagger');
-  assert.equal(poiseOf({ type: 'S', elite: {} }), 50);
-  assert.equal(poiseOf({ type: 'I', elite: {} }), 90);
-  pass('no stagger within 4 s of the last one\'s end; poise fills 3 s after the last hit; an elite has 50, the Bellwether 90, a Snuffer none');
+  assert.equal(poiseOf({ type: 'S', elite: {} }), 40);
+  assert.equal(poiseOf({ type: 'I', elite: {} }), 70);
+  pass('no stagger within 4 s of the last one\'s end; poise fills 3 s after the last hit; an elite has 40, the Bellwether 70, a Snuffer none');
 }
 
 /* ---------------- the combo ---------------- */

@@ -269,7 +269,9 @@ if (want('cues')) {
     ['hit-post', 'hit', { hit: 'cut1', on: ['post'], stop: 3 }], ['hit-ironback', 'hit', { hit: 'cut1', on: ['I'], stop: 3 }],
     ['land', 'land', { fallen: 2, on: ['S'], stop: 5 }], ['hurt', 'hurt', { dmg: 16 }],
     ['out-snuffer', 'out', { type: 'S' }], ['out-pitchrook', 'out', { type: 'P' }], ['out-mirelight', 'out', { type: 'M' }], ['out-ironback', 'out', { type: 'I' }],
-    ['slam-ironback', 'slam', { type: 'I' }], ['slam-boss', 'slam', { type: 'B', foe: 'reeve' }], ['sweep', 'sweep', { type: 'B' }], ['stumble', 'stumble', { type: 'B' }]
+    ['slam-ironback', 'slam', { type: 'I' }], ['slam-boss', 'slam', { type: 'B', foe: 'reeve' }], ['sweep', 'sweep', { type: 'B' }], ['stumble', 'stumble', { type: 'B' }],
+    // the snap: a hit that stops an attack or breaks a poise (gloam-downs-fair-fight)
+    ['snap', 'snap', { kind: 'S', why: 'cancel', type: 'S' }]
   ];
   // each variant with all its layers (the bands), and variant 0's body alone, whose pitch is read at its start and again at 50 ms (a
   // cut's body lasts about 90 ms) or 100 ms
@@ -500,6 +502,8 @@ if (all['cue-hit-cut1-v0']) {
   need(mm('hit-cut2') >= cut1, 'cut 2 is under cut 1');
   need(mm('out-snuffer') - cut1 >= 3, `a kill is ${(mm('out-snuffer') - cut1).toFixed(1)} LU over cut 1, not 3`);
   need(mm('slam-boss') - cut1 >= 3, `the boss slam is ${(mm('slam-boss') - cut1).toFixed(1)} LU over cut 1, not 3`);
+  // the snap: as loud as a cut or louder (it marks the stop), and under the boss slam
+  if (all['cue-snap-v0']) need(mm('snap') >= cut1 - 1 && mm('snap') < mm('slam-boss'), `the snap is ${mm('snap')} (cut 1 ${cut1}, the boss slam ${mm('slam-boss')}): not between them`);
   const loudest = Object.entries(all).filter(([k]) => k.startsWith('cue-')).sort((a, b) => b[1].M - a[1].M)[0];
   need(loudest[0].startsWith('cue-slam-boss'), `the loudest cue is ${loudest[0]} (${loudest[1].M}), not the boss slam`);
   for (const [k, v] of Object.entries(all)) if (v.bands) { const top = Math.max(...v.bands); need(v.bands.every(b => top - b <= 15), `${k}: the three layers are ${v.bands.join(' / ')} dB, more than 15 dB apart`); }

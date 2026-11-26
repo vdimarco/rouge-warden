@@ -38,15 +38,15 @@ A hit on a light or medium foe outside its wind-up SHALL flinch it too. While it
 - **THEN** its recovery is 1.1 s (0.7 s and at most 0.4 s more). Check: Node test `gloam-downs-fair.test.mjs`.
 
 ### Requirement: The brace
-A light or medium foe that flinches three times within 3 s SHALL be braced for 1.0 s. A cancel and a knock-down SHALL each count as a flinch. A braced foe SHALL take damage and its knock back, but SHALL not flinch, and its wind-up SHALL not be cancelled by a plain hit. The finisher and the plunge SHALL still knock it down. A braced foe SHALL show the armor glow.
+A light or medium foe that flinches three times within 3 s SHALL be braced for 1.0 s, counted while it stands. A cancel and a knock-down SHALL each count as a flinch. A braced foe SHALL take damage and its knock back, but SHALL not flinch, and a wind-up it starts braced SHALL not be cancelled by a plain hit. The finisher and the plunge SHALL still knock it down. A braced foe SHALL show the armor glow.
 
 #### Scenario: No endless flinch
-- **WHEN** a bot with seed 7 swings at three Snuffers in the Gaol for 10 s, with no pause and no roll
-- **THEN** at least 2 hooks hit the lamplighter, and each came from a braced Snuffer or one the bot did not hit. Check: Node test `gloam-downs-fair.test.mjs`.
+- **WHEN** a bot with seed 7 turns to the nearest of three Snuffers with 500 health each and swings for 10 s, with no pause and no roll
+- **THEN** at least 2 hooks hit the lamplighter, and each came from a braced Snuffer or one the bot had not hit in the second before. Check: Node test `gloam-downs-fair.test.mjs`.
 
 #### Scenario: The third flinch
 - **WHEN** cut1, cut2 and the finisher land on a Snuffer within 1 s
-- **THEN** after the knock-down, `__gloam.foes()` shows it braced for the rest of the 1.0 s, and it glows. Check: Node test `gloam-downs-fair.test.mjs`.
+- **THEN** after the knock-down, `__gloam.foes()` shows it braced for its 1.0 s, and it glows. Check: Node test `gloam-downs-fair.test.mjs`.
 
 ### Requirement: Armor that shows
 A heavy foe SHALL show a rim of cold dabs in palette slot 39 round its body, one dab for each 10 poise left, rounded up, so the rim thins as the poise drains. In an armored wind-up the rim SHALL double and brighten over the wind-up. No armor dab SHALL use a fire slot (34 to 37) or the lamp's slots (46 and 47). With reduced motion the rim SHALL not pulse.
@@ -113,8 +113,8 @@ A foe that hurts the lamplighter SHALL step back 1.0 m over 0.4 s, and SHALL wai
 A foe whose chest is outside the view SHALL start a wind-up only with its tell cue played at its start, panned to its side and never dropped by the cue limit. Its wind-up SHALL be 0.25 s longer, and its notch SHALL show. A foe that cannot play its tell SHALL wait. With the sound off, the notch and the longer wind-up SHALL stay.
 
 #### Scenario: A Snuffer behind the camera
-- **WHEN** a test at 390 by 844 spawns a Snuffer 6.0 m to the right of the lamplighter with the voice limit full of hit cues
-- **THEN** its hook's wind-up lasts 48 steps, the cue log has `scrape` at its first step, and a notch shows at the right edge. Check: e2e `gloam-downs-run.interrupt.e2e.mjs`, and Node test `gloam-downs-fair.test.mjs`.
+- **WHEN** a test at 390 by 844 narrows the view and spawns a Snuffer 2.4 m to the right of the lamplighter, outside it
+- **THEN** its hook's wind-up lasts 48 steps, the cue log has `scrape` marked off screen at its first step, a notch shows at the right edge, and with the voice limit full of hit cues the tell still gets a voice. Check: e2e `gloam-downs-run.interrupt.e2e.mjs`, Node tests `gloam-downs-fair.test.mjs` and `gloam-downs-sound.test.mjs`.
 
 ### Requirement: Foe growth with sparks
 At load, each foe's health SHALL be ×(1 + 0.03 s) and its damage ×(1 + 0.015 s), where s is the sparks the run holds, counted up to 12. The Barrow Reeve SHALL keep its own 5% a spark. A spark SHALL give the lamplighter more than the foes gain from it.
@@ -148,7 +148,7 @@ A hit SHALL follow the foe's weight ("Foe weights"): a light or medium foe flinc
 
 #### Scenario: Finisher stops a hook
 - **WHEN** the finisher lands on a Snuffer that is not braced, during its hook's wind-up
-- **THEN** the Snuffer is knocked down for 0.6 s, and the hook does not land. Check: Node test `gloam-downs-run.test.mjs`.
+- **THEN** the Snuffer is knocked down for 0.6 s, and the hook does not land. Check: Node test `gloam-downs-foes-ai.test.mjs`.
 
 #### Scenario: An elite holds
 - **WHEN** one cut lands on the Wardmother as it chases
@@ -181,7 +181,7 @@ With no Mantle level and no wick, the lamplighter SHALL have 100 health at the s
 
 #### Scenario: Hit by a hook
 - **WHEN** a Snuffer's hook lands on the lamplighter with 100 health in the Gaol at Ember 0
-- **THEN** health shows 82, and the lamplighter slides back 1.2 m, ±0.15 m, and blinks. A second blow within 1.0 s does no damage. Check: Node test `gloam-downs-run.test.mjs`.
+- **THEN** health shows 82, and the lamplighter slides back 1.2 m, ±0.15 m, and blinks. A second blow within 1.0 s does no damage. Check: Node test `gloam-downs-run.test.mjs` (the push, the blink and the 1.0 s), and e2e `gloam-downs-run.fight.e2e.mjs` (82).
 
 #### Scenario: Walk into a foe
 - **WHEN** the lamplighter walks into a Snuffer that is not attacking
@@ -207,7 +207,7 @@ At place depth d (the run's first place 0, Barrow Crown 4), foes SHALL deal ×(1
 
 #### Scenario: Barrow Crown
 - **WHEN** a run with no spark reaches Barrow Crown at Ember 0
-- **THEN** a hook deals 25 (16 × 1.1 × 1.4), so a lamplighter with 100 health takes 4 hooks or more to go down, and a Snuffer has about 104 health (50 × 1.15 × 1.8). Check: Node test `gloam-downs-foes.test.mjs`.
+- **THEN** a hook deals 25 (16 × 1.1 × 1.4), so a lamplighter with 100 health takes 4 hooks or more to go down, and a Snuffer has 103 health (50 × 1.15 × 1.8). Check: Node test `gloam-downs-foes.test.mjs`.
 
 #### Scenario: The table
 - **WHEN** `node qa/lab/gloam-downs-bot.mjs` starts

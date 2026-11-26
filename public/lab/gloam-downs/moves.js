@@ -47,7 +47,7 @@ export const MOVES = {
   roll: { steps: S(0.36), v: 9.0, end: 4.5, safe: [S(0.02), S(0.30)], cool: S(0.25), quick: S(0.12), drop: 3 },
   plunge: { high: 0.8, hang: S(0.08), v: 16, r: 1.6, heavyR: 2.0, dmg: 16, perM: 3, max: 28, heavy: 1.5, push: 1.5, knock: S(0.6), rec: S(0.30), stop: 5, rise: 1.2 },
   drink: { steps: S(0.8), v: 1.5 },
-  hurt: { lock: S(0.25), safe: S(0.9), push: 1.2, stop: 5 },
+  hurt: { lock: S(0.25), safe: S(1.0), push: 1.2, stop: 5 },
   fall: { below: -25, dmg: 10, firm: 1.0, every: 4 },
   shave: { steps: S(1.0), bonus: 0.5 },
   face: 10
@@ -434,7 +434,7 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
     return { move: f.move, ph: f.move, k: clamp(f.t / n, 0, 1), t: f.t, from: f.from, back: f.move === 'roll' && f.back };
   }
   // the hit lands on the lamplighter: no control for 0.25 s while it is pushed `dist` away from the source (walls stop the push),
-  // and safe for 0.9 s. It stops any move; a drink keeps its flask
+  // and safe for 1.0 s. It stops any move; a drink keeps its flask
   function knock(from, dist = MOVES.hurt.push) {
     const dx = s.x - from[0], dz = s.z - from[1], l = Math.hypot(dx, dz);
     f.dir = l > 1e-6 ? [dx / l, dz / l] : [-Math.sin(s.yaw), -Math.cos(s.yaw)];

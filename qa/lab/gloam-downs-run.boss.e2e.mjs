@@ -348,7 +348,13 @@ function layoutFaults() {
   });
   if (document.scrollingElement.scrollWidth > innerWidth + 1 || document.scrollingElement.scrollHeight > innerHeight + 1) out.push('the page scrolls');
   const r4 = r => r && [r.x, r.y, r.width, r.height].map(v => +v.toFixed(1));
-  return { out, boss: r4(rect.boss), hud: r4(rect.hud), tools: r4(rect.tools), lab: r4(rect.lab), games: r4(rect.games), cls: document.getElementById('hud').classList.contains('boss'), hint: shown(document.querySelector('#hud .hint')) };
+  // the Reeve's poise line (gloam-downs-fair-fight): a thin line under the health, inside the bar
+  const pl = document.querySelector('#bossBar .bpoise'), hb = document.querySelector('#bossBar .bbar');
+  if (rect.boss && pl && hb) {
+    const p = R(pl), h = R(hb);
+    if (!(p.height >= 1 && p.top >= h.bottom - 0.5 && p.left >= rect.boss.left - 0.5 && p.right <= rect.boss.right + 0.5 && p.bottom <= rect.boss.bottom + 0.5)) out.push(`the poise line ${r4(p)} is not under the health ${r4(h)} inside the bar ${r4(rect.boss)}`);
+  } else if (rect.boss) out.push('no poise line');
+  return { out, boss: r4(rect.boss), hud: r4(rect.hud), tools: r4(rect.tools), lab: r4(rect.lab), games: r4(rect.games), cls: document.getElementById('hud').classList.contains('boss'), hint: shown(document.querySelector('#hud .hint')), poise: pl ? r4(R(pl)) : null };
 }
 function pauseFaults() {
   const R = el => el.getBoundingClientRect();
@@ -368,7 +374,7 @@ function pauseFaults() {
 }
 {
   const sizes = {};
-  if (part('layout')) for (const [label, touch, list] of [['touch', true, [[390, 844], [320, 640], [360, 640], [800, 600]]], ['mouse', false, [[1280, 720], [800, 600]]]]) {
+  if (part('layout')) for (const [label, touch, list] of [['touch', true, [[390, 844], [320, 640], [360, 640], [800, 600], [844, 390]]], ['mouse', false, [[1280, 720], [800, 600]]]]) {
     const { ctx, page, errors } = await open({ width: list[0][0], height: list[0][1] }, touch);
     await bossIn(page);
     // the widest HUD, then the intro and the fight
@@ -391,10 +397,13 @@ function pauseFaults() {
       assert(bx >= f.lab[0] + f.lab[2] && bx + bw <= f.games[0], `the boss bar between ◀ Lab and Games at ${at}`);
       assert(bw <= (touch ? 360 : 520) + 0.5, `the boss bar ${bw} px at ${at}`);
       if (!touch && w === 1280) assert(Math.abs(bw - 520) < 0.5 && Math.abs(bh - 44) < 0.5, `the boss bar 520 by 44 at 1280x720 (${bw}x${bh})`);
-      const [hw, hh, tx] = RECTS[w], tw = w <= 520 ? 112 : 134;
-      assert(f.hud[0] >= 10 && f.hud[1] >= 60 && f.hud[0] + f.hud[2] <= 10 + hw + 0.5 && f.hud[1] + f.hud[3] <= 60 + hh + 0.5, `the HUD ${f.hud} in ${hw}x${hh} at ${at}`);
-      assert(f.tools[0] >= tx - 0.5 && f.tools[0] + f.tools[2] <= tx + tw + 0.5 && f.tools[3] <= 44.5, `the tools ${f.tools} at ${at}`);
-      sizes[at] = { bar: f.boss, hud: f.hud };
+      // (a phone held sideways, 844x390, has no rects in the stage 3 spec: the overlap checks above and the poise line cover it)
+      if (RECTS[w]) {
+        const [hw, hh, tx] = RECTS[w], tw = w <= 520 ? 112 : 134;
+        assert(f.hud[0] >= 10 && f.hud[1] >= 60 && f.hud[0] + f.hud[2] <= 10 + hw + 0.5 && f.hud[1] + f.hud[3] <= 60 + hh + 0.5, `the HUD ${f.hud} in ${hw}x${hh} at ${at}`);
+        assert(f.tools[0] >= tx - 0.5 && f.tools[0] + f.tools[2] <= tx + tw + 0.5 && f.tools[3] <= 44.5, `the tools ${f.tools} at ${at}`);
+      }
+      sizes[at] = { bar: f.boss, hud: f.hud, poise: f.poise };
       await shot(page, `layout-boss-${label}-${w}x${hgt}`);
     }
     // the pause panel in the boss fight, at each size

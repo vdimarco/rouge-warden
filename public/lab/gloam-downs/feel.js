@@ -10,15 +10,15 @@
 
 export const FEEL = {
   tint: 3, zoom: 7, zoomK: 1.05, beat: 55, low: 0.3, pull: 0.25, still: 0.15, fade: 72, fall: 6, kick: 2.4, decay: 0.6, most: 0.15,
-  add: { cut1: 0, cut2: 0, fin: 0.17, plunge: 0.18, hurt: 0.1, stagger: 0.08, slam: 0.22, relic: 0 }, heavy: 20,
+  add: { cut1: 0, cut2: 0, fin: 0.17, plunge: 0.18, hurt: 0.1, stagger: 0.08, slam: 0.22, relic: 0, snap: 0.06 }, heavy: 20,
   // the boss intro's zoom, eased in and out over 30 steps, and the letterbox bars' height as a share of the screen
   intro: 1.15, introEase: 30, bars: 0.12
 };
-/* poise and stagger (after poise in Dark Souls and stance in Elden Ring, cited from memory): each hit takes its damage from the poise
-   too; at 0 the foe staggers for 1.2 s (72 steps): it stops, its wind-up ends, its crack glows and it takes 25% more. Poise fills again
-   3 s after the last hit, and a stagger cannot start again within 4 s of its end. The Ironback has 60, an elite 50, the Bellwether
-   (the elite Ironback) 90; the boss has none */
-export const STAGGER = { steps: 72, gap: 240, refill: 180, take: 1.25, poise: { I: 60 }, elite: 50, eliteI: 90 };
+/* poise and stagger (after poise in Dark Souls and stance in Elden Ring, cited from memory; gloam-downs-fair-fight "Poise and armor"):
+   each hit takes its damage from the poise too, twice over in a wind-up (wind); at 0 the foe staggers for 1.2 s (72 steps): it stops,
+   its wind-up ends, its crack glows and it takes 25% more. Poise fills again 3 s after the last hit, and a stagger cannot start again
+   within 4 s of its end. The Ironback has 40, an elite 40, the Bellwether (the elite Ironback) 70; the boss has its own (boss.js) */
+export const STAGGER = { steps: 72, gap: 240, refill: 180, take: 1.25, poise: { I: 40 }, elite: 40, eliteI: 70, wind: 2 };
 export const poiseOf = f => f.poiseMax ?? (f.elite ? (f.type === 'I' ? STAGGER.eliteI : STAGGER.elite) : STAGGER.poise[f.type] ?? 0);
 const ease = u => { const k = Math.max(0, Math.min(1, u)); return k * k * (3 - 2 * k); };
 const RED = 0x8a1a12, HURT = 0xb02418;
@@ -49,6 +49,8 @@ export function makeFeel({ pal, still = false, fx = {} }) {
   F.shock = (k = FEEL.add.slam) => { F.trauma = Math.min(1, F.trauma + k); };
   // a foe's poise breaks
   F.stagger = () => F.shock(FEEL.add.stagger);
+  // a hit cancels a foe's attack, or breaks its poise: a small kick (none with reduced motion, as every kick)
+  F.snap = () => F.shock(FEEL.add.snap);
   F.dead = () => { if (F.fadeAt < 0) F.fadeAt = F.step; };
   // the boss's fall: slots 1 to 31 pull toward fire slot 37 by up to 50% for 6 steps, so the picture is never brighter than fire (a
   // white flash would be); none with reduced motion
