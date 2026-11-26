@@ -23,9 +23,9 @@ Two builders work in parallel worktrees from `720edbba`. design.md "Who builds w
 - [x] 2.5 The five hooks in `main.js`, exactly as design.md writes them, and `'life-stir'` at the end of `EVENTS` in `bus.js`.
 - [x] 2.6 `beds.js` (new) and `run-sound.js`: a bed per place, the gust swell, the flock's wings and caws at the flock, the duck in a fight, the stop in the boss fight and the Lamp-room.
 - [x] 2.7 `qa/lab/gloam-downs-life.test.mjs` (new): the Node scenarios of Ambient life, Life answers the lamplighter, Life never looks like a tell (no fire slot), Life budget (the count), Life with reduced motion and The world answers the screens; it prints each place's count. `GLOAM_WORLDS=0` skips the baked places.
-- [ ] 2.8 `qa/lab/gloam-downs-life.e2e.mjs` (new): life can be seen, crows lift, the hush, reduced motion, and the frame-time check of design.md "Budget and the measured check", which prints each view's ratio. `SHOTS=<dir>` keeps a picture of each place at 390x844 and 1280x720.
+- [x] 2.8 `qa/lab/gloam-downs-life.e2e.mjs` (new): life can be seen, crows lift, the hush, reduced motion, and the frame-time check of design.md "Budget and the measured check", which prints each view's ratio. `SHOTS=<dir>` keeps a picture of each place at 390x844 and 1280x720.
 - [x] 2.9 `gloam-downs-sound.test.mjs`: the bed scenarios. `gloam-downs-music-demo.mjs`: the `beds` group and its targets.
-- [ ] 2.10 Run `gloam-downs-run.fight.e2e.mjs` (the phone tell check with life on), `gloam-downs-foes.test.mjs`, `gloam-downs.test.mjs`, `gloam-downs-run.test.mjs` and `node qa/arcade/quiet.mjs --only=lab/gloam-downs`.
+- [x] 2.10 Run `gloam-downs-run.fight.e2e.mjs` (the phone tell check with life on), `gloam-downs-foes.test.mjs`, `gloam-downs.test.mjs`, `gloam-downs-run.test.mjs` and `node qa/arcade/quiet.mjs --only=lab/gloam-downs`.
 
 ## 3. Merge pass
 - [ ] 3.1 Merge E onto S. Check that Builder E's five hook lines and the `bus.js` line are in place once each.

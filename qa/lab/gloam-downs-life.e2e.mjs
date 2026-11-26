@@ -187,8 +187,8 @@ if (part('time')) {
   assert(ownMed <= 0.25, `life's own median time a draw is ${ownMed} ms`);
   pass('the frame time at 390x844: life costs 5% or less over all 15 views, 8% or less in each, the explorer too; life\'s own time 0.25 ms or less', { overall: +overall.toFixed(3), worst, explorer: +eRatio.toFixed(3), own: ownMed });
 }
-if (SHOTS) { // a picture of each place at 1280x720, and with touch at 320x640 and 844x390 (390x844 comes from the frame-time part)
-  for (const [w, h, touch] of [[1280, 720, false], [320, 640, true], [844, 390, true]]) {
+if (SHOTS) { // a picture of each place at 1280x720, and with touch at 320x640 and 844x390 (390x844 comes from the frame-time part, or here without it)
+  for (const [w, h, touch] of [[1280, 720, false], [320, 640, true], [844, 390, true], ...(part('time') ? [] : [[390, 844, true]])]) {
     if (process.env.SIZES && !process.env.SIZES.split(',').includes(`${w}x${h}`)) continue;
     const { ctx, page, errors } = await open({ width: w, height: h }, { touch });
     for (const id of PLACES) { await goPlace(page, id); await G(page, () => window.__gloam.draw()); await shot(page, `life-${id}-${w}x${h}`); }

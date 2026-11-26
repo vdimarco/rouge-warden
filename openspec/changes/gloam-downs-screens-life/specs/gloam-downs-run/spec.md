@@ -144,7 +144,7 @@ Life SHALL use at most 1,200 splats in a place, and the place with its pool, the
 
 #### Scenario: The frame time on a phone layout
 - **WHEN** each place is drawn at 390x844 with touch at three views (start, a lamp, the beacon), 120 timed draws each, life on and off by turns in blocks of 10
-- **THEN** the median ratio over all 15 views is 1.05 or less, no view is over 1.08, and life's own median time a draw is 0.25 ms or less. Check: e2e `gloam-downs-life.e2e.mjs` (SwiftShader; no real phone is checked).
+- **THEN** the median ratio over all 15 views is 1.05 or less, no view is over 1.08, and life's own median time a draw is 0.25 ms or less. Check: e2e `gloam-downs-life.e2e.mjs` (SwiftShader; `WARM`, `DRAWS` and `BLOCK` lower the counts on a slow machine, and the run prints them; no real phone is checked).
 
 ### Requirement: Life with reduced motion
 With reduced motion life SHALL hold still: no rising, falling, wandering or flying. Flicker SHALL become a soft steady glow, crows SHALL fade where they sit instead of flying, and leaves SHALL lie on the ground.

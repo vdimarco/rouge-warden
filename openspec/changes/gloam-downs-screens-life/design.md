@@ -206,7 +206,40 @@ Builder S keeps these five lines where they are when it changes main.js, and if 
 - **The bus count.** `gloam-downs-builds.test.mjs` and `gloam-downs-sound.test.mjs` counted 23 bus events; with `life-stir` they count 24.
 
 ### Measured (Builder E, SwiftShader, 390x844 with touch)
-MEASURED_TABLE
+One run of `gloam-downs-life.e2e.mjs` with `WARM=3 DRAWS=24 BLOCK=4`, not the spec's 15, 120 and 10. On this machine SwiftShader took 6 to 15 s a draw, with another browser check running beside it, so the full counts would have taken about 8 hours. The blocks go on, off, off, on, so a slow spell falls on both. With so few draws a view, the noise is a few percent either way (Bell Knoll's beacon reads 0.857). Life's own time is the median of its `draw` over the view.
+
+| View | With life (ms) | Without (ms) | Ratio | Life's own (ms) |
+|---|---|---|---|---|
+| gaol/start | 14503 | 14654 | 0.990 | 0.2 |
+| gaol/lamp | 13935 | 13869 | 1.005 | 0.2 |
+| gaol/beacon | 11150 | 11695 | 0.953 | 0.2 |
+| ramparts/start | 9558 | 9651 | 0.990 | 0.3 |
+| ramparts/lamp | 11403 | 11519 | 0.990 | 0.3 |
+| ramparts/beacon | 7965 | 8041 | 0.991 | 0.2 |
+| fen/start | 8723 | 8790 | 0.992 | 0 |
+| fen/lamp | 7537 | 7560 | 0.997 | 0.1 |
+| fen/beacon | 6955 | 7281 | 0.955 | 0.2 |
+| bells/start | 9716 | 9650 | 1.007 | 0 |
+| bells/lamp | 8933 | 9206 | 0.970 | 0 |
+| bells/beacon | 7157 | 8349 | 0.857 | 0.1 |
+| barrows/start | 6978 | 6887 | 1.013 | 0 |
+| barrows/lamp | 6415 | 6575 | 0.976 | 0 |
+| barrows/beacon | 6189 | 6287 | 0.984 | 0.1 |
+| explorer/gaol | 6739 | 6729 | 1.002 | |
+
+Over all 15 views: 0.981 (at most 1.05). Worst view: 1.013 (at most 1.08). Life's own median: 0.1 ms (at most 0.25). Life's count: the Gaol 1,010, the Crow Wall 862, Lantern Fen 756, the Bell Knoll 752, Barrow Crown 762. No real phone was checked.
+
+Bed levels (music demo `beds` group, 30 s, two gusts and one flock, integrated LUFS): bed alone, then the place's explore music, then the two together.
+
+| Place | Bed | Music | Both | Lift |
+|---|---|---|---|---|
+| The Sunken Gaol | -46.6 | -34.5 | -34.3 | 0.2 |
+| The Crow Wall | -46.9 | -36.6 | -36.2 | 0.4 |
+| Lantern Fen | -48.8 | -38.7 | -38.3 | 0.4 |
+| The Bell Knoll | -42.8 | -32.7 | -32.3 | 0.4 |
+| Barrow Crown | -40.8 | -30.6 | -30.5 | 0.1 |
+
+No one listened to the beds on speakers or headphones; the levels are measured only.
 
 ## Risks
 - **The title adds a screen.** A returning player pressed Begin in the Lamp-room before; now they press Begin on the title. The count of presses is the same.
