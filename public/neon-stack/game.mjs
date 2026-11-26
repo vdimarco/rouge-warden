@@ -5,10 +5,7 @@ import { createRenderer, lookAt, perspective, mul } from "./render.mjs";
 
 const FOV_PORTRAIT = 20 * Math.PI / 180;
 const FOV_LAND = 30 * Math.PI / 180;
-// Idle opaque box is 24/16 = 1.5 tiles. Scale the figure to 1.64.
 const RUNNER_SCALE = 1.64 / 1.5 * (1.64 / 1.66);
-// Whole-tile zoom. Ten tiles across is the step that fills a short frame at tilt 55
-// without pushing a ground corner out. Attract sits one tile further back.
 const TILES = 10;
 const SUN = norm([0.48, 0.84, 0.26]);
 const HAZE = [0x1f / 255, 0x2a / 255, 0x3a / 255];
@@ -47,7 +44,8 @@ let frameMs = 0;
 let fps = 0;
 let ready = false;
 const dpr0 = window.devicePixelRatio || 1;
-let ratio = Math.min(dpr0, 1.5);
+const locked = params.get("ratio");
+let ratio = locked ? Math.min(Number(locked), dpr0) : Math.min(dpr0, 1.5);
 let cool = 0;
 let hack = { held: 0, flash: 0, cool: 0 };
 let holding = false;
@@ -135,8 +133,6 @@ function solid(tx, ty) {
 }
 function free(x, y) { return !solid(Math.floor(x), Math.floor(y)) && !hitsMachine(x, y); }
 function viewDelta(mx, my) {
-  // A shallow camera squashes screen-up. Stretch that axis by 1/sin(tilt)
-  // before turning it into a ground direction, so a screen diagonal stays one.
   const yr = yaw * Math.PI / 180;
   const sy = my / Math.max(0.25, Math.sin(tilt * Math.PI / 180));
   const upx = -Math.sin(yr);
@@ -167,8 +163,6 @@ function hits(ax, az, bx, bz, box) {
 }
 let lastCam = [0, 0, 0];
 for (const s of world.slices) s.uv0 = s.uv.slice();
-// Orient 2 fronts +Z and orient 1 fronts -X when hx is positive. Flip the
-// winding when the camera is on the other side so culling keeps the billboard.
 function aim(s, cam, uv) {
   const o = s.orient || 0;
   const back = o >= 1.5 ? cam[2] < s.z : o > 0.5 && cam[0] > s.x;
@@ -182,7 +176,6 @@ function camera() {
   const aspect = renderer.view.artW / Math.max(1, renderer.view.artH);
   const portrait = renderer.view.artH > renderer.view.artW;
   const fov = portrait ? FOV_PORTRAIT : FOV_LAND;
-  // Distance stays the 20° distance. Landscape only opens the lens.
   const hold = Math.tan(FOV_PORTRAIT / 2);
   const lens = Math.tan(fov / 2);
   const span = Math.abs(Math.cos(yr)) + Math.abs(Math.sin(yr));
@@ -193,8 +186,6 @@ function camera() {
   const dist = (tiles * TILE) / (2 * hold * aspect);
   const cx = (attract ? 3 : player.x) * TILE;
   const cz = (attract ? 3 : player.y) * TILE;
-  // At the spawn, aim up the block without pulling the camera back. The runner stays
-  // in the lower third. Elsewhere keep the closer camera the width checks were built on.
   const along = attract ? 16 : establishing ? TILE * (portrait ? -2 : -0.3125) : 36;
   const lift = establishing ? TILE * (portrait ? 4.125 : 5.625) : 0;
   const focus = [cx + Math.sin(yr) * along, lift, cz + Math.cos(yr) * along];
@@ -243,8 +234,6 @@ function fit() {
   }
 }
 function planes(dist) {
-  // Tilt 20 still looks down, so the far ground is a few multiples of the camera distance.
-  // The band stays tight enough that a 1-unit slice gap does not z-fight.
   return [Math.max(0.5, dist * 0.06), dist * 3.4];
 }
 function groundAt(clientX, clientY) {
@@ -260,8 +249,22 @@ function groundAt(clientX, clientY) {
   return [hit[0] / TILE, hit[1] / TILE];
 }
 function onMachine(clientX, clientY) {
-  const hit = groundAt(clientX, clientY);
-  return !!hit && hit[0] >= 3 && hit[0] < 4 && hit[1] >= 2 && hit[1] < 3;
+  const g = groundAt(clientX, clientY);
+  if (!g) return false;
+  const m = world.machine;
+  const o = lastCam;
+  const d = [g[0] * TILE - o[0], 0.05 - o[1], g[1] * TILE - o[2]];
+  const span = [[m.x - m.hx, m.x + m.hx], [0, m.h], [m.z - m.hz, m.z + m.hz]];
+  let t0 = 0, t1 = 1;
+  for (let i = 0; i < 3; i++) {
+    if (Math.abs(d[i]) < 1e-6) { if (o[i] < span[i][0] || o[i] > span[i][1]) return false; continue; }
+    let a = (span[i][0] - o[i]) / d[i], b = (span[i][1] - o[i]) / d[i];
+    if (a > b) { const s = a; a = b; b = s; }
+    t0 = Math.max(t0, a);
+    t1 = Math.min(t1, b);
+    if (t0 > t1) return false;
+  }
+  return t0 <= 1;
 }
 function walkAt(clientX, clientY) {
   const hit = groundAt(clientX, clientY);
@@ -313,6 +316,7 @@ function scene() {
   if (cutaway && !rayHits(cam[0], cam[2], player.x * TILE, player.y * TILE, world.machine)) {
     const px = player.x * TILE, pz = player.y * TILE;
     world.buildings.forEach((b, i) => { if (hits(cam[0], cam[2], px, pz, b)) cuts.add(i); });
+    world.fillers.forEach((b) => { if (hits(cam[0], cam[2], px, pz, b)) cuts.add(b.bid); });
   }
   const lights = lightsNow();
   const runner = [];
@@ -380,10 +384,6 @@ function scene() {
   const uL = new Float32Array(32);
   const uC = new Float32Array(32);
   const uI = new Float32Array(8);
-  // Machine pool: one tile, amber, not a sign light. It stays off the alley distance list.
-  uL[24] = 3.5 * TILE; uL[25] = 26; uL[26] = 2.5 * TILE; uL[27] = TILE;
-  uC[24] = 242 / 255; uC[25] = 163 / 255; uC[26] = 58 / 255; uC[27] = 1;
-  uI[6] = 1;
   const halo = new Float32Array(32);
   const haloC = new Float32Array(32);
   const fadeU = new Float32Array(8);
@@ -522,7 +522,7 @@ function frame(now) {
   warmed++;
   cool -= dt;
   const cap = Math.min(window.devicePixelRatio || 1, 2);
-  if (warmed > 90 && cool <= 0) {
+  if (!locked && warmed > 90 && cool <= 0) {
     if (frameMs < 12 && ratio + 0.25 <= cap + 1e-4) { ratio = Math.round((ratio + 0.25) * 4) / 4; cool = 2.5; fit(); }
     else if (frameMs > 28 && ratio - 0.25 >= 1) { ratio = Math.round((ratio - 0.25) * 4) / 4; cool = 2.5; fit(); }
   }

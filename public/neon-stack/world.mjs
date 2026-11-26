@@ -236,47 +236,36 @@ export function build(seed) {
     }
   });
 
-  // Dark filler, 3 lots deep, outside the walkable grid. One quad per exposed face.
-  // The south band stays short so the spawn camera still sees the street.
-  const depth = 3;
-  const tall = new Map();
-  const cells = [];
-  for (let ty = -depth; ty < GRID + depth; ty++) for (let tx = -depth; tx < GRID + depth; tx++) {
-    if (tx >= 0 && ty >= 0 && tx < GRID && ty < GRID) continue;
-    if (tx < -2 || tx >= GRID + 2) continue;
-    let h = 14 + ((Math.abs(tx * 5 + ty * 3) + (tx & 3) + (ty & 3)) & 3);
-    if (tx < 0 || tx >= GRID) h = 12 + (Math.abs(tx + ty) & 1);
-    if (ty < 0 && tx >= 0 && tx < GRID) h = 26 + (Math.abs(tx) & 3);
-    if (ty >= GRID && tx >= 0 && tx < GRID) h = 1 + (Math.abs(tx) & 1);
-    tall.set(tx + "," + ty, h);
-    cells.push([tx, ty, h]);
-  }
-  const coverOf = (ax, ay) => (tall.has(ax + "," + ay) ? tall.get(ax + "," + ay) : lotH(ax, ay));
-  const pushFace = (tx, ty, face, y0, y1, tex, nudge, sign) => {
-    const cx = (tx + 0.5) * TILE;
-    const cz = (ty + 0.5) * TILE;
-    let px = cx, pz = cz, orient = 2, hx = TILE / 2, uv = uvOf(tex);
-    if (face === "s") pz = (ty + 1) * TILE;
-    else if (face === "n") { pz = ty * TILE; hx = -hx; uv = [uv[2], uv[1], uv[0], uv[3]]; }
-    else if (face === "e") { px = (tx + 1) * TILE; orient = 1; hx = -hx; uv = [uv[2], uv[1], uv[0], uv[3]]; }
-    else { px = tx * TILE; orient = 1; }
-    if (nudge) {
-      if (face === "s") pz += nudge;
-      else if (face === "n") pz -= nudge;
-      else if (face === "e") px += nudge;
-      else px -= nudge;
-    }
-    slices.push(slice(px, pz, (y0 + y1) / 2, hx, (y1 - y0) / 2, uv, 8, sign, -1, false, orient));
+  // Filler ring outside the walkable grid, no taller than this block's tower.
+  // Segments carry their own id so the camera cutaway can drop the one in front.
+  const fillers = [];
+  let bid = 16;
+  let top = 1;
+  for (const b of buildings) if (b.h > top) top = b.h;
+  const dark = uvOf("wall_dark");
+  const darkF = [dark[2], dark[1], dark[0], dark[3]];
+  const wall = (px, pz, hx, y1, orient) => {
+    slices.push(slice(px, pz, y1 * 0.5, hx, y1 * 0.5, hx < 0 ? darkF : dark, 8, -1, bid, false, orient));
   };
-  for (const [tx, ty, h] of cells) {
-    for (const face of ["s", "n", "e", "w"]) {
-      const nxy = face === "s" ? [tx, ty + 1] : face === "n" ? [tx, ty - 1] : face === "e" ? [tx + 1, ty] : [tx - 1, ty];
-      const nH = coverOf(nxy[0], nxy[1]);
-      if (nH >= h) continue;
-      pushFace(tx, ty, face, nH * TILE, h * TILE, "wall_dark", 0, nH - h);
-    }
-    slices.push(slice((tx + 0.5) * TILE, (ty + 0.5) * TILE, h * TILE, TILE / 2, TILE / 2, uvOf("roof_cap"), 11, 0, -1, false, 0));
+  const box = (tx, ty, tw, td, h, ix, iz) => {
+    const x = (tx + tw * 0.5) * TILE, z = (ty + td * 0.5) * TILE;
+    const hx = tw * TILE * 0.5 - ix, hz = td * TILE * 0.5 - iz, y1 = Math.min(h, top) * TILE;
+    fillers.push({ x, z, hx: hx + ix, hz: hz + iz, bid });
+    wall(x, z + hz, hx + ix, y1, 2);
+    wall(x, z - hz, -(hx + ix), y1, 2);
+    wall(x + hx, z, -(hz + iz), y1, 1);
+    wall(x - hx, z, hz + iz, y1, 1);
+    bid++;
+  };
+  for (let i = 0; i < 6; i++) {
+    const ty = -3 + i * 2;
+    box(-2, ty, 2, 2, 4, 0, 0.5);
+    box(6, ty, 2, 2, 4, 0, 0.5);
   }
+  box(0, -3, 2, 3, 4, 0.5, 0);
+  box(4, -3, 2, 3, 4, 0.5, 0);
+  box(0, 6, 2, 3, 1, 0.5, 0);
+  box(4, 6, 2, 3, 2, 0.5, 0);
 
   // Street and sidewalks. Outside the block the ground is the clear colour, #1A1A22.
   const gy0 = -2, gy1 = GRID + 16;
@@ -381,6 +370,7 @@ export function build(seed) {
     signs: signMeta,
     spawn: { x: 2.5, y: 5.2 },
     goals: { exit: { x: 0.5, y: 4.5 }, terminal: { x: 2.5, y: 0.5 } },
-    machine: { x: mx, z: mz, hx: boxX, hz: boxZ },
+    machine: { x: mx, z: mz, hx: boxX, hz: boxZ, h: mh },
+    fillers,
   };
 }

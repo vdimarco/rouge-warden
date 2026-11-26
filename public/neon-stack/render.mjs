@@ -1,6 +1,4 @@
 // WebGL2 sprite-stack renderer. One instanced quad, nearest sampling, no mipmaps.
-// Point lights are a second geometry pass (half resolution on narrow viewports).
-// The 4 light steps are applied after that pass is sampled, so the bands stay square.
 
 const VERT = `#version 300 es
 layout(location=0) in vec2 aC;
@@ -17,7 +15,7 @@ out vec2 vCorner;
 void main() {
   float upright = step(0.5, i2.w);
   float faceZ = step(1.5, i2.w);
-  vec3 horiz = vec3(i0.x + (aC.x - 0.5) * i0.w * 2.0, i0.z, i0.y + (aC.y - 0.5) * i1.x * 2.0);
+  vec3 horiz = vec3(i0.x + (0.5 - aC.x) * i0.w * 2.0, i0.z, i0.y + (aC.y - 0.5) * i1.x * 2.0);
   vec3 faceX = vec3(i0.x, i0.z + (aC.y - 0.5) * i1.x * 2.0, i0.y + (aC.x - 0.5) * i0.w * 2.0);
   vec3 faceZv = vec3(i0.x + (aC.x - 0.5) * i0.w * 2.0, i0.z + (aC.y - 0.5) * i1.x * 2.0, i0.y);
   vW = mix(horiz, mix(faceX, faceZv, faceZ), upright);
@@ -87,8 +85,7 @@ float ovalShade(vec2 d, float rx, float ry) {
 float falloff(vec2 p, vec4 L, float I) {
   float live = step(0.15, I) * step(0.5, L.w);
   float r = length(p - L.xz / uTile);
-  float u = clamp(r / 2.0, 0.0, 1.0);
-  return pow(1.0 - u, 0.55) * live;
+  return (1.0 - smoothstep(1.0, 2.0, r)) * live;
 }
 
 void main() {
@@ -115,7 +112,6 @@ void main() {
   }
   if (t.a < 0.5) discard;
   vec3 col = t.rgb;
-  // Warm window texels keep their texture, shifted onto #C9853A so a dark sign is not a lit window.
   if (abs(vKind - 8.0) < 0.25 && t.r > 0.55 && t.g > 0.25 && t.b < 0.45 && t.r > t.b + 0.25) {
     float lumT = dot(t.rgb, vec3(0.299, 0.587, 0.114));
     col = clamp(vec3(201.0, 133.0, 58.0) / 255.0 * (0.82 + 0.36 * lumT), vec3(187.0, 119.0, 44.0) / 255.0, vec3(215.0, 147.0, 72.0) / 255.0);
@@ -175,13 +171,8 @@ void main() {
   float wall = step(abs(vKind - 8.0), 0.25);
   if (wall > 0.5 && !(t.r > 0.55 && t.g > 0.25 && t.b < 0.45 && t.r > t.b + 0.25)) {
     if (vSign < 0.0) {
-      float row = fract(vW.y / uTile);
-      float colu = fract((vW.x + vW.z) / uTile);
-      float pane = step(0.25, colu) * step(colu, 0.42) + step(0.58, colu) * step(colu, 0.75);
-      float band = step(0.40, row) * step(row, 0.70);
-      float lit = step(0.5, fract(floor(vW.y / uTile) * 0.37 + floor((vW.x + vW.z) / uTile) * 0.17));
-      col = band * pane * lit > 0.5 ? vec3(201.0, 133.0, 58.0) / 255.0 : vec3(43.0, 42.0, 51.0) / 255.0;
-      o = vec4(col, 1.0);
+      float on = step(0.84, fract(floor(vW.y / uTile) * 0.37 + floor((vW.x + vW.z) / uTile) * 0.17));
+      o = vec4((on > 0.5 ? vec3(201.0, 133.0, 58.0) : vec3(43.0, 42.0, 51.0)) / 255.0, 1.0);
       return;
     } else {
     float kd = vKind - 8.0;
@@ -189,15 +180,12 @@ void main() {
     float rem = mod(kd + 0.0001, 0.03);
     float bottom = step(0.005, rem) * step(rem, 0.015);
     float top = step(0.015, rem);
-    // Side faces share the south wall's floor. A top storey, including the only
-    // storey of a one-storey lot, is never the bottom-storey darken.
     vec3 face = vec3(43.0, 42.0, 51.0) / 255.0;
     if (top > 0.5) face = vec3(48.0, 47.0, 56.0) / 255.0;
     vec3 dye = tint < 0.5 ? vec3(1.10, 0.84, 0.90) : tint < 1.5 ? vec3(0.84, 1.08, 0.90) : vec3(0.90, 0.94, 1.10);
     float lum = dot(face, vec3(0.299, 0.587, 0.114));
     vec3 dyed = face * dye;
     dyed *= lum / max(0.001, dot(dyed, vec3(0.299, 0.587, 0.114)));
-    // 0.92 keeps a bottom storey darker than the street face and still 12 levels above ink.
     col = top > 0.5 ? dyed : mix(dyed, dyed * 0.92, bottom);
     }
   }
@@ -216,17 +204,15 @@ void main() {
     shade = min(shade, ovalShade(p - vec2(2.35, 1.2), 0.18, 0.12));
     shade = min(shade, ovalShade(p - vec2(3.55, 4.5), 0.22, 0.14));
     col *= shade;
-    // One soft pool per sign. Full within 1 tile, a faint edge at the 2-tile radius.
     float w0 = falloff(p, uL[0], uI[0]);
     float w1 = falloff(p, uL[1], uI[1]);
     float w2 = falloff(p, uL[2], uI[2]);
     float w3 = falloff(p, uL[3], uI[3]);
     float w4 = falloff(p, uL[4], uI[4]);
     float w5 = falloff(p, uL[5], uI[5]);
-    float w6 = (1.0 - smoothstep(0.0, 1.0, length(p - uL[6].xz / uTile))) * step(0.15, uI[6]) * step(0.5, uL[6].w);
     vec3 glow = uC[0].rgb * w0 + uC[1].rgb * w1 + uC[2].rgb * w2
-      + uC[3].rgb * w3 + uC[4].rgb * w4 + uC[5].rgb * w5 + uC[6].rgb * w6;
-    float cover = min(1.0, w0 + w1 + w2 + w3 + w4 + w5 + w6);
+      + uC[3].rgb * w3 + uC[4].rgb * w4 + uC[5].rgb * w5;
+    float cover = min(1.0, w0 + w1 + w2 + w3 + w4 + w5);
     col = mix(col, clamp(glow, 0.0, 1.0), cover * 0.62);
   }
   float fade = fadeOf(vSign);

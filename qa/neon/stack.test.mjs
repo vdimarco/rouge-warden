@@ -58,6 +58,12 @@ for (const seed of [1, 4, 7, 9]) {
     if (q.z > maxZ) maxZ = q.z;
   }
   assert.ok(filler > 40, "seed " + seed + " filler walls " + filler);
+  const tower = w.buildings.find((b) => b.tx === 0 && b.ty === 0).h;
+  for (const q of w.slices) {
+    if (q.kind !== 8 || q.sign >= 0) continue;
+    assert.ok(q.y + q.hz <= tower * TILE + 0.1, "filler taller than the tower");
+    assert.ok(q.bid >= 16, "filler has a cutaway id");
+  }
   assert.ok(minX <= -2 * TILE && maxX >= 8 * TILE, "seed " + seed + " east-west ring " + minX + " " + maxX);
   assert.ok(minZ <= -2 * TILE && maxZ >= 8 * TILE, "seed " + seed + " north-south ring " + minZ + " " + maxZ);
   assert.equal(w.buildings.length, 16);
