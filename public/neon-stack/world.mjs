@@ -267,6 +267,25 @@ export function build(seed) {
   box(4, -3, 2, 3, 0, 4, 0.5, 0);
   box(0, 6, 2, 3, 0, 1, 0.5, 0);
   box(4, 6, 2, 3, 0, 2, 0.5, 0);
+  // One inward card per side, outside the ring, above it. The near card is the back face.
+  const card = (px, pz, span, orient, flip) => {
+    let hx = span * TILE * 0.5;
+    const y0 = 8 * TILE, y1 = 22 * TILE;
+    fillers.push({
+      x: px, z: pz,
+      hx: orient < 1.5 ? 8 : hx,
+      hz: orient < 1.5 ? hx : 8,
+      bid,
+    });
+    if (flip) hx = -hx;
+    slices.push(slice(px, pz, (y0 + y1) / 2, hx, (y1 - y0) / 2, flip ? darkF : dark, 8, -1, bid, false, orient));
+    bid++;
+  };
+  const wide = 10;
+  card(-4 * TILE, 3 * TILE, wide, 1, true);
+  card(10 * TILE, 3 * TILE, wide, 1, false);
+  card(3 * TILE, -4 * TILE, wide, 2, false);
+  card(3 * TILE, 10 * TILE, wide, 2, true);
 
   // Street and sidewalks. Outside the block the ground is the clear colour, #1A1A22.
   const gy0 = -2, gy1 = GRID + 16;

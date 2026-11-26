@@ -1124,6 +1124,57 @@ console.log("qa fix 390 and 1280");
 await qaFix(390, 844, 2, "390");
 await qaFix(1280, 800, 1, "1280");
 
+async function coverage(width, height, dpr, seed) {
+  const ctx = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: dpr });
+  const page = await ctx.newPage();
+  await page.goto(GAME + "?seed=" + seed + "&ratio=" + (width < 800 ? 1.5 : 1), { waitUntil: "domcontentloaded" });
+  await page.waitForFunction(() => window.__test && __test.ready());
+  const rows = await page.evaluate(async () => {
+    __test.enter();
+    __test.setTilt(55);
+    __test.moveTo(2.6, 1.8);
+    __test.forceCutaway(true);
+    __test.setPose("idle");
+    const canvas = document.querySelector("canvas");
+    const gl = canvas.getContext("webgl2");
+    const frame = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    const shareOf = (buf) => {
+      const w = canvas.width, h = canvas.height, y0 = Math.floor(h * 0.28);
+      let sky = 0, voidc = 0, build = 0;
+      for (let y = y0; y < h; y++) for (let x = 0; x < w; x++) {
+        const i = (y * w + x) * 4;
+        const r = buf[i], g = buf[i + 1], b = buf[i + 2];
+        const skyish = (b > r + 12 && b > g + 8) || (r + g + b < 70 && b > r + 4 && b > g);
+        const clear = Math.abs(r - 26) <= 10 && Math.abs(g - 26) <= 10 && Math.abs(b - 34) <= 10;
+        if (skyish) sky++;
+        else if (clear) voidc++;
+        else build++;
+      }
+      const nonsky = build + voidc;
+      return nonsky ? build / nonsky : 0;
+    };
+    const out = [];
+    for (const yaw of [90, 180, 270]) {
+      __test.setYaw(yaw);
+      await frame();
+      const buf = new Uint8Array(canvas.width * canvas.height * 4);
+      gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, buf);
+      out.push({ yaw, share: shareOf(buf) });
+    }
+    return out;
+  });
+  for (const row of rows) {
+    check(row.share >= 0.7, width + " seed " + seed + " yaw " + row.yaw + " building share " + (row.share * 100).toFixed(1) + "%");
+  }
+  console.log("  nums  " + width + " seed " + seed + " " + rows.map((r) => r.yaw + ":" + (r.share * 100).toFixed(1) + "%").join(" "));
+  await ctx.close();
+}
+console.log("skyline coverage");
+for (const seed of [1, 4, 7, 9]) {
+  await coverage(390, 844, 2, seed);
+  await coverage(1280, 800, 1, seed);
+}
+
 await browser.close();
 console.log(failed ? "FAIL " + failed : "PASS neon stack e2e");
 process.exit(failed ? 1 : 0);

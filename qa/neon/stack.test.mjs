@@ -61,7 +61,8 @@ for (const seed of [1, 4, 7, 9]) {
   const tower = w.buildings.find((b) => b.tx === 0 && b.ty === 0).h;
   for (const q of w.slices) {
     if (q.kind !== 8 || q.sign >= 0) continue;
-    assert.ok(q.y + q.hz <= tower * TILE + 0.1, "filler taller than the tower");
+    const ring = q.x >= -2.5 * TILE && q.x <= 8.5 * TILE && q.z >= -3.5 * TILE && q.z <= 9.5 * TILE;
+    if (ring) assert.ok(q.y + q.hz <= tower * TILE + 0.1, "filler taller than the tower");
     assert.ok(q.bid >= 16, "filler has a cutaway id");
   }
   assert.ok(minX <= -2 * TILE && maxX >= 8 * TILE, "seed " + seed + " east-west ring " + minX + " " + maxX);
