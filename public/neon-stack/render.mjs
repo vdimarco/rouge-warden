@@ -6,20 +6,36 @@ layout(location=1) in vec4 i0;
 layout(location=2) in vec4 i1;
 layout(location=3) in vec4 i2;
 uniform mat4 uVP;
+uniform float uHead;
 out vec2 vUV;
 out vec3 vW;
 flat out float vKind;
 flat out float vSign;
 flat out float vOrient;
+flat out vec4 vRect;
 out vec2 vCorner;
 void main() {
   float upright = step(0.5, i2.w);
   float faceZ = step(1.5, i2.w);
-  vec3 horiz = vec3(i0.x + (0.5 - aC.x) * i0.w * 2.0, i0.z, i0.y + (aC.y - 0.5) * i1.x * 2.0);
+  float lx = (0.5 - aC.x) * i0.w * 2.0;
+  float lz = (aC.y - 0.5) * i1.x * 2.0;
+  // Kind 1 lying flat is the runner stack. Buildings stay axis-aligned.
+  if (abs(i2.y - 1.0) < 0.25 && upright < 0.5) {
+    float c = cos(uHead);
+    float s = sin(uHead);
+    float rx = lx * c - lz * s;
+    float rz = lx * s + lz * c;
+    lx = rx;
+    lz = rz;
+  }
+  vec3 horiz = vec3(i0.x + lx, i0.z, i0.y + lz);
   vec3 faceX = vec3(i0.x, i0.z + (aC.y - 0.5) * i1.x * 2.0, i0.y + (aC.x - 0.5) * i0.w * 2.0);
   vec3 faceZv = vec3(i0.x + (aC.x - 0.5) * i0.w * 2.0, i0.z + (aC.y - 0.5) * i1.x * 2.0, i0.y);
   vW = mix(horiz, mix(faceX, faceZv, faceZ), upright);
-  vUV = mix(vec2(i1.y, i1.z), vec2(i1.w, i2.x), aC);
+  vec2 uvA = vec2(i1.y, i1.z);
+  vec2 uvB = vec2(i1.w, i2.x);
+  vUV = mix(uvA, uvB, aC);
+  vRect = vec4(min(uvA, uvB), max(uvA, uvB));
   vKind = i2.y;
   vSign = i2.z;
   vOrient = i2.w;
@@ -35,7 +51,6 @@ uniform vec3 uSun;
 uniform vec3 uHaze;
 uniform float uTile;
 uniform vec3 uOutline;
-uniform vec4 uFrame;
 uniform float uOutlineOn;
 uniform vec2 uCam;
 uniform vec2 uRunner;
@@ -48,6 +63,7 @@ in vec3 vW;
 flat in float vKind;
 flat in float vSign;
 flat in float vOrient;
+flat in vec4 vRect;
 in vec2 vCorner;
 layout(location=0) out vec4 o;
 
@@ -94,8 +110,8 @@ void main() {
   if (runner > 0.5 && t.a < 0.5) {
     if (uOutlineOn < 0.5) discard;
     vec2 one = vec2(1.0 / 1024.0);
-    vec2 lo = uFrame.xy + one * 0.5;
-    vec2 hi = uFrame.zw - one * 0.5;
+    vec2 lo = vRect.xy + one * 0.5;
+    vec2 hi = vRect.zw - one * 0.5;
     float edge = 0.0;
     for (int y = -2; y <= 2; y++) for (int x = -2; x <= 2; x++) {
       int ax = x < 0 ? -x : x;
@@ -449,7 +465,7 @@ export function createRenderer(canvas) {
       for (const name of names) out[name] = gl.getUniformLocation(prog, name);
       return out;
     };
-    stackU = loc(stackProg, ["uVP", "uSun", "uHaze", "uTile", "uOutline", "uFrame", "uOutlineOn", "uCam", "uRunner", "uFade", "uL", "uC", "uI", "uAtlas"]);
+    stackU = loc(stackProg, ["uVP", "uHead", "uSun", "uHaze", "uTile", "uOutline", "uOutlineOn", "uCam", "uRunner", "uFade", "uL", "uC", "uI", "uAtlas"]);
     compU = loc(compProg, ["uAlb", "uDrop", "uSmog", "uHalo", "uHaloC", "uTime"]);
     blitU = loc(blitProg, ["uBack", "uArt"]);
   }
@@ -509,11 +525,11 @@ export function createRenderer(canvas) {
   function drawStack(pass, count) {
     gl.useProgram(stackProg);
     gl.uniformMatrix4fv(stackU.uVP, false, api.vp);
+    gl.uniform1f(stackU.uHead, api.head || 0);
     gl.uniform3fv(stackU.uSun, api.sun);
     gl.uniform3fv(stackU.uHaze, api.haze);
     gl.uniform1f(stackU.uTile, api.tile || 32);
     gl.uniform3fv(stackU.uOutline, api.outline || [0, 0, 0]);
-    gl.uniform4fv(stackU.uFrame, api.frame || [0, 0, 1, 1]);
     gl.uniform1f(stackU.uOutlineOn, api.outlineOn || 0);
     gl.uniform2fv(stackU.uCam, api.camXZ || [0, 0]);
     gl.uniform2fv(stackU.uRunner, api.runnerXZ || [0, 0]);
@@ -559,7 +575,7 @@ export function createRenderer(canvas) {
     api.outlineOn = scene.outlineOn;
     api.camXZ = scene.camXZ;
     api.runnerXZ = scene.runnerXZ;
-    api.frame = scene.frame;
+    api.head = scene.head || 0;
     api.lights = scene.lights;
     api.lightColor = scene.lightColor;
     api.intensity = scene.intensity;
