@@ -52,15 +52,19 @@ const mock = () => {
   window.__press = (i, on) => { buttons[i].pressed = on; buttons[i].value = on ? 1 : 0; };
   navigator.getGamepads = () => [window.__pad];
 };
-const PAD = { A: 0, B: 1, RB: 5, BACK: 8, R3: 11, UP: 12, DOWN: 13 };
+const PAD = { A: 0, B: 1, LB: 4, RB: 5, BACK: 8, R3: 11, UP: 12, DOWN: 13 };
 const tap = async (page, i) => {
   await G(page, i => window.__press(i, true), i); await tick(page, 0.05, 'live');
   await G(page, i => window.__press(i, false), i); await tick(page, 0.05, 'live');
 };
-// stand d m before a station's point, facing it (the camera behind): a walk of d m with W brings the lamplighter there
+/* stand d m before a station's point, on the line W walks along (the hall camera looks in from the open front, so W walks away from
+   it, and the station's own facing may be across the view): a walk of d m with W brings the lamplighter there, facing the object */
 async function before(page, id, d = 1.6) {
   const st = (await hall(page)).stations.find(s => s.id === id), yaw = Math.atan2(st.obj[0] - st.at[0], st.obj[1] - st.at[1]);
-  await G(page, ([x, z, y]) => window.__gloam.teleport(x, z, y), [st.at[0] - Math.sin(yaw) * d, st.at[1] - Math.cos(yaw) * d, yaw]);
+  await G(page, ([x, z, y]) => window.__gloam.teleport(x, z, y), [st.at[0], st.at[1], yaw]);
+  await tick(page, 0.3, {});
+  const cy = await G(page, () => window.__gloam.state().cam.yaw), fx = -Math.sin(cy), fz = -Math.cos(cy);
+  await G(page, ([x, z, y]) => window.__gloam.teleport(x, z, y), [st.at[0] - fx * d, st.at[1] - fz * d, Math.atan2(fx, fz)]);
   await tick(page, 0.3, {});
   return st;
 }
@@ -101,6 +105,8 @@ try {
     assert.deepEqual(await G(page, cardFaults), []);
     const parts = await page.$$eval('#lamp section', s => s.filter(x => x.getClientRects().length).map(x => x.dataset.st));
     assert.deepEqual(parts, ['shelf'], 'only the shelf\'s rows');
+    // a shop shows the bank line
+    assert(await page.isVisible('#lampLine'), 'the shelf shows the bank line');
     await shot(page, 'keys-shelf');
     // the focus is on the first Buy; Enter buys Mantle 1, and the hall lights its first ring
     assert(!(await hall(page)).shown.includes('ware:mantle:1'));
@@ -112,11 +118,18 @@ try {
     await page.keyboard.press('Escape');
     assert.equal(await mode(page), 'play');
     await tick(page, 0.1, 'live');
-    // a held S walks away from a card
+    // a held S moves the focus and keeps the card; a held D walks away from it
     await page.keyboard.press('e');
     assert.equal(await mode(page), 'station');
     await page.keyboard.down('s'); await tick(page, 0.45, 'live'); await page.keyboard.up('s'); await tick(page, 0.05, 'live');
+    assert.equal(await mode(page), 'station', 'a held S keeps the card open');
+    await page.keyboard.down('d'); await tick(page, 0.45, 'live'); await page.keyboard.up('d'); await tick(page, 0.05, 'live');
     assert.equal(await mode(page), 'play', 'walking away shuts the card');
+    // the blade rack is no shop: no bank line
+    await G(page, () => window.__gloam.station('blades'));
+    assert.equal(await page.isVisible('#lampLine'), false, 'the blade rack shows no bank line');
+    await page.keyboard.press('Escape');
+    await tick(page, 0.1, 'live');
     // Tab opens the quick list with its nine headings in order
     await page.keyboard.press('Tab');
     h = await hall(page);
@@ -272,12 +285,24 @@ try {
     assert.equal(h.shrine, 'shelf');
     assert.deepEqual(await p2.$$eval('#shrineTabs button', b => b.map(x => x.textContent)), ['Wares', 'Patterns', 'Panes']);
     await p2.click('#shrineTabs button[data-tab="window"]');
-    assert.deepEqual(await p2.$$eval('#lamp section', s => s.filter(x => x.getClientRects().length).map(x => x.dataset.st)), ['window']);
+    const shown = () => p2.$$eval('#lamp section', s => s.filter(x => x.getClientRects().length).map(x => x.dataset.st));
+    assert.deepEqual(await shown(), ['window']);
+    // Left and Right, LB and RB switch the tabs too
+    await p2.keyboard.press('ArrowLeft');
+    assert.deepEqual(await shown(), ['kiln'], 'Left: Patterns');
+    await G(p2, mock);
+    await tick(p2, 0.1, 'live');
+    await tap(p2, PAD.RB);
+    assert.deepEqual(await shown(), ['window'], 'RB: Panes');
+    await tap(p2, PAD.LB);
+    assert.deepEqual(await shown(), ['kiln'], 'LB: Patterns');
+    await p2.keyboard.press('ArrowRight');
+    assert.deepEqual(await shown(), ['window'], 'Right: Panes');
     await shot(p2, 'shrine');
     await p2.click('#bLampBack');
     assert(await p2.isVisible('#beaconCard'));
     assert.deepEqual(errs, []);
-    pass('the shrine: "Go to the shrine" opens three tabs beside the beacon, a tab shows its rows, Back to the beacon goes back');
+    pass('the shrine: "Go to the shrine" opens three tabs beside the beacon, a tap, Left and Right, LB and RB switch them, Back to the beacon goes back');
     await c2.close();
   }
   if (part('load')) {

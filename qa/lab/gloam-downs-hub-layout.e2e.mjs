@@ -3,7 +3,8 @@
 //   the kiln, the map table) and the quick list: a bottom sheet of 55% of the height or less on an upright phone, a side sheet of 45%
 //   of the width or less on a landscape phone, beside the station elsewhere and never over it; inside the screen, under the Lab bar,
 //   buttons of 44 px or more, no page scroll, no text wider than its row; the prompt inside the screen and clear of the touch buttons;
-//   with reduced motion the hall's life holds still and a card shows with no motion.
+//   with reduced motion the hall's life holds still and a card shows with no motion; the close button covers no text, and a side sheet
+//   is no taller than its rows; the walk from the run door to the open front is never a cutaway (front-walk pictures).
 // Needs this tree served:   python3 -m http.server 8951 --bind 127.0.0.1 --directory public
 // Run: NODE_PATH=qa/browser/node_modules node qa/lab/gloam-downs-hub-layout.e2e.mjs   (SITE_URL, SHOTS=<dir> keeps the pictures, STATIONS=all every station)
 import assert from 'node:assert/strict';
@@ -17,7 +18,8 @@ if (SHOTS) fs.mkdirSync(SHOTS, { recursive: true });
 const executablePath = process.env.CHROMIUM_PATH || (existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined);
 const browser = await chromium.launch({ executablePath, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const TOUCH = { hasTouch: true, isMobile: true, deviceScaleFactor: 2 };
-const SIZES = [[320, 640, true, 'sheet'], [390, 844, true, 'sheet'], [360, 640, true, 'sheet'], [844, 390, true, 'side'], [800, 600, false, 'beside'], [1280, 720, false, 'beside']];
+// SIZES=320x640,844x390 runs those sizes alone
+const SIZES = [[320, 640, true, 'sheet'], [390, 844, true, 'sheet'], [360, 640, true, 'sheet'], [844, 390, true, 'side'], [800, 600, false, 'beside'], [1280, 720, false, 'beside']].filter(([w, h]) => !process.env.SIZES || process.env.SIZES.split(',').includes(`${w}x${h}`));
 // STATIONS=all opens every station's card but the door's (the door begins the run); by default the shelf, the kiln and the map table
 const IDS = process.env.STATIONS === 'all' ? ['well', 'wick', 'blades', 'offhand', 'post', 'shelf', 'window', 'kiln', 'trophy', 'bell', 'map'] : ['shelf', 'kiln', 'map'];
 let n = 0;
@@ -40,6 +42,19 @@ function faults(kind) {
     if (q.top < r.top - 0.5 || q.bottom > r.bottom + 0.5) out.push(`${b.id || b.textContent.trim().slice(0, 20)} out of its card`);
   }
   for (const el of box.querySelectorAll('h2, h3, p, li > span')) if (el.getClientRects().length && !el.closest('.stOff') && el.scrollWidth > el.clientWidth + 1) out.push(`text wider than its row: ${el.textContent.trim().slice(0, 30)}`);
+  // the close button covers no line of the card's text
+  const x = document.getElementById('bLampClose');
+  if (x && !x.hidden && x.getClientRects().length) {
+    box.scrollTop = 0;
+    const xr = R(x);
+    for (const el of box.querySelectorAll('h2, h3, p, li > span, li > em')) {
+      if (!el.getClientRects().length || el.closest('.stOff') || !el.textContent.trim()) continue;
+      const rg = document.createRange(); rg.selectNodeContents(el);
+      if ([...rg.getClientRects()].some(t => t.width > 1 && over(t, xr))) out.push(`the close button over: ${el.textContent.trim().slice(0, 30)}`);
+    }
+  }
+  // a side sheet is no taller than its rows (the free space under them is not a dark panel)
+  if (kind === 'side' && box.scrollHeight <= box.clientHeight && r.height > box.scrollHeight + 6) out.push(`side sheet ${r.height.toFixed(0)} px for ${box.scrollHeight} px of rows`);
   box.scrollTop = 0;
   if (document.scrollingElement.scrollHeight > innerHeight + 1 || document.scrollingElement.scrollWidth > innerWidth + 1) out.push('the page scrolls');
   return out;
@@ -64,6 +79,15 @@ try {
     await page.waitForFunction(() => window.__gloam?.ready() && window.__gloam.state().place === 'lamproom', null, { timeout: 180000 });
     await G(page, () => window.__gloam.tick(3.6, {}));
     if (SHOTS) { await G(page, () => window.__gloam.draw()); await page.screenshot({ path: `${SHOTS}/hall-${w}x${h}.png` }); }
+    /* the walk back from the run door to the open front (the hall camera): the view is never a cutaway and stands back at its
+       distance all the way; pictures at three points of the walk */
+    await G(page, () => { window.__gloam.teleport(0, -6.4, 0); window.__gloam.tick(1, {}); });
+    for (let i = 0; i < 3; i++) {
+      const v = await G(page, () => { const s = window.__gloam.state(); return { z: s.z, cut: s.cut.on, dist: s.cam.drawn.dist, pitch: s.cam.drawn.pitch }; });
+      assert(!v.cut && v.dist >= 6 && v.pitch <= 0.96, `${w}x${h} the walk to the front at z ${v.z.toFixed(1)}: ${JSON.stringify(v)}`);
+      if (SHOTS) { await G(page, () => window.__gloam.draw()); await page.screenshot({ path: `${SHOTS}/front-walk-${i}-${w}x${h}.png` }); }
+      await G(page, () => window.__gloam.tick(1.0, { mz: -1 }));
+    }
     const out = {};
     for (const id of IDS) {
       const st = (await G(page, () => window.__gloam.hall())).stations.find(s => s.id === id), yaw = Math.atan2(st.obj[0] - st.at[0], st.obj[1] - st.at[1]);

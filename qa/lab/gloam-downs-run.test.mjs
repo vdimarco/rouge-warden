@@ -965,7 +965,7 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   Object.assign(rs.run, { banked: 30, foes: 7, hp: 70 });
   enter(rs.run);
   const back = RS.clean(JSON.parse(JSON.stringify(rs)));
-  const { sparks, sparkPicks, carriedPatterns, groundPatterns, caches, abilityLamps, patternRolls, foePatterns, abilityDrops, abilityRolls, abilities, blade, offhand, gearLamps, gearRolls, tierRolls, traitRolls, gearDrops, ...entry } = back.run.entry;
+  const { sparks, sparkPicks, carriedPatterns, groundPatterns, caches, abilityLamps, patternRolls, foePatterns, abilityDrops, abilityRolls, abilities, blade, offhand, gearLamps, gearRolls, tierRolls, traitRolls, gearDrops, sureRolls, cracked, ...entry } = back.run.entry;
   assert.deepEqual([back.run.place, back.run.banked, back.run.foes, entry], ['fen', 30, 7, { hp: 70, flasks: 2, carried: 0, foes: 7, relics: [], elitesDown: [], lastUsed: false }]);
   assert.deepEqual([sparks, abilities], [{ flame: 0, ward: 0, gloam: 0 }, rs.run.abilities], 'the entry keeps the growth fields too');
   pass('the run save: bad fields are dropped, levels clamped, a bad offer dropped, and a run comes back with its entry');

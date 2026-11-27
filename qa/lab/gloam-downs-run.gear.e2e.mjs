@@ -5,7 +5,7 @@
 //   a tap still cuts: on a blade underfoot a tap plays the first cut and keeps the held blade;
 //   the off-hand: the Sling throws on an Off-hand press (V, the middle mouse button and RB through input.off,
 //     and through __gloam.gear({ off: true }); the touch button #bOff is checked in gloam-downs-hub.e2e.mjs);
-//   the Buckler's parry: a Snuffer's blow 0.1 s into the raise deals nothing, the Snuffer goes down, the cue log has parry;
+//   the Buckler's parry: a Snuffer's blow 0.1 s into the raise deals nothing, the Snuffer staggers 0.6 s, the cue log has parry;
 //   the Twin string: four presses of J on a training post give four cuts, the fourth with the first cut's pose;
 //   the Bell slam: J held 0.5 s with two posts within 2.5 m: each takes 30;
 //   the compare toast shows over a ground item and goes when the lamplighter steps off.
@@ -143,9 +143,9 @@ try {
     assert.equal(out, 'none');
     assert.equal(hp1, hp0);
     assert((await sounds(page, p0)).includes('parry'), 'the parry cue');
-    assert.equal((await G(page, () => window.__gloam.foes()))[0].move, 'down', 'the Snuffer goes down');
+    assert.equal((await G(page, () => window.__gloam.foes()))[0].move, 'stagger', 'the Snuffer staggers');
     assert((await held(page)).sure, 'the next cut is sure');
-    pass('the Buckler\'s parry: a blow 0.1 s into the raise deals nothing, the Snuffer goes down, the parry cue, a sure cut next');
+    pass('the Buckler\'s parry: a blow 0.1 s into the raise deals nothing, the Snuffer staggers, the parry cue, a sure cut next');
     await G(page, () => { for (const f of window.__gloam.foes()) window.__gloam.out?.(f.id); });
     await tick(page, 2);
 

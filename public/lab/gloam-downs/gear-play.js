@@ -7,13 +7,12 @@
 // once. It interrupts by the fair-fight rules (how.interrupt), and the Buckler's parry follows them too.
 import { OFFHANDS, GEAR_DROPS, bladeOf, offhandOf, tierOf, traitsOf, traitOf, hasTrait, gearCopy, tierPower, traitCool, traitWide, rollGear, gearRoll, gearKind, kindledGear, slamOf, traitNames } from './gear.js';
 import { colourPower, kindledOf, paneOf } from './run.js';
-import { statusHit, isFoe, heavyOf } from './status.js';
+import { statusHit, isFoe, heavyOf, tickHit } from './status.js';
 // a sure cut readied for the next blade hit, and a ward shell (gloam-downs-hub design.md "Who builds what")
 import { markSure, addShell } from './build.js';
 import { sees, dealt } from './moves.js';
 import { dropAbility, abilityOf, pullSpeed } from './abilities.js';
 import { emit } from './bus.js';
-import { mulberry, hash2 } from '../kit/rng.js';
 
 const S = sec => Math.round(sec * 60);
 const wrap = a => Math.atan2(Math.sin(a), Math.cos(a));
@@ -36,11 +35,12 @@ export const GEAR_CUES = { buckler: 'whiff', parry: 'clang', cuff: 'snap', sling
 /* a foe state (char, blind, mark) from the gear, by status.js's rules: Char stacks to 5 and bursts, Blind is half on a heavy foe, and
    the Barrow Reeve counts Char alone. o.ev takes a burst's hit and cue */
 export const putState = (t, kind, n, o = {}) => statusHit(t, kind, n, o);
-// a heavy foe's poise worn by n more (the Bell maul, Weighted, the Iron cuff, a parry): a break at 0 staggers it, by the fair-fight rules
+/* a heavy foe's poise worn by n more (the Bell maul, Weighted, the Iron cuff, a parry), through the foe's own wear (foes.js, as Bell toll
+   wears it): a fresh foe's poise starts full, and a break at 0 staggers it by the fair-fight rules. It is no hit, so a Mark on the foe
+   waits for the lamplighter's next real hit */
 export function wearPoise(t, n, from) {
-  if (!isFoe(t) || !t.alive || !(n > 0) || !Number.isFinite(t.poise) || t.poise <= 0) return false;
-  t.poise = Math.max(0, t.poise - n);
-  if (t.poise === 0) t.hit(0, { from, push: 0, knock: 0, kind: 'poise', interrupt: false });
+  if (!isFoe(t) || !t.alive || !(n > 0) || typeof t.wear !== 'function') return false;
+  t.wear(n);
   return true;
 }
 // the recap's gear (run.js recapFields): the run's last blade, off-hand and abilities, with tiers and traits
@@ -92,7 +92,8 @@ export function makeGear(R) {
     if (!t?.alive) return;
     const b = G.burns.find(x => x.t === t);
     if (b && !renew) return;
-    statusHit(t, 'burn', n);
+    // a target that takes no burn (the Barrow Reeve, a post) gets no ticks either
+    if (!statusHit(t, 'burn', n)) return;
     if (b) b.left = Math.max(b.left, n); else G.burns.push({ t, left: n, k: 0, from });
   }
   // the soft aim: the nearest target in front (70 degrees) within range that the lamplighter sees
@@ -120,7 +121,8 @@ export function makeGear(R) {
   // a target moved `far` metres along (ux, uz): a light foe by its own push (walls hold it), a post at once
   function shove(t, ux, uz, far) {
     if (!(far > 0.05)) return;
-    if (isFoe(t)) { if (t.T.light && !t.elite) t.push = { ux, uz, v: pullSpeed(far, 12), n: 12 }; }
+    // a braced foe or one in an armored wind-up is not pushed (the fair-fight rules)
+    if (isFoe(t)) { if (t.T.light && !t.elite && !(t.braced > 0) && !t.armorMove) t.push = { ux, uz, v: pullSpeed(far, 12), n: 12 }; }
     else if (!t.body && t.type === 'post') { t.x += ux * far; t.z += uz * far; }
   }
 
@@ -252,7 +254,8 @@ export function makeGear(R) {
     for (const b of G.burns.slice()) {
       if (!b.t.alive || b.left <= 0) { G.burns.splice(G.burns.indexOf(b), 1); continue; }
       b.left--;
-      if (++b.k % GEAR.burn.every === 0) hurtFoe(b.t, GEAR.burn.dmg, 'burn', ev, { tick: true, interrupt: false, kind: 'burn' });
+      // a tick through status.js tickHit: inside the 8-a-second cap, no flinch, no poise, no combo, no glim; Ember glass's 20% on it
+      if (++b.k % GEAR.burn.every === 0) tickHit(b.t, GEAR.burn.dmg * (paneOf(rs, 'ember') ? 1.2 : 1), ev, { id: 'burn', from: b.from });
     }
   }
 
@@ -266,19 +269,8 @@ export function makeGear(R) {
     if (BLADE_KINDS.includes(e.kind)) return { kind: 'blade', x: r.blade };
     return null;
   }
-  // a roll of a Steady hit: 6% from the seed, keyed to the play step and the hit's place in it, so the same seed and moves give the same
-  const steadyRoll = k => mulberry(hash2(run().seed | 0, clock.play * 16 + k, 0x57ead))();
-  // a sure cut's extra half: one more blow of half the damage, which never flinches (build.js makes the hit itself sure once it lands)
-  function sure(t, dmg, ev, why) {
-    if (!t.alive || !(dmg > 0)) return;
-    const s = sOf(), more = t.hit(dmg * 0.5, { from: [s.x, s.z], push: 0, knock: 0, kind: 'sure', interrupt: false });
-    if (more === false) return;
-    ev.push({ type: 'hit', kind: 'relic', sure: why, target: t, dmg: more, tick: true });
-    cue(ev, 'sure', { why });
-  }
   function traits(ev) {
     const r = run(), list = ev.filter(e => e.type === 'hit' && e.target && !e.tick);
-    let k = 0;
     for (const e of list) {
       const t = e.target, it = itemOf(e), s = sOf();
       // the Hook blade's finisher pulls a light foe 1 m in; the Twin knives' fourth cut adds 1 Char; the Bell maul wears poise twice
@@ -292,7 +284,7 @@ export function makeGear(R) {
       for (const id of traitsOf(x)) {
         const T = traitOf(id);
         if (id === 'smoulder') burn(t, S(it.kind === 'blade' ? T.burn : T.burnOther), [s.x, s.z], false);
-        else if (id === 'steady' && steadyRoll(k++) < T.sure) sure(t, e.dmg, ev, 'steady');
+        // Steady's chance is not rolled here: it adds to Whetstone's in build.js B.sure, from the seed's sure stream
         else if (id === 'char' && n % T.every === 0) putState(t, 'char', T.char, { ev, from: [s.x, s.z] });
         else if (id === 'dim' && n % T.every === 0) putState(t, 'blind', S(T.blind));
         else if (id === 'weight') wearPoise(t, T.poise * e.dmg, [s.x, s.z]);
@@ -327,9 +319,8 @@ export function makeGear(R) {
       break;
     }
     if (G.under && G.note !== G.under) {
+      // the compare toast (hud-gear.js compareToast) says what lies here and how to swap, so no note toast repeats it
       G.note = G.under;
-      const how = G.under.kind === 'blade' ? 'hold Attack to swap' : 'hold Off-hand to swap';
-      R.notes.push(`<b>${itemName(G.under.kind, G.under)}</b> · ${how}`);
       ev.push({ type: 'gear', what: 'lamp', kind: G.under.kind, id: G.under.id });
     }
     if (!G.under) G.note = null;
@@ -395,7 +386,7 @@ export function makeGear(R) {
       const s = sOf();
       if (foe) {
         if (isFoe(foe) && heavyOf(foe)) wearPoise(foe, B.poise, [s.x, s.z]);
-        else foe.hit(0, { from: [s.x, s.z], push: 0, knock: S(B.stagger), stagger: true, kind: 'parry', parry: true });
+        else foe.hit(0, { from: [s.x, s.z], push: 0, knock: S(B.stagger), stagger: true, kind: 'parry', parry: true, buckler: true });
       }
       markSure(R);
       G.raise = -1e9;
@@ -422,12 +413,15 @@ export function makeGear(R) {
       slamNow(slam, ev);
     }
     // the Off-hand: a press (kept 0.15 s) uses it; held 0.4 s on an off-hand underfoot takes that one
-    const h = !!a.off;
-    G.buf = h && !G.was ? GEAR.buffer : Math.max(0, G.buf - 1);
+    // On an off-hand underfoot a press waits: let go before 0.4 s it uses the held one, held 0.4 s it swaps and uses nothing
+    const h = !!a.off, edge = h && !G.was;
+    G.buf = Math.max(0, G.buf - 1);
+    if (edge) { if (G.under?.kind === 'offhand') G.waitO = true; else G.buf = GEAR.buffer; }
+    if (G.waitO && !h) { G.waitO = false; G.buf = GEAR.buffer; }
     G.was = h;
     G.heldO = h ? G.heldO + 1 : 0;
     if (G.buf > 0 && press(ev)) G.buf = 0;
-    if (G.under?.kind === 'offhand' && G.heldO === GEAR.swap) swap(G.under, ev);
+    if (G.under?.kind === 'offhand' && G.heldO === GEAR.swap) { G.waitO = false; swap(G.under, ev); }
     effects(ev);
     traits(ev);
     return ev;

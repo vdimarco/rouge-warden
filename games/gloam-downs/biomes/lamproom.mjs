@@ -75,12 +75,15 @@ export default {
       const u = x / 1.2 + 0.3, v = z / 1.2 + (Math.floor(x / 1.2) % 2) * 0.5, fu = u - Math.floor(u), fv = v - Math.floor(v);
       return grit(0.8)(x, y, z) + 0.08 * (B.n3(Math.floor(u) * 1.7, Math.floor(v) * 1.3, 2) - 0.5) + (fu < 0.05 || fv < 0.05 ? -0.18 : 0);
     };
-    const warmStone = [stn[1], fire[0], ramp('wood')[2], fire[1], fire[2], fire[3]];
+    // the walls' glow is mostly the stone's own lighter shades with a warm tint at the top, so a torch's light on stone reads as a
+    // lit wall and not a flat orange smear
+    const warmStone = [stn[1], stn[2], stn[3], ramp('wood')[2], ramp('brass')[0], fire[1]];
     const stone = { r: stn, g: warmStone, mod: laid(0.8) };
     const rough = { r: stn, g: warmStone, mod: grit(0.9) };
     const dark = { r: stn.slice(0, 3), g: [stn[0]], mod: grit(0.6) };
-    const floorM = { r: fl, g: [fl[1], fl[2], fire[0], fire[1], fire[2], fire[3]], mod: flags };
-    const wood = { r: wd, g: [wd[1]], mod: grit(0.5) };
+    const floorM = { r: fl, g: [fl[1], fl[2], fl[3], fire[1], fire[2], fire[3], fire[4]], mod: flags };
+    // wood catches the stations' lamps: its glow runs to warm brass, so the racks, stands and tables stand out of the stone
+    const wood = { r: wd, g: [wd[1], wd[2], ramp('brass')[1], fire[2]], mod: grit(0.5) };
     const ironM = { r: [iron[0], iron[0], iron[1]], g: [iron[0], wd[1], fire[1]] };
     const cloth = { r: cl, g: [cl[1]], mod: grit(0.4) };
     const brass = { r: ramp('brass'), g: [ramp('brass')[1]] };
@@ -112,10 +115,11 @@ export default {
       tile(S, h, { ...moor, fat: 0.8 }, { x0: X1 + 0.2, x1: N[1], z0: N[2], z1: FRONT + 0.6, res: 0.4 });
       tile(S, h, { ...moor, fat: 0.8 }, { x0: X0 - 0.2, x1: X1 + 0.2, z0: N[2], z1: BACK - 0.2, res: 0.4 });
       const M = [-50, 50, -50, 50];
-      tile(S, h, { ...moor, fat: 0.95 }, { x0: M[0], x1: M[1], z0: N[3], z1: M[3], res: 1.0 });
-      tile(S, h, { ...moor, fat: 0.95 }, { x0: M[0], x1: M[1], z0: M[2], z1: N[2], res: 1.0 });
-      tile(S, h, { ...moor, fat: 0.95 }, { x0: M[0], x1: N[0], z0: N[2], z1: N[3], res: 1.0 });
-      tile(S, h, { ...moor, fat: 0.95 }, { x0: N[1], x1: M[1], z0: N[2], z1: N[3], res: 1.0 });
+      // the far moor: coarse, it is seen only past the open front (the hall camera looks in from over it)
+      tile(S, h, { ...moor, fat: 0.95 }, { x0: M[0], x1: M[1], z0: N[3], z1: M[3], res: 1.5 });
+      tile(S, h, { ...moor, fat: 0.95 }, { x0: M[0], x1: M[1], z0: M[2], z1: N[2], res: 1.8 });
+      tile(S, h, { ...moor, fat: 0.95 }, { x0: M[0], x1: N[0], z0: N[2], z1: N[3], res: 1.6 });
+      tile(S, h, { ...moor, fat: 0.95 }, { x0: N[1], x1: M[1], z0: N[2], z1: N[3], res: 1.6 });
     }
 
     /* ---- small props ---- */
@@ -143,9 +147,9 @@ export default {
       // the back wall, either side of the door, and over it
       for (const s of [-1, 1]) {
         const xa = s * DOOR.half, xb = s * (X1 + WALL), cx = (xa + xb) / 2, hx = Math.abs(xb - xa) / 2;
-        S.box([cx, BACK_H / 2 - 0.4, zb], [hx, BACK_H / 2 + 0.4, WALL / 2], stone, { rd: 0.06, res: 0.14 });
+        S.box([cx, BACK_H / 2 - 0.4, zb], [hx, BACK_H / 2 + 0.4, WALL / 2], stone, { rd: 0.06, res: 0.16 });
       }
-      S.box([0, (DOOR.h + 0.5 + BACK_H) / 2, zb], [DOOR.half + 0.02, (BACK_H - DOOR.h - 0.5) / 2, WALL / 2], stone, { rd: 0.06, res: 0.14 });
+      S.box([0, (DOOR.h + 0.5 + BACK_H) / 2, zb], [DOOR.half + 0.02, (BACK_H - DOOR.h - 0.5) / 2, WALL / 2], stone, { rd: 0.06, res: 0.16 });
       // the door's frame: two jambs and an arch of fat stones over a dark lintel
       for (const s of [-1, 1]) S.box([s * (DOOR.half - 0.12), DOOR.h / 2, BACK + 0.08], [0.2, DOOR.h / 2 + 0.05, 0.22], rough, { rd: 0.05, res: 0.08 });
       for (let i = 0; i < 7; i++) {
@@ -157,8 +161,8 @@ export default {
       for (const y of [0.6, 1.6, 2.6]) S.box([0, y, BACK - 0.03], [DOOR.half - 0.12, 0.05, 0.03], ironM, { rd: 0.01, res: 0.055 });
       S.torus([0.45, 1.25, BACK + 0.02], 0.11, 0.025, ironM, { res: 0.025, ax: [[1, 0, 0], [0, 0, 1], [0, -1, 0]] });
       // the side walls; the right one around the window's opening
-      S.box([X0 - WALL / 2, SIDE_H / 2 - 0.4, (BACK - WALL + FRONT) / 2], [WALL / 2, SIDE_H / 2 + 0.4, (FRONT - BACK + WALL) / 2], stone, { rd: 0.06, res: 0.14 });
-      const xr = X1 + WALL / 2, seg = (za, zb2, ya, yb) => S.box([xr, (ya + yb) / 2, (za + zb2) / 2], [WALL / 2, (yb - ya) / 2, (zb2 - za) / 2], stone, { rd: 0.05, res: 0.14 });
+      S.box([X0 - WALL / 2, SIDE_H / 2 - 0.4, (BACK - WALL + FRONT) / 2], [WALL / 2, SIDE_H / 2 + 0.4, (FRONT - BACK + WALL) / 2], stone, { rd: 0.06, res: 0.16 });
+      const xr = X1 + WALL / 2, seg = (za, zb2, ya, yb) => S.box([xr, (ya + yb) / 2, (za + zb2) / 2], [WALL / 2, (yb - ya) / 2, (zb2 - za) / 2], stone, { rd: 0.05, res: 0.16 });
       seg(WIN.z1, FRONT, -0.8, SIDE_H);
       seg(BACK - WALL, WIN.z0, -0.8, SIDE_H);
       seg(WIN.z0, WIN.z1, -0.8, WIN.y0);
@@ -180,8 +184,8 @@ export default {
       for (const z of [6.0, 2.75, -0.6, -5.2]) pilaster(X0, z, 1, 0, SIDE_H);
       for (const z of [6.0, 2.4, -2.15]) pilaster(X1, z, -1, 0, SIDE_H);
       for (const x of [-5.6, -1.9, 1.9, 5.6]) pilaster(x, BACK, 0, 1, BACK_H);
-      for (const z of [6.0, -0.6, -5.2]) sconce(X0 + 0.28, 2.55, z, 1, 0);
-      for (const z of [6.0, 2.4]) sconce(X1 - 0.28, 2.55, z, -1, 0);
+      for (const z of [6.0, -0.6, -5.2]) sconce(X0 + 0.28, 2.15, z, 1, 0, { r: 4.0 });
+      for (const z of [6.0, 2.4]) sconce(X1 - 0.28, 2.15, z, -1, 0, { r: 4.0 });
       for (const x of [-1.9, 1.9]) sconce(x, 2.7, BACK + 0.28, 0, 1, { s: 0.7, r: 5 });
       // banners on the back wall, between the stations
       for (const x of [-5.6, 5.6]) {
@@ -281,7 +285,7 @@ export default {
       const mouth = S.ball([x - 0.5, 0.38, z], [0.42, 0.36, 0.34], stone, { hold: true });
       S.join('cut', body, mouth, { res: 0.07, inner: [stn[0], fire[0]] });
       S.ball([x + 0.05, 1.3, z], [0.5, 0.28, 0.72], rough, { res: 0.07 });
-      ctx.fire([x - 0.2, 0.18, z], 0.7, { k: 0.9, r: 3.6, n: 4 });
+      ctx.fire([x - 0.25, 0.2, z], 0.95, { k: 0.9, r: 4.2, n: 5 });
       // the hood: a breast of stone from the kiln to the wall's top, and a ledge under the hooks
       S.box([X1 - 0.32, 2.8, z], [0.34, 1.4, 1.3], stone, { rd: 0.05, res: 0.1 });
       S.box([X1 - 0.66, 1.62, z], [0.1, 0.05, 1.25], wood, { rd: 0.01, res: 0.05 });
@@ -316,6 +320,28 @@ export default {
     for (const [x, z] of [[-6.1, 6.3], [6.2, 6.4], [-5.9, -6.9]]) S.lathe([x, -0.05, z], 0.95, [0.38, 0.36], wood, { res: 0.05 });
     for (const [x, z, a] of [[-5.2, 6.5, 0.3], [5.3, 6.6, -0.2]]) S.box([x, 0.32, z], [0.36, 0.34, 0.36], wood, { ax: yawAx(a), rd: 0.03, res: 0.05 });
 
+    /* ---- a lantern over each station: a pool of warm light on its object and the floor before it, so each station reads from across
+       the hall as a lit thing against the dark stone (a lit set piece in a dim room, as the stations of Hades' House glow) ---- */
+    {
+      const lantern = (x, y, z, top) => {
+        S.tube([[x, top, z], [x, y + 0.24, z]], 0.015, 0.015, ironM, { res: 0.04 });
+        S.ball([x, y + 0.2, z], [0.11, 0.05, 0.11], ironM, { res: 0.045 });
+        S.ball([x, y, z], [0.1, 0.16, 0.1], { r: lamp, em: true }, { res: 0.045 });
+        S.ball([x, y - 0.18, z], [0.08, 0.03, 0.08], ironM, { res: 0.045 });
+        ctx.lamp([x, y, z], 3.4, 0.85, true);
+      };
+      // where each lantern hangs: inward of a wall station's object, out from the back wall's, over the table and the well
+      const at = { wick: [-5.75, 4.5], blades: [5.75, 4.5], offhand: [-5.75, 1], shelf: [-5.9, -2.5], window: [6.0, 0.9], kiln: [5.6, -5.4], trophy: [-3.5, -6.6], bell: [3.2, -6.4], map: [1.3, -3.6], well: [-3.7, 1.55] };
+      for (const [id, [x, z]] of Object.entries(at)) {
+        // a wall arm from the nearest wall, or a chain from a beam over the hall's middle
+        const wallX = x < -5 ? X0 : x > 5 ? X1 : null, wallZ = z < -6 ? BACK : null;
+        if (wallX !== null) S.tube([[wallX, 3.4, z], [x, 3.4, z]], 0.035, 0.035, ironM, { res: 0.06 });
+        else if (wallZ !== null) S.tube([[x, 3.4, wallZ], [x, 3.4, z]], 0.035, 0.035, ironM, { res: 0.06 });
+        else S.tube([[x - 0.4, 3.4, z], [x + 0.4, 3.4, z]], 0.04, 0.04, wood, { res: 0.06 });
+        lantern(x, id === 'well' ? 2.55 : 2.7, z, 3.4);
+      }
+    }
+
     /* ---- the marks: the spawn, the run door, the stations ---- */
     ctx.spawn([HALL.spawn[0], yHall + 0.03, HALL.spawn[1]], HALL.yaw);
     ctx.door([HALL.door[0], yHall, HALL.door[1]]);
@@ -338,19 +364,25 @@ export default {
       const [lx, ly, lz] = wareAt(i, st('shelf').obj[0], st('shelf').obj[1]), n = u.costs.length;
       for (let k = 1; k <= n; k++) grow(`ware:${u.id}:${k}`, () => {
         const y = ly + 0.04 + ((k - 0.5) / 8) * 0.38;
-        ring(lx, y, lz, 0.09, 12, lamp[0], 0.02);
-        B.iso(lx, y, lz, 0.05, P(fire[3]), 2, { em: true, nd: true });
+        ring(lx, y, lz, 0.1, 12, lamp[0], 0.03);
+        B.iso(lx, y, lz, 0.07, P(fire[3]), 2, { em: true, nd: true });
+        B.iso(lx, y, lz, 0.17, P(fire[2]), 0.35, { em: true, nd: true });
       });
     });
     // the patterns: a dark lamp hangs on its hook when found, a lit one when kindled
     PATTERNS.forEach((p, i) => {
       const [hx, hy, hz] = hookAt(i, st('kiln').obj[1]);
-      grow(`pattern:${p.id}:found`, () => { B.iso(hx, hy, hz, 0.05, P(stn[2]), 3, { em: true }); B.iso(hx, hy + 0.06, hz, 0.035, P(iron[0]), 3, { em: true }); B.iso(hx, hy - 0.01, hz, 0.018, P(fire[1]), 3, { em: true, nd: true }); });
+      grow(`pattern:${p.id}:found`, () => {
+        B.iso(hx, hy, hz, 0.075, P(stn[3]), 3, { em: true }); B.iso(hx, hy + 0.09, hz, 0.05, P(iron[0]), 3, { em: true });
+        B.iso(hx, hy - 0.01, hz, 0.03, P(fire[1]), 3, { em: true, nd: true }); B.iso(hx, hy - 0.09, hz, 0.03, P(iron[0]), 3, { em: true });
+      });
       grow(`pattern:${p.id}:lit`, () => {
         const c = hueSlot(colourOf(p));
-        B.iso(hx, hy, hz, 0.05, P(c[1]), 3, { em: true, nd: true, k: 7, ph: i, sp: 1.6 });
-        B.iso(hx, hy, hz, 0.11, P(c[0]), 0.5, { em: true, nd: true });
-        B.iso(hx, hy + 0.06, hz, 0.035, P(iron[1]), 3, { em: true });
+        B.iso(hx, hy, hz, 0.075, P(c[1]), 3, { em: true, nd: true, k: 7, ph: i, sp: 1.6 });
+        B.iso(hx - 0.02, hy + 0.01, hz, 0.035, P(lamp[1] ?? lamp[0]), 3, { em: true, nd: true });
+        B.iso(hx, hy, hz, 0.18, P(c[0]), 0.45, { em: true, nd: true });
+        B.iso(hx, hy + 0.09, hz, 0.05, P(iron[1]), 3, { em: true });
+        B.iso(hx, hy - 0.09, hz, 0.03, P(iron[1]), 3, { em: true });
       });
     });
     // the panes: coloured glass in a slot of the window; a shutter on a slot not bought
@@ -372,32 +404,40 @@ export default {
       });
     }
     // the unlocks: a lit wick on its hook
-    UNLOCKS.forEach((u, i) => { const [hx, hy, hz] = wickAt(i, st('wick').obj[0], st('wick').obj[1]); grow(`unlock:${u.id}`, () => flame(hx + 0.08, hy + 0.11, hz, 1)); });
+    UNLOCKS.forEach((u, i) => { const [hx, hy, hz] = wickAt(i, st('wick').obj[0], st('wick').obj[1]); grow(`unlock:${u.id}`, () => { flame(hx + 0.08, hy + 0.14, hz, 2); B.iso(hx + 0.08, hy + 0.12, hz, 0.16, P(fire[2]), 0.4, { em: true, nd: true }); }); });
     // the blades: each hangs point down on its hook; the start blade glows along its edge
     BLADES.forEach((b, i) => {
-      const [bx, by, bz] = bladeAt(i, st('blades').obj[0], st('blades').obj[1]), len = 0.75 * b.bone, wide = 0.08 * (b.width || 1);
+      const [bx, by, bz] = bladeAt(i, st('blades').obj[0], st('blades').obj[1]), len = 1.0 * b.bone, wide = 0.11 * (b.width || 1);
       grow(`blade:${b.id}`, () => {
         B.iso(bx - 0.04, by, bz, 0.04, P(iron[0]), 3, { em: true });
         B.axial(bx - 0.06, by - 0.12, bz, [0, 1, 0], 0.08, 0.03, P(wd[1]), 3, { em: true });
         B.axial(bx - 0.06, by - 0.2, bz, [0, 0, 1], 0.12, 0.025, P(iron[0]), 3, { em: true });
-        for (let k = 0; k < 6; k++) B.axial(bx - 0.06, by - 0.24 - len * (k + 0.5) / 6, bz, [0, 1, 0], len / 10, wide * (b.id === 'bell' && k > 3 ? 1.6 : 1), P(iron[k % 2]), 3, { em: true });
-        if (b.id === 'twin') for (let k = 0; k < 5; k++) B.axial(bx - 0.06, by - 0.24 - len * (k + 0.5) / 6, bz + 0.12, [0, 1, 0], len / 12, wide * 0.8, P(iron[1]), 3, { em: true });
+        const segs = 10;
+        for (let k = 0; k < segs; k++) {
+          const y = by - 0.24 - len * (k + 0.5) / segs, w = wide * (b.id === 'bell' && k > 6 ? 1.7 : 1) * (k === segs - 1 && b.id !== 'bell' ? 0.6 : 1);
+          B.axial(bx - 0.06, y, bz, [0, 1, 0], len / (segs * 1.6), w, P(iron[k % 2]), 3, { em: true });
+          // the edge: a thin line of the bright steel down one side
+          B.axial(bx - 0.1, y, bz + w * 0.8, [0, 1, 0], len / (segs * 1.6), 0.025, P(stn[4]), 3, { em: true });
+        }
+        if (b.id === 'twin') for (let k = 0; k < 8; k++) B.axial(bx - 0.06, by - 0.24 - len * (k + 0.5) / 8, bz + 0.2, [0, 1, 0], len / 13, wide * 0.8, P(iron[1]), 3, { em: true });
       });
-      grow(`blade:${b.id}:start`, () => { for (let k = 0; k < 6; k++) B.iso(bx - 0.03, by - 0.24 - len * (k + 0.5) / 6, bz + wide + 0.02, 0.02, P(lamp[0]), 3, { em: true, nd: true, k: 7, ph: k, sp: 1.4 }); });
+      grow(`blade:${b.id}:start`, () => { for (let k = 0; k < 8; k++) B.iso(bx - 0.03, by - 0.24 - len * (k + 0.5) / 8, bz + wide + 0.05, 0.035, P(lamp[0]), 3, { em: true, nd: true, k: 7, ph: k, sp: 1.4 }); B.iso(bx - 0.08, by - 0.24 - len / 2, bz, 0.3, P(fire[2]), 0.3, { em: true, nd: true }); });
     });
     // the off-hands, each on its peg; the start one glows
     OFFHANDS.forEach((o, i) => {
       const [px, py, pz] = offAt(i, st('offhand').obj[0], st('offhand').obj[1]);
       grow(`offhand:${o.id}`, () => {
-        const y = py - 0.08;
-        if (o.id === 'buckler') { ring(px + 0.02, y, pz, 0.14, 14, iron[1], 0.035, {}); B.iso(px, y, pz, 0.12, P(wd[2]), 3, { em: true }); B.iso(px - 0.02, y, pz, 0.04, P(iron[1]), 3, { em: true }); }
-        else if (o.id === 'cuff') { for (let k = 0; k < 12; k++) { const a = (k / 12) * Math.PI * 2; B.iso(px, y + Math.sin(a) * 0.09, pz + Math.cos(a) * 0.09, 0.03, P(iron[k % 2]), 3, { em: true }); } }
-        else if (o.id === 'sling') { for (let k = 0; k < 8; k++) B.iso(px, y - k * 0.04, pz + Math.sin(k * 0.6) * 0.05, 0.02, P(wd[2]), 3, { em: true }); B.iso(px, y - 0.32, pz, 0.05, P(stn[3]), 3, { em: true }); }
-        else if (o.id === 'pot') { B.iso(px, y - 0.1, pz, 0.12, P(wd[1]), 3, { em: true }); B.iso(px, y + 0.02, pz, 0.05, P(fire[1]), 3, { em: true, nd: true }); }
-        else if (o.id === 'chain') { for (let k = 0; k < 9; k++) B.iso(px, y - k * 0.045, pz + (k % 2) * 0.02, 0.022, P(iron[1]), 3, { em: true }); }
-        else { B.iso(px, y - 0.12, pz, 0.08, P(iron[0]), 3, { em: true }); B.iso(px, y - 0.04, pz, 0.1, P(cl[1]), 3, { em: true }); B.iso(px, y - 0.16, pz, 0.03, P(ramp('gloam')[1]), 3, { em: true, nd: true }); }
+        const y = py - 0.08, K = 1.6;
+        const ring = (x, yy, z, r, n, c, sz = 0.022, o2 = {}) => { for (let q = 0; q < n; q++) { const a = (q / n) * Math.PI * 2; B.iso(x, yy + Math.sin(a) * r * K, z + Math.cos(a) * r * K, sz * K, P(c), 3, { em: true, ...o2 }); } };
+        const iso = (x, yy, z, r, c, o2 = { em: true }) => B.iso(x, y + (yy - y) * K, pz + (z - pz) * K, r * K, P(c), 3, o2);
+        if (o.id === 'buckler') { ring(px + 0.02, y, pz, 0.14, 16, iron[1], 0.03); iso(px, y, pz, 0.12, wd[2]); iso(px - 0.02, y, pz, 0.045, stn[4]); }
+        else if (o.id === 'cuff') { ring(px, y, pz, 0.09, 14, iron[1], 0.03); ring(px - 0.01, y, pz, 0.065, 10, iron[0], 0.022); }
+        else if (o.id === 'sling') { for (let k = 0; k < 8; k++) iso(px, y - k * 0.04, pz + Math.sin(k * 0.6) * 0.05, 0.02, wd[2]); iso(px, y - 0.32, pz, 0.05, stn[4]); }
+        else if (o.id === 'pot') { iso(px, y - 0.1, pz, 0.12, wd[2]); iso(px, y + 0.02, pz, 0.05, fire[2], { em: true, nd: true }); iso(px, y - 0.12, pz + 0.07, 0.03, fire[1], { em: true, nd: true }); }
+        else if (o.id === 'chain') { for (let k = 0; k < 9; k++) iso(px, y - k * 0.045, pz + (k % 2) * 0.02, 0.024, stn[4]); }
+        else { iso(px, y - 0.12, pz, 0.08, iron[1]); iso(px, y - 0.04, pz, 0.1, cl[2]); iso(px, y - 0.16, pz, 0.035, ramp('gloam')[1], { em: true, nd: true }); }
       });
-      grow(`offhand:${o.id}:start`, () => ring(px + 0.03, py + 0.1, pz, 0.09, 8, lamp[0], 0.018, { k: 7, ph: i, sp: 1.4 }));
+      grow(`offhand:${o.id}:start`, () => { ring(px + 0.05, py - 0.08, pz, 0.24, 14, lamp[0], 0.03, { k: 7, ph: i, sp: 1.4 }); B.iso(px + 0.05, py - 0.1, pz, 0.32, P(fire[2]), 0.3, { em: true, nd: true }); });
     });
     // the keys' trophies and the elites' plaques
     LAMP_KEYS.forEach((k, i) => {
@@ -412,7 +452,11 @@ export default {
     });
     ELITE_LIST.forEach((e, i) => {
       const [px, py] = eliteAt(i, st('trophy').obj[0]);
-      grow(`elite:${e.id}`, () => { ring(px, py, BACK + 0.11, 0.1, 9, lamp[0], 0.02); B.iso(px, py, BACK + 0.11, 0.05, P(fire[2]), 3, { em: true, nd: true }); });
+      grow(`elite:${e.id}`, () => {
+        for (let q = 0; q < 14; q++) { const a = (q / 14) * Math.PI * 2; B.iso(px + Math.cos(a) * 0.15, py + Math.sin(a) * 0.18, BACK + 0.11, 0.032, P(lamp[0]), 3, { em: true, nd: true }); }
+        B.iso(px, py, BACK + 0.11, 0.08, P(fire[3]), 3, { em: true, nd: true });
+        B.iso(px, py, BACK + 0.13, 0.26, P(fire[2]), 0.35, { em: true, nd: true });
+      });
     });
     // the Ember levels: a ring of light round the bell's mouth for each level open, wider each level
     {

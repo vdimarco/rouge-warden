@@ -87,7 +87,9 @@ function focusSeen() {
   const over = (a, c) => a.left < c.right - 0.5 && c.left < a.right - 0.5 && a.top < c.bottom - 0.5 && c.top < a.bottom - 0.5;
   const foot = [...document.querySelectorAll('#lampRow button')].filter(x => !x.hidden);
   const inBox = r.top >= R(document.querySelector('#lamp .box')).top - 0.5 && r.bottom <= innerHeight + 0.5;
-  return { id: b.id || b.closest('li')?.dataset.up || b.closest('li')?.dataset.unlock || b.dataset.ember || b.textContent, ok: inBox && (foot.includes(b) || !foot.some(y => over(r, R(y)))) };
+  // (a row's button by its row's data: the locked blades and off-hands all read "Locked")
+  const li = b.closest('li'), row = li ? Object.entries(li.dataset).map(e => e.join('=')).join() : '';
+  return { id: b.id || li?.dataset.up || li?.dataset.unlock || b.dataset.ember || (row ? `${row}:${b.textContent}` : b.textContent), ok: inBox && (foot.includes(b) || !foot.some(y => over(r, R(y)))) };
 }
 
 try {

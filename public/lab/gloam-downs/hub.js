@@ -13,8 +13,9 @@ export const HUB_NAME = 'The Lamp-room';
 export const USE = { r: 1.6, face: 70, shut: 2.5, away: 0.3, click: 3, quarter: 4 };
 /* The plan (design.md "Decision 4"). at: the point the lamplighter stands on; obj: where the object stands (the prompt faces it).
    The hall is 14 m wide (x -7 to 7); its back wall's inner face is at z = -7.6, so the trophy wall, the bell and the door stand at the
-   back with room to stand in front of them. The front (z = 7) is open */
-export const HALL = { x0: -7, x1: 7, back: -7.6, front: 7, spawn: [0, 5], yaw: Math.PI, door: [0, -7] };
+   back with room to stand in front of them. The front (z = 7) is open. The spawn stands 3.2 m inside it, so the first view, from the
+   hall camera over the open front, is of the hall and not of the terrace */
+export const HALL = { x0: -7, x1: 7, back: -7.6, front: 7, spawn: [0, 3.8], yaw: Math.PI, door: [0, -7] };
 const W = -Math.PI / 2, E = Math.PI / 2, N = Math.PI;
 export const STATIONS = [
   { id: 'well', name: 'The well', cat: 'bank', at: [-2.5, 2.5], face: W, obj: [-3.7, 2.5] },

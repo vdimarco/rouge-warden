@@ -367,8 +367,10 @@ export function makeBoss({ walk, arena = null, seed = 1, runner = null, bounds =
    No flinch and no push. In a stumble the hits do no damage. In the 1.5 s after the cage slam it is open and takes 50% more. A hit
    that crosses 800 or 350 brings on the next phase with its stumble; one that takes the last health brings the fall. A held boss
    takes the damage and holds its pose. */
-  function hitBoss(raw) {
+  function hitBoss(raw, how = {}) {
     if (!B.alive || !hittable()) return false;
+    // a tick never reaches the Reeve (status.js tickHit refuses it), and one sent here anyway neither hurts it nor wears its poise
+    if (how?.tick) return false;
     B.flashTo = B.game + 1 + REEVE.flash;
     B.shakeTo = B.game + 1 + REEVE.shake;
     B.flash = REEVE.flash; B.shake = REEVE.shake;

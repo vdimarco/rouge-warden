@@ -122,14 +122,18 @@ const pass = (name, data) => { n++; console.log('PASS ' + name + (data !== undef
   assert.deepEqual([S.bladeRows(rs)[0].mark.shape, H.gearMark({ kind: 'offhand', id: 'buckler' }).shape, H.gearMark({ kind: 'ability', id: 'blink' }).shape], ['triangle', 'square', 'diamond']);
   assert.deepEqual([H.gearMark({ kind: 'blade', id: 'hook', tier: 'bright' }).pips, H.gearMark({ kind: 'blade', id: 'hook', tier: 'blazing' }).pips, H.gearMark({ kind: 'ability', id: 'bomb', bright: true }).pips], [1, 2, 1]);
   // the blade rack and the off-hand stand
-  assert.deepEqual(S.bladeRows(rs).map(r => [r.id, r.pick]), [['lamp', 'Start blade']]);
+  // every blade and off-hand shows: the kindled ones to pick, the others locked with where they come from
+  assert.deepEqual(S.bladeRows(rs).map(r => [r.id, r.pick]), [['lamp', 'Start blade'], ['hook', 'Locked'], ['twin', 'Locked'], ['bell', 'Locked']]);
+  assert.match(S.bladeRows(rs)[1].text, /Blade rack unlock/);
   rs.kindled = [...STARTERS, 'twin', 'sling'];
-  assert.deepEqual(S.bladeRows(rs).map(r => r.id), ['lamp', 'twin']);
+  rs.patterns = ['hook'];
+  assert.deepEqual(S.bladeRows(rs).filter(r => !r.locked).map(r => r.id), ['lamp', 'twin']);
+  assert.match(S.bladeRows(rs).find(r => r.id === 'hook').text, /kindle it at the kiln for 160 glim/);
   H.chooseBlade(rs, 'twin');
-  assert.deepEqual(S.bladeRows(rs).map(r => r.pick), ['Pick', 'Start blade']);
-  assert.deepEqual(S.offhandRows(rs).map(r => [r.id, r.start]), [['buckler', true], ['sling', false], [null, false]]);
+  assert.deepEqual(S.bladeRows(rs).map(r => r.pick), ['Pick', 'Locked', 'Start blade', 'Locked']);
+  assert.deepEqual(S.offhandRows(rs).map(r => [r.id, r.start, r.locked]), [['buckler', true, false], ['sling', false, false], [null, false, false], ['cuff', false, true], ['pot', false, true], ['chain', false, true], ['shade', false, true]]);
   H.chooseOffhand(rs, null);
-  assert.equal(S.offhandRows(rs).at(-1).start, true);
+  assert.equal(S.offhandRows(rs).find(r => r.id === null).start, true);
   assert(S.keyRows(rs).every(r => !r.got && /first fall of The /.test(r.label)));
   // the well: the bank and the last run
   assert.match(S.wellLines(rs)[0], /^Banked: 500 glim\./);

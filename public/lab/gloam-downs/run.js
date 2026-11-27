@@ -584,10 +584,11 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
     // Ember parry: a melee hit from in front in the first 0.1 s of a first cut is turned aside, and the foe staggers for 1 s
     if (parried(from, ev)) return 'none';
     // the Buckler (gear-play.js): a blow in the first 0.2 s of its raise is parried, a later one in the raise deals 40%
-    const block = R.gear.block(dmg, from, ev, o);
+    // (a blow in the roll's safe time or the 1.0 s after a hit would not hurt anyway, so it is not parried and readies no sure cut)
+    const safe = fighter.safe();
+    const block = safe ? null : R.gear.block(dmg, from, ev, o);
     if (block === 'parry') return 'none';
     if (Number.isFinite(block)) dmg = block;
-    const safe = fighter.safe();
     // Bell guard (abilities.js): the blow is turned aside. A blow that would not hurt anyway (in the roll's safe time or the 1.0 s
     // after a hit) does not spend it, and a roll's near miss stays a near miss
     if (!safe && R.abilities?.turn(from, ev, o)) return 'none';
@@ -671,6 +672,9 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
     R.eliteDown = true;
     const relic = drawRelic(run.seed, run.elitesDown.length, run.relics);
     if (!run.elitesDown.includes(run.place)) run.elitesDown.push(run.place);
+    // the lasting save: this elite has been put out once (its plaque shows on the hall's trophy wall)
+    const eid = el.elite?.id;
+    if (eid && !(rs.eliteFalls ||= []).includes(eid)) rs.eliteFalls.push(eid);
     const y0 = R.floorAt(e.x, e.z, e.y) ?? e.y;
     R.relics.drop(relic, [e.x, y0, e.z]);
     let flask = false;

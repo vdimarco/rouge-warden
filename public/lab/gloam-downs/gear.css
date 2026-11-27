@@ -28,6 +28,8 @@
 /* the tier: pips at the bottom, and a gold rim (bright) or a double rim (blazing) */
 .gt .pips, .gm .pips, .act .bm .pips { position: absolute; left: 50%; bottom: 1px; transform: translateX(-50%); display: flex; gap: 2px; text-decoration: none; }
 .gt .pips i, .gm .pips i, .act .bm .pips i { display: block; width: 5px; height: 5px; border-radius: 50%; background: var(--g-gold); box-shadow: 0 0 0 1px #2a1a08; }
+/* on a 40 px tile (a desktop) the pips are bigger, so a tier reads at a glance */
+@media (min-width: 700px) and (min-height: 500px) { .gt .pips { gap: 3px; bottom: 2px; } .gt .pips i { width: 8px; height: 8px; box-shadow: 0 0 0 1.5px #2a1a08; } }
 .gt.t-bright { box-shadow: 0 0 0 1px var(--g-gold); }
 .gt.t-blazing { box-shadow: 0 0 0 1px var(--g-gold), 0 0 0 3px #120c06, 0 0 0 4px var(--g-gold); }
 /* a cooling off-hand or ability: a dark sweep of the share left, and the seconds */

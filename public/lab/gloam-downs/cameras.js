@@ -10,7 +10,7 @@
 // for the boss while the fight has started, the boss is up and the lamplighter is outside the arena within 16 m of its centre. Until the
 // foes land, the training posts and the lineup figures stand in.
 import { makeCamera as viewCamera } from './ink/webgl/view.mjs';
-import { autoTurn } from './play.js';
+import { autoTurn, damp } from './play.js';
 
 const DEG = Math.PI / 180;
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -248,4 +248,79 @@ export function makeBossCam(cam, { screen, boss = () => null, centre = [18, 0.68
     return b.view;
   }
   return { b, turn, step, live };
+}
+
+/* ---------------- the hall camera (gloam-downs-hub, the Lamp-room) ----------------
+   The hall is a room with an open front and no roof. The follow camera, 6 to 15 m behind the lamplighter, stood behind the back wall as
+   soon as the lamplighter turned to face the front, and its cutaway then showed only the floor from above for the first 7 m of the walk
+   back. So in the hall the view is the high three-quarter view of a cut-away room (Hades' House of Hades, the family home of Children of
+   Morta; the open front is the stage's missing wall): the eye always stands on the open front's side of the lamplighter, its yaw within
+   HALLCAM.yaw of looking straight at the back wall. Walking toward the front walks toward the camera. Where a side wall would come
+   between, the yaw is held back toward the front (the controls' yaw with it, so the keys still move as they look), and the eye never
+   stands behind a wall, so the hall needs no cutaway. A station in reach draws the aim part way to its object and looks a little further
+   down, so the object shows over the lamplighter's head; with its card open the view also turns HALLCAM.frame.turn to the side with
+   more room, so the object stands beside the figure. Eased with a critically damped spring of `ease` s; with reduced motion it does not
+   glide, it cuts. */
+export const HALLCAM = { yaw: 1.1, dist: 7.5, tall: 9.5, pitch: 0.22, lo: 0.3, hi: 0.95, side: 6.4, back: 0.6, ease: 0.22, sheet: 2.0, frame: { k: 0.45, y: 1.3, pitch: 0.12, turn: 0.42 } };
+/* the room along the ground from (ax, az) toward yaw's eye side (sin yaw, cos yaw), inside the hall's walls; once the line leaves by the
+   open front it is free. box: { x0, x1, back, front } (hub.js HALL) -> metres */
+export function hallRoom(ax, az, yaw, box, side = HALLCAM.side) {
+  const ux = Math.sin(yaw), uz = Math.cos(yaw), lim = Math.min(side, (box.x1 - box.x0) / 2 - 0.5);
+  const cx = (box.x0 + box.x1) / 2;
+  let tx = Infinity, tz = Infinity, tf = Infinity;
+  if (ux > 1e-6) tx = (cx + lim - ax) / ux; else if (ux < -1e-6) tx = (cx - lim - ax) / ux;
+  if (uz < -1e-6) tz = (box.back + HALLCAM.back - az) / uz;
+  if (uz > 1e-6) tf = (box.front - az) / uz;
+  // out by the open front before a side wall: free
+  if (tf < Math.min(tx, tz)) return Infinity;
+  return Math.max(0, Math.min(tx, tz));
+}
+/* the yaw the hall allows nearest `yaw`: within ±HALLCAM.yaw of facing the back, and turned toward the front until the eye's ground
+   distance h fits in the room */
+export function hallYaw(ax, az, yaw, h, box) {
+  let y = clamp(wrap(yaw), -HALLCAM.yaw, HALLCAM.yaw);
+  for (let i = 0; i < 200 && Math.abs(y) > 1e-3 && hallRoom(ax, az, y, box) < h; i++) y -= Math.sign(y) * Math.min(Math.abs(y), 0.02);
+  return y;
+}
+/* cam: the follow camera (its yaw, the player's pitch, the layout's aim, distance and field of view); box: hub.js HALL; focus() -> the
+   station to frame, { obj: [x, z], y, open } or null; still: reduced motion */
+export function makeHallCam(cam, { box, focus = () => null, still = false } = {}) {
+  const h = { aim: null, av: [0, 0, 0], pitch: 0, pv: 0, dist: 0, dv: 0, off: 0, ov: 0, w: 0, wv: 0, snaps: -1, view: null };
+  function step(s, dt, view) {
+    const c = cam.c, F = HALLCAM.frame, f = focus();
+    const fresh = h.snaps !== c.snaps || !h.aim;
+    h.snaps = c.snaps;
+    const ease = (x, to, v, T = HALLCAM.ease) => (still || fresh ? [to, 0] : damp(x, to, v, T, dt));
+    // the framing's weight: 1 with a station in reach, eased
+    [h.w, h.wv] = ease(h.w, f ? 1 : 0, h.wv);
+    /* (an upright phone's open card is a bottom sheet: the view keeps the sheet's own tilt, main.js SHEET_TILT, which puts the
+       station above the sheet, and is not drawn toward the object, which would bring it down behind the sheet) */
+    const tallNow = (c.asp ?? 16 / 9) < 1, fy = f ? f.y ?? F.y : 0, k = f?.open && tallNow ? 0 : F.k * h.w;
+    // (and lowered a further HALLCAM.sheet m there: from the hall camera's higher pitch the sheet's tilt alone left a back-wall station
+    // at the sheet's top edge)
+    const goal = [s.x, s.y + c.aim - (f?.open && tallNow ? HALLCAM.sheet * h.w : 0), s.z];
+    if (f) { goal[0] += (f.obj[0] - s.x) * k; goal[1] += (s.y + fy - goal[1]) * k * 0.5; goal[2] += (f.obj[1] - s.z) * k; }
+    if (fresh) h.aim = goal.slice();
+    for (let i = 0; i < 3; i++) [h.aim[i], h.av[i]] = ease(h.aim[i], goal[i], h.av[i]);
+    const tall = (c.asp ?? 16 / 9) < 1, dist = Math.min(c.want, tall ? HALLCAM.tall : HALLCAM.dist);
+    [h.dist, h.dv] = ease(h.dist, dist, h.dv);
+    const pitch = clamp(c.pitch + HALLCAM.pitch + F.pitch * h.w, HALLCAM.lo, HALLCAM.hi);
+    [h.pitch, h.pv] = ease(h.pitch, pitch, h.pv);
+    // the controls' yaw: on the front's side and clear of the side walls
+    const flat = h.dist * Math.cos(h.pitch);
+    // a snap that puts the eye on the back's side (a teleport facing the front) mirrors it to the front's side, which faces the same way
+    if (fresh && Math.abs(wrap(c.yaw)) > Math.PI / 2) c.yaw = Math.sign(wrap(c.yaw)) * (Math.PI - Math.abs(wrap(c.yaw)));
+    c.yaw = hallYaw(h.aim[0], h.aim[2], c.yaw, flat, box);
+    // an open card turns the view to the side with more room, so the object stands beside the figure
+    let off = 0;
+    if (f?.open) {
+      const l = hallRoom(h.aim[0], h.aim[2], c.yaw - F.turn, box), r = hallRoom(h.aim[0], h.aim[2], c.yaw + F.turn, box);
+      off = (r >= l ? 1 : -1) * F.turn;
+      if (Math.max(l, r) < flat) off = 0;
+    }
+    [h.off, h.ov] = ease(h.off, off, h.ov);
+    h.view = { ...view, target: h.aim.slice(), dist: h.dist, yaw: c.yaw + h.off, pitch: h.pitch, cut: false, ...(c.fov ? { fov: c.fov } : {}) };
+    return h.view;
+  }
+  return { h, step };
 }

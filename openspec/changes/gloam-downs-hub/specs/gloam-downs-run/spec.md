@@ -5,11 +5,22 @@ Between runs the Lamp-room SHALL be a baked place, `lamproom`, with an open fron
 
 #### Scenario: The title opens the hall
 - **WHEN** the player presses Lamp-room on the title
-- **THEN** `__gloam.place()` is `lamproom`, the lamplighter stands at (0, 5), no foe slot is awake, and the start view's mean luminance is between 0.07 and 0.16. Check: e2e `gloam-downs-hub.e2e.mjs`.
+- **THEN** `__gloam.place()` is `lamproom`, the lamplighter stands at (0, 3.8), no foe slot is awake, and the start view's mean luminance is between 0.07 and 0.16. Check: e2e `gloam-downs-hub.e2e.mjs`.
 
 #### Scenario: A death walks back to the hall
 - **WHEN** a run ends in a death and the player closes the summary
 - **THEN** the hall loads and the well's card holds the run's recap. Check: e2e `gloam-downs-hub.e2e.mjs`.
+
+### Requirement: The hall camera
+In the hall the view SHALL look in over the open front, its yaw within 63 degrees of facing the back wall and turned toward the front where a side wall would come between, with no cutaway and its eye never behind a wall. A station in reach SHALL draw the view toward its object. With its card open, the object SHALL show beside or over the lamplighter, never behind it. Moves SHALL follow the view.
+
+#### Scenario: Walk back to the open front
+- **WHEN** the lamplighter stands before the run door facing the front and walks toward the front for 6 s, at 1280x720 and 390x844
+- **THEN** the view is never a cutaway, its pitch stays at most 0.95, its distance at least 6 m, and its eye inside the walls or past the open front. Check: Node test `gloam-downs-hub-rules.test.mjs`, and the screenshots `front-walk-*.png` of `gloam-downs-hub-layout.e2e.mjs`.
+
+#### Scenario: The station's object in view
+- **WHEN** a station's card is open at 1280x720 or 800x600
+- **THEN** the object's screen point is on the screen and outside the lamplighter's screen box. Check: Node test `gloam-downs-hub-rules.test.mjs`, and the station screenshots of `gloam-downs-hub-layout.e2e.mjs`.
 
 ### Requirement: Stations in the hall
 The hall SHALL have these 12 stations, each with its own object: the lamp shelf (wares), the kiln (patterns), the pane window (panes), the wick rack (unlocks), the blade rack (blades), the off-hand stand (off-hands), the ability post (abilities), the trophy wall (keys), the Ember bell, the map table, the well and the run door. Each SHALL be reachable on the walk map and within 6 m of the spawn-to-door path.
@@ -19,18 +30,22 @@ The hall SHALL have these 12 stations, each with its own object: the lamp shelf 
 - **THEN** each of the 12 station marks is reachable from the spawn with `reachable`, and each is within 6 m of the path to the door. Check: `node games/gloam-downs/bake.mjs lamproom --check`, and Node test `gloam-downs-hub.test.mjs`.
 
 ### Requirement: Station cards
-Within 1.6 m of a station and facing it within 70 degrees, the hall SHALL show the station's name and its Use key. Use SHALL open a card with only that station's rows, made by the same row makers and Buy, Kindle and Set rules as the quick list. Esc, B, the close button, walking away for 0.3 s or moving 2.5 m away SHALL close it. The lamplighter SHALL stand still while it is open.
+Within 1.6 m of a station and facing it within 70 degrees, the hall SHALL show the station's name and its Use key. Use SHALL open a card with only that station's rows, made by the same row makers and Buy, Kindle and Set rules as the quick list. Esc, B, the close button, a move across (A, D or the touch stick) held 0.3 s or being 2.5 m away SHALL close it. The lamplighter SHALL stand still while it is open. Only the lamp shelf, kiln, pane window and wick rack SHALL show the bank line.
 
 #### Scenario: The lamp shelf shows only wares
 - **WHEN** the lamplighter walks to the lamp shelf and presses E
 - **THEN** a card opens with one row a ware and no pattern, pane or unlock row. Check: e2e `gloam-downs-hub.e2e.mjs`.
+
+#### Scenario: Only a shop shows the bank line
+- **WHEN** the blade rack's card and then the lamp shelf's card open
+- **THEN** the blade rack's card has no "Banked" line and the lamp shelf's has one. Check: e2e `gloam-downs-hub.e2e.mjs`.
 
 #### Scenario: Walk away to close
 - **WHEN** the lamp shelf's card is open and the player holds Left for 0.3 s
 - **THEN** the card is shut and the lamplighter walks. Check: e2e `gloam-downs-hub.e2e.mjs`.
 
 ### Requirement: Station input
-Use SHALL be E or Enter on keys, A on a pad, a click on the prompt or on a station within 3 m, and a Use button of at least 44 px on touch. In a card, arrows, W and S, the d-pad or the stick SHALL move the focus, and Enter, A, a click or a tap SHALL press. Every station SHALL work with keys alone, a pad alone, a mouse and touch alone.
+Use SHALL be E or Enter on keys, A on a pad, a click on the prompt or on a station within 3 m, and a Use button of at least 44 px on touch. In a card, arrows, W and S, the d-pad or the stick SHALL move the focus (held, they never shut it), and Enter, A, a click or a tap SHALL press. Every station SHALL work with keys alone, a pad alone, a mouse and touch alone.
 
 #### Scenario: Buy with a pad alone
 - **WHEN** a pad walks to the lamp shelf, presses A, moves to Mantle's Buy and presses A with 50 glim banked
@@ -41,11 +56,11 @@ Use SHALL be E or Enter on keys, A on a pad, a click on the prompt or on a stati
 - **THEN** the pattern is kindled. Check: e2e `gloam-downs-hub.e2e.mjs`.
 
 ### Requirement: Station cards in every layout
-A station card SHALL sit beside its station at 800x600 and 1280x720, at most 360 px wide and 16 px inside the screen; a bottom sheet at most 55% high at 320x640, 360x640 and 390x844, with the station in view above it; and a side sheet at most 45% wide at 844x390. It SHALL never cover the Lab bar, and SHALL scroll inside itself.
+A station card SHALL sit beside its station at 800x600 and 1280x720, at most 360 px wide and 16 px inside the screen; a bottom sheet at most 55% high at 320x640, 360x640 and 390x844, with the station in view above it; and a side sheet at most 45% wide and no taller than its rows at 844x390. It SHALL never cover the Lab bar, its close button SHALL cover none of its text, and it SHALL scroll inside itself.
 
 #### Scenario: Six layouts
 - **WHEN** the lamp shelf's card opens at 320x640, 390x844, 360x640, 844x390, 800x600 and 1280x720
-- **THEN** it follows the rule for each size, every button is reachable by scroll, and the station's screen point is outside the card. Check: e2e `gloam-downs-hub-layout.e2e.mjs`.
+- **THEN** it follows the rule for each size, every button is reachable by scroll, the station's screen point is outside the card, and the close button overlaps no text of the card. Check: e2e `gloam-downs-hub-layout.e2e.mjs`.
 
 ### Requirement: The quick list
 Tab, the pad's View button or a touch List button of at least 44 px SHALL open one card with every station's rows, anywhere in the hall. It SHALL keep the rules of today's Lamp-room card: focus kept in the card, Buy off and focusable when glim is short, and the Ember row after a first win.
@@ -55,18 +70,22 @@ Tab, the pad's View button or a touch List button of at least 44 px SHALL open o
 - **THEN** one card shows headings in the order Blades, Off-hands, Abilities, Panes, Patterns, Wares, Unlocks, Keys, Ember, each with its rows, and Esc shuts it. Check: e2e `gloam-downs-hub.e2e.mjs`.
 
 ### Requirement: The hall grows
-The hall SHALL show what the save owns and nothing else: a ware's lamp with one lit ring a level, an unlit lamp on the kiln for each found pattern and a lit one on its hood for each kindled one, set panes as coloured glass and shutters on slots not bought, a lit wick for each unlock, each kindled blade on the blade rack, each kindled off-hand on the stand, a trophy for each key and a plaque for each elite put out.
+The hall SHALL show what the save owns and nothing else: a ware's lamp with one lit ring a level, an unlit lamp on the kiln for each found pattern and a lit one on its hood for each kindled one, set panes as coloured glass and shutters on slots not bought, a lit wick for each unlock, each kindled blade on the blade rack, each kindled off-hand on the stand, a trophy for each key and a plaque for each elite put out once (kept in the lasting save).
 
 #### Scenario: Buy lights a ring
 - **WHEN** Mantle goes from level 2 to 3 at the lamp shelf
 - **THEN** Mantle's third ring range gets its baked density back, the cue log has `buy`, and the other ranges do not change. Check: Node test `gloam-downs-hub.test.mjs`, and e2e `gloam-downs-hub.e2e.mjs`.
+
+#### Scenario: An elite's plaque
+- **WHEN** the Wardmother is put out in a run and the save is reloaded
+- **THEN** the save's `eliteFalls` holds `wardmother` and the hall shows its plaque and no other. Check: Node test `gloam-downs-hub-rules.test.mjs`.
 
 #### Scenario: A first key goes on the wall
 - **WHEN** the save gains Crow step and the hall loads
 - **THEN** the Crow step trophy's range is shown and the Bell drop trophy's range is at density 0. Check: Node test `gloam-downs-hub.test.mjs`.
 
 ### Requirement: Try the build at the ability post
-In the hall, Attack, Roll, the off-hand and both abilities SHALL work at the ability post, with cooldowns at a quarter of their length, damage numbers over the post, and nothing spent. Its card SHALL let the player put any two kindled abilities in the slots to try, in the hall only.
+In the hall, Attack, Roll, the off-hand and both abilities SHALL work at the ability post, with the abilities' and the off-hand's cooldowns at a quarter of their length, damage numbers over the post, and nothing spent. Its card SHALL let the player put any two kindled abilities in the slots to try, in the hall only.
 
 #### Scenario: A bomb at the post
 - **WHEN** the lamplighter throws Lantern bomb at the post
@@ -81,6 +100,10 @@ The map table SHALL show the seed's route as five lamps, with Begin the run, Wan
 
 ### Requirement: The beacon shrine
 At a lit beacon, nothing SHALL load. The beacon card's "Go to the shrine" SHALL leave the lamplighter at the beacon with a station card open beside it, with tabs Wares, Patterns and Panes, switched by Left and Right, LB and RB, or a tap. It SHALL spend the glim carried first, then the bank.
+
+#### Scenario: Switch tabs with keys and a pad
+- **WHEN** the shrine is open on Wares and the player presses Right, then RB, then Left
+- **THEN** the tab is Patterns, then Panes, then Patterns, each with its own rows. Check: e2e `gloam-downs-hub.e2e.mjs`.
 
 #### Scenario: Spend at the shrine
 - **WHEN** the lamplighter lights the Gaol's beacon with 50 carried and 30 banked, opens the shrine and buys Mantle 1 for 40
@@ -130,14 +153,26 @@ A blind foe's next attack started within 3 s (1.5 s for a heavy foe) SHALL play 
 - **THEN** the hook plays and the lamplighter's health does not change. Check: Node test `gloam-downs-states.test.mjs`.
 
 ### Requirement: Ticks never interrupt
-A tick of Char, Soot or burn SHALL NOT make a foe flinch, wear its poise, stop a wind-up, add to the combo or give glim. Ticks on one foe SHALL deal at most 8 a second together. A burst of Char or Mark SHALL be a hit under the fair-fight rules.
+A tick of Char, Soot or a burn, the gear's burns too, SHALL NOT make a foe flinch, wear its poise, stop a wind-up, add to the combo or give glim. Ticks on one foe SHALL deal at most 8 a second together, but for a lit Oil slick's ground fire. The Barrow Reeve SHALL take no tick. A burst of Char or Mark SHALL be a hit under the fair-fight rules.
+
+#### Scenario: A gear burn is no hit
+- **WHEN** a Smouldering cut burns a Snuffer for 2 s
+- **THEN** its two ticks are ticks, not hits, the combo counts the cut alone, and a tick in a second already at 8 deals nothing. Check: Node test `gloam-downs-hub-rules.test.mjs`.
+
+#### Scenario: The Reeve takes no tick
+- **WHEN** a Smouldering cut lands on the Barrow Reeve
+- **THEN** it gets no burn, no tick hurts it, and its poise does not change. Check: Node test `gloam-downs-hub-rules.test.mjs`.
 
 #### Scenario: A ticking foe still swings
 - **WHEN** a Snuffer with 5 s of Soot and 4 Char starts its hook
 - **THEN** the hook lands on time, its poise is unchanged, and the ticks deal at most 8 in that second. Check: Node test `gloam-downs-states.test.mjs`.
 
 ### Requirement: Sure cuts
-A sure cut SHALL deal 1.5 times, after the added bonuses, with a brighter spark, a 1-step longer hit stop and the `sure` cue. A hit SHALL be sure from Sure hand on a stunned, held or blind foe, from Shutter, or by Whetstone's chance of 4% a level from the seed's `sure` stream.
+A sure cut SHALL deal 1.5 times, after the added bonuses, with a brighter spark, a 1-step longer hit stop and the `sure` cue. A hit SHALL be sure from Sure hand on a stunned, held or blind foe, from Shutter, or by one roll a blade hit from the seed's `sure` stream at Whetstone's 4% a level plus Steady's 6% for each held item with it.
+
+#### Scenario: Steady adds to Whetstone
+- **WHEN** with Whetstone 1, a Steady blade and a Steady Sling, 4,000 blade hits roll
+- **THEN** 14% to 18% are sure, each took one roll of the sure stream, and no hit dealt an extra blow. Check: Node test `gloam-downs-hub-rules.test.mjs`.
 
 #### Scenario: Sure hand on a held foe
 - **WHEN** with Sure hand the first cut hits a foe held by Ember snare
@@ -309,11 +344,15 @@ The Lamp blade (Flame, from the first run), Hook blade (Flame), Twin knives (Glo
 - **THEN** the run holds the Hook blade, plain, with no traits. Check: e2e `gloam-downs-hub.e2e.mjs`.
 
 ### Requirement: Swap gear on the ground
-A found blade or off-hand SHALL lie on the ground with a glow in its colour. Standing on it SHALL show the compare toast. Holding Attack 0.4 s on a blade, or Off-hand 0.4 s on an off-hand, SHALL take it and leave the old one there with its tier and traits; a tap SHALL still cut or use. Ability lamps SHALL swap as today.
+A found blade or off-hand SHALL lie on the ground with a glow in its colour. Standing on it SHALL show the compare toast. Holding Attack 0.4 s on a blade, or Off-hand 0.4 s on an off-hand, SHALL take it and leave the old one there with its tier and traits, using nothing first; a tap SHALL still cut or use. Only the compare toast SHALL say how to swap. Ability lamps SHALL swap as today.
 
 #### Scenario: Hold to swap a blade
 - **WHEN** the lamplighter stands on a bright Hook blade holding a plain Lamp blade and holds Attack 0.4 s
 - **THEN** the run holds the bright Hook blade, the plain Lamp blade lies there, and the cue log has `swap`. Check: e2e `gloam-downs-run.gear.e2e.mjs`.
+
+#### Scenario: Hold to swap an off-hand uses nothing
+- **WHEN** the lamplighter holding a Buckler stands on a Sling and holds Off-hand 0.4 s
+- **THEN** it holds the Sling, the Buckler was not raised and no cooldown runs. Check: Node test `gloam-downs-hub-rules.test.mjs`.
 
 #### Scenario: A tap still cuts
 - **WHEN** the lamplighter stands on a blade and taps Attack
@@ -331,11 +370,15 @@ The off-hand SHALL have its own button and cooldown: V or O on keys, the middle 
 - **THEN** the lamplighter turns to face it. Check: e2e `gloam-downs-run.gear.e2e.mjs`.
 
 ### Requirement: The Buckler
-The Buckler (Ward, from the first run, 1.2 s) SHALL be raised for 0.6 s. A blow in its first 0.2 s SHALL be parried: 0 damage, a light foe staggered 0.6 s, a heavy foe losing 30 poise, and the next cut sure. A blow later in the raise SHALL deal 40%. A new save SHALL have the Buckler picked.
+The Buckler (Ward, from the first run, 1.2 s) SHALL be raised for 0.6 s. A blow in its first 0.2 s SHALL be parried: 0 damage, a light foe staggered 0.6 s, a heavy foe losing 30 poise, and the next cut sure. A blow later in the raise SHALL deal 40%. A blow in the roll's safe time or the 1.0 s after a hit SHALL NOT be parried. A new save SHALL have the Buckler picked.
 
 #### Scenario: A parry
 - **WHEN** a Snuffer's hook lands 0.1 s after the Buckler is raised
 - **THEN** health does not change, the Snuffer staggers 0.6 s, the cue log has `parry`, and the next cut is sure. Check: Node test `gloam-downs-gear.test.mjs`, and e2e `gloam-downs-run.gear.e2e.mjs`.
+
+#### Scenario: No parry in the safe time
+- **WHEN** a hook lands in the roll's safe time 0.05 s after the Buckler is raised
+- **THEN** no parry plays and no sure cut is readied. Check: Node test `gloam-downs-hub-rules.test.mjs`.
 
 #### Scenario: A late block
 - **WHEN** a 20 hook lands 0.4 s after the Buckler is raised
@@ -421,6 +464,13 @@ At 1280x720 and 800x600 the gear row SHALL sit at the bottom left with 40 px til
 - **WHEN** a run with all four gear slots full shows at 320x640, 390x844, 360x640, 844x390, 800x600 and 1280x720
 - **THEN** the gear row follows the rule for each size, overlaps no control, and the touch buttons are at least 44 px with their marks. Check: e2e `gloam-downs-gear-hud.e2e.mjs`, with screenshots under `SHOTS`.
 
+### Requirement: Locked gear at the rack and stand
+The blade rack and the off-hand stand SHALL list every blade and off-hand, the ones not kindled greyed and locked, each saying where it comes from: the kiln for a found pattern, else a run's pattern drops, after the Blade rack unlock for a blade.
+
+#### Scenario: Locked gear shows
+- **WHEN** a new save opens the blade rack
+- **THEN** it lists the Lamp blade to pick and the Hook blade, Twin knives and Bell maul locked, each saying how to find it. Check: Node tests `gloam-downs-hub.test.mjs` and `gloam-downs-hub-rules.test.mjs`.
+
 ### Requirement: Cards by category
 Every choice card and station row SHALL start with its category glyph and word, show its colour edge, its tier mark when it has one, and a line a trait. On a ground blade, off-hand or ability lamp, the compare toast SHALL show the held item over the found one with tiers, traits and the way to swap, in two lines with no numbers at 320x640, and SHALL never cover a touch button.
 
@@ -433,7 +483,7 @@ Every choice card and station row SHALL start with its category glyph and word, 
 - **THEN** each row starts with the pane glyph and the word Pane and has its colour edge, and no row has a tier mark. Check: e2e `gloam-downs-hub.e2e.mjs`.
 
 ### Requirement: The save keeps the gear
-The save SHALL keep the start `blade` and `offhand`, and in a run the held blade, off-hand and abilities as `{ id, tier, traits }`, the gear on the ground with its place, and the draw counters, so a reload gives the same gear and drops. `clean()` SHALL make an unknown tier plain, keep only known traits that fit, differ and fit the tier's count, and make an unknown blade the Lamp blade and an unknown off-hand none.
+The save SHALL keep the start `blade` and `offhand`, and in a run the held blade, off-hand and abilities as `{ id, tier, traits }`, the gear on the ground with its place, and the draw counters (the sure stream's too), so a reload gives the same gear, drops and sure cuts. `clean()` SHALL make an unknown tier plain, keep only known traits that fit, differ and fit the tier's count, and make an unknown blade the Lamp blade and an unknown off-hand none.
 
 #### Scenario: A reload keeps the gear
 - **WHEN** a run holding a bright Twin knives with Quick is saved and loaded

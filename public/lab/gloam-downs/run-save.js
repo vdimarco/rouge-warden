@@ -9,6 +9,8 @@
 import { ORDER } from './save.js';
 import { WICKS, UPGRADES, UNLOCK_IDS, EMBER_TOP, maxHp, flasksMax, routeFor, startAbilities, kindledOf, paneSlots } from './run.js';
 import { RELIC_IDS, RELIC_MAX } from './relics.js';
+import { ELITE_LIST } from './elites.js';
+const ELITE_IDS = () => ELITE_LIST.map(e => e.id);
 import { COLOUR_IDS, ABILITY_IDS, PANE_IDS, PATTERN_IDS, STARTERS, LAMP_KEY_IDS, DROPS } from './growth.js';
 import { cleanGear, kindledGear, plain, GEAR_DROPS, BLADE_IDS, OFFHAND_IDS } from './gear.js';
 
@@ -18,7 +20,7 @@ export const V2_KEY = 'gloam-downs.run.v2';
 export const OLD_KEY = 'gloam-downs.run.v1';
 export const fresh = () => ({
   v: 4, bank: 0, up: Object.fromEntries(UPGRADES.map(u => [u.id, 0])), unlocks: [], ember: 0, emberTop: 0, bestByEmber: [0, 0, 0, 0, 0, 0], bestCombo: 0,
-  patterns: [], kindled: STARTERS.slice(), keys: [], panes: [], blade: 'lamp', offhand: 'buckler',
+  patterns: [], kindled: STARTERS.slice(), keys: [], eliteFalls: [], panes: [], blade: 'lamp', offhand: 'buckler',
   runs: 0, wins: 0, deaths: 0, furthest: 0, reached: [], bestWin: 0, sound: true, music: true, shake: null, seen: false, wander: false, run: null, ended: null
 });
 const WICK_IDS = WICKS.map(w => w.id);
@@ -60,7 +62,9 @@ function cleanGrown(r, s, place) {
     groundPatterns: cleanLamps(r.groundPatterns, PATTERN_IDS, 6),
     // the gear (v4): the blade and off-hand held, the gear on the ground here, and the draw counters of the gear, tier and trait streams
     blade: cleanBlade(r.blade, s), offhand: cleanOff(r.offhand, s), gearLamps: cleanGearLamps(r.gearLamps, s, place),
-    gearRolls: count(r.gearRolls, 1e6), tierRolls: count(r.tierRolls, 1e6), traitRolls: count(r.traitRolls, 1e6), gearDrops: intIn(r.gearDrops, 0, GEAR_DROPS.max, 0)
+    gearRolls: count(r.gearRolls, 1e6), tierRolls: count(r.tierRolls, 1e6), traitRolls: count(r.traitRolls, 1e6), gearDrops: intIn(r.gearDrops, 0, GEAR_DROPS.max, 0),
+    // the sure stream's counter (build.js sureRoll) and Cracked glass's count, so a reload rolls the same sure cuts
+    sureRolls: count(r.sureRolls, 1e6), cracked: intIn(r.cracked, 0, 3, 0)
   };
   g.abilities = cleanSlots(r.abilities, abilities);
   return g;
@@ -155,6 +159,8 @@ export function clean(raw) {
   s.kindled = [...new Set([...STARTERS, ...ids(raw.kindled, [...STARTERS, ...PATTERN_IDS], STARTERS.length + PATTERN_IDS.length)])];
   s.patterns = ids(raw.patterns, PATTERN_IDS.filter(p => !s.kindled.includes(p)), PATTERN_IDS.length);
   s.keys = ids(raw.keys, LAMP_KEY_IDS, LAMP_KEY_IDS.length);
+  // the elites put out at least once (their plaques on the hall's trophy wall), each once
+  s.eliteFalls = ids(raw.eliteFalls, ELITE_IDS(), ELITE_IDS().length);
   // the start blade and off-hand (v4): kindled ones; a save with no off-hand field (v3) has the Buckler picked, and null is none
   s.blade = kindledGear(s, 'blade').includes(raw.blade) ? raw.blade : 'lamp';
   s.offhand = !('offhand' in raw) ? 'buckler' : kindledGear(s, 'offhand').includes(raw.offhand) ? raw.offhand : null;

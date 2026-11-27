@@ -5,7 +5,7 @@
 // makeBuild(R) makes the build of one runner and keeps it on R.build; the runner reads it in its stats (the bonus, a sure cut, the
 // haste) and in hurt() (the shell), and steps it at the end of its own step. Every time here is in play steps of 1/60 s.
 import { ABILITIES, PANES, MOVE_COLOUR, COLOUR_IDS } from './growth.js';
-import { BLADES, OFFHANDS } from './gear.js';
+import { BLADES, OFFHANDS, traitsOf, traitOf } from './gear.js';
 import { RELICS } from './relics.js';
 import { makeCombo } from './combo.js';
 import { statusHit, STATES } from './status.js';
@@ -44,6 +44,12 @@ export function colourCount(R) {
   for (const r of run.relics || []) add(relicColour(r));
   return n;
 }
+// Steady's share of the sure-cut chance: 6% for each Steady on the held blade, off-hand and abilities (traits on two items add)
+export function steadyChance(run) {
+  let n = 0;
+  for (const x of [run?.blade, run?.offhand, ...(run?.abilities || [])]) if (x) for (const id of traitsOf(x)) if (id === 'steady') n += traitOf('steady').sure;
+  return n;
+}
 export const setsOf = R => { const n = colourCount(R); return COLOUR_IDS.filter(c => n[c] >= BUILD_RULES.set.need); };
 
 export function makeBuild(R) {
@@ -68,7 +74,8 @@ export function makeBuild(R) {
     if (B.sureUntil >= clock.play) { sure = true; B.sureUntil = -1; }
     const st = t?.status;
     if (!sure && has('sure') && (st?.stun > 0 || st?.hold > 0 || st?.blind > 0 || t?.state === 'stun')) sure = true;
-    const whet = whetChance(rs.up);
+    // Whetstone's 4% a level and Steady's 6% on each held item add into one chance, one roll a blade hit from the sure stream
+    const whet = whetChance(rs.up) + steadyChance(r);
     if (whet > 0 && sureRoll(r) < whet) sure = true;
     return sure;
   };
@@ -161,7 +168,7 @@ export function makeBuild(R) {
       for (const x of B.shells.slice()) if (Number.isFinite(x.left) && --x.left <= 0) end(x, ev, false);
     }
     for (const e of ev.slice()) {
-      if (e.type === 'hit' && e.target) {
+      if (e.type === 'hit' && e.target && !e.tick) {
         // the combo of the Count wick: each 12th hit throws a free Lantern bomb at 75% at the nearest foe within 6 m
         if (B.combo.hit(e.kind === 'relic' ? 'relic' : e.kind) && has('count') && B.combo.n % wick('count').every === 0) countBomb(ev);
         const blade = BUILD_RULES.blade.includes(e.kind);

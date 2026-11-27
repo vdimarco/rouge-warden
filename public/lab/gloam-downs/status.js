@@ -85,7 +85,8 @@ export function markHit(f, how = {}, ev = null) {
 /* one tick on a foe: raw damage, inside the 8-a-second cap that every tick on the foe shares, sent as a tick (foes.js: the damage and
    its flash, nothing else). -> the damage dealt (0 when the cap is spent) */
 export function tickHit(f, raw, ev = null, o = {}) {
-  if (!f?.alive) return 0;
+  // the Barrow Reeve takes no ticks at all (only Char's burst, statusHit)
+  if (!f?.alive || isBoss(f)) return 0;
   let n = Math.round(raw);
   // the cap: the ticks of the last 60 play steps of this foe (a rolling second) add to at most 8
   if (o.capped !== false && isFoe(f)) {

@@ -7,7 +7,7 @@ import { createRenderer } from './ink/webgl/renderer.mjs';
 import { makeCamera as viewCamera } from './ink/webgl/view.mjs';
 import { loadPlace } from './world.js';
 import { makeWalk, makeBody, makeCamera, makeBlend, camLayout, pose, touches, atBeacon, autoTurn, PARAMS, makeFade, fadeOf, eyeOf } from './play.js';
-import { makeCombat, makeMoveLock, asFoes, makeBossCam, yawDiff, easeTurn, BOSS } from './cameras.js';
+import { makeCombat, makeMoveLock, asFoes, makeBossCam, makeHallCam, yawDiff, easeTurn, BOSS } from './cameras.js';
 import { ORDER, LATTICE, load, store, wispCount, fresh } from './save.js';
 import { placeName, nextOf, mapGroups, mapLine, arriveLine, hintOf, startPlace } from './places.js';
 import * as RS from './run-save.js';
@@ -42,7 +42,7 @@ import { titleView, frameAt, titleSpot } from './menu-scene.js';
 import { titleLamps, titleLine, seedLine, emberStep, wareTiles, recapOf, pickColour } from './screens.js';
 import { PAD } from './input.js';
 // the Lamp-room as a place (gloam-downs-hub): the hall's plan and rules, its rows, and the stand-ins of the gear builder's picks
-import { HUB, stationOf, stationNear, promptOf, SHRINE_TABS, shown as growShown, practiceRun, quarterCool, postRows, tryAbility, chooseBlade, chooseOffhand, USE, startBlade as startBladeOf, startOffhand as startOffhandOf } from './hub.js';
+import { HUB, HALL, stationOf, stationNear, promptOf, SHRINE_TABS, shown as growShown, practiceRun, quarterCool, postRows, tryAbility, chooseBlade, chooseOffhand, USE, startBlade as startBladeOf, startOffhand as startOffhandOf } from './hub.js';
 import { bladeRows, offhandRows, keyRows, wellLines } from './screens.js';
 import { gearRow, compareToast } from './hud-gear.js';
 import { groundGear, gearTest } from './gear-play.js';
@@ -253,7 +253,7 @@ function padCheck() {
 function pollPad(dt) {
   const p = inp.readPad(), n = p.nav;
   const was = padWas;
-  padWas = { a: n.a, b: n.b, start: n.start, back: n.back, face: p.face, pause: p.pause, use: p.use, list: p.list };
+  padWas = { a: n.a, b: n.b, start: n.start, back: n.back, face: p.face, pause: p.pause, use: p.use, list: p.list, lb: !!p.down?.has(PAD.LB), rb: !!p.down?.has(PAD.RB) };
   // a pad that first shows up takes the labels, and that press presses nothing; after a key or a mouse press, a pad's next press or
   // stick takes them back
   if (p.any && !padFound) { padFound = padSeen = true; showControls(); updateAbilities(); return; }
@@ -267,6 +267,10 @@ function pollPad(dt) {
       if ((dx || dy) && document.activeElement?.closest?.('.lcard, .lamp')) cards.moveDir(dx, dy);
       else cards.move(d);
     }
+    // LB and RB switch the beacon shrine's tabs
+    const tabEdge = k => padWas[k] && !was[k];
+    if (tabEdge('lb') && shrineTab(-1)) return;
+    if (tabEdge('rb') && shrineTab(1)) return;
     if (edge('a')) { if (cards.press()) inp.swallowAll(); }
     else if (edge('b')) back();
     else if (edge('start')) startButton();
@@ -1556,6 +1560,15 @@ function stepBack() {
    never stored, with cooldowns at a quarter. In a run the Lamp-room is the beacon's shrine: the same card, three tabs, beside the beacon */
 const hall = { near: null, list: [], shown: new Map(), tried: [], practice: null, last: null, walkAway: 0, door: 0, tab: 'shelf', hits: 0, fetched: false, opened: 0, cool: [] };
 const hallOn = () => RUN && meta?.id === HUB;
+let hallCam = null;
+// the station the hall camera frames: the open card's, else the one in reach (its object at the height of its middle)
+function hallFocus() {
+  if (!hallOn()) return null;
+  const id = !$('lamp').hidden ? $('lamp').dataset.station : null, st = id ? hall.list.find(x => x.id === id) : hall.near;
+  return st ? { obj: st.obj, y: STATION_Y[st.id] ?? 1.3, open: !!id } : null;
+}
+// the height of each station's object's middle, over the floor
+const STATION_Y = { well: 1.0, map: 1.0, post: 1.2, kiln: 1.6, trophy: 2.2, bell: 1.9, door: 1.8, shelf: 1.4, window: 1.8, blades: 1.6, offhand: 1.3, wick: 1.5 };
 // the practice run's save: the real one, but its run is the practice run (so nothing in the hall touches rs.run or is stored with it)
 const hallRs = new Proxy({}, {
   get: (_, k) => (k === 'run' ? hall.practice : rs[k]),
@@ -1617,6 +1630,13 @@ function hallStep() {
   const moving = Math.hypot(input.mx || 0, input.mz || 0) > 0.2;
   hall.door = d && st?.id === 'door' && moving && Math.hypot(s.x - d.at[0], s.z - d.at[1]) < 0.8 ? hall.door + STEP : 0;
   if (hall.door >= 0.2) { hall.door = 0; hallBegin(); return; }
+  // the off-hand cools at a quarter in the hall too (the post), as the abilities do
+  const pr = hall.practice, G = runner?.gear;
+  if (pr && G) {
+    const c = pr.offCool | 0;
+    if (c > (hall.offWas | 0)) { pr.offCool = Math.ceil(c / USE.quarter); G.full = Math.max(1, pr.offCool); }
+    hall.offWas = pr.offCool | 0;
+  }
   const A = runner?.abilities;
   if (A?.cool) {
     quarterCool(A.cool, hall.cool).forEach((c, i) => { if (c !== A.cool[i]) { A.cool[i] = c; A.full[i] = Math.max(1, c); } });
@@ -1711,13 +1731,29 @@ function closeStation() {
   hall.near = null;
 }
 // a station card's own step: the lamplighter stands still; a move held 0.3 s on keys walks away from it (a pad's stick moves the focus)
+/* (W, S and the arrows move the focus in the card, so only a move across, A or D, or the touch stick walks away; a lamplighter pushed
+   more than USE.shut m from the station's point shuts it too) */
 function stationStep() {
   const pad = readPads(navigator.getGamepads?.() || [], RUN), padMove = Math.hypot(pad.mx, pad.mz) >= 0.2;
-  const held = !padMove && Math.hypot(input.mx || 0, input.mz || 0) > 0.2 && steps - hall.opened > 6;
+  const touch = controlsKind() === 'touch', mx = input.mx || 0, mz = input.mz || 0;
+  const held = !padMove && (touch ? Math.hypot(mx, mz) > 0.2 : Math.abs(mx) > 0.2) && steps - hall.opened > 6;
   hall.walkAway = held ? hall.walkAway + STEP : 0;
-  if (hall.walkAway >= USE.away) { hall.walkAway = 0; closeStation(); }
+  const st = hall.list.find(x => x.id === $('lamp').dataset.station), s = body.s;
+  if (hall.walkAway >= USE.away || (st && Math.hypot(s.x - st.at[0], s.z - st.at[1]) > USE.shut)) { hall.walkAway = 0; closeStation(); }
 }
-// the shrine's tabs (Wares, Patterns, Panes) at a beacon
+// the shrine's tabs (Wares, Patterns, Panes) at a beacon; Left and Right (cards.js setTabKeys), LB and RB (pollPad) switch them
+function shrineTab(dir) {
+  if ($('shrineTabs').hidden || $('lamp').hidden) return false;
+  const i = SHRINE_TABS.findIndex(t => t.id === hall.tab), n = SHRINE_TABS.length, t = SHRINE_TABS[(i + dir + n) % n];
+  hall.tab = t.id;
+  audio?.cue('choice');
+  shrineTabs();
+  lampParts(t.id);
+  const b = firstButton($('lamp'));
+  if (b && b.closest('#shrineTabs') === null) b.focus({ preventScroll: true });
+  return true;
+}
+cards.setTabKeys(shrineTab);
 function shrineTabs() {
   const box = $('shrineTabs');
   box.textContent = '';
@@ -1758,13 +1794,16 @@ function fillHall() {
       const li = growRow(list, key, r, () => fn(r.id), r.text), b = li.querySelector('button');
       b.textContent = r.pick;
       b.setAttribute('aria-pressed', String(r.start));
-      b.setAttribute('aria-label', `${r.mark?.word || ''} ${r.name}: ${r.start ? 'the start pick' : 'pick it to start with'}`);
+      // a locked item shows greyed with where it comes from; its button only says no
+      li.classList.toggle('locked', !!r.locked);
+      b.setAttribute('aria-disabled', String(!!r.locked));
+      b.setAttribute('aria-label', `${r.mark?.word || ''} ${r.name}: ${r.locked ? r.text : r.start ? 'the start pick' : 'pick it to start with'}`);
     }
   };
   // a pick also goes to the hall's practice run, so the gear row and the post show the new start blade or off-hand at once
   const pickGear = () => { if (hall.practice) { const g = practiceRun(rs, hall.tried); hall.practice.blade = g.blade; hall.practice.offhand = g.offhand; } };
-  pick($('bladeRows'), 'blade', bladeRows(rs), id => { if (!chooseBlade(rs, id)) return audio?.cue('refuse'); audio?.cue('choice'); pickGear(); storeRun(); fillLamp(); });
-  pick($('offRows'), 'off', offhandRows(rs), id => { if (!chooseOffhand(rs, id)) return audio?.cue('refuse'); audio?.cue('choice'); pickGear(); storeRun(); fillLamp(); });
+  pick($('bladeRows'), 'blade', bladeRows(rs), id => { if (bladeRows(rs).find(r => r.id === id)?.locked || !chooseBlade(rs, id)) return audio?.cue('refuse'); audio?.cue('choice'); pickGear(); storeRun(); fillLamp(); });
+  pick($('offRows'), 'off', offhandRows(rs), id => { if (offhandRows(rs).find(r => r.id === id)?.locked || !chooseOffhand(rs, id)) return audio?.cue('refuse'); audio?.cue('choice'); pickGear(); storeRun(); fillLamp(); });
   const post = postRows(rs, hall.tried), pl = $('postRows');
   $('postLine').textContent = hallOn() ? 'Put any two in the post\'s slots to try them here. They cool four times as fast, and nothing is spent.' : 'Try them at the ability post in the Lamp-room.';
   for (const li of [...pl.children]) if (!post.some(r => r.id === li.dataset.ab)) li.remove();
@@ -1879,7 +1918,10 @@ async function go(id) {
   walk = makeWalk(meta.walk, place.walk);
   // a run's moves drive the body through its own copy of PARAMS
   body = makeBody(walk, meta.spawn, meta.bounds, RUN ? { ...PARAMS } : PARAMS);
-  cam = makeCamera(walk, { yaw: meta.spawn.yaw + Math.PI, auto: !still, ...layoutNow() });
+  // (in the hall the view does not swing behind a running lamplighter: the hall camera keeps it on the open front's side)
+  cam = makeCamera(walk, { yaw: meta.spawn.yaw + Math.PI, auto: !still && !(RUN && id === HUB), ...layoutNow() });
+  // the hall camera (cameras.js makeHallCam): the three-quarter view from the open front, framing the station in reach
+  hallCam = RUN && id === HUB ? makeHallCam(cam, { box: HALL, still, focus: hallFocus }) : null;
   blend = makeBlend(cam);
   // a run that goes on after the boss's fall starts at the arena, facing the beacon, with the light at the lantern
   const arena = RUN && rs.run?.bossDown ? meta.zones?.find(z => z.boss) : null;
@@ -2021,6 +2063,7 @@ function update() {
     if (s.y < -25) { body.place(meta.spawn.p, meta.spawn.yaw); cam.snap(body.s, meta.spawn.yaw + Math.PI); toast('Back to the start'); }
   }
   view = cam.follow(body.s, STEP, input, RUN && mode === 'play' ? runTurn : RUN && mode === 'intro' ? introTurn : null);
+  if (hallCam) view = hallCam.step(body.s, STEP, view);
   if (bossCam) {
     view = bossCam.step(body.s, STEP, view);
     if (bossCam.b.on && steps % 30 === 0) measureScreen();
@@ -2095,7 +2138,7 @@ function seen(v, b, dt) {
 /* o.time draws at that game time (the clips and the flicker); o.pool false parks every foe for this one draw (?test); o.view and o.body
    are the frame's blend of the last two steps (play.js makeBlend: the loop's frames between steps) */
 function draw(o = {}) {
-  if (!view) { view = cam.follow(body.s, 0, input); blend.reset(); }
+  if (!view) { view = cam.follow(body.s, 0, input); if (hallCam) view = hallCam.step(body.s, 0, view); blend.reset(); }
   const t = Number.isFinite(o.time) ? o.time : time, view0 = view;
   if (o.view) view = o.view;
   // behind the title the place drifts (menu-scene.js); the follow camera is not stepped by it
@@ -2176,7 +2219,7 @@ addEventListener('pagehide', keep);
 
 // where a world point lands on the screen, in CSS px (null behind the eye)
 function project([x, y, z], v = null) {
-  if (!view) view = cam.follow(body.s, 0, input);
+  if (!view) { view = cam.follow(body.s, 0, input); if (hallCam) view = hallCam.step(body.s, 0, view); }
   const c = viewCamera(world, { camera: v || view }, art.w, art.h), V = c.view, Pm = c.projection;
   const mv = i => V[i] * x + V[4 + i] * y + V[8 + i] * z + V[12 + i], e = [mv(0), mv(1), mv(2), mv(3)];
   const cl = i => Pm[i] * e[0] + Pm[4 + i] * e[1] + Pm[8 + i] * e[2] + Pm[12 + i] * e[3], w = cl(3);

@@ -144,8 +144,9 @@ const cues = R => R.log.map(c => c.cue);
   const hp = rs.run.hp, out = R.hurt(14, [f.x, f.z]);
   assert.equal(out, 'none');
   assert.equal(rs.run.hp, hp);
-  assert.equal(f.state, 'down');
-  assert.equal(f.downFor, Math.round(0.6 * 60));
+  // a stagger of the parry's 0.6 s (not a knock-down)
+  assert.equal(f.state, 'stagger');
+  assert.equal(f.staggerFor, Math.round(0.6 * 60));
   assert(cues(R).includes('parry') && cues(R).includes('buckler'));
   assert.equal(R.gear.view().sure, true, 'the next cut is sure');
   pass('a parry: no damage, the Snuffer staggers 0.6 s, the parry cue, and the next cut is sure');
@@ -309,7 +310,7 @@ const cues = R => R.log.map(c => c.cue);
   // the foe does not think here, so its flinch from the cut stays as it was: a tick adds no flinch and counts toward no brace
   const fl0 = [f.flinch | 0, f.flinches.length, f.cancels | 0], fl = [];
   let ticks = 0;
-  for (let i = 0; i < 150; i++) for (const e of R.step({}, 0)) { if (e.type === 'hit' && e.offhand === 'burn') { ticks++; fl.push([f.flinch | 0, f.flinches.length, f.cancels | 0]); } }
+  for (let i = 0; i < 150; i++) for (const e of R.step({}, 0)) { if (e.type === 'tick' && e.id === 'burn') { ticks++; fl.push([f.flinch | 0, f.flinches.length, f.cancels | 0]); } }
   assert.equal(ticks, 2, 'two ticks in 2 s');
   assert(fl.every(v => v.join() === fl0.join()), `no tick flinches it: ${JSON.stringify(fl)} against ${fl0}`);
   pass('Smouldering: a cut burns the Snuffer 2 s, a tick a second, and no tick flinches it');

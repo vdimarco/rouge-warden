@@ -49,7 +49,7 @@ import { bossBrain } from './gloam-downs-bossbot.mjs';
 import { PATTERNS } from '../../public/lab/gloam-downs/growth.js';
 import * as RS from '../../public/lab/gloam-downs/run-save.js';
 import { groundGear } from '../../public/lab/gloam-downs/gear-play.js';
-import { tierOf, traitsOf, bladeOf, offhandOf } from '../../public/lab/gloam-downs/gear.js';
+import { tierOf, traitsOf, bladeOf, offhandOf, chooseBlade, chooseOffhand } from '../../public/lab/gloam-downs/gear.js';
 import { makeFoes, phaseOf, FOE_HARD, FAIR, TYPES, armored } from '../../public/lab/gloam-downs/foes.js';
 import { STAGGER, poiseOf } from '../../public/lab/gloam-downs/feel.js';
 import { ELITES } from '../../public/lab/gloam-downs/elites.js';
@@ -143,7 +143,12 @@ function shop(rs, fam = 'flame') {
   }
   const have = PANE_ORDER[fam].filter(id => kindledOf(rs, 'pane').includes(id));
   for (let i = 0; i < paneSlots(rs); i++) if ((rs.panes || [])[i] !== have[i]) setPane(rs, i, have[i] || null);
+  // the start blade and off-hand at the blade rack and the off-hand stand: the family's own colour first, of those kindled
+  for (const id of START_BLADE[fam]) if (chooseBlade(rs, id)) break;
+  for (const id of START_OFF[fam]) if (chooseOffhand(rs, id)) break;
 }
+const START_BLADE = { flame: ['hook', 'lamp'], ward: ['bell', 'lamp'], gloam: ['twin', 'lamp'] };
+const START_OFF = { flame: ['sling', 'pot', 'buckler'], ward: ['buckler', 'cuff'], gloam: ['chain', 'shade', 'buckler'] };
 // the spark picks: Ward while the health share was under 50% at the last beacon; else the family's colour (Gloam once both slots hold
 // an ability, else Flame)
 function sparks(rs, share, fam = 'flame') {
@@ -417,7 +422,7 @@ function playPlace(rs, id, bot) {
     for (const e of R.step(a, 0)) {
       if (e.type === 'gear' && e.what === 'swap') bot.gearSwaps++;
       if (e.type === 'dark') dark = e.at;
-      if (e.type === 'hit') { lastHit = steps; combo.hit(e.kind === 'relic' ? 'relic' : e.kind); }
+      if (e.type === 'hit' && !e.tick) { lastHit = steps; combo.hit(e.kind === 'relic' ? 'relic' : e.kind); }
       if (e.type === 'hurt') {
         combo.end(); bot.hurt += e.dmg; placeDmg += e.dmg;
         // a hook from a braced foe: the foe in its active time nearest the lamplighter is braced

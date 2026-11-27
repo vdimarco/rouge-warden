@@ -789,7 +789,8 @@ export function makeFoes({ walk, meta = {}, slots = '', seed = 1, runner = null,
     const heavy = heavyOf(f);
     // Ember parry: a light foe is knocked down below; a heavy foe (an Ironback, an elite) staggers for the parry's time, whatever its
     // poise, and its blow is cut off. The run's parry has its own clang, so no cue here
-    if (how.parry && heavy) {
+    // the Buckler's parry (how.buckler) staggers a light foe the same way, braced or not
+    if (how.parry && (heavy || how.buckler)) {
       cancelMove(f);
       f.hold = null; f.push = null; f.flinch = 0;
       f.state = 'stagger'; f.t = 0; f.staggerFor = how.knock || STAGGER.steps; f.aware = true;

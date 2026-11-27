@@ -49,7 +49,7 @@ export const TIER_SHIFT = { perKeen: 4, perEmber: 2, plainMin: 10 };
 const ALL = ['blade', 'offhand', 'ability'], HELD = ['blade', 'offhand'];
 export const TRAITS = [
   { id: 'smoulder', name: 'Smouldering', fits: ALL, text: 'its hits burn (a blade\'s 2 s, others 1 s)', burn: 2, burnOther: 1 },
-  { id: 'steady', name: 'Steady', fits: ALL, text: '6% of its hits are sure cuts', sure: 0.06 },
+  { id: 'steady', name: 'Steady', fits: ALL, text: '6% more of your blade hits are sure cuts', sure: 0.06 },
   { id: 'glean', name: 'Gleaning', fits: ALL, text: 'a foe it puts out heals 2% of max health', heal: 0.02 },
   { id: 'char', name: 'Charring', fits: ALL, text: 'each 4th hit adds 1 Char', every: 4, char: 1 },
   { id: 'quick', name: 'Quick', fits: ALL, text: 'a faster string, or a shorter cooldown', speed: 0.06, cool: 0.06 },

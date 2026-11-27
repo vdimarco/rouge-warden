@@ -71,7 +71,8 @@ A downs place is 232,607 to 245,198 splats and 1.22 to 1.36 MB. So the hall is b
 - **lib/check.mjs:** for a hub, it skips the beacon-above-start rule, the wisp count and the lattice colour rules, and adds: every station reachable from the spawn on the walk map, every station within 6 m of the spawn-to-door path, and the start view's mean luminance between 0.07 and 0.16 with at least 0.3% bright pixels.
 - **save.js and places.js:** `HUB` beside `ORDER` and `LATTICE`; `placeName('lamproom')` is "The Lamp-room". The hub is never in the Map.
 - **main.js:** `go('lamproom')` loads it with no foe pool.
-- **As built:** 162,900 splats (151,482 scenery, 4,334 in 205 growth ranges), 0.397 MB gzip with the walk map and JSON, a 1.8 KB walk file, about 5 s to bake, and a start view of mean luminance 0.114 with 0.76% bright pixels. A flagstone terrace with two braziers lies before the open front, because the follow camera stands 9 m behind the lamplighter, outside the hall, and without it the lower third of the view was the unlit moor. The five downs places and the three Lattice places still bake byte for byte as before.
+- **As built:** 162,900 splats (151,482 scenery, 4,334 in 205 growth ranges), 0.397 MB gzip with the walk map and JSON, a 1.8 KB walk file, about 5 s to bake, and a start view of mean luminance 0.114 with 0.76% bright pixels. A flagstone terrace with two braziers lies before the open front, because the follow camera stands 9 m behind the lamplighter, outside the hall, and without it the lower third of the view was the unlit moor.
+- **After the checker pass:** 154,975 splats (143,235 scenery, 4,655 in 205 growth ranges), 0.387 MB gzip, a 2.1 KB walk file, about 6 s to bake, and a start view of mean luminance 0.126 with 1.40% bright pixels. The walls are drawn at 0.16 m splats (0.14 before) and the far moor at 1.5 to 1.8 m, which paid for a lantern over each station and the bigger growth objects inside the 0.40 MB. The five downs places and the three Lattice places still bake byte for byte as before.
 - **Fallback, if the bake fails on a later Ink Studio:** build the hall at load from the props the bake already has, appended after the place's splats as `pool.js` appends slots. It costs more code and looks weaker, so it is only the fallback.
 
 ### Decision 3: the budget and the load on phones
@@ -95,7 +96,7 @@ A stone hall 14 m wide (x from -7 to 7) and 14 m deep (z from -7 to 7) on flat g
 
 | Station | Where (x, z) | The object | What it does |
 |---|---|---|---|
-| Spawn | (0, 5) | a worn mat | where the lamplighter stands at first, facing the door |
+| Spawn | (0, 3.8) | a worn mat | where the lamplighter stands at first, facing the door (3.2 m inside the open front, so the first view is of the hall) |
 | Well | (-2.5, 2.5) | a stone well with water | the bank, and the last run's recap |
 | Wick rack | (-5.5, 4.5) | a rack of 9 hooks | the unlocks |
 | Blade rack | (5.5, 4.5) | a rack of 4 hooks | the blades: pick the start blade |
@@ -109,9 +110,9 @@ A stone hall 14 m wide (x from -7 to 7) and 14 m deep (z from -7 to 7) on flat g
 | Map table | (0, -3.6) | a table with the route as five lamps | the seed's route, Wander, Explore |
 | Run door | (0, -7) | a tall door | begin the run |
 
-- The path from the spawn to the door is 12 m: 2 s at a run (6.4 m/s), 4 s at a walk.
+- The path from the spawn to the door is 10.8 m: under 2 s at a run (6.4 m/s), about 3.5 s at a walk.
 - 12 stations in all, one a category or a lasting family (Part C "Hall stations by category").
-- Every station's point is at most 5.5 m from the spawn-to-door path (x = 0, z from -7 to 5), inside the 6 m rule with 0.5 m to spare. The first plan put the lamp shelf at x = -8.5, the pane window at x = 9.3 and both racks at x = 6.5, which broke that rule; the hall is narrower now so they stand closer.
+- Every station's point is at most 5.5 m from the spawn-to-door path (x = 0, z from -7 to 3.8), inside the 6 m rule with 0.5 m to spare (the rack and the wick rack are 5.5 m off it at z = 4.5, past the spawn). The first plan put the lamp shelf at x = -8.5, the pane window at x = 9.3 and both racks at x = 6.5, which broke that rule; the hall is narrower now so they stand closer.
 - Any two station points are at least 3.2 m apart, so two use radii (1.6 m) never overlap and one prompt shows at a time.
 - One run door and a map table, not five place doors. A run's route is fixed by the seed (`routeFor`), so five doors would offer a choice that does not exist. The map table shows the route, and the explorer's Map stays in Wander.
 - The stations' marks go in the biome as `ctx.mark('station', { id, at, face })`. `meta.stations` gives each one's point, its face and its use radius (1.6 m).
@@ -131,6 +132,7 @@ Every growth object is baked, each as one contiguous range of splats, listed in 
 | Ember bell | 6 rings of light round the bell | levels open |
 
 - The first estimate was about 1,600 splats a ware, 250 a lamp and 400 a glass or an item, about 43,000 in all. As baked, the rings, lamps, glasses and items are small and the 205 ranges hold 4,334 splats, far inside the 46,000 budget.
+- The checker found the growth too small to see: a rich save and a fresh one looked nearly the same. Size, not count, was the fault, so the objects grew and the count barely moved (4,655 splats): a ware's ring is 0.03 m dots with a glow, a pattern lamp is fist-sized with a halo in its colour, a lit wick is twice as tall with a halo, a blade hangs at its full length (1 m times its bone) with a bright edge, an off-hand is 1.6 times bigger, an elite's plaque is a lit ring the size of a plate, and the start blade and off-hand glow behind. The download kept the 0.40 MB budget, so the count stayed low.
 - A new light is lit with a 0.4 s glow and the `kindle` or `buy` cue. With reduced motion it is lit at once.
 - The glass rings are a shape, not a colour ramp, so the level reads on a grey screen too.
 
@@ -143,7 +145,9 @@ Every growth object is baked, each as one contiguous range of splats, listed in 
   - In a side sheet the tools (Look, List) hide while it is open; its own close button is there.
   - 844 by 390: a side sheet on the right, at most 45% of the width.
   - It never covers the Lab bar. Long cards scroll inside themselves, as today.
-- While a card is open, the lamplighter stands still and input moves the focus in the card. Walking away (a stick or key held 0.3 s) or Esc, B or the close button shuts it. Moving more than 2.5 m away shuts it.
+- While a card is open, the lamplighter stands still and input moves the focus in the card. Walking away (A or D, or the touch stick, held 0.3 s) or Esc, B or the close button shuts it. W, S and the arrows move the focus, so holding them never shuts it (holding Down to scroll walked away). Being more than 2.5 m from the station's point shuts it.
+- Only the shops (the lamp shelf, the kiln, the pane window and the wick rack) show the bank line. The other cards (the well, the racks, the post, the bell, the map table) buy nothing, and the well's recap already says what is banked.
+- The close button sits in the card's corner; the title is at least as tall as it, and the title, the bank line and the shrine's tabs keep 48 px clear of it, so it covers no text. On a landscape phone the side sheet is only as tall as its rows. The hall's hint hides while a card is open.
 - **The quick list:** Tab, the pad's View button, or the touch List button (top right, at least 44 px) opens every station's rows in one card, the restyled `#lamp`. It works anywhere in the hall. It is also the screen reader's way through.
 - **The Ember bell** card picks the level; the map table card has Begin the run, Wander and Explore; the run door begins the run when walked through, or with Use.
 
@@ -165,6 +169,22 @@ The ability post: Attack, Roll, the off-hand and both abilities work in the hall
 - `life.js` `LIFE.lamproom`: dust that twinkles in the torch light, the kiln's fire on the fire slots 34 to 37, a slow bob on the well's water, and the shelf lamps that brighten within `RULES.near` of the lamplighter. No crows, no gusts.
 - `beds.js` `BEDS.lamproom`: a low room tone (wind f 160, q 0.5, db -10), a drip from the well every 10 to 25 s, and the kiln's crackle near the kiln. The music is the Lamp-room's scene as today.
 - With reduced motion: the camera does not glide to frame a station, a card shows at once, lights come on at once, and life follows its own reduced rules.
+
+### Decision 9: the hall camera (checker pass)
+The follow camera stood 6 to 15 m behind the lamplighter. Turned to face the open front from the back half of the hall, it stood behind the back wall, and its cutaway showed only the floor from above for about 7 m of the walk. So the hall has its own camera (`cameras.js` `makeHallCam`), stepped after the follow camera as the boss camera is, so `play.js` is unchanged:
+- **Source.** The high three-quarter view into a room with no front wall of Hades' House of Hades and the family home of Children of Morta, which this hall already took its open front from: the camera keeps to the side the room is built to be seen from. The yaw limit and the turn away from the side walls are our own.
+- **The yaw.** The eye always stands on the open front's side, its yaw within 63 degrees (1.1 rad) of facing the back wall. Where a side wall would come between the aim and the eye at its distance, the yaw is turned toward the front until it fits. The controls' yaw turns with it, so the keys move as the view looks. Walking to the front walks toward the camera. There is no swing behind a running lamplighter in the hall. A snap (a teleport or a load) that faces the front mirrors the eye to the front's side.
+- **The distance and pitch.** 7.5 m (9.5 m on an upright phone, in place of the follow camera's 15 m), the layout's pitch plus 0.22 rad, kept between 0.30 and 0.95, and the player's own pitch on top. The eye never stands behind a wall, so the hall needs no cutaway.
+- **Framing a station.** A station in reach draws the aim 45% of the way to its object and looks 0.12 rad further down, so the object shows over the lamplighter's head. On an upright phone an open card is a bottom sheet, and the view keeps the sheet's own tilt (aimed 1.7 m lower, and 2.0 m more under the hall camera's higher pitch) and is not drawn toward the object, so the station stays above the sheet. With its card open the view also turns 0.42 rad toward the side with more room, so the object stands beside the figure. The ease is a critically damped spring of 0.22 s; with reduced motion it cuts.
+- **Check.** `gloam-downs-hub-rules.test.mjs` walks the baked walk map from the run door to the front at 1280x720 and 390x844 (no cutaway, the pitch at most 0.95, the distance at least 6 m, the eye inside the walls or past the front), and projects each station's object with its card open at 1280x720 and 800x600 (on the screen and outside the lamplighter's screen box). `gloam-downs-hub-layout.e2e.mjs` checks the walk in the browser and keeps the pictures.
+
+### Decision 10: the hall's light (checker pass)
+The checker read the hall as murky: flat dark blue-grey with torch light as big orange smears on the upper walls, and station objects with little contrast against the stone. No outside source fit better than the five places' own torches, so the change uses their tools:
+- **A lantern over each station** (`ctx.lamp`, radius 3.4 m, strength 0.85, with shadows) on an iron arm from its wall or a chain from a beam, so each station is a lit set piece on a dark floor.
+- **Stone takes light as lighter stone.** The walls' glow ramp is the stone's own lighter shades with brass and one warm fire shade at the top, in place of three fire colours. Wood's glow runs to brass, so racks and tables stand out of the walls. The floor's glow reaches the bright fire colours, so light pools on it.
+- **The side torches** hang 0.4 m lower with a 4 m reach, so their light lands on the floor.
+- **The kiln's fire** is a third bigger.
+- **Check.** `bake.mjs lamproom --check` keeps the start view's mean luminance in 0.07 to 0.16 (0.126) with at least 0.3% bright pixels (1.40%), and the screenshots of `gloam-downs-hub-layout.e2e.mjs`.
 
 ## Part B: more to gain
 
@@ -408,7 +428,7 @@ A bright item rolls 1 trait and a blazing item 2 different ones, from those that
 | id | Name | Fits | Rule |
 |---|---|---|---|
 | smoulder | Smouldering | blade, off-hand, ability | its hits burn: a blade's 2 s, an off-hand's or ability's 1 s; a burn under way is not renewed by it |
-| steady | Steady | blade, off-hand, ability | 6% of its hits are sure cuts, from the seed's `sure` stream |
+| steady | Steady | blade, off-hand, ability | adds 6% to the sure-cut chance of blade hits, in Whetstone's roll of the seed's `sure` stream |
 | glean | Gleaning | blade, off-hand, ability | a foe it puts out heals 2% of max health |
 | char | Charring | blade, off-hand, ability | each 4th hit adds 1 Char |
 | quick | Quick | blade, off-hand, ability | a blade's string 6% faster; an off-hand's or ability's cooldown 6% shorter |
@@ -419,6 +439,7 @@ A bright item rolls 1 trait and a blazing item 2 different ones, from those that
 | dim | Dimming | blade, off-hand | each 4th hit blinds the foe 1.5 s; never the Barrow Reeve |
 
 - Traits on two items add. Their ticks count in the 8-a-second cap, their shells in the shell cap, and Steady's chance adds to Whetstone's.
+- As built after the checker pass: a gear burn (Smouldering, the Fire pot) ticks through `status.js` `tickHit`, so it is in the cap, never a hit for the combo, Count wick or glim, and never on the Barrow Reeve (`tickHit` refuses the Reeve, and a tick sent to `boss.js` anyway wears no poise). Steady is no longer its own roll with an extra half blow: `build.js` `steadyChance` adds 6% an item to Whetstone's chance in the one roll a blade hit, so a Steady sure cut is a real sure cut (x1.5, Shard glass's Char, the cue). A lit Oil slick's ground fire stays outside the cap, as "New abilities" says.
 - An ability's hits are the ones it deals itself, so Smouldering on Moth swarm burns with each moth's hit.
 - An item with traits reads "Hook blade, Smouldering, Wide" on the HUD label, the cards and the recap.
 
@@ -661,3 +682,33 @@ Tests changed by the merge: `gloam-downs-gear.test.mjs` gives its runner the bui
 - life: its seen, crows, hush and reduced-motion parts pass. Its frame-time part ran with `WARM=3 DRAWS=20 BLOCK=5` and measured 11 views (life against none 0.97 to 1.06) before its 40-minute limit; software WebGL drew a frame in about 9 s under load.
 - `quiet.mjs --only=lab/gloam-downs`: 35 of 35. The music demo: 192 files, all targets met. A first full run under heavy load measured the Gaol's music 1.7 LU quieter and failed its bed check; the beds group alone and a second full run pass, as on the commit before the hub.
 - Not run: `gloam-downs-uniforms.e2e.mjs` (about 12 minutes; the hub does not touch the renderer).
+
+## Checker pass
+A checker played the merged hall and gear. What changed (tasks.md section 5):
+- **The hall camera** ("Decision 9") in place of the follow camera's cutaway in the hall; the spawn at (0, 3.8).
+- **The hall's light and growth** ("Decision 5", "Decision 10").
+- **Ticks.** The gear's burns tick through `tickHit` (the cap, no combo, no Count wick, no glim). `fight.js`, `build.js` and the bot skip a tick in the combo. The Reeve takes no tick, and a tick wears no poise on it.
+- **Steady** adds to Whetstone's roll ("Traits").
+- **Saves.** `rs.eliteFalls` (the elites' plaques), and the run's `sureRolls` and `cracked` with its entry.
+- **The shrine's tabs** switch with Left and Right, LB and RB.
+- **Station cards** ("Decision 6"): the bank line on the shops alone, the close button clear of the text, a side sheet as tall as its rows, the hint hidden under a card, W and S never shut a card.
+- **Locked gear** at the blade rack and the off-hand stand, with where it comes from.
+- **The off-hand.** A hold to swap uses nothing first. At the post its cooldown is a quarter too. The compare toast alone says how to swap (the note toast repeated it, and could be stale). The Buckler does not parry in the safe time, and its parry staggers a light foe 0.6 s, braced or not. The gear wears poise through the foe's own `wear`, so a fresh heavy foe's poise starts full (before, a parry or the Bell maul on a foe not yet hit wore nothing) and a Mark is not spent. The Iron cuff and the Hook pull leave a braced or armored foe in place.
+- **The HUD's tier pips** are 8 px on a 40 px tile.
+- **The bot** picks a start blade and off-hand by its family.
+
+**Pacing** (`WORKERS=2 node qa/lab/gloam-downs-bot.mjs 60 <skill> 1`), against the merge pass:
+
+| Skill | First run reaches place 2 / 3 | Median first win | Runs won | Off-hand uses, swaps a run | Families against the mean |
+|---|---|---|---|---|---|
+| 0.3 | 83% / 62% (merge 78% / 60%) | run 2 (merge 3) | 254 of 488 | 18.9, 0.44 | Flame 4.3% faster, Ward 3.2% slower, Gloam 0.5% slower |
+| 0.5 | 100% / 100% (97%) | run 1 | 341 of 368 | 50.6, 0.55 | Flame 4.7% faster, Ward 4.3% slower, Gloam 0.2% slower |
+| 0.9 | 93% / 93% | run 1 | 323 of 368 | 88.6, 0.60 | Flame 4.3% faster, Ward 3.0% slower, Gloam 1.3% slower |
+
+- The game is not harder: a 0.3 player reaches more places and wins sooner than at the merge. Ticks no longer feed the combo or Count wick, and the start gear now follows the family; neither moved a family past 15%.
+- At 0.9 the 4 first runs that stop in place 1 are the bot's stuck runs, as at the merge.
+
+**Not fixed in this pass:**
+- The blade bone scaled by blade (tasks.md 3.3), the pause card's Gear list and a found blade's own look on the ground.
+- The checker's unconfirmed Sling miss (a foe spawned 4 m ahead took no damage in its script): `gloam-downs-run.gear.e2e.mjs` throws the Sling four times and it hits, so the miss is not reproduced.
+- No real phone, GPU, gamepad, touch screen or speaker was used, and nobody listened to the sound.

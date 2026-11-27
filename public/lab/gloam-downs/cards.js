@@ -64,10 +64,16 @@ export function moveDir(dx, dy) {
   list[j].scrollIntoView?.({ block: 'nearest' });
 }
 const ARROWS = { arrowleft: [-1, 0], arrowright: [1, 0], arrowup: [0, -1], arrowdown: [0, 1] };
+// in a hall station card (the #lamp card with data-station) W and S move the focus up and down too (gloam-downs-hub Decision 7)
+// a card with tabs (the beacon shrine): Left and Right switch its tab (main.js sets it while the tabs show; fn(dir) -> true when it did)
+let tabKeys = null;
+export const setTabKeys = fn => { tabKeys = fn; };
+const inStation = () => current()?.el?.id === 'lamp' && !!current().el.dataset.station;
 addEventListener('keydown', e => {
-  const d = ARROWS[e.key.toLowerCase()];
+  const d = ARROWS[e.key.toLowerCase()] || (inStation() ? { w: [0, -1], s: [0, 1] }[e.key.toLowerCase()] : null);
   if (!d || !current() || e.altKey || e.ctrlKey || e.metaKey) return;
   e.preventDefault();
+  if (d[0] && !d[1] && tabKeys?.(d[0])) return;
   moveDir(d[0], d[1]);
 }, true);
 // touch has no hover: the focus style shows on the press itself

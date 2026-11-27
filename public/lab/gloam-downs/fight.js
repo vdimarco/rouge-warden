@@ -281,6 +281,8 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
     const s = G.runner?.fighter.body.s;
     switch (e.type) {
       case 'hit': {
+        // a tick (a burn, a moth, Char) is never a hit: no feel, no sparks, nothing for the combo (status.js tickHit)
+        if (e.tick) break;
         feel.hit(e.kind);
         if (fx.combo !== false) combo.hit(e.kind === 'relic' ? 'relic' : boss && e.target === boss ? 'boss' : e.kind);
         const t = e.target;

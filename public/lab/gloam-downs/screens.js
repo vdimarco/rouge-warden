@@ -299,21 +299,36 @@ export function recapOf(e, route = ORDER) {
    each key, held or where it comes from. The well: the bank and the last run. Every row carries its category mark (gearMark) */
 // a number and its unit stay on one line
 const unit = t => String(t || '').replace(/(\d) (s|m)\b/g, '$1\u00a0$2');
+/* the blade rack and the off-hand stand list every item of their category: the kindled ones to pick, and the others locked, with
+   where they come from (a found pattern waits at the kiln; an unfound one drops as a pattern lamp in a run, a blade only once the
+   Blade rack unlock is bought) */
+function lockedText(rs, x, kind) {
+  if ((rs.patterns || []).includes(x.id)) return `found: kindle it at the kiln for ${x.cost} glim`;
+  if (kind === 'blade' && !(rs.unlocks || []).includes('rack')) return 'not found yet: buy the Blade rack unlock at the wick rack, then find its pattern in a run';
+  return 'not found yet: its pattern lamp drops from foes in a run';
+}
 export function bladeRows(rs) {
-  const on = startBlade(rs);
-  return kindledBlades(rs).map(id => BLADES.find(b => b.id === id)).map(b => ({
-    id: b.id, name: b.name, text: unit(b.text), start: b.id === on, mark: gearMark({ kind: 'blade', id: b.id }),
-    label: `${b.name} · ${b.text}`, pick: b.id === on ? 'Start blade' : 'Pick'
-  }));
+  const on = startBlade(rs), have = kindledBlades(rs);
+  return BLADES.map(b => {
+    const locked = !have.includes(b.id);
+    return {
+      id: b.id, name: b.name, text: locked ? lockedText(rs, b, 'blade') : unit(b.text), start: b.id === on, locked, mark: gearMark({ kind: 'blade', id: b.id }),
+      label: `${b.name} · ${locked ? lockedText(rs, b, 'blade') : b.text}`, pick: locked ? 'Locked' : b.id === on ? 'Start blade' : 'Pick'
+    };
+  });
 }
 export function offhandRows(rs) {
-  const on = startOffhand(rs);
-  const rows = kindledOffhands(rs).map(id => OFFHANDS.find(o => o.id === id)).map(o => ({
-    id: o.id, name: o.name, text: `${unit(o.text)}; cools in ${o.cool}\u00a0s`, start: o.id === on, mark: gearMark({ kind: 'offhand', id: o.id }),
-    label: `${o.name} · ${o.text}`, pick: o.id === on ? 'Start off-hand' : 'Pick'
-  }));
-  rows.push({ id: null, name: 'None', text: 'start with the off-hand slot empty', start: on === null, mark: gearMark({ kind: 'offhand' }), label: 'None · start with the off-hand slot empty', pick: on === null ? 'Start off-hand' : 'Pick' });
-  return rows;
+  const on = startOffhand(rs), have = kindledOffhands(rs);
+  const rows = OFFHANDS.map(o => {
+    const locked = !have.includes(o.id);
+    return {
+      id: o.id, name: o.name, text: locked ? lockedText(rs, o, 'offhand') : `${unit(o.text)}; cools in ${o.cool}\u00a0s`, start: o.id === on, locked, mark: gearMark({ kind: 'offhand', id: o.id }),
+      label: `${o.name} · ${locked ? lockedText(rs, o, 'offhand') : o.text}`, pick: locked ? 'Locked' : o.id === on ? 'Start off-hand' : 'Pick'
+    };
+  });
+  // the kindled ones first, then None, then the locked ones
+  const open = rows.filter(r => !r.locked), shut = rows.filter(r => r.locked);
+  return [...open, { id: null, name: 'None', text: 'start with the off-hand slot empty', start: on === null, locked: false, mark: gearMark({ kind: 'offhand' }), label: 'None · start with the off-hand slot empty', pick: on === null ? 'Start off-hand' : 'Pick' }, ...shut];
 }
 // the elite whose first fall gives a key: the one of the key's place
 const eliteFrom = place => ELITES[place] || null;

@@ -520,12 +520,19 @@
   #lamp .lampX { position: absolute; top: 8px; right: 8px; z-index: 2; width: 44px; height: 44px; padding: 0; font-size: 22px; }
   #lamp .lampX[hidden], #shrineTabs[hidden] { display: none; }
   #lamp .box { position: relative; }
-  #lamp[data-station] h2 { padding-right: 48px; }
+  /* the close button's corner: the title and the first lines keep clear of it, and the title is at least as tall as it */
+  #lamp:has(#bLampClose:not([hidden])) h2 { padding-right: 48px; min-height: 44px; box-sizing: border-box; }
+  #lamp:has(#bLampClose:not([hidden])) :is(#lampLine, #shrineTabs) { padding-right: 48px; }
+  body:has(#lamp:not([hidden])) #hint { visibility: hidden; }
   .shrineTabs { margin: 4px 0 6px; }
   .shrineTabs button[aria-selected="true"] { background: #5a2214; border-color: var(--ember); color: #ffe2bd; }
   .grows li { min-height: 44px; border-left: 4px solid var(--hue, var(--edge)); }
   .grows li button { grid-row: 1; }
   .grows li button[aria-pressed="true"] { background: #5a2214; border-color: var(--ember); color: #ffe2bd; }
+  /* a locked blade or off-hand: a dim silhouette, its mark grey, with where it comes from */
+  .grows li.locked { opacity: 0.62; border-left-style: dashed; }
+  .grows li.locked .catw .gm { filter: grayscale(1) brightness(0.7); }
+  .grows li.locked button { color: var(--ash); }
   .grows li em { grid-column: 1; font: 500 14px/1.25 var(--body); font-style: normal; color: #e0b98a; }
   /* in a tile the category mark sits over the name, and the cost spans the tile, so the glass's column stays as narrow as the glass */
   .tiles .tile > .catw { grid-column: 2; justify-self: start; }
@@ -545,7 +552,7 @@
   #lamp.anchored { background: transparent; pointer-events: none; padding: 0; display: block; }
   #lamp.anchored .box { pointer-events: auto; position: fixed; margin: 0; }
   #lamp.anchored.sheet .box { left: 8px; right: 8px; width: auto; bottom: calc(var(--sab) + 8px); top: auto; max-height: 55dvh; }
-  #lamp.anchored.side .box { right: calc(8px + env(safe-area-inset-right, 0px)); left: auto; top: calc(var(--sat) + 60px); bottom: calc(var(--sab) + 8px); width: 45vw; max-height: none; }
+  #lamp.anchored.side .box { right: calc(8px + env(safe-area-inset-right, 0px)); left: auto; top: calc(var(--sat) + 60px); bottom: auto; width: 45vw; max-height: calc(100dvh - var(--sat) - var(--sab) - 68px); }
   /* the side sheet stands where the tools are: they hide while it is open (its own close button is there) */
   body:has(#lamp.anchored.side:not([hidden])) .tools { visibility: hidden; }
   #lamp.anchored.beside .box { width: min(360px, calc(100vw - 32px)); max-height: calc(100dvh - var(--sat) - var(--sab) - 76px); }
@@ -719,7 +726,7 @@
   <button type="button" class="lampX" id="bLampClose" aria-label="Close" hidden>×</button>
   <h2 id="lampT">The Lamp-room</h2>
   <div class="row shrineTabs" id="shrineTabs" role="tablist" aria-label="The shrine" hidden></div>
-  <p id="lampLine" data-st="well map shelf kiln window wick blades offhand post bell">Banked: 0 glim. What you buy here lasts for every run.</p>
+  <p id="lampLine" data-st="shelf kiln window wick">Banked: 0 glim. What you buy here lasts for every run.</p>
   <p class="colours" id="colours" hidden></p>
   <section data-st="well" class="lsec" id="wellSec"><h3 class="shelf">The last run</h3><p class="wellRecap" id="wellRecap"></p></section>
   <section data-st="blades" class="lsec"><h3 class="shelf" id="bladesT">Blades</h3><ul class="ups grows" id="bladeRows" aria-labelledby="bladesT"></ul></section>
