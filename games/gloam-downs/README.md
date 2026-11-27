@@ -137,6 +137,36 @@ export default {
 - The pools and the figure colour checks are for the five places only (`PLACES` in `lib/check.mjs`).
 - In the page, `places.js` gives the names, the Map's rows and the choice of `?place=`. The first Lattice place is always open. A lit Lattice beacon opens the next Lattice place. The walk's time, best time and end card count the downs only.
 
+## The Lamp-room: the hall between runs
+
+`lamproom` is the hall you walk through between runs (`HUB` in `bake.mjs` and in `public/lab/gloam-downs/save.js`; the change is `openspec/changes/gloam-downs-hub/`). It is not in the run's route, the Map or the explorer.
+
+```sh
+node games/gloam-downs/bake.mjs lamproom --check                            # bake the hall and check it
+node games/gloam-downs/bake.mjs lamproom --check --preview --out /tmp/hall  # with CPU pictures (every growth object shown)
+node games/gloam-downs/bake.mjs hub                                         # the same; `all` bakes the eight places and the hall
+```
+
+- **The look.** A stone hall 14 m wide, lit by torches and the stations' own lamps, with no front wall, so the follow camera sees in (the cut-away room). The same stone, fire and painted look as the Sunken Gaol.
+- **The plan.** `public/lab/gloam-downs/hub.js` `STATIONS` holds each station's point, face and object. The biome reads it, so the bake and the page agree. Every station is within 6 m of the walk from the spawn to the run door, and any two are 3.2 m apart or more.
+- **Its marks.** `ctx.door(p)` marks the run door, and `ctx.mark('station', { id, at, face, obj })` marks each station. The hall has a spawn and a door, and no beacon or wisps. Its JSON keeps `beacon` as the door's point with no radius and no fire, so the page's beacon code passes it by.
+- **Growth objects.** `ctx.grow(id, fn)` draws one object into a range of splats of its own, after everything else glows. The JSON lists them in `grow: [{ id, first, n }]`. `hub.js` `growIds()` names every one (a ware's rings, a pattern's lamp, a pane's glass, an unlock's wick, a blade, an off-hand, a key, an elite's plaque, an Ember ring), and `shown(rs, id)` says when the save owns it. The page sets a range's density to 0 or back, as it does for a wisp.
+- **Its life and bed.** `life.js` `LIFE.lamproom` (dust at the lamps, embers, the well's water; no crows or gusts) and `beds.js` `BEDS.lamproom` (a room tone, a drip and the kiln's crackle).
+
+`--check` holds the hall to its own rules (`checkHub()` in `lib/check.mjs`), not to a place's:
+
+| Rule | Limit | Now |
+|---|---|---|
+| splats | 210,000 or fewer | 159,699 |
+| the hall's scenery | 160,000 or fewer | 148,303 |
+| growth objects | 46,000 or fewer | 4,334 (205 ranges) |
+| download (splats, walk map, JSON) | 0.40 MB or less | 0.386 MB |
+| walk file | 4 KB or less | 1.7 KB |
+| bake | 20 s or less | about 5 s |
+| start view | mean luminance 0.07 to 0.16, 0.3% bright or more | 0.099, 0.77% |
+
+It also checks that the start stands on the ground, that no reached cell is a trap, that the door and every station can be reached, that each station is within 6 m of the path, and that every growth id of `hub.js` is baked once and has splats. The five places of the downs and the Lattice still bake byte for byte as before.
+
 ## The combat run: zones, foes and the boss
 
 The page plays the combat run by default (and with `?run` or `#run`). With `?explore` (or `?wander`) it is the explorer, with no foes. The run's first card has an Explore button, and the explorer has Fight. Stage 1 of the run baked these files and data, and stage 2 made the foes fight back, fixed the camera and built the run's HUD and cards. `openspec/changes/add-gloam-downs/design.md` ("The combat run") has the numbers.

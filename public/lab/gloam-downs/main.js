@@ -1841,7 +1841,8 @@ async function go(id) {
   }
   cam.snap(body.s, body.s.yaw + Math.PI);
   // in a run, the combat camera turns the view toward the foes (cameras.js); reduced motion keeps it still
-  combat = RUN ? makeCombat({ foes: awake, still }) : null;
+  // (not in the hall: the ability post is a target, but the view never turns to it by itself)
+  combat = RUN && id !== HUB ? makeCombat({ foes: awake, still }) : null;
   // a held move keeps its world direction while a camera turns by itself: a run's cameras, and the framed shot's lean (play.js)
   held = makeMoveLock();
   // the fog: the bake set it for a camera 9 back; keep it at the same depths whatever the distance
@@ -2405,6 +2406,8 @@ window.__gloam = {
   if (RUN) {
     // a reload in a run restarts its place: health and flasks no higher than they were, the glim carried and the foes as they entered
     if (rs.run) reload(rs.run);
+    // ?hall (gloam-downs-hub) opens straight into the Lamp-room when no run is in progress and no ended run waits
+    if (q.has('hall') && !rs.run && !rs.ended) return go(HUB);
     // a reload on the win card shows it over the place that was won, with its beacon burning
     return go(rs.run?.place || (rs.ended?.won && ORDER.includes(rs.ended.place) ? rs.ended.place : ORDER[0]));
   }
