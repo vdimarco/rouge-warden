@@ -67,7 +67,8 @@ function cleanRun(r, s) {
     route: goodRoute(r.route) ? r.route.slice() : routeFor(seed, ember), ember, relics: ids(r.relics, RELIC_IDS, RELIC_MAX),
     elitesDown: ids(r.elitesDown, ORDER, ORDER.length), combo: count(r.combo, 1e5), lastUsed: r.lastUsed === true && wicks.includes('last'), shelf: r.shelf === true,
     ...grown, sparkNow: r.sparkNow === true && grown.sparkPicks > 0, abilityOffer: null, patternsKept: count(r.patternsKept, 100), kept: ids(r.kept, PATTERN_IDS, PATTERN_IDS.length),
-    splits: cleanSplits(r.splits), lastHurt: byCode(r.lastHurt)
+    splits: cleanSplits(r.splits), lastHurt: byCode(r.lastHurt),
+    cracked: intIn(r.cracked, 0, 3, 0),
   };
   // an offer is two different known wicks not yet chosen, or nothing; Belt's offer is two different kindled abilities, or nothing
   if (Array.isArray(r.offer) && r.offer.length === 2 && r.offer[0] !== r.offer[1] && r.offer.every(w => WICK_IDS.includes(w) && !wicks.includes(w))) run.offer = r.offer.slice();

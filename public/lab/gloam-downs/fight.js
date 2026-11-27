@@ -74,10 +74,11 @@ export const LAMPS = { r: 0.16, s: 0.04, lift: 0.4, stoneR: 0.5 };
    as wide as its reach with a pale centre that blinks, a pool of pitch is three rings of dark and ember dabs that fill its 2 m, so it
    reads as a pool and not as glim. Both stand 0.15 m over the ground */
 export const GROUND_FX = { snare: { n: 14, s: 0.07, lift: 0.15 }, pitch: { rings: [[0.35, 5], [0.65, 9], [0.95, 13]], s: 0.065, lift: 0.15 },
-  /* the hub's (gloam-downs-hub design.md "New abilities"): an oil slick is two rings of dark dabs (Flame's ember 33 and the lamp's pale
-     47) that turn to fire (34, 35) once lit; a tack is one small pale dab; the post lamp a column of 3 warm dabs with a ring at its
-     reach; the moths of the swarm 6 Gloam dabs (39) over the lamplighter, or at the foe they seek */
-  slick: { rings: [[0.45, 7], [0.9, 14]], s: 0.065, lift: 0.12 }, tack: { s: 0.045, lift: 0.1 }, post: { n: 10, s: 0.045, lift: 0.12 }, moth: { s: 0.03 } };
+  /* the hub's (gloam-downs-hub design.md "New abilities"): an oil slick is three rings of large dark dabs (Flame's dark ember 33, never
+     the pale of glim or a wisp's teal) that fill its 3 m as one dark pool and turn to fire (34, 35) once lit; a tack is one small pale
+     dab; the post lamp a column of 3 warm dabs with a ring at its reach; the moths of the swarm 6 Gloam dabs (39) over the lamplighter,
+     or at the foe they seek */
+  slick: { rings: [[0.3, 6], [0.65, 10], [0.95, 12]], s: 0.12, lift: 0.08 }, tack: { s: 0.045, lift: 0.1 }, post: { n: 10, s: 0.045, lift: 0.12 }, moth: { s: 0.03 } };
 export function effectDabs(e, t = 0) {
   const out = [];
   if (e.kind === 'snare') {
@@ -89,7 +90,7 @@ export function effectDabs(e, t = 0) {
     G.rings.forEach(([k, n], r) => { for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2 + t * 0.5 * (r % 2 ? -1 : 1); out.push({ kind: 'pitch', x: e.at[0] + Math.sin(a) * e.r * k, y: e.at[1] + G.lift, z: e.at[2] + Math.cos(a) * e.r * k, ci: (i + r) % 2 ? 33 : 34, s: G.s }); } });
   } else if (e.kind === 'slick') {
     const G = GROUND_FX.slick, lit = e.lit > 0;
-    G.rings.forEach(([k, n], r) => { for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2 + (lit ? t * 0.8 : 0); out.push({ kind: 'slick', x: e.at[0] + Math.sin(a) * e.r * k, y: e.at[1] + G.lift, z: e.at[2] + Math.cos(a) * e.r * k, ci: lit ? ((i + r) % 2 ? 34 : 35) : ((i + r) % 2 ? 33 : 47), s: G.s }); } });
+    G.rings.forEach(([k, n], r) => { for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2 + (lit ? t * 0.8 : 0); out.push({ kind: 'slick', x: e.at[0] + Math.sin(a) * e.r * k, y: e.at[1] + G.lift, z: e.at[2] + Math.cos(a) * e.r * k, ci: lit ? ((i + r) % 2 ? 34 : 35) : 33, s: G.s }); } });
   } else if (e.kind === 'tacks') {
     for (const p of e.pts) out.push({ kind: 'tack', x: p[0], y: p[1] + GROUND_FX.tack.lift, z: p[2], ci: 47, s: GROUND_FX.tack.s });
   } else if (e.kind === 'post') {

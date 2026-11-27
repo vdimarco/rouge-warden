@@ -171,7 +171,8 @@ The ability post: Attack, Roll, the off-hand and both abilities work in the hall
 | Mark | 4 s; the lamplighter's next hit bursts it for 22 | the same | none |
 
 - **Ticks never interrupt.** A tick of Char, Soot or burn never makes a foe flinch, never wears its poise, never stops a wind-up, adds nothing to the combo and gives no glim on its own. A burst of Char or Mark is a hit and follows the fair-fight rules.
-- **States together** on one foe deal at most 8 a second from ticks; a tick over that is lost.
+- **States together** on one foe deal at most 8 a second from ticks; a tick over that is lost. The cap is a rolling second of the foe's own play steps. It counts Char, Soot, a burn and the moths of Moth swarm. The ground fires (Pitch pour's pool and a lit Oil slick, 5 every 0.5 s) tick too, so they never flinch or wear poise, but they stay outside the cap, as the pitch is today.
+- **As built (B):** a tick goes to the foe as `hit(n, { tick: true })`, which takes the damage and a short flash and nothing else. A blind foe's next attack is marked at its start (`blindMiss`); an elite's special move is read as its first blow comes. A Mark bursts after the hit that finds it. The Lantern bomb's own burn is a tick now, so it no longer wears an Ironback's poise. Ember tongue stays a relic hit.
 
 ### Sure cuts and the ward shell (`build.js`)
 - **A sure cut** deals 1.5 times. It comes from Sure hand, Shutter and Whetstone. It multiplies after the added bonuses (Flame, Edge, Keen edge, Cinder glass, Cracked glass, Ember glass). It shows a brighter spark, a 1-step longer hit stop and the `sure` cue.
@@ -206,9 +207,9 @@ Each sits in its category (Part C). Here: 6 panes, 4 wicks, 4 relics and their 4
 | cinder | Cinder glass | Flame | 140 | below 30% health, +30% damage |
 | spill | Spill glass | Flame | 120 | a foe put out bursts: 8 in 2 m and 2 s of burn; a chain stops after 3 |
 | rush | Rush glass | Gloam | 110 | a foe put out gives 1.5 s of haste: walk and run 25% faster, and the next roll starts at once |
-| thirst | Thirst glass | Ward | 150 | below 50% health, blade hits heal 15% of their damage |
+| thirst | Thirst glass | Ward | 150 | below 50% health, blade hits heal 4% of their damage (the first draft's 15% failed the budget) |
 | shard | Shard glass | Gloam | 130 | a sure cut adds 2 Char |
-| cracked | Cracked glass | Flame | 60 | +35% damage; after 3 hits taken in a place it cracks and gives nothing until the next beacon |
+| cracked | Cracked glass | Flame | 60 | +30% damage; after 3 hits taken in a place it cracks and gives nothing until the next beacon (the first draft's +35% failed the budget) |
 
 **Wicks** (the start pick and beacon offers):
 | id | Name | Colour | Rule | In the pool |
@@ -245,7 +246,7 @@ Each sits in its category (Part C). Here: 6 panes, 4 wicks, 4 relics and their 4
 | Ward | a 10 shell at each zone cleared, and the shell may hold 50% |
 | Gloam | each ability use cools the other by 1 s |
 
-The HUD's colour row rings a colour whose set is on.
+The HUD's colour row rings a colour whose set is on. As built (B): `build.js` `setsOf(R)` and `R.build.view().sets` give the sets on; the ring itself is a line in the HUD's colour row (`cards.js`, H's), left for the merge pass.
 
 ### Gaining them
 | Way | What |
@@ -291,10 +292,21 @@ The fair-fight change is changing the foe curve, the interrupts, the poise and t
 - **One buff:** at most +20% damage a second on the bot's reference string against a Snuffer, or at most +25% effective health, when held alone. Node test `gloam-downs-kit.test.mjs` measures each one.
 - **Adding up:** damage bonuses add within one sum (the held blade's colour, Edge, Keen edge, Cinder, Cracked, Ember glass), then the tier's power multiplies, and a sure cut multiplies after. The gear has its own budget (Part C "Gear budget"). Ticks are capped at 8 a second a foe, a Spill chain at 3, a shell at 40% (50%).
 - **Pacing SHALL be rechecked after both changes land.** Run `node qa/lab/gloam-downs-bot.mjs` with 60 bots a skill on the merged code. The fair-fight targets must still hold (skill 0.3: place 2 in 80% of first runs, first win in run 8 to 20; 0.5: run 3 to 8; 0.9: run 1 to 2). No build family may clear a place more than 15% faster than the mean of all families. A build family is the run's main colour with its blade and off-hand. If one does, its numbers here move, and this file says so.
+- **The reference duel** (`gloam-downs-kit.test.mjs`, B): the lamplighter holds Attack against a Snuffer that hooks back, for 30 s of play on flat ground. When a blow would put it out it stands again at full health, so the low-health panes come and go as in a fight. Damage a second is the Snuffer's health lost; effective health is the blows' damage over the health lost, where shell points and heals are health not lost. Measured on the B branch, before the gear: Whetstone 3 +11.2%, Cinder glass +5.3%, Cracked glass +16.5%, Char wick +12.9%, Count wick +4.8%, Char edge +7.3% damage a second; Thirst glass +19.0% and Shell wick +17.6% effective health. The rest add nothing alone in the duel (they need a kill, a roll, a drink, a plunge or a sure cut from another buff). Cracked glass at +35% measured +20.3% and Thirst glass at 15% measured +58.7% (at 5%, +26.6%), so both moved, as the table says.
+- **Pacing on the B branch** (the kit, no gear yet; 60 bots a skill, first seed 1, `node qa/lab/gloam-downs-bot.mjs 60 <skill> 1`), against the shared start commit before it, as the base:
+
+| Skill | First run reaches place 2 (B / base) | Place 3 | Median first win run | Runs won | Families, minutes to clear a place against the mean |
+|---|---|---|---|---|---|
+| 0.3 | 75% / 75% | 45% / 47% | 4 / 6 | 246 of 567 / 178 of 739 | Flame 3.4% faster, Ward 3.1% slower, Gloam 0.0% |
+| 0.5 | 97% / 97% | 90% / 90% | 1 / 2 | 339 of 379 / 293 of 403 | Flame 3.9% faster, Ward 5.1% slower, Gloam 1.4% faster |
+| 0.9 | 100% / 100% | 100% / 100% | 1 / 1 | 336 of 369 / 327 of 373 | Flame 3.0% faster, Ward 3.7% slower, Gloam 0.7% faster |
+
+  The kit makes no run harder and wins come sooner; no family clears a place more than 15% faster than the mean. The base already misses two fair-fight targets at 0.3 (place 2 in 80% of first runs, the first win from run 8), so the merge pass reads them again with the gear. The bot plays one family a bot (Flame, Ward, Gloam by its number; `FAMILY=` plays one for all): its panes, Belt's start ability, its wicks and its sparks by that colour, with Thick glass first or second in every family as before.
 - **The whole catalogue** (every ware level, every unlock and every pattern) costs 16,315 glim, up from 11,725: wares 10,165, unlocks 1,320, patterns 4,830. `gloam-downs-growth.test.mjs` pins these and keeps the total between 15,000 and 18,000.
 
 ### Sound
-New cues in `run-sound.js`, built from the recipes there now: `lash`, `slick`, `tacks`, `toll`, `shell`, `post`, `shutter`, `blink`, `sure`, `char` (the burst), `soot`, `crack` (Cracked glass), `dash`. `shards` and `wisp` are reused. Each keys on a bus event with the ability or buff id.
+New cues in `run-sound.js`, built from the recipes there now: `lash`, `slick`, `tacks`, `toll`, `shell`, `post`, `shutter`, `blink`, `sure`, `char` (the burst), `soot`, `crack` (Cracked glass), `dash`. `shards` and `wisp` are reused. Each keys on its event with the ability or buff id.
+- **As built (B):** the runner logs each cue where its event happens, as it logs an ability's cue today (the use, a sure cut, a Char or Mark burst, Soot passed on, a shell that breaks, Cracked glass that cracks, a Gloam dash). `run-sound.js` `KIT_CUES` names the recipe there now that each one plays (`lash` the charge, `slick` and `soot` the pulse, `tacks` the cracks, `toll` the clang, `shell` and `post` the light, `shutter`, `blink` and `dash` the roll, `sure` a shard, `char` the snap, `crack` the shards), and keeps the kit's name in `kit`. None plays as a foe's tell. So no new bus event and no new recipe in `sound.js` is needed.
 The gear's cues (Part C): `buckler` and `parry`, `cuff`, `sling`, `pot`, `chain`, `shade`, `swap` (a blade or off-hand taken from the ground), and `slam` (Bell maul). A bright or blazing drop rings `bright` or `blazing` as it lands. Each keys on a bus event with the item id and its tier.
 
 ## Part C: what you gain, in categories
@@ -490,7 +502,7 @@ build?.step();
 $('shell').style.width = (100 * shellShare(build)).toFixed(1) + '%';
 ```
 ```html
-<!-- index.html, inside the health bar -->
+<!-- index.html, inside the health bar (B also adds one style rule beside .hpbar for its pale band, .hud .hpbar i.shell) -->
 <i id="shell" class="shell" aria-hidden="true"></i>
 ```
 - `input.js`: none. Gloam dash reads Roll in the air in `moves.js`.
