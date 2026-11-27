@@ -533,6 +533,7 @@
     #patterns li.tile.kindled .glass .flame { animation: none; }
   }
 </style>
+<link rel="stylesheet" href="./gear.css">
 </head>
 <body class="toy">
 <canvas class="view" id="view" aria-label="Gloam Downs: a dark place on rolling hills, drawn as pixel art"></canvas>
@@ -546,10 +547,11 @@
   <p class="colourRow" id="colourRow" hidden></p>
   <p class="count" id="count"><b>◆ 0/5</b> wisps · <i>beacon dark</i><i id="patternsN" hidden></i></p>
   <div class="combo" id="combo" hidden aria-live="off"><b id="comboN"></b><i id="comboPip"></i><i class="cbar"><i id="comboFill"></i></i></div>
-  <div class="abilities" id="abilities" hidden aria-label="Abilities"></div>
+  <div class="gear" id="gear" role="img" aria-label="Gear" hidden></div>
   <p class="hint" id="hint">Climb to the keep. Light the beacon.</p>
   <div class="relics" id="relics" role="img" aria-label="No relics" hidden></div>
 </div>
+<div class="compare" id="compare" hidden aria-live="polite"></div>
 <div class="tools" id="tools" hidden>
   <button type="button" id="bLook" title="Turn the view behind the lamplighter (R)">Look</button>
   <button type="button" id="bMap" title="The places (M)">Map</button>

@@ -10,6 +10,7 @@ import { emit } from './bus.js';
 import { sees } from './moves.js';
 import { mulberry, hash2 } from '../kit/rng.js';
 import { statusHit, isFoe } from './status.js';
+import { tierPower, traitCool, traitWide, rollGear, gearCopy, tierOf, traitsOf } from './gear.js';
 
 const S = sec => Math.round(sec * 60);
 const wrap = a => Math.atan2(Math.sin(a), Math.cos(a));
@@ -34,37 +35,38 @@ export const AB = {
   busy: ['drink', 'roll', 'hurt', 'hang', 'plunge', 'land'], ground: ['step', 'guard']
 };
 // the cooldown of an ability in play steps: its seconds, Gloam's share (never under 60%), and Smoked glass's 15% off
-export const coolOf = (rs, id) => {
+export const coolOf = (rs, id, slot = null) => {
   const A = abilityOf(id);
   if (!A) return 0;
-  return Math.max(1, Math.round(S(A.cool) * coolShare(rs.run) * (paneOf(rs, 'smoked') ? AB.smoked : 1)));
+  return Math.max(1, Math.round(S(A.cool) * coolShare(rs.run) * (paneOf(rs, 'smoked') ? AB.smoked : 1) * traitCool(slot)));
 };
-// the power of an ability: its colour's level and 25% more when bright
-export const powerOf = (rs, slot) => (slot ? colourPower(rs.run, abilityOf(slot.id)?.colour) * (slot.bright ? BRIGHT.power : 1) : 1);
+// the power of an ability: its colour's level, then its tier (gear.js: bright 25% more, blazing 40%)
+export const powerOf = (rs, slot) => (slot ? colourPower(rs.run, abilityOf(slot.id)?.colour) * tierPower(slot) : 1);
 export const brightChance = rs => BRIGHT.base + BRIGHT.perKeen * (rs?.up?.keen | 0);
 export const abilityChance = rs => DROPS.ability + DROPS.abilityPerKeen * (rs?.up?.keen | 0);
 
 /* ---------------- the ability lamps ----------------
-   An ability lamp lies on the ground (run.abilityLamps: { id, bright, x, y, z }) until it is touched or the place is left. A draw takes
-   the run's next roll of the seed's `ability` stream: the id from the kindled abilities, and bright with 10% and 4% more a Keen eye
-   level */
+   An ability lamp lies on the ground (run.abilityLamps: { id, tier, traits, x, y, z }) until it is touched or the place is left. A cache's
+   draw takes the run's next roll of the seed's `ability` stream for the id, and its tier and traits from the `tier` and `trait` streams
+   (gear.js rollGear). A foe's ability lamp is a gear drop (gear-play.js) */
 const abilityRoll = run => { run.abilityRolls = (run.abilityRolls | 0) + 1; return mulberry(hash2(run.seed | 0, run.abilityRolls, 0xab17)); };
-export function drawAbility(rs, chance = 1) {
+export function drawAbility(rs, chance = 1, o = {}) {
   const run = rs.run;
   if (!run) return null;
   const r = abilityRoll(run), roll = r(), left = kindledOf(rs, 'ability');
   if (roll >= chance || !left.length) return null;
-  return { id: left[Math.floor(r() * left.length)], bright: r() < brightChance(rs) };
+  // the tier and traits from the seed's own tier and trait streams (gear.js); a cache uses the next row down
+  return { id: left[Math.floor(r() * left.length)], ...rollGear(rs, 'ability', o) };
 }
 // an ability lamp on the ground: at `at`, the given one or a draw -> the lamp, or null
 export function dropAbility(R, at = null, pick = null) {
   const run = R.rs.run;
   if (!run) return null;
-  const a = pick ? { id: pick.id, bright: !!pick.bright } : drawAbility(R.rs, 1);
+  const a = pick ? gearCopy(pick) : drawAbility(R.rs, 1, { elite: true });
   if (!a || !ABILITY_IDS.includes(a.id)) return null;
   const s = R.fighter?.body.s, p = at || [s.x, s.y, s.z];
   // a lamp keeps the cooldown its ability had when it was swapped out (cool, full: play steps), and goes on cooling where it lies
-  const lamp = { id: a.id, bright: a.bright, place: run.place, x: p[0], y: p[1], z: p[2], cool: Math.max(0, pick?.cool | 0), full: Math.max(1, pick?.full | 0) };
+  const lamp = { id: a.id, tier: tierOf(a), traits: traitsOf(a), place: run.place, x: p[0], y: p[1], z: p[2], cool: Math.max(0, pick?.cool | 0), full: Math.max(1, pick?.full | 0) };
   (run.abilityLamps ||= []).push(lamp);
   return lamp;
 }
@@ -73,7 +75,7 @@ export const groundAbilities = R => (R?.rs?.run?.abilityLamps || []).map(l => ({
 
 /* ---------------- the slots ----------------
    makeAbilities(R) -> { step(act, camYaw, ev), view(), turn(from, ev) (Bell guard), nearMiss(), drink(), foeOut(), effects }. The slots
-   are rs.run.abilities ([{ id, bright } | null, same]). The cooldowns live here and are copied to rs.run.abilityLive on every step, so
+   are rs.run.abilities ([{ id, tier, traits } | null, same]). The cooldowns live here and are copied to rs.run.abilityLive on every step, so
    the next place's runner (Walk on, Back to the start) takes them on as they were, with a Moth wisp still flying; a page reload starts
    them ready (abilityLive is not saved). A snare, a pool of pitch or a bomb in flight stays in the place it was laid in */
 export function makeAbilities(R) {
@@ -204,9 +206,9 @@ export function makeAbilities(R) {
       const lamp = A.onLamp;
       run.abilityLamps.splice(run.abilityLamps.indexOf(lamp), 1);
       const old = run.abilities[i];
-      run.abilities[i] = { id: lamp.id, bright: lamp.bright };
+      run.abilities[i] = gearCopy(lamp);
       // the swap keeps each ability's cooldown: the one put down lies there still cooling, and the one taken up has what its lamp had
-      if (old) run.abilityLamps.push({ id: old.id, bright: old.bright, place: run.place, x: lamp.x, y: lamp.y, z: lamp.z, cool: A.cool[i], full: A.full[i] });
+      if (old) run.abilityLamps.push({ ...gearCopy(old), place: run.place, x: lamp.x, y: lamp.y, z: lamp.z, cool: A.cool[i], full: A.full[i] });
       A.cool[i] = Math.max(0, lamp.cool | 0); A.full[i] = Math.max(1, lamp.full | 0, A.cool[i]); A.onLamp = null;
       ev.push({ type: 'ability', what: 'swap', slot: i, id: lamp.id }, { type: 'store' });
       cue(ev, 'choice', { ability: lamp.id });
@@ -219,8 +221,10 @@ export function makeAbilities(R) {
     // in a drink, a roll, a hurt or a plunge, and Smoke step or Bell guard in the air: nothing but the refuse cue, and the press is spent
     if (AB.busy.includes(f.move) || (AB.ground.includes(a.id) && !s.ground) || A.move) { cue(ev, 'refuse', { ability: slot.id, slot: i, busy: true }); return true; }
     // an ability with no START yet (a row of the hub change before its builder lands) only refuses
-    if (!START[a.id]?.(a, powerOf(rs, slot), ev, act, camYaw)) { cue(ev, 'refuse', { ability: slot.id, slot: i }); return true; }
-    A.full[i] = A.cool[i] = coolOf(rs, a.id);
+    // Wide (gear.js): its radius and range 15% more
+    const w = traitWide(slot), aw = w === 1 ? a : { ...a, ...(a.r ? { r: a.r * w } : {}), ...(a.range ? { range: a.range * w } : {}) };
+    if (!START[a.id]?.(aw, powerOf(rs, slot), ev, act, camYaw)) { cue(ev, 'refuse', { ability: slot.id, slot: i }); return true; }
+    A.full[i] = A.cool[i] = coolOf(rs, a.id, slot);
     A.lastUse = clock.play; A.lastSlot = i;
     ev.push({ type: 'ability', what: 'use', id: a.id, slot: i });
     cue(ev, a.cue, { ability: a.id, slot: i });
@@ -326,10 +330,10 @@ export function makeAbilities(R) {
       const i = slots().findIndex(x => !x);
       if (i >= 0) {
         run.abilities ||= [null, null];
-        run.abilities[i] = { id: l.id, bright: l.bright };
+        run.abilities[i] = gearCopy(l);
         run.abilityLamps.splice(run.abilityLamps.indexOf(l), 1);
         A.cool[i] = Math.max(0, l.cool | 0); A.full[i] = Math.max(1, l.full | 0, A.cool[i]);
-        R.notes.push(`<b>${abilityOf(l.id).name}</b>${l.bright ? ' (bright)' : ''} in slot ${i + 1}`);
+        R.notes.push(`<b>${abilityOf(l.id).name}</b>${tierOf(l) !== 'plain' ? ` (${tierOf(l)})` : ''} in slot ${i + 1}`);
         ev.push({ type: 'ability', what: 'take', slot: i, id: l.id }, { type: 'store' });
         cue(ev, 'wisp', { ability: l.id });
         continue;
@@ -392,6 +396,6 @@ export function makeAbilities(R) {
   // the test hook: set the cooldown left on each slot, in seconds
   A.setCool = (list = []) => { list.forEach((v, i) => { if (Number.isFinite(v)) { A.cool[i] = Math.max(0, Math.round(v * 60)); A.full[i] = Math.max(A.full[i], A.cool[i], 1); } }); };
   // the HUD and __gloam.run(): each slot's ability, bright, the seconds left and the share of the cooldown left
-  A.view = () => slots().map((x, i) => (x ? { id: x.id, name: abilityOf(x.id)?.name || x.id, colour: abilityOf(x.id)?.colour, bright: !!x.bright, left: +(A.cool[i] / 60).toFixed(2), share: A.cool[i] / Math.max(1, A.full[i]) } : null));
+  A.view = () => slots().map((x, i) => (x ? { id: x.id, name: abilityOf(x.id)?.name || x.id, colour: abilityOf(x.id)?.colour, bright: tierOf(x) !== 'plain', tier: tierOf(x), traits: traitsOf(x), left: +(A.cool[i] / 60).toFixed(2), share: A.cool[i] / Math.max(1, A.full[i]) } : null));
   return A;
 }

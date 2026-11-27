@@ -38,7 +38,7 @@ function setup({ slots = [null, null], foes = [], rs = null, pane = null, sparks
   rs ||= RS.fresh();
   rs.up.keen = keen;
   if (!rs.run) startRun(rs, 7);
-  rs.run.abilities = slots.map(x => (x ? (typeof x === 'string' ? { id: x, bright: false } : x) : null));
+  rs.run.abilities = slots.map(x => (x ? (typeof x === 'string' ? { id: x, tier: 'plain', traits: [] } : x) : null));
   if (pane) { rs.kindled = [...new Set([...rs.kindled, pane])]; setPane(rs, 0, pane); }
   if (sparks) rs.run.sparks = { flame: 0, ward: 0, gloam: 0, ...sparks };
   const body = makeBody(FLAT, { p: [0, 0.5, 0], yaw: 0 }, 20, { ...PARAMS });
@@ -203,9 +203,9 @@ const press = (R, key) => [...R.step({ [key]: true }, 0), ...R.step({}, 0)];
   startRun(rs, 7);
   rs.run.sparkPicks = 9;
   for (let i = 0; i < 3; i++) takeSpark(rs, 'flame');
-  assert(Math.abs(powerOf(rs, { id: 'bomb', bright: false }) - 1.3) < 1e-9);
-  assert(Math.abs(powerOf(rs, { id: 'bomb', bright: true }) - 1.3 * 1.25) < 1e-9);
-  assert.equal(powerOf(rs, { id: 'flare', bright: false }), 1, 'Flame does not raise a Ward ability');
+  assert(Math.abs(powerOf(rs, { id: 'bomb', tier: 'plain', traits: [] }) - 1.3) < 1e-9);
+  assert(Math.abs(powerOf(rs, { id: 'bomb', tier: 'bright', traits: [] }) - 1.3 * 1.25) < 1e-9);
+  assert.equal(powerOf(rs, { id: 'flare', tier: 'plain', traits: [] }), 1, 'Flame does not raise a Ward ability');
   for (let i = 0; i < 5; i++) takeSpark(rs, 'gloam');
   assert.equal(coolOf(rs, 'bomb'), Math.round(480 * 0.8));
   rs.run.sparks.gloam = 40;
@@ -244,15 +244,15 @@ const press = (R, key) => [...R.step({ [key]: true }, 0), ...R.step({}, 0)];
 /* ---------------- Ability lamps ---------------- */
 {
   const { R, rs, s } = setup({ slots: ['bomb', null] });
-  dropAbility(R, [0, 0, 0], { id: 'flare', bright: true });
+  dropAbility(R, [0, 0, 0], { id: 'flare', tier: 'bright', traits: [] });
   steps(R, 2);
-  assert.deepEqual(rs.run.abilities, [{ id: 'bomb', bright: false }, { id: 'flare', bright: true }]);
+  assert.deepEqual(rs.run.abilities, [{ id: 'bomb', tier: 'plain', traits: [] }, { id: 'flare', tier: 'bright', traits: [] }]);
   assert.equal(groundAbilities(R).length, 0);
-  dropAbility(R, [s.x, 0, s.z], { id: 'step', bright: false });
+  dropAbility(R, [s.x, 0, s.z], { id: 'step', tier: 'plain', traits: [] });
   steps(R, 2);
   assert(R.notes.some(t => /press an ability to swap/.test(t)));
   press(R, 'ab1');
-  assert.deepEqual(rs.run.abilities[0], { id: 'step', bright: false });
+  assert.deepEqual(rs.run.abilities[0], { id: 'step', tier: 'plain', traits: [] });
   assert.deepEqual(groundAbilities(R).map(l => l.id), ['bomb'], 'the old one lies there');
   pass('ability lamps: a touch fills the empty slot, and with both full a press swaps, the old one left on the ground');
 }
@@ -263,10 +263,11 @@ const press = (R, key) => [...R.step({ [key]: true }, 0), ...R.step({}, 0)];
   const draws = seed => { const q = RS.fresh(); startRun(q, seed); return Array.from({ length: 200 }, () => drawAbility(q, 0.03)?.id ?? null).join(','); };
   assert.equal(draws(5), draws(5));
   const { R } = setup({ slots: ['bomb', 'step'], keen: 5 });
-  R.rs.run.abilityDrops = 0;
+  // a foe's ability lamp is a gear drop now (gloam-downs-hub "Gear drops"): at most 3 gear drops a place
+  R.rs.run.gearDrops = 0;
   for (let i = 0; i < 2000; i++) R.foeOut(0, [0, 0, 5]);
-  assert.equal(R.rs.run.abilityDrops, 3);
-  pass('ability drops: 3% and 1% a Keen eye level, the same seed gives the same drops, and 3 a run at most');
+  assert.equal(R.rs.run.gearDrops, 3);
+  pass('ability drops: 3% and 1% a Keen eye level, the same seed gives the same drops, and 3 gear drops a place at most');
 }
 
 
@@ -310,7 +311,7 @@ const press = (R, key) => [...R.step({ [key]: true }, 0), ...R.step({}, 0)];
   // it comes back still cooling, and a press then only says no
   const { R, rs, s } = setup({ slots: ['bomb', 'flare'] });
   press(R, 'ab1');
-  dropAbility(R, [s.x, 0, s.z], { id: 'moth', bright: false });
+  dropAbility(R, [s.x, 0, s.z], { id: 'moth', tier: 'plain', traits: [] });
   steps(R, 2);
   press(R, 'ab1');
   assert.equal(rs.run.abilities[0].id, 'moth');
@@ -341,7 +342,7 @@ const press = (R, key) => [...R.step({ [key]: true }, 0), ...R.step({}, 0)];
 }
 { // the swap hint: standing on an ability lamp with both slots full sends an event at once, so the page shows the hint before a press
   const { R, s } = setup({ slots: ['bomb', 'flare'] });
-  dropAbility(R, [s.x, 0, s.z], { id: 'snare', bright: false });
+  dropAbility(R, [s.x, 0, s.z], { id: 'snare', tier: 'plain', traits: [] });
   const ev = steps(R, 1);
   assert(ev.some(e => e.type === 'ability' && e.what === 'lamp' && e.id === 'snare'));
   assert(R.notes.some(t => /press an ability to swap/.test(t)));

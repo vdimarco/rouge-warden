@@ -876,7 +876,9 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   // a death keeps 10% of the 20 carried
   // with the recap's fields (gloam-downs-screens-life): the place reached with its time and foes, the sparks, no pattern kept, and no hit by a foe
   assert.deepEqual(rr.ended, { won: false, place: 'ramparts', time: 0, foes: 0, kept: 2, lost: 18, banked: 2, ember: 0, opened: null, relics: [], combo: 0, seed: rr.ended.seed, patternsKept: 0, patternsLost: 0,
-    path: [{ id: 'gaol', time: 0, foes: 0 }, { id: 'ramparts', time: 0, foes: 0 }], colours: { flame: 0, ward: 0, gloam: 0 }, patternNames: [], by: null });
+    path: [{ id: 'gaol', time: 0, foes: 0 }, { id: 'ramparts', time: 0, foes: 0 }], colours: { flame: 0, ward: 0, gloam: 0 }, patternNames: [], by: null, gear: rr.ended.gear });
+  // the recap's gear (gloam-downs-hub "Save fields"): the run's last blade, off-hand and abilities
+  assert.deepEqual([rr.ended.gear.blade, rr.ended.gear.offhand], [{ id: 'lamp', tier: 'plain', traits: [] }, { id: 'buckler', tier: 'plain', traits: [] }]);
   assert.equal(rr.bank, 46);
   assert.equal(R.clock.stop, 9, 'death holds the game for 9 steps');
   pass('the win at the last beacon and a death end the run and keep their figures');
@@ -924,7 +926,7 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   assert.equal(fade.run, null);
   // a death keeps 2 of the 20 carried (10%)
   assert.deepEqual({ ...fade.ended, time: +fade.ended.time.toFixed(2), path: fade.ended.path.map(p => ({ ...p, time: +p.time.toFixed(2) })) }, { won: false, place: 'gaol', time: 1.25, foes: 0, kept: 2, lost: 18, banked: 2, ember: 0, relics: [], combo: 0, seed: fade.ended.seed, opened: null, patternsKept: 0, patternsLost: 0,
-    path: [{ id: 'gaol', time: 1.25, foes: 0 }], colours: { flame: 0, ward: 0, gloam: 0 }, patternNames: [], by: null });
+    path: [{ id: 'gaol', time: 1.25, foes: 0 }], colours: { flame: 0, ward: 0, gloam: 0 }, patternNames: [], by: null, gear: rs.ended.gear });
   assert.equal(fade.deaths, 1);
   pass('a reload just after a hit keeps the hit, and a reload in the death fade shows the summary');
 }
@@ -963,7 +965,7 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   Object.assign(rs.run, { banked: 30, foes: 7, hp: 70 });
   enter(rs.run);
   const back = RS.clean(JSON.parse(JSON.stringify(rs)));
-  const { sparks, sparkPicks, carriedPatterns, groundPatterns, caches, abilityLamps, patternRolls, foePatterns, abilityDrops, abilityRolls, abilities, ...entry } = back.run.entry;
+  const { sparks, sparkPicks, carriedPatterns, groundPatterns, caches, abilityLamps, patternRolls, foePatterns, abilityDrops, abilityRolls, abilities, blade, offhand, gearLamps, gearRolls, tierRolls, traitRolls, gearDrops, ...entry } = back.run.entry;
   assert.deepEqual([back.run.place, back.run.banked, back.run.foes, entry], ['fen', 30, 7, { hp: 70, flasks: 2, carried: 0, foes: 7, relics: [], elitesDown: [], lastUsed: false }]);
   assert.deepEqual([sparks, abilities], [{ flame: 0, ward: 0, gloam: 0 }, rs.run.abilities], 'the entry keeps the growth fields too');
   pass('the run save: bad fields are dropped, levels clamped, a bad offer dropped, and a run comes back with its entry');
