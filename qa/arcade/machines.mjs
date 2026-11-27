@@ -153,7 +153,8 @@ for (const { id } of JSON.parse(read("higgsfield/arcade-key-art.json")).art) {
     // a Lab toy lives under /lab/, so it names its route and its folder
     { id: "riftwalk", title: "Riftwalk", kind: "THE LAB", art: "riftwalk", after: "Warden's Ledger", url: "/lab/riftwalk/", path: "public/lab/riftwalk" },
     { id: "splat-isle", title: "Splat Isle", kind: "THE LAB", art: "splat_isle", after: "Riftwalk", url: "/lab/splat-isle/", path: "public/lab/splat-isle" },
-    { id: "gloam-downs", title: "Gloam Downs", kind: "THE LAB", art: "gloam_downs", after: "Splat Isle", last: true, url: "/lab/gloam-downs/", path: "public/lab/gloam-downs" },
+    { id: "gloam-downs", title: "Gloam Downs", kind: "THE LAB", art: "gloam_downs", after: "Splat Isle", url: "/lab/gloam-downs/", path: "public/lab/gloam-downs" },
+    { id: "neon-stack", title: "Neon Stack", kind: "THE LAB", art: "neon_stack", after: "Gloam Downs", last: true },
   ];
   for (const g of ADDED) {
     const url = g.url || `/${g.id}/`, at = pieces.findIndex((p) => p.url === url), p = pieces[at], prev = pieces[at - 1], next = pieces[at + 1];
@@ -172,7 +173,7 @@ for (const { id } of JSON.parse(read("higgsfield/arcade-key-art.json")).art) {
   }
   const n = pieces.length;
   check(n >= 40 && pieces.every((p, i) => Number(p.n) === i + 1), `the Corridor's ${n} cabinets are numbered 01 to ${String(n).padStart(2, "0")} with no gap`);
-  const WORDS = { 38: "thirty-eight", 39: "thirty-nine", 40: "forty", 41: "forty-one", 42: "forty-two", 43: "forty-three", 44: "forty-four", 45: "forty-five", 46: "forty-six", 47: "forty-seven" };
+  const WORDS = { 38: "thirty-eight", 39: "thirty-nine", 40: "forty", 41: "forty-one", 42: "forty-two", 43: "forty-three", 44: "forty-four", 45: "forty-five", 46: "forty-six", 47: "forty-seven", 48: "forty-eight" };
   const written = {
     "--n": walk.includes(`style="--n: ${n}"`),
     "the aria label": walk.includes(`An arcade hall of ${n} games.`),
@@ -729,7 +730,7 @@ if (chromium) {
     ascii: ["ascii-front", "battle-tanks"],
     strategy: ["breakthrough", "follow-suit", "silent-depth"],
     gta: ["gta"],
-    lab: ["lab", "worlds", "neon", "echo", "tellme", "plunge", "creek", "tilt", "rules", "afterlight", "lighthouse-keeper", "echoes-under-ice", "last-train-home", "firefly-courier", "mirage-runner", "orbital-gardener", "eleven-wells", "last-light", "ledger", "riftwalk", "splat-isle", "gloam-downs"],
+    lab: ["lab", "worlds", "neon", "echo", "tellme", "plunge", "creek", "tilt", "rules", "afterlight", "lighthouse-keeper", "echoes-under-ice", "last-train-home", "firefly-courier", "mirage-runner", "orbital-gardener", "eleven-wells", "last-light", "ledger", "riftwalk", "splat-isle", "gloam-downs", "neon-stack"],
   };
   // 320 x 700 as the small-phone checks above: at 320 x 568 every machine's screen is about 52 x 43 px, too small for any attract line
   for (const [width, height] of PARTS.includes("firstbreath") ? [[390, 844], [320, 700], [1280, 720]] : []) {
