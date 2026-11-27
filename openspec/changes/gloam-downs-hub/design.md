@@ -621,3 +621,38 @@ if (blindMiss(f)) attack.miss = true;
 
 ### The merge pass
 Merge H, then B, then G. Run every check in "Tests", the Gloam Downs checks in AGENTS.md, and the bot's pacing. Update this file with the measured numbers.
+
+## Merge pass
+H (`gloam-hub-h-2`), then B (`gloam-hub-b-2`), then G (`gloam-hub-g-2`) merged into the work branch. H and B met in one line of `main.js` (the hall's step and the build's step, both kept). G met H and B in `main.js`, `run.js`, `abilities.js`, `moves.js`, `run-save.js`, the bot and the sound test. Each side was kept:
+- **The HUD.** The gear row (`hud-gear.js` `gearRow`) replaces `#abilities` and also shows in the hall, with the practice run's gear. The compare toast shows only in a run.
+- **Wide.** It widens an ability's radius and range once, where the ability starts. B's new abilities had read Wide again inside each effect, so a Wide trait would have counted twice; now only Wick lash's line width reads it there.
+- **The fighter** keeps both Rush glass (`rush`) and the Bell slam's landing pose (`land`). **The run** keeps both the build's sure cuts, haste and Gloam dash and the gear's blade, colour and underfoot item; `GROWN` keeps `sureRolls`, `cracked` and the gear's fields; the save keeps `offCool` and `cracked`.
+- **Every hook line** of "The hooks" appears once.
+
+The stubs are gone:
+- `hub.js` picks with `gear.js` `chooseBlade` and `chooseOffhand`, and its start blade and off-hand come from `startGear`.
+- `cards.js` draws each row's glyph with `hud-gear.js` `gearMark`, small (16 px), beside the category word, so a row keeps its height.
+- `gear-play.js` readies a sure cut and adds a shell through `build.js` `markSure` and `addShell`, and puts Char, Blind and Mark through `status.js` `statusHit`. A parry's sure cut is now the build's own (x1.5 on the next blade hit), the same rule as Shutter's.
+- The hall's practice run holds the start blade and off-hand, so the gear row there is not empty, and a pick at the rack shows at once.
+- B's last open line, the ring round a colour whose set is on, is in the HUD's colour row.
+
+Tests changed by the merge: `gloam-downs-gear.test.mjs` gives its runner the build, as the page and the bot do; `gloam-downs-run.gear.e2e.mjs` now requires V, the middle mouse button and RB to work the off-hand, and expects the Twin string's first cut to be the parry's sure cut (14, not 9); `gloam-downs-run.input.e2e.mjs` faces with R3, since RB is the off-hand.
+
+**Pacing after the merge** (`WORKERS=2 node qa/lab/gloam-downs-bot.mjs 60 <skill> 1`), against the shared start commit (the base of B's table above) and the fair-fight targets:
+
+| Skill | First run reaches place 2 / 3 (merge / base) | Median first win (merge / base) | Runs won | Off-hand uses, gear swaps a run | Families, minutes to clear a place against the mean |
+|---|---|---|---|---|---|
+| 0.3 | 78% / 75%, 60% / 47% | run 3 / 6 | 263 of 521 | 16.6, 0.47 | Flame 4.1% faster, Ward 3.3% slower, Gloam 0.6% slower |
+| 0.5 | 100% / 97%, 97% / 90% | run 1 / 2 | 335 of 377 | 47.8, 0.57 | Flame 6.0% faster, Ward 5.8% slower, Gloam 0.2% faster |
+| 0.9 | 93% / 100%, 93% / 100% | run 1 / 1 | 331 of 371 | 94.3, 0.66 | Flame 3.2% faster, Ward 3.1% slower, Gloam 0.0% |
+
+- **The game is not harder for a 0.3 player.** More first runs reach places 2 and 3, the first win comes in run 3 in place of run 6, and half the runs win (base: 178 of 739).
+- **At 0.9**, 4 first runs stop in place 1 with no death there: they are the bot's stuck runs (12 in place 1, counted apart), not losses.
+- **No build family** clears a place more than 15% faster than the mean (at most 6.0%). Nothing in the gear budget moved.
+- **Fair-fight targets:** at 0.3, place 2 in 80% of first runs is missed by 2 points (78%; the base missed it too, at 75%); place 3 in 40% is met (60%); the first win in run 8 to 20 is missed, too easy (run 3). At 0.5, run 3 to 8 is missed, too easy (run 1). At 0.9, run 1 to 2 is met. The player found the game hard, so the misses on the easy side stay.
+
+**Left open:**
+- The Moth wisp's blazing pairs. The merge pass tried the same 6.25 damage a second in bigger, slower hits (6 each 0.96 s, 7 each 1.12 s, 8 each 1.28 s). Each fixes the blazing rounding but breaks another limit, because Smouldering's 1 s burn weighs more on a slower beat (bright with Smouldering +41.7% and +42.4%, blazing with Smouldering and Quick +64.6%). So the wisp stays at 5 each 0.8 s and `gloam-downs-gear.test.mjs` still leaves it out of the pairs. A later pass could cap a blazing wisp at one trait.
+- The blade bone scaled by blade (tasks.md 3.3), the pause card's Gear list, and a found blade's own look on the ground (it glows as an ability lamp does).
+
+**Checks run by the merge pass:** see tasks.md 4.1 and 4.3.

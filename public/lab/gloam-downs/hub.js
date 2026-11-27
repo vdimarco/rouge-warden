@@ -150,7 +150,9 @@ export function practiceRun(rs, tried = []) {
     seed: 1, place: HUB, time: 0, hp: 999, flasks: 0, carried: 0, banked: 0, foes: 0, wicks: [], offer: null, bossDown: false, entry: null, route: [], ember: 0,
     relics: [], elitesDown: [], combo: 0, lastUsed: false, shelf: false, sparks: { flame: 0, ward: 0, gloam: 0 }, sparkPicks: 0, sparkNow: false,
     abilities: [0, 1].map(i => (pick[i] ? { id: pick[i], bright: false } : null)), abilityOffer: null, carriedPatterns: [], groundPatterns: [], caches: [],
-    abilityLamps: [], patternRolls: 0, abilityRolls: 0, foePatterns: 0, abilityDrops: 0, patternsKept: 0, kept: [], splits: [], lastHurt: null, practice: true
+    abilityLamps: [], patternRolls: 0, abilityRolls: 0, foePatterns: 0, abilityDrops: 0, patternsKept: 0, kept: [], splits: [], lastHurt: null, practice: true,
+    // the start blade and off-hand (gear.js startGear), so the hall's gear row and the post show what the run will start with
+    ...startGear(rs)
   };
 }
 /* the cooldowns in the hall, in steps: a slot whose cooldown has just started (more steps left than last step) starts at a quarter of

@@ -155,8 +155,9 @@ try {
     await G(page, p => window.__gloam.post(p[0] + Math.sin(p[2]) * 1.2, p[1] + Math.cos(p[2]) * 1.2, { hp: Infinity }), [bx, bz, yaw]);
     for (let i = 0; i < 4; i++) { await page.keyboard.down('j'); await tick(page, 0.03, 'live'); await page.keyboard.up('j'); await tick(page, 0.4, 'live'); }
     const twin = (await G(page, () => window.__gloam.posts()))[0].hits.filter(h => /cut|fin/.test(h.kind));
-    assert.deepEqual(twin.map(h => h.dmg), [9, 10, 20, 9], `the twin string: ${JSON.stringify(twin)}`);
-    pass('the Twin string: four presses of J, four cuts (9, 10, 20, 9)');
+    // the first cut is the sure cut the parry readied (build.js, x1.5: 9 to 14); the rest are the string's own
+    assert.deepEqual(twin.map(h => h.dmg), [14, 10, 20, 9], `the twin string: ${JSON.stringify(twin)}`);
+    pass('the Twin string: four presses of J, four cuts (14 sure after the parry, 10, 20, 9)');
     await G(page, () => window.__gloam.gear({ blade: { id: 'bell' } }));
     await G(page, () => window.__gloam.clearPosts());
     const pos = await G(page, () => window.__gloam.state());

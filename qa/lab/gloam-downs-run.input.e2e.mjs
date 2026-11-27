@@ -4,7 +4,7 @@
 //   roll to the camera's left, the arrows with X, Z and C roll, swing and drink, L with no flask says so; W held through the pause
 //   walks on; a roll, a drink, Heal at full health, a hit that is stored at once and a fall; the pause panel with its focus, End the
 //   run asking again, Escape and M; the beacon card, its wicks, Escape that cannot pass them and a reload at it; a mocked gamepad
-//   alone on the cards and in play (a stick held into a card moves nothing, RB faces, a tilt and B roll its way, three X make the
+//   alone on the cards and in play (a stick held into a card moves nothing, R3 faces, a tilt and B roll its way, three X make the
 //   string); and a phone with real touches: the touch buttons at the design's sizes, Look, and Roll with the stick held left. First, a
 //   first visit through the title (?title): its Begin the run opens the help card, whose own Begin the run starts the run.
 // Stage 1 of the combat run: the later stages add Wander's cards, the Lamp-room and the sound log to this file.
@@ -400,13 +400,13 @@ try {
     assert.equal(await active(page), 'bSound', 'back to centre, a new tilt moves it');
     await G(page, () => window.__press(1, true)); await tick(page, 0.1, 'live'); await G(page, () => window.__press(1, false)); await tick(page, 0.1, 'live');
     assert.equal((await run(page)).mode, 'play');
-    // RB faces a post 6 m behind
+    // R3 (the right stick's press) faces a post 6 m behind; RB is the off-hand (gloam-downs-hub)
     await G(page, () => window.__gloam.clearPosts());
     await postAhead(page, 6, Math.PI);
-    await G(page, () => window.__press(5, true)); await tick(page, 0.1, 'live'); await G(page, () => window.__press(5, false));
+    await G(page, () => window.__press(11, true)); await tick(page, 0.1, 'live'); await G(page, () => window.__press(11, false));
     await tick(page, 0.4, 'live');
     const offRB = await viewOff(page);
-    assert(offRB <= 10 * Math.PI / 180, `RB faced the post behind: ${offRB}`);
+    assert(offRB <= 10 * Math.PI / 180, `R3 faced the post behind: ${offRB}`);
     // a full tilt and B: the roll goes the tilt's way (to the camera's right)
     await G(page, () => window.__gloam.clearPosts());
     await tick(page, 0.5, 'live');
@@ -441,7 +441,7 @@ try {
     await stick(0, 0);
     await tick(page, 0.1, 'live');
     assert.deepEqual(errors, []);
-    pass('a stick held into a card moves nothing; RB faces the foe behind; a tilt and B roll its way; three X give cut1, cut2 and the finisher; RT, LT and Y swing, roll and drink', { rb: +offRB.toFixed(3), right: +right.toFixed(2), string });
+    pass('a stick held into a card moves nothing; R3 faces the foe behind; a tilt and B roll its way; three X give cut1, cut2 and the finisher; RT, LT and Y swing, roll and drink', { r3: +offRB.toFixed(3), right: +right.toFixed(2), string });
     await ctx.close();
   }
 

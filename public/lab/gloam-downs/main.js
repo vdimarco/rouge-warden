@@ -1761,8 +1761,10 @@ function fillHall() {
       b.setAttribute('aria-label', `${r.mark?.word || ''} ${r.name}: ${r.start ? 'the start pick' : 'pick it to start with'}`);
     }
   };
-  pick($('bladeRows'), 'blade', bladeRows(rs), id => { if (!chooseBlade(rs, id)) return audio?.cue('refuse'); audio?.cue('choice'); storeRun(); fillLamp(); });
-  pick($('offRows'), 'off', offhandRows(rs), id => { if (!chooseOffhand(rs, id)) return audio?.cue('refuse'); audio?.cue('choice'); storeRun(); fillLamp(); });
+  // a pick also goes to the hall's practice run, so the gear row and the post show the new start blade or off-hand at once
+  const pickGear = () => { if (hall.practice) { const g = practiceRun(rs, hall.tried); hall.practice.blade = g.blade; hall.practice.offhand = g.offhand; } };
+  pick($('bladeRows'), 'blade', bladeRows(rs), id => { if (!chooseBlade(rs, id)) return audio?.cue('refuse'); audio?.cue('choice'); pickGear(); storeRun(); fillLamp(); });
+  pick($('offRows'), 'off', offhandRows(rs), id => { if (!chooseOffhand(rs, id)) return audio?.cue('refuse'); audio?.cue('choice'); pickGear(); storeRun(); fillLamp(); });
   const post = postRows(rs, hall.tried), pl = $('postRows');
   $('postLine').textContent = hallOn() ? 'Put any two in the post\'s slots to try them here. They cool four times as fast, and nothing is spent.' : 'Try them at the ability post in the Lamp-room.';
   for (const li of [...pl.children]) if (!post.some(r => r.id === li.dataset.ab)) li.remove();

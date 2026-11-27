@@ -81,6 +81,8 @@ async function click(page, sel, label = sel) {
   const at = await G(page, sel => {
     const el = document.querySelector(sel);
     if (!el) return null;
+    // a button at the foot of a long card (the shrine's Back to the beacon) is scrolled to, as a player scrolls the card
+    el.scrollIntoView({ block: 'nearest' });
     const r = el.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2, top = document.elementFromPoint(x, y);
     return { x, y, w: r.width, h: r.height, on: !!top && (top === el || el.contains(top)), top: top ? top.id || top.tagName : null };
   }, sel);
@@ -266,7 +268,7 @@ try {
     await click(page, '#wicks button', 'a wick');
     // gloam-downs-growth: the beacon's spark pick comes after the wick
     await click(page, '#sparks button', 'a spark');
-    if (await page.isVisible('#bSpend')) { await click(page, '#bSpend', 'Spend glim'); await click(page, '#bLampBack', 'Back to the beacon'); }
+    if (await page.isVisible('#bSpend')) { await click(page, '#bSpend', 'Go to the shrine'); await click(page, '#bLampBack', 'Back to the beacon'); }
     await click(page, '#bWalkOn', 'Walk on');
     await ready(page);
     await settle(page);
@@ -279,13 +281,15 @@ try {
     await click(page, '#bSumLamp', 'To the Lamp-room');
     await ready(page);
     await tick(page, 0.2, {});
+    // the Lamp-room is a hall now (gloam-downs-hub): its List tool opens the quick list, which holds Begin the run
+    await click(page, '#bList', 'List (the hall)');
     await click(page, '#bLampBegin', 'Begin the run (Lamp-room)');
     await ready(page);
     await settle(page);
     await tick(page, 0.2);
     assert.equal((await run(page)).mode, 'play', `${lock}: the Lamp-room's Begin the run plays`);
     assert(await viewClick(page, DESK_AT, true), `${lock}: the first click after the Lamp-room attacks`);
-    pass(`the run's cards with the lock ${lock}: wick, Spend glim, Back, Walk on, To the Lamp-room and Begin the run answer one click, and the first click after each attacks`);
+    pass(`the run's cards with the lock ${lock}: wick, Go to the shrine, Back, Walk on, To the Lamp-room, List and Begin the run answer one click, and the first click after each attacks`);
     if (errors.length) throw new Error(errors.join('\n'));
     await ctx.close();
   }
