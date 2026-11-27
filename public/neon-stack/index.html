@@ -13,10 +13,13 @@
   a.home, button.games { position: fixed; z-index: 3; top: 8px; min-width: 44px; min-height: 44px; display: grid; place-items: center; padding: 0 10px; background: #1A1A22; color: #F3E9D6; border: 0; text-decoration: none; font: 12px/1 ui-monospace, monospace; }
   a.home { left: 8px; }
   button.games { right: 8px; }
+  #nogl { position: fixed; inset: 0; z-index: 2; display: grid; place-items: center; margin: 0; padding: 0 24px; text-align: center; color: #F3E9D6; font: 14px/1.5 ui-monospace, monospace; }
+  #nogl[hidden] { display: none; }
 </style>
 </head>
 <body>
 <canvas id="view" aria-label="Neon Stack, a rainy night block"></canvas>
+<p id="nogl" hidden>Neon Stack needs WebGL2. Turn on hardware acceleration, or open it in another browser.</p>
 <a class="home" href="/">Arcade</a>
 <button class="games" type="button" data-switch>Games</button>
 <script type="module" src="game.mjs"></script>

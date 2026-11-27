@@ -26,7 +26,12 @@ Use the generated skills for the installed version. Agent commands such as `$ope
 
 ## New games
 
-Every new game ships with its homepage arcade cabinet in the same pull request.
+Every new game ships with its machine in the same pull request, and the machine stands in every view: the Corridor, the game-updates orders (New and Updated), All Games, and the homepage row. Always create all of them. A game with a homepage cabinet and no Corridor machine is unfinished. Read `.agents/skills/arcade-machine/SKILL.md` for the list of places and the order to do them in.
+
+- Corridor: a `PIECES` entry and its `ART` screen in `public/corridor/index.html`.
+- Game updates: the game's `added` and `updated` in `public/arcade/game-dates.json`, copied into the Corridor's baked `DATES`. A visible change to a game later moves its `updated` in both.
+- All Games: a `GAMES` entry in `public/arcade/switch.js` without `labOnly`. `labOnly: true` hides a game from All Games, so set it only when the user asks for that.
+- Homepage row: the cabinet article and the id in its group, as below.
 
 Cabinets are the `<article class="cab">` elements inside `<div class="row" id="row">` in `public/index.html`. Copy a neighboring article. `data-game` is the id, `data-url` is the game's route, the marquee `<b>` is the name, and `<small>` is the subtitle. The `<img>` inside `.bezel .screen` is the cabinet screen art, drawn in the game's palette. Set `--c1`, `--c2`, and `--glow` to that palette, on a `.cab.<id>` rule or on the article.
 
