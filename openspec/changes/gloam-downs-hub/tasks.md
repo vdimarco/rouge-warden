@@ -15,8 +15,8 @@ Three builders work in parallel worktrees after the fair-fight change (`gloam-do
 - [x] 1.7 `main.js`: the title, the end of a run and a win go to `lamproom`; Spend glim becomes "Go to the shrine"; one place on the GPU at a time.
 - [x] 1.8 `life.js` `LIFE.lamproom`, `beds.js` `BEDS.lamproom`; reduced motion as design.md "Decision 8".
 - [x] 1.9 `qa/lab/gloam-downs-hub.test.mjs` (new): stations, growth ranges, station rows, the shrine's spend order, the budget. Update `gloam-downs-life.test.mjs` for the hall.
-- [ ] 1.10 `qa/lab/gloam-downs-hub.e2e.mjs` (new): every scenario of the hall with keys alone, a pad alone, a mouse and touch alone, and the phone load. `qa/lab/gloam-downs-hub-layout.e2e.mjs` (new): the six layouts and reduced motion, with screenshots kept under `SHOTS`.
-- [ ] 1.11 Update `gloam-downs-screens.e2e.mjs`, `gloam-downs-run.cards.e2e.mjs`, `gloam-downs-run.growth.e2e.mjs` and `gloam-downs-run.builds.e2e.mjs` where they open today's Lamp-room card.
+- [x] 1.10 `qa/lab/gloam-downs-hub.e2e.mjs` (new): every scenario of the hall with keys alone, a pad alone, a mouse and touch alone, and the phone load. `qa/lab/gloam-downs-hub-layout.e2e.mjs` (new): the six layouts and reduced motion, with screenshots kept under `SHOTS`.
+- [x] 1.11 Update `gloam-downs-screens.e2e.mjs`, `gloam-downs-run.cards.e2e.mjs`, `gloam-downs-run.growth.e2e.mjs` and `gloam-downs-run.builds.e2e.mjs` where they open today's Lamp-room card.
 - [x] 1.12 `games/gloam-downs/README.md`: the hall, its budget and how to bake it.
 
 ## 2. Buffs builder (B)

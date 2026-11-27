@@ -139,7 +139,7 @@ Every growth object is baked, each as one contiguous range of splats, listed in 
 - The card holds only that station's rows, built from the same row makers as today (`upgradeRows`, the pattern and pane rows, the unlock rows) and the new blade and off-hand rows, so the rules of Buy, Kindle, Set and Pick stay one. Every row shows its category as Part C "The cards by category" says.
 - **Where it shows** (`cards.js` `anchor(card, x, y)`), from the station's screen point:
   - 800 by 600 and 1280 by 720: beside the station, at most 360 px wide, kept 16 px inside the screen, never over the station itself.
-  - 320 by 640, 360 by 640 and 390 by 844: a bottom sheet at most 55% of the height, with the station showing above it. The follow camera already frames the station in the upper half there (`gloam-downs-hub-layout.e2e.mjs` checks it), so `play.js`'s camera is not changed.
+  - 320 by 640, 360 by 640 and 390 by 844: a bottom sheet at most 55% of the height, with the station showing above it. While the sheet is open, `main.js` gives the camera a layout that aims 1.7 m lower on the lamplighter and looks 0.2 rad further down, through `play.js`'s own `layout()`, so no code in `play.js` changes; the window's layout comes back when the card closes. `gloam-downs-hub-layout.e2e.mjs` checks that the station stands above the sheet.
   - In a side sheet the tools (Look, List) hide while it is open; its own close button is there.
   - 844 by 390: a side sheet on the right, at most 45% of the width.
   - It never covers the Lab bar. Long cards scroll inside themselves, as today.

@@ -420,6 +420,8 @@ try {
         await titleLamp(page);
         await check(page, 'lamp', 'lamp');
         await G(page, () => document.getElementById('bLampBegin').click());
+        // from the hall the run's first place loads
+        await page.waitForFunction(() => window.__gloam?.ready() && window.__gloam.state().place === 'gaol', null, { timeout: 120000 });
         await G(page, () => { const r = window.__gloam.run(); if (r.abilityOffer) document.querySelector('#wicks button').click(); });
         await toBeacon(page, 120);
         await check(page, 'beaconCard', 'beacon-wicks');

@@ -137,9 +137,11 @@ export const colourLine = run => colourRow(run).map(c => `${c.name} ${c.n}`).joi
 // the HUD's pattern count, "◇ 1", while a pattern is carried
 export const patternsMark = run => ((run?.carriedPatterns || []).length ? `◇ ${run.carriedPatterns.length}` : '');
 // what a pattern, an ability or a pane does, and its name
-export const growthName = id => patternOf(id)?.name || id;
+// a pattern's item: an ability or a pane (run.js patternOf), or a blade or an off-hand (gear.js)
+const itemOfPattern = id => patternOf(id) || BLADES.find(x => x.id === id) || OFFHANDS.find(x => x.id === id) || null;
+export const growthName = id => itemOfPattern(id)?.name || id;
 // a number and its unit ("1 s", "4 m") stay on one line (merge pass: a pane's "by 1 s" broke before its "s" at 320 px)
-export const growthText = id => (patternOf(id)?.text || '').replace(/(\d) (s|m)\b/g, '$1\u00a0$2');
+export const growthText = id => (itemOfPattern(id)?.text || '').replace(/(\d) (s|m)\b/g, '$1\u00a0$2');
 // the Lamp-room's patterns: "<name> · <what it does> · <cost> glim" with Kindle, under the same rules as a Buy
 export function patternRows(rs) {
   return (rs.patterns || []).filter(id => PATTERNS.some(p => p.id === id)).map(id => {
@@ -295,17 +297,19 @@ export function recapOf(e, route = ORDER) {
 /* ---------------- the hall's own rows (gloam-downs-hub) ----------------
    The blade rack and the off-hand stand: each kindled item with its string or rule, the start one marked, and Pick. The trophy wall:
    each key, held or where it comes from. The well: the bank and the last run. Every row carries its category mark (gearMark) */
+// a number and its unit stay on one line
+const unit = t => String(t || '').replace(/(\d) (s|m)\b/g, '$1\u00a0$2');
 export function bladeRows(rs) {
   const on = startBlade(rs);
   return kindledBlades(rs).map(id => BLADES.find(b => b.id === id)).map(b => ({
-    id: b.id, name: b.name, text: b.text, start: b.id === on, mark: gearMark({ kind: 'blade', id: b.id }),
+    id: b.id, name: b.name, text: unit(b.text), start: b.id === on, mark: gearMark({ kind: 'blade', id: b.id }),
     label: `${b.name} · ${b.text}`, pick: b.id === on ? 'Start blade' : 'Pick'
   }));
 }
 export function offhandRows(rs) {
   const on = startOffhand(rs);
   const rows = kindledOffhands(rs).map(id => OFFHANDS.find(o => o.id === id)).map(o => ({
-    id: o.id, name: o.name, text: `${o.text}; cools in ${o.cool}\u00a0s`, start: o.id === on, mark: gearMark({ kind: 'offhand', id: o.id }),
+    id: o.id, name: o.name, text: `${unit(o.text)}; cools in ${o.cool}\u00a0s`, start: o.id === on, mark: gearMark({ kind: 'offhand', id: o.id }),
     label: `${o.name} · ${o.text}`, pick: o.id === on ? 'Start off-hand' : 'Pick'
   }));
   rows.push({ id: null, name: 'None', text: 'start with the off-hand slot empty', start: on === null, mark: gearMark({ kind: 'offhand' }), label: 'None · start with the off-hand slot empty', pick: on === null ? 'Start off-hand' : 'Pick' });

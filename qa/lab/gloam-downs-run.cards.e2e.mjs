@@ -397,12 +397,18 @@ try {
     await tap(page, PAD.A);
     assert.equal((await run(page)).mode, 'lamp');
     assert.equal(await active(page), 'bLampBack');
-    // the left stick past half moves the focus one button, as the d-pad does
-    await G(page, () => { window.__pad.axes[1] = 0.8; });
-    await tick(page, 0.05, 'live');
-    await G(page, () => { window.__pad.axes[1] = 0; });
-    await tick(page, 0.05, 'live');
-    assert.equal(await G(page, () => document.activeElement.closest('li')?.dataset.up), 'mantle', "the left stick reaches Mantle's Buy");
+    // the left stick past half moves the focus one button, as the d-pad does; at the shrine (gloam-downs-hub) its tabs and the close
+    // button come before the wares, so a few moves reach Mantle's Buy
+    const seen = [];
+    for (let k = 0; k < 8 && (await G(page, () => document.activeElement.closest('li')?.dataset.up)) !== 'mantle'; k++) {
+      await G(page, () => { window.__pad.axes[1] = 0.8; });
+      await tick(page, 0.05, 'live');
+      await G(page, () => { window.__pad.axes[1] = 0; });
+      await tick(page, 0.05, 'live');
+      seen.push(await active(page));
+    }
+    assert.equal(new Set(seen).size, seen.length, `each stick move takes the focus to a new button: ${seen.join(', ')}`);
+    assert.equal(await G(page, () => document.activeElement.closest('li')?.dataset.up), 'mantle', `the left stick reaches Mantle's Buy: ${seen.join(', ')}`);
     await tap(page, PAD.A);
     r = await run(page);
     assert.deepEqual([r.carried, r.bank, r.hp, r.max], [20, 0, 115, 115], 'the glim carried pays first: 20 left, and Mantle works at once');

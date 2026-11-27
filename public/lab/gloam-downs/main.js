@@ -1049,9 +1049,33 @@ function openLamp(from = null) {
   cards.freshLamp();
   fillLamp();
   openCard('lamp', 'lamp', () => $(LAMP[b.main]), b.back ? () => $(LAMP[b.back]).click() : null);
-  const at = shrine && meta?.beacon ? project([meta.beacon.p[0], meta.beacon.p[1] + 1, meta.beacon.p[2]]) : null;
-  cards.anchor(card, at ? at[0] : null, at ? at[1] : null);
+  lampAnchor = shrine && meta?.beacon ? () => project([meta.beacon.p[0], meta.beacon.p[1] + 1, meta.beacon.p[2]]) : null;
+  anchorLamp();
 }
+/* the anchored card's point on the screen, again on each resize (a phone turned, a window sized): the shrine's beacon or the open
+   station; null lays the card in the middle */
+let lampAnchor = null, sheetTilt = false, tiltCam = null;
+/* a station's bottom sheet on an upright phone covers the lower half of the view: the camera aims lower on the lamplighter and looks a
+   little further down (the layout's aim and pitch, through play.js's own layout(), so play.js is unchanged), so the station shows
+   above the sheet; the layout comes back when the card closes */
+const SHEET_TILT = { aim: -1.7, pitch: 0.2 };
+function tiltFor(kind) {
+  const on = kind === 'sheet' && hallOn() && !!$('lamp').dataset.station;
+  // (a new place has a new camera, with its own layout)
+  if (!cam || (on === sheetTilt && tiltCam === cam)) return;
+  sheetTilt = on; tiltCam = cam;
+  const L = layoutNow();
+  cam.layout(on ? { ...L, aim: L.aim + SHEET_TILT.aim, pitch: L.pitch + SHEET_TILT.pitch } : L);
+}
+function anchorLamp() {
+  const card = $('lamp');
+  if (!lampAnchor) { tiltFor(null); return cards.anchor(card, null); }
+  const at = lampAnchor(), kind = cards.anchor(card, at ? at[0] : innerWidth / 2, at ? at[1] : innerHeight / 2);
+  tiltFor(kind);
+  return kind;
+}
+// (the page's own resize has just put the window's layout back on the camera)
+addEventListener('resize', () => { sheetTilt = false; if (!$('lamp').hidden && lampAnchor) anchorLamp(); });
 /* the Lamp-room's wares as lamp tiles (screens.js wareTile): a glass that fills by level / levels, "Mantle 2 of 8", the next gift, its
    cost and Buy. The glim line's numbers roll from the old count to the new over 400 ms with tally ticks (at most 12); with reduced
    motion they change at once */
@@ -1152,8 +1176,8 @@ function buyUp(id) {
     next ? next.focus({ preventScroll: true }) : cards.focusMain();
   }
 }
-$('bLampBack').addEventListener('click', () => { hideCard('lamp'); cards.anchor($('lamp'), null); $('shrineTabs').hidden = true; openBeacon(); });
-$('bLampBegin').addEventListener('click', () => { cards.anchor($('lamp'), null); beginRun('lamp'); });
+$('bLampBack').addEventListener('click', () => { hideCard('lamp'); lampAnchor = null; cards.anchor($('lamp'), null); $('shrineTabs').hidden = true; openBeacon(); });
+$('bLampBegin').addEventListener('click', () => { lampAnchor = null; cards.anchor($('lamp'), null); beginRun('lamp'); });
 // Go on with the run goes on as a reload does, at the start of the run's place
 $('bLampGoOn').addEventListener('click', () => { lampFromWander = false; soundPress(); audio?.cue('choice'); reload(rs.run); storeRun(); hideCard('lamp'); retake(); go(rs.run.place); });
 $('bLampWander').addEventListener('click', toWander);
@@ -1644,8 +1668,9 @@ function openStation(id) {
   hall.opened = steps;
   showUse(null);
   openCard('lamp', 'station', () => (id === 'map' ? $(LAMP[b.main]) : firstButton(card)), () => closeStation());
-  const y = (st.y ?? body.s.y) + 1.3, at = project([st.obj[0], y, st.obj[1]]);
-  cards.anchor(card, at ? at[0] : innerWidth / 2, at ? at[1] : innerHeight / 2);
+  const y = (st.y ?? body.s.y) + 1.3;
+  lampAnchor = () => project([st.obj[0], y, st.obj[1]]);
+  anchorLamp();
   emit('station-open', { id });
 }
 // the first button of the card's parts that show (the main one for a station's card)
@@ -1666,13 +1691,15 @@ function openQuick() {
   cards.freshLamp();
   fillLamp();
   showUse(null);
-  cards.anchor(card, null);
+  lampAnchor = null;
+  anchorLamp();
   openCard('lamp', 'station', () => $(LAMP[b.main]), () => closeStation());
 }
 function closeStation() {
   const card = $('lamp');
   delete card.dataset.station;
-  cards.anchor(card, null);
+  lampAnchor = null;
+  anchorLamp();
   lampParts(null);
   $('bLampClose').hidden = $('bLampDone').hidden = true;
   closeCard('lamp');
