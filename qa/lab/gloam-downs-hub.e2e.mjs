@@ -140,6 +140,8 @@ try {
   if (part('pad')) {
     const { ctx, page, errors } = await open({ viewport: { width: 1280, height: 720 } }, '?run&test&hall', { seen: true, bank: 600, kindled: ['bomb', 'step', 'thick', 'hot', 'lamp', 'buckler', 'hook'] }, mock);
     await at(page, 'blades');
+    // the pad's first press takes the labels (and presses nothing)
+    await tap(page, PAD.R3);
     await tick(page, 0.1, 'live');
     assert.equal((await hall(page)).near, 'blades');
     assert.match(await page.textContent('#bUse'), /A\s*Use/, 'the prompt names A');
@@ -180,11 +182,16 @@ try {
     const st = (await hall(page)).stations.find(s => s.id === 'well');
     const p = await G(page, s => window.__gloam.project([s.obj[0], s.y + 1.2, s.obj[1]]), st);
     await G(page, () => window.__gloam.release());
+    await page.waitForFunction(() => !window.__gloam.state().mouse.locked);
+    await G(page, () => window.__gloam.draw());
     await page.mouse.click(p[0], p[1]);
     assert.deepEqual([await mode(page), (await hall(page)).station], ['station', 'well']);
     assert.match(await page.textContent('#wellRecap'), /Banked: 0 glim/);
     await page.click('#bLampClose');
     assert.equal(await mode(page), 'play');
+    // the close button takes the mouse back for play; freed, the cursor reaches the tools
+    await G(page, () => window.__gloam.release());
+    await page.waitForFunction(() => !window.__gloam.state().mouse.locked);
     await page.click('#bList');
     assert((await hall(page)).quick);
     assert.deepEqual(errors, []);

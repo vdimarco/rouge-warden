@@ -188,8 +188,11 @@ try {
     const { ctx, page, errors } = await open({ viewport: { width: 1280, height: 720 } }, '?run&test&seed=7&nodraw', saveWith(won));
     await ready(page, 'ended');
     assert.match(await text(page, '#winOpened'), /Ember 1 opens/);
+    // the win card walks into the Lamp-room (gloam-downs-hub); the quick list holds the Ember row (the bell's card)
     await page.click('#bWinLamp');
-    await ready(page, 'lamp');
+    await page.waitForFunction(() => window.__gloam?.ready() && window.__gloam.state().place === 'lamproom' && window.__gloam.run().mode === 'play', null, { timeout: 180000 });
+    await G(page, () => document.getElementById('bList').click());
+    await ready(page, 'station');
     const row = await page.$$eval('#emberRow button', bs => bs.map(b => [b.textContent, b.getAttribute('aria-pressed')]));
     assert.deepEqual(row, [['Ember 0', 'true'], ['Ember 1', 'false']]);
     await page.click('#emberRow button[data-ember="1"]');

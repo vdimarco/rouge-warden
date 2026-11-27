@@ -220,7 +220,8 @@ function kindleRow(id) {
   if (had) {
     const pane = byId('paneRow').querySelector(`button[data-pane="${id}"]`);
     const next = pane || order.map(p => list.querySelector(`li[data-pattern="${p}"] button:not([hidden])`)).find(Boolean) || byId('paneRow').querySelector('button');
-    next && !next.closest('[hidden]') ? next.focus({ preventScroll: true }) : focusMain();
+    // (a button on another tab of the shrine, or another station's part of the card, does not show: the main button then)
+    next && !next.closest('[hidden]') && next.getClientRects().length ? next.focus({ preventScroll: true }) : focusMain();
   }
 }
 function paneButton(slot, id) {

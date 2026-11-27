@@ -150,7 +150,9 @@ const pass = (name, data) => { n++; console.log('PASS ' + name + (data !== undef
   const pr = H.practiceRun(rs, ['step']);
   assert.deepEqual(pr.abilities.map(a => a?.id), ['step', 'bomb']);
   assert(pr.practice && pr.hp > 0);
-  assert.equal(+H.quarterLeft(1).toFixed(4), +(1 - 3 / 60).toFixed(4));
+  // an 8 s cooldown that has just started counts down from 2 s; one that runs on is left alone, and an empty slot stays empty
+  assert.deepEqual(H.quarterCool([480, 100, 0], [0, 101, 0]), [120, 100, 0]);
+  assert.deepEqual(H.quarterCool([119], [120]), [119]);
   assert.equal(H.USE.quarter, 4);
   pass('every row starts with its category word and colour edge; the blade rack and the stand pick the start items; the quick list\'s headings in order; the post\'s slots and quarter cooldowns', { rows: words.length });
 }

@@ -41,7 +41,7 @@ import { titleView, frameAt, titleSpot } from './menu-scene.js';
 import { titleLamps, titleLine, seedLine, emberStep, wareTiles, recapOf, pickColour } from './screens.js';
 import { PAD } from './input.js';
 // the Lamp-room as a place (gloam-downs-hub): the hall's plan and rules, its rows, and the stand-ins of the gear builder's picks
-import { HUB, stationOf, stationNear, promptOf, SHRINE_TABS, shown as growShown, practiceRun, quarterLeft, postRows, tryAbility, chooseBlade, chooseOffhand, USE, startBlade as startBladeOf, startOffhand as startOffhandOf } from './hub.js';
+import { HUB, stationOf, stationNear, promptOf, SHRINE_TABS, shown as growShown, practiceRun, quarterCool, postRows, tryAbility, chooseBlade, chooseOffhand, USE, startBlade as startBladeOf, startOffhand as startOffhandOf } from './hub.js';
 import { bladeRows, offhandRows, keyRows, wellLines } from './screens.js';
 // growth (gloam-downs-growth): the page parts in cards.js, bound to the page's state with getters
 const { bindGrowth, updateGrowth, fillGrowthLamp, sparkButtons, abilityButtons, growthView, setGrowth } = cards;
@@ -602,6 +602,8 @@ function showControls() {
   const more = kind === 'keys' || kind === 'drag' ? [MOUSE_LINE] : [];
   $('runControls').innerHTML = [...lines, ...more].map(li).join('');
   $('pauseControls').innerHTML = lines.map(li).join('');
+  // the hall's prompt names the key of the input in use now
+  if (hallOn() && hall.near) showUse(hall.near);
 }
 /* a mouse found or lost changes the mouse lines, and so the height of the card they are on. Under an open card a change in the press
    that switched the input (a finger's pointerdown on a phone that has seen a mouse, or a mouse's first press with no move before it)
@@ -1523,7 +1525,7 @@ function stepBack() {
    List button open every station's rows in one card, the quick list. The run door begins the run. Each growth object of the hall
    (meta.grow) shows when the save owns it (hub.js shown). The ability post tries any two kindled abilities on a practice run that is
    never stored, with cooldowns at a quarter. In a run the Lamp-room is the beacon's shrine: the same card, three tabs, beside the beacon */
-const hall = { near: null, list: [], shown: new Map(), tried: [], practice: null, last: null, walkAway: 0, door: 0, tab: 'shelf', hits: 0, fetched: false, opened: 0 };
+const hall = { near: null, list: [], shown: new Map(), tried: [], practice: null, last: null, walkAway: 0, door: 0, tab: 'shelf', hits: 0, fetched: false, opened: 0, cool: [] };
 const hallOn = () => RUN && meta?.id === HUB;
 // the practice run's save: the real one, but its run is the practice run (so nothing in the hall touches rs.run or is stored with it)
 const hallRs = new Proxy({}, {
@@ -1537,10 +1539,18 @@ function hallEnter() {
   hall.shown.clear();
   hall.near = null;
   hall.door = hall.walkAway = 0;
+  hall.cool = [];
   hallGrow();
   // the ability post: a post to hit, beside its object
   const p = hall.list.find(s => s.id === 'post');
-  if (p) posts.push(makePost(walk, p.obj[0], p.obj[1], { id: 'post', r: 0.35 }));
+  /* the target stands on the post's near face, on the floor at the station's height: the baked post is solid on the walk map, so a
+     target at its middle would be out of the blade's sight and the map's top there is the post's own top */
+  if (p) {
+    const dx = p.obj[0] - p.at[0], dz = p.obj[1] - p.at[1], l = Math.hypot(dx, dz) || 1, face = 0.5;
+    const post = makePost(walk, p.obj[0] - (dx / l) * face, p.obj[1] - (dz / l) * face, { id: 'post', r: 0.35 });
+    post.y = p.y ?? 0;
+    posts.push(post);
+  }
   hall.hits = 0;
   showUse(null);
   updateHud();
@@ -1579,7 +1589,10 @@ function hallStep() {
   hall.door = d && st?.id === 'door' && moving && Math.hypot(s.x - d.at[0], s.z - d.at[1]) < 0.8 ? hall.door + STEP : 0;
   if (hall.door >= 0.2) { hall.door = 0; hallBegin(); return; }
   const A = runner?.abilities;
-  if (A) A.setCool(A.view().map(v => (v ? quarterLeft(v.left) : NaN)));
+  if (A?.cool) {
+    quarterCool(A.cool, hall.cool).forEach((c, i) => { if (c !== A.cool[i]) { A.cool[i] = c; A.full[i] = Math.max(1, c); } });
+    hall.cool = A.cool.slice();
+  }
   const post = posts.find(p => p.id === 'post');
   while (post && hall.hits < post.hits.length) floatHit(post, post.hits[hall.hits++].dmg);
 }
@@ -1725,7 +1738,8 @@ function fillHall() {
     const li = growRow(pl, 'ab', r, () => tryPost(r.id), r.text), b = li.querySelector('button');
     b.textContent = r.slot >= 0 ? `Slot ${r.slot + 1}` : 'Try';
     b.setAttribute('aria-pressed', String(r.slot >= 0));
-    b.disabled = !hallOn();
+    // away from the hall the post's slots cannot be tried: the rows show the abilities, with no button
+    b.hidden = !hallOn();
   }
   const kl = $('keyRows');
   for (const r of keyRows(rs)) {
@@ -2295,7 +2309,7 @@ window.__gloam = {
     if (run && Array.isArray(o.abilityLamps)) run.abilityLamps = o.abilityLamps.filter(l => abilityOf(l.id)).map(l => ({ id: l.id, bright: !!l.bright, place: run.place, x: +l.x, y: +l.y, z: +l.z }));
     if (Array.isArray(o.abilities) || Array.isArray(o.keys)) showControls();
     updateHud();
-    if (mode === 'lamp') fillLamp();
+    if (mode === 'lamp' || mode === 'station') fillLamp();
     storeRun();
     return runState();
   },

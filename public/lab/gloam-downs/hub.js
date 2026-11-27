@@ -161,8 +161,9 @@ export function practiceRun(rs, tried = []) {
     abilityLamps: [], patternRolls: 0, abilityRolls: 0, foePatterns: 0, abilityDrops: 0, patternsKept: 0, kept: [], splits: [], lastHurt: null, practice: true
   };
 }
-// a cooldown in the hall: the seconds left after one more step at a quarter (the runner steps one, the post three more)
-export const quarterLeft = left => Math.max(0, left - (USE.quarter - 1) / 60);
+/* the cooldowns in the hall, in steps: a slot whose cooldown has just started (more steps left than last step) starts at a quarter of
+   it, so the HUD counts the quarter down; one already running goes on as it is. cool: the steps left now; was: the steps left a step ago */
+export const quarterCool = (cool = [], was = []) => cool.map((c, i) => (c > (was[i] ?? 0) ? Math.ceil(c / USE.quarter) : c));
 // what the post's card shows: a row a kindled ability, by colour, with whether it is in a post slot
 export function postRows(rs, tried = []) {
   const order = COLOURS.map(c => c.id);

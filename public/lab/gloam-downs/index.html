@@ -509,6 +509,8 @@
   .useprompt kbd { font: 700 14px/1 ui-monospace, monospace; padding: 3px 6px; border-radius: 5px; border: 1px solid var(--edge); color: #ffe2bd; }
   .useprompt kbd:empty { display: none; }
   body.touchUse .useprompt { left: 12px; transform: none; bottom: calc(var(--sab) + 240px); max-width: calc(100vw - 24px); }
+  /* a landscape phone: the HUD's lines reach low, so the prompt sits at the bottom left, clear of the touch buttons on the right */
+  @media (orientation: landscape) and (max-height: 430px) { body.touchUse .useprompt { bottom: calc(var(--sab) + 12px); left: calc(12px + env(safe-area-inset-left, 0px)); } }
   body:has(.panel:not([hidden])) .useprompt, body:has(#title:not([hidden])) .useprompt { visibility: hidden; }
   .act.off { width: 48px; height: 48px; font-size: 10px; right: calc(174px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 154px); background: rgba(14, 30, 26, 0.78); border-color: #5fa874; color: #d4f6dc; }
   .act.off i { position: absolute; inset: 0; border-radius: 50%; pointer-events: none; }
@@ -523,6 +525,9 @@
   .grows li button { grid-row: 1; }
   .grows li button[aria-pressed="true"] { background: #5a2214; border-color: var(--ember); color: #ffe2bd; }
   .grows li em { grid-column: 1; font: 500 13px/1.25 var(--body); font-style: normal; color: #e0b98a; }
+  /* in a tile the category mark sits over the name, and the cost spans the tile, so the glass's column stays as narrow as the glass */
+  .tiles .tile > .catw { grid-column: 2; justify-self: start; }
+  .tiles .tile > span.cost { grid-column: 1 / -1; }
   .catw { display: inline-block; margin-right: 6px; font: 700 11px/1 var(--title); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ash); white-space: nowrap; }
   .catw::before { content: ''; display: inline-block; width: 9px; height: 9px; margin-right: 4px; background: var(--hue, var(--ash)); vertical-align: -1px; }
   .catw.triangle::before { clip-path: polygon(50% 0, 100% 100%, 0 100%); }
@@ -534,7 +539,11 @@
   #lamp.anchored .box { pointer-events: auto; position: fixed; margin: 0; }
   #lamp.anchored.sheet .box { left: 8px; right: 8px; width: auto; bottom: calc(var(--sab) + 8px); top: auto; max-height: 55dvh; }
   #lamp.anchored.side .box { right: calc(8px + env(safe-area-inset-right, 0px)); left: auto; top: calc(var(--sat) + 60px); bottom: calc(var(--sab) + 8px); width: 45vw; max-height: none; }
+  /* the side sheet stands where the tools are: they hide while it is open (its own close button is there) */
+  body:has(#lamp.anchored.side:not([hidden])) .tools { visibility: hidden; }
   #lamp.anchored.beside .box { width: min(360px, calc(100vw - 32px)); max-height: calc(100dvh - var(--sat) - var(--sab) - 76px); }
+  /* a card beside its station or in a side sheet is narrow: two tiles a row, whatever the screen's width */
+  #lamp.anchored.beside ul.tiles, #lamp.anchored.side ul.tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   #lamp.anchored #lampRow { position: static; margin: 8px 0 0; padding: 0; border: 0; background: none; }
   #lampRow button[hidden] { display: none; }
   #lamp .empty { color: var(--ash); font-size: 14px; }

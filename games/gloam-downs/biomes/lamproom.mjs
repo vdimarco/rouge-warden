@@ -93,7 +93,21 @@ export default {
     {
       tile(S, h, floorM, { x0: X0 - 0.2, x1: X1 + 0.2, z0: BACK - 0.2, z1: FRONT + 0.6, res: 0.24 });
       const N = [-14, 14, -14, 16];
-      tile(S, h, { ...moor, fat: 0.8 }, { x0: N[0], x1: N[1], z0: FRONT + 0.6, z1: N[3], res: 0.36 });
+      /* the terrace before the open front: flagstones lit by two braziers, so the foreground of the cut-away view is a warm floor and
+         not the dark moor (the follow camera stands out here, 9 m behind the lamplighter) */
+      const T = { x: 8.2, z1: FRONT + 4.6 };
+      tile(S, h, floorM, { x0: -T.x, x1: T.x, z0: FRONT + 0.6, z1: T.z1, res: 0.36 });
+      S.box([0, -0.12, T.z1 + 0.15], [T.x + 0.1, 0.16, 0.2], rough, { rd: 0.05, res: 0.12 });
+      tile(S, h, { ...moor, fat: 0.8 }, { x0: N[0], x1: N[1], z0: T.z1 + 0.35, z1: N[3], res: 0.48 });
+      tile(S, h, { ...moor, fat: 0.8 }, { x0: N[0], x1: -T.x, z0: FRONT + 0.6, z1: T.z1 + 0.35, res: 0.4 });
+      tile(S, h, { ...moor, fat: 0.8 }, { x0: T.x, x1: N[1], z0: FRONT + 0.6, z1: T.z1 + 0.35, res: 0.4 });
+      for (const sx of [-1, 1]) {
+        const bx = sx * 4.2, bz = FRONT + 2.4;
+        S.tube([[bx, 0, bz], [bx, 0.95, bz]], 0.07, 0.06, ironM, { res: 0.05 });
+        for (let k = 0; k < 3; k++) { const a = (k / 3) * Math.PI * 2; S.tube([[bx, 0.5, bz], [bx + Math.cos(a) * 0.32, 0, bz + Math.sin(a) * 0.32]], 0.04, 0.035, ironM, { res: 0.04 }); }
+        S.ball([bx, 1.02, bz], [0.36, 0.14, 0.36], ironM, { res: 0.05 });
+        ctx.fire([bx, 1.12, bz], 0.75, { k: 0.8, r: 5.5 });
+      }
       tile(S, h, { ...moor, fat: 0.8 }, { x0: N[0], x1: X0 - 0.2, z0: N[2], z1: FRONT + 0.6, res: 0.4 });
       tile(S, h, { ...moor, fat: 0.8 }, { x0: X1 + 0.2, x1: N[1], z0: N[2], z1: FRONT + 0.6, res: 0.4 });
       tile(S, h, { ...moor, fat: 0.8 }, { x0: X0 - 0.2, x1: X1 + 0.2, z0: N[2], z1: BACK - 0.2, res: 0.4 });

@@ -78,6 +78,11 @@ try {
         const p = await G(page, s => window.__gloam.project([s.obj[0], s.y + 1.3, s.obj[1]]), st), r = await page.$eval('#lamp .box', b => b.getBoundingClientRect().toJSON());
         assert(!(p[0] > r.left && p[0] < r.right && p[1] > r.top && p[1] < r.bottom), `${w}x${h} ${id}: the card over its station`);
       }
+      // a sheet: the station's object shows above it (the follow camera already frames it there, so play.js's camera is not moved)
+      if (kind === 'sheet') {
+        const p = await G(page, s => window.__gloam.project([s.obj[0], s.y + 1.3, s.obj[1]]), st), r = await page.$eval('#lamp .box', b => b.getBoundingClientRect().toJSON());
+        assert(p && p[1] < r.top && p[1] > 60, `${w}x${h} ${id}: the station (${p}) above the sheet (top ${r.top})`);
+      }
       if (SHOTS) { await G(page, () => window.__gloam.draw()); await page.screenshot({ path: `${SHOTS}/${id}-${w}x${h}.png` }); }
       out[id] = await page.$eval('#lamp .box', b => { const r = b.getBoundingClientRect(); return `${Math.round(r.width)}x${Math.round(r.height)}`; });
       await page.keyboard.press('Escape');

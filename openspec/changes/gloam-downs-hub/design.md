@@ -71,6 +71,7 @@ A downs place is 232,607 to 245,198 splats and 1.22 to 1.36 MB. So the hall is b
 - **lib/check.mjs:** for a hub, it skips the beacon-above-start rule, the wisp count and the lattice colour rules, and adds: every station reachable from the spawn on the walk map, every station within 6 m of the spawn-to-door path, and the start view's mean luminance between 0.07 and 0.16 with at least 0.3% bright pixels.
 - **save.js and places.js:** `HUB` beside `ORDER` and `LATTICE`; `placeName('lamproom')` is "The Lamp-room". The hub is never in the Map.
 - **main.js:** `go('lamproom')` loads it with no foe pool.
+- **As built:** 162,900 splats (151,482 scenery, 4,334 in 205 growth ranges), 0.397 MB gzip with the walk map and JSON, a 1.8 KB walk file, about 5 s to bake, and a start view of mean luminance 0.114 with 0.76% bright pixels. A flagstone terrace with two braziers lies before the open front, because the follow camera stands 9 m behind the lamplighter, outside the hall, and without it the lower third of the view was the unlit moor. The five downs places and the three Lattice places still bake byte for byte as before.
 - **Fallback, if the bake fails on a later Ink Studio:** build the hall at load from the props the bake already has, appended after the place's splats as `pool.js` appends slots. It costs more code and looks weaker, so it is only the fallback.
 
 ### Decision 3: the budget and the load on phones
@@ -129,7 +130,7 @@ Every growth object is baked, each as one contiguous range of splats, listed in 
 | Trophy wall | for each key, its trophy; for each elite, a plaque | key held; elite put out once |
 | Ember bell | 6 rings of light round the bell | levels open |
 
-- About 1,600 splats a ware (8 rings of 200), 250 a lamp, 400 a pane glass, 400 a blade or off-hand. With 37 patterns, 4 blades and 6 off-hands, about 43,000 splats in all, inside the 46,000 budget.
+- The first estimate was about 1,600 splats a ware, 250 a lamp and 400 a glass or an item, about 43,000 in all. As baked, the rings, lamps, glasses and items are small and the 205 ranges hold 4,334 splats, far inside the 46,000 budget.
 - A new light is lit with a 0.4 s glow and the `kindle` or `buy` cue. With reduced motion it is lit at once.
 - The glass rings are a shape, not a colour ramp, so the level reads on a grey screen too.
 
@@ -138,7 +139,8 @@ Every growth object is baked, each as one contiguous range of splats, listed in 
 - The card holds only that station's rows, built from the same row makers as today (`upgradeRows`, the pattern and pane rows, the unlock rows) and the new blade and off-hand rows, so the rules of Buy, Kindle, Set and Pick stay one. Every row shows its category as Part C "The cards by category" says.
 - **Where it shows** (`cards.js` `anchor(card, x, y)`), from the station's screen point:
   - 800 by 600 and 1280 by 720: beside the station, at most 360 px wide, kept 16 px inside the screen, never over the station itself.
-  - 320 by 640, 360 by 640 and 390 by 844: a bottom sheet at most 55% of the height; the camera lifts so the station shows above it.
+  - 320 by 640, 360 by 640 and 390 by 844: a bottom sheet at most 55% of the height, with the station showing above it. The follow camera already frames the station in the upper half there (`gloam-downs-hub-layout.e2e.mjs` checks it), so `play.js`'s camera is not changed.
+  - In a side sheet the tools (Look, List) hide while it is open; its own close button is there.
   - 844 by 390: a side sheet on the right, at most 45% of the width.
   - It never covers the Lab bar. Long cards scroll inside themselves, as today.
 - While a card is open, the lamplighter stands still and input moves the focus in the card. Walking away (a stick or key held 0.3 s) or Esc, B or the close button shuts it. Moving more than 2.5 m away shuts it.
@@ -154,6 +156,10 @@ Every growth object is baked, each as one contiguous range of splats, listed in 
 | Touch | the Use button | the close button, or walk away | the List button | tap |
 
 The ability post: Attack, Roll, the off-hand and both abilities work in the hall. Ability cooldowns are a quarter of their length there, and damage numbers float over the post. Nothing spent there costs anything.
+- A cooldown that starts in the hall starts at a quarter of its length (`hub.js` `quarterCool`), so the HUD counts the short time down.
+- The post's target stands on the near face of the baked post, 0.5 m in front of its middle, on the floor. The baked post is solid on the walk map, so a target in its middle would be out of the blade's line of sight.
+- In the hall E is Use, so it does not turn the view there; Q still does. Escape, M and P open the quick list, since the hall has no pause.
+- A pad's prompt reads "A Use" once the pad has been pressed; until then the keys' "E Use" shows, as the other labels do.
 
 ### Decision 8: life, sound and reduced motion
 - `life.js` `LIFE.lamproom`: dust that twinkles in the torch light, the kiln's fire on the fire slots 34 to 37, a slow bob on the well's water, and the shelf lamps that brighten within `RULES.near` of the lamplighter. No crows, no gusts.
