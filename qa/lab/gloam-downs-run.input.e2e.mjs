@@ -257,7 +257,7 @@ try {
     await G(page, () => window.__gloam.hurt(16));
     r = await run(page);
     assert.deepEqual([r.hp, r.stop], [84, 5]);
-    const saved = await G(page, () => JSON.parse(localStorage.getItem('gloam-downs.run.v3')));
+    const saved = await G(page, () => JSON.parse(localStorage.getItem('gloam-downs.run.v4')));
     assert.equal(saved.run.hp, 84, 'the hit is stored at once');
     await tick(page, 1.0, {});
     a = await state(page);

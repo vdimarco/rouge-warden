@@ -6,6 +6,7 @@
 import { takeSpark, chooseStartAbility, kindle, setPane, dropPattern, sparksOf, maxOf, paneSlots, kindledOf } from './run.js';
 import { colourRow, colourLine, patternsMark, patternRows, paneRows, SPARK_PICKS, abilityLine, growthName, growthText, patternHue } from './screens.js';
 import { COLOUR_IDS, PATTERN_IDS, ABILITY_IDS, PANE_IDS, STARTERS } from './growth.js';
+import { gearMark as gearGlyph } from './hud-gear.js';
 export const wrapIndex = (i, n, d) => (((i + d) % n) + n) % n;
 // the buttons of a card that can take the focus, in their order on the page
 export const buttonsOf = box => [...box.querySelectorAll('button')].filter(b => !b.disabled && !b.hidden && !b.classList.contains('ghost') && b.getClientRects().length > 0);
@@ -107,10 +108,12 @@ export function updateGrowth() {
   const rs = G.rs(), run = rs?.run, row = byId('colourRow');
   if (row) {
     const cols = run ? colourRow(run) : [];
-    row.hidden = !cols.some(c => c.n > 0);
-    const html = cols.map(c => `<i style="color:${c.hue}" title="${c.name} ${c.n}">${c.text}</i>`).join('');
+    // a ring round a colour whose set is on (build.js setsOf: three of one colour held)
+    const sets = run ? (G.runner?.()?.build?.view().sets || []) : [];
+    row.hidden = !cols.some(c => c.n > 0) && !sets.length;
+    const html = cols.map(c => `<i style="color:${c.hue}"${sets.includes(c.id) ? ' class="set"' : ''} title="${c.name} ${c.n}${sets.includes(c.id) ? ', set on' : ''}">${c.text}</i>`).join('');
     if (row.innerHTML !== html) row.innerHTML = html;
-    row.setAttribute('aria-label', cols.map(c => `${c.name} ${c.n}`).join(', '));
+    row.setAttribute('aria-label', cols.map(c => `${c.name} ${c.n}${sets.includes(c.id) ? ', set on' : ''}`).join(', '));
   }
   // the count line is written again after this (main.js updateRunHud), so its pattern mark is set once that is done, as its last child
   queueMicrotask(() => {
@@ -373,5 +376,7 @@ export function anchor(card, x, y) {
 // a row's category mark: the word, a corner shape in the colour's hue and the tier's pips (screens.js rows give mark: gearMark(item))
 export function markHtml(m) {
   if (!m) return '';
-  return `<i class="catw ${m.shape || ''}"${m.hue ? ` style="--hue:${m.hue}"` : ''} data-pips="${m.pips | 0}">${esc(m.word)}</i>`;
+  // the glyph is the HUD's own (hud-gear.js gearMark), drawn small; the word and the pips follow it
+  const glyph = gearGlyph({ kind: m.kind, id: m.id ?? undefined, colour: m.colour, tier: m.tier || undefined });
+  return `<i class="catw ${m.shape || ''}"${m.hue ? ` style="--hue:${m.hue}"` : ''} data-pips="${m.pips | 0}">${glyph}${esc(m.word)}</i>`;
 }

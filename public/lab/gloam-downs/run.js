@@ -8,7 +8,8 @@ import { makeRelics, drawRelic } from './relics.js';
 import { emit } from './bus.js';
 import { mulberry, hash2 } from '../kit/rng.js';
 import { SPARK, levelGain, COLOUR_IDS, ABILITIES, ABILITY_IDS, PANES, PANE_IDS, PANE_SLOTS, PATTERNS, PATTERN_IDS, STARTERS, DROPS } from './growth.js';
-import { BLADES, OFFHANDS } from './gear.js';
+import { makeGear, gearRecap } from './gear-play.js';
+import { startGear, patternKind, GEAR_GROWN, BLADES, OFFHANDS } from './gear.js';
 
 /* ---------------- the step ----------------
    The game steps at a fixed 1/60 s, as many steps as the frame took, up to 15 a frame. The small term keeps a frame of 24/144 s from
@@ -157,7 +158,8 @@ export const healShare = (up, em = 0) => BASE.heal + 0.1 * (up.draught || 0) - e
 /* the blade's bonuses add (Edge, Keen edge and Flame raise the plunge and the relic hits too: they are Flame moves); damage and heals
    round once, at the end */
 export const flameBonus = sparks => SPARK.flame.power * levelGain(sparks?.flame | 0);
-export const bladeBonus = (up, wicks, sparks = null) => PACE.blade - 1 + 0.12 * (up.edge || 0) + (has(wicks, 'keen') ? 0.15 : 0) + flameBonus(sparks);
+// the held blade's colour gives its share (gloam-downs-hub "Colour growth"): the Lamp blade is Flame, so it keeps today's numbers
+export const bladeBonus = (up, wicks, sparks = null, colour = 'flame') => PACE.blade - 1 + 0.12 * (up.edge || 0) + (has(wicks, 'keen') ? 0.15 : 0) + SPARK[colour].power * levelGain(sparks?.[colour] | 0);
 export const healOf = (up, max, em = 0, more = 1) => dealt(healShare(up, em) * more, max);
 // a death, or End the run, keeps 10% of the glim carried and 8% more for each Ash pocket level (up to 50%), rounded down
 export const keepShare = up => 0.1 + 0.08 * Math.max(0, Math.min(5, up?.ash | 0));
@@ -227,9 +229,13 @@ export const patternsLeft = rs => PATTERN_IDS.filter(id => !(rs.patterns || []).
 export function drawPattern(rs, chance = 1) {
   const run = rs.run;
   if (!run) return null;
-  const r = patternRoll(run), roll = r(), left = patternsLeft(rs);
+  const r = patternRoll(run), roll = r();
+  let left = patternsLeft(rs);
   if (roll >= chance || !left.length) return null;
-  return left[Math.floor(r() * left.length)];
+  // the kind first (gear.js patternKind), then one of that kind
+  const kind = patternKind(rs, r, left.map(id => PATTERNS.find(p => p.id === id)));
+  left = left.filter(id => PATTERNS.find(p => p.id === id)?.kind === kind);
+  return left.length ? left[Math.floor(r() * left.length)] : null;
 }
 // a pattern lamp on the ground (a cache's prize calls this, keys.js) -> the id dropped, or null when none is left
 export function dropPattern(R, at = null, id = null) {
@@ -290,7 +296,7 @@ export function startAbilities(seed, rs) {
   const left = kindledOf(rs, 'ability'), belt = rs?.up?.belt | 0, r = stream(seed, 'start'), bright = belt >= 3;
   r(); r();
   const take = () => (left.length ? left.splice(Math.floor(r() * left.length), 1)[0] : null);
-  const slot = id => (id ? { id, bright } : null);
+  const slot = id => (id ? { id, tier: bright ? 'bright' : 'plain', traits: [] } : null);
   if (belt < 1) return { offer: null, slots: [slot(take()), null] };
   const offer = [take(), take()].filter(Boolean), two = belt >= 2 ? take() : null;
   return { offer: offer.length > 1 ? offer : null, slots: [offer.length === 1 ? slot(offer[0]) : null, slot(two)] };
@@ -301,8 +307,9 @@ export function chooseStartAbility(rs, id) {
   if (!run || !run.abilityOffer || !run.abilityOffer.includes(id)) return false;
   const bright = (rs.up.belt | 0) >= 3;
   run.abilities ||= [null, null];
-  run.abilities[0] = { id, bright };
-  if ((rs.up.belt | 0) >= 2 && !run.abilities[1]) { const other = run.abilityOffer.find(x => x !== id); run.abilities[1] = other ? { id: other, bright } : null; }
+  const tier = bright ? 'bright' : 'plain';
+  run.abilities[0] = { id, tier, traits: [] };
+  if ((rs.up.belt | 0) >= 2 && !run.abilities[1]) { const other = run.abilityOffer.find(x => x !== id); run.abilities[1] = other ? { id: other, tier, traits: [] } : null; }
   run.abilityOffer = null;
   if (run.entry) run.entry.abilities = run.abilities.map(a => (a ? { ...a } : null));
   return true;
@@ -336,6 +343,7 @@ export function startRun(rs, seed, em = rs.ember | 0) {
     // the recap (gloam-downs-screens-life): each place left, with the run's time, foes and patterns kept as it was left, and what hit last
     splits: [], lastHurt: null
   };
+  Object.assign(rs.run, startGear(rs));
   // Wick shelf: the run starts with a choice of two wicks, on the beacon card's own buttons
   if ((rs.unlocks || []).includes('shelf')) rs.run.offer = startOffer(s, rs.unlocks);
   // the start card (the beacon card's buttons) asks for the shelf's wick, First spark's sparks and Belt's ability
@@ -346,7 +354,7 @@ export function startRun(rs, seed, em = rs.ember | 0) {
   return rs.run;
 }
 // the growth fields a reload restores as they were at the entry
-const GROWN = ['sparks', 'sparkPicks', 'abilities', 'carriedPatterns', 'groundPatterns', 'caches', 'abilityLamps', 'patternRolls', 'foePatterns', 'abilityDrops', 'abilityRolls', 'sureRolls', 'cracked'];
+const GROWN = ['sparks', 'sparkPicks', 'abilities', 'carriedPatterns', 'groundPatterns', 'caches', 'abilityLamps', 'patternRolls', 'foePatterns', 'abilityDrops', 'abilityRolls', 'sureRolls', 'cracked', ...GEAR_GROWN];
 const copy = v => (v === undefined ? undefined : JSON.parse(JSON.stringify(v)));
 export function enter(run) {
   run.entry = { hp: run.hp, flasks: run.flasks, carried: run.carried, foes: run.foes, relics: (run.relics || []).slice(), elitesDown: (run.elitesDown || []).slice(), lastUsed: !!run.lastUsed };
@@ -383,6 +391,7 @@ export function goTo(rs, id) {
   // the lamps left lying in the last place are gone
   if (rs.run.groundPatterns) rs.run.groundPatterns = [];
   if (rs.run.abilityLamps) rs.run.abilityLamps = [];
+  if (rs.run.gearLamps) { rs.run.gearLamps = []; rs.run.gearDrops = 0; }
   // Cracked glass mends at the beacon: its hits count again from 0 in the next place
   rs.run.cracked = 0;
   enter(rs.run);
@@ -454,7 +463,7 @@ function recapFields(run, keptNow = []) {
   for (const x of sp) { path.push({ id: x.id, time: Math.max(0, x.time - t), foes: Math.max(0, x.foes - f) }); t = x.time; f = x.foes; }
   if (!path.some(x => x.id === run.place)) path.push({ id: run.place, time: Math.max(0, run.time - t), foes: Math.max(0, run.foes - f) });
   const names = [...new Set([...sp.flatMap(x => x.kept || []), ...keptNow])];
-  return { path, colours: { ...sparksOf(run) }, patternNames: names, by: run.lastHurt ?? null };
+  return { path, colours: { ...sparksOf(run) }, patternNames: names, by: run.lastHurt ?? null, gear: gearRecap(run) };
 }
 // a win at the top open level opens the next one, up to Ember 5; the best time is kept for each level
 export function win(rs) {
@@ -515,7 +524,7 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
     const run = rs.run;
     if (!run) return {};
     return {
-      bonus: bladeBonus(rs.up, run.wicks, run.sparks) + (clearOn() ? PANE_RULES.clear : 0) + (R.build?.bonus() ?? 0), heavy: run.wicks.includes('heavy'), quick: run.wicks.includes('heels'), shave: run.wicks.includes('shave'),
+      bonus: bladeBonus(rs.up, run.wicks, run.sparks, R.gear?.colour()) + (clearOn() ? PANE_RULES.clear : 0) + (R.build?.bonus() ?? 0), blade: R.gear?.blade(), underfoot: R.gear?.underfoot(), heavy: run.wicks.includes('heavy'), quick: run.wicks.includes('heels'), shave: run.wicks.includes('shave'),
       // the build (build.js): a sure cut on this target and blade hit, Rush glass's haste, and Gloam dash (the key)
       sure: (t, kind) => R.build?.sure(t, kind) ?? false, haste: R.build?.hasteK() ?? 1, dash: (rs.keys || []).includes('dash'),
       drink: run.flasks <= 0 ? 'empty' : run.hp >= maxOf(rs) ? 'full' : 'ok', relics: run.relics || [], unlocks: rs.unlocks || [],
@@ -525,10 +534,10 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
   const fighter = makeFighter(body, walk, { stats });
   const R = {
     clock, fighter, rs, meta, log, fx, wisps: new Set(), lit: false, dead: false, onBeacon: false, hurtAt: -1, blink: still ? 8 : 4,
-    pend: { attack: false, roll: false, heal: false, ab1: false, ab2: false }, targets, lightable, think,
+    pend: { attack: false, roll: false, heal: false, ab1: false, ab2: false, off: false }, targets, lightable, think,
     drop: drop || ((n) => { if (rs.run) rs.run.carried += n; }),
     // the place's elite (elites.js sets it when it wakes), and the relics lying here and the fires they light (relics.js)
-    elite: null, max: () => maxOf(rs), bonus: () => (rs.run ? bladeBonus(rs.up, rs.run.wicks, rs.run.sparks) + (R.build?.bonus() ?? 0) : 0),
+    elite: null, max: () => maxOf(rs), bonus: () => (rs.run ? bladeBonus(rs.up, rs.run.wicks, rs.run.sparks, R.gear?.colour()) + (R.build?.bonus() ?? 0) : 0),
     // growth: the toasts the page shows next (main.js updateGrowth), Lead glass ready for the next fight, Clear glass's window
     notes: [], lead: true, clearUntil: -1,
     // Shutter (abilities.js): no foe starts an attack at the lamplighter before this play step
@@ -538,6 +547,7 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
   R.floorAt = (x, z, y) => walk.support(x, z, y + 1.2);
   R.relics = makeRelics(R);
   R.abilities = abilities ? abilities(R) : null;
+  R.gear = makeGear(R);
   R.keys = keys ? keys(R) : null;
   // the build (build.js makeBuild keeps itself on R.build): sure cuts, the shell, the panes and wicks that read the fight, the sets
   if (build) build(R);
@@ -573,6 +583,10 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
     if (!run || R.dead) return 'none';
     // Ember parry: a melee hit from in front in the first 0.1 s of a first cut is turned aside, and the foe staggers for 1 s
     if (parried(from, ev)) return 'none';
+    // the Buckler (gear-play.js): a blow in the first 0.2 s of its raise is parried, a later one in the raise deals 40%
+    const block = R.gear.block(dmg, from, ev, o);
+    if (block === 'parry') return 'none';
+    if (Number.isFinite(block)) dmg = block;
     const safe = fighter.safe();
     // Bell guard (abilities.js): the blow is turned aside. A blow that would not hurt anyway (in the roll's safe time or the 1.0 s
     // after a hit) does not spend it, and a roll's near miss stays a near miss
@@ -694,7 +708,7 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
   function step(act, camYaw) {
     const ev = (R.out = []);
     // a press during hit stop waits for the next play step
-    for (const k of ['attack', 'roll', 'heal', 'ab1', 'ab2']) if (act[k]) R.pend[k] = true;
+    for (const k of ['attack', 'roll', 'heal', 'ab1', 'ab2', 'off']) if (act[k]) R.pend[k] = true;
     const play = advance(clock);
     ev.play = play;
     if (play && rs.run && !R.dead) {
@@ -704,6 +718,7 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
       if (!R.targets().some(t => t.aware)) R.lead = true;
       fighter.step(a, camYaw, R.targets(), ev);
       R.abilities?.step(a, camYaw, ev);
+      R.gear.step(a, ev);
       R.keys?.step(a, ev);
       rs.run.time += STEP;
       const s = body.s;
@@ -784,14 +799,15 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
     R.abilities?.foeOut();
     // the elite's own drop is eliteOut's (35%); any other foe drops a pattern with 2%, 1% more a Keen eye level, at most 2 a run
     const elite = !!(foe && R.elite && foe.id === R.elite.id);
-    if (elite) return;
+    if (elite) { R.gear.foeOut(at || [body.s.x, body.s.y, body.s.z], true); return; }
     const s = body.s, where = at || [s.x, s.y, s.z];
     if ((run.foePatterns | 0) < DROPS.patternMax) {
       const pat = drawPattern(rs, patternChance(rs));
       if (pat) { run.foePatterns = (run.foePatterns | 0) + 1; dropPattern(R, where, pat); }
     }
     // an ability lamp: 3%, 1% more a Keen eye level, at most 3 a run (abilities.js draws it from the kindled abilities)
-    if (R.abilities && (run.abilityDrops | 0) < DROPS.abilityMax && R.abilities.dropRoll?.(where)) run.abilityDrops = (run.abilityDrops | 0) + 1;
+    // gear (gear-play.js): 3%, 1% more a Keen eye level, 60% for an elite, at most 3 a place; it took the place of today's ability lamps
+    R.gear.foeOut(where, false);
   };
   return R;
 }

@@ -5,7 +5,7 @@
 //   buttons of 44 px or more, no page scroll, no text wider than its row; the prompt inside the screen and clear of the touch buttons;
 //   with reduced motion the hall's life holds still and a card shows with no motion.
 // Needs this tree served:   python3 -m http.server 8951 --bind 127.0.0.1 --directory public
-// Run: NODE_PATH=qa/browser/node_modules node qa/lab/gloam-downs-hub-layout.e2e.mjs   (SITE_URL, SHOTS=<dir> keeps the pictures)
+// Run: NODE_PATH=qa/browser/node_modules node qa/lab/gloam-downs-hub-layout.e2e.mjs   (SITE_URL, SHOTS=<dir> keeps the pictures, STATIONS=all every station)
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
@@ -18,6 +18,8 @@ const executablePath = process.env.CHROMIUM_PATH || (existsSync('/opt/pw-browser
 const browser = await chromium.launch({ executablePath, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const TOUCH = { hasTouch: true, isMobile: true, deviceScaleFactor: 2 };
 const SIZES = [[320, 640, true, 'sheet'], [390, 844, true, 'sheet'], [360, 640, true, 'sheet'], [844, 390, true, 'side'], [800, 600, false, 'beside'], [1280, 720, false, 'beside']];
+// STATIONS=all opens every station's card but the door's (the door begins the run); by default the shelf, the kiln and the map table
+const IDS = process.env.STATIONS === 'all' ? ['well', 'wick', 'blades', 'offhand', 'post', 'shelf', 'window', 'kiln', 'trophy', 'bell', 'map'] : ['shelf', 'kiln', 'map'];
 let n = 0;
 const pass = (name, data) => { n++; console.log('PASS ' + name + (data ? ' ' + JSON.stringify(data) : '')); };
 const G = (page, fn, arg) => page.evaluate(fn, arg);
@@ -63,7 +65,7 @@ try {
     await G(page, () => window.__gloam.tick(3.6, {}));
     if (SHOTS) { await G(page, () => window.__gloam.draw()); await page.screenshot({ path: `${SHOTS}/hall-${w}x${h}.png` }); }
     const out = {};
-    for (const id of ['shelf', 'kiln', 'map']) {
+    for (const id of IDS) {
       const st = (await G(page, () => window.__gloam.hall())).stations.find(s => s.id === id), yaw = Math.atan2(st.obj[0] - st.at[0], st.obj[1] - st.at[1]);
       await G(page, ([x, z, y]) => window.__gloam.teleport(x, z, y), [st.at[0], st.at[1], yaw]);
       await G(page, () => window.__gloam.tick(0.6, {}));
@@ -93,7 +95,7 @@ try {
     assert.deepEqual(await G(page, faults, 'quick'), [], `${w}x${h} quick list`);
     if (SHOTS) { await G(page, () => window.__gloam.draw()); await page.screenshot({ path: `${SHOTS}/quick-${w}x${h}.png` }); }
     assert.deepEqual(errors, []);
-    pass(`${w}x${h}: the prompt, the shelf, kiln and map cards (${kind}) and the quick list fit`, out);
+    pass(`${w}x${h}: the prompt, the ${IDS.join(', ')} cards (${kind}) and the quick list fit`, out);
     await ctx.close();
   }
   { // reduced motion: the hall's life holds still and a card shows with no motion

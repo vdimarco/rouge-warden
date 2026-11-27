@@ -252,6 +252,7 @@
   #beaconKept { color: #ffd77a; font-weight: 600; }
   .hud .colourRow { display: flex; gap: 8px; margin: 2px 0 0; font: 700 13px/1 var(--body); }
   .hud .colourRow i { font-style: normal; }
+  .hud .colourRow i.set { padding: 1px 4px; border: 1.5px solid currentColor; border-radius: 999px; }
   .hud #patternsN { font-style: normal; color: #ffd77a; }
   @media (max-width: 360px) { .hud .colourRow { gap: 6px; font-size: 12px; } .panes button { flex-basis: 120px; } }
   /* merge pass (gloam-downs-growth): the colour row and the pattern mark make the run's HUD taller, so on a narrow upright screen the
@@ -533,6 +534,11 @@
   .catw::before { content: ''; display: inline-block; width: 9px; height: 9px; margin-right: 4px; background: var(--hue, var(--ash)); vertical-align: -1px; }
   .catw.triangle::before { clip-path: polygon(50% 0, 100% 100%, 0 100%); }
   .catw.diamond::before { clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+  /* the HUD's glyph (hud-gear.js gearMark) stands in for the plain colour mark, small enough to keep the row's height */
+  .catw:has(.gm)::before { content: none; }
+  .catw .gm { width: 16px; height: 16px; margin-right: 4px; border-radius: 4px; vertical-align: -4px; }
+  .catw .gm svg { width: 10px; height: 10px; }
+  .catw .gm .pips { display: none; }
   .catw[data-pips="1"]::after { content: ' •'; color: #e8c35a; }
   .catw[data-pips="2"]::after { content: ' ••'; color: #e8c35a; }
   .wellRecap { white-space: pre-line; }
@@ -584,6 +590,7 @@
     #patterns li.tile.kindled .glass .flame { animation: none; }
   }
 </style>
+<link rel="stylesheet" href="./gear.css">
 </head>
 <body class="toy">
 <canvas class="view" id="view" aria-label="Gloam Downs: a dark place on rolling hills, drawn as pixel art"></canvas>
@@ -597,10 +604,11 @@
   <p class="colourRow" id="colourRow" hidden></p>
   <p class="count" id="count"><b>◆ 0/5</b> wisps · <i>beacon dark</i><i id="patternsN" hidden></i></p>
   <div class="combo" id="combo" hidden aria-live="off"><b id="comboN"></b><i id="comboPip"></i><i class="cbar"><i id="comboFill"></i></i></div>
-  <div class="abilities" id="abilities" hidden aria-label="Abilities"></div>
+  <div class="gear" id="gear" role="img" aria-label="Gear" hidden></div>
   <p class="hint" id="hint">Climb to the keep. Light the beacon.</p>
   <div class="relics" id="relics" role="img" aria-label="No relics" hidden></div>
 </div>
+<div class="compare" id="compare" hidden aria-live="polite"></div>
 <div class="tools" id="tools" hidden>
   <button type="button" id="bLook" title="Turn the view behind the lamplighter (R)">Look</button>
   <button type="button" id="bMap" title="The places (M)">Map</button>

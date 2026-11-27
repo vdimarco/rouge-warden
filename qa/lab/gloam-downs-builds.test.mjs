@@ -539,15 +539,15 @@ function untilSpecial(W, E, max = 600) {
   assert.deepEqual([b.emberTop, b.ember, b.run.relics, b.run.ember, b.run.elitesDown, b.run.route[0], new Set(b.run.route).size], [5, 3, ['trail', 'echo'], 5, ['gaol'], 'gaol', 5]);
   pass('the save: unknown unlocks and relics, a level over emberTop, a bad route and bad bests are dropped');
 }
-{ // from v1 (with no v2): the bank and levels come over, v3 is stored at once, and a later v1 write changes nothing
+{ // from v1 (with no v2): the bank and levels come over, v4 is stored at once, and a later v1 write changes nothing
   const mem = new Map(), storage = { getItem: k => mem.get(k) ?? null, setItem: (k, v) => mem.set(k, String(v)) };
   mem.set(RS.OLD_KEY, JSON.stringify({ v: 1, bank: 300, up: { mantle: 2 }, runs: 4 }));
   const s = RS.load(storage);
-  assert.deepEqual([s.bank, s.up.mantle, s.v, mem.has(RS.KEY)], [300, 2, 3, true]);
+  assert.deepEqual([s.bank, s.up.mantle, s.v, mem.has(RS.KEY)], [300, 2, 4, true]);
   mem.set(RS.OLD_KEY, JSON.stringify({ v: 1, bank: 5, up: {} }));
   assert.deepEqual([RS.load(storage).bank, RS.load(storage).up.mantle], [300, 2]);
   assert.deepEqual(RS.load(null), RS.fresh());
-  pass('from v1: 300 glim and Mantle 2 come over and v3 is stored; a later v1 write does not change v3');
+  pass('from v1: 300 glim and Mantle 2 come over and v4 is stored; a later v1 write does not change v4');
 }
 { // a run at Ember 1 in Lantern Fen with Ember trail, 30 banked and 7 foes comes back from the save
   const rs = RS.fresh();
@@ -581,7 +581,7 @@ function untilSpecial(W, E, max = 600) {
   console.error = err;
   off.forEach(f => f());
   assert.equal(got, 1);
-  assert.equal(EVENTS.length, 24); // with life-stir (gloam-downs-screens-life)
+  assert.equal(EVENTS.length, 25); // with life-stir (gloam-downs-screens-life) and gear-cue (gloam-downs-hub)
   pass('the screens: relic marks with Kindled; the bus: a listener that throws does not stop the next');
 }
 

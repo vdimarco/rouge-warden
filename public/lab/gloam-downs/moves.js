@@ -5,6 +5,7 @@
 // at any frame rate. A target is anything with { x, y, z, r, alive, hit(raw, how) }: a foe, the boss, or a training post (makePost).
 // hit() takes the damage before the target's own factor and rounding, and returns what it took, or false when the blade passes.
 import { PARAMS, SWINGS, shownState } from './play.js';
+import { bladeHit, bladeNext, bladeHold } from './gear.js';
 
 const S = sec => Math.round(sec * 60);
 const DEG = Math.PI / 180;
@@ -128,6 +129,9 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
     dashUsed: false
   };
   const holds = (st, k, id) => (st[k] || []).includes(id);
+  // the held blade's string (gear.js): its row for hit i, or today's; it is read again at the start of each step
+  let held = null;
+  const hitAt = i => bladeHit(held, i, hitOf) || hitOf(i);
   s.after = null;
   // move the body one step at speed v along (ux, uz), with no stick, no turn and (for the plunge) its own gravity
   function drive(v, ux, uz, gravity = KEEP.gravity) {
@@ -176,7 +180,7 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
   // a move begins from what the pose shows now, so the pose eases from it (play.js BLEND)
   function begin(move) { f.from = snap(shownState(s)); f.move = move; f.t = 0; }
   function startHit(i, act, camYaw, targets, ev) {
-    const h = hitOf(i), dir = heldDir(act, camYaw);
+    const h = hitAt(i), dir = heldDir(act, camYaw);
     f.alone = i === 0 && f.move !== 'hit';
     begin('hit'); f.hit = i; f.landed = false; f.buf.attack = 0; f.queue = false;
     const t = aim(targets, dir);
@@ -304,7 +308,7 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
     return true;
   }
   // the hit after hit i in the string: after the finisher the first cut, after the rising cut the second
-  const nextAfter = i => (i === 3 ? 1 : (i + 1) % 3);
+  const nextAfter = i => bladeNext(held, i) ?? (i === 3 ? 1 : (i + 1) % 3);
   /* the hit a press of Attack starts when no move plays: Tinder guard's finisher within 1 s of a near miss; Rising cut when the press
      came in the last 0.12 s of a roll or in the 0.1 s after it; else the next hit of the string while it holds, or the first cut */
   function firstHit(st) {
@@ -315,6 +319,7 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
   }
   function step(act, camYaw, targets, ev) {
     const st = stats();
+    held = st.blade || null;
     f.clock++;
     // press edges, kept 0.15 s; a held Attack or Roll goes on as if pressed again. A press of Attack in a hit is kept until the next
     // hit can start (the string's own buffer), so presses as fast as the player likes give the string at its own pace
@@ -325,7 +330,7 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
       f.buf[k] = h && !f.was[k] ? MOVES.buffer : Math.max(0, f.buf[k] - 1);
       f.was[k] = h;
     }
-    const wantAttack = f.buf.attack > 0 || f.was.attack || f.queue, wantRoll = f.buf.roll > 0 || f.was.roll;
+    const wantAttack = f.buf.attack > 0 || (f.was.attack && !bladeHold(st)) || f.queue, wantRoll = f.buf.roll > 0 || f.was.roll;
     if (f.cool > 0) f.cool--;
     if (f.safe > 0) f.safe--;
     if (f.shave > 0) f.shave--;
@@ -346,7 +351,7 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
     }
     // a roll cancels a wind-up (the hit is lost), a recovery or a drink, never active time
     if (wantRoll && canRoll()) {
-      const h = f.move === 'hit' ? hitOf(f.hit) : null;
+      const h = f.move === 'hit' ? hitAt(f.hit) : null;
       if (!f.move || f.move === 'drink' || (h && (f.t < h.wind || f.t >= h.wind + h.act))) {
         if (h) { f.since = 0; f.next = f.landed ? nextAfter(f.hit) : f.hit === 3 ? 0 : f.hit; }
         startRoll(act, camYaw, ev, !!h && f.t < h.wind);
@@ -354,7 +359,7 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
     }
     // the next hit can start 0.10 s into the recovery of the hit before
     if (f.move === 'hit' && wantAttack) {
-      const h = hitOf(f.hit);
+      const h = hitAt(f.hit);
       if (f.t >= h.wind + h.act + MOVES.chain) startHit(nextAfter(f.hit), act, camYaw, targets, ev);
     }
     if (!f.move) {
@@ -371,7 +376,7 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
     const moving = !!f.move;
     switch (f.move) {
       case 'hit': {
-        const h = hitOf(f.hit);
+        const h = hitAt(f.hit);
         // the lunge runs over the wind-up, and stops dead at its end; a cut in the air falls on as it was falling
         if (!s.ground) glide(camYaw);
         else drive(f.t < h.wind ? f.lungeV : 0, ...f.dir);
@@ -461,7 +466,7 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
   function pose() {
     if (!f.move) return null;
     if (f.move === 'hit') {
-      const h = hitOf(f.hit), t = f.t;
+      const h = hitAt(f.hit), t = f.t;
       const ph = t < h.wind ? 'wind' : t < h.wind + h.act ? 'act' : 'rec';
       const k = ph === 'wind' ? t / h.wind : ph === 'act' ? (t - h.wind) / h.act : (t - h.wind - h.act) / h.rec;
       return { move: h.pose || h.id, ph, k: clamp(k, 0, 1), t, from: f.from };
@@ -510,5 +515,7 @@ export function makeFighter(body, walk, { stats = () => ({}) } = {}) {
   }
   // Rush glass: the next roll can start at once
   const rush = () => { f.cool = 0; };
-  return { f, step, knock, safe, nextHit, toFirm, nearMiss: () => { f.shave = MOVES.shave.steps; }, tinder: () => { f.tinder = BUILD.tinder.steps; }, parryOpen, rush, body, walk };
+  return { f, step, knock, safe, nextHit, toFirm, nearMiss: () => { f.shave = MOVES.shave.steps; }, tinder: () => { f.tinder = BUILD.tinder.steps; }, parryOpen, rush, body, walk,
+    // the Bell maul's slam (gear-play.js): it plays the plunge's landing pose where the lamplighter stands
+    land: () => { begin('land'); f.queue = false; f.buf.attack = 0; s.vx = s.vz = 0; } };
 }

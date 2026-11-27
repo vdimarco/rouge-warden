@@ -2,7 +2,7 @@
 // the station in reach and its prompt, what each station's card holds, the growth objects the save shows, and the ability post. No
 // DOM, so the bake (games/gloam-downs/biomes/lamproom.mjs), the Node tests and the page read the same plan and the same rules.
 import { ABILITIES, PANES, LAMP_KEYS, PATTERNS, STARTERS, COLOURS } from './growth.js';
-import { BLADES, OFFHANDS, TIERS, GEAR_GLYPHS, COLOUR_SHAPES } from './gear.js';
+import { BLADES, OFFHANDS, TIERS, GEAR_GLYPHS, COLOUR_SHAPES, chooseBlade, chooseOffhand, kindledGear, startGear } from './gear.js';
 import { UPGRADES, UNLOCKS, EMBER_TOP, paneSlots, kindledOf } from './run.js';
 import { ELITE_LIST } from './elites.js';
 
@@ -66,31 +66,23 @@ export function stationNear(s, list = STATIONS, o = USE) {
 export const USE_KEYS = { keys: 'E', pad: 'A', touch: '', drag: 'E' };
 export const promptOf = (st, kind = 'keys') => (st ? { name: st.name, key: USE_KEYS[kind] ?? 'E', text: `${USE_KEYS[kind] ? `${USE_KEYS[kind]} ` : ''}Use` } : null);
 
-/* ---------------- the stubs of the gear builder's exports ----------------
-   chooseBlade, chooseOffhand (gear.js) and gearMark (hud-gear.js) come with the gear builder; until then these keep the same shapes.
-   The start blade and off-hand live in the lasting save as rs.blade and rs.offhand (run-save.js v4 keeps them) */
-export const kindledBlades = rs => BLADES.filter(b => b.start || (rs?.kindled || []).includes(b.id)).map(b => b.id);
-export const kindledOffhands = rs => OFFHANDS.filter(o => o.start || (rs?.kindled || []).includes(o.id)).map(o => o.id);
-export const startBlade = rs => (kindledBlades(rs).includes(rs?.blade) ? rs.blade : 'lamp');
+/* ---------------- the start picks (gear.js) ----------------
+   The blade rack and the off-hand stand pick with gear.js chooseBlade and chooseOffhand; the start blade and off-hand are what
+   gear.js startGear gives a run. They live in the lasting save as rs.blade and rs.offhand (run-save.js v4 keeps them) */
+export { chooseBlade, chooseOffhand };
+export const kindledBlades = rs => kindledGear(rs, 'blade');
+export const kindledOffhands = rs => kindledGear(rs, 'offhand');
+export const startBlade = rs => startGear(rs).blade.id;
 // a new save has the Buckler; null is none
-export const startOffhand = rs => (rs?.offhand === null ? null : kindledOffhands(rs).includes(rs?.offhand) ? rs.offhand : 'buckler');
-export function chooseBlade(rs, id) {
-  if (!kindledBlades(rs).includes(id)) return false;
-  rs.blade = id;
-  return true;
-}
-export function chooseOffhand(rs, id) {
-  if (id !== null && !kindledOffhands(rs).includes(id)) return false;
-  rs.offhand = id;
-  return true;
-}
+export const startOffhand = rs => startGear(rs).offhand?.id ?? null;
 const itemOf = (kind, id) => (kind === 'blade' ? BLADES : kind === 'offhand' ? OFFHANDS : kind === 'ability' ? ABILITIES : kind === 'pane' ? PANES : []).find(x => x.id === id) || null;
-// the glyph, the colour edge and the tier mark of an item: { kind, word, glyph, colour, hue, shape, pips, tier }
+/* the glyph, the colour edge and the tier mark of an item, as data: { kind, id, word, glyph, colour, hue, shape, pips, tier }. The page
+   draws it with hud-gear.js gearMark (cards.js markHtml), the same mark as the HUD's gear row */
 export function gearMark(item = {}) {
   const kind = item.kind || 'ability', x = itemOf(kind, item.id), colour = item.colour || x?.colour || null;
   const tier = TIERS.find(t => t.id === item.tier) || (item.bright ? TIERS[1] : null);
   return {
-    kind, word: CATEGORY[kind] || kind, glyph: GEAR_GLYPHS[kind] || (kind === 'ware' ? 'lamp' : kind === 'unlock' ? 'wick' : kind === 'key' ? 'key' : 'square'),
+    kind, id: item.id ?? null, word: CATEGORY[kind] || kind, glyph: GEAR_GLYPHS[kind] || (kind === 'ware' ? 'lamp' : kind === 'unlock' ? 'wick' : kind === 'key' ? 'key' : 'square'),
     colour, hue: COLOURS.find(c => c.id === colour)?.hue || null, shape: colour ? COLOUR_SHAPES[colour] : null, pips: tier ? tier.pips : 0, tier: tier?.id || null
   };
 }

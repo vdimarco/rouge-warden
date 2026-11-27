@@ -44,6 +44,9 @@ import { PAD } from './input.js';
 // the Lamp-room as a place (gloam-downs-hub): the hall's plan and rules, its rows, and the stand-ins of the gear builder's picks
 import { HUB, stationOf, stationNear, promptOf, SHRINE_TABS, shown as growShown, practiceRun, quarterCool, postRows, tryAbility, chooseBlade, chooseOffhand, USE, startBlade as startBladeOf, startOffhand as startOffhandOf } from './hub.js';
 import { bladeRows, offhandRows, keyRows, wellLines } from './screens.js';
+import { gearRow, compareToast } from './hud-gear.js';
+import { groundGear, gearTest } from './gear-play.js';
+import { gearCopy } from './gear.js';
 // growth (gloam-downs-growth): the page parts in cards.js, bound to the page's state with getters
 const { bindGrowth, updateGrowth, fillGrowthLamp, sparkButtons, abilityButtons, growthView, setGrowth } = cards;
 bindGrowth({ rs: () => rs, runner: () => runner, mode: () => mode, audio: () => audio, toast: (h, ms) => toast(h, ms), storeRun: () => storeRun(), fillLamp: () => fillLamp(), updateHud: () => updateHud(), openBeacon: () => openBeacon(),
@@ -347,7 +350,7 @@ function measureScreen() {
   bossScreen.w = innerWidth;
   bossScreen.h = innerHeight;
   bossScreen.bar = $('menu').getBoundingClientRect().bottom || 52;
-  bossScreen.rects = [hud, tools, jumpBtn, ...actBtns, ...abBtns, $('abilities')].filter(el => !el.hidden).map(el => el.getBoundingClientRect()).filter(r => r.width > 0).map(r => [r.left, r.top, r.width, r.height]);
+  bossScreen.rects = [hud, tools, jumpBtn, ...actBtns, ...abBtns, $('gear')].filter(el => el && !el.hidden).map(el => el.getBoundingClientRect()).filter(r => r.width > 0).map(r => [r.left, r.top, r.width, r.height]);
 }
 function showHud(on) {
   hud.hidden = tools.hidden = !on;
@@ -412,13 +415,12 @@ const abKeys = () => (padSeen ? ['LB', 'LT'] : ['F', 'G']);
 // glows: the steady dabs of the last draw by kind (fight.js glows: pattern, ability, cache, stone, snare, ...), for ?test
 const abilityView = () => ({ glows: fight ? fight.halo.reduce((m, g) => ((m[g.kind] = (m[g.kind] || 0) + 1), m), {}) : {}, abilities: runner?.abilities ? runner.abilities.view() : (rs?.run?.abilities || [null, null]).map(a => (a ? { ...a, left: 0, share: 0 } : null)), ...(runner?.keys ? runner.keys.view() : { keys: (rs?.keys || []).slice(), caches: (rs?.run?.caches || []).slice() }) });
 function updateAbilities() {
-  const el = $('abilities');
-  if (!el) return;
-  const v = RUN && (rs?.run || (hallOn() && runner)) && !hud.hidden ? abilityView().abilities : [null, null], keys = abKeys(), touch = coarse && !inp.mouse;
-  const html = v.map((a, i) => (a ? `<span class="${a.left > 0 ? 'cool' : ''}${a.bright ? ' bright' : ''}"><kbd>${keys[i]}</kbd>${a.name}${a.left > 0 ? ` ${Math.ceil(a.left)}\u00a0s` : ''}</span>` : '')).join('');
-  el.hidden = touch || !v.some(Boolean);
-  if (el.innerHTML !== html) el.innerHTML = html;
-  el.setAttribute('aria-label', v.filter(Boolean).map((a, i) => `${a.name}${a.left > 0 ? `, ready in ${Math.ceil(a.left)} seconds` : ', ready'}`).join('; ') || 'No abilities');
+  // in the hall the runner plays the ability post's practice run (hallRs), so the row shows it there too
+  const on = RUN && (rs?.run || (hallOn() && runner)) && !hud.hidden;
+  const v = on ? abilityView().abilities : [null, null], touch = coarse && !inp.mouse;
+  // the gear row (hud-gear.js) in place of the abilities' row, and the compare toast over a ground item
+  gearRow($('gear'), on ? runner : null, hallOn() ? hallRs : rs, Date.now(), touch ? null : abKeys());
+  compareToast($('compare'), on && rs?.run && mode === 'play' ? runner : null);
   abBtns.forEach((b, i) => {
     const a = v[i];
     b.hidden = !(a && touch && mode !== 'loading');
@@ -1405,7 +1407,7 @@ function newRunner() {
   // (mix.js); with ?test they stand as baked (the checks of each place rely on them) unless &mix asks for the mix
   fight = pool && !LOOK && rs.run ? makeFight({ walk, meta, world, pool, rs, max: () => maxOf(rs), still, fx, project, doc: document, mix: q.has('test') && !q.has('mix') ? false : { ember: rs.run.ember ?? 0, depth: depthOf(rs.run) },
     emit, dressOf, clipOf: eliteClip, groundRelics: () => groundRelics(runner),
-    groundAbilities: () => groundAbilities(runner), groundPatterns: () => groundPatterns(runner), groundSpots: () => groundSpots(runner) }) : null;
+    groundAbilities: () => [...groundAbilities(runner), ...groundGear(runner)], groundPatterns: () => groundPatterns(runner), groundSpots: () => groundSpots(runner) }) : null;
   lastRun = { seed: rs.run?.seed ?? lastRun.seed, combo: rs.run?.combo ?? 0 };
   foeTargets = fight ? () => fight.targets() : () => [];
   // in the hall the runner plays the ability post's practice run, never rs.run
@@ -2328,7 +2330,7 @@ window.__gloam = {
     setBuilds(o);
     setGrowth(o);
     // the abilities: slots ([{ id, bright } | null, same]), the seconds of cooldown left on each, and the keys held
-    if (run && Array.isArray(o.abilities)) run.abilities = [0, 1].map(i => { const a = o.abilities[i]; return a && abilityOf(a.id) ? { id: a.id, bright: !!a.bright } : null; });
+    if (run && Array.isArray(o.abilities)) run.abilities = [0, 1].map(i => { const a = o.abilities[i]; return a && abilityOf(a.id) ? gearCopy(a) : null; });
     if (Array.isArray(o.cool)) runner?.abilities?.setCool(o.cool);
     if (Array.isArray(o.keys)) rs.keys = [...new Set(o.keys.filter(k => k === 'leap' || k === 'drop'))];
     // the title's lamps: the furthest place reached and the runs played
@@ -2337,7 +2339,7 @@ window.__gloam = {
     if (Number.isInteger(o.runs)) rs.runs = Math.max(0, o.runs);
     if (o.seen === true || o.seen === false) rs.seen = o.seen;
     if (mode === 'title') fillTitle();
-    if (run && Array.isArray(o.abilityLamps)) run.abilityLamps = o.abilityLamps.filter(l => abilityOf(l.id)).map(l => ({ id: l.id, bright: !!l.bright, place: run.place, x: +l.x, y: +l.y, z: +l.z }));
+    if (run && Array.isArray(o.abilityLamps)) run.abilityLamps = o.abilityLamps.filter(l => abilityOf(l.id)).map(l => ({ ...gearCopy(l), place: run.place, x: +l.x, y: +l.y, z: +l.z }));
     if (Array.isArray(o.abilities) || Array.isArray(o.keys)) showControls();
     updateHud();
     if (mode === 'lamp' || mode === 'station') fillLamp();
@@ -2373,6 +2375,8 @@ window.__gloam = {
   use: () => hallUse(),
   station: id => { if (hallOn() && mode === 'play') openStation(id); return hallView(); },
   quick: () => { openQuick(); return hallView(); },
+  // the gear (gear-play.js gearTest): the held blade and off-hand, an item laid on the ground, an Off-hand press, its cooldown
+  gear: (o = {}) => { const v = RUN ? gearTest(runner, o) : null; updateHud(); updateAbilities(); return v; },
   project,
   // stage 2 hands the page its foes as targets
   setTargets: fn => { foeTargets = fn; },

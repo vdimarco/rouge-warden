@@ -1,20 +1,24 @@
 // The run's save, under its own key beside the explorer's (save.js): the bank, the lasting wares and unlocks, the Ember levels, the
 // growth (patterns found and kindled, keys, panes), the counts and bests, the sound settings, the run in progress and the summary of a
 // run whose card has not closed. Every arcade page shares one origin, and a cached old page keeps writing its own key, so this key is
-// apart and each field is checked on the way in: a bad save cannot stop the page. Version 3 adds the growth; a page that finds no v3
-// save reads the v2 save once (or, with no v2, the v1 save once), stores v3 at once, and from then on writes v3 only, so a cached old
-// page that drops the new fields cannot reach them. Pure functions, so Node tests can feed it rubbish.
+// apart and each field is checked on the way in: a bad save cannot stop the page. Version 3 adds the growth and version 4 the gear (the
+// start blade and off-hand, and in a run the held blade, off-hand and abilities with their tiers and traits, the gear on the ground and
+// the gear's draw counters; gloam-downs-hub design.md "Save fields"). A page that finds no v4 save reads the v3 save once (or the v2, or
+// the v1), stores v4 at once, and from then on writes v4 only, so a cached old page that drops the new fields cannot reach them. Pure
+// functions, so Node tests can feed it rubbish.
 import { ORDER } from './save.js';
 import { WICKS, UPGRADES, UNLOCK_IDS, EMBER_TOP, maxHp, flasksMax, routeFor, startAbilities, kindledOf, paneSlots } from './run.js';
 import { RELIC_IDS, RELIC_MAX } from './relics.js';
 import { COLOUR_IDS, ABILITY_IDS, PANE_IDS, PATTERN_IDS, STARTERS, LAMP_KEY_IDS, DROPS } from './growth.js';
+import { cleanGear, kindledGear, plain, GEAR_DROPS, BLADE_IDS, OFFHAND_IDS } from './gear.js';
 
-export const KEY = 'gloam-downs.run.v3';
+export const KEY = 'gloam-downs.run.v4';
+export const V3_KEY = 'gloam-downs.run.v3';
 export const V2_KEY = 'gloam-downs.run.v2';
 export const OLD_KEY = 'gloam-downs.run.v1';
 export const fresh = () => ({
-  v: 3, bank: 0, up: Object.fromEntries(UPGRADES.map(u => [u.id, 0])), unlocks: [], ember: 0, emberTop: 0, bestByEmber: [0, 0, 0, 0, 0, 0], bestCombo: 0,
-  patterns: [], kindled: STARTERS.slice(), keys: [], panes: [],
+  v: 4, bank: 0, up: Object.fromEntries(UPGRADES.map(u => [u.id, 0])), unlocks: [], ember: 0, emberTop: 0, bestByEmber: [0, 0, 0, 0, 0, 0], bestCombo: 0,
+  patterns: [], kindled: STARTERS.slice(), keys: [], panes: [], blade: 'lamp', offhand: 'buckler',
   runs: 0, wins: 0, deaths: 0, furthest: 0, reached: [], bestWin: 0, sound: true, music: true, shake: null, seen: false, wander: false, run: null, ended: null
 });
 const WICK_IDS = WICKS.map(w => w.id);
@@ -31,11 +35,19 @@ const spotIds = v => (Array.isArray(v) ? [...new Set(v.filter(x => typeof x === 
 const goodRoute = r => Array.isArray(r) && r.length === ORDER.length && new Set(r).size === ORDER.length && r.every(p => ORDER.includes(p)) && r[0] === ORDER[0] && r[4] === ORDER[4];
 // the three colours, each 0 to 40
 const cleanSparks = v => Object.fromEntries(COLOUR_IDS.map(c => [c, obj(v) ? intIn(v[c], 0, 40, 0) : 0]));
-// the two ability slots: each a kindled ability { id, bright }, or null
-const cleanSlots = (v, kindled) => [0, 1].map(i => { const a = Array.isArray(v) ? v[i] : null; return obj(a) && ABILITY_IDS.includes(a.id) && kindled.includes(a.id) ? { id: a.id, bright: a.bright === true } : null; });
-// lamps on the ground: a known id where it lies
-const cleanLamps = (v, known, n, withPlace = false) => (Array.isArray(v) ? v.filter(g => obj(g) && known.includes(g.id) && coord(g.x) !== null && coord(g.y) !== null && coord(g.z) !== null && (!withPlace || ORDER.includes(g.place)))
-  .slice(0, n).map(g => ({ id: g.id, ...(withPlace ? { place: g.place, bright: g.bright === true, cool: count(g.cool, 3600), full: Math.max(1, count(g.full, 3600)) } : {}), x: g.x, y: g.y, z: g.z })) : []);
+// the two ability slots: each a kindled ability { id, tier, traits } (gear.js cleanGear; an old bright: true is the bright tier), or null
+const cleanSlots = (v, kindled) => [0, 1].map(i => cleanGear(Array.isArray(v) ? v[i] : null, 'ability', kindled.filter(a => ABILITY_IDS.includes(a))));
+// lamps on the ground: a known id where it lies; an ability lamp keeps its tier, traits and cooldown
+const at = g => coord(g.x) !== null && coord(g.y) !== null && coord(g.z) !== null;
+const cleanLamps = (v, known, n, withPlace = false) => (Array.isArray(v) ? v.filter(g => obj(g) && known.includes(g.id) && at(g) && (!withPlace || ORDER.includes(g.place)))
+  .slice(0, n).map(g => ({ ...(withPlace ? { ...cleanGear(g, 'ability', known), place: g.place, cool: count(g.cool, 3600), full: Math.max(1, count(g.full, 3600)) } : { id: g.id }), x: g.x, y: g.y, z: g.z })) : []);
+// the gear lying in a place: a kindled blade or off-hand with its tier and traits, where it lies, at most 6
+const cleanGearLamps = (v, s, place) => (Array.isArray(v) ? v.filter(g => obj(g) && (g.kind === 'blade' || g.kind === 'offhand') && at(g) && g.place === place)
+  .map(g => { const x = cleanGear(g, g.kind, kindledGear(s, g.kind)); return x ? { kind: g.kind, ...x, place, x: g.x, y: g.y, z: g.z } : null; }).filter(Boolean).slice(0, GEAR_DROPS.lamps) : []);
+// the held blade (an unknown one is the Lamp blade, plain) and off-hand (an unknown one is none). A run from v3 holds the Lamp blade
+// plain and no off-hand
+const cleanBlade = (v, s) => cleanGear(v, 'blade', kindledGear(s, 'blade')) || plain('lamp');
+const cleanOff = (v, s) => cleanGear(v, 'offhand', kindledGear(s, 'offhand'));
 // the patterns that can be carried: known, not found and not kindled
 const carriable = (v, found, kindled) => ids(v, PATTERN_IDS.filter(p => !found.includes(p) && !kindled.includes(p)), DROPS.patternMax + 8);
 // the growth fields of a run (and of its entry): each checked as the run's are
@@ -45,7 +57,10 @@ function cleanGrown(r, s, place) {
     sparks: cleanSparks(r.sparks), sparkPicks: intIn(r.sparkPicks, 0, 9, 0), carriedPatterns: carriable(r.carriedPatterns, s.patterns, kindled),
     caches: spotIds(r.caches), patternRolls: count(r.patternRolls, 1e6), abilityRolls: count(r.abilityRolls, 1e6), foePatterns: intIn(r.foePatterns, 0, DROPS.patternMax, 0), abilityDrops: intIn(r.abilityDrops, 0, DROPS.abilityMax, 0),
     abilityLamps: cleanLamps(r.abilityLamps, abilities, 6, true).filter(l => !place || l.place === place),
-    groundPatterns: cleanLamps(r.groundPatterns, PATTERN_IDS, 6)
+    groundPatterns: cleanLamps(r.groundPatterns, PATTERN_IDS, 6),
+    // the gear (v4): the blade and off-hand held, the gear on the ground here, and the draw counters of the gear, tier and trait streams
+    blade: cleanBlade(r.blade, s), offhand: cleanOff(r.offhand, s), gearLamps: cleanGearLamps(r.gearLamps, s, place),
+    gearRolls: count(r.gearRolls, 1e6), tierRolls: count(r.tierRolls, 1e6), traitRolls: count(r.traitRolls, 1e6), gearDrops: intIn(r.gearDrops, 0, GEAR_DROPS.max, 0)
   };
   g.abilities = cleanSlots(r.abilities, abilities);
   return g;
@@ -67,7 +82,7 @@ function cleanRun(r, s) {
     route: goodRoute(r.route) ? r.route.slice() : routeFor(seed, ember), ember, relics: ids(r.relics, RELIC_IDS, RELIC_MAX),
     elitesDown: ids(r.elitesDown, ORDER, ORDER.length), combo: count(r.combo, 1e5), lastUsed: r.lastUsed === true && wicks.includes('last'), shelf: r.shelf === true,
     ...grown, sparkNow: r.sparkNow === true && grown.sparkPicks > 0, abilityOffer: null, patternsKept: count(r.patternsKept, 100), kept: ids(r.kept, PATTERN_IDS, PATTERN_IDS.length),
-    splits: cleanSplits(r.splits), lastHurt: byCode(r.lastHurt),
+    splits: cleanSplits(r.splits), lastHurt: byCode(r.lastHurt), offCool: count(r.offCool, 3600),
     cracked: intIn(r.cracked, 0, 3, 0),
   };
   // an offer is two different known wicks not yet chosen, or nothing; Belt's offer is two different kindled abilities, or nothing
@@ -85,6 +100,8 @@ function cleanRun(r, s) {
   // the entry's growth: as saved when the run was saved with it, else the run's own
   const eg = has && obj(e.sparks) ? cleanGrown(e, s, r.place) : JSON.parse(JSON.stringify(grown));
   if (has && obj(e.sparks) && !Array.isArray(e.abilities)) eg.abilities = run.abilities.map(a => (a ? { ...a } : null));
+  // an entry saved before the gear holds what the run holds
+  if (has && obj(e.sparks) && !obj(e.blade)) { eg.blade = { ...run.blade, traits: run.blade.traits.slice() }; eg.offhand = run.offhand && { ...run.offhand, traits: run.offhand.traits.slice() }; }
   Object.assign(run.entry, eg);
   return run;
 }
@@ -96,6 +113,10 @@ function cleanSplits(v) {
   return v.filter(x => obj(x) && ORDER.includes(x.id) && !seen.has(x.id) && seen.add(x.id)).slice(0, ORDER.length)
     .map(x => ({ id: x.id, time: secs(x.time), foes: count(x.foes, 1e5), kept: ids(x.kept, PATTERN_IDS, PATTERN_IDS.length) }));
 }
+const cleanEndedGear = g => ({
+  blade: cleanGear(g.blade, 'blade', BLADE_IDS), offhand: cleanGear(g.offhand, 'offhand', OFFHAND_IDS),
+  abilities: [0, 1].map(i => cleanGear(Array.isArray(g.abilities) ? g.abilities[i] : null, 'ability', ABILITY_IDS))
+});
 const byCode = v => (typeof v === 'string' && /^[A-Za-z][a-z0-9-]{0,23}$/.test(v) ? v : null);
 function cleanPath(v) {
   if (!Array.isArray(v)) return null;
@@ -109,6 +130,8 @@ function cleanEnded(e, top) {
   return {
     // a save from before the recap has no path: the summary shows the old rows (screens.js recapOf)
     ...(path ? { path, colours: cleanSparks(e.colours), patternNames: ids(e.patternNames, PATTERN_IDS, PATTERN_IDS.length), by: byCode(e.by) } : {}),
+    // the recap's gear (v4): the run's last blade, off-hand and abilities with tiers and traits
+    ...(obj(e.gear) ? { gear: cleanEndedGear(e.gear) } : {}),
     won: e.won === true, place: e.place, time: secs(e.time), foes: count(e.foes, 1e5), kept: Number.isFinite(e.kept) ? count(e.kept) : null, lost: count(e.lost), banked: count(e.banked),
     ember: intIn(e.ember, 0, EMBER_TOP, 0), relics: ids(e.relics, RELIC_IDS, RELIC_MAX), combo: count(e.combo, 1e5),
     seed: Number.isInteger(e.seed) && e.seed > 0 && e.seed < 2 ** 32 ? e.seed : null,
@@ -132,6 +155,9 @@ export function clean(raw) {
   s.kindled = [...new Set([...STARTERS, ...ids(raw.kindled, [...STARTERS, ...PATTERN_IDS], STARTERS.length + PATTERN_IDS.length)])];
   s.patterns = ids(raw.patterns, PATTERN_IDS.filter(p => !s.kindled.includes(p)), PATTERN_IDS.length);
   s.keys = ids(raw.keys, LAMP_KEY_IDS, LAMP_KEY_IDS.length);
+  // the start blade and off-hand (v4): kindled ones; a save with no off-hand field (v3) has the Buckler picked, and null is none
+  s.blade = kindledGear(s, 'blade').includes(raw.blade) ? raw.blade : 'lamp';
+  s.offhand = !('offhand' in raw) ? 'buckler' : kindledGear(s, 'offhand').includes(raw.offhand) ? raw.offhand : null;
   const slots = paneSlots(s), seen = new Set();
   s.panes = Array.isArray(raw.panes) ? raw.panes.slice(0, slots).map(p => (PANE_IDS.includes(p) && s.kindled.includes(p) && !seen.has(p) && seen.add(p) ? p : null)) : [];
   while (s.panes.length && s.panes.at(-1) === null) s.panes.pop();
@@ -152,20 +178,30 @@ export function clean(raw) {
   s.ended = cleanEnded(raw.ended, s.emberTop);
   return s;
 }
-/* an old save (v1 or v2) as v3: every level of Mantle, Flask, Edge and Draught is kept, and Ash pocket 1 becomes level 2 (40 + 80 is
+/* an old save (v1 or v2) as v4: every level of Mantle, Flask, Edge and Draught is kept, and Ash pocket 1 becomes level 2 (40 + 80 is
    the 120 it cost). Its run in progress keeps its place, with sparks 0 and slot 1 from the seed */
 export function fromOld(raw) {
   if (!obj(raw)) return fresh();
   const up = obj(raw.up) ? { ...raw.up } : {};
   if (up.ash === 1 || up.ash === true) up.ash = 2;
-  return clean({ ...raw, up, v: 3 });
+  return fromV3({ ...raw, up });
 }
-// storage is null when the browser blocks site data; the try blocks cover a throw on any call as well. With no v3 save the v2 save (or
-// with none the v1 save) is read once and stored as v3 at once, so a later old write by a cached page changes nothing here
+/* a v3 save as v4, with its numbers kept: the Lamp blade picked, the Buckler kindled and picked; a run in progress holds the Lamp blade
+   plain and no off-hand, and each bright: true ability is the bright tier with no trait */
+export function fromV3(raw) {
+  if (!obj(raw)) return fresh();
+  const { blade, offhand, ...rest } = raw;
+  const run = obj(raw.run) ? { ...raw.run, blade: undefined, offhand: null } : raw.run;
+  return clean({ ...rest, run, v: 4 });
+}
+// storage is null when the browser blocks site data; the try blocks cover a throw on any call as well. With no v4 save the v3 save (or
+// the v2, or the v1) is read once and stored as v4 at once, so a later old write by a cached page changes nothing here
 export function load(storage) {
   try {
-    const v3 = storage.getItem(KEY);
-    if (v3 !== null) return clean(JSON.parse(v3));
+    const v4 = storage.getItem(KEY);
+    if (v4 !== null) return clean(JSON.parse(v4));
+    const v3 = storage.getItem(V3_KEY);
+    if (v3 !== null) { const s = fromV3(JSON.parse(v3)); store(storage, s); return s; }
     const old = storage.getItem(V2_KEY) ?? storage.getItem(OLD_KEY);
     if (old === null) return fresh();
     const s = fromOld(JSON.parse(old));

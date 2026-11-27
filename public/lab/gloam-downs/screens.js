@@ -8,7 +8,7 @@ import { COLOURS, PATTERNS, PANES, ABILITIES } from './growth.js';
 import { ELITE_LIST, ELITES } from './elites.js';
 import { BLADES, OFFHANDS } from './gear.js';
 import { LAMP_KEYS } from './growth.js';
-// the gear builder's gearMark (hud-gear.js) and the start picks: hub.js keeps their stand-ins until it lands
+// the rows' category mark (hub.js gearMark, drawn by hud-gear.js) and the start picks (gear.js, through hub.js)
 import { gearMark, startBlade, startOffhand, kindledBlades, kindledOffhands } from './hub.js';
 
 export const NUMERAL = ['I', 'II', 'III', 'IV', 'V'];

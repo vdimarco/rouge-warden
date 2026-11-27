@@ -199,7 +199,7 @@ const heard = names => { const got = []; const offs = names.map(k => on(k, d => 
   assert(rs.run.abilities[0] === null && rs.run.abilities[1] && !offer.includes(rs.run.abilities[1].id), 'slot 2 holds a third one');
   assert(startPicks(rs.run) && rs.run.shelf && cardOnLoad(rs) === 'beacon', 'the start card asks');
   assert(chooseStartAbility(rs, offer[1]));
-  assert.deepEqual([rs.run.abilities[0], rs.run.abilityOffer, startPicks(rs.run)], [{ id: offer[1], bright: false }, null, false]);
+  assert.deepEqual([rs.run.abilities[0], rs.run.abilityOffer, startPicks(rs.run)], [{ id: offer[1], tier: 'plain', traits: [] }, null, false]);
   // with only the two starters and Belt 2, the one not chosen fills slot 2
   const two = RS.fresh();
   two.up.belt = 2;
@@ -214,7 +214,7 @@ const heard = names => { const got = []; const offs = names.map(k => on(k, d => 
   b3.up.belt = 3;
   startRun(b3, 4);
   chooseStartAbility(b3, b3.run.abilityOffer[0]);
-  assert(b3.run.abilities.every(a => a.bright));
+  assert(b3.run.abilities.every(a => a.tier === 'bright'));
   pass('Belt: two abilities offered for slot 1, slot 2 drawn by the seed at Belt 2, bright at Belt 3, slot 1 alone without Belt', { offer, two: rs.run.abilities[1].id });
 }
 { // Costs grow: each level costs more; the whole catalogue with the unlocks and the patterns is 15,000 to 18,000 glim (gloam-downs-hub
@@ -382,11 +382,11 @@ const heard = names => { const got = []; const offs = names.map(k => on(k, d => 
   const rs = RS.fresh();
   startRun(rs, 21);
   goTo(rs, 'fen');
-  Object.assign(rs.run, { relics: ['trail'], sparks: { flame: 2, ward: 0, gloam: 0 }, abilities: [{ id: 'bomb', bright: true }, null], carriedPatterns: ['rime'], caches: ['fen-ledge-1'], sparkPicks: 1 });
-  rs.run.abilityLamps = [{ id: 'step', bright: false, place: 'fen', x: 1, y: 2, z: 3, cool: 120, full: 360 }];
+  Object.assign(rs.run, { relics: ['trail'], sparks: { flame: 2, ward: 0, gloam: 0 }, abilities: [{ id: 'bomb', tier: 'bright', traits: [] }, null], carriedPatterns: ['rime'], caches: ['fen-ledge-1'], sparkPicks: 1 });
+  rs.run.abilityLamps = [{ id: 'step', tier: 'plain', traits: [], place: 'fen', x: 1, y: 2, z: 3, cool: 120, full: 360 }];
   enter(rs.run);
   RS.store(storage, rs);
-  assert(mem.has('gloam-downs.run.v3'));
+  assert(mem.has('gloam-downs.run.v4'));
   const back = RS.load(storage);
   for (const k of ['relics', 'sparks', 'abilities', 'carriedPatterns', 'caches', 'sparkPicks', 'abilityLamps']) {
     assert.deepEqual(back.run[k], rs.run[k], k);
@@ -394,33 +394,33 @@ const heard = names => { const got = []; const offs = names.map(k => on(k, d => 
   }
   pass('the run in the save: Ember trail, Flame 2, Lantern bomb in slot 1, the Rime lamp carried, a cache and a lamp (with the cooldown it lies with) come back with the entry');
 }
-{ // From v2: Mantle 3, Ash pocket 1 and 70 banked -> Mantle 3, Ash pocket 2, 70, the four starters kindled, and v3 written
+{ // From v2: Mantle 3, Ash pocket 1 and 70 banked -> Mantle 3, Ash pocket 2, 70, the starters kindled, and v4 written
   const mem = new Map(), storage = { getItem: k => mem.get(k) ?? null, setItem: (k, v) => mem.set(k, String(v)) };
   const v2 = { v: 2, bank: 70, up: { mantle: 3, ash: 1, flask: 1 }, unlocks: ['shelf'], runs: 6, run: { place: 'fen', seed: 99, hp: 80, carried: 12, wicks: ['keen'] } };
   mem.set('gloam-downs.run.v2', JSON.stringify(v2));
   mem.set('gloam-downs.run.v1', JSON.stringify({ bank: 5 }));
   const s = RS.load(storage);
-  assert.deepEqual([s.v, s.up.mantle, s.up.ash, s.up.flask, s.bank, s.kindled, s.unlocks], [3, 3, 2, 1, 70, ['bomb', 'step', 'thick', 'hot', 'lamp', 'buckler'], ['shelf']]);
-  assert(mem.has('gloam-downs.run.v3'));
+  assert.deepEqual([s.v, s.up.mantle, s.up.ash, s.up.flask, s.bank, s.kindled, s.unlocks], [4, 3, 2, 1, 70, ['bomb', 'step', 'thick', 'hot', 'lamp', 'buckler'], ['shelf']]);
+  assert(mem.has('gloam-downs.run.v4'));
   // the run in progress keeps its place, with sparks 0 and slot 1 from the seed's start stream
   assert.deepEqual([s.run.place, s.run.carried, s.run.sparks, s.run.abilities], ['fen', 12, { flame: 0, ward: 0, gloam: 0 }, startAbilities(99, s).slots]);
   assert(s.run.abilities[0] && STARTERS.includes(s.run.abilities[0].id));
   // a later v2 write by a cached page changes nothing
   mem.set('gloam-downs.run.v2', JSON.stringify({ bank: 1 }));
   assert.equal(RS.load(storage).bank, 70);
-  pass('from v2: Mantle 3, Ash pocket 1 becomes 2, 70 glim, the four starters kindled, v3 written; the run keeps its place with slot 1 drawn');
+  pass('from v2: Mantle 3, Ash pocket 1 becomes 2, 70 glim, the starters kindled, v4 written; the run keeps its place with slot 1 drawn');
 }
 { // Rubbish in v3: an unknown pattern, an unknown key, Flame 900, a slot with an ability not kindled -> dropped, 40, and empty
   const raw = {
     patterns: ['rime', 'sword', 'rime', 'bomb'], kindled: ['flare', 'dragon'], keys: ['leap', 'moon'], panes: ['thick', 'thick', 'storm'],
     up: { belt: 9, keen: -1, panes: 1.4, first: 'x' },
-    run: { place: 'gaol', seed: 5, sparks: { flame: 900, ward: -3, gloam: 'x' }, abilities: [{ id: 'moth', bright: true }, { id: 'flare', bright: 1 }], carriedPatterns: ['rime', 'flare', 'nope'], sparkPicks: 99, caches: ['ok-1', 'Bad Spot', 7], abilityLamps: [{ id: 'step', place: 'fen', x: 0, y: 0, z: 0 }, { id: 'nope', place: 'gaol', x: 0, y: 0, z: 0 }] },
+    run: { place: 'gaol', seed: 5, sparks: { flame: 900, ward: -3, gloam: 'x' }, abilities: [{ id: 'moth', tier: 'bright', traits: [] }, { id: 'flare', bright: 1 }], carriedPatterns: ['rime', 'flare', 'nope'], sparkPicks: 99, caches: ['ok-1', 'Bad Spot', 7], abilityLamps: [{ id: 'step', place: 'fen', x: 0, y: 0, z: 0 }, { id: 'nope', place: 'gaol', x: 0, y: 0, z: 0 }] },
     ended: { place: 'gaol', kept: -2, patternsKept: 'x' }
   };
   const s = RS.clean(raw);
   assert.deepEqual([s.patterns, s.kindled, s.keys, s.panes], [['rime'], ['bomb', 'step', 'thick', 'hot', 'lamp', 'buckler', 'flare'], ['leap'], ['thick']]);
   assert.deepEqual([s.up.belt, s.up.keen, s.up.panes, s.up.first], [3, 0, 1, 0]);
-  assert.deepEqual([s.run.sparks, s.run.abilities, s.run.carriedPatterns, s.run.sparkPicks, s.run.caches, s.run.abilityLamps], [{ flame: 40, ward: 0, gloam: 0 }, [null, { id: 'flare', bright: false }], [], 9, ['ok-1'], []]);
+  assert.deepEqual([s.run.sparks, s.run.abilities, s.run.carriedPatterns, s.run.sparkPicks, s.run.caches, s.run.abilityLamps], [{ flame: 40, ward: 0, gloam: 0 }, [null, { id: 'flare', tier: 'plain', traits: [] }], [], 9, ['ok-1'], []]);
   assert.deepEqual([s.ended.kept, s.ended.patternsKept], [0, 0]);
   assert(s.run.hp <= maxOf(s) && maxOf(s) === 100, 'Ward is 0, so the maximum is 100');
   for (const bad of [null, 3, 'x', [], { run: { place: 'gaol', abilities: 'x', sparks: [] } }]) { const c = RS.clean(bad); assert.deepEqual(Object.keys(c).sort(), Object.keys(RS.fresh()).sort()); }

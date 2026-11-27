@@ -253,7 +253,7 @@ Each sits in its category (Part C). Here: 6 panes, 4 wicks, 4 relics and their 4
 | Ward | a 10 shell at each zone cleared, and the shell may hold 50% |
 | Gloam | each ability use cools the other by 1 s |
 
-The HUD's colour row rings a colour whose set is on. As built (B): `build.js` `setsOf(R)` and `R.build.view().sets` give the sets on; the ring itself is a line in the HUD's colour row (`cards.js`, H's), left for the merge pass.
+The HUD's colour row rings a colour whose set is on. As built (B): `build.js` `setsOf(R)` and `R.build.view().sets` give the sets on; the merge pass drew the ring in the HUD's colour row (`cards.js` `updateGrowth`, a rounded edge in the colour's hue, and "set on" in the row's label).
 
 ### Gaining them
 | Way | What |
@@ -348,8 +348,8 @@ The tempers of the first draft become blades. A blade is the main weapon: one is
 |---|---|---|---|---|---|
 | lamp | Lamp blade | Flame | from the first run | 2 cuts and a finisher | today's string (`moves.js` `HITS`) |
 | hook | Hook blade | Flame | 160 | 2 cuts and a finisher, 15% slower | reach +0.6 m, damage x1.1; the finisher sweeps 180 degrees and pulls light foes 1 m in; the bone 1.4 long |
-| twin | Twin knives | Gloam | 160 | 4 cuts, each 25% faster | each cut at 65% damage; the 4th reuses the first cut and adds 1 Char; the bone 0.7 long |
-| bell | Bell maul | Ward | 200 | 2 cuts, 30% slower | damage x1.6, poise worn twice as fast; hold Attack 0.5 s to slam: 30 in 2.5 m, with the plunge's landing pose; the bone 1.2 long and wider |
+| twin | Twin knives | Gloam | 160 | 4 cuts, each 25% faster | each cut at 90% damage; the 4th reuses the first cut and adds 1 Char; the bone 0.7 long |
+| bell | Bell maul | Ward | 200 | 2 cuts, 30% slower | damage x1.5, poise worn twice as fast; hold Attack 0.5 s to slam: 30 in 2.5 m, with the plunge's landing pose; the bone 1.2 long and wider |
 
 - **Blade rack** (the unlock, 150, was Temper rack) puts the Hook blade, Twin knives and Bell maul in the pattern drops. The rack stands in the hall from the first visit, with the Lamp blade on it.
 - **In a run** a blade drop lies stuck in the ground with a glow in its colour. Standing on it shows the compare toast. Holding Attack 0.4 s takes it; a tap still cuts. The old blade lies where the new one was, with its tier and traits. While a blade lies underfoot, Bell maul's slam waits.
@@ -378,7 +378,7 @@ The new slot: one held, with its own button and cooldown.
 |---|---|---|---|
 | plain | none | x1.0 | 0 |
 | bright | one pip and a gold rim | x1.25 (today's bright) | 1 |
-| blazing | two pips and a double rim | x1.4 | 2 |
+| blazing | two pips and a double rim | x1.35 | 2 |
 
 - Power multiplies the item's damage, heals and shell points, after its colour. It never changes a cooldown, a time or a reach.
 - Today's bright ability is the bright tier. An old save's `bright: true` reads as bright with no trait.
@@ -407,11 +407,11 @@ A bright item rolls 1 trait and a blazing item 2 different ones, from those that
 
 | id | Name | Fits | Rule |
 |---|---|---|---|
-| smoulder | Smouldering | blade, off-hand, ability | its hits burn 2 s |
+| smoulder | Smouldering | blade, off-hand, ability | its hits burn: a blade's 2 s, an off-hand's or ability's 1 s; a burn under way is not renewed by it |
 | steady | Steady | blade, off-hand, ability | 6% of its hits are sure cuts, from the seed's `sure` stream |
 | glean | Gleaning | blade, off-hand, ability | a foe it puts out heals 2% of max health |
-| char | Charring | blade, off-hand, ability | each 3rd hit adds 1 Char |
-| quick | Quick | blade, off-hand, ability | a blade's string 8% faster; an off-hand's or ability's cooldown 10% shorter |
+| char | Charring | blade, off-hand, ability | each 4th hit adds 1 Char |
+| quick | Quick | blade, off-hand, ability | a blade's string 6% faster; an off-hand's or ability's cooldown 6% shorter |
 | wide | Wide | blade, off-hand, ability | a blade's reach +0.3 m; an off-hand's or ability's radius or range +15% |
 | weight | Weighted | blade, off-hand | poise worn 30% faster |
 | hoard | Hoarding | blade, off-hand, ability | a foe it puts out gives 1 more glim |
@@ -431,6 +431,24 @@ A pattern is the plan of any category item that is not there from the first run:
 - Each plain blade deals within 10% of the Lamp blade's damage a second on the bot's reference string against a Snuffer.
 - A bright item with its trait adds at most 40%, and a blazing item with its two traits at most 60%, to the damage a second of the same item plain.
 - Node test `gloam-downs-gear.test.mjs` measures each one. The bot's pacing check (merge pass) includes the gear.
+
+#### Measured (gear builder, on `gloam-hub-g-2`)
+The test plays the string on a training post with Attack pressed as fast as it takes it, for 10 s, and an ability on its cooldown for 60 s. Char's damage is the buffs builder's: it is counted as 6.5 a stack (1 a second while the stacks climb, and the burst's 20 shared by 5 stacks). A burn here is 1 a second, a tick that never flinches and never wears poise.
+
+| Item | Damage a second | Against the Lamp blade |
+|---|---|---|
+| Lamp blade | 36.5 | |
+| Hook blade | 37.6 | +3% |
+| Twin knives (with the fourth cut's Char) | 40.0 | +9.6% |
+| Bell maul | 38.4 | +5% |
+
+Worst cases: one trait alone +11.4%; bright with a trait +38.6%; blazing with two traits +56.2% (blades), +47.5% (abilities). Off-hands beside the string: Sling +13.2%, Fire pot +6.8%, Lamp chain +3.3%, Iron cuff +2.2%, Buckler and Shade lamp 0 (they guard and blind).
+
+Numbers moved to fit the budget, from the first draft:
+- Twin knives: each cut 90% (was 65%, which dealt 25.9 a second, 29% under the Lamp blade).
+- Bell maul: damage x1.5 (was x1.6, 12% over).
+- Blazing: x1.35 (was x1.4). Quick: 6% faster and 6% shorter (was 8% and 10%). Charring: each 4th hit (was each 3rd). Smouldering: an off-hand's or ability's hit burns 1 s, and a burn under way is not renewed by the same trait (a moth's many hits passed +20% alone).
+- Left for the merge pass: the Moth wisp deals 5 a hit, which rounds to 7 at blazing (x1.35 is 6.75), +40% before any trait; with two traits it passes +60%. Its hit (growth.js, the buffs builder's) could rise to 6 with a slower beat, or the pairs on it could be capped.
 
 ### The HUD by category (`hud-gear.js`, `gear.css`)
 - **The gear row** (`#gear`, in the HUD, in place of `#abilities`): four slot tiles in order, Blade, Off-hand, Ability 1, Ability 2; then one small tile for each open pane slot; then the wick count. The relic row stays as it is.
@@ -572,13 +590,22 @@ tierPower(slot)
 // abilities.js, drawAbility, in place of bright: r() < brightChance(rs)
 ...rollGear(rs, 'ability')
 ```
+What the gear builder added beyond the lines above, and why (each is one line or a small block at the place named):
+- `run.js`: `GROWN` takes `...GEAR_GROWN` (a reload restores the held gear and its draw counters as they were at the entry); `goTo` clears `gearLamps` and `gearDrops`; `pend` and the press list take `off`; `hurt` asks `R.gear.block` (the Buckler) after the Ember parry; `foeOut` asks `R.gear.foeOut` in place of the ability lamp roll (gear drops took its place), and an elite's fall rolls at 60%; `stats()` also gives `underfoot`; `startAbilities` and `chooseStartAbility` make `{ id, tier, traits }`; `patternOf` and `groundPatterns` know the blade and off-hand patterns; `recapFields` adds `gear`.
+- `moves.js`: `hitOf` becomes `hitAt` inside the fighter (the held blade's row, or today's), `nextAfter` asks `bladeNext` (the Twin knives' 4 cuts, the Bell maul's 2), a held Attack is no press when `bladeHold(st)` (the Bell maul's slam, a blade underfoot), and the fighter has `land()` for the slam's pose. The design's two lines could not carry a string of 4 or 2.
+- `abilities.js`: `coolOf(rs, id, slot)` takes the slot for Quick; Wide widens a copy of the ability's row; the swaps and the lamps copy `{ id, tier, traits }` (`gearCopy`); a cache's lamp rolls its tier on the next row down; the view gives `tier` and `traits`.
+- `main.js`: the gear row also replaces the line that set `#abilities`' text and label (the touch buttons stay); `bossScreen.rects` reads `#gear`; `groundAbilities` for the fight adds `groundGear` (a found blade or off-hand glows as an ability lamp does); `__gloam.set` keeps tiers and traits; `__gloam.gear` (`gearTest`) is the test hook.
+- `bus.js`: `EVENTS` gains `gear-cue`; `run-sound.js` has one handler for it, which plays each gear cue with a recipe there now (`GEAR_CUES` in `gear-play.js`: the Buckler whiff, the parry clang, the cuff snap, the sling whiff, the pot coal, the chain charge, the shade light, the swap choice, a bright drop glim and a blazing drop light; the slam has its own recipe).
+- The merge pass replaced the gear builder's stubs: `gear-play.js` imports `markSure` and `addShell` from `build.js` (a parry readies the build's sure cut, so it is one rule with Shutter's), and `putState` is `status.js` `statusHit` (Char's burst now gives its hit and cue).
+- Not done by the gear builder: the blade bone scaled for each blade (the pose code in `play.js` and the figure), the pause card's Gear list, and the off-hand's inputs (`input.off`, the hub builder's).
+
 B may add one line to G's `run-save.js`, in `cleanRun`: `cracked: intIn(r.cracked, 0, 3, 0),` (Cracked glass's hits taken in the place).
 
 H reads the tables and calls these functions, with no line in B's or G's files:
 - `hub.js` reads `ABILITIES`, `PANES`, `LAMP_KEYS` and `PATTERNS` from `growth.js`, `UPGRADES` and `UNLOCKS` from `run.js`, and `BLADES` and `OFFHANDS` from `gear.js`. New rows show up at their stations with no hook.
 - `hub.js`, at the blade rack: `pick: id => chooseBlade(rs, id),` and at the off-hand stand: `pick: id => chooseOffhand(rs, id),` from `gear.js`.
 - `screens.js`, in every row maker: `gearMark(item)` from `hud-gear.js` gives the glyph, the colour edge and the tier mark.
-- Until G lands, H stubs `chooseBlade`, `chooseOffhand` and `gearMark` in `hub.js`.
+- The merge pass replaced H's stubs: `hub.js` re-exports `chooseBlade` and `chooseOffhand` from `gear.js`, and reads the start picks from `startGear`. `hub.js` `gearMark` stays as the row's mark data (the word, the shape and the pips); `cards.js` `markHtml` draws its glyph with `hud-gear.js` `gearMark`, the same glyph as the HUD's gear row.
 
 Lines in files no builder owns:
 - `foes.js` (B, after the fair-fight merge), one line at each of three places:

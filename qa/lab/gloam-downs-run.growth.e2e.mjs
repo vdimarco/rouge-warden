@@ -179,8 +179,8 @@ try {
     assert.deepEqual(panes, [['thick:true', 'hot:false'], ['hot:false']]);
     r = await run(page);
     assert.deepEqual([r.panes, r.paneSlots, r.up.panes], [['thick'], 2, 1]);
-    const stored = await G(page, () => JSON.parse(localStorage.getItem('gloam-downs.run.v3')));
-    assert.deepEqual([stored.v, stored.panes, stored.kindled.includes('rime'), stored.run.sparks.ward], [3, ['thick'], true, 1]);
+    const stored = await G(page, () => JSON.parse(localStorage.getItem('gloam-downs.run.v4')));
+    assert.deepEqual([stored.v, stored.panes, stored.kindled.includes('rime'), stored.run.sparks.ward], [4, ['thick'], true, 1]);
     await shot(page, 'flow-lamp-1280x720');
     pass('two pane slots: Lantern panes 1 shows a second row, and Thick glass set in the first is not offered in the second; the save is v3', { panes });
     assert.deepEqual(errors, []);

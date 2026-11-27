@@ -10,6 +10,7 @@ import { createMix, createSound, cueAt, CUES } from './sound.js';
 import { createMusic, TIMER, keyOf, THEMES, LOOKAHEAD, PHONE_LOOKAHEAD } from './music.js';
 import { on, EVENTS } from './bus.js';
 import { makeBeds } from './beds.js';
+import { GEAR_CUES } from './gear-play.js';
 
 // the cues that begin a fight as a hit does: a hit given, a plunge's landing, a hit taken
 const FIGHT_CUES = new Set(['hit', 'land', 'hurt']);
@@ -211,7 +212,9 @@ export function makeRunSound({ log, rs, phone = false, step = () => 0, ear = () 
     'ability-ready': d => A.cue('focus', { ready: d.slot ?? 0 }),
     'spark-take': () => {},
     'cache-open': () => A.cue('glim', { cache: true }),
-    'life-stir': d => A.stir(d)
+    'life-stir': d => A.stir(d),
+    // the gear (gloam-downs-hub design.md "Sound"): one handler a cue, each with a recipe there now; the gear's own name rides along
+    'gear-cue': d => { const r = GEAR_CUES[d.cue]; if (r) A.cue(r, { gear: d.cue, ...(d.id ? { id: d.id } : {}), ...(d.tier ? { tier: d.tier } : {}) }); }
   };
   const offs = EVENTS.map(name => on(name, d => { A.heardEvents.push(name); if (A.heardEvents.length > 32) A.heardEvents.shift(); HANDLERS[name]?.(d || {}); }));
   // stop listening (a test that makes more than one run sound)

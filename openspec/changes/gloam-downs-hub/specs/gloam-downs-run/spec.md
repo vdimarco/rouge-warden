@@ -298,7 +298,7 @@ The Lamp blade (Flame, from the first run), Hook blade (Flame), Twin knives (Glo
 
 #### Scenario: The twin string
 - **WHEN** with Twin knives the player presses Attack four times on a Snuffer
-- **THEN** four cuts land at 65% damage each, and the fourth adds 1 Char. Check: Node test `gloam-downs-gear.test.mjs`, and e2e `gloam-downs-run.gear.e2e.mjs`.
+- **THEN** four cuts land at 90% damage each, and the fourth adds 1 Char. Check: Node test `gloam-downs-gear.test.mjs`, and e2e `gloam-downs-run.gear.e2e.mjs`.
 
 #### Scenario: The bell slam
 - **WHEN** with the Bell maul the player holds Attack 0.5 s with two foes within 2.5 m
@@ -357,11 +357,11 @@ Iron cuff (Ward), Sling and Fire pot (Flame), Lamp chain and Shade lamp (Gloam) 
 - **THEN** it takes 8 and 1 Char. Check: Node test `gloam-downs-gear.test.mjs`.
 
 ### Requirement: Quality tiers
-Found gear SHALL come in three tiers: plain (power x1.0, no trait), bright (x1.25, 1 trait) and blazing (x1.4, 2 different traits). Power SHALL multiply the item's damage, heals and shell points after its colour, and SHALL NOT change a cooldown, a time or a reach. A start item SHALL be plain, except Belt 3's start abilities, which SHALL be bright.
+Found gear SHALL come in three tiers: plain (power x1.0, no trait), bright (x1.25, 1 trait) and blazing (x1.35, 2 different traits). Power SHALL multiply the item's damage, heals and shell points after its colour, and SHALL NOT change a cooldown, a time or a reach. A start item SHALL be plain, except Belt 3's start abilities, which SHALL be bright.
 
 #### Scenario: A blazing bomb
 - **WHEN** a blazing Lantern bomb with no Flame bursts on a Snuffer
-- **THEN** it deals 28 x1.4, rounded once, and its cooldown is 8 s. Check: Node test `gloam-downs-gear.test.mjs`.
+- **THEN** it deals 28 x1.35, rounded once, and its cooldown is 8 s. Check: Node test `gloam-downs-gear.test.mjs`.
 
 ### Requirement: Tiers by place depth
 A gear drop's tier SHALL come from the row of design.md "Drop tables" for the place's depth in the route, from plain 90, bright 10, blazing 0 at depth 0 to 35, 42, 23 at depth 4. An elite or a cache SHALL use the next row. Each Keen eye level SHALL move 4 points from plain to bright, each Ember level 2 points from plain to blazing, and plain SHALL never go under 10.

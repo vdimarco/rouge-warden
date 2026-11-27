@@ -31,15 +31,16 @@ Three builders work in parallel worktrees after the fair-fight change (`gloam-do
 - [x] 2.9 `qa/lab/gloam-downs-bot.mjs`: the bot knows the new kit and picks build families.
 
 ## 3. Gear builder (G)
-- [ ] 3.1 `gear.js`: `rollGear` (the `gear`, `tier` and `trait` streams with their counters), `tierPower`, `traitCool`, `traitWide`, `bladeHit`, `bladeHold`, `patternKind`, `startGear`, `chooseBlade`, `chooseOffhand`, `cleanGear`; the depth tables with the Keen eye and Ember shifts.
-- [ ] 3.2 `gear-play.js` (new): `makeGear(R)`, the held blade's colour and row for the fighter, the six off-hands with tells, effects and cooldowns, the Buckler's parry under the fair-fight interrupts, gear drops on the ground, the hold-to-swap, traits on hits, `R.gear.view()`.
+- [x] 3.1 `gear.js`: `rollGear` (the `gear`, `tier` and `trait` streams with their counters), `tierPower`, `traitCool`, `traitWide`, `bladeHit`, `bladeHold`, `patternKind`, `startGear`, `chooseBlade`, `chooseOffhand`, `cleanGear`; the depth tables with the Keen eye and Ember shifts.
+- [x] 3.2 `gear-play.js` (new): `makeGear(R)`, the held blade's colour and row for the fighter, the six off-hands with tells, effects and cooldowns, the Buckler's parry under the fair-fight interrupts, gear drops on the ground, the hold-to-swap, traits on hits, `R.gear.view()`.
 - [ ] 3.3 The blades: the strings, reach and the Bell maul slam from `bladeHit` and `bladeHold`, with the cut poses there now and the blade bone scaled; the hook lines in `moves.js`, `run.js` and `abilities.js` of design.md "The hooks".
-- [ ] 3.4 `run-save.js` v4: the save fields of design.md "Save fields", `clean()`, and the v3 to v4 move.
-- [ ] 3.5 `hud-gear.js` and `gear.css` (new): `gearRow` with the glyphs, colour edges, tier marks, cooldown sweeps and the label; `gearMark` for the cards and rows; `compareToast`; the six layouts; the touch buttons' marks. The hook lines in `main.js` and `index.html`.
-- [ ] 3.6 The gear's cues in `run-sound.js`, one handler a cue; `gloam-downs-sound.test.mjs` checks each.
-- [ ] 3.7 `qa/lab/gloam-downs-gear.test.mjs` (new): every Node scenario of the categories, blades, off-hands, tiers, traits, depth tables, patterns, colour growth, the save and the gear budget. Update seeded tests that pin an ability lamp.
+- [x] 3.4 `run-save.js` v4: the save fields of design.md "Save fields", `clean()`, and the v3 to v4 move.
+- [x] 3.5 `hud-gear.js` and `gear.css` (new): `gearRow` with the glyphs, colour edges, tier marks, cooldown sweeps and the label; `gearMark` for the cards and rows; `compareToast`; the six layouts; the touch buttons' marks. The hook lines in `main.js` and `index.html`.
+- [x] 3.6 The gear's cues in `run-sound.js`, one handler a cue; `gloam-downs-sound.test.mjs` checks each.
+- [x] 3.7 `qa/lab/gloam-downs-gear.test.mjs` (new): every Node scenario of the categories, blades, off-hands, tiers, traits, depth tables, patterns, colour growth, the save and the gear budget. Update seeded tests that pin an ability lamp.
 - [ ] 3.8 `qa/lab/gloam-downs-run.gear.e2e.mjs` and `qa/lab/gloam-downs-gear-hud.e2e.mjs` (new): the swaps with keys, a pad, a mouse and touch, the parry, the Twin string, the slam, the compare toast, and the gear row and cards at the six layouts and on a grey screen, with screenshots under `SHOTS`.
 - [ ] 3.9 The bot (with B): it picks up better gear and swaps blades and off-hands by its build family.
+- Gear builder's notes (`gloam-hub-g-2`): 3.3 is done but for the blade bone scaled by blade (the pose code). 3.8 is done but for the Off-hand's own inputs (V, the middle mouse button, RB, `#bOff`), which wait for the hub builder's `input.off`; the e2e presses the Off-hand through `__gloam.gear({ off: true })` and says which inputs it could not press. 3.9: the bot's gear half is in (it takes a better blade or off-hand, prefers its spark colour at an equal tier, raises the Buckler in place of some rolls and uses the other off-hands in a fight); the build families of the buffs builder are not. The numbers moved for the gear budget are in design.md "Gear budget", "Measured".
 
 ## 4. Merge pass
 - [ ] 4.1 Merge H, then B, then G. Run every test in design.md "Tests" and the Gloam Downs checks in AGENTS.md.
