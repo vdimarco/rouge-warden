@@ -111,6 +111,12 @@ void main() {
   // Flat slices stay unoutlined: a halo on every 12x10 cell stacks into a solid fill.
   // The ring is one upright card (sign 2), body discarded, same 2px reach as the flat poses.
   if (runner > 0.5 && vSign > 1.5 && t.a >= 0.5) discard;
+  // The contact shadow (sign -1): the footprint in wet-street ink, drawn under slice 0.
+  if (runner > 0.5 && vSign < -0.5) {
+    if (t.a < 0.5) discard;
+    o = vec4(vec3(18.0, 18.0, 26.0) / 255.0, 1.0);
+    return;
+  }
   if (runner > 0.5 && t.a < 0.5) {
     if (uOutlineOn < 0.5 || vOrient < 0.5) discard;
     vec2 one = vec2(1.0 / 1024.0);
@@ -141,7 +147,12 @@ void main() {
   float lo = min(col.r, min(col.g, col.b));
   float neon = step(0.25, hi - lo) * step(0.45, hi);
   vec3 dark = vec3(0.290, 0.282, 0.322);
-  if (runner > 0.5) { o = vec4(col, 1.0); return; }
+  if (runner > 0.5) {
+    // Stack slices carry their height in vSign (0 feet, 1 hood): low slices sit in shade.
+    if (vOrient < 0.5) col *= mix(0.86, 1.0, smoothstep(0.0, 0.5, vSign));
+    o = vec4(col, 1.0);
+    return;
+  }
   vec3 ink = vec3(0.102, 0.102, 0.133);
   if (abs(vKind - 5.0) < 0.25) {
     float u = vCorner.x;

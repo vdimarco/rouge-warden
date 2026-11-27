@@ -13,7 +13,15 @@ const SMOG = [0x8a / 255, 0x83 / 255, 0x78 / 255];
 const canvas = document.getElementById("view");
 const params = new URLSearchParams(location.search);
 const world = build(params.get("seed") || 1);
-const renderer = createRenderer(canvas);
+let renderer;
+try {
+  renderer = createRenderer(canvas);
+} catch (e) {
+  // No WebGL2: say so, rather than leave an empty page.
+  const note = document.getElementById("nogl");
+  if (note) note.hidden = false;
+  throw e;
+}
 let lastDt = 1 / 60;
 
 const player = { x: world.spawn.x, y: world.spawn.y };
@@ -314,6 +322,12 @@ const stackSlots = Array.from({ length: STACK_N }, () => ({
   x: 0, z: 0, y: 0, hx: 0, hz: 0, uv: [0, 0, 0, 0],
   kind: 1, sign: 0, bid: -1, low: true, orient: 0,
 }));
+// The contact shadow: the widest slice, flat on the street, pushed away from the sun (sign -1).
+const SHADOW_SLICE = 8;
+const shadowSlot = {
+  x: 0, z: 0, y: 0, hx: 0, hz: 0, uv: [0, 0, 0, 0],
+  kind: 1, sign: -1, bid: -1, low: true, orient: 0,
+};
 const outlineSlot = {
   x: 0, z: 0, y: 0, hx: 0, hz: 0, uv: [0, 0, 0, 0],
   kind: 1, sign: 2, bid: -1, low: true, orient: 2,
@@ -352,8 +366,20 @@ function pushStack(runner) {
     s.uv[1] = 1 - (fr.y + 10) / 1024;
     s.uv[2] = (x0 + 12) / 1024;
     s.uv[3] = 1 - fr.y / 1024;
+    // 0 at the feet, 1 at the hood: the shader shades the low slices so the stack has volume.
+    s.sign = i / (STACK_N - 1);
     runner.push(s);
   }
+  const top = stackSlots[SHADOW_SLICE];
+  const sh = shadowSlot;
+  const sl = Math.hypot(SUN[0], SUN[2]) || 1;
+  sh.x = x - SUN[0] / sl * 2.5 * px;
+  sh.z = z - SUN[2] / sl * 2.5 * px;
+  sh.y = 0.3;
+  sh.hx = top.hx * 1.15;
+  sh.hz = top.hz * 1.15;
+  sh.uv = top.uv;
+  runner.push(sh);
 }
 function scene() {
   fit();
