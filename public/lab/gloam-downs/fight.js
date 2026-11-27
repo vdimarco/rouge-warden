@@ -78,7 +78,7 @@ export const GROUND_FX = { snare: { n: 14, s: 0.07, lift: 0.15 }, pitch: { rings
      the pale of glim or a wisp's teal) that fill its 3 m as one dark pool and turn to fire (34, 35) once lit; a tack is one small pale
      dab; the post lamp a column of 3 warm dabs with a ring at its reach; the moths of the swarm 6 Gloam dabs (39) over the lamplighter,
      or at the foe they seek */
-  slick: { rings: [[0.3, 6], [0.65, 10], [0.95, 12]], s: 0.12, lift: 0.08 }, tack: { s: 0.045, lift: 0.1 }, post: { n: 10, s: 0.045, lift: 0.12 }, moth: { s: 0.03 } };
+  slick: { rings: [[0.3, 5], [0.65, 8], [0.95, 10]], s: 0.13, lift: 0.08 }, tack: { s: 0.045, lift: 0.1 }, post: { n: 10, s: 0.045, lift: 0.12 }, moth: { s: 0.03 } };
 export function effectDabs(e, t = 0) {
   const out = [];
   if (e.kind === 'snare') {
@@ -136,7 +136,7 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
   const zones = mix && meta.zones ? mixZones(meta.id, meta.zones, codes.join(''), seed, mix) : meta.zones;
   const combo = makeCombo({ emit, best: rs.run?.combo ?? 0 });
   const foes = makeFoes({ walk, meta: { ...meta, zones }, slots: codes, seed, onScreen, water, combo, scale: rs.run ? foeScale(rs.run) : null, tokens: rs.run ? tokensOf(rs.run) : 1 });
-  const sparks = pool.extra && pool.extra.end > pool.extra.first ? makeSparks(world, pool.extra.first, pool.extra.end - pool.extra.first, meta.pal, { glow: 64 }) : null;
+  const sparks = pool.extra && pool.extra.end > pool.extra.first ? makeSparks(world, pool.extra.first, pool.extra.end - pool.extra.first, meta.pal, { glow: 80 }) : null; // 80 steady dabs: an Oil slick, a ring of tacks and a ledge's lamps fit together
   const feel = makeFeel({ pal: meta.pal, still, fx });
   const fits = new Map(); // a foe's marker laid on the ground: its fit, kept while the marker stands where it is
   const G = { foes, sparks, feel, combo, zones, runner: null, game: 0, keeperTo: -1, keeperAt: null, beatTo: -1, lift: MARK_LIFT, bars: 0, halo: [] };

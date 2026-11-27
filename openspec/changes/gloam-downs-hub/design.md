@@ -197,6 +197,7 @@ All are patterns kindled at the kiln. Cooldown in s, and the cost in glim.
 - Power by colour, bright lamps, Gloam cooldowns and Smoked glass apply as for the nine abilities there now.
 - Wick lash, Shard fan, Bell toll and the bursts are damaging hits, so they interrupt by the fair-fight rules. Oil slick's fire, Moth swarm and Post lamp's heal tick.
 - Drawn with the spark dabs, rings and lines `fight.js` and `sparks.js` already draw. A tell comes before every effect.
+- **As built (B):** the steady dabs of a draw are capped at 80, up from 64. At 64, an Oil slick of 28 dabs, a ledge's lamps and a ring of tacks went over the cap and two tacks were not drawn (`gloam-downs-run.kit.e2e.mjs` caught it). The slick is now 23 slightly larger dabs, and the cap leaves room for a slick, the tacks and the lamps together.
 
 ### New buffs
 Each sits in its category (Part C). Here: 6 panes, 4 wicks, 4 relics and their 4 kindlings, 2 wares, 2 unlocks, 1 key and 3 colour sets. The 3 blades, 6 off-hands, 3 tiers and 10 traits are in Part C.
