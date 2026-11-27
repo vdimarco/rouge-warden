@@ -199,34 +199,34 @@ const cues = R => R.log.map(c => c.cue);
   assert.equal(hp1 - g.hp, 10);
   assert(g.status.burn > 0, 'it burns');
   steps(b.R, 60 * 3);
-  assert.equal(hp1 - g.hp, 10 + 6, 'the burn deals 1 every 0.5 s for 3 s');
+  assert.equal(hp1 - g.hp, 10 + 3, 'the burn deals 1 every 1 s for 3 s');
   steps(b.R, 90);
   assert.equal(b.rs.run.offCool, 0, 'the 5 s cooldown is over');
   press(b.R, 'off');
   assert.equal(b.rs.run.offCool, Math.round(5 * 60) - 1);
   press(b.R, 'off');
   assert(cues(b.R).includes('refuse'), 'a press while it cools only says no');
-  pass('the Iron cuff bashes 6 and pushes; the Fire pot bursts 10 and burns 6 over 3 s; a press while cooling says no');
+  pass('the Iron cuff bashes 6 and pushes; the Fire pot bursts 10 and burns 3 over 3 s; a press while cooling says no');
 }
 
 /* ---------------- Quality tiers ---------------- */
-{ // a blazing Lantern bomb with no Flame bursts on a Snuffer: 28 x 1.4, rounded once; its cooldown is 8 s
+{ // a blazing Lantern bomb with no Flame bursts on a Snuffer: 28 x 1.35 (the measured budget; design.md "Gear budget"), rounded once; its cooldown is 8 s
   const { R, rs, foes } = setup({ slots: [item('bomb', 'blazing', ['quick', 'glean'].slice(0, 0)), null], foes: [['S', 0, 4]] });
   const f = foes[0], hp0 = f.hp;
   press(R, 'ab1');
   const ev = steps(R, 50);
   const burst = ev.find(e => e.type === 'hit' && e.ability === 'bomb');
-  assert.equal(burst.dmg, Math.round(28 * 1.4));
+  assert.equal(burst.dmg, Math.round(28 * 1.35));
   assert.equal(coolOf(rs, 'bomb', rs.run.abilities[0]), 8 * 60);
-  assert(hp0 - f.hp >= 39);
-  pass('a blazing bomb: 28 x 1.4 = 39, and its cooldown stays 8 s');
+  assert(hp0 - f.hp >= 38);
+  pass('a blazing bomb: 28 x 1.35 = 38, and its cooldown stays 8 s');
 }
 { // Quick shortens an ability's cooldown 10%; Wide widens its reach 15%
   const rs = RS.fresh(); startRun(rs, 7);
-  assert.equal(coolOf(rs, 'bomb', item('bomb', 'bright', ['quick'])), Math.round(8 * 60 * 0.9));
+  assert.equal(coolOf(rs, 'bomb', item('bomb', 'bright', ['quick'])), Math.round(8 * 60 * 0.94));
   assert.equal(GE.traitWide(item('bomb', 'bright', ['wide'])), 1.15);
-  assert.deepEqual(GE.TIERS.map(t => [t.power, t.traits]), [[1, 0], [1.25, 1], [1.4, 2]]);
-  pass('tiers: plain x1, bright x1.25 with 1 trait, blazing x1.4 with 2; Quick cools 10% faster, Wide reaches 15% more');
+  assert.deepEqual(GE.TIERS.map(t => [t.power, t.traits]), [[1, 0], [1.25, 1], [1.35, 2]]);
+  pass('tiers: plain x1, bright x1.25 with 1 trait, blazing x1.35 with 2; Quick cools 6% faster, Wide reaches 15% more');
 }
 { // deeper drops are better: 10,000 tiers a depth, each share within 1.5 points of its row, and blazing grows with depth
   const blaze = [];
@@ -309,9 +309,9 @@ const cues = R => R.log.map(c => c.cue);
   const fl0 = [f.flinch | 0, f.flinches.length, f.cancels | 0], fl = [];
   let ticks = 0;
   for (let i = 0; i < 150; i++) for (const e of R.step({}, 0)) { if (e.type === 'hit' && e.offhand === 'burn') { ticks++; fl.push([f.flinch | 0, f.flinches.length, f.cancels | 0]); } }
-  assert.equal(ticks, 4, 'four ticks in 2 s');
+  assert.equal(ticks, 2, 'two ticks in 2 s');
   assert(fl.every(v => v.join() === fl0.join()), `no tick flinches it: ${JSON.stringify(fl)} against ${fl0}`);
-  pass('Smouldering: a cut burns the Snuffer 2 s, four ticks, and no tick flinches it');
+  pass('Smouldering: a cut burns the Snuffer 2 s, a tick a second, and no tick flinches it');
 }
 { // Gleaning: a Sling with Gleaning puts out a foe, and health rises by 2 of 100
   const { R, rs, foes } = setup({ offhand: item('sling', 'bright', ['glean']), foes: [['S', 0, 4]] });
@@ -477,6 +477,33 @@ function dps(blade, { offhand = null, secs = 10 } = {}) {
     assert(d / lamp - 1 <= 0.2 + 1e-9, `${o.id}: +${out[o.id]}%`);
   }
   pass('the gear budget: each off-hand alone at most +20% damage a second', out);
+}
+
+{ // the abilities with traits: each damaging ability there now, used on its cooldown on a post for 60 s, keeps the same limits
+  const abDps = (slot, secs = 60) => {
+    const { R, P } = setup({ slots: [slot, null], posts: [[0, 1.5, { hp: Infinity }]] });
+    for (let i = 0; i < secs * 60; i++) R.step({ ab1: i % 2 === 0 }, 0);
+    return P[0].taken / (R.clock.step / 60);
+  };
+  const worst = { one: 0, bright: 0, blazing: 0 }, DPS_TRAITS = ['smoulder', 'steady', 'char', 'quick'];
+  for (const id of ['bomb', 'moth', 'pitch']) {
+    const base = abDps(item(id));
+    for (const t of DPS_TRAITS) {
+      const one = abDps({ id, tier: 'plain', traits: [t] }) / base - 1, br = abDps(item(id, 'bright', [t])) / base - 1;
+      worst.one = Math.max(worst.one, one); worst.bright = Math.max(worst.bright, br);
+      assert(one <= 0.2 + 1e-9, `${id} with ${t} alone: +${(one * 100).toFixed(1)}%`);
+      assert(br <= 0.4 + 1e-9, `${id} bright with ${t}: +${(br * 100).toFixed(1)}%`);
+    }
+    /* the Moth wisp's 5 a hit rounds to 7 at blazing (x1.35 is 6.75), +40% by itself: with two traits it goes past +60%. Its own numbers
+       are the buffs builder's (growth.js); design.md "Gear budget" hands it to the merge pass, so it is left out of the pairs here */
+    if (id === 'moth') continue;
+    for (let i = 0; i < DPS_TRAITS.length; i++) for (let j = i + 1; j < DPS_TRAITS.length; j++) {
+      const bz = abDps(item(id, 'blazing', [DPS_TRAITS[i], DPS_TRAITS[j]])) / base - 1;
+      worst.blazing = Math.max(worst.blazing, bz);
+      assert(bz <= 0.6 + 1e-9, `${id} blazing with ${DPS_TRAITS[i]} and ${DPS_TRAITS[j]}: +${(bz * 100).toFixed(1)}%`);
+    }
+  }
+  pass('the gear budget for abilities: Lantern bomb, Moth wisp and Pitch pour with each trait inside the limits, and the bomb and the pitch with each pair', Object.fromEntries(Object.entries(worst).map(([k, v]) => [k, +(v * 100).toFixed(1)])));
 }
 
 console.log(`${n} checks passed`);

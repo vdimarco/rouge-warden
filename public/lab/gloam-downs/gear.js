@@ -30,7 +30,7 @@ export const OFFHAND_IDS = OFFHANDS.map(o => o.id);
 export const TIERS = [
   { id: 'plain', name: 'plain', pips: 0, power: 1, traits: 0 },
   { id: 'bright', name: 'bright', pips: 1, power: 1.25, traits: 1 },
-  { id: 'blazing', name: 'blazing', pips: 2, power: 1.4, traits: 2 }
+  { id: 'blazing', name: 'blazing', pips: 2, power: 1.35, traits: 2 }
 ];
 export const TIER_IDS = TIERS.map(t => t.id);
 // the tier odds by place depth, in the order plain, bright, blazing. Row 5 is an elite's drop or a cache at depth 4; an elite's drop
@@ -48,11 +48,11 @@ export const TIER_SHIFT = { perKeen: 4, perEmber: 2, plainMin: 10 };
 // the traits: a bright item rolls 1, a blazing item 2 different ones, from those that fit its kind
 const ALL = ['blade', 'offhand', 'ability'], HELD = ['blade', 'offhand'];
 export const TRAITS = [
-  { id: 'smoulder', name: 'Smouldering', fits: ALL, text: 'its hits burn 2 s', burn: 2 },
+  { id: 'smoulder', name: 'Smouldering', fits: ALL, text: 'its hits burn (a blade\'s 2 s, others 1 s)', burn: 2, burnOther: 1 },
   { id: 'steady', name: 'Steady', fits: ALL, text: '6% of its hits are sure cuts', sure: 0.06 },
   { id: 'glean', name: 'Gleaning', fits: ALL, text: 'a foe it puts out heals 2% of max health', heal: 0.02 },
   { id: 'char', name: 'Charring', fits: ALL, text: 'each 4th hit adds 1 Char', every: 4, char: 1 },
-  { id: 'quick', name: 'Quick', fits: ALL, text: 'a faster string, or a shorter cooldown', speed: 0.06, cool: 0.1 },
+  { id: 'quick', name: 'Quick', fits: ALL, text: 'a faster string, or a shorter cooldown', speed: 0.06, cool: 0.06 },
   { id: 'wide', name: 'Wide', fits: ALL, text: 'a longer reach, or a wider reach', reach: 0.3, wide: 0.15 },
   { id: 'weight', name: 'Weighted', fits: HELD, text: 'poise worn 30% faster', poise: 0.3 },
   { id: 'hoard', name: 'Hoarding', fits: ALL, text: 'a foe it puts out gives 1 more glim', glim: 1 },

@@ -79,7 +79,7 @@ function tile(t, small = false) {
   const colour = colourOf(t.kind, x.id), tier = TIERED.includes(t.kind) ? tierOf(x) : null, pips = tier ? tierRow(tier).pips : 0;
   return `<i class="gt k-${t.kind} c-${colour || 'none'}${tier ? ` t-${tier}` : ''}${cool ? ' cool' : ''}${small ? ' small' : ''}" style="--cd:${(t.share || 0).toFixed(3)}">`
     + `${svg(GLYPH_SVG[GLYPH_OF[t.kind]])}${colour ? `<s class="cs">${svg(CORNER_SVG[COLOUR_SHAPES[colour]], 8)}</s>` : ''}${pips ? `<u class="pips">${'<i></i>'.repeat(pips)}</u>` : ''}`
-    + `${cool ? `<b class="sec">${Math.ceil(t.left)}</b>` : ''}</i>`;
+    + `${cool ? `<b class="sec">${Math.ceil(t.left)}</b>` : ''}${t.key ? `<kbd>${t.key}</kbd>` : ''}</i>`;
 }
 export function gearLabel(v) {
   if (!v) return 'No gear';
@@ -87,17 +87,20 @@ export function gearLabel(v) {
   const panes = v.panes.map(p => (p ? nameOf('pane', p) : 'empty'));
   return `${parts.join('. ')}. Panes: ${panes.join(', ') || 'none'}. Wicks: ${v.wicks}.`;
 }
-export function gearRow(el, R, rs = R?.rs, now = Date.now()) {
+/* keys: the labels of the two ability inputs ('F', 'G'; 'LB', 'LT' on a pad), shown on the ability tiles; none on a touch screen,
+   whose buttons carry the marks */
+export function gearRow(el, R, rs = R?.rs, now = Date.now(), keys = null) {
   if (!el) return null;
   const v = gearView(R, rs);
   el.hidden = !v;
   if (!v) return null;
+  if (keys) { v.slots[2].key = keys[0]; v.slots[3].key = keys[1]; }
   const html = v.slots.map(t => tile(t)).join('') + `<i class="gpanes">${v.panes.map(p => tile({ kind: 'pane', x: p ? { id: p } : null }, true)).join('')}</i>`
     + `<i class="gt wick small">${svg(GLYPH_SVG.wick)}<b>${v.wicks}</b></i>`;
   if (el.innerHTML !== html) el.innerHTML = html;
   const L = last.get(el) || { at: -1e9, text: '' }, text = gearLabel(v);
   // the label changes on a swap at once, and with the cooldowns at most once a second
-  const changed = text.replace(/, ready in \d+ seconds/g, '') !== L.text.replace(/, ready in \d+ seconds/g, '');
+  const changed = text.replace(/ready in \d+/g, 'ready in n') !== L.text.replace(/ready in \d+/g, 'ready in n');
   if (text !== L.text && (changed || now - L.at >= 1000)) { el.setAttribute('aria-label', text); last.set(el, { at: now, text }); }
   markButtons(v);
   return v;

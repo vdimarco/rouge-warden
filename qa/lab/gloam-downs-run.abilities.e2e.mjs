@@ -2,9 +2,9 @@
 // (openspec/changes/gloam-downs-growth):
 //   inputs: F and G with the keys, the mouse's side buttons 3 and 4 (the page takes them, so the browser does not go back), the pad's
 //     LB and LT (LT no longer rolls), and the touch buttons #bAb1 and #bAb2;
-//   the HUD: #abilities with each slot's key and name, its seconds while it cools; on a touch screen the two buttons, 44 px or more,
-//     inside the screen and clear of the other buttons and the HUD, at 320x640, 390x844, 360x640, 844x390; #abilities inside the HUD
-//     and clear of the health and count lines at 800x600 and 1280x720;
+//   the HUD: the gear row (#gear, gloam-downs-hub) with each ability tile's key and its seconds while it cools, and the label with each
+//     slot's name; on a touch screen the two buttons, 44 px or more, inside the screen and clear of the other buttons and the HUD, at
+//     320x640, 390x844, 360x640, 844x390; #gear inside the screen and clear of the health and count lines at 800x600 and 1280x720;
 //   lamps drawn: a pattern lamp, an ability lamp and the place's caches are dabs of the draw; an ability lamp fills an empty slot;
 //   keys: Crow step from the set hook, the Gaol's first ledge reached with its way from its stand and its cache opened (and not without
 //     the key), and the pause panel's keys line.
@@ -62,7 +62,11 @@ try {
     assert(r.abilities[0].left > 7 && r.abilities[1].left > 13, JSON.stringify(r.abilities));
     // the HUD: the slot's key, its name and the seconds left
     await G(page, () => window.__gloam.draw());
-    assert.match(await page.textContent('#abilities'), /^FLantern bomb \d+ sGFlare \d+ s$/);
+    const abTiles = () => G(page, () => [...document.querySelectorAll('#gear > .gt.k-ability')].map(t => [t.querySelector('kbd')?.textContent ?? null, t.querySelector('.sec')?.textContent ?? null]));
+    const tiles = await abTiles();
+    assert.deepEqual(tiles.map(t => t[0]), ['F', 'G']);
+    assert(tiles.every(t => /^\d+$/.test(t[1])), JSON.stringify(tiles));
+    assert.match(await page.getAttribute('#gear', 'aria-label'), /Ability 1: Lantern bomb, plain, ready in \d+ seconds\. Ability 2: Flare, plain, ready in \d+ seconds\./);
     // the side buttons: back is slot 1, forward slot 2; the page takes their events, so the browser does not go back
     await G(page, () => window.__gloam.set({ cool: [0, 0] }));
     const prevented = await G(page, () => {
@@ -98,11 +102,11 @@ try {
     for (const b of [4, 6]) { await G(page, i => window.__press(i, true), b); await tick(page, 0.05, 'live'); r = await run(page); assert.notEqual(r.move, 'roll', 'LT does not roll'); await G(page, i => window.__press(i, false), b); await tick(page, 0.05, 'live'); }
     assert.deepEqual((await used(page)).slice(4), ['bomb', 'flare']);
     await G(page, () => window.__gloam.draw());
-    assert.match(await page.textContent('#abilities'), /^LBLantern bomb/, 'a pad press shows the pad\'s labels');
+    assert.deepEqual((await abTiles()).map(t => t[0]), ['LB', 'LT'], 'a pad press shows the pad\'s labels');
     // back on the keys: a key press in play gives the labels back to the keys, and the help lines name the mouse's side buttons
     await page.keyboard.down('w'); await tick(page, 0.05, 'live'); await page.keyboard.up('w'); await tick(page, 0.05, 'live');
     await G(page, () => window.__gloam.draw());
-    assert.match(await page.textContent('#abilities'), /^FLantern bomb/, 'the keys\' labels come back');
+    assert.deepEqual((await abTiles()).map(t => t[0]), ['F', 'G'], 'the keys\' labels come back');
     assert.match(await page.innerHTML('#runControls'), /Mouse buttons 4 and 5 use the abilities too\. On an ability lamp, an ability's key swaps it\./);
     assert.deepEqual(errors, []);
     pass('inputs: F and G, the side buttons 3 and 4 (with back and forward taken), and the pad\'s LB and LT start the two abilities; LT does not roll');
@@ -187,15 +191,15 @@ try {
           if (!inside(r)) out.push(`${b.id} outside the screen`);
           for (const o of [...others, ...abs.filter(x => x !== b)]) if (over(r, R(o))) out.push(`${b.id} over ${o.id}`);
         }
-        if (shown(document.getElementById('abilities'))) out.push('the HUD row shows on touch');
+        // the gear row shows on touch too, with no keys on its tiles (the buttons carry the marks)
+        if (document.querySelector('#gear kbd')) out.push('keys on the gear row on touch');
       } else {
-        const a = document.getElementById('abilities');
-        if (!shown(a)) out.push('no #abilities');
+        const a = document.getElementById('gear');
+        if (!shown(a)) out.push('no #gear');
         else {
-          const r = R(a), hud = R(document.getElementById('hud'));
-          if (r.left < hud.left - 0.5 || r.right > hud.right + 0.5 || r.bottom > hud.bottom + 0.5) out.push('#abilities outside the HUD');
-          for (const id of ['life', 'count', 'where']) if (over(r, R(document.getElementById(id)))) out.push(`#abilities over #${id}`);
-          if (!inside(r)) out.push('#abilities outside the screen');
+          const r = R(a);
+          for (const id of ['life', 'count', 'where']) if (over(r, R(document.getElementById(id)))) out.push(`#gear over #${id}`);
+          if (!inside(r)) out.push('#gear outside the screen');
         }
         if (['bAb1', 'bAb2'].some(id => shown(document.getElementById(id)))) out.push('the touch buttons show with a mouse');
       }

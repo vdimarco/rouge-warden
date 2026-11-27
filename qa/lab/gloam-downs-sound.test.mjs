@@ -20,6 +20,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CUES, cueAt, CUE_CAP, makeVary, makeGlim, space, PENTA, createMix, createSound, db } from '../../public/lab/gloam-downs/sound.js';
 import { makeRunSound } from '../../public/lab/gloam-downs/run-sound.js';
+import { GEAR_CUES } from '../../public/lab/gloam-downs/gear-play.js';
 import { THEMES, STINGS, PLACES, BANK, SYNTH, gridOf, nextLine, nextBeat, onLine, lineAt, makeScore, levelOf, LOOKAHEAD, LATE } from '../../public/lab/gloam-downs/music.js';
 import { emit, on as busOn, EVENTS } from '../../public/lab/gloam-downs/bus.js';
 import { TYPES } from '../../public/lab/gloam-downs/foes.js';
@@ -339,7 +340,7 @@ const whats = F => F.S.view().changes.map(c => c.what);
   console.error = err;
   a(); b();
   assert.deepEqual(got, [{ zone: 'G1' }]);
-  assert.equal(EVENTS.length, 24); // with life-stir (gloam-downs-screens-life)
+  assert.equal(EVENTS.length, 25); // with life-stir (gloam-downs-screens-life) and gear-cue (gloam-downs-hub)
   const F = fake(), { A } = busRun(F);
   for (const e of EVENTS) emit(e, {});
   assert.deepEqual(A.view().events.length ? EVENTS.filter(e => !A.heardEvents.includes(e)) : ['none'], []);
@@ -666,5 +667,22 @@ const swingAt = (S, t, id = 'cut1') => {
   assert.equal(A.beds.log.length, n0, 'a gust swelled with Sound off');
   A.off();
   pass('the sound beds: a gust swells the wind for 2 s within 50 ms, a flock lifts with wings and caws at it, the bed ducks while foes are awake, stops in the Lamp-room and the boss fight, stops in a hidden tab or under the switcher, and stays quiet with Sound off', { swell: sw, crows: cr });
+}
+{ // the gear (gloam-downs-hub "Sound"): each gear cue keys on its bus event and plays a recipe there now, with the item's id and tier
+  const F = fake(), { A, log } = busRun(F);
+  F.S.arrive('gaol'); F.run(0.3); F.S.placeTheme('gaol'); F.run(3);
+  for (const [name, recipe] of Object.entries(GEAR_CUES)) {
+    const n = log.length;
+    emit('gear-cue', { cue: name, id: 'sling', tier: 'blazing' });
+    const got = log.slice(n);
+    assert.equal(got.length, 1, `${name}: one cue`);
+    assert.deepEqual([got[0].cue, got[0].gear, got[0].id, got[0].tier], [recipe, name, 'sling', 'blazing']);
+    assert(CUES[recipe], `${recipe} has a recipe`);
+  }
+  // the runner's own gear cues reach the bus: the Buckler's raise, a parry, a swap, and the slam's own recipe
+  assert(CUES.slam && CUES.refuse && CUES.clang);
+  for (const want of ['buckler', 'parry', 'cuff', 'sling', 'pot', 'chain', 'shade', 'swap', 'bright', 'blazing']) assert(GEAR_CUES[want], `${want} has a handler`);
+  A.off();
+  pass('gear sounds: each gear cue plays one cue that exists, with the item and its tier', Object.keys(GEAR_CUES));
 }
 console.log(`PASS qa/lab/gloam-downs-sound.test.mjs: ${passed} checks`);

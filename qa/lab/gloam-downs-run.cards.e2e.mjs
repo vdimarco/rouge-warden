@@ -50,7 +50,7 @@ const tick = (page, sec, held = {}) => G(page, ([s, h]) => window.__gloam.tick(s
 const keepOut = (page, carried) => G(page, c => { const g = window.__gloam; g.out('G5'); g.tick(1.2, {}); g.set({ carried: c - 9 }); }, carried);
 const active = page => G(page, () => document.activeElement?.id || document.activeElement?.textContent);
 const text = (page, sel) => page.textContent(sel).then(t => t.trim());
-const stored = page => G(page, () => JSON.parse(localStorage.getItem('gloam-downs.run.v3')));
+const stored = page => G(page, () => JSON.parse(localStorage.getItem('gloam-downs.run.v4')));
 const shot = async (page, name) => { if (!SHOTS) return; await G(page, () => window.__gloam.draw()); await page.screenshot({ path: `${SHOTS}/${name}.png` }); };
 // the longest toast in the run's data (the keepers by the broken wall, from foes.js) and one of 96 characters
 const KEEPERS = 'The beacon will not catch while its keepers stand by the broken wall below the tower.';
@@ -267,7 +267,9 @@ try {
     assert.equal(r.mode, 'dying');
     // the foes put out are the keep's three Snuffers, put out before the Gaol's beacon
     // with the recap's fields (gloam-downs-screens-life): the Gaol passed with its 3 foes, The Crow Wall where it ended, the spark taken
-    const { path, colours, patternNames, by, ...rest } = r.ended;
+    const { path, colours, patternNames, by, gear, ...rest } = r.ended;
+    // the recap's gear (gloam-downs-hub): the Lamp blade and the Buckler, plain
+    assert.deepEqual([gear.blade.id, gear.offhand.id], ['lamp', 'buckler']);
     assert.deepEqual(rest, { won: false, place: 'ramparts', time: r.ended.time, foes: 3, kept: 2, lost: 18, banked: 2, ember: 0, opened: null, relics: [], combo: 0, seed: r.ended.seed, patternsKept: 0, patternsLost: 0 }, 'a death keeps 10%: 2 of the 20 carried');
     assert.deepEqual([path.map(p => [p.id, p.foes]), colours, patternNames, by], [[['gaol', 3], ['ramparts', 0]], { flame: 1, ward: 0, gloam: 0 }, [], null]);
     await tick(page, 0.5, {});

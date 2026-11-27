@@ -21,13 +21,15 @@ const DEG = Math.PI / 180;
    lamplighter cannot do an off-hand in (as for the abilities: a drink, a roll, a hurt, a plunge) */
 export const GEAR = {
   swap: S(0.4), touch: 1.0, buffer: S(0.15), tell: S(0.1), stone: 30, potFlight: S(0.5), stop: 2, aim: 70 * DEG,
-  burn: { every: S(0.5), dmg: 1 }, char: S(4), mark: S(4), blind: S(3), chainShort: 1.0, chainSafe: S(0.1),
+  burn: { every: S(1), dmg: 1 }, char: S(4), mark: S(4), blind: S(3), chainShort: 1.0, chainSafe: S(0.1),
   busy: ['drink', 'roll', 'hurt', 'hang', 'plunge', 'land'], ground: ['cuff', 'chain', 'pot']
 };
 // the blade's own hits (its string, the Rising cut, the Bell maul's slam): the traits of the held blade ride on these
 const BLADE_KINDS = ['cut1', 'cut2', 'fin', 'rise', 'slam'];
-// the off-hands' tells and effects, by id, for the sound and the picture
-export const OFF_CUES = Object.fromEntries(OFFHANDS.map(o => [o.id, o.cue]));
+/* the gear's cues (gloam-downs-hub design.md "Sound"), each played by run-sound.js with a recipe of sound.js there now: the Buckler's raise
+   and its parry, the five other off-hands, a swap, and the ring of a bright or blazing drop. The Bell maul's slam logs `slam`, which has
+   its own recipe already */
+export const GEAR_CUES = { buckler: 'whiff', parry: 'clang', cuff: 'snap', sling: 'whiff', pot: 'coal', chain: 'charge', shade: 'light', swap: 'choice', bright: 'glim', blazing: 'light' };
 
 /* until the buffs builder's build.js lands: a sure cut readied for the next blade hit, and a ward shell. Its markSure(R) and
    addShell(R, n, steps, from) take these places (gloam-downs-hub design.md "Who builds what") */
@@ -70,7 +72,13 @@ export function makeGear(R) {
   };
   const run = () => rs.run;
   const sOf = () => R.fighter.body.s;
-  const cue = (ev, name, more = {}) => { const c = { cue: name, step: clock.step, play: clock.play, ...more }; R.log.push(c); ev.push({ type: 'cue', ...c, logged: true }); };
+  // a cue in the log; the gear's own cues (GEAR_CUES) also go on the bus, where run-sound.js plays each with a recipe there now
+  const cue = (ev, name, more = {}) => {
+    const c = { cue: name, step: clock.step, play: clock.play, ...more };
+    R.log.push(c);
+    ev.push({ type: 'cue', ...c, logged: true });
+    if (GEAR_CUES[name]) emit('gear-cue', { cue: name, id: more.offhand || more.id || more.blade || null, tier: more.tier || null });
+  };
   const live = () => R.targets().filter(t => t.alive);
   const ground = (x, z, y) => { const g = R.fighter.walk.support(x, z, y + 1.2); return g === null ? y : g; };
   const offRow = () => (run()?.offhand ? offhandOf(run().offhand.id) : null);
@@ -89,11 +97,13 @@ export function makeGear(R) {
     if (!how.tick) { ev.push({ type: 'stop', n: GEAR.stop }); cue(ev, 'hit', { hit: 'offhand', offhand: id, on: [t.type || 'post'], stop: GEAR.stop }); }
     return dmg;
   }
-  // a burn of n steps on a foe: its state, and ticks of 1 every 0.5 s that never flinch and never wear poise (one burn a target)
-  function burn(t, n, from) {
+  /* a burn of n steps on a foe: its state, and ticks of 1 every 1 s that never flinch and never wear poise (one burn a target). renew:
+     a new burn lengthens one under way (the Fire pot); Smouldering's does not, so a quick string or a moth's many hits keep one burn */
+  function burn(t, n, from, renew = true) {
     if (!t?.alive) return;
-    statusHit(t, 'burn', n);
     const b = G.burns.find(x => x.t === t);
+    if (b && !renew) return;
+    statusHit(t, 'burn', n);
     if (b) b.left = Math.max(b.left, n); else G.burns.push({ t, left: n, k: 0, from });
   }
   // the soft aim: the nearest target in front (70 degrees) within range that the lamplighter sees
@@ -294,7 +304,7 @@ export function makeGear(R) {
       G.hits.set(key, n);
       for (const id of traitsOf(x)) {
         const T = traitOf(id);
-        if (id === 'smoulder') burn(t, S(T.burn), [s.x, s.z]);
+        if (id === 'smoulder') burn(t, S(it.kind === 'blade' ? T.burn : T.burnOther), [s.x, s.z], false);
         else if (id === 'steady' && steadyRoll(k++) < T.sure) sure(t, e.dmg, ev, 'steady');
         else if (id === 'char' && n % T.every === 0) putState(t, 'char', T.char);
         else if (id === 'dim' && n % T.every === 0) putState(t, 'blind', S(T.blind));

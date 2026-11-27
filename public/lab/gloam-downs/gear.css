@@ -33,6 +33,7 @@
 /* a cooling off-hand or ability: a dark sweep of the share left, and the seconds */
 .gt.cool::after { content: ''; position: absolute; inset: 0; border-radius: 4px; background: conic-gradient(rgba(4, 4, 8, 0.72) calc(var(--cd) * 360deg), transparent 0); }
 .gt .sec { position: absolute; z-index: 1; font: 800 13px/1 var(--body, sans-serif); color: #fff; text-shadow: 0 1px 2px #000; }
+.gt kbd { position: absolute; right: -3px; top: -6px; padding: 1px 3px; border-radius: 4px; background: #120c06; font: 700 9px/1 var(--body, sans-serif); color: var(--ember, #ff9a32); }
 .gt.wick { border-color: #5a3424; color: #ffd9b4; width: auto; min-width: var(--g-pane); padding: 0 4px; grid-auto-flow: column; gap: 2px; }
 .gt.wick svg { width: 12px; height: 12px; }
 .gt.wick b { font: 700 11px/1 var(--body, sans-serif); }

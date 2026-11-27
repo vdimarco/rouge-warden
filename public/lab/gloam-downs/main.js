@@ -382,7 +382,7 @@ const abilityView = () => ({ glows: fight ? fight.halo.reduce((m, g) => ((m[g.ki
 function updateAbilities() {
   const v = RUN && rs?.run && !hud.hidden ? abilityView().abilities : [null, null], touch = coarse && !inp.mouse;
   // the gear row (hud-gear.js) in place of the abilities' row, and the compare toast over a ground item
-  gearRow($('gear'), RUN && rs?.run && !hud.hidden ? runner : null, rs);
+  gearRow($('gear'), RUN && rs?.run && !hud.hidden ? runner : null, rs, Date.now(), touch ? null : abKeys());
   compareToast($('compare'), RUN && rs?.run && !hud.hidden && mode === 'play' ? runner : null);
   abBtns.forEach((b, i) => {
     const a = v[i];

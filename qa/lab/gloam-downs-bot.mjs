@@ -47,6 +47,8 @@ import { makeBoss, REEVE } from '../../public/lab/gloam-downs/boss.js';
 import { bossBrain } from './gloam-downs-bossbot.mjs';
 import { PATTERNS } from '../../public/lab/gloam-downs/growth.js';
 import * as RS from '../../public/lab/gloam-downs/run-save.js';
+import { groundGear } from '../../public/lab/gloam-downs/gear-play.js';
+import { tierOf, traitsOf, bladeOf, offhandOf } from '../../public/lab/gloam-downs/gear.js';
 import { makeFoes, phaseOf, FOE_HARD, FAIR, TYPES, armored } from '../../public/lab/gloam-downs/foes.js';
 import { STAGGER, poiseOf } from '../../public/lab/gloam-downs/feel.js';
 import { ELITES } from '../../public/lab/gloam-downs/elites.js';
@@ -184,7 +186,7 @@ function playPlace(rs, id, bot) {
     const g = R.relics.view().ground[0];
     if (g) return [g.x, g.y, g.z];
     // a pattern lamp or an ability lamp within 12 m (an ability lamp only while a slot is empty)
-    const lamps = [...groundPatterns(R), ...(R.rs.run.abilities || []).some(a => !a) ? groundAbilities(R) : []];
+    const lamps = [...groundPatterns(R), ...(R.rs.run.abilities || []).some(a => !a) ? groundAbilities(R) : [], ...groundGear(R).filter(wantGear)];
     goalLamp = null;
     for (const l of lamps) if (Math.hypot(l.x - s.x, l.z - s.z) < 12 && !giveUp.has(`${l.id}:${l.x}`)) { goalLamp = l; return (goalAt = [l.x, l.y, l.z]); }
     // a cache its keys open, within 16 m: the start of its way
@@ -208,6 +210,20 @@ function playPlace(rs, id, bot) {
     }
     return route[Math.min(wi, route.length - 1)];
   };
+  /* the gear (gloam-downs-hub "Part C"): the bot takes a found blade or off-hand that is better than the one it holds, a higher tier,
+     or the same tier with more traits, or one of its build family's colour (the colour it spends its sparks on) at the same tier */
+  const TIER_RANK = { plain: 0, bright: 1, blazing: 2 };
+  const rank = x => (x ? TIER_RANK[tierOf(x)] * 3 + traitsOf(x).length : -1);
+  const familyColour = () => { const sp = rs.run?.sparks || {}; return ['flame', 'ward', 'gloam'].sort((a, b) => (sp[b] | 0) - (sp[a] | 0))[0]; };
+  const colourOfGear = (kind, id) => (kind === 'blade' ? bladeOf(id) : offhandOf(id))?.colour;
+  function wantGear(l) {
+    const run = rs.run;
+    if (!run || (l.kind !== 'blade' && l.kind !== 'offhand')) return false;
+    const held = run[l.kind];
+    if (!held) return true;
+    if (rank(l) !== rank(held)) return rank(l) > rank(held);
+    return colourOfGear(l.kind, l.id) === familyColour() && colourOfGear(l.kind, held.id) !== familyColour();
+  }
   const giveUp = new Set(), passed = new Set();
   let goalLamp = null, goalAt = null;
   const spotNear = () => groundSpots(R).find(sp => sp.open && !spotsDone.has(sp.id) && Math.hypot(sp.from[0] - s.x, sp.from[2] - s.z) < 16);
@@ -240,8 +256,20 @@ function playPlace(rs, id, bot) {
   const press = (a, i) => ({ ...a, [i ? 'ab2' : 'ab1']: true });
   let usedAb = 0;
   function act() {
+    // on a found blade or off-hand it wants: hold Attack or the Off-hand until it is taken (0.4 s), standing still
+    const cmp = rs.run && R.gear.compare();
+    if (cmp && (cmp.kind === 'blade' || cmp.kind === 'offhand') && wantGear({ kind: cmp.kind, ...cmp.found }) && !threats().some(t => t.left < 30)) {
+      return cmp.kind === 'blade' ? { attack: true } : { off: true };
+    }
     const a = act0();
     if (!rs.run) return a;
+    // the off-hand: the Buckler raised against a blow about to land in front, in place of a roll, as a skilled player would; any other
+    // off-hand in a fight on its cooldown with a foe near
+    const off = rs.run.offhand;
+    if (off && (rs.run.offCool | 0) === 0) {
+      if (off.id === 'buckler' && a.roll && rnd() < 0.3 + 0.5 * k) { bot.offhand++; return { ...a, roll: false, off: true }; }
+      if (off.id !== 'buckler' && a.fight && steps % 6 === 0 && F.targets().some(t => t.aware && Math.hypot(t.x - s.x, t.z - s.z) < (off.id === 'sling' ? 9 : 5))) { bot.offhand++; return { ...a, off: true }; }
+    }
     // in place of a roll, 4 times in 10: Smoke step or Bell guard
     if (a.roll) { const i = slotOf(DODGE); if (i >= 0 && rnd() < 0.4) { usedAb++; return press({ ...a, roll: false }, i); } }
     // a wind-up read near it: Flare or Rime lamp
@@ -365,6 +393,7 @@ function playPlace(rs, id, bot) {
     if (B && fought && !B.up && bot.bossAt != null) { bot.bossFights.push(rs.run.time - bot.bossAt); bot.bossAt = null; }
     if (jumpTo > 0) { jumpTo--; a.jump = jumpTo % 20 < 10; }
     for (const e of R.step(a, 0)) {
+      if (e.type === 'gear' && e.what === 'swap') bot.gearSwaps++;
       if (e.type === 'dark') dark = e.at;
       if (e.type === 'hit') { lastHit = steps; combo.hit(e.kind === 'relic' ? 'relic' : e.kind); }
       if (e.type === 'hurt') {
@@ -423,7 +452,7 @@ function playPlace(rs, id, bot) {
 /* ---------------- one bot ---------------- */
 function playBot(b) {
   const rs = RS.fresh();
-  const bot = { skill: SKILL, rnd: mulberry(hash2(b, 0xb07, 7)), bossFights: [], arrive: [], hurt: 0, caches: 0, abilities: 0, bossAt: null, nudgeTime: 0, snaps: 0, cutins: 0, armorCuts: 0, bracedHits: 0, steelHits: 0, src: {}, bossBreaks: 0, places: [] };
+  const bot = { skill: SKILL, rnd: mulberry(hash2(b, 0xb07, 7)), bossFights: [], arrive: [], hurt: 0, caches: 0, abilities: 0, offhand: 0, gearSwaps: 0, bossAt: null, nudgeTime: 0, snaps: 0, cutins: 0, armorCuts: 0, bracedHits: 0, steelHits: 0, src: {}, bossBreaks: 0, places: [] };
   const runs = [];
   for (let r = 0; r < MAXRUNS; r++) {
     shop(rs);
@@ -456,7 +485,7 @@ function playBot(b) {
     if (bot.firstWin != null && r + 1 >= bot.firstWin + AFTER) break;
   }
   return { runs, firstWin: bot.firstWin ?? null, boss: bot.bossFights, arrive: bot.arrive, hurt: bot.hurt, caches: bot.caches, abilities: bot.abilities, nudgeTime: bot.nudgeTime, keys: (rs.keys || []).slice(),
-    snaps: bot.snaps, cutins: bot.cutins, armorCuts: bot.armorCuts, src: bot.src, steelHits: bot.steelHits, bracedHits: bot.bracedHits, bossBreaks: bot.bossBreaks, places: bot.places };
+    snaps: bot.snaps, cutins: bot.cutins, armorCuts: bot.armorCuts, src: bot.src, steelHits: bot.steelHits, bracedHits: bot.bracedHits, bossBreaks: bot.bossBreaks, places: bot.places, offhand: bot.offhand, gearSwaps: bot.gearSwaps, gear: rs.ended?.gear || null };
 }
 
 /* ---------------- the threads ----------------
@@ -512,6 +541,7 @@ console.log(`runs played ${allRuns.length}, won ${winsAll}`);
 console.log(`won within ${MAXRUNS} runs: ${wins.length} of ${BOTS}; median first-win run ${med(wins) ?? '-'} (of those that won)`);
 console.log(`winning run: median ${med(winTimes) ?? '-'} min of game time; the Reeve's fight (stepped) median ${(med(bots.flatMap(x => x.boss)) ?? 0).toFixed(1)} s`);
 const nRuns = bots.flatMap(x => x.runs).length;
+console.log(`gear: off-hand uses a run (mean) ${(bots.reduce((a, x) => a + (x.offhand || 0), 0) / nRuns).toFixed(1)}; gear swaps a run (mean) ${(bots.reduce((a, x) => a + (x.gearSwaps || 0), 0) / nRuns).toFixed(2)}`);
 console.log(`abilities used a run (mean) ${(bots.reduce((a, x) => a + x.abilities, 0) / nRuns).toFixed(1)}; caches opened a run (mean) ${(bots.reduce((a, x) => a + x.caches, 0) / nRuns).toFixed(2)}; bots with Crow step ${bots.filter(x => x.keys.includes('leap')).length}, with Bell drop ${bots.filter(x => x.keys.includes('drop')).length}`);
 console.log(`runs ended in: ${Object.entries(reached).map(([p, n]) => `${p} ${n}`).join(', ')}`);
 const per = {};
