@@ -655,4 +655,9 @@ Tests changed by the merge: `gloam-downs-gear.test.mjs` gives its runner the bui
 - The Moth wisp's blazing pairs. The merge pass tried the same 6.25 damage a second in bigger, slower hits (6 each 0.96 s, 7 each 1.12 s, 8 each 1.28 s). Each fixes the blazing rounding but breaks another limit, because Smouldering's 1 s burn weighs more on a slower beat (bright with Smouldering +41.7% and +42.4%, blazing with Smouldering and Quick +64.6%). So the wisp stays at 5 each 0.8 s and `gloam-downs-gear.test.mjs` still leaves it out of the pairs. A later pass could cap a blazing wisp at one trait.
 - The blade bone scaled by blade (tasks.md 3.3), the pause card's Gear list, and a found blade's own look on the ground (it glows as an ability lamp does).
 
-**Checks run by the merge pass:** see tasks.md 4.1 and 4.3.
+**Checks run by the merge pass** (headless Chromium with software WebGL; no real phone, GPU, gamepad, touch screen or speaker):
+- Node: all 25 `qa/lab/gloam-downs*.test.mjs` pass, and `gloam-downs-zones.mjs` (177 checks). `bake.mjs lamproom --check` passes with no file change.
+- Browser: hub 7, hub-layout 7 (also with `STATIONS=all`, every station's card at the six layouts), gear-hud 10, run.gear 9, run.kit 4, run.cards 12, screens 18, run.growth 4, run.builds 7, run.abilities 9, run.interrupt 7, run.fight 8, run.boss 24, run.input 17, run.sound 19, run.feel 5, run.swing 2, run.lineup 15, camera 8, mouse 8, clicks 46, cutaway 1, gloam-downs 17, screen-sound 1. The hall loads in 3.35 s cold on the throttled phone profile.
+- life: its seen, crows, hush and reduced-motion parts pass. Its frame-time part ran with `WARM=3 DRAWS=20 BLOCK=5` and measured 11 views (life against none 0.97 to 1.06) before its 40-minute limit; software WebGL drew a frame in about 9 s under load.
+- `quiet.mjs --only=lab/gloam-downs`: 35 of 35. The music demo: 192 files, all targets met. A first full run under heavy load measured the Gaol's music 1.7 LU quieter and failed its bed check; the beds group alone and a second full run pass, as on the commit before the hub.
+- Not run: `gloam-downs-uniforms.e2e.mjs` (about 12 minutes; the hub does not touch the renderer).
