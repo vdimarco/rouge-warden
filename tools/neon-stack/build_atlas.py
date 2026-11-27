@@ -8,6 +8,7 @@ Does not write neon-atlas.png or a preview under public/.
 import base64
 import json
 import os
+import sys
 import tempfile
 from pathlib import Path
 from PIL import Image, ImageDraw
@@ -1645,6 +1646,72 @@ def verify_outputs(atlas, atlas_path, frames):
     return size_bytes, len(frames)
 
 
+# Art's voxel strips, not a carved hull. 20 cells of 12x10, ground on the left.
+# tools/neon-stack/runner_slices/slices20-<pose>.png
+# Views in runner_views/ are the cross-check only.
+STACK_POSES = (
+    ("runner_stack_idle", "idle", 320),
+    ("runner_stack_run_0", "run_0", 336),
+    ("runner_stack_run_1", "run_1", 352),
+)
+STACK_DIR = Path(__file__).resolve().parent / "runner_slices"
+VIEW_DIR = Path(__file__).resolve().parent / "runner_views"
+
+
+def paste_runner_stacks(atlas, frames):
+    for name, pose, y in STACK_POSES:
+        src = Image.open(STACK_DIR / f"slices20-{pose}.png")
+        if src.mode != "P" or src.size != (240, 10):
+            raise SystemExit(f"{pose} strip must be indexed 240x10, got {src.mode} {src.size}")
+        pix = list(src.get_flattened_data())
+        for row in range(10):
+            for col in range(240):
+                atlas.putpixel((col, y + row), pix[row * 240 + col])
+        frames[name] = {"x": 0, "y": y, "w": 240, "h": 10}
+    cross_check_views()
+
+
+def cross_check_views():
+    """Top-view occupancy against the union of the 20 slice cells. A mismatch is reported, not baked."""
+    for _name, pose, _y in STACK_POSES:
+        top = Image.open(VIEW_DIR / f"{pose}_top.png")
+        strip = Image.open(STACK_DIR / f"slices20-{pose}.png")
+        if top.size != (12, 10) or strip.size != (240, 10):
+            raise SystemExit(f"{pose} view/strip size {top.size} {strip.size}")
+        td = list(top.get_flattened_data())
+        sd = list(strip.get_flattened_data())
+        miss = 0
+        for row in range(10):
+            for col in range(12):
+                solid = 0
+                for i in range(20):
+                    if sd[row * 240 + i * 12 + col]:
+                        solid = 1
+                        break
+                if solid != (1 if td[row * 12 + col] else 0):
+                    miss += 1
+        print(f"cross-check {pose}: top vs slices20 union differs in {miss} px")
+
+
+def patch_shipped_stacks():
+    """Paste the strips into the shipped atlas. Does not redraw the rest of the sheet."""
+    import io
+    src = (OUT_DIR / "atlas-data.mjs").read_text()
+    raw = base64.b64decode(src.split("base64,", 1)[1].split('"', 1)[0])
+    atlas = Image.open(io.BytesIO(raw))
+    json_path = OUT_DIR / "neon-atlas.json"
+    frames = json.loads(json_path.read_text())["frames"]
+    paste_runner_stacks(atlas, frames)
+    buf = io.BytesIO()
+    atlas.save(buf, format="PNG", optimize=True, transparency=0)
+    data = base64.b64encode(buf.getvalue()).decode("ascii")
+    (OUT_DIR / "atlas-data.mjs").write_text('export const atlasUrl = "data:image/png;base64,' + data + '";\n')
+    with open(json_path, "w") as f:
+        json.dump({"tile": 16, "frames": frames}, f, indent=2)
+        f.write("\n")
+    print(f"Patched {OUT_DIR / 'atlas-data.mjs'}")
+
+
 def main():
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     atlas = make_indexed_canvas(1024, 1024)
@@ -1657,6 +1724,7 @@ def main():
     draw_signs(atlas, frames)
     draw_heist_pieces(atlas, frames)
     draw_runner(atlas, frames)
+    paste_runner_stacks(atlas, frames)
     draw_backdrop(atlas, frames)
 
     # The shipped atlas is art/atlas-data.mjs. This tool must not write a PNG under public/.
@@ -1682,4 +1750,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    if "--patch-stacks" in sys.argv:
+        patch_shipped_stacks()
+    else:
+        main()

@@ -27,6 +27,7 @@ let time = 0;
 const override = [null, null, null, null, null, null];
 const fade = [1, 1, 1, 1, 1, 1];
 let facing = 1;
+let head = 0;
 let faceWant = 1;
 let faceT = 1;
 let moving = false;
@@ -298,11 +299,44 @@ function frameUV(name, flip) {
   if (flip) { const t = u0; u0 = u1; u1 = t; }
   return [u0, v0, u1, v1];
 }
+function flatPose() {
+  return pose === "crouch" || pose === "hack" || pose === "spotted";
+}
 function runnerFrame() {
   if (pose === "idle") return "runner_idle";
-  if (pose === "crouch" || pose === "hack" || pose === "spotted") return "runner_" + pose;
-  if (pose === "run" || moving) return "runner_run_" + (Math.floor(time * 8) % 4);
+  if (flatPose()) return "runner_" + pose;
+  if (pose === "run" || moving) return "runner_run_" + (Math.floor(time * 8) % 2);
   return "runner_idle";
+}
+const STACK_N = 20;
+const STACK_STEP = 1.2;
+const stackSlots = Array.from({ length: STACK_N }, () => ({
+  x: 0, z: 0, y: 0, hx: 0, hz: 0, uv: [0, 0, 0, 0],
+  kind: 1, sign: 0, bid: -1, low: true, orient: 0,
+}));
+function stackKey() {
+  if (pose === "run" || (pose !== "idle" && moving)) return "runner_stack_run_" + (Math.floor(time * 8) % 2);
+  return "runner_stack_idle";
+}
+function pushStack(runner) {
+  const fr = world.frames[stackKey()];
+  const px = (TILE / 16) * RUNNER_SCALE;
+  const x = player.x * TILE;
+  const z = player.y * TILE;
+  for (let i = 0; i < STACK_N; i++) {
+    const s = stackSlots[i];
+    const x0 = fr.x + i * 12;
+    s.x = x;
+    s.z = z;
+    s.y = (i + 0.5) * STACK_STEP * px;
+    s.hx = 12 * px / 2;
+    s.hz = 10 * px / 2;
+    s.uv[0] = x0 / 1024;
+    s.uv[1] = 1 - (fr.y + 10) / 1024;
+    s.uv[2] = (x0 + 12) / 1024;
+    s.uv[3] = 1 - fr.y / 1024;
+    runner.push(s);
+  }
 }
 function scene() {
   fit();
@@ -325,6 +359,7 @@ function scene() {
   const runFr = world.frames[runName];
   for (const s of world.slices) {
     if (s.kind === 1) {
+      if (!flatPose()) continue;
       s.x = player.x * TILE;
       s.z = player.y * TILE;
       s.hx = runFr.w * (TILE / 16) / 2 * RUNNER_SCALE;
@@ -371,6 +406,7 @@ function scene() {
       rest.push(s);
     }
   }
+  if (!flatPose()) pushStack(runner);
   let nearD = 2;
   let outline = [0, 0, 0];
   let outlineOn = 0;
@@ -437,6 +473,7 @@ function scene() {
   return {
     vp, slices: runner.concat(rest), runnerCount: runner.length, runnerPaper: false,
     outline, outlineOn,
+    head,
     camXZ: [cam[0], cam[2]],
     runnerXZ: [player.x, player.y],
     frame: [runFr.x / 1024, 1 - (runFr.y + runFr.h) / 1024, (runFr.x + runFr.w) / 1024, 1 - runFr.y / 1024],
@@ -468,6 +505,7 @@ function step(dt) {
     moving = true;
     route = [];
     const [dx, dy] = viewDelta(wish.x, wish.y);
+    if (dx || dy) head = Math.atan2(dx, dy);
     if (Math.abs(dx) > 0.2) {
       const want = dx > 0 ? 1 : -1;
       if (want !== faceWant) { faceWant = want; faceT = 0; }
@@ -481,6 +519,7 @@ function step(dt) {
     const d = Math.hypot(dx, dy);
     const step = 3 * dt;
     moving = true;
+    if (dx || dy) head = Math.atan2(dx, dy);
     if (dx) facing = dx > 0 ? 1 : -1;
     if (d <= step) { player.x = tx; player.y = ty; route.shift(); }
     else { player.x += dx / d * step; player.y += dy / d * step; }
@@ -597,7 +636,7 @@ addEventListener("keyup", (e) => keys.delete(e.key.toLowerCase()));
 window.__test = {
   ready: () => ready,
   state: () => ({
-    player: { x: player.x, y: player.y, facing },
+    player: { x: player.x, y: player.y, facing, heading: head * 180 / Math.PI },
     tilt, yaw: wrap(yaw),
     slices: renderer.slices,
     drawCalls: renderer.drawCalls,
@@ -655,6 +694,7 @@ window.__test = {
   viewStep: (mx, my, dt = 0.3) => {
     attract = false;
     const [dx, dy] = viewDelta(mx, my);
+    if (dx || dy) head = Math.atan2(dx, dy);
     if (dx) facing = dx > 0 ? 1 : -1;
     const before = { x: player.x, y: player.y };
     tryMove(dx * 3 * dt, dy * 3 * dt);
