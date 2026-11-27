@@ -7,7 +7,9 @@
 //   and life 277,000 or fewer (printed per place); steady play writes no row, a gust or a flight 4 rows of 512 or fewer a frame;
 //   a lamp brightens with the lamplighter 3 m off and fades back once 8 m off; a flock lifts with the lamplighter 4 m off, flies off
 //   and is put away, and the bus hears life-stir; the hush near an awake foe and its return; reduced motion holds still; the beacon
-//   answers a spark pick, a hover and beacon-lit.
+//   answers a spark pick, a hover and beacon-lit. The Lamp-room (gloam-downs-hub "Decision 8"): its slots are its biome's colours; dust at
+//   its lamps, embers over its fires, the well's water bobbing, no crows and no gusts; no growth object is a lamp anchor; steady play
+//   writes no row; 1,200 dabs or fewer; reduced motion holds still.
 // GLOAM_WORLDS=0 skips the baked places (only the table checks run).
 // Run: node qa/lab/gloam-downs-life.test.mjs
 import assert from 'node:assert/strict';
@@ -38,7 +40,7 @@ function biomePalette(id) {
 }
 {
   const checked = [];
-  for (const id of PLACES) {
+  for (const id of [...PLACES, 'lamproom']) {
     const meta = JSON.parse(fs.readFileSync(`${W}${id}.json`, 'utf8')), bio = biomePalette(id), L = LIFE[id];
     for (const [use, u] of Object.entries(L)) {
       if (!u || !u.name) continue;
@@ -50,7 +52,7 @@ function biomePalette(id) {
         checked.push(`${id}.${use}.${s}`);
       }
     }
-    for (const s of L.tuftOn) assert(s < 32, `${id}: tuftOn slot ${s} is not the place's own`);
+    for (const s of L.tuftOn || []) assert(s < 32, `${id}: tuftOn slot ${s} is not the place's own`);
   }
   assert.deepEqual(FIRE, [34, 35, 36, 37]);
   assert(!Object.values(ANSWER).some(s => FIRE.includes(s)), 'an answer in a fire slot');
@@ -319,5 +321,26 @@ pass('the budget: life 1,200 splats or fewer, the place with its pool, the spark
     out[id] = { med: +medT.toFixed(3), p99: +p99.toFixed(3), rows: rowsMax, writing };
   }
   pass('life\'s own time over 3,600 draws with gusts, a flight and the hush: median 0.1 ms or less, 99th percentile 1 ms or less, 4 rows or fewer', out);
+}
+{ // the Lamp-room: dust in the torch light, embers, the well's water, no crows and no gusts; steady play writes no row; reduced motion
+  const L = place('lamproom'), { meta, world, life, walk } = L, s = life.test(), all = life.test({ all: true }).all;
+  assert(s.anchors >= 6, `lamproom: ${s.anchors} lamp anchors`);
+  assert(s.uses.mote >= 40 && s.uses.ember >= 6, `lamproom: ${JSON.stringify(s.uses)}`);
+  assert(!s.uses.crow && !s.uses.tuft, 'lamproom: crows or tufts in the hall');
+  const well = meta.stations.find(x => x.id === 'well'), spots = all.filter(d => d.use === 'spot');
+  assert(spots.length >= 5 && spots.every(d => Math.hypot(d.x - well.obj[0], d.z - well.obj[1]) <= 0.45), 'lamproom: the well\'s water');
+  // no lamp anchor stands on a growth object (the save puts those out): every pattern lamp on the kiln's hood glows, and none has a halo
+  const hooks = meta.grow.filter(g => /^pattern:.*:lit$/.test(g.id)).map(g => [world.data[g.first * 16], world.data[g.first * 16 + 1], world.data[g.first * 16 + 2]]);
+  for (const h of life.test().halos) assert(!hooks.some(p => Math.hypot(p[0] - h.x, p[1] - h.y, p[2] - h.z) < 0.15), 'lamproom: a halo on a growth lamp');
+  assert(life.count <= MAX, `lamproom: ${life.count} life dabs`);
+  const fire = FIRE.map(c => pk(meta.pal[c]));
+  assert(!all.some(d => d.d > 0 && fire.includes(d.col)), 'lamproom: a fire slot');
+  const body = stand(walk, meta.spawn.p[0], meta.spawn.p[2]);
+  let r = run(L, 0, 0.2, body);
+  const steady = run(L, r.t, 25, { x: 0, y: 0, z: 0.5 });
+  assert.equal(life.test().gusts, 0, 'lamproom: a gust');
+  const still = place('lamproom', { still: true }).life.test();
+  assert(!still.kinds[K.bob] && !still.kinds[K.rise] && !still.kinds[K.wander], `lamproom with reduced motion: ${JSON.stringify(still.kinds)}`);
+  pass('the Lamp-room: dust at its lamps, embers, the well\'s water, no crows, no gusts; reduced motion holds still', { anchors: s.anchors, uses: s.uses, count: life.count, rows: steady.rowsMax });
 }
 console.log(`PASS qa/lab/gloam-downs-life.test.mjs: ${n} checks`);

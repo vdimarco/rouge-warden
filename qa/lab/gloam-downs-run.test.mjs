@@ -1004,8 +1004,12 @@ function runFor(R, count, inp = {}, camYaw = 0) {
   const pad = (buttons = [], axes = [0, 0, 0, 0]) => ({ connected: true, axes, buttons: Array.from({ length: 17 }, (_, i) => ({ pressed: buttons.includes(i), value: buttons.includes(i) ? 1 : 0 })) });
   const two = readPads([pad([PAD.START]), pad([PAD.START])], true);
   assert(two.pause && two.down.size === 1, 'two pads holding Start make one press');
-  const run = readPads([pad([PAD.X, PAD.B, PAD.Y, PAD.RB])], true);
-  assert(run.attack && run.roll && run.heal && run.face && !run.slow);
+  const run = readPads([pad([PAD.X, PAD.B, PAD.Y, PAD.R3])], true);
+  assert(run.attack && run.roll && run.heal && run.face && !run.slow && !run.off);
+  // gloam-downs-hub: RB is the off-hand in a run, and R3 (the right stick's press) faces the foe; A is also Use and Back the quick list
+  const off = readPads([pad([PAD.RB, PAD.A, PAD.BACK])], true);
+  assert(off.off && !off.face && off.use && off.list, 'RB is the off-hand, not the face');
+  assert(!readPads([pad([PAD.RB])], false).off, 'no off-hand outside a run');
   assert(readPads([pad([PAD.RT])], true).attack && readPads([pad([PAD.LT])], true).ab2 && !readPads([pad([PAD.LT])], true).roll && readPads([pad([PAD.BACK])], true).pause);
   const wander = readPads([pad([PAD.X, PAD.RT, PAD.B, PAD.LT, PAD.Y])], false);
   assert(wander.slow && !wander.attack && !wander.roll && !wander.heal, 'in Wander X walks, and RT, B, LT and Y do nothing');

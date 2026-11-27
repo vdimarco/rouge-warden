@@ -499,6 +499,56 @@
   .panel p.by[hidden] { display: none; }
   .panel#winCard .box { border-top-color: #e8c35a; box-shadow: 0 16px 50px #000, inset 0 22px 30px -20px rgba(255, 215, 122, 0.4); }
   .panel#winCard h2 { color: #ffd77a; }
+  /* the Lamp-room as a place (gloam-downs-hub): the use prompt at a station, the List and Off-hand buttons, and the station cards. A
+     station card shows only its own parts (main.js marks the others .stOff by their data-st). Anchored beside the station at 800x600
+     and wider, a bottom sheet on an upright phone and a side sheet on a landscape phone (cards.js anchor) */
+  .useprompt { position: fixed; left: 50%; bottom: calc(var(--sab) + 72px); transform: translateX(-50%); z-index: 9; display: flex; align-items: center; gap: 8px; min-height: 48px;
+    box-sizing: border-box; padding: 6px 14px; border-radius: 12px; border: 1px solid var(--ember); background: rgba(10, 9, 14, 0.9); color: var(--bone); font: 600 15px/1.2 var(--body); cursor: pointer; white-space: nowrap; max-width: calc(100vw - 32px); }
+  .useprompt[hidden] { display: none; }
+  .useprompt b { font: 700 15px/1.1 var(--title); color: #f2d7a6; overflow: hidden; text-overflow: ellipsis; }
+  .useprompt kbd { font: 700 14px/1 ui-monospace, monospace; padding: 3px 6px; border-radius: 5px; border: 1px solid var(--edge); color: #ffe2bd; }
+  .useprompt kbd:empty { display: none; }
+  body.touchUse .useprompt { left: 12px; transform: none; bottom: calc(var(--sab) + 240px); max-width: calc(100vw - 24px); }
+  /* a landscape phone: the HUD's lines reach low, so the prompt sits at the bottom left, clear of the touch buttons on the right */
+  @media (orientation: landscape) and (max-height: 430px) { body.touchUse .useprompt { bottom: calc(var(--sab) + 12px); left: calc(12px + env(safe-area-inset-left, 0px)); } }
+  body:has(.panel:not([hidden])) .useprompt, body:has(#title:not([hidden])) .useprompt { visibility: hidden; }
+  .act.off { width: 48px; height: 48px; font-size: 10px; right: calc(174px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 154px); background: rgba(14, 30, 26, 0.78); border-color: #5fa874; color: #d4f6dc; }
+  .act.off i { position: absolute; inset: 0; border-radius: 50%; pointer-events: none; }
+  .stOff { display: none !important; }
+  #lamp .lampX { position: absolute; top: 8px; right: 8px; z-index: 2; width: 44px; height: 44px; padding: 0; font-size: 22px; }
+  #lamp .lampX[hidden], #shrineTabs[hidden] { display: none; }
+  #lamp .box { position: relative; }
+  #lamp[data-station] h2 { padding-right: 48px; }
+  .shrineTabs { margin: 4px 0 6px; }
+  .shrineTabs button[aria-selected="true"] { background: #5a2214; border-color: var(--ember); color: #ffe2bd; }
+  .grows li { min-height: 44px; border-left: 4px solid var(--hue, var(--edge)); }
+  .grows li button { grid-row: 1; }
+  .grows li button[aria-pressed="true"] { background: #5a2214; border-color: var(--ember); color: #ffe2bd; }
+  .grows li em { grid-column: 1; font: 500 14px/1.25 var(--body); font-style: normal; color: #e0b98a; }
+  /* in a tile the category mark sits over the name, and the cost spans the tile, so the glass's column stays as narrow as the glass */
+  .tiles .tile > .catw { grid-column: 2; justify-self: start; }
+  .tiles .tile > span.cost { grid-column: 1 / -1; }
+  .catw { display: inline-block; margin-right: 6px; font: 700 11px/1 var(--title); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ash); white-space: nowrap; }
+  .catw::before { content: ''; display: inline-block; width: 9px; height: 9px; margin-right: 4px; background: var(--hue, var(--ash)); vertical-align: -1px; }
+  .catw.triangle::before { clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+  .catw.diamond::before { clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+  .catw[data-pips="1"]::after { content: ' •'; color: #e8c35a; }
+  .catw[data-pips="2"]::after { content: ' ••'; color: #e8c35a; }
+  .wellRecap { white-space: pre-line; }
+  #lamp.anchored { background: transparent; pointer-events: none; padding: 0; display: block; }
+  #lamp.anchored .box { pointer-events: auto; position: fixed; margin: 0; }
+  #lamp.anchored.sheet .box { left: 8px; right: 8px; width: auto; bottom: calc(var(--sab) + 8px); top: auto; max-height: 55dvh; }
+  #lamp.anchored.side .box { right: calc(8px + env(safe-area-inset-right, 0px)); left: auto; top: calc(var(--sat) + 60px); bottom: calc(var(--sab) + 8px); width: 45vw; max-height: none; }
+  /* the side sheet stands where the tools are: they hide while it is open (its own close button is there) */
+  body:has(#lamp.anchored.side:not([hidden])) .tools { visibility: hidden; }
+  #lamp.anchored.beside .box { width: min(360px, calc(100vw - 32px)); max-height: calc(100dvh - var(--sat) - var(--sab) - 76px); }
+  /* a card beside its station or in a side sheet is narrow: two tiles a row, whatever the screen's width */
+  #lamp.anchored.beside ul.tiles, #lamp.anchored.side ul.tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #lamp.anchored #lampRow { position: static; margin: 8px 0 0; padding: 0; border: 0; background: none; }
+  #lampRow button[hidden] { display: none; }
+  #lamp .empty { color: var(--ash); font-size: 14px; }
+  #lamp .empty[hidden] { display: none; }
+  .hitnum { position: fixed; z-index: 9; transform: translate(-50%, 0); pointer-events: none; font: 800 18px/1 var(--title); color: #ffd77a; text-shadow: 0 2px 0 #3a0f0c; }
   /* the title stands alone over the place: the HUD, the tools and the touch buttons hide under it */
   body:has(#title:not([hidden])) :is(.hud, .tools, .act, .jump, .stick, .mousehint, .toast, .arrive) { visibility: hidden; }
   .lamp:not(.lit):not(:focus):not(.on) .flame { opacity: 0.1; }
@@ -553,6 +603,7 @@
 <div class="tools" id="tools" hidden>
   <button type="button" id="bLook" title="Turn the view behind the lamplighter (R)">Look</button>
   <button type="button" id="bMap" title="The places (M)">Map</button>
+  <button type="button" id="bList" title="Every station of the Lamp-room in one list (Tab)" hidden>List</button>
 </div>
 <button type="button" class="jump" id="bJump" hidden>JUMP</button>
 <button type="button" class="act attack" id="bAttack" hidden aria-label="Attack">ATTACK</button>
@@ -560,6 +611,8 @@
 <button type="button" class="act heal" id="bHeal" hidden aria-label="Heal">HEAL<b id="healN">2</b></button>
 <button type="button" class="act ab ab1" id="bAb1" hidden aria-label="Ability 1"><i></i><b></b></button>
 <button type="button" class="act ab ab2" id="bAb2" hidden aria-label="Ability 2"><i></i><b></b></button>
+<button type="button" class="act off" id="bOff" hidden aria-label="Off-hand"><i></i><b>OFF</b></button>
+<button type="button" class="useprompt" id="bUse" hidden><b id="useName">The kiln</b><kbd id="useKey">E</kbd><span>Use</span></button>
 <div class="stick" id="stick" hidden><i></i></div>
 <p class="mousehint" id="mouseHint" hidden>Click to look with the mouse</p>
 
@@ -654,18 +707,23 @@
 </div></div>
 
 <div class="panel" id="lamp" hidden><div class="box" role="dialog" aria-labelledby="lampT">
+  <button type="button" class="lampX" id="bLampClose" aria-label="Close" hidden>×</button>
   <h2 id="lampT">The Lamp-room</h2>
-  <p id="lampLine">Banked: 0 glim. What you buy here lasts for every run.</p>
+  <div class="row shrineTabs" id="shrineTabs" role="tablist" aria-label="The shrine" hidden></div>
+  <p id="lampLine" data-st="well map shelf kiln window wick blades offhand post bell">Banked: 0 glim. What you buy here lasts for every run.</p>
   <p class="colours" id="colours" hidden></p>
-  <h3 class="shelf" id="waresT">Wares</h3>
-  <ul class="ups tiles" id="ups" aria-labelledby="waresT"></ul>
-  <h3 class="shelf" id="patternsT">Patterns</h3><ul class="ups tiles" id="patterns" aria-labelledby="patternsT"></ul>
-  <h3 class="unlocksT" id="unlocksT">Unlocks</h3>
-  <ul class="ups" id="unlocks" aria-labelledby="unlocksT"></ul>
-  <h3 class="shelf" id="panesT">Panes</h3><div class="panes" id="paneRow" role="group" aria-labelledby="panesT"></div>
-  <p class="emberLine" id="emberLine" hidden></p>
-  <div class="row" id="emberRow" role="group" aria-label="Ember level" hidden></div>
-  <div class="row" id="lampRow"><button type="button" class="go" id="bLampBack" hidden>Back to the beacon</button><button type="button" class="go" id="bLampBegin" hidden>Begin the run</button><button type="button" class="go" id="bLampGoOn" hidden>Go on with the run</button><button type="button" id="bLampWander" hidden>Wander</button><button type="button" id="bLampToWander" hidden>Back to Wander</button><button type="button" id="bLampExplore" hidden>Explore</button></div>
+  <section data-st="well" class="lsec" id="wellSec"><h3 class="shelf">The last run</h3><p class="wellRecap" id="wellRecap"></p></section>
+  <section data-st="blades" class="lsec"><h3 class="shelf" id="bladesT">Blades</h3><ul class="ups grows" id="bladeRows" aria-labelledby="bladesT"></ul></section>
+  <section data-st="offhand" class="lsec"><h3 class="shelf" id="offT">Off-hands</h3><ul class="ups grows" id="offRows" aria-labelledby="offT"></ul></section>
+  <section data-st="post" class="lsec"><h3 class="shelf" id="postT">Abilities</h3><p class="postLine" id="postLine"></p><ul class="ups grows" id="postRows" aria-labelledby="postT"></ul></section>
+  <section data-st="window" class="lsec"><h3 class="shelf" id="panesT">Panes</h3><div class="panes" id="paneRow" role="group" aria-labelledby="panesT"></div></section>
+  <section data-st="kiln" class="lsec"><p class="empty" id="kilnEmpty" hidden>No pattern found yet. A pattern lamp drops in a run: carry it to a beacon, and kindle it here.</p><h3 class="shelf" id="patternsT">Patterns</h3><ul class="ups tiles" id="patterns" aria-labelledby="patternsT"></ul></section>
+  <section data-st="shelf" class="lsec"><h3 class="shelf" id="waresT">Wares</h3><ul class="ups tiles" id="ups" aria-labelledby="waresT"></ul></section>
+  <section data-st="wick" class="lsec"><h3 class="unlocksT" id="unlocksT">Unlocks</h3><ul class="ups" id="unlocks" aria-labelledby="unlocksT"></ul></section>
+  <section data-st="trophy" class="lsec"><h3 class="shelf" id="keysT">Keys</h3><ul class="ups grows" id="keyRows" aria-labelledby="keysT"></ul></section>
+  <section data-st="bell" class="lsec"><h3 class="shelf" id="emberT">Ember</h3><p class="emberLine" id="emberLine" hidden></p>
+  <div class="row" id="emberRow" role="group" aria-label="Ember level" hidden></div></section>
+  <div class="row" id="lampRow" data-st="map well shelf kiln window wick blades offhand post trophy bell"><button type="button" class="go" id="bLampBack" hidden>Back to the beacon</button><button type="button" class="go" id="bLampBegin" hidden>Begin the run</button><button type="button" class="go" id="bLampGoOn" hidden>Go on with the run</button><button type="button" id="bLampWander" hidden>Wander</button><button type="button" id="bLampToWander" hidden>Back to Wander</button><button type="button" id="bLampExplore" hidden>Explore</button><button type="button" id="bLampDone" hidden>Close</button></div>
 </div></div>
 
 <div class="panel" id="winCard" hidden><div class="box" role="dialog" aria-labelledby="winT">

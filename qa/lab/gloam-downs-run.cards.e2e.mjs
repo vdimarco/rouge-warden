@@ -42,6 +42,12 @@ async function open(ctxOpts, query, init) {
 }
 const ready = (page, mode) => page.waitForFunction(m => window.__gloam?.ready() && (!m || window.__gloam.run().mode === m), mode, { timeout: 120000 });
 const G = (page, fn, arg) => page.evaluate(fn, arg);
+// the Lamp-room is a hall now (gloam-downs-hub): wait for it, then open its quick list (the #lamp card with every station's rows)
+async function toQuick(page, opener) {
+  await page.waitForFunction(() => window.__gloam?.ready() && window.__gloam.state().place === 'lamproom' && window.__gloam.run().mode === 'play', null, { timeout: 120000 });
+  await opener();
+  await ready(page, 'station');
+}
 const run = page => G(page, () => window.__gloam.run());
 const tick = (page, sec, held = {}) => G(page, ([s, h]) => window.__gloam.tick(s, h), [sec, held]);
 /* the Gaol's beacon lights only once its keepers are out: put out the keep's three Snuffers (G5). Their 9 glim lie as motes far from the
@@ -301,9 +307,10 @@ try {
     await shot(page, 'keys-summary-1280x720');
     pass('End the run with keys, a reload 0.5 s into the fade, and the summary: "II · The Crow Wall", glim kept 2 and lost 18, 2 banked', { sum });
 
-    // the summary opens the Lamp-room over the Gaol; with 49 banked (set here), Mantle bought with the focus kept, Flask off with "11 more glim"
+    // the summary walks into the Lamp-room (gloam-downs-hub), and Tab opens its quick list; with 49 banked (set here), Mantle bought with
+    // the focus kept, Flask off with "11 more glim"
     await page.keyboard.press('Enter');
-    await ready(page, 'lamp');
+    await toQuick(page, () => page.keyboard.press('Tab'));
     await G(page, () => window.__gloam.set({ bank: 49 }));
     assert.equal((await stored(page)).ended, null, 'closing the summary clears the ended run');
     assert.deepEqual(await lampBtns(), ['bLampBegin', 'bLampExplore'], 'Explore beside Begin the run until Wander opens');
@@ -314,15 +321,18 @@ try {
       ['Mantle 1 · +15 health · 40 glim', 'Buy', 'false'], ['Flask 1 · +1 flask · 60 glim', '11 more glim', 'true'], ['Edge 1 · +12% blade damage · 50 glim', '1 more glim', 'true'],
       ['Draught 1 · heal 45% · 45 glim', 'Buy', 'false'], ['Ash pocket 1 · keep 18% of glim at a death · 40 glim', 'Buy', 'false'],
       ['Belt 1 · a choice of two start abilities · 90 glim', '41 more glim', 'true'], ['Keen eye 1 · better drops · 70 glim', '21 more glim', 'true'],
-      ['Lantern panes 1 · 2 pane slots · 300 glim', '251 more glim', 'true'], ['First spark 1 · 1 spark pick at the start · 120 glim', '71 more glim', 'true']
+      ['Lantern panes 1 · 2 pane slots · 300 glim', '251 more glim', 'true'], ['First spark 1 · 1 spark pick at the start · 120 glim', '71 more glim', 'true'],
+      ['Whetstone 1 · 4% of blade hits are sure cuts · 90 glim', '41 more glim', 'true'], ['Horn lamp 1 · shells 20% bigger · 120 glim', '71 more glim', 'true']
     ]);
     assert.match(await text(page, '#lampLine'), /Banked: 49 glim/);
     assert.deepEqual(await faults(page, 'lamp'), []);
     await shot(page, 'keys-lamp-1280x720');
     await page.keyboard.press('Tab');
     assert.equal(await active(page), 'bLampExplore', 'Tab goes from Begin the run to Explore');
+    // the quick list's first button is its close button, then the blade rack's rows (gloam-downs-hub): Tab wraps there
     await page.keyboard.press('Tab');
-    assert.equal(await G(page, () => document.activeElement.closest('li')?.dataset.up), 'mantle', 'Tab wraps to the first Buy');
+    assert.equal(await active(page), 'bLampClose', 'Tab wraps to the close button');
+    await page.focus('#ups li[data-up="mantle"] button');
     await page.keyboard.press(' ');
     let s = await stored(page);
     assert.deepEqual([s.bank, s.up.mantle], [9, 1], 'the buy is stored at once');
@@ -331,6 +341,7 @@ try {
     await page.keyboard.press('Enter');
     await page.keyboard.press(' ');
     assert.equal((await stored(page)).bank, 9, 'a Buy button that is off does nothing, on Enter or Space');
+    await page.focus('#bLampClose');
     await page.keyboard.press('Shift+Tab');
     assert.equal(await active(page), 'bLampExplore', 'Shift+Tab wraps back to Explore');
     await page.keyboard.press('Shift+Tab');
@@ -386,12 +397,18 @@ try {
     await tap(page, PAD.A);
     assert.equal((await run(page)).mode, 'lamp');
     assert.equal(await active(page), 'bLampBack');
-    // the left stick past half moves the focus one button, as the d-pad does
-    await G(page, () => { window.__pad.axes[1] = 0.8; });
-    await tick(page, 0.05, 'live');
-    await G(page, () => { window.__pad.axes[1] = 0; });
-    await tick(page, 0.05, 'live');
-    assert.equal(await G(page, () => document.activeElement.closest('li')?.dataset.up), 'mantle', "the left stick reaches Mantle's Buy");
+    // the left stick past half moves the focus one button, as the d-pad does; at the shrine (gloam-downs-hub) its tabs and the close
+    // button come before the wares, so a few moves reach Mantle's Buy
+    const seen = [];
+    for (let k = 0; k < 8 && (await G(page, () => document.activeElement.closest('li')?.dataset.up)) !== 'mantle'; k++) {
+      await G(page, () => { window.__pad.axes[1] = 0.8; });
+      await tick(page, 0.05, 'live');
+      await G(page, () => { window.__pad.axes[1] = 0; });
+      await tick(page, 0.05, 'live');
+      seen.push(await active(page));
+    }
+    assert.equal(new Set(seen).size, seen.length, `each stick move takes the focus to a new button: ${seen.join(', ')}`);
+    assert.equal(await G(page, () => document.activeElement.closest('li')?.dataset.up), 'mantle', `the left stick reaches Mantle's Buy: ${seen.join(', ')}`);
     await tap(page, PAD.A);
     r = await run(page);
     assert.deepEqual([r.carried, r.bank, r.hp, r.max], [20, 0, 115, 115], 'the glim carried pays first: 20 left, and Mantle works at once');
@@ -506,7 +523,7 @@ try {
         assert((await run(page)).mode === 'ended' && (await page.isVisible('#summary')), 'a tap beside the summary does nothing');
       }
       await G(page, () => document.getElementById('bSumLamp').click());
-      await ready(page, 'lamp');
+      await toQuick(page, () => G(page, () => document.getElementById('bList').click()));
       await each(page, list, `${label}-lamp`, 'lamp');
       assert.deepEqual(errors, []);
       pass(`every card fits at ${list.map(s => s.join('x')).join(', ')} (${label}), with the widest HUD and the longest toasts`);

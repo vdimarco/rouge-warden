@@ -58,6 +58,14 @@ async function open(ctxOpts, query, init) {
   return { ctx, page, errors };
 }
 const ready = (page, mode) => page.waitForFunction(m => window.__gloam?.ready() && (!m || window.__gloam.run()?.mode === m || window.__gloam.state().mode === m), mode, { timeout: 120000 });
+/* the title's Lamp-room walks into the hall (gloam-downs-hub); its quick list is the #lamp card with every station's rows. This opens
+   the hall from the title and then the quick list with the List tool */
+async function titleLamp(page) {
+  await G(page, () => document.getElementById('bTitleLamp').click());
+  await page.waitForFunction(() => window.__gloam?.ready() && window.__gloam.state().place === 'lamproom' && window.__gloam.run().mode === 'play', null, { timeout: 120000 });
+  await G(page, () => document.getElementById('bList').click());
+  await ready(page, 'station');
+}
 const G = (page, fn, arg) => page.evaluate(fn, arg);
 const run = page => G(page, () => window.__gloam.run());
 const tick = (page, sec, held = {}) => G(page, ([s, h]) => window.__gloam.tick(s, h), [sec, held]);
@@ -276,7 +284,7 @@ try {
     const columns = {};
     for (const [w, h, opts, want] of [[390, 844, TOUCH, 2], [800, 600, {}, 3], [1280, 720, {}, 4]]) {
       const { ctx, page, errors } = await open({ viewport: { width: w, height: h }, ...opts }, '?run&test&seed=7&title', RETURNING({ up: { mantle: 2 } }));
-      await G(page, () => document.getElementById('bTitleLamp').click());
+      await titleLamp(page);
       assert(await page.isVisible('#lamp'));
       const t = await G(page, () => {
         const li = document.querySelector('#ups li[data-up="mantle"]'), g = li.querySelector('.glass'), f = li.querySelector('.fill');
@@ -288,7 +296,10 @@ try {
       assert.equal(t.text, 'Mantle 2 of 8');
       assert(Math.abs(t.fill - 0.25) < 0.02, `the glass is filled ${t.fill}`);
       assert.equal(t.row, want, `${t.row} columns at ${w}x${h}`);
-      assert.deepEqual(t.shelves.slice(0, 1), ['Wares']);
+      // the quick list's headings by category (gloam-downs-hub), after the well's last run
+      // (a heading with no rows, Patterns with none found, hides)
+      const ORDER_H = ['Blades', 'Off-hands', 'Abilities', 'Panes', 'Patterns', 'Wares', 'Unlocks', 'Keys', 'Ember'], heads = t.shelves.filter(x => x !== 'The last run');
+      assert(heads.includes('Wares') && heads.every((x, i) => ORDER_H.includes(x) && (i === 0 || ORDER_H.indexOf(heads[i - 1]) < ORDER_H.indexOf(x))), heads.join(', '));
       columns[`${w}x${h}`] = t.row;
       await shot(page, `lamp-${w}x${h}`);
       assert.deepEqual(errors, []);
@@ -297,7 +308,7 @@ try {
     pass('Mantle 2 reads "Mantle 2 of 8" with its glass filled 25%; the ware tiles stand in 2, 3 and 4 columns', columns);
     { // a buy: Mantle 1 for 40 with 75 banked
       const { ctx, page, errors } = await open({ viewport: { width: 1280, height: 720 } }, '?run&test&seed=7&title', RETURNING({ patterns: ['rime'], bank: 75 }));
-      await G(page, () => document.getElementById('bTitleLamp').click());
+      await titleLamp(page);
       await settle(page);
       await page.focus('#ups li[data-up="mantle"] button');
       const from = (await cues(page)).length;
@@ -406,9 +417,11 @@ try {
         await check(page, 'runHelp', 'help');
         await G(page, () => document.getElementById('bHelpBack').click());
         assert(await page.isVisible('#title'), `Back on How to play goes to the title at ${label}`);
-        await G(page, () => document.getElementById('bTitleLamp').click());
+        await titleLamp(page);
         await check(page, 'lamp', 'lamp');
         await G(page, () => document.getElementById('bLampBegin').click());
+        // from the hall the run's first place loads
+        await page.waitForFunction(() => window.__gloam?.ready() && window.__gloam.state().place === 'gaol', null, { timeout: 120000 });
         await G(page, () => { const r = window.__gloam.run(); if (r.abilityOffer) document.querySelector('#wicks button').click(); });
         await toBeacon(page, 120);
         await check(page, 'beaconCard', 'beacon-wicks');

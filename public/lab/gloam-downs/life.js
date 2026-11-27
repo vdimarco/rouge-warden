@@ -71,6 +71,14 @@ export const LIFE = {
     fall: { name: 'earth', slots: [19], n: 110, kind: K.fall, rg: [2.6, 3.6], sp: [0.2, 0.35], s: 0.022 }, // ash
     rag: { name: 'rag', slots: [30, 31], n: 14 },
     crow: { name: 'ink', slots: [10], flocks: 1 }
+  },
+  /* the Lamp-room (gloam-downs-hub design.md "Decision 8"): dust that twinkles in the torch light, embers over the fires, a slow bob on
+     the well's water, and the shelf's lamps that brighten as the lamplighter passes (the halos every lamp has). No crows, no gusts */
+  lamproom: {
+    mote: { name: 'stone', slots: [10, 11], n: 70, glow: true, at: 'lamp', d: 1.3 },
+    ember: { slots: [EMBER], per: 2 },
+    spot: { name: 'water', slots: [23], n: 7, station: 'well', y: 0.6, r: 0.4 },
+    gust: false
   }
 };
 
@@ -94,7 +102,7 @@ export function makeLife(world, meta, { walk, still = false, rows = new Set(), o
   const nearestSlot = col => nearestOf(col, pal.map((_, i) => i));
 
   /* ---------------- where life goes, from the place's own data ---------------- */
-  const skip = [[meta.bones.first, meta.bones.end], ...meta.beacon.fire, ...meta.wisps.map(w => w.ids)];
+  const skip = [[meta.bones.first, meta.bones.end], ...meta.beacon.fire, ...meta.wisps.map(w => w.ids), ...(meta.grow || []).map(g => [g.first, g.first + g.n])];
   const skipped = i => skip.some(([a, b]) => i >= a && i < b);
   // the lamp anchors: clusters (0.6 m) of the baked rising embers and glows
   const anchors = [];
@@ -251,6 +259,14 @@ export function makeLife(world, meta, { walk, still = false, rows = new Set(), o
       // with reduced motion a leaf that would fall lies on the ground
       if (still) add({ use: 'fall', x, y: y + 0.02, z, s: L.fall.s, sy: L.fall.s * 0.3, d: 2, ci: pick(fallSlots), kind: K.still });
       else add({ use: 'fall', x, y: y + rg + 0.04, z, s: L.fall.s, d: long ? 1.8 : 2.2, ci: pick(fallSlots), kind: L.fall.kind, ph: rnd(0, 1), sp: rnd(...L.fall.sp), rg, ex: long ? 0 : rnd(0.15, 0.3) });
+    }
+  }
+  // a few dabs that bob in one spot of a station (the well's water)
+  if (L.spot) {
+    const st = (meta.stations || []).find(x => x.id === L.spot.station);
+    if (st) for (let t = 0; t < L.spot.n; t++) {
+      const a = rnd(0, TAU), r = rnd(0, L.spot.r);
+      add({ use: 'spot', x: st.obj[0] + Math.sin(a) * r, y: L.spot.y, z: st.obj[1] + Math.cos(a) * r, s: 0.035, sy: 0.012, d: 1.4, ci: pick(L.spot.slots), kind: mot(K.bob), ph: rnd(0, TAU), sp: rnd(0.4, 0.7), rg: 0.012, flags: ND + EM });
     }
   }
   if (L.rag && tops.length) for (let t = 0; t < L.rag.n; t++) {
@@ -448,7 +464,7 @@ export function makeLife(world, meta, { walk, still = false, rows = new Set(), o
       }
     }
     // a gust: the tufts sway twice as far, then ease back, and a few leaves shed; one write a frame while it lasts
-    if (t >= nextGust) {
+    if (L.gust !== false && t >= nextGust) {
       const k = rnd(0.6, 1);
       gust = { t0: t, k, f: 1 };
       gusts++;

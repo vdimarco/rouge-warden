@@ -461,6 +461,11 @@ if (want('beds')) {
     await render(`music-${id}`, { len: 30, acts: theme }, 'the explore music alone');
     await render(`bedmusic-${id}`, { len: 30, bed: id, acts: [...theme, ...acts] }, 'the explore music with the bed');
   }
+  // the Lamp-room's bed (gloam-downs-hub "Decision 8") under the Lamp-room's theme, as the hall plays them
+  const lampTheme = [{ t: 0, score: 'lamp', args: [] }];
+  await render('bed-lamproom', { len: 30, bed: 'lamproom', acts: [] }, 'the hall\'s bed alone: room tone, drips and the kiln');
+  await render('music-lamproom', { len: 30, acts: lampTheme }, 'the Lamp-room theme alone');
+  await render('bedmusic-lamproom', { len: 30, bed: 'lamproom', acts: lampTheme }, 'the Lamp-room theme with the hall\'s bed');
 }
 await browser.close();
 server?.kill();
@@ -480,7 +485,7 @@ const need = (ok, what) => { if (!ok) fails.push(what); };
 for (const [k, v] of Object.entries(all)) need(v.TP <= -1, `${k}: true peak ${v.TP} dBTP over -1`);
 // each bed alone 10 LU or more under its place's explore music (and over -52 LUFS, so it is heard with the music off), and the music
 // moved by 0.5 LU or less with it
-for (const id of info.places) {
+for (const id of [...info.places, 'lamproom']) {
   if (!all[`bed-${id}`]) continue;
   need(all[`music-${id}`].I - all[`bed-${id}`].I >= 9.5 && all[`bed-${id}`].I >= -52, `bed-${id}: ${all[`bed-${id}`].I} LUFS, the music ${all[`music-${id}`].I}: not 10 LU under it, or under -52`);
   need(Math.abs(all[`bedmusic-${id}`].I - all[`music-${id}`].I) <= 0.5, `the bed moves ${id}'s music by ${(all[`bedmusic-${id}`].I - all[`music-${id}`].I).toFixed(2)} LU, over 0.5`);

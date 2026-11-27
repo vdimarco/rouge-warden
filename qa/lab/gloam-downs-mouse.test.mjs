@@ -85,9 +85,10 @@ const eyeOf = v => { const cp = Math.cos(v.pitch); return [v.target[0] + v.dist 
   assert.equal(T(0, { run: false, locked: false, lockable: false }), 'jump');
   assert.equal(T(2, { run: true, locked: false, lockable: false }), 'look');
   assert.equal(T(2, { run: false, locked: false, lockable: false }), 'look');
-  // the middle button does nothing; the side buttons are the two abilities in a run (taken or free) and nothing in the explorer; no
-  // button turns the view while the mouse is taken
-  assert.equal(T(1, { run: true, locked: true }), null);
+  // the middle button is the off-hand in a run (gloam-downs-hub) and nothing in the explorer; the side buttons are the two abilities in
+  // a run (taken or free) and nothing in the explorer; no button turns the view while the mouse is taken
+  assert.equal(T(1, { run: true, locked: true }), 'off');
+  assert.equal(T(1, { run: false, locked: true }), null);
   for (const locked of [true, false]) assert.deepEqual([T(3, { run: true, locked }), T(4, { run: true, locked })], ['ab1', 'ab2']);
   for (const b of [3, 4]) assert.equal(T(b, { run: false, locked: true }), null);
   for (const b of [0, 1, 2, 3, 4]) assert.notEqual(T(b, { run: true, locked: true }), 'look');

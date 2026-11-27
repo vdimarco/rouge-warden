@@ -1,6 +1,7 @@
 // Bake the Gloam Downs places into public/lab/gloam-downs/worlds/.
 //   node bake.mjs                 the five places of the downs (ORDER)
-//   node bake.mjs lattice         the three places of the Gilt Lattice (LATTICE);  node bake.mjs all  all eight
+//   node bake.mjs lattice         the three places of the Gilt Lattice (LATTICE);  node bake.mjs all  all eight, and the hall
+//   node bake.mjs lamproom        the Lamp-room, the hall between runs (HUB)
 //   node bake.mjs gaol fen        only these
 //   node bake.mjs gaol --preview  also draw CPU previews (from the start point and from above) into --out (default ./preview)
 //   --out DIR  --w 640 --h 360
@@ -13,7 +14,7 @@ import zlib from 'node:zlib';
 import { performance } from 'node:perf_hooks';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
-import { checkPlace } from './lib/check.mjs';
+import { checkPlace, checkHub } from './lib/check.mjs';
 import { closeWalk } from './lib/traps.mjs';
 import { lib, K, palette, hills, terrain, walkMap, walkCells, WALK_LAYERS, lamplighter, shadowDisc, wisp, fire, embers, BONES, INK_VERSION } from './lib/common.mjs';
 import { zonesOf, zoneOf, zoneJson } from './lib/zones.mjs';
@@ -24,6 +25,11 @@ export const ORDER = ['gaol', 'ramparts', 'fen', 'bells', 'barrows'];
 /* The Gilt Lattice: three explorer places, not in the combat run. Their biomes say `run: false` and `set: 'lattice'`: they have no zones
    (lib/zones.mjs is the run's table), and their JSON has `set` and `digital` (the slots of the grid or neon ramp, for lib/check.mjs) */
 export const LATTICE = ['piazza', 'cupola', 'orrery'];
+/* The hall between runs (gloam-downs-hub): its biome says `run: false` and `set: 'hub'`. It has a spawn and a run door (ctx.door), no
+   beacon and no wisps; its stations (ctx.mark('station', ...)) go in meta.stations, and each growth object (ctx.grow(id, fn)) is one
+   range of splats of its own, in meta.grow, which the page puts out or back by the save */
+export const HUB = ['lamproom'];
+export const isHub = def => def.set === 'hub';
 
 export async function loadPlace(id) {
   return (await import(`./biomes/${id}.mjs`)).default;
@@ -65,7 +71,7 @@ function scenery(def) {
   if (L.shK !== undefined) S.shK = L.shK;
   if (L.aoK !== undefined) S.aoK = L.aoK;
   const h = hills(B, def.hills);
-  const marks = { wisps: [], beacon: null, spawn: null, fires: [], embers: [], late: [], glow: [], lamps: [], zones: [], stairs: [] };
+  const marks = { wisps: [], beacon: null, spawn: null, fires: [], embers: [], late: [], glow: [], lamps: [], zones: [], stairs: [], door: null, stations: [], grow: [] };
   const ctx = {
     B, S, K, P, h, lib,
     ramp: P.ramp,
@@ -84,13 +90,20 @@ function scenery(def) {
       const z = zoneOf(def.id, zid); if (!marks.zones.includes(z)) marks.zones.push(z); return z;
     },
     later: (fn) => marks.late.push(fn), // solids that must not block the feet: added after the walk map, baked with the scenery
-    glow: (fn) => marks.glow.push(fn) // emissive extras (motes, sky, moon): added after every bake
+    glow: (fn) => marks.glow.push(fn), // emissive extras (motes, sky, moon): added after every bake
+    // the hall's marks: the run door, a station ({ id, at, face, obj }), and a growth object drawn into a range of its own
+    door: (p) => { marks.door = { p }; },
+    mark: (kind, o) => { if (kind !== 'station') throw new Error(`${def.id}: no mark of kind ${kind}`); marks.stations.push(o); },
+    grow: (id, fn) => { if (marks.grow.some(g => g.id === id)) throw new Error(`${def.id}: growth object ${id} twice`); marks.grow.push({ id, fn }); },
+    grown: id => marks.grow.some(g => g.id === id)
   };
   // GLOAM_COUNT=1: list the heaviest solids (where, size, spacing, splats), to keep a place inside its budget
   const per = new Map();
   if (process.env.GLOAM_COUNT) { const prev = S.emit; S.emit = (pr, n0, n1) => { if (prev) prev(pr, n0, n1); if (pr) per.set(pr, (per.get(pr) || 0) + n1 - n0); }; }
   def.build(ctx);
-  if (!marks.spawn || !marks.beacon || marks.wisps.length !== 5) throw new Error(`${def.id}: needs a spawn, a beacon and five wisps`);
+  if (isHub(def)) {
+    if (!marks.spawn || !marks.door || marks.beacon || marks.wisps.length) throw new Error(`${def.id}: the hall needs a spawn and a door, and no beacon or wisps`);
+  } else if (!marks.spawn || !marks.beacon || marks.wisps.length !== 5) throw new Error(`${def.id}: needs a spawn, a beacon and five wisps`);
   const missing = (def.run === false ? [] : zonesOf(def.id)).filter(z => !marks.zones.includes(z)).map(z => z.id);
   if (missing.length) throw new Error(`${def.id}: lib/zones.mjs has zones the place does not place: ${missing.join(' ')}`);
   return { P, B, S0, S, L, h, marks, ctx, per, warm };
@@ -101,7 +114,9 @@ export function march(def) {
   const t0 = performance.now(), sc = scenery(def), W = def.walk || {}, t1 = performance.now();
   sc.S.ready();
   const walk = walkMap(sc.S, sc.h, { x0: -W.half || -36, x1: W.half || 36, z0: -W.half || -36, z1: W.half || 36, step: 0.25, ...W.opts });
-  return { ...sc, walk, place: { spawn: sc.marks.spawn, beacon: sc.marks.beacon, bounds: W.half || 36 }, times: [t0, t1, performance.now()] };
+  // the hall's way out is its run door: the reach search and the trap check go from the spawn and from the door
+  const goal = sc.marks.beacon || { p: sc.marks.door.p, r: 1.6 };
+  return { ...sc, walk, place: { spawn: sc.marks.spawn, beacon: goal, bounds: W.half || 36 }, times: [t0, t1, performance.now()] };
 }
 
 // build one place; returns { world, meta, walk, stats }. zones: false leaves the zones out of the JSON (and only out of it)
@@ -139,14 +154,18 @@ export function build(def, { zones = true } = {}) {
   const fires = marks.fires.map(f => fire(B, P, f.p, f.s));
   for (const e of marks.embers) embers(B, P, e.p, e.n);
   const wisps = marks.wisps.map((p, i) => ({ p, ids: wisp(B, P, p, i * 1.3) }));
-  const bp = marks.beacon.p;
-  const beaconFire = [fire(B, P, [bp[0], bp[1] + 0.15, bp[2]], 1.7)];
-  {
+  const hub = isHub(def), bp = hub ? marks.door.p : marks.beacon.p;
+  // the hall has no beacon: its JSON's beacon is the run door's point, with no radius and no fire, so the page's beacon code passes it by
+  const beaconFire = hub ? [] : [fire(B, P, [bp[0], bp[1] + 0.15, bp[2]], 1.7)];
+  if (!hub) {
     const n0 = B.count();
     embers(B, P, [bp[0], bp[1] + 0.3, bp[2]], 14, 0.5, 3.4);
     beaconFire.push([n0, B.count()]);
   }
   for (const fn of marks.glow) fn(ctx);
+  // the growth objects, each one range in the order drawn
+  const grow = [];
+  for (const g of marks.grow) { const n0 = B.count(); g.fn(ctx); grow.push({ id: g.id, first: n0, n: B.count() - n0 }); }
   const world = B.finish({
     cam: { target: [marks.spawn.p[0], marks.spawn.p[1] + 1, marks.spawn.p[2]], dist: 9, pitch: 0.32, yaw: marks.spawn.yaw + Math.PI },
     detail: 9,
@@ -172,7 +191,7 @@ export function build(def, { zones = true } = {}) {
     moving: Array.from(world.moving || []), back: Array.from(world.back || []),
     fogFar: def.fog.far, fogNear: def.fog.near ?? 10,
     spawn: marks.spawn,
-    beacon: { p: bp, r: marks.beacon.r, fire: beaconFire },
+    beacon: { p: bp, r: hub ? 0 : marks.beacon.r, fire: beaconFire },
     wisps,
     fires: fires.length,
     bones: { names: BONES, pivots: BONES.map(n => rig.pivots[n]), first: Math.min(...boned), end: Math.max(...boned) + 1, count: boned.length },
@@ -183,6 +202,12 @@ export function build(def, { zones = true } = {}) {
   };
   // in the module's order, so the JSON's zones equal the module's
   if (zones && def.run !== false) meta.zones = zonesOf(def.id).map(zoneJson);
+  // the hall: its run door, its stations (the point it is used from, its face, its object and the use radius) and its growth ranges
+  if (hub) {
+    meta.door = { p: marks.door.p };
+    meta.stations = marks.stations.map(s => ({ id: s.id, at: s.at.map(v => +v.toFixed(2)), face: +s.face.toFixed(4), obj: s.obj.map(v => +v.toFixed(2)), r: 1.6 }));
+    meta.grow = grow;
+  }
   // a place of a second set says so; the five places of the downs write no `set`, so their JSON does not change
   if (def.set) {
     meta.set = def.set;
@@ -192,7 +217,7 @@ export function build(def, { zones = true } = {}) {
   const stats = {
     splats: world.count, build: Math.round(t1 - t0), walk: Math.round(t2 - t1), reach: Math.round(t2r - t2), bake: Math.round(t3 - t2r),
     avatar: Math.round(t4 - t3), finish: Math.round(t5 - t4), gaps: walk.gaps, cracks: walk.cracks, traps: walk.traps.length, boned: boned.length,
-    scenery: nScenery, glow: world.count - nScenery - boned.length
+    scenery: nScenery, glow: world.count - nScenery - boned.length, grow: grow.reduce((n, g) => n + g.n, 0)
   };
   return { world, meta, walk, stats, P, reach: traps.R };
 }
@@ -254,7 +279,7 @@ async function main() {
   const opt = k => { const i = args.indexOf('--' + k); return i >= 0 ? args[i + 1] : undefined; };
   const VAL = new Set(['--out', '--w', '--h', '--worlds']); // the options that take a value; --check, --preview and --no-zones do not
   const ids = args.filter((a, i) => !a.startsWith('--') && !(i > 0 && VAL.has(args[i - 1])));
-  const list = (ids.length ? ids : ['downs']).flatMap(id => (id === 'downs' ? ORDER : id === 'lattice' ? LATTICE : id === 'all' ? [...ORDER, ...LATTICE] : [id]));
+  const list = (ids.length ? ids : ['downs']).flatMap(id => (id === 'downs' ? ORDER : id === 'lattice' ? LATTICE : id === 'hub' ? HUB : id === 'all' ? [...ORDER, ...LATTICE, ...HUB] : [id]));
   const prev = args.includes('--preview'), out = opt('out') || path.join(HERE, 'preview');
   const worlds = opt('worlds') ? path.resolve(opt('worlds')) : OUT;
   for (const id of list) {
@@ -269,7 +294,9 @@ async function main() {
       continue;
     }
     const def = await loadPlace(id);
+    const tb = performance.now();
     const built = build(def, { zones: !args.includes('--no-zones') });
+    const bakeMs = performance.now() - tb;
     const sizes = save(id, built, worlds);
     console.log(`${id}: ${JSON.stringify(built.stats)} gz ${(sizes.splatsGz / 1e6).toFixed(2)} MB, walk ${(sizes.walkGz / 1e3).toFixed(0)} KB`);
     for (const c of built.walk.traps) console.log(`  trap filled at (${c.x}, ${c.z}): top/floor/underside ${c.before.join('/')} -> ${c.after.join('/')} cm`);
@@ -284,7 +311,12 @@ async function main() {
     }
     if (args.includes('--check')) {
       // a place's 1.5 MB counts its three files: the splats, the walk map and its JSON
-      const res = checkPlace(built, { gzBytes: sizes.splatsGz + sizes.walkGz + sizes.jsonBytes, frame, worlds });
+      const gzBytes = sizes.splatsGz + sizes.walkGz + sizes.jsonBytes;
+      let res;
+      if (isHub(def)) {
+        const { growIds, toPath } = await import('../../public/lab/gloam-downs/hub.js');
+        res = checkHub(built, { gzBytes, walkBytes: sizes.walkGz, frame, ms: bakeMs, growIds: growIds(), toPath });
+      } else res = checkPlace(built, { gzBytes, frame, worlds });
       for (const r of res) console.log(`  ${r.ok ? 'ok  ' : 'FAIL'} ${r.what}`);
       if (res.some(r => !r.ok)) process.exitCode = 1;
     }

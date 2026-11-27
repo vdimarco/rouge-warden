@@ -142,6 +142,8 @@ export function fillGrowthLamp() {
   for (const row of rows) {
     const li = patternTile(list, row.id);
     li.dataset.label = row.label;
+    // its category: the pattern's kind (an ability, a pane, a blade or an off-hand)
+    if (!li.querySelector('.catw')) li.querySelector('.nm').insertAdjacentHTML('beforebegin', markHtml(row.mark));
     li.querySelector('.nm').textContent = growthName(row.id);
     li.querySelector('.gift').textContent = growthText(row.id);
     li.querySelector('.cost').textContent = `${row.cost} glim`;
@@ -177,7 +179,7 @@ export function fillGrowthLamp() {
       b.dataset.pane = x.id;
       b.setAttribute('aria-pressed', String(x.on));
       b.title = x.text;
-      b.innerHTML = `<b>${esc(x.name)}</b> ${esc(x.text)}`;
+      b.innerHTML = `${markHtml(x.mark)}<b>${esc(x.name)}</b> ${esc(x.text)}`;
       b.addEventListener('click', () => paneButton(p.slot, x.id));
       r.appendChild(b);
     }
@@ -218,7 +220,8 @@ function kindleRow(id) {
   if (had) {
     const pane = byId('paneRow').querySelector(`button[data-pane="${id}"]`);
     const next = pane || order.map(p => list.querySelector(`li[data-pattern="${p}"] button:not([hidden])`)).find(Boolean) || byId('paneRow').querySelector('button');
-    next && !next.closest('[hidden]') ? next.focus({ preventScroll: true }) : focusMain();
+    // (a button on another tab of the shrine, or another station's part of the card, does not show: the main button then)
+    next && !next.closest('[hidden]') && next.getClientRects().length ? next.focus({ preventScroll: true }) : focusMain();
   }
 }
 function paneButton(slot, id) {
@@ -334,4 +337,41 @@ export function setGrowth(o = {}) {
     const d = typeof o.dropPattern === 'string' ? { id: o.dropPattern } : o.dropPattern, R = G.runner();
     if (R) dropPattern(R, d.at || null, d.id || null);
   }
+}
+
+/* ---------------- station cards (gloam-downs-hub design.md "Decision 6") ----------------
+   A station's card stands next to it: beside the station at 800x600 and wider (at most 360 px wide, 16 px inside the screen, never over
+   the station's own point), a bottom sheet of at most 55% of the height on an upright phone, and a side sheet of at most 45% of the
+   width on a landscape phone. It never covers the Lab bar (the top 60 px). Long cards scroll inside themselves */
+export const ANCHOR = { gap: 48, edge: 16, top: 72, width: 360 };
+export const anchorLayout = (w, h) => (w > h && h <= 430 ? 'side' : w < 600 && h > w ? 'sheet' : 'beside');
+// beside: where the box goes for a station at (x, y), box bw by bh, screen w by h -> { left, top }
+export function anchorAt(w, h, x, y, bw, bh, A = ANCHOR) {
+  const right = x < w / 2;
+  let left = right ? x + A.gap : x - A.gap - bw;
+  left = Math.max(A.edge, Math.min(w - A.edge - bw, left));
+  // pushed back over the station by the screen's edge: the edge away from it
+  if (x > left - 8 && x < left + bw + 8) left = right ? w - A.edge - bw : A.edge;
+  const top = Math.max(A.top, Math.min(h - A.edge - bh, y - bh / 2));
+  return { left: Math.round(left), top: Math.round(top) };
+}
+// lay the card (a .panel) by its station's screen point, or in the middle (x null): the quick list and the old card -> the layout
+export function anchor(card, x, y) {
+  const box = card.querySelector('.box');
+  card.classList.remove('anchored', 'sheet', 'side', 'beside');
+  box.style.left = box.style.top = '';
+  if (x === null || x === undefined) return null;
+  const w = innerWidth, h = innerHeight, kind = anchorLayout(w, h);
+  card.classList.add('anchored', kind);
+  if (kind === 'beside') {
+    const r = box.getBoundingClientRect(), at = anchorAt(w, h, x, y, r.width, r.height);
+    box.style.left = `${at.left}px`;
+    box.style.top = `${at.top}px`;
+  }
+  return kind;
+}
+// a row's category mark: the word, a corner shape in the colour's hue and the tier's pips (screens.js rows give mark: gearMark(item))
+export function markHtml(m) {
+  if (!m) return '';
+  return `<i class="catw ${m.shape || ''}"${m.hue ? ` style="--hue:${m.hue}"` : ''} data-pips="${m.pips | 0}">${esc(m.word)}</i>`;
 }

@@ -1,15 +1,18 @@
 // Gloam Downs: the explorer's two sets of places. The downs (ORDER, five places) and the Gilt Lattice (LATTICE, three explorer places).
 // The names, the next place in a set, the rows of the Map, its count line and the choice of the first place from ?place=. No DOM, so the
 // Node test reads the same rows and texts that the page shows; main.js builds the Map from them. The run (?run) does not use this file.
-import { ORDER, LATTICE, latticeOpen, wispCount, latticeWisps } from './save.js';
+import { ORDER, LATTICE, HUB, latticeOpen, wispCount, latticeWisps } from './save.js';
 import { NUMERAL, NAMES } from './screens.js';
 
 export const LATTICE_NAMES = { piazza: 'The Vanishing Piazza', cupola: 'The Broken Cupola', orrery: 'The Orrery Isles' };
+// the hall between runs: a place the run walks through, never a row of the Map
+export const HUB_NAMES = { lamproom: 'The Lamp-room' };
+export const isHub = id => HUB.includes(id);
 export const SET_TITLES = { downs: 'The downs', lattice: 'The Gilt Lattice' };
 
 export const isLattice = id => LATTICE.includes(id);
 export const setOf = id => (ORDER.includes(id) ? ORDER : LATTICE.includes(id) ? LATTICE : null);
-export const placeName = id => NAMES[id] || LATTICE_NAMES[id] || id;
+export const placeName = id => NAMES[id] || LATTICE_NAMES[id] || HUB_NAMES[id] || id;
 // the next place in the same set, or null after the last
 export function nextOf(id) {
   const set = setOf(id);

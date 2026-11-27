@@ -141,13 +141,15 @@ try {
     assert.equal(await text(page, '#colourRow'), 'Flame 0Ward 1Gloam 0');
     assert.equal(await text(page, '#beaconKept'), 'Kept: Rime lamp');
     assert.match(await text(page, '#beaconBank'), /^You carry 40 glim, and 0 is banked\./);
-    assert.equal(await text(page, '#bSpend'), 'Lamp-room');
+    // the beacon's Lamp-room is its shrine now (gloam-downs-hub): the same rows under three tabs, Wares, Patterns and Panes
+    assert.equal(await text(page, '#bSpend'), 'Go to the shrine');
     assert.equal(await active(page), 'bWalkOn');
     await shot(page, 'flow-beacon-1280x720');
     pass('carry and keep: 40 glim carried past the Gaol (bank 0), the Rime lamp kept ("Kept: Rime lamp"), and Ward +1 gives 90/110', { colours: await text(page, '#colourRow') });
     // the Lamp-room: the Rime lamp's row, short of glim, then Kindle with the 40 carried first and 80 of the bank
     await page.click('#bSpend');
     assert(await page.isVisible('#lamp'));
+    await page.click('#shrineTabs button[data-tab="kiln"]');
     assert.match(await text(page, '#lampLine'), /^Carried: 40 glim · Banked: 0 glim\./);
     assert.match(await text(page, '#colours'), /Flame 0 · Ward 1 · Gloam 0/);
     // a pattern is an unlit lamp tile (gloam-downs-screens-life): its row's words in data-label, and Kindle
@@ -162,13 +164,16 @@ try {
     assert.deepEqual(await row(), [], 'no pattern left to kindle');
     assert.deepEqual(await page.$$eval('#patterns li.kindled', ls => ls.map(l => [l.dataset.pattern, l.querySelector('button').hidden])), [['rime', true]]);
     // the focus stays in the Lamp-room's growth rows (a pane button here), not on a Buy button of the wares
-    assert(await G(page, () => !!document.activeElement?.closest('#paneRow, #patterns')), `the focus after Kindle: ${await G(page, () => document.activeElement?.textContent)}`);
+    // (at the shrine the panes are on their own tab: with no pattern left on this one, the focus goes to Back to the beacon)
+    assert(await G(page, () => !!document.activeElement?.closest('#paneRow, #patterns') || document.activeElement?.id === 'bLampBack'), `the focus after Kindle: ${await G(page, () => document.activeElement?.textContent)}`);
     pass('kindle: the Rime lamp\'s row says "80 more glim" with 40 carried, then Kindle takes the 40 carried and 80 of the bank', { bank: r.bank });
     // two pane slots: Lantern panes 1, then Thick glass in slot 1 is not offered in slot 2
     await G(page, () => window.__gloam.set({ bank: 300 }));
     assert.equal(await page.$$eval('#paneRow .paneSlot', s => s.length), 1);
+    await page.click('#shrineTabs button[data-tab="shelf"]');
     await page.click('#ups li[data-up="panes"] button');
     assert.equal(await page.$$eval('#paneRow .paneSlot', s => s.length), 2);
+    await page.click('#shrineTabs button[data-tab="window"]');
     await page.click('#paneRow button[data-slot="0"][data-pane="thick"]');
     const panes = await page.$$eval('#paneRow .paneSlot', s => s.map(x => [...x.querySelectorAll('button')].map(b => `${b.dataset.pane}:${b.getAttribute('aria-pressed')}`)));
     assert.deepEqual(panes, [['thick:true', 'hot:false'], ['hot:false']]);
