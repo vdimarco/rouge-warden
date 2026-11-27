@@ -19,15 +19,15 @@ void main() {
   float faceZ = step(1.5, i2.w);
   float lx = (0.5 - aC.x) * i0.w * 2.0;
   float lz = (aC.y - 0.5) * i1.x * 2.0;
-  // Kind 1 lying flat is the runner. uHead is atan2(moveX, moveZ): 0 faces +Z.
-  // The front row of the slice sits on local -Z, and image-left is the character's right.
+  // Kind 1 flat slices spin in the ground plane. uHead 0 aims the front row at +Z.
+  // cos(pi - h), sin(pi - h) is a det +1 turn, so the 12x10 footprint never folds flat.
   if (abs(i2.y - 1.0) < 0.25 && upright < 0.5) {
-    float rgt = lx;
-    float fwd = -lz;
-    float c = cos(uHead);
+    float c = -cos(uHead);
     float s = sin(uHead);
-    lx = -rgt * c + fwd * s;
-    lz = -rgt * s + fwd * c;
+    float nx = lx * c - lz * s;
+    float nz = lx * s + lz * c;
+    lx = nx;
+    lz = nz;
   }
   vec3 horiz = vec3(i0.x + lx, i0.z, i0.y + lz);
   vec3 faceX = vec3(i0.x, i0.z + (aC.y - 0.5) * i1.x * 2.0, i0.y + (aC.x - 0.5) * i0.w * 2.0);
@@ -108,17 +108,21 @@ float falloff(vec2 p, vec4 L, float I) {
 void main() {
   vec4 t = texture(uAtlas, vUV);
   float runner = step(abs(vKind - 1.0), 0.25);
+  // Flat slices stay unoutlined: a halo on every 12x10 cell stacks into a solid fill.
+  // The ring is one upright card (sign 2), body discarded, same 2px reach as the flat poses.
+  if (runner > 0.5 && vSign > 1.5 && t.a >= 0.5) discard;
   if (runner > 0.5 && t.a < 0.5) {
-    if (uOutlineOn < 0.5) discard;
+    if (uOutlineOn < 0.5 || vOrient < 0.5) discard;
     vec2 one = vec2(1.0 / 1024.0);
     vec2 lo = vRect.xy + one * 0.5;
     vec2 hi = vRect.zw - one * 0.5;
+    int reach = 2;
     float edge = 0.0;
     for (int y = -2; y <= 2; y++) for (int x = -2; x <= 2; x++) {
       int ax = x < 0 ? -x : x;
       int ay = y < 0 ? -y : y;
       int cheb = ax > ay ? ax : ay;
-      if (cheb < 1 || cheb > 2) continue;
+      if (cheb < 1 || cheb > reach) continue;
       vec2 s = vUV + one * vec2(float(x), float(y));
       if (s.x < lo.x || s.y < lo.y || s.x > hi.x || s.y > hi.y) continue;
       edge = max(edge, texture(uAtlas, s).a);

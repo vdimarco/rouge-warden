@@ -1206,9 +1206,31 @@ console.log("runner heading");
   await page.waitForFunction(() => window.__test && __test.ready(), null, { timeout: 90000 });
   const rows = await page.evaluate(async () => {
     const wrap = (d) => { let x = ((d % 360) + 360) % 360; if (x > 180) x -= 360; return x; };
+    const count = () => {
+      const st = __test.state().player;
+      const p = __test.project(st.x, st.y, 14);
+      const v = __test.view();
+      let n = 0;
+      for (let y = Math.floor(p.y - 36); y <= p.y + 18; y++) {
+        for (let x = Math.floor(p.x - 28); x <= p.x + 28; x++) {
+          if (x < 0 || y < 0 || x >= v.artW || y >= v.artH) continue;
+          const c = __test.pixel(x, y);
+          const ochre = c[0] > 200 && c[1] > 110 && c[1] < 200 && c[2] < 110 && c[0] > c[2] + 70;
+          const skin = Math.abs(c[0] - 192) < 28 && Math.abs(c[1] - 138) < 28 && Math.abs(c[2] - 106) < 28;
+          if (ochre || skin) n++;
+        }
+      }
+      return n;
+    };
     const dirs = [[0, 1, "down"], [0, -1, "up"], [-1, 0, "left"], [1, 0, "right"]];
     const out = [];
     __test.enter();
+    __test.setTilt(55);
+    __test.setYaw(0);
+    __test.moveTo(2.5, 3.2);
+    __test.setPose("idle");
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    const idlePx = count();
     __test.setPose("run");
     for (const yaw of [0, 90]) {
       for (const [mx, my, name] of dirs) {
@@ -1226,6 +1248,7 @@ console.log("runner heading");
           yaw, name, heading: b.heading, expect,
           err: Math.abs(wrap(b.heading - expect)),
           dist: Math.hypot(dx, dy),
+          px: count(), idlePx,
         });
       }
     }
@@ -1233,6 +1256,92 @@ console.log("runner heading");
   });
   for (const row of rows) {
     check(row.dist > 0.05 && row.err < 20, "yaw " + row.yaw + " " + row.name + " heading " + row.heading.toFixed(0) + " vs move " + row.expect.toFixed(0) + " (" + row.err.toFixed(1) + " deg)");
+    check(row.px >= row.idlePx / 2, "yaw " + row.yaw + " " + row.name + " runner pixels " + row.px + " vs idle " + row.idlePx);
+  }
+  const spun = await page.evaluate(async () => {
+    const canvas = document.querySelector("canvas");
+    const gl = canvas.getContext("webgl2");
+    const frame = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    const read = () => {
+      const b = new Uint8Array(canvas.width * canvas.height * 4);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, b);
+      return b;
+    };
+    const at = (buf, ax, ay) => {
+      const v = __test.view();
+      const bx = Math.floor(v.ox + (ax + 0.5) * v.scale);
+      const by = Math.floor(v.oy + (v.artH - ay - 0.5) * v.scale);
+      if (bx < 0 || by < 0 || bx >= canvas.width || by >= canvas.height) return [0, 0, 0];
+      const i = (by * canvas.width + bx) * 4;
+      return [buf[i], buf[i + 1], buf[i + 2]];
+    };
+    const ochre = (c) => c[0] > 200 && c[1] > 110 && c[1] < 200 && c[2] < 110 && c[0] > c[2] + 70;
+    const skin = (c) => Math.abs(c[0] - 192) < 28 && Math.abs(c[1] - 138) < 28 && Math.abs(c[2] - 106) < 28;
+    const count = (buf) => {
+      const st = __test.state().player;
+      const p = __test.project(st.x, st.y, 14);
+      const v = __test.view();
+      let n = 0;
+      for (let y = Math.floor(p.y - 36); y <= p.y + 18; y++) {
+        for (let x = Math.floor(p.x - 28); x <= p.x + 28; x++) {
+          if (x < 0 || y < 0 || x >= v.artW || y >= v.artH) continue;
+          const c = at(buf, x, y);
+          if (ochre(c) || skin(c)) n++;
+        }
+      }
+      return n;
+    };
+    const headings = [0, 45, 90, 135, 180, -135, -90, -45];
+    const out = [];
+    __test.setPose("idle");
+    __test.moveTo(2.5, 5.2);
+    for (const yaw of [0, 90]) {
+      for (const hd of headings) {
+        __test.setTilt(55);
+        __test.setYaw(yaw);
+        __test.setHeading(hd);
+        await frame();
+        out.push({ yaw, hd, px: count(read()) });
+      }
+    }
+    const cross = __test.signs().find((s) => s.colour === "#B6F23A");
+    const tint = [];
+    const green = (c) => c[1] > 210 && c[0] > 140 && c[0] < 220 && c[2] < 90 && c[1] > c[0] + 30;
+    for (const hd of [0, 90, 180]) {
+      __test.setYaw(0);
+      __test.setTilt(55);
+      __test.setPose("idle");
+      __test.setHeading(hd);
+      __test.moveTo(cross.light[0], cross.light[1] + 1.15);
+      await frame();
+      const st = __test.state().player;
+      const feet = __test.project(st.x, st.y, 0);
+      const head = __test.project(st.x, st.y, 52);
+      const v = __test.view();
+      const x0 = Math.max(0, Math.floor(Math.min(feet.x, head.x) - 22));
+      const x1 = Math.min(v.artW - 1, Math.ceil(Math.max(feet.x, head.x) + 22));
+      const y0 = Math.max(0, Math.floor(Math.min(feet.y, head.y) - 8));
+      const y1 = Math.min(v.artH - 1, Math.ceil(Math.max(feet.y, head.y) + 8));
+      const buf = read();
+      let b = 0, g = 0;
+      for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+        const c = at(buf, x, y);
+        if (green(c)) g++;
+        else if (ochre(c) || skin(c)) b++;
+      }
+      tint.push({ hd, g, b, share: (b + g) ? g / (b + g) : 0 });
+    }
+    return { out, tint };
+  });
+  const idle0 = spun.out.find((r) => r.yaw === 0 && r.hd === 0).px;
+  const idle90 = spun.out.find((r) => r.yaw === 90 && r.hd === 0).px;
+  for (const row of spun.out) {
+    const base = row.yaw === 0 ? idle0 : idle90;
+    check(row.px >= base * 0.5 && row.px > 0, "yaw " + row.yaw + " heading " + row.hd + " runner pixels " + row.px + " vs idle " + base);
+  }
+  for (const row of spun.tint) {
+    check(row.share >= 0.18 && row.share <= 0.45, "sign outline share at heading " + row.hd + " is " + (row.share * 100).toFixed(1) + "% (" + row.g + "/" + (row.g + row.b) + ")");
   }
   await ctx.close();
 }

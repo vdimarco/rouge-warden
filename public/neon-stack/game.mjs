@@ -314,6 +314,23 @@ const stackSlots = Array.from({ length: STACK_N }, () => ({
   x: 0, z: 0, y: 0, hx: 0, hz: 0, uv: [0, 0, 0, 0],
   kind: 1, sign: 0, bid: -1, low: true, orient: 0,
 }));
+const outlineSlot = {
+  x: 0, z: 0, y: 0, hx: 0, hz: 0, uv: [0, 0, 0, 0],
+  kind: 1, sign: 2, bid: -1, low: true, orient: 2,
+};
+// Flat cards and the outline ring share the stack's ground slice and its crown height.
+function placeCard(s, fr, name, boost) {
+  const px = (TILE / 16) * RUNNER_SCALE;
+  const box = RUNNER_BOX[name];
+  const ground = 0.5 * STACK_STEP * px;
+  const span = (STACK_N - 1) * STACK_STEP * px;
+  // A flat card foreshortens; the stack's top face does not. Standing poses use 1.5.
+  const scale = span / (24 * px) * boost;
+  const foot = ground - (boost > 1.2 ? 8 * px : 0);
+  s.hx = fr.w * px / 2 * scale;
+  s.hz = fr.h * px / 2 * scale;
+  s.y = foot + s.hz - box.bottom * px * scale;
+}
 function stackKey() {
   if (pose === "run" || (pose !== "idle" && moving)) return "runner_stack_run_" + (Math.floor(time * 8) % 2);
   return "runner_stack_idle";
@@ -362,12 +379,11 @@ function scene() {
       if (!flatPose()) continue;
       s.x = player.x * TILE;
       s.z = player.y * TILE;
-      s.hx = runFr.w * (TILE / 16) / 2 * RUNNER_SCALE;
-      s.hz = runFr.h * (TILE / 16) / 2 * RUNNER_SCALE;
-      s.y = s.hz;
+      placeCard(s, runFr, runName, 1.5);
       s.uv = frameUV(runName, facing < 0);
       const yr = yaw * Math.PI / 180;
       s.orient = Math.abs(Math.sin(yr)) > Math.abs(Math.cos(yr)) ? 1 : 2;
+      s.sign = 0;
       aim(s, cam, s.uv);
       runner.push(s);
     } else if (s.kind === 3 && s.sign >= 1) {
@@ -406,7 +422,24 @@ function scene() {
       rest.push(s);
     }
   }
-  if (!flatPose()) pushStack(runner);
+  if (!flatPose()) {
+    pushStack(runner);
+    const name = runnerFrame();
+    const fr = world.frames[name];
+    const s = outlineSlot;
+    s.x = player.x * TILE;
+    s.z = player.y * TILE;
+    placeCard(s, fr, name, 1);
+    const yr = yaw * Math.PI / 180;
+    const facingCam = Math.cos(yr - head);
+    const faceOn = Math.abs(facingCam);
+    s.hx *= 0.7 + 0.3 * faceOn;
+    if (facingCam < -0.4) s.hx *= 0.72;
+    s.orient = Math.abs(Math.sin(yr)) > Math.abs(Math.cos(yr)) ? 1 : 2;
+    s.sign = 2;
+    aim(s, cam, frameUV(name, facing < 0));
+    runner.push(s);
+  }
   let nearD = 2;
   let outline = [0, 0, 0];
   let outlineOn = 0;
@@ -672,6 +705,7 @@ window.__test = {
     return r ? { x: r.x, y: r.y, z: r.z, hx: r.hx, uv: r.uv } : null;
   },
   setPose: (name) => { pose = name || ""; },
+  setHeading: (deg) => { head = deg * Math.PI / 180; },
   outline: () => shownOutline,
   hack: () => ({ held: hack.held, flash: hack.flash, cool: hack.cool, holding }),
   holdMachine: (seconds) => {
