@@ -8,6 +8,7 @@ import { makeRelics, drawRelic } from './relics.js';
 import { emit } from './bus.js';
 import { mulberry, hash2 } from '../kit/rng.js';
 import { SPARK, levelGain, COLOUR_IDS, ABILITIES, ABILITY_IDS, PANES, PANE_IDS, PANE_SLOTS, PATTERNS, PATTERN_IDS, STARTERS, DROPS } from './growth.js';
+import { BLADES, OFFHANDS } from './gear.js';
 
 /* ---------------- the step ----------------
    The game steps at a fixed 1/60 s, as many steps as the frame took, up to 15 a frame. The small term keeps a frame of 24/144 s from
@@ -216,7 +217,7 @@ export const paneHit = (rs, t) => (paneOf(rs, 'ember') && (t?.status?.burn > 0 |
    A pattern is the plan of an ability or a pane not yet kindled. It drops as a small lamp and is carried; a lit beacon or a win keeps
    it (rs.patterns), and a death loses it. In the Lamp-room glim kindles it, and from then on it is in the drops of every later run.
    Each draw takes the run's next roll of the seed's `pattern` stream, so the same seed, wares and kindled list give the same drops */
-export const patternOf = id => [...ABILITIES, ...PANES].find(x => x.id === id) || null;
+export const patternOf = id => [...ABILITIES, ...PANES, ...BLADES, ...OFFHANDS].find(x => x.id === id) || null;
 export const patternChance = rs => DROPS.pattern + DROPS.patternPerKeen * (rs?.up?.keen | 0);
 const patternRoll = run => { run.patternRolls = (run.patternRolls | 0) + 1; return mulberry(hash2(run.seed | 0, run.patternRolls, 0x9a77)); };
 // the patterns that may drop: not found, not kindled, not carried and not lying on the ground
@@ -243,7 +244,7 @@ export function dropPattern(R, at = null, id = null) {
 // what the fight draws: each pattern lamp, with its kind, colour and name
 export const groundPatterns = R => (R?.rs?.run?.groundPatterns || []).map(g => {
   const x = patternOf(g.id);
-  return { ...g, kind: ABILITY_IDS.includes(g.id) ? 'ability' : 'pane', colour: x?.colour || 'gloam', name: x?.name || g.id };
+  return { ...g, kind: PATTERNS.find(p => p.id === g.id)?.kind || (ABILITY_IDS.includes(g.id) ? 'ability' : 'pane'), colour: x?.colour || 'gloam', name: x?.name || g.id };
 });
 // the glim a Lamp-room can spend: in a run the glim carried, and the bank
 export const purse = rs => (rs.bank | 0) + (rs.run?.carried | 0);
@@ -345,7 +346,7 @@ export function startRun(rs, seed, em = rs.ember | 0) {
   return rs.run;
 }
 // the growth fields a reload restores as they were at the entry
-const GROWN = ['sparks', 'sparkPicks', 'abilities', 'carriedPatterns', 'groundPatterns', 'caches', 'abilityLamps', 'patternRolls', 'foePatterns', 'abilityDrops', 'abilityRolls'];
+const GROWN = ['sparks', 'sparkPicks', 'abilities', 'carriedPatterns', 'groundPatterns', 'caches', 'abilityLamps', 'patternRolls', 'foePatterns', 'abilityDrops', 'abilityRolls', 'sureRolls', 'cracked'];
 const copy = v => (v === undefined ? undefined : JSON.parse(JSON.stringify(v)));
 export function enter(run) {
   run.entry = { hp: run.hp, flasks: run.flasks, carried: run.carried, foes: run.foes, relics: (run.relics || []).slice(), elitesDown: (run.elitesDown || []).slice(), lastUsed: !!run.lastUsed };
@@ -382,6 +383,8 @@ export function goTo(rs, id) {
   // the lamps left lying in the last place are gone
   if (rs.run.groundPatterns) rs.run.groundPatterns = [];
   if (rs.run.abilityLamps) rs.run.abilityLamps = [];
+  // Cracked glass mends at the beacon: its hits count again from 0 in the next place
+  rs.run.cracked = 0;
   enter(rs.run);
 }
 export const maxOf = rs => maxHp(rs.up, rs.run?.wicks, rs.run?.sparks);
@@ -503,7 +506,7 @@ export function die(rs) {
    - think(ev, play): runs after the lamplighter on every game step (stage 2's foes; play is false in hit stop). A foe's hit calls
      runner.hurt(dmg, from, { push });
    - onLight(): runs when a beacon lights, before it banks (the foes' glim motes not yet taken count as carried). */
-export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable = () => ({ ok: true }), drop = null, think = null, onLight = null, still = false, log = [], fx = {}, clock = makeClock(), abilities = null, keys = null }) {
+export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable = () => ({ ok: true }), drop = null, think = null, onLight = null, still = false, log = [], fx = {}, clock = makeClock(), abilities = null, keys = null, build = null }) {
   // fx.stop false turns hit stop off (__gloam.fx), so the game must still play with it off
   const stop = n => (fx.stop === false ? 0 : hitStop(clock, n));
   // Clear glass: an ability use makes the next blade hit within 2 s deal 40% more
@@ -512,7 +515,9 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
     const run = rs.run;
     if (!run) return {};
     return {
-      bonus: bladeBonus(rs.up, run.wicks, run.sparks) + (clearOn() ? PANE_RULES.clear : 0), heavy: run.wicks.includes('heavy'), quick: run.wicks.includes('heels'), shave: run.wicks.includes('shave'),
+      bonus: bladeBonus(rs.up, run.wicks, run.sparks) + (clearOn() ? PANE_RULES.clear : 0) + (R.build?.bonus() ?? 0), heavy: run.wicks.includes('heavy'), quick: run.wicks.includes('heels'), shave: run.wicks.includes('shave'),
+      // the build (build.js): a sure cut on this target and blade hit, Rush glass's haste, and Gloam dash (the key)
+      sure: (t, kind) => R.build?.sure(t, kind) ?? false, haste: R.build?.hasteK() ?? 1, dash: (rs.keys || []).includes('dash'),
       drink: run.flasks <= 0 ? 'empty' : run.hp >= maxOf(rs) ? 'full' : 'ok', relics: run.relics || [], unlocks: rs.unlocks || [],
       extra: t => paneHit(rs, t)
     };
@@ -523,15 +528,19 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
     pend: { attack: false, roll: false, heal: false, ab1: false, ab2: false }, targets, lightable, think,
     drop: drop || ((n) => { if (rs.run) rs.run.carried += n; }),
     // the place's elite (elites.js sets it when it wakes), and the relics lying here and the fires they light (relics.js)
-    elite: null, max: () => maxOf(rs), bonus: () => (rs.run ? bladeBonus(rs.up, rs.run.wicks, rs.run.sparks) : 0),
+    elite: null, max: () => maxOf(rs), bonus: () => (rs.run ? bladeBonus(rs.up, rs.run.wicks, rs.run.sparks) + (R.build?.bonus() ?? 0) : 0),
     // growth: the toasts the page shows next (main.js updateGrowth), Lead glass ready for the next fight, Clear glass's window
-    notes: [], lead: true, clearUntil: -1
+    notes: [], lead: true, clearUntil: -1,
+    // Shutter (abilities.js): no foe starts an attack at the lamplighter before this play step
+    unseenUntil: -1, build: null
   };
   // the floor under (x, z) near y: where a drop lies (the relic and the pattern lamp of an elite, a flier's drops)
   R.floorAt = (x, z, y) => walk.support(x, z, y + 1.2);
   R.relics = makeRelics(R);
   R.abilities = abilities ? abilities(R) : null;
   R.keys = keys ? keys(R) : null;
+  // the build (build.js makeBuild keeps itself on R.build): sure cuts, the shell, the panes and wicks that read the fight, the sets
+  if (build) build(R);
   const cue = (ev, name, more) => { const c = { cue: name, step: clock.step, play: clock.play, ...more }; R.log.push(c); ev.push({ type: 'cue', ...c, logged: true }); };
   // the Ember level's glim: 15% more a level, rounded down
   const glimAt = n => Math.floor(n * glimFactor(emberOf(rs.run)) + 1e-9);
@@ -578,6 +587,8 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
         cue(ev, 'miss', shave ? { shave } : {});
         // Storm glass: a near miss cools both abilities by 1 s
         R.abilities?.nearMiss();
+        // Thorn roll (relics.js): the foe that swung takes 12, with no flinch
+        R.relics.thorn?.(from, ev);
       }
       return 'safe';
     }
@@ -585,13 +596,16 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
     const lead = paneOf(rs, 'lead') && R.lead;
     if (paneOf(rs, 'lead')) R.lead = false;
     const d = Math.round(dmg * ember(emberOf(run)).dmg * (lead ? PANE_RULES.lead : 1));
-    run.hp = Math.max(0, run.hp - d);
+    // the ward shell (build.js) takes the blow first
+    const taken = R.build ? R.build.absorb(d, ev) : d;
+    run.hp = Math.max(0, run.hp - taken);
     run.lastHurt = byOf(from, o);
     fighter.knock(from, o.push ?? MOVES.hurt.push);
     R.hurtAt = clock.step;
     stop(MOVES.hurt.stop);
-    ev.push({ type: 'hurt', dmg: d, hp: run.hp }, { type: 'store' });
+    ev.push({ type: 'hurt', dmg: taken, blow: d, shell: d - taken, hp: run.hp }, { type: 'store' });
     cue(ev, 'hurt', { dmg: d });
+    R.build?.hurt(ev);
     // Last ember: once a run, at 0 health, the lamplighter stands again with 25%
     if (run.hp <= 0 && run.wicks.includes('last') && !run.lastUsed) {
       run.lastUsed = true;
@@ -682,6 +696,7 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
     // a press during hit stop waits for the next play step
     for (const k of ['attack', 'roll', 'heal', 'ab1', 'ab2']) if (act[k]) R.pend[k] = true;
     const play = advance(clock);
+    ev.play = play;
     if (play && rs.run && !R.dead) {
       const a = { ...act };
       for (const k of Object.keys(R.pend)) { a[k] = act[k] || R.pend[k]; R.pend[k] = false; }
@@ -723,6 +738,7 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
       if (e.type === 'stop') stop(e.n);
       // a drink that ends after the flasks went to 0 (a test hook, a later stage's cost) heals nothing and takes nothing
       else if (e.type === 'drink' && rs.run && rs.run.flasks > 0) {
+        e.drank = true;
         rs.run.flasks -= 1;
         rs.run.hp = Math.min(maxOf(rs), rs.run.hp + healNow(rs));
         // Tallow glass: a flask cools both abilities by 3 s
@@ -737,6 +753,8 @@ export function makeRunner({ walk, meta, body, rs, targets = () => [], lightable
     // the hurt blink: the figure hides and shows every 4 game steps (8 with reduced motion) while the hit's safe time lasts. The
     // fighter stops stepping at 0 health, so its safe time stops counting: the figure stays shown through the death fade
     body.s.hide = !R.dead && fighter.f.safe > 0 && R.hurtAt >= 0 && Math.floor((clock.step - R.hurtAt) / R.blink) % 2 === 0;
+    // the build reads what this step did (a hit, a hurt, a foe put out, a zone cleared, an ability used)
+    R.build?.step(ev);
     return ev;
   }
   /* a cache's prize (keys.js opens it): glim (its n, with the Ember factor), a spark pick offered at once, a pattern lamp or an ability

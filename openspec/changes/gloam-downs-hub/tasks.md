@@ -20,15 +20,15 @@ Three builders work in parallel worktrees after the fair-fight change (`gloam-do
 - [x] 1.12 `games/gloam-downs/README.md`: the hall, its budget and how to bake it.
 
 ## 2. Buffs builder (B)
-- [ ] 2.1 `status.js`: Char, Soot, Blind, Mark, the tick cap, `statusTick`, `statusOut`, `blindMiss`; ticks never flinch or wear poise. The three hook lines in `foes.js`.
-- [ ] 2.2 `build.js` (new): sure cuts with the `sure` stream, the ward shell and its cap, Horn lamp, the colour sets (the held blade and off-hand count), `makeBuild`, `shellShare`, and for G `markSure` and `addShell`. The hook lines in `main.js` and `index.html`.
-- [ ] 2.3 `abilities.js`, `fight.js`, `sparks.js`: the ten abilities with their tells, effects and cues.
-- [ ] 2.4 `run.js`: the panes' rules, the wicks' rules, Whetstone, Horn lamp, Blade rack, Wick crate; the one `cracked` line in G's `run-save.js`.
-- [ ] 2.5 `relics.js`: the four relics and kindlings. `keys.js` and `moves.js`: Gloam dash.
-- [ ] 2.6 `run-sound.js`: the cues of design.md "Sound". `gloam-downs-sound.test.mjs`: each new cue keys on its event.
-- [ ] 2.7 `qa/lab/gloam-downs-states.test.mjs` and `qa/lab/gloam-downs-kit.test.mjs` (new): every scenario of the foe states, sure cuts, the shell, the abilities, panes, wicks, relics, wares, the key, sets, gaining, and the power budget. Update seeded tests that pin a draw.
-- [ ] 2.8 `qa/lab/gloam-downs-run.kit.e2e.mjs` (new): the e2e scenarios, in one place with `?test`.
-- [ ] 2.9 `qa/lab/gloam-downs-bot.mjs`: the bot knows the new kit and picks build families.
+- [x] 2.1 `status.js`: Char, Soot, Blind, Mark, the tick cap, `statusTick`, `statusOut`, `blindMiss`; ticks never flinch or wear poise. The three hook lines in `foes.js`.
+- [x] 2.2 `build.js` (new): sure cuts with the `sure` stream, the ward shell and its cap, Horn lamp, the colour sets (the held blade and off-hand count), `makeBuild`, `shellShare`, and for G `markSure` and `addShell`. The hook lines in `main.js` and `index.html`.
+- [x] 2.3 `abilities.js`, `fight.js`, `sparks.js`: the ten abilities with their tells, effects and cues.
+- [x] 2.4 `run.js`: the panes' rules, the wicks' rules, Whetstone, Horn lamp, Blade rack, Wick crate; the one `cracked` line in G's `run-save.js`.
+- [x] 2.5 `relics.js`: the four relics and kindlings. `keys.js` and `moves.js`: Gloam dash.
+- [x] 2.6 `run-sound.js`: the cues of design.md "Sound". `gloam-downs-sound.test.mjs`: each new cue keys on its event.
+- [x] 2.7 `qa/lab/gloam-downs-states.test.mjs` and `qa/lab/gloam-downs-kit.test.mjs` (new): every scenario of the foe states, sure cuts, the shell, the abilities, panes, wicks, relics, wares, the key, sets, gaining, and the power budget. Update seeded tests that pin a draw.
+- [x] 2.8 `qa/lab/gloam-downs-run.kit.e2e.mjs` (new): the e2e scenarios, in one place with `?test`.
+- [x] 2.9 `qa/lab/gloam-downs-bot.mjs`: the bot knows the new kit and picks build families.
 
 ## 3. Gear builder (G)
 - [ ] 3.1 `gear.js`: `rollGear` (the `gear`, `tier` and `trait` streams with their counters), `tierPower`, `traitCool`, `traitWide`, `bladeHit`, `bladeHold`, `patternKind`, `startGear`, `chooseBlade`, `chooseOffhand`, `cleanGear`; the depth tables with the Keen eye and Ember shifts.

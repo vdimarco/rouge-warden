@@ -13,6 +13,14 @@ import { makeBeds } from './beds.js';
 
 // the cues that begin a fight as a hit does: a hit given, a plunge's landing, a hit taken
 const FIGHT_CUES = new Set(['hit', 'land', 'hurt']);
+/* the cues of the new kit (gloam-downs-hub design.md "Sound"), each built from a recipe there now (sound.js): the cue log keeps the
+   kit's own name with its ability or buff id (`ability: 'lash'`, `pane: 'cracked'`), and the sound lays the recipe named here, with
+   `kit` set to that name. The runner logs each as its event happens: an ability's use, a sure cut, a Char or Mark burst, Soot passed
+   on, a shell that breaks, Cracked glass that cracks, a Gloam dash */
+export const KIT_CUES = {
+  lash: 'charge', slick: 'pulse', tacks: 'cracks', toll: 'clang', shell: 'light', post: 'light', shutter: 'roll', blink: 'roll',
+  sure: 'shard', char: 'snap', soot: 'pulse', crack: 'shards', dash: 'roll'
+};
 export function makeRunSound({ log, rs, phone = false, step = () => 0, ear = () => null, foe = () => null, base = './audio/', fetchFn = null, seed = 1 }) {
   const A = { ctx: null, mix: null, fx: null, music: null, heard: 0, timer: 0, scene: { kind: 'silent' }, paused: false, low: false, frame: null, failed: null, lead: null,
     // the fight as the score follows it (kept before the context exists), the Ember level, and the events heard
@@ -113,7 +121,9 @@ export function makeRunSound({ log, rs, phone = false, step = () => 0, ear = () 
     const f = c.foe ? foe(c.foe) : null, o = { ...c };
     if (f) { o.pos = f.pos; o.type = f.type; }
     A.fx.setEar(ear());
-    const r = A.fx.play(c.cue, at, o);
+    const name = KIT_CUES[c.cue] || c.cue;
+    if (name !== c.cue) o.kit = c.cue;
+    const r = A.fx.play(name, at, o);
     // the lead is read inside play(), on the same reading of the clock as the cue's time: a read here could come a render quantum later
     if (r) A.lead = +r.lead.toFixed(4);
     if (r) { c.at = +r.at.toFixed(4); c.v = r.v; if (r.glim !== undefined) c.glim = r.glim; }
@@ -121,7 +131,7 @@ export function makeRunSound({ log, rs, phone = false, step = () => 0, ear = () 
   /* a cue of the page itself (the cards): logged in the same queue as the game's cues. Inside a frame the frame's flush lays it with
      them; outside one it is laid now. So a card that opens in a frame never takes the frame's other cues with it */
   A.cue = (name, more = {}) => {
-    if (!CUES[name]) return;
+    if (!CUES[name] && !KIT_CUES[name]) return;
     log.push({ cue: name, step: step(), play: step(), ...more });
     if (!A.frame) A.flush();
   };

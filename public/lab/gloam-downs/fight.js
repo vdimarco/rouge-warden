@@ -73,7 +73,12 @@ export const LAMPS = { r: 0.16, s: 0.04, lift: 0.4, stoneR: 0.5 };
 /* what an ability leaves on the ground, as steady dabs that read from the follow camera (8.5 m back): a snare is a ring of 14 ember dabs
    as wide as its reach with a pale centre that blinks, a pool of pitch is three rings of dark and ember dabs that fill its 2 m, so it
    reads as a pool and not as glim. Both stand 0.15 m over the ground */
-export const GROUND_FX = { snare: { n: 14, s: 0.07, lift: 0.15 }, pitch: { rings: [[0.35, 5], [0.65, 9], [0.95, 13]], s: 0.065, lift: 0.15 } };
+export const GROUND_FX = { snare: { n: 14, s: 0.07, lift: 0.15 }, pitch: { rings: [[0.35, 5], [0.65, 9], [0.95, 13]], s: 0.065, lift: 0.15 },
+  /* the hub's (gloam-downs-hub design.md "New abilities"): an oil slick is three rings of large dark dabs (Flame's dark ember 33, never
+     the pale of glim or a wisp's teal) that fill its 3 m as one dark pool and turn to fire (34, 35) once lit; a tack is one small pale
+     dab; the post lamp a column of 3 warm dabs with a ring at its reach; the moths of the swarm 6 Gloam dabs (39) over the lamplighter,
+     or at the foe they seek */
+  slick: { rings: [[0.3, 5], [0.65, 8], [0.95, 10]], s: 0.13, lift: 0.08 }, tack: { s: 0.045, lift: 0.1 }, post: { n: 10, s: 0.045, lift: 0.12 }, moth: { s: 0.03 } };
 export function effectDabs(e, t = 0) {
   const out = [];
   if (e.kind === 'snare') {
@@ -83,13 +88,25 @@ export function effectDabs(e, t = 0) {
   } else if (e.kind === 'pitch') {
     const G = GROUND_FX.pitch;
     G.rings.forEach(([k, n], r) => { for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2 + t * 0.5 * (r % 2 ? -1 : 1); out.push({ kind: 'pitch', x: e.at[0] + Math.sin(a) * e.r * k, y: e.at[1] + G.lift, z: e.at[2] + Math.cos(a) * e.r * k, ci: (i + r) % 2 ? 33 : 34, s: G.s }); } });
+  } else if (e.kind === 'slick') {
+    const G = GROUND_FX.slick, lit = e.lit > 0;
+    G.rings.forEach(([k, n], r) => { for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2 + (lit ? t * 0.8 : 0); out.push({ kind: 'slick', x: e.at[0] + Math.sin(a) * e.r * k, y: e.at[1] + G.lift, z: e.at[2] + Math.cos(a) * e.r * k, ci: lit ? ((i + r) % 2 ? 34 : 35) : 33, s: G.s }); } });
+  } else if (e.kind === 'tacks') {
+    for (const p of e.pts) out.push({ kind: 'tack', x: p[0], y: p[1] + GROUND_FX.tack.lift, z: p[2], ci: 47, s: GROUND_FX.tack.s });
+  } else if (e.kind === 'post') {
+    const G = GROUND_FX.post;
+    for (let k = 0; k < 3; k++) out.push({ kind: 'post', x: e.at[0], y: e.at[1] + 0.5 + k * 0.4, z: e.at[2], ci: k === 2 ? 46 : 47, s: G.s * (k === 2 ? 1.8 : 1) });
+    for (let i = 0; i < G.n; i++) { const a = (i / G.n) * Math.PI * 2 + t * 0.4; out.push({ kind: 'post', x: e.at[0] + Math.sin(a) * e.r, y: e.at[1] + G.lift, z: e.at[2] + Math.cos(a) * e.r, ci: 46, s: G.s }); }
   }
   return out;
 }
 /* a foe's state, as abilities put it on (status.js), drawn on the foe: stunned, 5 pale dabs circling over the head; held by a snare, a
    ring of 6 warm lamp dabs at the feet (not a fire slot, so it never reads as a tell); slowed, 4 frost dabs (Ward's deep 38) at the chest; burning, 3 dark ember dabs rising. Each shows
    while its count runs and goes when it ends */
-export const STATE_DABS = { stun: { n: 5, r: 0.32, s: 0.05 }, hold: { n: 6, r: 0.55, s: 0.055 }, slow: { n: 4, r: 0.4, s: 0.05 }, burn: { n: 3, r: 0.22, s: 0.05 } };
+export const STATE_DABS = { stun: { n: 5, r: 0.32, s: 0.05 }, hold: { n: 6, r: 0.55, s: 0.055 }, slow: { n: 4, r: 0.4, s: 0.05 }, burn: { n: 3, r: 0.22, s: 0.05 },
+  /* the hub's states (status.js): Char, one dark ember dab a stack in a short arc over the head, so 5 read as a full row; Soot, 3 dark
+     dabs that sink round the body; Blind, a pale bar of 3 dabs at the eyes; Mark, 4 Gloam dabs (39) turning round the chest */
+  char: { r: 0.18, s: 0.05 }, soot: { n: 3, r: 0.3, s: 0.05 }, blind: { n: 3, s: 0.04 }, mark: { n: 4, r: 0.35, s: 0.05 } };
 export function stateDabs(f, t = 0) {
   const st = f?.status, out = [];
   if (!st || !f.alive) return out;
@@ -99,6 +116,10 @@ export function stateDabs(f, t = 0) {
   if (st.hold > 0) ring('hold', f.y + 0.12, Math.max(STATE_DABS.hold.r, r + 0.15), 46, 1);
   if (st.slow > 0) ring('slow', f.y + chest, Math.max(STATE_DABS.slow.r, r + 0.1), 38, -0.8);
   if (st.burn > 0) for (let i = 0; i < STATE_DABS.burn.n; i++) { const u = (t * 0.9 + i / STATE_DABS.burn.n) % 1, a = i * 2.1; out.push({ kind: 'state-burn', x: f.x + Math.sin(a) * STATE_DABS.burn.r, y: f.y + 0.4 + u * (chest + 0.4), z: f.z + Math.cos(a) * STATE_DABS.burn.r, ci: 33, s: STATE_DABS.burn.s * (1 - 0.5 * u) }); }
+  if (st.char > 0) for (let i = 0; i < st.char; i++) { const a = (i - 2) * 0.45; out.push({ kind: 'state-char', x: f.x + Math.sin(a) * STATE_DABS.char.r, y: f.y + chest + 0.55 + Math.cos(a) * 0.08, z: f.z + Math.cos(a) * STATE_DABS.char.r * 0.3, ci: 33, s: STATE_DABS.char.s }); }
+  if (st.soot > 0) for (let i = 0; i < STATE_DABS.soot.n; i++) { const u = (t * 0.6 + i / STATE_DABS.soot.n) % 1, a = i * 2.1 + 1; out.push({ kind: 'state-soot', x: f.x + Math.sin(a) * STATE_DABS.soot.r, y: f.y + chest + 0.3 - u * chest, z: f.z + Math.cos(a) * STATE_DABS.soot.r, ci: 33, s: STATE_DABS.soot.s * (0.6 + 0.4 * u) }); }
+  if (st.blind > 0) for (let i = 0; i < STATE_DABS.blind.n; i++) out.push({ kind: 'state-blind', x: f.x + Math.sin((f.yaw ?? 0) + Math.PI / 2) * (i - 1) * 0.1, y: f.y + (f.T?.eye ?? chest + 0.3), z: f.z + Math.cos((f.yaw ?? 0) + Math.PI / 2) * (i - 1) * 0.1, ci: 47, s: STATE_DABS.blind.s });
+  if (st.mark > 0) ring('mark', f.y + chest, Math.max(STATE_DABS.mark.r, r + 0.1), 39, 2);
   return out;
 }
 export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still = false, fx = {}, project = null, doc = null, mix = { ember: 0 }, emit = null, dressOf = () => null, clipOf = () => null, groundRelics = () => [],
@@ -115,7 +136,7 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
   const zones = mix && meta.zones ? mixZones(meta.id, meta.zones, codes.join(''), seed, mix) : meta.zones;
   const combo = makeCombo({ emit, best: rs.run?.combo ?? 0 });
   const foes = makeFoes({ walk, meta: { ...meta, zones }, slots: codes, seed, onScreen, water, combo, scale: rs.run ? foeScale(rs.run) : null, tokens: rs.run ? tokensOf(rs.run) : 1 });
-  const sparks = pool.extra && pool.extra.end > pool.extra.first ? makeSparks(world, pool.extra.first, pool.extra.end - pool.extra.first, meta.pal, { glow: 64 }) : null;
+  const sparks = pool.extra && pool.extra.end > pool.extra.first ? makeSparks(world, pool.extra.first, pool.extra.end - pool.extra.first, meta.pal, { glow: 80 }) : null; // 80 steady dabs: an Oil slick, a ring of tacks and a ledge's lamps fit together
   const feel = makeFeel({ pal: meta.pal, still, fx });
   const fits = new Map(); // a foe's marker laid on the ground: its fit, kept while the marker stands where it is
   const G = { foes, sparks, feel, combo, zones, runner: null, game: 0, keeperTo: -1, keeperAt: null, beatTo: -1, lift: MARK_LIFT, bars: 0, halo: [] };
@@ -364,14 +385,16 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
     const at = e.at, ground = (x, z, y) => walk.support(x, z, y + 0.6) ?? y;
     switch (e.kind) {
       case 'throw': sparks.smear(e.from, e.to, 35, 0.05, 0.3); break;
-      case 'line': sparks.smear(e.a, e.b, e.id === 'moth' ? 39 : 36, 0.03, e.life ?? 0.2); break;
-      case 'tell': sparks.ring(at[0], ground(at[0], at[2], at[1]) + OVER, at[2], 34, e.r * 0.9, e.r, e.life ?? 0.6, Math.round(10 + e.r * 6), 0.04); break;
+      // a line: the moth's seek in Gloam, Wick lash in fire, a shard of the fan pale, the Crook line gold
+      case 'line': sparks.smear(e.a, e.b, e.id === 'moth' ? 39 : e.id === 'lash' ? 35 : e.id === 'fan' ? 47 : 36, 0.03, e.life ?? 0.2); break;
+      // a ring that tells an effect: the bomb's in ember, as it always was; the lamplighter's own (Bell toll, Oil slick) in pale lamp
+      case 'tell': sparks.ring(at[0], ground(at[0], at[2], at[1]) + OVER, at[2], e.id === 'bomb' ? 34 : 47, e.r * 0.9, e.r, e.life ?? 0.6, Math.round(10 + e.r * 6), 0.04); break;
       case 'burst':
         sparks.ring(at[0], ground(at[0], at[2], at[1]) + OVER, at[2], 35, e.r * 0.3, e.r, 0.35, Math.round(12 + e.r * 6), 0.05);
         sparks.flash(at[0], at[1] + 0.4, at[2], 36, 0.5, 0.12);
         sparks.drops(at[0], at[1] + 0.3, at[2], 34, 10, 2.5, 2.5);
         break;
-      case 'puff': sparks.drops(at[0], at[1] + 0.5, at[2], 46, 8, 1.2, 1.5); break;
+      case 'puff': sparks.drops(at[0], at[1] + 0.5, at[2], e.id === 'blink' || e.id === 'shutter' || e.id === 'swarm' ? 39 : 46, 8, 1.2, 1.5); break;
       case 'cone':
         for (let i = 0; i < 9; i++) {
           const a = e.yaw + ((i / 8) - 0.5) * (e.arc * Math.PI / 180), r = e.r * 0.9;
@@ -601,7 +624,12 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
     }
     const A = G.runner?.abilities;
     for (const e of A?.effects || []) {
-      if (e.kind === 'snare' || e.kind === 'pitch') out.push(...effectDabs(e, t));
+      if (e.kind === 'snare' || e.kind === 'pitch' || e.kind === 'slick' || e.kind === 'tacks' || e.kind === 'post') out.push(...effectDabs(e, t));
+      else if (e.kind === 'swarm' && s0() && e.t >= e.tell) {
+        // the moths: round the foe they seek, else round the lamplighter's head
+        const q = e.targets?.find(x => x?.alive), L = s0(), cx = q ? q.x : L.x, cy = q ? q.y + (q.T?.chest ?? 1) + 0.3 : L.y + 1.6, cz = q ? q.z : L.z;
+        for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2 + t * 5; out.push({ kind: 'moth', x: cx + Math.sin(a) * 0.35, y: cy + 0.08 * Math.sin(t * 9 + i), z: cz + Math.cos(a) * 0.35, ci: 39, s: GROUND_FX.moth.s }); }
+      }
       else if (e.kind === 'moth' && s0()) { const L = s0(); for (let i = 0; i < 3; i++) out.push({ kind: 'moth', x: L.x + 0.45 + 0.06 * Math.sin(t * 9 + i), y: L.y + 1.5 + 0.05 * i, z: L.z + 0.06 * Math.cos(t * 7 + i), ci: 39, s: 0.03 }); }
     }
     // the foes' states: stunned, held, slowed, burning

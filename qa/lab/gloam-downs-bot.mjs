@@ -42,6 +42,7 @@ import { fileURLToPath } from 'node:url';
 import { makeWalk, makeBody, PARAMS } from '../../public/lab/gloam-downs/play.js';
 import { startRun, makeRunner, buy, buyUnlock, chooseWick, maxOf, flasksOf, emberOf, ember, UPGRADES, UNLOCKS, purse, takeSpark, setPane, paneSlots, kindle, kindledOf, chooseStartAbility, groundPatterns, BASE, PACE, PANE_RULES, foeScale, bossScale, tokensOf, depthOf, routeOfRun } from '../../public/lab/gloam-downs/run.js';
 import { makeAbilities, groundAbilities } from '../../public/lab/gloam-downs/abilities.js';
+import { makeBuild } from '../../public/lab/gloam-downs/build.js';
 import { makeKeys, groundSpots } from '../../public/lab/gloam-downs/keys.js';
 import { makeBoss, REEVE } from '../../public/lab/gloam-downs/boss.js';
 import { bossBrain } from './gloam-downs-bossbot.mjs';
@@ -103,16 +104,30 @@ function place(id) {
 }
 /* what the bot buys in each Lamp-room (before a run and at each lit beacon), in this order: the first affordable of the next of each. A
    lit beacon does not bank, so the Lamp-room spends the glim carried first, then the bank (pay in run.js). Found patterns come first */
-const WANT = ['up:mantle', 'up:flask', 'un:kflask', 'up:edge', 'up:draught', 'up:belt', 'un:shelf', 'up:ash', 'up:keen', 'un:rising', 'un:tongue', 'un:heart', 'un:last', 'un:parry', 'up:first', 'up:panes'];
-const PANE_ORDER = ['smoked', 'thick', 'lead', 'hot', 'tallow', 'storm', 'ember', 'clear'];
-// Belt's start ability, and the abilities it uses on a wind-up, in place of a roll, and to attack
-const START_ORDER = ['bomb', 'moth', 'pitch', 'flare', 'crook', 'snare', 'rime', 'guard', 'step'];
-const DODGE = ['step', 'guard'], READ = ['flare', 'rime'], HIT = ['bomb', 'moth', 'pitch', 'snare', 'crook'];
+const WANT = ['up:mantle', 'up:flask', 'un:kflask', 'up:edge', 'up:draught', 'up:belt', 'un:shelf', 'up:ash', 'up:keen', 'un:rising', 'un:tongue', 'un:heart', 'un:last', 'un:parry', 'up:first', 'up:panes', 'up:whet', 'un:crate', 'up:horn'];
+/* the build families (gloam-downs-hub design.md "Balance"): each bot plays one colour's family, by its number (FAMILY=flame, ward or
+   gloam plays them all as one). A family sets the panes in its order (Thick glass, a starter, first or second in each, as the bot set
+   it before the families), picks Belt's start ability and its wicks by its own ranks, and takes its sparks in its colour (Ward under
+   50% health, as every family; Gloam only once both slots hold an ability) */
+const FAMILIES = ['flame', 'ward', 'gloam'];
+const PANE_ORDER = {
+  flame: ['ember', 'thick', 'cinder', 'hot', 'cracked', 'spill', 'smoked', 'lead', 'tallow', 'storm', 'clear', 'thirst', 'rush', 'shard'],
+  ward: ['thick', 'lead', 'tallow', 'thirst', 'smoked', 'hot', 'storm', 'ember', 'clear', 'cinder', 'spill', 'rush', 'shard', 'cracked'],
+  gloam: ['smoked', 'thick', 'storm', 'clear', 'rush', 'shard', 'hot', 'lead', 'tallow', 'ember', 'cinder', 'spill', 'thirst', 'cracked']
+};
+// Belt's start ability, and the abilities it uses on a wind-up, in place of a roll, to attack, and to heal
+const START_ORDER = {
+  flame: ['bomb', 'lash', 'fan', 'slick', 'pitch', 'crook', 'moth', 'flare', 'toll', 'snare', 'rime', 'shell', 'guard', 'step', 'swarm', 'tacks', 'shutter', 'blink', 'post'],
+  ward: ['flare', 'toll', 'shell', 'bomb', 'guard', 'rime', 'post', 'moth', 'pitch', 'crook', 'snare', 'lash', 'fan', 'slick', 'step', 'swarm', 'tacks', 'shutter', 'blink'],
+  gloam: ['moth', 'swarm', 'snare', 'tacks', 'bomb', 'shutter', 'blink', 'step', 'flare', 'pitch', 'crook', 'rime', 'lash', 'fan', 'slick', 'toll', 'shell', 'guard', 'post']
+};
+const DODGE = ['step', 'guard', 'blink'], READ = ['flare', 'rime', 'toll', 'shutter'], HIT = ['bomb', 'moth', 'pitch', 'snare', 'crook', 'lash', 'fan', 'slick', 'tacks', 'swarm', 'shell'], MEND = ['post'];
+const familyOf = b => (FAMILIES.includes(process.env.FAMILY) ? process.env.FAMILY : FAMILIES[b % FAMILIES.length]);
 // the whole catalogue, in glim: every ware level, every unlock and every pattern
 const CATALOGUE = UPGRADES.reduce((a, u) => a + u.costs.reduce((x, c) => x + c, 0), 0) + UNLOCKS.reduce((a, u) => a + u.cost, 0) + PATTERNS.reduce((a, p) => a + (p.cost | 0), 0);
 const spentOf = rs => UPGRADES.reduce((a, u) => a + u.costs.slice(0, rs.up[u.id] || 0).reduce((x, c) => x + c, 0), 0) +
   UNLOCKS.filter(u => (rs.unlocks || []).includes(u.id)).reduce((a, u) => a + u.cost, 0) + PATTERNS.filter(p => (rs.kindled || []).includes(p.id)).reduce((a, p) => a + (p.cost | 0), 0);
-function shop(rs) {
+function shop(rs, fam = 'flame') {
   for (const p of PATTERNS.filter(p => (rs.patterns || []).includes(p.id)).sort((a, b) => a.cost - b.cost)) kindle(rs, p.id);
   for (let guard = 0; guard < 40; guard++) {
     const opts = WANT.map(w => {
@@ -124,19 +139,24 @@ function shop(rs) {
     const o = opts[0], [k, id] = o.w.split(':');
     if (k === 'up') buy(rs, id); else buyUnlock(rs, id);
   }
-  const have = PANE_ORDER.filter(id => kindledOf(rs, 'pane').includes(id));
+  const have = PANE_ORDER[fam].filter(id => kindledOf(rs, 'pane').includes(id));
   for (let i = 0; i < paneSlots(rs); i++) if ((rs.panes || [])[i] !== have[i]) setPane(rs, i, have[i] || null);
 }
-// the spark picks: Ward while the health share was under 50% at the last beacon, Gloam once both slots hold an ability, else Flame
-function sparks(rs, share) {
+// the spark picks: Ward while the health share was under 50% at the last beacon; else the family's colour (Gloam once both slots hold
+// an ability, else Flame)
+function sparks(rs, share, fam = 'flame') {
   while ((rs.run?.sparkPicks | 0) > 0) {
     const both = (rs.run.abilities || []).every(Boolean);
-    if (!takeSpark(rs, share < 0.5 ? 'ward' : both ? 'gloam' : 'flame')) break;
+    if (!takeSpark(rs, share < 0.5 ? 'ward' : fam === 'ward' ? 'ward' : fam === 'gloam' && both ? 'gloam' : 'flame')) break;
   }
 }
-// the wick the bot takes from an offer
-const WICK_RANK = ['keen', 'long', 'oil', 'heels', 'tongue', 'last', 'heavy', 'heart', 'shave'];
-const pickWick = offer => offer.slice().sort((a, b) => WICK_RANK.indexOf(a) - WICK_RANK.indexOf(b))[0];
+// the wick the bot takes from an offer, by its family
+const WICK_RANK = {
+  flame: ['keen', 'long', 'charw', 'oil', 'heels', 'sure', 'tongue', 'count', 'last', 'shellw', 'heavy', 'heart', 'shave'],
+  ward: ['long', 'oil', 'shellw', 'keen', 'last', 'heels', 'heart', 'sure', 'charw', 'tongue', 'count', 'heavy', 'shave'],
+  gloam: ['keen', 'long', 'heels', 'oil', 'count', 'sure', 'shave', 'charw', 'tongue', 'last', 'shellw', 'heavy', 'heart']
+};
+const pickWick = (offer, fam = 'flame') => offer.slice().sort((a, b) => WICK_RANK[fam].indexOf(a) - WICK_RANK[fam].indexOf(b))[0];
 
 /* ---------------- one place ---------------- */
 function playPlace(rs, id, bot) {
@@ -152,7 +172,7 @@ function playPlace(rs, id, bot) {
   if (B) B.ready = true;
   const targets = B ? () => (B.alive ? [...F.targets(), B] : F.targets()) : F.targets;
   const think = B ? (ev, play) => { F.think(ev, play); B.think(ev, play); if (ev.some(e => e.type === 'boss' && (e.what === 'intro' || e.what === 'fall'))) F.hush(); } : F.think;
-  const R = makeRunner({ walk, meta, body, rs, targets, lightable: B ? B.lightable : F.lightable, drop: F.drop, think, onLight: F.bank, abilities: makeAbilities, keys: makeKeys });
+  const R = makeRunner({ walk, meta, body, rs, targets, lightable: B ? B.lightable : F.lightable, drop: F.drop, think, onLight: F.bank, abilities: makeAbilities, keys: makeKeys, build: makeBuild });
   F.bind(R);
   B?.bind(R);
   // who hurt the lamplighter: the foe whose blow came from that point (a coal by its ring), its type, E for an elite, B for the Reeve
@@ -244,8 +264,10 @@ function playPlace(rs, id, bot) {
     if (!rs.run) return a;
     // in place of a roll, 4 times in 10: Smoke step or Bell guard
     if (a.roll) { const i = slotOf(DODGE); if (i >= 0 && rnd() < 0.4) { usedAb++; return press({ ...a, roll: false }, i); } }
-    // a wind-up read near it: Flare or Rime lamp
+    // a wind-up read near it: Flare, Rime lamp, Bell toll or Shutter
     if (a.read) { const i = slotOf(READ); if (i >= 0) { usedAb++; return press(a, i); } }
+    // under half health with foes awake: the Post lamp
+    if (a.fight && rs.run.hp < 0.5 * maxOf(rs)) { const i = slotOf(MEND); if (i >= 0 && !R.abilities.effects.some(e => e.kind === 'post')) { usedAb++; return press(a, i); } }
     // 2 or more foes near, or an elite awake: an attack ability
     if (a.fight) {
       const near = F.targets().filter(t => t.aware && Math.hypot(t.x - s.x, t.z - s.z) < 6).length, elite = R.elite && !R.eliteDown && R.elite.aware;
@@ -423,16 +445,17 @@ function playPlace(rs, id, bot) {
 /* ---------------- one bot ---------------- */
 function playBot(b) {
   const rs = RS.fresh();
-  const bot = { skill: SKILL, rnd: mulberry(hash2(b, 0xb07, 7)), bossFights: [], arrive: [], hurt: 0, caches: 0, abilities: 0, bossAt: null, nudgeTime: 0, snaps: 0, cutins: 0, armorCuts: 0, bracedHits: 0, steelHits: 0, src: {}, bossBreaks: 0, places: [] };
+  const bot = { family: familyOf(b), skill: SKILL, rnd: mulberry(hash2(b, 0xb07, 7)), bossFights: [], arrive: [], hurt: 0, caches: 0, abilities: 0, bossAt: null, nudgeTime: 0, snaps: 0, cutins: 0, armorCuts: 0, bracedHits: 0, steelHits: 0, src: {}, bossBreaks: 0, places: [] };
   const runs = [];
   for (let r = 0; r < MAXRUNS; r++) {
-    shop(rs);
+    const fam = bot.family;
+    shop(rs, fam);
     startRun(rs, hash2(b, r, 0x5eed) || 1);
-    if (rs.run.offer) chooseWick(rs, pickWick(rs.run.offer));
-    if (rs.run.abilityOffer) chooseStartAbility(rs, rs.run.abilityOffer.slice().sort((a, b) => START_ORDER.indexOf(a) - START_ORDER.indexOf(b))[0]);
+    if (rs.run.offer) chooseWick(rs, pickWick(rs.run.offer, fam));
+    if (rs.run.abilityOffer) chooseStartAbility(rs, rs.run.abilityOffer.slice().sort((a, b) => START_ORDER[fam].indexOf(a) - START_ORDER[fam].indexOf(b))[0]);
     // NOAB=1: a run with no abilities (to see what they add)
     if (process.env.NOAB) { rs.run.abilities = [null, null]; rs.run.abilityOffer = null; }
-    sparks(rs, 1);
+    sparks(rs, 1, fam);
     const per = {};
     let nudges = 0, deepest = 0;
     while (rs.run) {
@@ -441,11 +464,11 @@ function playBot(b) {
       deepest = Math.max(deepest, res.depth);
       per[id] = +(res.time / 60).toFixed(2);
       nudges += res.nudges;
-      if (rs.run?.offer) chooseWick(rs, pickWick(rs.run.offer));
+      if (rs.run?.offer) chooseWick(rs, pickWick(rs.run.offer, fam));
       if (res.out?.type === 'dead' || res.out?.type === 'win' || !rs.run) break;
       // a lit beacon: the spark pick, then the Lamp-room (a 0.3 bot carries its glim on half the time)
-      sparks(rs, res.share);
-      if (bot.skill >= 0.5 || bot.rnd() < 0.5) shop(rs);
+      sparks(rs, res.share, fam);
+      if (bot.skill >= 0.5 || bot.rnd() < 0.5) shop(rs, fam);
     }
     const e = rs.ended;
     runs.push({ won: e.won, place: e.place, depth: e.won ? 5 : deepest, time: +(e.time / 60).toFixed(2), banked: e.banked, kept: e.kept, lost: e.lost, relics: e.relics.length, per, nudges, spent: spentOf(rs) });
@@ -455,7 +478,7 @@ function playBot(b) {
     if (e.won && bot.firstWin == null) bot.firstWin = r + 1;
     if (bot.firstWin != null && r + 1 >= bot.firstWin + AFTER) break;
   }
-  return { runs, firstWin: bot.firstWin ?? null, boss: bot.bossFights, arrive: bot.arrive, hurt: bot.hurt, caches: bot.caches, abilities: bot.abilities, nudgeTime: bot.nudgeTime, keys: (rs.keys || []).slice(),
+  return { family: bot.family, runs, firstWin: bot.firstWin ?? null, boss: bot.bossFights, arrive: bot.arrive, hurt: bot.hurt, caches: bot.caches, abilities: bot.abilities, nudgeTime: bot.nudgeTime, keys: (rs.keys || []).slice(),
     snaps: bot.snaps, cutins: bot.cutins, armorCuts: bot.armorCuts, src: bot.src, steelHits: bot.steelHits, bracedHits: bot.bracedHits, bossBreaks: bot.bossBreaks, places: bot.places };
 }
 
@@ -517,6 +540,14 @@ console.log(`runs ended in: ${Object.entries(reached).map(([p, n]) => `${p} ${n}
 const per = {};
 for (const x of bots) for (const r of x.runs) for (const [p, t] of Object.entries(r.per)) (per[p] ||= []).push(t);
 console.log(`minutes a place (median): ${Object.entries(per).map(([p, v]) => `${p} ${med(v)}`).join(', ')}`);
+/* the build families (gloam-downs-hub design.md "Balance"): the mean minutes to clear a place (a place left by its beacon or won) of
+   each family, against the mean of all; none may be more than 15% faster */
+{
+  const clear = fam => { const v = []; for (const x of bots.filter(x => !fam || x.family === fam)) for (const r of x.runs) for (const [p, t] of Object.entries(r.per)) if (r.won || p !== r.place) v.push(t); return v; };
+  const mean = v => (v.length ? v.reduce((a, b) => a + b, 0) / v.length : null), all = mean(clear(null));
+  const fams = FAMILIES.map(f => { const m = mean(clear(f)); return `${f} ${m === null ? '-' : m.toFixed(2)} (${m === null || !all ? '-' : ((100 * (all - m)) / all).toFixed(1) + '% faster'}, ${bots.filter(x => x.family === f).length} bots)`; });
+  console.log(`build families, minutes to clear a place (mean ${all === null ? '-' : all.toFixed(2)}): ${fams.join('; ')}`);
+}
 const arr = bots.flatMap(x => x.arrive);
 console.log(`at the arena: health ${(100 * med(arr.map(a => a.h))).toFixed(0)}% (median), flasks left ${med(arr.map(a => a.flasks))}; damage taken a run (mean) ${(bots.reduce((a, x) => a + x.hurt, 0) / bots.flatMap(x => x.runs).length).toFixed(0)}`);
 console.log(`nudges: ${JSON.stringify(why)} (route and foe are nudges; wisp and zone were given up)`);

@@ -35,6 +35,7 @@ import { makeLife } from './life.js';
 import { parseSeed, seedCode, smallSeed } from './mix.js';
 import { REEVE, REEVE_TEXT } from './boss.js';
 import { makeRunSound } from './run-sound.js';
+import { makeBuild, shellShare } from './build.js'; let build = null;
 import { emit, on } from './bus.js';
 // the selection screens (gloam-downs-screens-life): the title, the lamp cards, the Lamp-room's tiles and the recap
 import { titleView, frameAt, titleSpot } from './menu-scene.js';
@@ -393,6 +394,7 @@ function updateRunHud() {
   if (!h) return;
   $('hpN').textContent = h.text;
   $('hpFill').style.width = `${(h.share * 100).toFixed(1)}%`;
+  $('shell').style.width = (100 * shellShare(build)).toFixed(1) + '%';
   const pips = $('pips');
   while (pips.children.length < h.pips.length) pips.appendChild(document.createElement('i'));
   while (pips.children.length > h.pips.length) pips.lastChild.remove();
@@ -1412,6 +1414,7 @@ function newRunner() {
     walk, meta, body, rs: hallOn() ? hallRs : rs, targets, still, log: cues, fx, abilities: makeAbilities, keys: makeKeys,
     ...(fight ? { lightable: fight.lightable, drop: fight.foes.drop, think: fight.think, onLight: fight.foes.bank } : {})
   });
+  build = makeBuild(runner);
   fight?.bind(runner);
   /* the boss camera (cameras.js), at Barrow Crown: on within 7.0 m of the arena's centre while the fight has started and the boss is
      up, framing the two with the page's own controls kept clear; its step goes after the follow camera's */
@@ -1989,6 +1992,7 @@ function update() {
       const yaw = play && held ? held.yaw(input, cam.c) : cam.c.yaw;
       for (const e of runner.step(play ? input : {}, yaw)) runEvent(e);
       if (hallOn()) hallStep();
+      build?.step();
       if (rs.run && ++sinceStore >= 120) storeRun();
       if (mode === 'play' && fight?.boss) bossWatch();
     }
