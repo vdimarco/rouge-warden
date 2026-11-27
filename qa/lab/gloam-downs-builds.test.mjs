@@ -581,7 +581,7 @@ function untilSpecial(W, E, max = 600) {
   console.error = err;
   off.forEach(f => f());
   assert.equal(got, 1);
-  assert.equal(EVENTS.length, 24); // with life-stir (gloam-downs-screens-life)
+  assert.equal(EVENTS.length, 25); // with life-stir (gloam-downs-screens-life) and gear-cue (gloam-downs-hub)
   pass('the screens: relic marks with Kindled; the bus: a listener that throws does not stop the next');
 }
 

@@ -85,3 +85,6 @@
 @media (prefers-reduced-motion: reduce) { .gt, .gm { transition: none; } }
 /* a compare toast hides the place's arrival words, as the run's toast does */
 body.run:has(.compare:not([hidden])) .arrive { opacity: 0; }
+/* in the boss fight on a phone the HUD keeps to its corner: the row steps aside, and the touch buttons carry the off-hand's and the
+   abilities' marks */
+@media not ((min-width: 760px) and (min-height: 560px)) { .hud.boss .gear { display: none; } }
