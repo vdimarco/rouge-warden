@@ -1,5 +1,7 @@
 # Working in rouge-warden
 
+When planning, building, art-directing, testing, or shipping a game, follow `.cursor/skills/make-games-with-ai/SKILL.md`.
+
 ## OpenSpec
 
 Use [OpenSpec](https://openspec.dev/) for new features, changes to gameplay behavior, substantial refactors, and work across multiple systems. Read `.agents/skills/openspec-workflow/SKILL.md` for the workflow. Apply these rules throughout the repository, together with any instructions closer to the files you change.
