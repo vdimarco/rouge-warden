@@ -19,14 +19,15 @@ void main() {
   float faceZ = step(1.5, i2.w);
   float lx = (0.5 - aC.x) * i0.w * 2.0;
   float lz = (aC.y - 0.5) * i1.x * 2.0;
-  // Kind 1 lying flat is the runner stack. Buildings stay axis-aligned.
+  // Kind 1 lying flat is the runner. uHead is atan2(moveX, moveZ): 0 faces +Z.
+  // The front row of the slice sits on local -Z, and image-left is the character's right.
   if (abs(i2.y - 1.0) < 0.25 && upright < 0.5) {
+    float rgt = lx;
+    float fwd = -lz;
     float c = cos(uHead);
     float s = sin(uHead);
-    float rx = lx * c - lz * s;
-    float rz = lx * s + lz * c;
-    lx = rx;
-    lz = rz;
+    lx = -rgt * c + fwd * s;
+    lz = -rgt * s + fwd * c;
   }
   vec3 horiz = vec3(i0.x + lx, i0.z, i0.y + lz);
   vec3 faceX = vec3(i0.x, i0.z + (aC.y - 0.5) * i1.x * 2.0, i0.y + (aC.x - 0.5) * i0.w * 2.0);
@@ -525,7 +526,7 @@ export function createRenderer(canvas) {
   function drawStack(pass, count) {
     gl.useProgram(stackProg);
     gl.uniformMatrix4fv(stackU.uVP, false, api.vp);
-    gl.uniform1f(stackU.uHead, api.head || 0);
+    gl.uniform1f(stackU.uHead, api.head);
     gl.uniform3fv(stackU.uSun, api.sun);
     gl.uniform3fv(stackU.uHaze, api.haze);
     gl.uniform1f(stackU.uTile, api.tile || 32);
@@ -575,7 +576,7 @@ export function createRenderer(canvas) {
     api.outlineOn = scene.outlineOn;
     api.camXZ = scene.camXZ;
     api.runnerXZ = scene.runnerXZ;
-    api.head = scene.head || 0;
+    api.head = scene.head;
     api.lights = scene.lights;
     api.lightColor = scene.lightColor;
     api.intensity = scene.intensity;

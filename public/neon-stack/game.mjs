@@ -27,7 +27,7 @@ let time = 0;
 const override = [null, null, null, null, null, null];
 const fade = [1, 1, 1, 1, 1, 1];
 let facing = 1;
-let head = Math.PI;
+let head = 0;
 let faceWant = 1;
 let faceT = 1;
 let moving = false;
@@ -505,7 +505,7 @@ function step(dt) {
     moving = true;
     route = [];
     const [dx, dy] = viewDelta(wish.x, wish.y);
-    if (dx || dy) head = Math.atan2(dx, -dy);
+    if (dx || dy) head = Math.atan2(dx, dy);
     if (Math.abs(dx) > 0.2) {
       const want = dx > 0 ? 1 : -1;
       if (want !== faceWant) { faceWant = want; faceT = 0; }
@@ -519,7 +519,7 @@ function step(dt) {
     const d = Math.hypot(dx, dy);
     const step = 3 * dt;
     moving = true;
-    if (dx || dy) head = Math.atan2(dx, -dy);
+    if (dx || dy) head = Math.atan2(dx, dy);
     if (dx) facing = dx > 0 ? 1 : -1;
     if (d <= step) { player.x = tx; player.y = ty; route.shift(); }
     else { player.x += dx / d * step; player.y += dy / d * step; }
@@ -636,7 +636,7 @@ addEventListener("keyup", (e) => keys.delete(e.key.toLowerCase()));
 window.__test = {
   ready: () => ready,
   state: () => ({
-    player: { x: player.x, y: player.y, facing },
+    player: { x: player.x, y: player.y, facing, heading: head * 180 / Math.PI },
     tilt, yaw: wrap(yaw),
     slices: renderer.slices,
     drawCalls: renderer.drawCalls,
@@ -694,6 +694,7 @@ window.__test = {
   viewStep: (mx, my, dt = 0.3) => {
     attract = false;
     const [dx, dy] = viewDelta(mx, my);
+    if (dx || dy) head = Math.atan2(dx, dy);
     if (dx) facing = dx > 0 ? 1 : -1;
     const before = { x: player.x, y: player.y };
     tryMove(dx * 3 * dt, dy * 3 * dt);

@@ -1198,6 +1198,45 @@ for (const seed of [1, 4, 7, 9]) {
   await coverage(1280, 800, 1, seed);
 }
 
+console.log("runner heading");
+{
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
+  const page = await ctx.newPage();
+  await page.goto(GAME + "?seed=7", { waitUntil: "domcontentloaded" });
+  await page.waitForFunction(() => window.__test && __test.ready(), null, { timeout: 90000 });
+  const rows = await page.evaluate(async () => {
+    const wrap = (d) => { let x = ((d % 360) + 360) % 360; if (x > 180) x -= 360; return x; };
+    const dirs = [[0, 1, "down"], [0, -1, "up"], [-1, 0, "left"], [1, 0, "right"]];
+    const out = [];
+    __test.enter();
+    __test.setPose("run");
+    for (const yaw of [0, 90]) {
+      for (const [mx, my, name] of dirs) {
+        __test.setTilt(55);
+        __test.setYaw(yaw);
+        __test.moveTo(2.5, 3.2);
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+        const a = __test.state().player;
+        __test.moveInput(mx, my, 500);
+        await new Promise((r) => setTimeout(r, 320));
+        const b = __test.state().player;
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const expect = Math.atan2(dx, dy) * 180 / Math.PI;
+        out.push({
+          yaw, name, heading: b.heading, expect,
+          err: Math.abs(wrap(b.heading - expect)),
+          dist: Math.hypot(dx, dy),
+        });
+      }
+    }
+    return out;
+  });
+  for (const row of rows) {
+    check(row.dist > 0.05 && row.err < 20, "yaw " + row.yaw + " " + row.name + " heading " + row.heading.toFixed(0) + " vs move " + row.expect.toFixed(0) + " (" + row.err.toFixed(1) + " deg)");
+  }
+  await ctx.close();
+}
+
 await browser.close();
 console.log(failed ? "FAIL " + failed : "PASS neon stack e2e");
 process.exit(failed ? 1 : 0);
