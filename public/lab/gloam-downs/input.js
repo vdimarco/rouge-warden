@@ -12,9 +12,15 @@
 // so a phone with a mouse plugged in (Samsung DeX) takes it too. A touch's tap is never a click of the mouse.
 // readPads, navStep, heldNav, pickMove, mouseLook, mouseAct and mouseAsk are pure, so Node tests use them.
 
-export const PAD = { A: 0, B: 1, X: 2, Y: 3, LB: 4, RB: 5, LT: 6, RT: 7, BACK: 8, START: 9, UP: 12, DOWN: 13, LEFT: 14, RIGHT: 15 };
+export const PAD = { A: 0, B: 1, X: 2, Y: 3, LB: 4, RB: 5, LT: 6, RT: 7, BACK: 8, START: 9, L3: 10, R3: 11, UP: 12, DOWN: 13, LEFT: 14, RIGHT: 15 };
 // the keys of a run's moves; M, P, Escape and R are the page's own (main.js)
-export const KEYS = { attack: ['j', 'z'], roll: ['k', 'x'], heal: ['l', 'c'] };
+export const KEYS = { attack: ['j', 'z'], roll: ['k', 'x'], heal: ['l', 'c'], ab1: ['f', 'u'], ab2: ['g', 'i'], off: ['v', 'o'] };
+/* the Lamp-room's own inputs (gloam-downs-hub design.md "Decision 7"): Use opens the card of the station in reach, and the quick list
+   opens every station's rows in one card. In the hall E is Use, so it does not turn the view there (Q still does) */
+export const HUB_KEYS = { use: ['e', 'enter'], list: ['tab'] };
+export const HUB_PAD = { use: 'A', list: 'BACK', close: 'B' };
+// the abilities' slots, as the held input and the latch name them
+export const ABILITY_INPUTS = ['ab1', 'ab2'];
 // the keys that move, walk and look: never swallowed, so what is held through a card goes on after it
 export const MOVE_KEYS = new Set(['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'shift', 'q', 'e']);
 // the left stick moves only past this size (moves.js heldDir reads the same): under it the keys or the touch stick win
@@ -34,6 +40,10 @@ export function mouseLook(dx, dy, drag = false, P = MOUSE, dt = 1 / 60) {
 /* what a mouse button does on the view: 'attack', 'roll', 'jump', 'look' (the free mouse's right drag) or null. locked: the mouse is
    taken now. A click never only takes the mouse: what it does is the same whether or not the page also asks for the lock (mouseAsk) */
 export function mouseAct(button, { run = false, locked = false } = {}) {
+  // the middle button is the off-hand, in a run (gloam-downs-hub: the off-hand's input)
+  if (button === 1) return run ? 'off' : null;
+  // the side buttons: back (3) is the first ability and forward (4) the second, in a run, with the mouse taken or free
+  if (button === 3 || button === 4) return run ? (button === 3 ? 'ab1' : 'ab2') : null;
   if (button !== 0 && button !== 2) return null;
   if (button === 0) return run ? 'attack' : 'jump';
   return locked ? (run ? 'roll' : null) : 'look';
@@ -45,13 +55,14 @@ export function mouseAsk(button, { locked = false, lockable = false, trying = fa
 }
 
 /* what the pads hold, all pads together: a button counts when any pad presses it, so two pads holding Start make one press. The
-   left stick moves (a light tilt walks, as step reads its size), the right stick looks, A jumps. In a run X and RT attack, B and LT
-   roll, Y heals, RB faces the foe, and Start and Back pause. In Wander X walks, as in the explorer, Start opens the Map, and RT, B,
-   LT and Y do nothing. skip(i) is true for a button that is swallowed. Each stick is the one tilted furthest across the pads, so a
+   left stick moves (a light tilt walks, as step reads its size), the right stick looks, A jumps. In a run X and RT attack, B rolls,
+   Y heals, LB and LT are the two abilities, RB faces the foe, and Start and Back pause. In Wander X walks, as in the explorer, Start opens the Map, and RT, B,
+   LT and Y do nothing. RB is the off-hand in a run and R3 (the right stick's press) faces the foe; in the hall A is also Use and Back
+   (View) the quick list, which the page reads from use and list. skip(i) is true for a button that is swallowed. Each stick is the one tilted furthest across the pads, so a
    second pad whose stick drifts past the deadzone does not take over. nav is what the cards read: the d-pad or the left stick past
    half, A, B, Start and Back */
 export function readPads(pads, run, skip = () => false) {
-  const out = { any: false, mx: 0, mz: 0, ox: 0, oy: 0, jump: false, slow: false, attack: false, roll: false, heal: false, face: false, pause: false, down: new Set(), nav: null };
+  const out = { any: false, mx: 0, mz: 0, ox: 0, oy: 0, jump: false, slow: false, attack: false, roll: false, heal: false, ab1: false, ab2: false, off: false, face: false, pause: false, use: false, list: false, down: new Set(), nav: null };
   let lx = 0, ly = 0, lm = 0, rm = 0;
   for (const pad of pads || []) {
     if (!pad || !pad.connected) continue;
@@ -66,9 +77,15 @@ export function readPads(pads, run, skip = () => false) {
   out.jump = on(PAD.A);
   out.slow = !run && on(PAD.X);
   out.attack = run && (on(PAD.X) || on(PAD.RT));
-  out.roll = run && (on(PAD.B) || on(PAD.LT));
+  // LB is the first ability and LT the second; LT no longer rolls (gloam-downs-growth design.md "Slots and inputs")
+  out.roll = run && on(PAD.B);
+  out.ab1 = run && on(PAD.LB);
+  out.ab2 = run && on(PAD.LT);
   out.heal = run && on(PAD.Y);
-  out.face = on(PAD.RB);
+  out.off = run && on(PAD.RB);
+  out.face = on(PAD.R3);
+  out.use = on(PAD.A);
+  out.list = on(PAD.BACK);
   out.pause = on(PAD.START) || (run && on(PAD.BACK));
   const d = i => out.down.has(i);
   out.nav = { prev: d(PAD.UP) || d(PAD.LEFT) || ly < -0.5 || lx < -0.5, next: d(PAD.DOWN) || d(PAD.RIGHT) || ly > 0.5 || lx > 0.5, a: d(PAD.A), b: d(PAD.B), start: d(PAD.START), back: d(PAD.BACK) };
@@ -104,15 +121,15 @@ export function pickMove(own, pad) {
    over a card. onLock(taken, ours) runs when the mouse is taken or freed (ours: the page freed it); onState() when a request goes out
    or has had no answer, so the hint can change. onMouse(press) runs when the page finds a mouse, or loses it (press: a press did it). fine: true or false fixes
    whether there is a mouse (a test); by default the page reads it */
-export function makeInput(els, { run = () => false, play = () => false, hold = play, onLock = () => {}, onState = () => {}, onMouse = () => {}, fine } = {}) {
+export function makeInput(els, { run = () => false, play = () => false, hold = play, hub = () => false, onLock = () => {}, onState = () => {}, onMouse = () => {}, fine } = {}) {
   const { canvas, stick: stickEl } = els;
-  const input = { mx: 0, mz: 0, slow: false, jump: false, ox: 0, oy: 0, dyaw: 0, dpitch: 0, attack: false, roll: false, heal: false, mouse: false };
+  const input = { mx: 0, mz: 0, slow: false, jump: false, ox: 0, oy: 0, dyaw: 0, dpitch: 0, attack: false, roll: false, heal: false, ab1: false, ab2: false, off: false, mouse: false };
   const keys = new Set(), swallowed = new Set(), padSwallowed = new Set();
-  const latch = { attack: false, roll: false, heal: false, jump: false };
-  const touch = { jump: false, attack: false, roll: false, heal: false };
+  const latch = { attack: false, roll: false, heal: false, jump: false, ab1: false, ab2: false, off: false };
+  const touch = { jump: false, attack: false, roll: false, heal: false, ab1: false, ab2: false, off: false };
   let stick = null, look = null, drag = null, pads = null;
   // the mouse's buttons held now, by what they do (mouseAct)
-  const held = { attack: false, roll: false, jump: false };
+  const held = { attack: false, roll: false, jump: false, ab1: false, ab2: false, off: false };
   /* the pointer lock: taken now; refusals in a row; no new try before retryAt (a click till then asks again at retryAt: retry is that
      timer, and the click's user activation lasts about 5 s in Chrome, long enough for it); when the player or the browser last freed it, not the page (an Escape that the browser passes on as it frees the mouse must not also close
      the pause panel that opens); ours: the page is freeing it now */
@@ -147,9 +164,10 @@ export function makeInput(els, { run = () => false, play = () => false, hold = p
     // keys steer the lamplighter only in play. In a card, on the end card and on the loading screen they are the page's (Space and
     // Enter press the focused button), and a key pressed there stays out of play until it is let go
     if (!play() || e.target.closest?.('.panel:not([hidden])')) {
-      // the keys that move stay live, so a direction held into a card (or pressed in one) walks on after it
-      if (MOVE_KEYS.has(k)) keys.add(k);
-      else swallowed.add(k);
+      // the keys that move stay live, so a direction held into a card walks on after it. The arrows are the card's own there (they
+      // move its focus): an arrow pressed or repeating in a card does nothing in play until it is let go
+      if (MOVE_KEYS.has(k) && !k.startsWith('arrow')) keys.add(k);
+      else { keys.add(k); swallowed.add(k); }
       return;
     }
     if ([' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) e.preventDefault();
@@ -160,7 +178,7 @@ export function makeInput(els, { run = () => false, play = () => false, hold = p
   });
   addEventListener('keyup', e => { const k = e.key.toLowerCase(); keys.delete(k); swallowed.delete(k); });
   addEventListener('blur', clear);
-  function letGo() { held.attack = held.roll = held.jump = false; drag = null; canvas.classList.remove('drag'); }
+  function letGo() { held.attack = held.roll = held.jump = held.ab1 = held.ab2 = held.off = false; drag = null; canvas.classList.remove('drag'); }
   function clear() {
     keys.clear(); swallowed.clear();
     stick = look = null;
@@ -168,7 +186,7 @@ export function makeInput(els, { run = () => false, play = () => false, hold = p
     for (const k in touch) touch[k] = false;
     for (const k in latch) latch[k] = false;
     stickEl.hidden = true;
-    for (const b of [els.jump, els.attack, els.roll, els.heal]) b?.classList.remove('on');
+    for (const b of [els.jump, els.attack, els.roll, els.heal, els.ab1, els.ab2, els.off]) b?.classList.remove('on');
   }
 
   /* take the mouse: raw movement where the browser offers it (unadjustedMovement), else the plain lock. A refusal waits 1.5 s, and the
@@ -247,6 +265,9 @@ export function makeInput(els, { run = () => false, play = () => false, hold = p
     if (!seen && !primary.matches) { seen = true; onMouse(true); }
     // a click asks for the mouse where the page may, and acts all the same (mouseAct)
     if (mouseAsk(e.button, { locked: lock.taken, lockable: lockable(), trying: lock.trying })) { take(); onState(); }
+    // the side buttons are read from their pointer events (sideButton, below): Chromium sends no mousedown after a pointerdown the
+    // page cancels
+    if (e.button === 3 || e.button === 4) return;
     const act = mouseAct(e.button, { run: run(), locked: lock.taken });
     if (!act) return;
     e.preventDefault();
@@ -254,8 +275,28 @@ export function makeInput(els, { run = () => false, play = () => false, hold = p
     held[act] = true;
     latch[act] = true;
   });
+  /* the side buttons in a run: the browser's back and forward never fire (the page takes their down, up and auxclick), so a press of an
+     ability does not leave the page */
+  const side = e => { if ((e.button === 3 || e.button === 4) && run()) e.preventDefault(); };
+  for (const t of ['mousedown', 'mouseup', 'auxclick']) addEventListener(t, side, true);
+  /* the side buttons as abilities: back (3) is slot 1 and forward (4) slot 2, read from the pointer events, which come with the
+     pointer taken too. A side button pressed while another button is down comes as a pointermove with its button set. Its pointerdown
+     and pointerup are cancelled, so the browser does not go back */
+  const SIDE_BIT = { 3: 8, 4: 16 };
+  const sideButton = e => {
+    if ((e.button !== 3 && e.button !== 4) || (e.pointerType && e.pointerType !== 'mouse') || !run()) return;
+    e.preventDefault();
+    const act = mouseAct(e.button, { run: true, locked: lock.taken }), down = e.type !== 'pointerup' && (e.buttons & SIDE_BIT[e.button]) !== 0;
+    if (!act) return;
+    if (down && play() && !held[act]) latch[act] = true;
+    held[act] = down && play();
+  };
+  for (const t of ['pointerdown', 'pointermove', 'pointerup']) addEventListener(t, sideButton, true);
   addEventListener('mouseup', e => {
+    if (e.button === 3) held.ab1 = false;
+    if (e.button === 4) held.ab2 = false;
     if (e.button === 0) held.attack = held.jump = false;
+    if (e.button === 1) held.off = false;
     if (e.button === 2) { held.roll = false; drag = null; canvas.classList.remove('drag'); }
   });
   canvas.addEventListener('pointerdown', e => {
@@ -307,7 +348,7 @@ export function makeInput(els, { run = () => false, play = () => false, hold = p
   canvas.addEventListener('pointercancel', release);
   canvas.addEventListener('contextmenu', e => e.preventDefault());
   // the touch buttons: held while a finger is on them, and a tap between two reads still counts
-  for (const name of ['jump', 'attack', 'roll', 'heal']) {
+  for (const name of ['jump', 'attack', 'roll', 'heal', 'ab1', 'ab2', 'off']) {
     const b = els[name];
     if (!b) continue;
     b.addEventListener('pointerdown', e => { e.preventDefault(); touch[name] = true; latch[name] = true; b.classList.add('on'); b.setPointerCapture?.(e.pointerId); });
@@ -330,7 +371,7 @@ export function makeInput(els, { run = () => false, play = () => false, hold = p
     const k = n => keys.has(n) && !swallowed.has(n), any = list => list.some(k);
     let mx = (k('d') || k('arrowright') ? 1 : 0) - (k('a') || k('arrowleft') ? 1 : 0);
     let mz = (k('w') || k('arrowup') ? 1 : 0) - (k('s') || k('arrowdown') ? 1 : 0);
-    let ox = (k('e') ? 1 : 0) - (k('q') ? 1 : 0), oy = 0;
+    let ox = (k('e') && !hub() ? 1 : 0) - (k('q') ? 1 : 0), oy = 0;
     let jump = k(' '), slow = k('shift');
     if (stick) {
       const dx = stick.x - stick.x0, dy = stick.y - stick.y0, l = Math.hypot(dx, dy);
@@ -347,6 +388,8 @@ export function makeInput(els, { run = () => false, play = () => false, hold = p
     input.roll = r && (any(KEYS.roll) || p.roll || touch.roll || held.roll || latch.roll);
     input.mouse = lock.taken;
     input.heal = r && (any(KEYS.heal) || p.heal || touch.heal || latch.heal);
+    for (const k of ABILITY_INPUTS) input[k] = r && (any(KEYS[k]) || p[k] || touch[k] || held[k] || latch[k]);
+    input.off = r && (any(KEYS.off) || p.off || touch.off || held.off || latch.off);
     pads = null;
     return input;
   }

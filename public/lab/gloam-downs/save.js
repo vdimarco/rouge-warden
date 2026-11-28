@@ -4,6 +4,8 @@
 // explorer places only). The Lattice needs no `reached` entries: its first place is always open, and a lit beacon opens the next.
 export const ORDER = ['gaol', 'ramparts', 'fen', 'bells', 'barrows'];
 export const LATTICE = ['piazza', 'cupola', 'orrery'];
+// the Lamp-room, the hall between runs (gloam-downs-hub): a place of the run's screens, never in the explorer's save or its Map
+export const HUB = ['lamproom'];
 export const KEY = 'gloam-downs.save.v1';
 export const fresh = () => ({ v: 1, reached: ['gaol'], at: 'gaol', wisps: {}, lit: {}, time: 0, best: 0, done: 0, seen: false });
 

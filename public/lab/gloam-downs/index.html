@@ -50,19 +50,19 @@
   /* dialogs: map, help, beacon, end */
   .panel { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; background: rgba(2, 2, 6, 0.6); }
   .panel[hidden] { display: none; }
-  .panel .box { width: min(440px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow: auto; box-sizing: border-box; padding: 18px; border-radius: 14px; background: rgba(10, 9, 14, 0.97); border: 1px solid #5a3424; box-shadow: 0 16px 50px #000; color: var(--bone); }
+  .panel .box { width: min(440px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow: auto; box-sizing: border-box; padding: 18px; border-radius: 14px; background: rgba(10, 9, 14, 0.99); border: 1px solid #5a3424; box-shadow: 0 16px 50px #000; color: var(--bone); }
   .panel h2 { margin: 0 0 4px; font: 700 26px/1.1 var(--title); color: #f2d7a6; }
   .panel p { margin: 6px 0 12px; color: #c9c2ae; font: 500 15px/1.4 var(--body); }
   .panel ul { margin: 0 0 14px; padding-left: 20px; color: #c9c2ae; font: 500 14px/1.45 var(--body); }
-  .panel kbd { font: 700 12px/1 ui-monospace, monospace; padding: 2px 5px; border-radius: 4px; border: 1px solid var(--edge); color: var(--bone); }
+  .panel kbd { font: 700 14px/1 ui-monospace, monospace; padding: 2px 5px; border-radius: 4px; border: 1px solid var(--edge); color: var(--bone); }
   .panel .row { display: flex; gap: 8px; }
   .panel .row button { flex: 1; }
   .panel button.go { background: #5a2214; border-color: var(--emberd); color: #ffe2bd; }
   .places { display: grid; gap: 6px; margin: 10px 0 12px; }
   .places button { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 2px 10px; padding: 8px 12px; text-align: left; width: 100%; }
   .places button b { font: 700 15px/1.2 var(--title); color: #f2d7a6; }
-  .places button small { grid-column: 2; font: 500 12px/1.3 var(--body); color: var(--ash); }
-  .places button em { grid-row: span 2; font: 700 12px/1 var(--body); font-style: normal; color: var(--wisp); white-space: nowrap; }
+  .places button small { grid-column: 2; font: 500 14px/1.3 var(--body); color: var(--ash); }
+  .places button em { grid-row: span 2; font: 700 14px/1 var(--body); font-style: normal; color: var(--wisp); white-space: nowrap; }
   .places button .n { grid-row: span 2; font: 700 18px/1 var(--title); color: var(--ember); width: 1.4em; text-align: center; }
   .places button[aria-current="true"] { border-color: var(--emberd); }
   .places button:disabled { opacity: 0.45; cursor: default; }
@@ -71,7 +71,7 @@
   .groups { display: grid; gap: 4px 16px; margin: 6px 0 12px; }
   .groups .group { min-width: 0; }
   .groups .places { margin: 6px 0 0; }
-  .groups h3 { margin: 4px 0 0; font: 700 13px/1.2 var(--body); letter-spacing: 0.16em; text-transform: uppercase; color: var(--ember); }
+  .groups h3 { margin: 4px 0 0; font: 700 14px/1.2 var(--body); letter-spacing: 0.16em; text-transform: uppercase; color: var(--ember); }
   .groups .lattice h3 { color: #ffd77a; }
   @media (min-width: 760px) {
     #map .box { width: min(760px, calc(100vw - 24px)); }
@@ -82,15 +82,15 @@
     #map { box-sizing: border-box; padding: calc(var(--sat) + 60px) 0 calc(var(--sab) + 6px); }
     #map .box { padding: 10px 12px; max-height: 100%; }
     #map h2 { font-size: 20px; }
-    #map p { margin: 2px 0 4px; font-size: 13px; line-height: 1.3; }
+    #map p { margin: 2px 0 4px; font-size: 14px; line-height: 1.3; }
     .groups { margin: 2px 0 8px; gap: 2px 16px; }
-    .groups h3 { margin: 2px 0 0; font-size: 11px; }
+    .groups h3 { margin: 2px 0 0; font-size: 14px; }
     .groups .places { margin: 3px 0 0; gap: 4px; }
     #map .places button { grid-template-columns: auto minmax(0, 1fr) auto auto; height: 44px; padding: 0 10px; gap: 0 8px; }
     #map .places button .n { grid-row: auto; font-size: 15px; }
-    #map .places button b { font-size: 13px; line-height: 1.1; }
+    #map .places button b { font-size: 14px; line-height: 1.1; }
     #map .places button em { grid-row: auto; }
-    #map .places button small { grid-column: auto; font-size: 11px; line-height: 1.1; max-width: 6.5em; }
+    #map .places button small { grid-column: auto; font-size: 14px; line-height: 1.05; max-width: 8em; }
   }
   dl.score { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 6px 0 16px; }
   dl.score dt { color: var(--ash); } dl.score dd { margin: 0; text-align: right; font-weight: 700; }
@@ -116,18 +116,34 @@
   .act.attack { width: 76px; height: 76px; right: calc(16px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 84px); font-size: 13px; }
   .act.roll { width: 60px; height: 60px; right: calc(100px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 18px); background: rgba(20, 18, 30, 0.72); border-color: #6a6478; color: var(--bone); }
   .act.heal { width: 48px; height: 48px; right: calc(104px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 94px); font-size: 10px; background: rgba(14, 40, 34, 0.72); border-color: #3f8f78; color: #c8f6e6; }
+  /* the two ability buttons (gloam-downs-growth): above Attack and above Heal, 56 px, with the cooldown as a dark sweep (--cd, the share
+     left) and the ability's short name. A bright ability has a gold edge; hidden while the slot is empty */
+  .act.ab { width: 56px; height: 56px; font-size: 10px; overflow: hidden; background: rgba(30, 22, 44, 0.78); border-color: #8a7fd0; color: #e6defc; --cd: 0; }
+  .act.ab.flame { border-color: #c8743a; color: #ffd9b4; }
+  .act.ab.ward { border-color: #5fa874; color: #d4f6dc; }
+  .act.ab.bright { box-shadow: 0 0 0 2px #e8c35a; }
+  /* a cooling ability: the button goes grey and near black, the time left is a pale sweep that shrinks as it cools, and the label
+     gives the seconds in large figures; a ready one keeps its colour and its name */
+  .act.ab i { position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(rgba(214, 206, 240, 0.34) calc(var(--cd) * 360deg), transparent 0); pointer-events: none; }
+  .act.ab b { position: relative; font: 800 10px/1 var(--body); }
+  .act.ab.cool { background: rgba(8, 7, 12, 0.9); border-color: #57525f; color: #f4f0ff; }
+  .act.ab.cool b { font-size: 20px; }
+  .act.ab1 { right: calc(26px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 170px); }
+  .act.ab2 { right: calc(100px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 150px); }
   body.run .jump { width: 64px; height: 64px; right: calc(16px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 12px); padding: 0; }
   @media (min-height: 661px) {
     .act.attack { width: 84px; height: 84px; bottom: calc(var(--sab) + 96px); font-size: 14px; }
     .act.roll { width: 64px; height: 64px; right: calc(112px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 30px); }
     .act.heal { width: 52px; height: 52px; right: calc(112px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 110px); }
     body.run .jump { width: 72px; height: 72px; bottom: calc(var(--sab) + 16px); }
+    .act.ab1 { bottom: calc(var(--sab) + 188px); }
+    .act.ab2 { right: calc(110px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 170px); }
   }
   /* the run's cards: the places of the run, the wick choice and the question before End the run */
   .route { list-style: none; margin: 8px 0 10px; padding: 0; display: grid; gap: 4px; }
   .route li { display: grid; grid-template-columns: 1.8em 1fr auto; gap: 8px; align-items: center; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--edge); font: 600 14px/1.2 var(--body); color: var(--ash); }
   .route li span { font: 700 15px/1 var(--title); color: var(--ember); text-align: center; }
-  .route li em { font: 700 11px/1 var(--body); font-style: normal; text-transform: uppercase; letter-spacing: 0.1em; }
+  .route li em { font: 700 14px/1 var(--body); font-style: normal; text-transform: uppercase; letter-spacing: 0.1em; }
   .route li.here { color: var(--bone); border-color: var(--emberd); }
   .route li.passed { color: #c9c2ae; }
   .wicks { display: grid; gap: 8px; margin: 8px 0 12px; }
@@ -151,6 +167,7 @@
   .hud .life b { font: 700 13px/1 var(--body); color: #ffe2bd; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .hud .hpbar { position: relative; display: block; flex: none; width: 120px; height: 10px; background: #1c0d0b; box-shadow: 0 0 0 1px #5a3424; }
   .hud .hpbar i { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; background: linear-gradient(90deg, var(--emberd), var(--ember)); }
+  .hud .hpbar i.shell { width: 0; top: -3px; bottom: -3px; background: rgba(236, 226, 204, 0.62); box-shadow: 0 0 0 1px rgba(255, 246, 228, 0.85), 0 0 6px rgba(255, 238, 205, 0.5); }
   .hud.low .hpbar { box-shadow: 0 0 0 1px var(--ember); }
   .hud.beat .hpbar { box-shadow: 0 0 0 2px var(--ember), 0 0 8px rgba(210, 85, 28, 0.8); }
   .hud .pips { display: flex; gap: 2px; flex: none; }
@@ -158,6 +175,32 @@
   .hud .pips i.on { background: #8cf0cc; border-color: #c8f6e6; }
   body.run .hud .count em { font-style: normal; color: #ffd77a; }
   .hud.boss .hint { display: none; }
+  /* the combo meter (fight.js showCombo): a row of its own under the glim, "×N" in a 12 px number, a pip in the tier's colour and a
+     thin bar of the 3 s left, in lamp and ember colours (fire stays brightest); it fades over 0.4 s after the combo ends. The seed's
+     code under the run time (pause panel) and under the summary's rows */
+  .hud .combo { display: flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 8px; background: var(--panel2); border: 1px solid var(--edge); transition: opacity 0.4s linear; }
+  .hud .combo[hidden] { display: none; }
+  /* the ability slots on the HUD (a mouse, keys or a pad; on a touch screen the two buttons show the same): "1 Lantern bomb 3.2 s" */
+  .hud .abilities { display: flex; flex-wrap: wrap; gap: 4px 8px; margin: 2px 0 0; font: 600 12px/1.3 var(--body); color: var(--bone); }
+  .hud .abilities[hidden] { display: none; }
+  .hud .abilities span { padding: 2px 7px; border-radius: 7px; background: var(--panel2); border: 1px solid var(--edge); white-space: nowrap; }
+  .hud .abilities span.cool { color: #9a93a8; }
+  .hud .abilities span.bright { border-color: #e8c35a; }
+  .hud .abilities kbd { font: 700 11px/1 var(--body); color: var(--ember); margin-right: 4px; }
+  /* in the boss fight the HUD keeps its rect (add-gloam-downs "The HUD in the boss fight"), so the ability row moves to the bottom left,
+     where the boss camera keeps it clear (main.js measureScreen) */
+  .hud.boss .abilities { position: fixed; left: calc(10px + env(safe-area-inset-left, 0px)); bottom: calc(var(--sab) + 14px); margin: 0; }
+  .hud .combo.fading { opacity: 0; }
+  .hud .combo b { font: 700 12px/1 var(--body); color: #ffe2bd; font-variant-numeric: tabular-nums; min-width: 2.6em; }
+  .hud .combo #comboPip { display: block; width: 8px; height: 8px; border-radius: 50%; border: 1px solid var(--emberd); box-sizing: border-box; }
+  .hud .combo[data-tier="1"] #comboPip { background: #d2551c; }
+  .hud .combo[data-tier="2"] #comboPip { background: #ff9a32; }
+  .hud .combo[data-tier="3"] #comboPip { background: #ffd77a; border-color: #ffd77a; }
+  .hud .combo .cbar { position: relative; display: block; width: 48px; height: 4px; background: #1c0d0b; box-shadow: 0 0 0 1px #5a3424; }
+  .hud .combo #comboFill { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; background: #d2551c; }
+  .panel p.seed { color: var(--ash); font: 600 14px/1.2 var(--body); letter-spacing: 0.08em; margin: 2px 0 8px; }
+  #bShake[aria-pressed="false"] { color: var(--ash); }
+  @media (prefers-reduced-motion: reduce) { .hud .combo { transition: none; } }
   @media (max-width: 520px) {
     body.run .hud .life { gap: 5px; }
     .hud .life b { font-size: 12px; }
@@ -192,15 +235,62 @@
   .ups li button { grid-column: 2; grid-row: 1 / span 2; min-width: 88px; padding: 4px 10px; line-height: 1.15; white-space: normal; }
   .ups li button[aria-disabled="true"] { color: var(--ash); border-color: var(--edge); background: rgba(20, 18, 26, 0.9); cursor: default; font-weight: 600; font-size: 13px; }
   .ups li.top span { color: var(--ash); }
+  /* growth (builder G): the Lamp-room's colours line, pattern rows and pane slots, the beacon card's spark buttons and kept line, and
+     the HUD's colour row and pattern mark. The HUD takes no input; each pane button is 44 px high at least */
+  #lamp .colours { margin: 0 0 6px; font-size: 13px; color: #f2d7a6; }
+  #lamp .colours[hidden], #patternsT[hidden], #patterns[hidden], #panesT[hidden], #paneRow[hidden], #sparks[hidden], #beaconKept[hidden], .hud .colourRow[hidden] { display: none; }
+  #patterns li { min-height: 44px; }
+  #patterns li button { grid-row: 1; }
+  .panes { display: grid; gap: 6px; margin: 6px 0 10px; }
+  .panes .paneSlot { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .panes .paneSlot > b { flex: 0 0 100%; font: 700 11px/1.2 var(--title); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ash); }
+  .panes button { flex: 1 1 140px; min-height: 44px; padding: 4px 10px; text-align: left; line-height: 1.2; white-space: normal; font-size: 12px; }
+  .panes button b { display: block; font-size: 14px; }
+  .panes button[aria-pressed="true"] { background: #5a2214; border-color: var(--ember); color: #ffe2bd; }
+  #sparks { margin-top: 6px; }
+  #sparks button { border-left: 4px solid var(--hue, var(--ember)); }
+  #beaconKept { color: #ffd77a; font-weight: 600; }
+  .hud .colourRow { display: flex; gap: 8px; margin: 2px 0 0; font: 700 13px/1 var(--body); }
+  .hud .colourRow i { font-style: normal; }
+  .hud .colourRow i.set { padding: 1px 4px; border: 1.5px solid currentColor; border-radius: 999px; }
+  .hud #patternsN { font-style: normal; color: #ffd77a; }
+  @media (max-width: 360px) { .hud .colourRow { gap: 6px; font-size: 12px; } .panes button { flex-basis: 120px; } }
+  /* merge pass (gloam-downs-growth): the colour row and the pattern mark make the run's HUD taller, so on a narrow upright screen the
+     place's name card starts under the HUD's tallest (with the relics row), and the count line keeps "◇ 1" on its line */
+  body.run .hud .count { white-space: nowrap; }
+  @media (max-width: 520px) and (min-height: 560px) { body.run .arrive { top: calc(var(--sat) + 220px); transform: translate(-50%, 0); } }
+  /* the builds (builder BC): the Lamp-room's Unlocks list and Ember row, the beacon card's kindle line, the win card's opened level, and
+     the HUD's relic marks. The marks are small ember-edged tags in lamp colours, never brighter than the fire; the HUD takes no input */
+  .unlocksT { margin: 4px 0 0; font: 700 12px/1.2 var(--title); letter-spacing: 0.12em; text-transform: uppercase; color: #f2d7a6; }
+  #unlocks li { grid-template-columns: 1fr auto; min-height: 44px; }
+  #unlocks li button { grid-row: 1; }
+  .emberLine { margin: 4px 0 6px; font-size: 13px; color: var(--ash); }
+  #emberRow { flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  #emberRow[hidden] { display: none; }
+  #emberRow button { flex: 1 0 64px; }
+  #emberRow button[aria-pressed="true"] { background: #5a2214; border-color: var(--ember); color: #ffe2bd; }
+  /* with the unlocks the Lamp-room is taller than a short screen: its lists scroll inside the card, and its own buttons (Begin the run
+     and the rest) stay at the card's foot, so the main button is always in view */
+  #lamp .box { scroll-padding-bottom: 80px; }
+  #lamp #lampRow { position: sticky; bottom: -18px; z-index: 1; margin: 0 -18px -18px; padding: 10px 18px 18px; background: rgba(10, 9, 14, 0.995); border-top: 1px solid var(--edge); }
+  @media (max-height: 660px) { #lamp #lampRow { bottom: -12px; margin: 0 -14px -12px; padding: 8px 14px 12px; } }
+  .wicks button em.kindle { display: block; margin-top: 4px; font-style: normal; font-size: 12px; color: #ffd77a; }
+  .opened { color: #ffd77a; }
+  .hud .relics { display: flex; flex-wrap: wrap; gap: 3px; align-items: center; max-width: 180px; }
+  .hud .relics[hidden] { display: none; }
+  .hud .relics i { display: block; font: 700 11px/1 var(--body); font-style: normal; padding: 3px 5px; border-radius: 6px; color: #f2d7a6; background: var(--panel2); border: 1px solid #5a3424; }
+  .hud .relics i.k { border-color: var(--ember); color: #ffd77a; }
+  .hud .relics em { font: 700 10px/1 var(--body); font-style: normal; letter-spacing: 0.08em; text-transform: uppercase; color: #ffd77a; }
+  @media (max-width: 520px) { .hud .relics i { font-size: 10px; padding: 2px 4px; } }
   .panel .bank { color: #ffd77a; font-weight: 700; }
   /* short windows: smaller titles and padding, so the pause panel and the Lamp-room fit 640 and 600 px with no scroll */
   @media (max-height: 660px) {
     body.run .panel .box { padding: 12px 14px; }
     body.run .panel h2 { font-size: 22px; }
     body.run .panel p { margin: 4px 0 8px; font-size: 14px; }
-    body.run .panel ul:not(.ups) { margin-bottom: 8px; font-size: 13px; line-height: 1.35; }
+    body.run .panel ul:not(.ups) { margin-bottom: 8px; font-size: 14px; line-height: 1.3; }
     body.run .route { margin: 4px 0 6px; gap: 3px; }
-    body.run .route li { padding: 4px 10px; font-size: 13px; }
+    body.run .route li { padding: 3px 10px; font-size: 14px; }
     .panel .ups { margin: 6px 0 8px; gap: 4px; }
     .ups li span { font-size: 13px; }
   }
@@ -214,39 +304,354 @@
   .bossbar .bbar i { position: absolute; top: 0; bottom: 0; left: 0; display: block; }
   .bossbar #bossFill { width: 100%; background: linear-gradient(90deg, #8a2814, var(--emberd)); }
   .bossbar .tick { width: 2px; margin-left: -1px; background: rgba(5, 6, 12, 0.85); }
+  /* the Reeve's poise: a thin cold line under the health, full when it is fresh and empty when a few more hits will make it flinch */
+  .bossbar .bpoise { position: relative; display: block; height: 4px; margin-top: -3px; background: #0d1318; box-shadow: 0 0 0 1px #2a3a44; }
+  .bossbar #bossPoise { position: absolute; top: 0; bottom: 0; left: 0; display: block; width: 100%; background: #9fc4d0; }
   body.run:has(.panel:not([hidden])) .bossbar { visibility: hidden; }
   /* in a run the Lab bar stays above the loading screen, so ◀ Lab and Games can be reached while it waits (the boss files) */
   body.run .labbar { z-index: 41; }
   .loading .row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
-  @media (max-height: 420px) { .arrive { top: 40%; } .arrive p { display: none; } }
+  /* a landscape phone: the place's name sits in the band under the Lab bar, clear of the HUD on the left, the buttons on the right and
+     the lamplighter in the middle */
+  @media (max-height: 420px) { .arrive { top: calc(var(--sat) + 54px); transform: translate(-50%, 0); width: min(52vw, 440px); } .arrive h1 { font-size: 38px; } .arrive p { display: none; } }
+  /* while the place's name shows, the HUD's hint waits (they shared a line at 844x390 and 800x600) */
+  .hud .hint { transition: opacity 0.3s; }
+  body:has(#arrive:not(.off)) .hud .hint { opacity: 0; }
+  @media (prefers-reduced-motion: reduce) { .hud .hint { transition: none; } }
+  /* the pause card on a short window. A portrait phone of 700 px or less leaves the controls out (the touch buttons name them); a
+     landscape one lays the card in two columns, the route on the left and the controls on the right, with its six buttons in a row */
+  @media (max-height: 700px) and (max-aspect-ratio: 1/1) { #pauseControls { display: none; } }
+  @media (max-height: 520px) and (min-aspect-ratio: 1/1) {
+    body.run #pause .box { width: min(820px, calc(100vw - 24px)); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); column-gap: 18px; align-content: start; }
+    #pause .box > * { grid-column: 1; }
+    #pause #pauseControls { grid-column: 2; grid-row: 1 / span 5; align-self: start; margin: 6px 0 6px; }
+    #pause #pauseRow, #pause #askRow { grid-column: 1 / -1; }
+    #pauseRow { grid-template-columns: 1fr 1fr; }
+    body.run #pause .route li { padding: 2px 10px; }
+    body.run #pause p { margin: 2px 0 4px; }
+    body.run #pause h2 { margin-bottom: 0; }
+    /* How to play: its controls beside the words */
+    body.run #runHelp .box { width: min(820px, calc(100vw - 24px)); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 18px; align-content: start; }
+    #runHelp .box > * { grid-column: 1; }
+    #runHelp #runControls { grid-column: 2; grid-row: 1 / span 3; align-self: start; margin-top: 6px; }
+    #runHelp .row { grid-column: 1 / -1; }
+  }
+  /* the explorer's map on a landscape phone: the title and its line on one line, and Close and Fight under the shorter Gilt Lattice */
+  @media (max-height: 460px) and (min-width: 760px) {
+    #map .box { position: relative; }
+    #map h2 { display: inline; margin-right: 10px; }
+    #map p#mapLine { display: inline; }
+    #map .groups { margin-top: 6px; }
+    #map .box > .row { position: absolute; right: 12px; bottom: 10px; width: calc(50% - 20px); margin: 0; }
+  }
+  /* 320 px: the title's three small buttons and the pause card's switches keep their words on one line */
+  @media (max-width: 359px) {
+    .panel#title #titleMore button, body.run #pauseRow :is(#bSound, #bMusic, #bShake) { padding: 4px 6px; white-space: nowrap; }
+  }
+  #sparks .lcard b { white-space: nowrap; }
   @media (prefers-reduced-motion: reduce) { .arrive, .veil, .loading, .bar i { transition: none; } }
+  /* ---------------- the selection screens (gloam-downs-screens-life) ----------------
+     The veil is a vignette per card; a card's box has a warm inner glow at its top and a 1 px gilt rule. The glass of a lamp is a CSS
+     radial gradient with a flame of two stacked shapes, in its colour (--hue). Motion is CSS transitions and the Web Animations API
+     (main.js), none on a timer while a card is idle; with reduced motion only fades of 150 ms or less */
+  :root { --gilt: #b88a46; --glass: rgba(18, 13, 12, 0.92); }
+  .panel .box { border-color: #6a3e26; border-top-color: var(--gilt); box-shadow: 0 16px 50px #000, inset 0 18px 26px -20px rgba(255, 154, 50, 0.32); }
+  .glass { --hue: var(--ember); --g: 0.45; position: relative; display: block; flex: none; width: 26px; height: 34px; box-sizing: border-box; border-radius: 12px 12px 7px 7px / 15px 15px 7px 7px;
+    background: radial-gradient(70% 60% at 50% 68%, color-mix(in srgb, var(--hue) calc(var(--g) * 70%), transparent), var(--glass) 78%);
+    box-shadow: inset 0 0 0 1px rgba(232, 226, 208, 0.24), 0 0 14px -3px color-mix(in srgb, var(--hue) calc(var(--g) * 100%), transparent); transition: box-shadow 0.12s, background 0.12s; }
+  .glass::before { content: ''; position: absolute; left: 22%; right: 22%; top: -3px; height: 4px; border-radius: 2px; background: #3a2a20; box-shadow: 0 0 0 1px rgba(232, 226, 208, 0.18); }
+  .glass .flame { position: absolute; left: 50%; bottom: 6px; width: 10px; height: 17px; margin-left: -5px; border-radius: 50% 50% 46% 46% / 64% 64% 36% 36%; transform-origin: 50% 100%;
+    background: radial-gradient(circle at 50% 72%, #fff3cf 0 12%, color-mix(in srgb, var(--hue) 75%, #fff3cf) 32%, var(--hue) 58%, transparent 76%); opacity: calc(0.35 + var(--g) * 0.65); transition: transform 0.12s, opacity 0.12s; }
+  .glass .flame::after { content: ''; position: absolute; left: 36%; right: 36%; bottom: 2px; height: 34%; border-radius: 50%; background: #fffbe8; opacity: 0.7; }
+  /* a lamp card: a wick, a spark, an ability. The glow is its own element, so its opacity can be read */
+  .panel button.lcard { position: relative; display: grid; grid-template-rows: auto auto 1fr; justify-items: center; align-content: start; gap: 4px; width: auto; text-align: center; padding: 10px 8px 9px;
+    min-height: 44px; border-radius: 12px; background: linear-gradient(180deg, rgba(34, 22, 17, 0.95), rgba(12, 10, 14, 0.96)); border: 1px solid color-mix(in srgb, var(--hue) 45%, #3a2a20);
+    color: var(--bone); transition: transform 0.12s ease-out, border-color 0.12s, opacity 0.16s; line-height: 1.2; }
+  .lcard .glass { --hue: inherit; } /* the card's colour (cards.js lampCard sets it), not the glass's amber default */
+  .lcard .glow { position: absolute; inset: -1px; border-radius: inherit; pointer-events: none; box-shadow: 0 0 20px -3px var(--hue), inset 0 0 16px -8px var(--hue); opacity: 0.4; transition: opacity 0.12s; }
+  .lcard b { font: 700 16px/1.15 var(--title); color: #f2d7a6; }
+  .lcard .gift { font: 500 14px/1.25 var(--body); color: #d9d1bc; }
+  .lcard .sep { display: none; }
+  .wicks .lcard em.kindle { margin: 0; font-size: 14px; }
+  /* the mouse moves the focus (main.js pointerover), so the one card lit is the one Enter or A takes; :hover alone lights nothing */
+  .panel button.lcard:focus { transform: translateY(-4px); border-color: var(--hue); outline: none; }
+  .panel button.lcard:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
+  .lcard:focus .glow { opacity: 1; }
+  .lcard:focus .glass { --g: 1; }
+  .lcard:focus .flame { transform: scale(1.15); }
+  .panel button.lcard.bright { border-color: #e8c35a; }
+  .lcard.bright .glass { box-shadow: inset 0 0 0 2px #e8c35a, 0 0 16px -2px #e8c35a; }
+  .panel button.lcard.faded { opacity: 0.3; }
+  .wicks.cards { grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); }
+  #sparks.cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  /* the beacon card: a bottom sheet on a portrait phone (its top at 58% of the height or lower), at the right on a wide or landscape
+     screen in at most 46% of the width; the veil leaves the beacon's part of the picture clear */
+  body.run #beaconCard { background: linear-gradient(to top, rgba(2, 2, 6, 0.7), rgba(2, 2, 6, 0.12) 55%); place-items: end center; }
+  body.run #beaconCard .box { max-height: calc(42dvh - var(--sab) - 12px); padding: 10px 14px; }
+  #beaconCard h2 { font-size: 22px; }
+  #beaconCard p { margin: 2px 0 6px; font-size: 14px; line-height: 1.32; }
+  #beaconCard .wicks { margin: 6px 0; }
+  @media (min-aspect-ratio: 1/1), (min-width: 521px) {
+    body.run #beaconCard { place-items: center end; background: linear-gradient(to left, rgba(2, 2, 6, 0.72), rgba(2, 2, 6, 0.12) 60%); }
+    body.run #beaconCard .box { width: min(440px, 46vw); max-height: calc(100dvh - var(--sat) - var(--sab) - 72px); }
+  }
+  /* the title screen: the live place behind, the title over a brush rule, the places as lamps on a path, the seed and Ember line, and
+     the buttons. Its box has no fill: the foot's own shade carries the text */
+  .panel#title { background: radial-gradient(120% 85% at 50% 40%, rgba(2, 2, 6, 0.15) 0 40%, rgba(2, 2, 6, 0.7) 100%); place-items: stretch center; box-sizing: border-box; padding: calc(var(--sat) + 60px) 12px calc(var(--sab) + 12px); }
+  .panel#title .box.tbox { width: min(560px, calc(100vw - 24px)); max-height: none; height: 100%; padding: 0; background: none; border: 0; box-shadow: none; display: flex; flex-direction: column; justify-content: space-between; overflow: visible; }
+  .tbrand { text-align: center; padding-top: 2vh; }
+  .panel h1.brand { margin: 0; font: 700 44px/1.05 var(--title); letter-spacing: 0.06em; background: linear-gradient(180deg, #f2d7a6 20%, #e08a3c 95%); -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 0 16px rgba(255, 140, 50, 0.4)) drop-shadow(0 3px 0 #2a0c06); }
+  @media (max-width: 359px) { .panel h1.brand { font-size: 34px; } }
+  .brush { display: block; width: min(240px, 70%); height: 14px; margin: 4px auto 0; overflow: visible; }
+  .brush path { fill: none; stroke: var(--gilt); stroke-width: 3; stroke-linecap: round; opacity: 0.9; }
+  .panel#title .tplace { margin: 8px 0 0; text-align: center; color: #e6d6b4; font: 600 15px/1.3 var(--body); text-shadow: 0 2px 0 #000, 0 0 10px #000; }
+  .tfoot { position: relative; isolation: isolate; padding: 22px 14px 12px; }
+  /* the foot's shade: wider than its buttons and soft at its edges, so it reads as lamplight falling off, not a box */
+  .tfoot::before { content: ''; position: absolute; z-index: -1; inset: -30px max(-90px, calc((100% - 100vw) / 2)) 0; pointer-events: none;
+    background: radial-gradient(60% 72% at 50% 78%, rgba(8, 7, 12, 0.95) 58%, rgba(8, 7, 12, 0.6) 78%, rgba(8, 7, 12, 0) 100%); }
+  .lamps { position: relative; display: flex; justify-content: space-between; gap: 4px; margin: 0 0 4px; }
+  .lamps[hidden] { display: none; }
+  .lamps .path { position: absolute; left: 6%; top: 50%; width: 88%; height: 20px; transform: translateY(-50%); pointer-events: none; overflow: visible; }
+  .lamps .path path { fill: none; stroke: #6a4a2e; stroke-width: 2; stroke-dasharray: 3 5; }
+  .lamps .gname { position: absolute; left: 0; top: -19px; margin: 0; font: 700 12px/1.2 var(--body); letter-spacing: 0.14em; text-transform: uppercase; color: #ffd77a; }
+  .panel .lamps button.lamp { position: relative; display: grid; justify-items: center; align-content: center; gap: 5px; width: 56px; height: 66px; min-width: 44px; padding: 4px 0;
+    border-radius: 12px; background: rgba(10, 9, 14, 0.84); border: 1px solid rgba(232, 226, 208, 0.14); color: #a8a29a; transition: transform 0.12s ease-out, border-color 0.12s; }
+  .lamp .glass { --g: 0.1; }
+  .lamp .n { font: 700 14px/1 var(--title); }
+  .lamp.lit .glass { --g: 0.6; }
+  .panel .lamps button.lamp.lit { color: #f2d7a6; }
+  .panel .lamps button.lamp:focus, .panel .lamps button.lamp.on { border-color: var(--ember); color: #ffe2bd; transform: translateY(-3px); outline: none; }
+  .panel .lamps button.lamp:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
+  .lamp:focus .glass, .lamp.on .glass { --g: 1; }
+  .panel .lamps button.lamp:disabled { opacity: 0.5; cursor: default; transform: none; }
+  .lamps.lattice { margin-top: 26px; justify-content: center; gap: 14px; }
+  .lamps.lattice .glass { --hue: #ffd77a; }
+  .panel#title .tline { min-height: 2.7em; margin: 6px 0 4px; text-align: center; color: #e6dcc6; font: 500 14px/1.35 var(--body); }
+  .panel#title .tline b { color: #f2d7a6; font-family: var(--title); }
+  .seedrow { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0 0 8px; }
+  .panel .seedrow p { margin: 0; color: #c9c2ae; font: 600 14px/1.2 var(--body); letter-spacing: 0.02em; white-space: nowrap; }
+  .seedrow button[hidden] { display: none; }
+  .panel#title .row { flex-wrap: wrap; }
+  .panel#title .row + .row { margin-top: 8px; }
+  .panel#title .row[hidden] { display: none; }
+  .panel#title #bTitleBegin, .panel#title #bTitleWalk { flex-basis: 100%; min-height: 50px; font-size: 16px; }
+  @media (max-height: 700px) { .tbrand { padding-top: 0; } .tfoot { padding-top: 14px; } .panel#title .tline { margin: 4px 0 2px; } .seedrow { margin-bottom: 6px; } .panel#title .row + .row { margin-top: 6px; } .panel#title #bTitleBegin, .panel#title #bTitleWalk { min-height: 46px; } }
+  @media (max-height: 460px) {
+    .panel#title .box.tbox { flex-direction: row; align-items: flex-end; width: min(820px, calc(100vw - 24px)); gap: 12px; }
+    .tbrand { flex: 0 0 34%; align-self: center; } .panel h1.brand { font-size: 34px; } .tfoot { flex: 1; padding: 10px 12px; }
+    .tfoot::before { inset: -20px 0 0 -40px; background: radial-gradient(70% 80% at 55% 60%, rgba(8, 7, 12, 0.94) 60%, rgba(8, 7, 12, 0) 100%); }
+    .panel .lamps button.lamp { height: 56px; }
+    .lamps.lattice { margin-top: 8px; }
+    .lamps.lattice .gname { position: static; align-self: center; }
+  }
+  /* the Lamp-room: three headed shelves; a ware is a lamp tile whose light fills by its level; 2 columns under 520 px, 3 to 900, 4 above */
+  .panel#lamp .box { width: min(440px, calc(100vw - 24px)); }
+  @media (min-width: 520px) { .panel#lamp .box { width: min(640px, calc(100vw - 24px)); } }
+  @media (min-width: 900px) { .panel#lamp .box { width: min(860px, calc(100vw - 24px)); } }
+  .panel h3.shelf { margin: 8px 0 2px; padding-bottom: 3px; font: 700 12px/1.2 var(--title); letter-spacing: 0.14em; text-transform: uppercase; color: #f2d7a6; border-bottom: 1px solid rgba(184, 138, 70, 0.35); }
+  .panel h3.shelf[hidden] { display: none; }
+  .panel ul.tiles { list-style: none; margin: 6px 0 10px; padding: 0; display: grid; gap: 8px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (min-width: 520px) { .panel ul.tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (min-width: 900px) { .panel ul.tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .panel ul.tiles[hidden] { display: none; }
+  .tiles li.tile { --hue: var(--ember); position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto 1fr auto; gap: 2px 9px; align-items: start; padding: 9px 9px 8px;
+    min-height: 0; border-radius: 12px; border: 1px solid #3a2a20; background: linear-gradient(180deg, rgba(30, 20, 16, 0.92), rgba(12, 10, 14, 0.95)); }
+  .tile .glass { grid-row: 1 / span 3; width: 28px; height: 42px; overflow: hidden; --g: 0.2; }
+  .tile .glass .fill { position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--fill, 0) * 100%); background: linear-gradient(to top, rgba(210, 85, 28, 0.85), rgba(255, 154, 50, 0.5)); transition: height 0.3s ease-out; }
+  .tile .glass .flame { bottom: calc(var(--fill, 0) * 22px + 3px); opacity: var(--fill, 0); transition: bottom 0.3s ease-out, opacity 0.3s; }
+  .tiles .tile b.nm { font: 700 15px/1.2 var(--title); color: #f2d7a6; overflow-wrap: anywhere; }
+  .tiles .tile span.gift { font: 500 14px/1.25 var(--body); color: #d9d1bc; overflow-wrap: anywhere; }
+  .tiles .tile span.cost { font: 700 14px/1.2 var(--body); color: #ffd77a; }
+  .panel .tiles li.tile button { grid-column: 1 / -1; grid-row: auto; min-width: 0; min-height: 44px; margin-top: 4px; padding: 4px 8px; line-height: 1.15; white-space: normal; }
+  .panel .tiles li.tile button[aria-disabled="true"] { color: var(--ash); border-color: var(--edge); background: rgba(20, 18, 26, 0.9); cursor: default; font-weight: 600; font-size: 14px; }
+  .tiles li.tile.top { border-color: #6a4a2e; }
+  /* a ware under the mouse or the focus: its rim and its glass warm, so the room answers before anything is bought */
+  .tiles li.tile:hover, .tiles li.tile:focus-within { border-color: color-mix(in srgb, var(--hue) 70%, #3a2a20); }
+  .tiles li.tile:hover .glass, .tiles li.tile:focus-within .glass { --g: 0.55; }
+  .tiles li.tile.top span.gift { color: var(--ash); }
+  .tiles li.tile .flash { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: radial-gradient(circle at 24px 30px, rgba(255, 244, 210, 0.9), rgba(255, 190, 90, 0.35) 40%, transparent 70%); opacity: 0; }
+  #patterns li.tile button { grid-row: auto; }
+  #sparks button.lcard { border-left: 1px solid color-mix(in srgb, var(--hue) 45%, #3a2a20); }
+  #sparks button.lcard:focus { border-left-color: var(--hue); }
+  #patterns li.tile .glass { --g: 0.25; }
+  #patterns li.tile .glass .flame { opacity: 0; }
+  #patterns li.tile.kindled { border-color: var(--hue); }
+  #patterns li.tile.kindled .glass { --g: 1; }
+  #patterns li.tile.kindled .glass .flame { bottom: 8px; opacity: 1; animation: catch 0.4s ease-out; }
+  @keyframes catch { from { transform: scale(0); } to { transform: scale(1); } }
+  /* the recap: the run's path as lamps, each place passed lit with its time and foes, the end snuffed on a death or bright on a win */
+  ol.rpath { list-style: none; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; margin: 10px 0 8px; padding: 0; }
+  ol.rpath[hidden] { display: none; }
+  .panel .rpath li { display: grid; justify-items: center; align-content: start; gap: 3px; min-width: 0; color: var(--ash); font: 600 14px/1.15 var(--body); text-align: center; }
+  .rpath li .glass { --g: 0.08; }
+  .rpath li .n { font: 700 14px/1 var(--title); color: #c9c2ae; }
+  .rpath li.lit .glass, .rpath li.bright .glass { --g: 0.9; }
+  .rpath li.bright .glass { --hue: #ffd77a; box-shadow: inset 0 0 0 2px #e8c35a, 0 0 18px -2px #ffd77a; }
+  .rpath li.snuffed .glass { --g: 0; --hue: #6a6478; }
+  .rpath li.snuffed .glass .flame { opacity: 0; }
+  /* the lamp that went out: a red rim and a wisp of smoke, so it reads apart from the places not reached */
+  .rpath li.snuffed .glass { box-shadow: inset 0 0 0 2px #8a2814; }
+  .rpath li.snuffed .glass::after { content: ''; position: absolute; left: 50%; top: 8%; width: 3px; height: 40%; margin-left: -1px; border-radius: 2px; background: linear-gradient(to top, rgba(160, 150, 170, 0.75), rgba(160, 150, 170, 0)); }
+  .rpath li.snuffed .n { color: #e07a5a; }
+  .rpath li.dark .glass .flame { opacity: 0.1; }
+  .panel .rpath li.lit, .panel .rpath li.bright { color: var(--bone); }
+  .rpath li span { display: block; white-space: nowrap; }
+  .panel p.by { margin: 0 0 10px; color: #ffb27a; font-weight: 700; }
+  .panel p.by[hidden] { display: none; }
+  .panel#winCard .box { border-top-color: #e8c35a; box-shadow: 0 16px 50px #000, inset 0 22px 30px -20px rgba(255, 215, 122, 0.4); }
+  .panel#winCard h2 { color: #ffd77a; }
+  /* the Lamp-room as a place (gloam-downs-hub): the use prompt at a station, the List and Off-hand buttons, and the station cards. A
+     station card shows only its own parts (main.js marks the others .stOff by their data-st). Anchored beside the station at 800x600
+     and wider, a bottom sheet on an upright phone and a side sheet on a landscape phone (cards.js anchor) */
+  .useprompt { position: fixed; left: 50%; bottom: calc(var(--sab) + 72px); transform: translateX(-50%); z-index: 9; display: flex; align-items: center; gap: 8px; min-height: 48px;
+    box-sizing: border-box; padding: 6px 14px; border-radius: 12px; border: 1px solid var(--ember); background: rgba(10, 9, 14, 0.9); color: var(--bone); font: 600 15px/1.2 var(--body); cursor: pointer; white-space: nowrap; max-width: calc(100vw - 32px); }
+  .useprompt[hidden] { display: none; }
+  .useprompt b { font: 700 15px/1.1 var(--title); color: #f2d7a6; overflow: hidden; text-overflow: ellipsis; }
+  .useprompt kbd { font: 700 14px/1 ui-monospace, monospace; padding: 3px 6px; border-radius: 5px; border: 1px solid var(--edge); color: #ffe2bd; }
+  .useprompt kbd:empty { display: none; }
+  body.touchUse .useprompt { left: 12px; transform: none; bottom: calc(var(--sab) + 240px); max-width: calc(100vw - 24px); }
+  /* a landscape phone: the HUD's lines reach low, so the prompt sits at the bottom left, clear of the touch buttons on the right */
+  @media (orientation: landscape) and (max-height: 430px) { body.touchUse .useprompt { bottom: calc(var(--sab) + 12px); left: calc(12px + env(safe-area-inset-left, 0px)); } }
+  body:has(.panel:not([hidden])) .useprompt, body:has(#title:not([hidden])) .useprompt { visibility: hidden; }
+  .act.off { width: 48px; height: 48px; font-size: 10px; right: calc(174px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 154px); background: rgba(14, 30, 26, 0.78); border-color: #5fa874; color: #d4f6dc; }
+  .act.off i { position: absolute; inset: 0; border-radius: 50%; pointer-events: none; }
+  .stOff { display: none !important; }
+  #lamp .lampX { position: absolute; top: 8px; right: 8px; z-index: 2; width: 44px; height: 44px; padding: 0; font-size: 22px; }
+  #lamp .lampX[hidden], #shrineTabs[hidden] { display: none; }
+  #lamp .box { position: relative; }
+  /* the close button's corner: the title and the first lines keep clear of it, and the title is at least as tall as it */
+  #lamp:has(#bLampClose:not([hidden])) h2 { padding-right: 48px; min-height: 44px; box-sizing: border-box; }
+  #lamp:has(#bLampClose:not([hidden])) :is(#lampLine, #shrineTabs) { padding-right: 48px; }
+  body:has(#lamp:not([hidden])) #hint { visibility: hidden; }
+  .shrineTabs { margin: 4px 0 6px; }
+  .shrineTabs button[aria-selected="true"] { background: #5a2214; border-color: var(--ember); color: #ffe2bd; }
+  .grows li { min-height: 44px; border-left: 4px solid var(--hue, var(--edge)); }
+  .grows li button { grid-row: 1; }
+  .grows li button[aria-pressed="true"] { background: #5a2214; border-color: var(--ember); color: #ffe2bd; }
+  /* a locked blade or off-hand: a dim silhouette, its mark grey, with where it comes from */
+  .grows li.locked { opacity: 0.62; border-left-style: dashed; }
+  .grows li.locked .catw .gm { filter: grayscale(1) brightness(0.7); }
+  .grows li.locked button { color: var(--ash); }
+  .grows li em { grid-column: 1; font: 500 14px/1.25 var(--body); font-style: normal; color: #e0b98a; }
+  /* in a tile the category mark sits over the name, and the cost spans the tile, so the glass's column stays as narrow as the glass */
+  .tiles .tile > .catw { grid-column: 2; justify-self: start; }
+  .tiles .tile > span.cost { grid-column: 1 / -1; }
+  .catw { display: inline-block; margin-right: 6px; font: 700 11px/1 var(--title); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ash); white-space: nowrap; }
+  .catw::before { content: ''; display: inline-block; width: 9px; height: 9px; margin-right: 4px; background: var(--hue, var(--ash)); vertical-align: -1px; }
+  .catw.triangle::before { clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+  .catw.diamond::before { clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+  /* the HUD's glyph (hud-gear.js gearMark) stands in for the plain colour mark, small enough to keep the row's height */
+  .catw:has(.gm)::before { content: none; }
+  .catw .gm { width: 16px; height: 16px; margin-right: 4px; border-radius: 4px; vertical-align: -4px; }
+  .catw .gm svg { width: 10px; height: 10px; }
+  .catw .gm .pips { display: none; }
+  .catw[data-pips="1"]::after { content: ' •'; color: #e8c35a; }
+  .catw[data-pips="2"]::after { content: ' ••'; color: #e8c35a; }
+  .wellRecap { white-space: pre-line; }
+  #lamp.anchored { background: transparent; pointer-events: none; padding: 0; display: block; }
+  #lamp.anchored .box { pointer-events: auto; position: fixed; margin: 0; }
+  #lamp.anchored.sheet .box { left: 8px; right: 8px; width: auto; bottom: calc(var(--sab) + 8px); top: auto; max-height: 55dvh; }
+  #lamp.anchored.side .box { right: calc(8px + env(safe-area-inset-right, 0px)); left: auto; top: calc(var(--sat) + 60px); bottom: auto; width: 45vw; max-height: calc(100dvh - var(--sat) - var(--sab) - 68px); }
+  /* the side sheet stands where the tools are: they hide while it is open (its own close button is there) */
+  body:has(#lamp.anchored.side:not([hidden])) .tools { visibility: hidden; }
+  #lamp.anchored.beside .box { width: min(360px, calc(100vw - 32px)); max-height: calc(100dvh - var(--sat) - var(--sab) - 76px); }
+  /* a card beside its station or in a side sheet is narrow: two tiles a row, whatever the screen's width */
+  #lamp.anchored.beside ul.tiles, #lamp.anchored.side ul.tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #lamp.anchored #lampRow { position: static; margin: 8px 0 0; padding: 0; border: 0; background: none; }
+  #lampRow button[hidden] { display: none; }
+  #lamp .empty { color: var(--ash); font-size: 14px; }
+  #lamp .empty[hidden] { display: none; }
+  .hitnum { position: fixed; z-index: 9; transform: translate(-50%, 0); pointer-events: none; font: 800 18px/1 var(--title); color: #ffd77a; text-shadow: 0 2px 0 #3a0f0c; }
+  /* the title stands alone over the place: the HUD, the tools and the touch buttons hide under it */
+  body:has(#title:not([hidden])) :is(.hud, .tools, .act, .jump, .stick, .mousehint, .toast, .arrive) { visibility: hidden; }
+  .lamp:not(.lit):not(:focus):not(.on) .flame { opacity: 0.1; }
+  /* in a run the touch buttons wait under every card, so a bottom sheet or a side card has nothing peeking past it */
+  body.run:has(.panel:not([hidden])) :is(.act, .jump, .stick) { visibility: hidden; }
+  .tiles .tile b.nm .of { display: block; font: 600 14px/1.2 var(--body); color: #e0b98a; }
+  /* readable (gloam-downs-screens-life "Inputs and layouts"): every line of text on the screens at 14 px or more */
+  .panel h3.unlocksT, .panel h3.shelf { font-size: 14px; }
+  .panel .ups li span, .panel .ups li button[aria-disabled="true"] { font-size: 14px; }
+  .panel .panes .paneSlot > b, .panel .panes button, .panel .panes button b { font-size: 14px; }
+  .panel p.emberLine, #lamp p.colours, #summary p.seed { font-size: 14px; }
+  /* a number that rolls: its text is the new count at once, and data-roll is what shows over it while it rolls */
+  [data-roll] { position: relative; color: transparent !important; }
+  [data-roll]::after { content: attr(data-roll); position: absolute; top: 0; right: 0; color: var(--roll, var(--bone)); white-space: nowrap; }
+  b.bank[data-roll]::after { left: 0; right: auto; --roll: #ffd77a; }
+  .panel button.lcard.ghost { transform: none; }
+  .ghost .glow { opacity: 1; }
+  /* a short landscape window (844x390): the recap goes wide, its rows in two pairs of columns and its lamps smaller, so it fits */
+  @media (max-height: 460px) {
+    .panel#summary .box, .panel#winCard .box { width: min(760px, calc(100vw - 24px)); }
+    .panel#summary dl.score, .panel#winCard dl.score { grid-template-columns: auto 1fr auto 1fr; gap: 2px 14px; margin: 4px 0 8px; }
+    .panel ol.rpath { margin: 4px 0 6px; }
+    .rpath li .glass { width: 20px; height: 26px; }
+    .panel#winCard .box > p:not([class]) { display: none; }
+    .panel#summary h2, .panel#winCard h2 { margin-bottom: 0; }
+  }
+  /* reduced motion: no rise, no scale, no drift, no flare; fades of 150 ms or less (the glow on focus stays: it is not motion) */
+  @media (prefers-reduced-motion: reduce) {
+    .panel button.lcard, .panel button.lcard:hover, .panel button.lcard:focus, .panel .lamps button.lamp, .panel .lamps button.lamp:focus, .panel .lamps button.lamp.on { transform: none; transition: opacity 0.15s, border-color 0.15s; }
+    .lcard:focus .flame { transform: none; }
+    .glass, .glass .flame, .lcard .glow, .tile .glass .fill, .tile .glass .flame { transition: none; }
+    #patterns li.tile.kindled .glass .flame { animation: none; }
+  }
 </style>
+<link rel="stylesheet" href="./gear.css">
 </head>
 <body class="toy">
 <canvas class="view" id="view" aria-label="Gloam Downs: a dark place on rolling hills, drawn as pixel art"></canvas>
 <nav class="labbar"><a class="back" href="/lab/">◀ Lab</a><button type="button" id="menu" data-switch>Games</button></nav>
-<div class="bossbar" id="bossBar" hidden role="img" aria-label="The Barrow Reeve"><b>The Barrow Reeve</b><i class="bbar"><i id="bossFill"></i><i class="tick" style="left: 61.5%"></i><i class="tick" style="left: 26.9%"></i></i></div>
+<div class="bossbar" id="bossBar" hidden role="img" aria-label="The Barrow Reeve"><b>The Barrow Reeve</b><i class="bbar"><i id="bossFill"></i><i class="tick" style="left: 61.5%"></i><i class="tick" style="left: 26.9%"></i></i><i class="bpoise"><i id="bossPoise"></i></i></div>
 
 <div class="ink" id="ink" aria-hidden="true"></div>
 <div class="hud" id="hud" hidden>
   <p class="where" id="where">The Sunken Gaol</p>
-  <p class="life" id="life" aria-label="Health and flasks"><i class="hpbar"><i id="hpFill"></i></i><b id="hpN">100/100</b><i class="pips" id="pips"></i></p>
-  <p class="count" id="count"><b>◆ 0/5</b> wisps · <i>beacon dark</i></p>
+  <p class="life" id="life" aria-label="Health and flasks"><i class="hpbar"><i id="hpFill"></i><i id="shell" class="shell" aria-hidden="true"></i></i><b id="hpN">100/100</b><i class="pips" id="pips"></i></p>
+  <p class="colourRow" id="colourRow" hidden></p>
+  <p class="count" id="count"><b>◆ 0/5</b> wisps · <i>beacon dark</i><i id="patternsN" hidden></i></p>
+  <div class="combo" id="combo" hidden aria-live="off"><b id="comboN"></b><i id="comboPip"></i><i class="cbar"><i id="comboFill"></i></i></div>
+  <div class="gear" id="gear" role="img" aria-label="Gear" hidden></div>
   <p class="hint" id="hint">Climb to the keep. Light the beacon.</p>
+  <div class="relics" id="relics" role="img" aria-label="No relics" hidden></div>
 </div>
+<div class="compare" id="compare" hidden aria-live="polite"></div>
 <div class="tools" id="tools" hidden>
   <button type="button" id="bLook" title="Turn the view behind the lamplighter (R)">Look</button>
   <button type="button" id="bMap" title="The places (M)">Map</button>
+  <button type="button" id="bList" title="Every station of the Lamp-room in one list (Tab)" hidden>List</button>
 </div>
 <button type="button" class="jump" id="bJump" hidden>JUMP</button>
 <button type="button" class="act attack" id="bAttack" hidden aria-label="Attack">ATTACK</button>
 <button type="button" class="act roll" id="bRoll" hidden aria-label="Roll">ROLL</button>
 <button type="button" class="act heal" id="bHeal" hidden aria-label="Heal">HEAL<b id="healN">2</b></button>
+<button type="button" class="act ab ab1" id="bAb1" hidden aria-label="Ability 1"><i></i><b></b></button>
+<button type="button" class="act ab ab2" id="bAb2" hidden aria-label="Ability 2"><i></i><b></b></button>
+<button type="button" class="act off" id="bOff" hidden aria-label="Off-hand"><i></i><b>OFF</b></button>
+<button type="button" class="useprompt" id="bUse" hidden><b id="useName">The kiln</b><kbd id="useKey">E</kbd><span>Use</span></button>
 <div class="stick" id="stick" hidden><i></i></div>
 <p class="mousehint" id="mouseHint" hidden>Click to look with the mouse</p>
 
 <div class="arrive off" id="arrive" aria-live="polite"><small id="arriveN">I · The first place</small><h1 id="arriveName">The Sunken Gaol</h1><p id="arriveSub"></p></div>
 <p class="toast" id="toast" role="status"></p>
+
+<div class="panel" id="title" hidden><div class="box tbox" role="dialog" aria-labelledby="titleT">
+  <div class="tbrand">
+    <h1 class="brand" id="titleT">Gloam Downs</h1>
+    <svg class="brush" viewBox="0 0 240 14" aria-hidden="true"><path d="M4 9 C 40 3, 70 12, 112 7 S 190 4, 236 8"/></svg>
+    <p class="tplace" id="titlePlace"></p>
+  </div>
+  <div class="tfoot">
+    <div class="lamps" id="titleLamps" role="group" aria-label="The five places"></div>
+    <div class="lamps lattice" id="titleLattice" role="group" aria-label="The Gilt Lattice" hidden></div>
+    <p class="tline" id="titleLine" aria-live="polite"></p>
+    <div class="seedrow" id="seedRow"><button type="button" id="bEmberDown" aria-label="Ember level down" hidden>◀</button><p id="titleSeed"></p><button type="button" id="bEmberUp" aria-label="Ember level up" hidden>▶</button></div>
+    <div class="row" id="titleRun"><button type="button" class="go" id="bTitleBegin">Begin the run</button></div>
+    <div class="row" id="titleMore"><button type="button" id="bTitleLamp">Lamp-room</button><button type="button" id="bTitleHelp">How to play</button><button type="button" id="bTitleExplore">Explore</button></div>
+    <div class="row" id="titleWalkRow" hidden><button type="button" class="go" id="bTitleWalk">Walk</button></div>
+    <div class="row" id="titleWalkMore" hidden><button type="button" id="bTitleFight" title="Fight through the five places: attack, roll and heal">Fight</button><button type="button" id="bTitleHelp2">How to play</button></div>
+  </div>
+</div></div>
 
 <div class="panel" id="help" hidden><div class="box" role="dialog" aria-labelledby="helpT">
   <h2 id="helpT">Gloam Downs</h2>
@@ -287,20 +692,22 @@
 
 <div class="panel" id="runHelp" hidden><div class="box" role="dialog" aria-labelledby="runHelpT">
   <h2 id="runHelpT">Gloam Downs</h2>
-  <p>A run through five dark places, with a blade, a roll and two flasks. Put out each beacon's keepers, then light it. A lit beacon banks the glim you carry. Spend it in the Lamp-room, on upgrades that last.</p>
+  <p>A run through five dark places, with a blade, a roll and one flask. Put out each beacon's keepers, then light it. At a lit beacon, spend the glim you carry in the Lamp-room, on wares that last, or carry it on. A death keeps only a little of it.</p>
   <ul id="runControls"></ul>
   <p id="exploreLine">Explore walks the places with no foes.</p>
-  <div class="row"><button type="button" class="go" id="bBegin">Begin the run</button><button type="button" id="bExplore" title="Walk the five places with no foes">Explore</button></div>
+  <div class="row"><button type="button" class="go" id="bBegin">Begin the run</button><button type="button" id="bExplore" title="Walk the five places with no foes">Explore</button><button type="button" id="bHelpBack" hidden>Back</button></div>
 </div></div>
 
 <div class="panel" id="pause" hidden><div class="box" role="dialog" aria-labelledby="pauseT">
   <h2 id="pauseT">Paused</h2>
   <ol class="route" id="route"></ol>
   <p id="pauseLine">Run time 0:00</p>
+  <p class="seed" id="seedLine"></p>
+  <p class="seed" id="keysLine" hidden></p>
   <ul id="pauseControls"></ul>
   <div id="pauseRow">
     <div class="row"><button type="button" class="go" id="bResume">Resume</button><button type="button" id="bSound" aria-pressed="true">Sound on</button><button type="button" id="bMusic" aria-pressed="true">Music on</button></div>
-    <div class="row"><button type="button" id="bRestart">Back to the start</button><button type="button" id="bEnd">End the run</button></div>
+    <div class="row"><button type="button" id="bShake" aria-pressed="true">Shake on</button><button type="button" id="bRestart">Back to the start</button><button type="button" id="bEnd">End the run</button></div>
   </div>
   <div class="row" id="askRow" hidden><p class="ask" id="askLine">End the run? The glim you carry is lost.</p><button type="button" class="go" id="bNo">No</button><button type="button" id="bYes">Yes, end it</button></div>
 </div></div>
@@ -309,27 +716,47 @@
   <h2 id="beaconT">The beacon burns</h2>
   <p id="beaconLine">Choose a wick. It burns for the rest of the run.</p>
   <div class="wicks" id="wicks"></div>
+  <div class="wicks" id="sparks" hidden></div>
+  <p id="beaconKept" hidden></p>
   <p id="beaconBank" hidden>Banked: 0 glim. Spend it in the Lamp-room, or walk on.</p>
   <div class="row" id="beaconRow" hidden><button type="button" id="bSpend">Spend glim</button><button type="button" class="go" id="bWalkOn">Walk on</button></div>
 </div></div>
 
 <div class="panel" id="lamp" hidden><div class="box" role="dialog" aria-labelledby="lampT">
+  <button type="button" class="lampX" id="bLampClose" aria-label="Close" hidden>×</button>
   <h2 id="lampT">The Lamp-room</h2>
-  <p id="lampLine">Banked: 0 glim. What you buy here lasts for every run.</p>
-  <ul class="ups" id="ups"></ul>
-  <div class="row" id="lampRow"><button type="button" class="go" id="bLampBack" hidden>Back to the beacon</button><button type="button" class="go" id="bLampBegin" hidden>Begin the run</button><button type="button" class="go" id="bLampGoOn" hidden>Go on with the run</button><button type="button" id="bLampWander" hidden>Wander</button><button type="button" id="bLampToWander" hidden>Back to Wander</button><button type="button" id="bLampExplore" hidden>Explore</button></div>
+  <div class="row shrineTabs" id="shrineTabs" role="tablist" aria-label="The shrine" hidden></div>
+  <p id="lampLine" data-st="shelf kiln window wick">Banked: 0 glim. What you buy here lasts for every run.</p>
+  <p class="colours" id="colours" hidden></p>
+  <section data-st="well" class="lsec" id="wellSec"><h3 class="shelf">The last run</h3><p class="wellRecap" id="wellRecap"></p></section>
+  <section data-st="blades" class="lsec"><h3 class="shelf" id="bladesT">Blades</h3><ul class="ups grows" id="bladeRows" aria-labelledby="bladesT"></ul></section>
+  <section data-st="offhand" class="lsec"><h3 class="shelf" id="offT">Off-hands</h3><ul class="ups grows" id="offRows" aria-labelledby="offT"></ul></section>
+  <section data-st="post" class="lsec"><h3 class="shelf" id="postT">Abilities</h3><p class="postLine" id="postLine"></p><ul class="ups grows" id="postRows" aria-labelledby="postT"></ul></section>
+  <section data-st="window" class="lsec"><h3 class="shelf" id="panesT">Panes</h3><div class="panes" id="paneRow" role="group" aria-labelledby="panesT"></div></section>
+  <section data-st="kiln" class="lsec"><p class="empty" id="kilnEmpty" hidden>No pattern found yet. A pattern lamp drops in a run: carry it to a beacon, and kindle it here.</p><h3 class="shelf" id="patternsT">Patterns</h3><ul class="ups tiles" id="patterns" aria-labelledby="patternsT"></ul></section>
+  <section data-st="shelf" class="lsec"><h3 class="shelf" id="waresT">Wares</h3><ul class="ups tiles" id="ups" aria-labelledby="waresT"></ul></section>
+  <section data-st="wick" class="lsec"><h3 class="unlocksT" id="unlocksT">Unlocks</h3><ul class="ups" id="unlocks" aria-labelledby="unlocksT"></ul></section>
+  <section data-st="trophy" class="lsec"><h3 class="shelf" id="keysT">Keys</h3><ul class="ups grows" id="keyRows" aria-labelledby="keysT"></ul></section>
+  <section data-st="bell" class="lsec"><h3 class="shelf" id="emberT">Ember</h3><p class="emberLine" id="emberLine" hidden></p>
+  <div class="row" id="emberRow" role="group" aria-label="Ember level" hidden></div></section>
+  <div class="row" id="lampRow" data-st="map well shelf kiln window wick blades offhand post trophy bell"><button type="button" class="go" id="bLampBack" hidden>Back to the beacon</button><button type="button" class="go" id="bLampBegin" hidden>Begin the run</button><button type="button" class="go" id="bLampGoOn" hidden>Go on with the run</button><button type="button" id="bLampWander" hidden>Wander</button><button type="button" id="bLampToWander" hidden>Back to Wander</button><button type="button" id="bLampExplore" hidden>Explore</button><button type="button" id="bLampDone" hidden>Close</button></div>
 </div></div>
 
 <div class="panel" id="winCard" hidden><div class="box" role="dialog" aria-labelledby="winT">
   <h2 id="winT">The downs are lit</h2>
   <p>The last light of the downs burns over Barrow Crown, and every beacon is lit.</p>
+  <ol class="rpath" id="winPath" aria-label="The run's path" hidden></ol>
   <dl class="score"><dt>Time</dt><dd id="winTime"></dd><dt>Best winning time</dt><dd id="winBest"></dd><dt>Glim banked</dt><dd id="winBanked"></dd><dt>Runs</dt><dd id="winRuns"></dd><dt>Deaths</dt><dd id="winDeaths"></dd></dl>
+  <p class="opened" id="winOpened" hidden></p>
   <div class="row"><button type="button" class="go" id="bWinLamp">To the Lamp-room</button><button type="button" id="bWinWander" hidden>Wander</button></div>
 </div></div>
 
 <div class="panel" id="summary" hidden><div class="box" role="dialog" aria-labelledby="sumT">
   <h2 id="sumT">The lamp goes out</h2>
+  <ol class="rpath" id="sumPath" aria-label="The run's path" hidden></ol>
+  <p class="by" id="sumBy" hidden></p>
   <dl class="score"><dt>Reached</dt><dd id="sumPlace"></dd><dt>Time</dt><dd id="sumTime"></dd><dt>Foes put out</dt><dd id="sumFoes"></dd><dt>Glim lost</dt><dd id="sumLost"></dd><dt>Glim banked</dt><dd id="sumBanked"></dd></dl>
+  <p class="seed" id="sumSeed"></p>
   <div class="row"><button type="button" class="go" id="bSumLamp">To the Lamp-room</button></div>
 </div></div>
 

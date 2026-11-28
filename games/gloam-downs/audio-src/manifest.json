@@ -1,0 +1,46 @@
+{
+ "source": "made offline by qa/lab/gloam-downs-synth.mjs (Gloam Downs), no recording and no paid service",
+ "license": "Made for this repository; the same license as its code.",
+ "instruments": {
+  "cello": {
+   "notes": {
+    "36": "cello/36.mp3",
+    "40": "cello/40.mp3",
+    "44": "cello/44.mp3",
+    "48": "cello/48.mp3",
+    "52": "cello/52.mp3",
+    "56": "cello/56.mp3",
+    "60": "cello/60.mp3",
+    "64": "cello/64.mp3",
+    "68": "cello/68.mp3"
+   },
+   "gain": 1,
+   "sustain": true
+  },
+  "gurdy": {
+   "notes": {
+    "50": "gurdy/50.mp3",
+    "54": "gurdy/54.mp3",
+    "58": "gurdy/58.mp3",
+    "62": "gurdy/62.mp3",
+    "66": "gurdy/66.mp3",
+    "70": "gurdy/70.mp3",
+    "74": "gurdy/74.mp3"
+   },
+   "gain": 1,
+   "sustain": true
+  },
+  "drum-lo": {
+   "notes": {
+    "36": "drum-lo/36.mp3"
+   },
+   "gain": 1
+  },
+  "drum-mid": {
+   "notes": {
+    "50": "drum-mid/50.mp3"
+   },
+   "gain": 1
+  }
+ }
+}

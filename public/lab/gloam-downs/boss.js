@@ -22,11 +22,15 @@ const LAMP_R = PARAMS.radius, BOSS_LOOK = 0.6;
    lamplighter is in the arena, the 11 m of the intro (and of the pause for the boss files), the 13 m that Step back goes back to, and
    the ring of the 12 grave candles */
 export const REEVE = {
-  hp: 1300, phases: [800, 350], r: 0.9, chest: 1.7, height: 3.4, turn: 1.2, walk: [1.8, 1.8, 2.4], near: 2.6, reachY: 2.5,
+  // hard: Ember 0 is harder, the Reeve's blows deal 20% more (gloam-downs-growth design.md; the pacing tune may use 1.0 to 1.4)
+  hard: 1.2, hp: 1300, phases: [800, 350], r: 0.9, chest: 1.7, height: 3.4, turn: 1.2, walk: [1.8, 1.8, 2.4], near: 2.6, reachY: 2.5,
   gap: [S(1.0), S(0.75), S(0.55)], intro: S(2.4), rise: S(0.9), stumble: S(2.0), fall: S(0.6), parts: S(0.6), stop: 9, kick: 0.2,
   arena: { c: [18, 0.68, -22], leash: 6.5, in: 7.0, intro: 11, back: 13, candles: 7.0, camera: 16 },
   light: { rise: S(0.5), fly: S(0.5), up: 1.2, over: 0.32, beacon: S(0.5) },
-  flash: 3, shake: 6
+  flash: 3, shake: 6,
+  /* its poise (gloam-downs-fair-fight "The Reeve's poise"): every hit wears it; at 0 the Reeve flinches for 1.0 s (a wind-up is cut off,
+     an active time ends first), at most once every 8 s, never in a stumble or the intro. It fills 4 s after the last hit */
+  poise: { max: 150, flinch: S(1.0), gap: S(8), refill: S(4), stop: 5 }
 };
 /* what the player reads: the intro's card, the toast at the dark beacon (it names the arena zone's landmark, its keeper in
    lib/zones.mjs, and never a compass word), and the toast at the fall */
@@ -135,16 +139,24 @@ export const lanternOf = s => [s.x + Math.cos(s.yaw) * 0.56 + Math.sin(s.yaw) * 
    B.ready is set by the page when the boss files have loaded: until then the arena sleeps, and the intro waits.
    think(ev, play) runs on every game step after the lamplighter, as part of the runner's think; ev gets the cues, the stops, the bursts
    and { type: 'boss', what: 'intro' | 'start' | 'phase' | 'slam' | 'fall' | 'light' | 'hp' } for the page. */
-export function makeBoss({ walk, arena = null, seed = 1, runner = null, bounds = 34, down = false, water } = {}) {
+/* Ember 5 (run.js ember): hpScale 1.25 gives 1,625 health, and phase3 0.4 starts phase 3 at 40% of it. Phase 2 starts at the same
+   share as ever (800 of 1,300) */
+export const bossLines = (hpScale = 1, phase3 = null) => {
+  const max = Math.round(REEVE.hp * hpScale);
+  return { max, lines: [Math.round((max * REEVE.phases[0]) / REEVE.hp), Math.round(phase3 != null ? max * phase3 : (max * REEVE.phases[1]) / REEVE.hp)] };
+};
+export function makeBoss({ walk, arena = null, seed = 1, runner = null, bounds = 34, down = false, water, hpScale = 1, phase3 = null } = {}) {
+  const LINES = bossLines(hpScale, phase3), phaseOf = hp => (hp >= LINES.lines[0] ? 1 : hp >= LINES.lines[1] ? 2 : 3);
   const rng = stream(seed, 'boss');
   const c = (arena?.c || REEVE.arena.c).slice(), leash = arena?.leash ?? REEVE.arena.leash, dark = arena?.keeper ? darkLine(arena.keeper) : REEVE_TEXT.dark;
   const ground = (x, z, y = c[1]) => { let g = walk.support(x, z, y + 2.5); if (g === null) g = walk.top(x, z); return water !== undefined ? Math.max(g, water) : g; };
   const y0 = ground(c[0], c[2]);
   const B = {
-    id: 'reeve', type: 'B', code: 'B', zone: 'arena', c, leash, hp: REEVE.hp, max: REEVE.hp, phase: 1, state: down ? 'down' : 'wait', t: 0,
+    id: 'reeve', type: 'B', code: 'B', zone: 'arena', c, leash, hp: LINES.max, max: LINES.max, lines: LINES.lines, phase: 1, state: down ? 'down' : 'wait', t: 0,
     move: null, mt: 0, landed: false, last: [], gap: 0, prog: 0, started: false, up: !down, ready: false, hold: null, mk: null, shards: [],
     x: c[0], y: y0, z: c[2], yaw: 0, r: REEVE.r, alive: false, walking: 0, flash: 0, shake: 0, shakeDir: [1, 0], flashTo: 0, shakeTo: 0,
     game: 0, step: 0, pending: [], falling: false, stumbleNext: false, diedAt: null, runner,
+    poise: REEVE.poise.max, poiseMax: REEVE.poise.max, poiseAt: -1e9, breakAt: -1e9, cutAfter: false, breaks: 0,
     light: { state: down ? 'carried' : 'cage', t: 0, from: null, at: null },
     T: { chest: REEVE.chest, height: REEVE.height },
     hit: (raw, how) => hitBoss(raw, how)
@@ -164,12 +176,12 @@ export function makeBoss({ walk, arena = null, seed = 1, runner = null, bounds =
     return d <= L ? [x, z] : [c[0] + (dx / d) * L, c[2] + (dz / d) * L];
   }
   const towards = (x, z, v) => { const dx = x - B.x, dz = z - B.z, d = Math.hypot(dx, dz); return d < 0.05 ? null : [(dx / d) * v * Math.min(1, d * 4), (dz / d) * v * Math.min(1, d * 4)]; };
-  const hittable = () => B.up && B.started && ['idle', 'home', 'move', 'stumble'].includes(B.state);
-  const shown = () => ['intro', 'idle', 'home', 'move', 'stumble', 'fall', 'parts'].includes(B.state);
+  const hittable = () => B.up && B.started && ['idle', 'home', 'move', 'stumble', 'flinch'].includes(B.state);
+  const shown = () => ['intro', 'idle', 'home', 'move', 'stumble', 'flinch', 'fall', 'parts'].includes(B.state);
   // a hit on the lamplighter: true once it has landed (in a safe time it passes, and the attack tests its later active steps)
   function strike(dmg, from, ev, o = {}) {
     if (B.hold || !R()) return false;
-    const r = R().hurt(dmg, from, o, ev);
+    const r = R().hurt(dmg * REEVE.hard, from, o, ev);
     return r === 'hit' || r === 'dead' || r === 'none';
   }
   const place = (x, z, yaw) => { B.body.place([x, ground(x, z) + 0.3, z], yaw); B.x = B.body.s.x; B.y = B.body.s.y; B.z = B.body.s.z; B.yaw = yaw; };
@@ -199,7 +211,9 @@ export function makeBoss({ walk, arena = null, seed = 1, runner = null, bounds =
     const A = ATTACKS[B.move];
     B.mt++;
     const g = segAt(A, B.mt), s = lamp();
-    if (!g) { endMove(); return null; }
+    if (!g) { endMove(); if (B.cutAfter) flinchNow(ev); return null; }
+    // a poise broken in an active time: the move ends with that time, and the flinch starts
+    if (B.cutAfter && g.kind !== 'act') { endMove(); flinchNow(ev); return hard0; }
     switch (B.move) {
       case 'sweep': case 'dsweep': return sweep(A, g, s, ev);
       case 'slam': return slam(A, g, s, ev);
@@ -353,8 +367,10 @@ export function makeBoss({ walk, arena = null, seed = 1, runner = null, bounds =
    No flinch and no push. In a stumble the hits do no damage. In the 1.5 s after the cage slam it is open and takes 50% more. A hit
    that crosses 800 or 350 brings on the next phase with its stumble; one that takes the last health brings the fall. A held boss
    takes the damage and holds its pose. */
-  function hitBoss(raw) {
+  function hitBoss(raw, how = {}) {
     if (!B.alive || !hittable()) return false;
+    // a tick never reaches the Reeve (status.js tickHit refuses it), and one sent here anyway neither hurts it nor wears its poise
+    if (how?.tick) return false;
     B.flashTo = B.game + 1 + REEVE.flash;
     B.shakeTo = B.game + 1 + REEVE.shake;
     B.flash = REEVE.flash; B.shake = REEVE.shake;
@@ -363,20 +379,41 @@ export function makeBoss({ walk, arena = null, seed = 1, runner = null, bounds =
     if (B.state === 'stumble') return 0;
     const g = B.move === 'slam' ? segAt(ATTACKS.slam, B.mt) : null, dmg = dealt(raw, g?.kind === 'rec' ? ATTACKS.slam.open : 1);
     setHp(B.hp - dmg);
+    wearPoise(dmg);
     return dmg;
   }
+  // the poise: each hit takes its damage off it (it fills 4 s after the last hit); at 0, 8 s or more after the last break, it breaks
+  function wearPoise(dmg) {
+    const P = REEVE.poise;
+    if (B.falling || B.stumbleNext || B.state === 'flinch' || !B.up) return;
+    if (B.step - B.poiseAt >= P.refill) B.poise = B.poiseMax;
+    B.poiseAt = B.step;
+    B.poise = Math.max(0, B.poise - dmg);
+    if (B.poise > 0 || B.step - B.breakAt < P.gap) return;
+    B.breakAt = B.step;
+    B.breaks++;
+    const g = B.move ? segAt(ATTACKS[B.move], B.mt) : null;
+    B.pending.push({ type: 'stop', n: P.stop }, { type: 'snap', foe: B.id, kind: 'B', why: 'break', x: B.x, y: B.y + REEVE.chest, z: B.z }, { type: 'cue', cue: 'snap', foe: B.id, kind: 'B', why: 'break' });
+    if (g?.kind === 'act') { B.cutAfter = true; return; }
+    endMove();
+    B.mk = B.shards.length ? B.mk : null;
+    flinchNow();
+  }
+  function flinchNow() { B.cutAfter = false; B.move = null; B.mt = 0; B.hold = null; B.state = 'flinch'; B.t = 0; }
+  // the poise as the bar shows it: full again 4 s after the last hit
+  B.poiseNow = () => (B.step - B.poiseAt >= REEVE.poise.refill ? B.poiseMax : B.poise);
   // the boss's health set at once: the phase of that health, with one stop of 9 steps and one stumble however many thresholds it
   // crossed; at 0 the fall. Before the fight has started there is no stumble
   function setHp(hp) {
-    B.hp = clamp(Math.round(hp), 0, REEVE.hp);
+    B.hp = clamp(Math.round(hp), 0, B.max);
     B.pending.push({ type: 'boss', what: 'hp', hp: B.hp });
     if (B.hp <= 0 && B.up) { B.falling = true; B.alive = false; return; }
-    const ph = phaseFor(B.hp);
+    const ph = phaseOf(B.hp);
     if (ph !== B.phase) { B.phase = ph; if (B.started && B.up) B.stumbleNext = true; }
   }
   B.setHp = setHp;
   function stumble(ev) {
-    B.stumbleNext = false;
+    B.stumbleNext = false; B.cutAfter = false;
     B.move = null; B.mt = 0; B.mk = null; B.shards = []; B.hold = null;
     B.state = 'stumble'; B.t = 0;
     ev.push({ type: 'stop', n: REEVE.stop }, { type: 'boss', what: 'phase', phase: B.phase, kick: REEVE.kick }, { type: 'cue', cue: 'stumble', foe: B.id });
@@ -436,6 +473,11 @@ export function makeBoss({ walk, arena = null, seed = 1, runner = null, bounds =
         if (++B.t >= REEVE.stumble) { B.state = 'idle'; B.t = 0; B.gap = REEVE.gap[B.phase - 1]; }
         want = hard0;
         break;
+      // a broken poise: it stands 1.0 s, then fights on after its gap
+      case 'flinch':
+        if (++B.t >= REEVE.poise.flinch) { B.state = 'idle'; B.t = 0; B.gap = REEVE.gap[B.phase - 1]; }
+        want = hard0;
+        break;
       case 'fall':
         if (++B.t >= REEVE.fall) {
           B.state = 'parts'; B.t = 0;
@@ -450,7 +492,7 @@ export function makeBoss({ walk, arena = null, seed = 1, runner = null, bounds =
         break;
       case 'idle': case 'home': want = mind(ev); break;
     }
-    if (['intro', 'idle', 'home', 'move', 'stumble'].includes(B.state)) physics(want);
+    if (['intro', 'idle', 'home', 'move', 'stumble', 'flinch'].includes(B.state)) physics(want);
     B.alive = hittable();
     apart(s);
   };
@@ -518,6 +560,7 @@ export function makeBoss({ walk, arena = null, seed = 1, runner = null, bounds =
     return {
       id: B.id, state: B.state, phase: B.phase, hp: B.hp, max: B.max, started: B.started, up: B.up, ready: B.ready, x: B.x, y: B.y, z: B.z, yaw: B.yaw,
       move: B.move, seg: g ? g.kind : null, t: B.move ? B.mt / 60 : B.t / 60, held: !!B.hold, gap: B.gap, last: B.last.slice(), open: g?.kind === 'rec' && B.move === 'slam',
+      poise: B.poiseNow(), poiseMax: B.poiseMax, flinch: B.state === 'flinch' ? REEVE.poise.flinch - B.t : 0, breaks: B.breaks,
       marker: B.mk ? JSON.parse(JSON.stringify(B.mk)) : null, shards: B.shards.length, light: { state: B.light.state, t: B.light.t }, flash: B.flash
     };
   };
@@ -550,6 +593,8 @@ export function poseOfBoss(B, time = 0) {
   switch (B.state) {
     case 'intro': return { clip: 'intro', t: B.t / 60, dy: -1.8 * (1 - ease(B.t / REEVE.rise)) };
     case 'stumble': return { clip: 'stumble', t: B.t / 60, dy: 0 };
+    // a broken poise: the stumble's first lurch, held and let go over the 1.0 s
+    case 'flinch': return { clip: 'stumble', t: 0.25 * Math.sin(Math.PI * Math.min(1, B.t / REEVE.poise.flinch)), dy: 0 };
     case 'fall': return { clip: 'fall', t: B.t / 60, dy: 0 };
     case 'move': {
       const g = segAt(ATTACKS[B.move], B.mt);

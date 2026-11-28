@@ -52,6 +52,46 @@ export function checkPlace({ meta, walk, world, reach }, { gzBytes, frame, world
   if (worlds) for (const r of placeChecks(worlds)) if (r.what.startsWith(`${meta.id}:`)) out.push(r);
   return out;
 }
+/* ---------------- the hall between runs (gloam-downs-hub design.md "Decision 2" and "Decision 3") ----------------
+   No beacon, wisps or lattice colours. Its own budget, every station reached from the spawn, every station within 6 m of the walk from
+   the spawn to the run door, every growth object of hub.js baked once, and a start view of a lit room: mean luminance 0.07 to 0.16 with
+   at least 0.3% bright pixels */
+export const HUB_BUDGET = { splats: 210000, scenery: 160000, grow: 46000, gzBytes: 0.4e6, walkBytes: 4096, path: 6, meanMin: 0.07, meanMax: 0.16, brightMin: 0.003, bakeMs: 20000 };
+export function checkHub({ meta, walk, reach, stats }, { gzBytes, walkBytes, frame, ms, growIds = [], toPath } = {}) {
+  const out = [], H = HUB_BUDGET;
+  const ok = (cond, what) => out.push({ ok: !!cond, what });
+  ok(meta.count <= H.splats, `splats ${meta.count} <= ${H.splats}`);
+  if (stats) {
+    ok(stats.scenery <= H.scenery, `the hall's scenery ${stats.scenery} <= ${H.scenery} splats`);
+    ok(stats.grow <= H.grow, `growth objects ${stats.grow} <= ${H.grow} splats`);
+  }
+  if (gzBytes !== undefined) ok(gzBytes <= H.gzBytes, `download ${(gzBytes / 1e6).toFixed(3)} MB <= 0.40 MB (splats, walk map and JSON)`);
+  if (walkBytes !== undefined) ok(walkBytes <= H.walkBytes, `walk file ${(walkBytes / 1024).toFixed(1)} KB <= 4 KB`);
+  if (ms !== undefined) ok(ms <= H.bakeMs, `bake ${(ms / 1000).toFixed(1)} s <= 20 s`);
+  ok(meta.pal.length <= BUDGET.colors, `palette ${meta.pal.length} <= 48`);
+  const W = makeWalk(meta.walk, walkCells(walk));
+  const sy = W.support(meta.spawn.p[0], meta.spawn.p[2], meta.spawn.p[1] + 1);
+  ok(sy !== null && Math.abs(sy - meta.spawn.p[1]) < 0.6, `start stands on the ground (floor ${sy?.toFixed(2)}, start ${meta.spawn.p[1].toFixed(2)})`);
+  const R = reach ?? reachable(W, meta.spawn, meta.bounds, PARAMS, { wide: true });
+  ok(R.cells > 1000, `walkable area ${R.cells} cells`);
+  const door = { p: meta.door.p, r: 1.6 };
+  const { traps } = R.trapped(byBeacon(door), controllerOut(W, meta.bounds)), cells = new Set(traps.map(t => `${t.i},${t.j}`)).size;
+  ok(!traps.length, `no trap: every reached cell can get back (${cells} trap cells left)`);
+  ok(R.near(meta.door.p, 1.0, -1, 1), `the run door at ${meta.door.p.map(v => v.toFixed(1))} can be reached`);
+  for (const s of meta.stations) {
+    ok(R.near(s.at, 0.6, -1, 1), `station ${s.id} at ${s.at.map(v => v.toFixed(1))} can be reached`);
+    if (toPath) { const d = toPath([s.at[0], s.at[2]]); ok(d <= H.path, `station ${s.id} is ${d.toFixed(1)} m from the walk to the door (<= ${H.path})`); }
+  }
+  const have = meta.grow.map(g => g.id), missing = growIds.filter(id => !have.includes(id)), extra = have.filter(id => !growIds.includes(id));
+  ok(!missing.length && !extra.length && new Set(have).size === have.length, `growth objects: each of hub.js's ${growIds.length} baked once${missing.length ? `; missing ${missing.join(' ')}` : ''}${extra.length ? `; unknown ${extra.join(' ')}` : ''}`);
+  ok(meta.grow.every(g => g.n > 0), `every growth object has splats (${meta.grow.filter(g => !g.n).map(g => g.id).join(' ') || 'all'})`);
+  if (frame) {
+    const L = lumaStats(frame);
+    ok(L.mean >= H.meanMin && L.mean <= H.meanMax, `a lit room: mean luminance ${L.mean.toFixed(3)} in ${H.meanMin}..${H.meanMax}`);
+    ok(L.bright >= H.brightMin, `bright accents: ${(L.bright * 100).toFixed(2)}% of pixels over ${BUDGET.brightLuma} (>= 0.3%)`);
+  }
+  return out;
+}
 /* ---------------- the Gilt Lattice ----------------
    Two more rules for a place with set: 'lattice' (its JSON is enough: meta.pal, and meta.digital, the slots of its grid or neon ramp):
    no own colour (slots 1..31) is within an RGB distance of 60 of the wisp colours (slots 39 and 40), so a wisp stays a wisp; and every

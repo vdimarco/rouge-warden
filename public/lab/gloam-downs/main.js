@@ -7,22 +7,50 @@ import { createRenderer } from './ink/webgl/renderer.mjs';
 import { makeCamera as viewCamera } from './ink/webgl/view.mjs';
 import { loadPlace } from './world.js';
 import { makeWalk, makeBody, makeCamera, makeBlend, camLayout, pose, touches, atBeacon, autoTurn, PARAMS, makeFade, fadeOf, eyeOf } from './play.js';
-import { makeCombat, makeMoveLock, asFoes, makeBossCam, yawDiff, easeTurn, BOSS } from './cameras.js';
+import { makeCombat, makeMoveLock, asFoes, makeBossCam, makeHallCam, yawDiff, easeTurn, BOSS } from './cameras.js';
 import { ORDER, LATTICE, load, store, wispCount, fresh } from './save.js';
 import { placeName, nextOf, mapGroups, mapLine, arriveLine, hintOf, startPlace } from './places.js';
 import * as RS from './run-save.js';
 import { STEP, stepCount, startRun, reload, goTo, chooseWick, buy, maxOf, flasksOf, makeRunner, newSeed, WICKS } from './run.js';
-import { nearest, faceYaw, makePost, HITS, clearLine } from './moves.js';
+import { nearest, faceYaw, makePost, HITS, hitOf, clearLine } from './moves.js';
 import { NUMERAL, NAMES, fmt, stepsOf, INK, inkAt, TIMED, hudOf, wickLine, wickName, upgradeRows, lampButtons, summaryOf, winOf, routeOf, ASKS, cardOnLoad, isRun, modeHref } from './screens.js';
 import { makeInput, navStep, readPads, heldNav } from './input.js';
+import { makeAbilities, groundAbilities, abilityOf } from './abilities.js';
+import { makeKeys, groundSpots, keysLine } from './keys.js';
+import { groundPatterns, reach } from './run.js';
 import * as cards from './cards.js';
+// the builds (relics, unlocks, Ember): builder BC's hooks
+import { relicEvent, RELIC_IDS, groundRelics } from './relics.js';
+import { dressOf, eliteClip } from './elites.js';
+import { UNLOCK_IDS, buyUnlock, setEmber, routeOfRun, emberOf, depthOf } from './run.js';
+import { unlockRows, emberRow, relicMarks, kindleLine, moveLines } from './screens.js';
+import { glimLine, keptLine } from './screens.js';
+import { startPicks } from './run.js';
 import { makePool } from './pool.js';
 import { figures, poolFor, lineup, LINEUP } from './figures.js';
 import { findVeils, makeVeils, findOccluders, makeOccluders, VEIL } from './veil.js';
 import { makeCut, CUT } from './cut.js';
 import { makeFight, SPARKS } from './fight.js';
+import { makeLife } from './life.js';
+import { parseSeed, seedCode, smallSeed } from './mix.js';
 import { REEVE, REEVE_TEXT } from './boss.js';
 import { makeRunSound } from './run-sound.js';
+import { makeBuild, shellShare } from './build.js'; let build = null;
+import { emit, on } from './bus.js';
+// the selection screens (gloam-downs-screens-life): the title, the lamp cards, the Lamp-room's tiles and the recap
+import { titleView, frameAt, titleSpot } from './menu-scene.js';
+import { titleLamps, titleLine, seedLine, emberStep, wareTiles, recapOf, pickColour } from './screens.js';
+import { PAD } from './input.js';
+// the Lamp-room as a place (gloam-downs-hub): the hall's plan and rules, its rows, and the stand-ins of the gear builder's picks
+import { HUB, HALL, stationOf, stationNear, promptOf, SHRINE_TABS, shown as growShown, practiceRun, quarterCool, postRows, tryAbility, chooseBlade, chooseOffhand, USE, startBlade as startBladeOf, startOffhand as startOffhandOf } from './hub.js';
+import { bladeRows, offhandRows, keyRows, wellLines } from './screens.js';
+import { gearRow, compareToast } from './hud-gear.js';
+import { groundGear, gearTest } from './gear-play.js';
+import { gearCopy } from './gear.js';
+// growth (gloam-downs-growth): the page parts in cards.js, bound to the page's state with getters
+const { bindGrowth, updateGrowth, fillGrowthLamp, sparkButtons, abilityButtons, growthView, setGrowth } = cards;
+bindGrowth({ rs: () => rs, runner: () => runner, mode: () => mode, audio: () => audio, toast: (h, ms) => toast(h, ms), storeRun: () => storeRun(), fillLamp: () => fillLamp(), updateHud: () => updateHud(), openBeacon: () => openBeacon(),
+  picked: (kind, id, b) => picked(kind, id, b), kindled: id => kindledTile(id) });
 
 const $ = id => document.getElementById(id);
 const canvas = $('view'), loading = $('loading'), loadLine = $('loadLine'), barFill = $('barFill'), bar = $('bar');
@@ -60,8 +88,14 @@ const intervals = [];
 const cues = [];
 const fx = { stop: true, flash: true, kick: true, zoom: true, grade: true, shake: true, trail: true };
 const fxNow = { kick: [0, 0, 0], zoom: 1, bars: 0 };
+// the Shake switch (the pause panel): the save's shake, or until the player presses it, off under reduced motion and on otherwise
+const shakeOn = () => (rs?.shake === true || rs?.shake === false ? rs.shake : !still);
+fx.kick = shakeOn(); fx.combo = true; fx.lamp = true;
+// the seed and the best combo of the run in this place, kept for the summary after the run ends
+let lastRun = { seed: 1, combo: 0 };
 const posts = [];
 let foeTargets = () => [], fight = null;
+let life = null;
 /* the run's sound (run-sound.js): no AudioContext until the first key, click or tap in a run, and none in the explorer or Wander.
    A Lamp-room opened from Wander's Map makes no sound until Begin the run or Go on with the run */
 let lampFromWander = false, bossCard = false;
@@ -93,8 +127,10 @@ if (audio) for (const k of ['keydown', 'pointerdown', 'pointerup', 'touchend', '
 // after a card that played the Lamp-room theme (or silence), the place's own sounds come back: under the arrival card, or the theme
 function sceneOfPlace() {
   if (!audio || !meta || fight?.boss?.fighting()) return;
+  // the hall plays the Lamp-room's theme, and its own bed (soundTick)
+  if (hallOn()) return audio.setScene('lamp');
   if (arriveLeft > 0 && !bossCard) audio.setScene('arrive', { id: meta.id });
-  else audio.setScene(meta.id === 'barrows' && rs.run?.bossDown ? 'light' : 'place', { id: meta.id });
+  else audio.setScene(meta.id === 'barrows' && rs?.run?.bossDown ? 'light' : 'place', { id: meta.id });
 }
 let sinceStore = 0, endAt = 0;
 /* the boss files: they load during The Bell Knoll, or after play starts in Barrow Crown, and stay. bossFile once they are in, bossLoad
@@ -152,12 +188,12 @@ const layoutNow = () => camLayout(innerWidth, innerHeight);
 addEventListener('resize', () => { sizeArt(); if (cam) cam.layout(layoutNow()); placeBossBar(); measureScreen(); });
 
 /* ---------------- input ---------------- */
-const jumpBtn = $('bJump'), stickEl = $('stick'), actBtns = [$('bAttack'), $('bRoll'), $('bHeal')];
+const jumpBtn = $('bJump'), stickEl = $('stick'), actBtns = [$('bAttack'), $('bRoll'), $('bHeal')], abBtns = [$('bAb1'), $('bAb2')];
 /* the mouse: taken by a click on the view (input.js). Freed in play in a run, by Escape or by the browser, it opens the pause panel. A
    card that opens frees it, so its buttons can be clicked, and a button that goes back to play takes it again (the click is the
    gesture the browser asks for) */
-const inp = makeInput({ canvas, stick: stickEl, jump: jumpBtn, attack: $('bAttack'), roll: $('bRoll'), heal: $('bHeal') }, {
-  run: () => RUN, play: () => mode === 'play', hold: () => mode === 'play' || mode === 'loading',
+const inp = makeInput({ canvas, stick: stickEl, jump: jumpBtn, attack: $('bAttack'), roll: $('bRoll'), heal: $('bHeal'), ab1: $('bAb1'), ab2: $('bAb2'), off: $('bOff') }, {
+  run: () => RUN, play: () => mode === 'play', hold: () => mode === 'play' || mode === 'loading', hub: () => hallOn(),
   onLock: (taken, ours) => { if (!taken && !ours && RUN && mode === 'play' && rs.run) openPause(); mouseHint(); },
   onState: () => mouseHint(),
   /* a mouse found or lost (one plugged into a phone): the help, the controls and the hint follow it. Found by a move, at once; found or
@@ -181,6 +217,11 @@ const typing = e => e.target instanceof HTMLInputElement || e.target instanceof 
 addEventListener('keydown', e => {
   if (typing(e) || window.GameSwitch?.isOpen) return;
   const k = e.key.toLowerCase();
+  // in the hall: E or Enter uses the station in reach, Tab opens the quick list, and Escape, M or P open it too (the hall has no pause)
+  if (hallOn() && mode === 'play') {
+    if (k === 'e' || k === 'enter') { if (hall.near) { e.preventDefault(); hallUse(); } return; }
+    if (k === 'tab' || k === 'm' || k === 'p' || (k === 'escape' && performance.now() - inp.lostAt >= 400)) { e.preventDefault(); openQuick(); return; }
+  }
   // the Escape that frees the mouse has opened the pause panel already: it does not also close it
   if (k === 'escape') { if (performance.now() - inp.lostAt < 400) return; if (mode === 'play') { if (RUN) openPause(); else inp.free(); } else back(); return; }
   if (k === 'm' || (RUN && k === 'p')) {
@@ -189,38 +230,61 @@ addEventListener('keydown', e => {
     return;
   }
   if (mode === 'play' && k === 'r') face();
+  if (mode === 'play') padOff();
 });
 
 /* the pads, read on every frame in every mode: in a card or on the loading screen the d-pad and the left stick move the focus, A
    presses, B goes back, and Start and Back do what the card allows. A pad that first shows up changes the cards' controls, and that
    press presses nothing */
 const nav = { dir: 0, t: 0 };
-let padWas = { a: false, b: false, start: false, back: false, face: false, pause: false }, padSeen = false;
+/* padSeen: the pad is the input in use (its labels on the HUD and its lines on the cards); padFound: a pad has shown up once. A key
+   or a mouse press in play gives the labels back to the keys and the mouse, and the next pad press takes them again */
+let padWas = { a: false, b: false, start: false, back: false, face: false, pause: false, use: false, list: false }, padSeen = false, padFound = false;
+function padOff() { if (!padSeen) return; padSeen = false; showControls(); updateAbilities(); }
+addEventListener('pointerdown', e => { if (e.pointerType === 'mouse' && mode === 'play') padOff(); }, true);
 // a card or the loading screen takes over: a way the d-pad or the stick already holds moves nothing until it comes back to centre
 const holdNav = () => heldNav(nav, readPads(navigator.getGamepads?.() || [], RUN).nav);
 function showCard(card) { holdNav(); inp.free(); mouseHint(); if (linesStale) setLines(); return cards.show(card); }
 function padCheck() {
   const any = [...(navigator.getGamepads?.() || [])].some(p => p && p.connected);
-  if (any && !padSeen) { padSeen = true; showControls(); return true; }
+  if (any && !padFound) { padFound = padSeen = true; showControls(); return true; }
   return false;
 }
 function pollPad(dt) {
   const p = inp.readPad(), n = p.nav;
   const was = padWas;
-  padWas = { a: n.a, b: n.b, start: n.start, back: n.back, face: p.face, pause: p.pause };
-  if (p.any && !padSeen) { padSeen = true; showControls(); return; }
+  padWas = { a: n.a, b: n.b, start: n.start, back: n.back, face: p.face, pause: p.pause, use: p.use, list: p.list, lb: !!p.down?.has(PAD.LB), rb: !!p.down?.has(PAD.RB) };
+  // a pad that first shows up takes the labels, and that press presses nothing; after a key or a mouse press, a pad's next press or
+  // stick takes them back
+  if (p.any && !padFound) { padFound = padSeen = true; showControls(); updateAbilities(); return; }
+  if (!padSeen && (p.down?.size || p.mx || p.mz || p.ox || p.oy)) { padSeen = true; showControls(); updateAbilities(); }
   const edge = k => n[k] && !was[k];
   if (cards.current() || mode === 'loading') {
     const d = navStep(nav, n, dt);
-    if (d) cards.move(d);
+    // on lamp cards and the title's lamps the d-pad and the stick move by the grid (cards.js moveDir); elsewhere in the card's order
+    if (d) {
+      const dn = p.down || new Set(), dx = dn.has(PAD.RIGHT) || p.mx > 0.5 ? 1 : dn.has(PAD.LEFT) || p.mx < -0.5 ? -1 : 0, dy = dn.has(PAD.DOWN) || p.mz < -0.5 ? 1 : dn.has(PAD.UP) || p.mz > 0.5 ? -1 : 0;
+      if ((dx || dy) && document.activeElement?.closest?.('.lcard, .lamp')) cards.moveDir(dx, dy);
+      else cards.move(d);
+    }
+    // LB and RB switch the beacon shrine's tabs
+    const tabEdge = k => padWas[k] && !was[k];
+    if (tabEdge('lb') && shrineTab(-1)) return;
+    if (tabEdge('rb') && shrineTab(1)) return;
     if (edge('a')) { if (cards.press()) inp.swallowAll(); }
     else if (edge('b')) back();
     else if (edge('start')) startButton();
     else if (edge('back') && RUN && mode === 'pause' && !asking) resume();
+    else if ((edge('back') || edge('start')) && mode === 'station') closeStation();
   } else {
     // out of the cards the way held is kept, so the first poll in a card that opens takes no move from it
     heldNav(nav, n);
     if (mode !== 'play') return;
+    // in the hall A uses the station in reach (the card opens before the jump is stepped), and View or Start open the quick list
+    if (hallOn()) {
+      if (p.use && !was.use && hall.near) { hallUse(); inp.swallowAll(); return; }
+      if ((p.list && !was.list) || (p.pause && !was.pause)) { openQuick(); return; }
+    }
     if (p.face && !was.face) face();
     if (p.pause && !was.pause) RUN ? openPause() : openMap();
   }
@@ -259,12 +323,26 @@ function placeBossBar() {
 function fillBossBar() {
   const B = fight?.boss;
   if (B) $('bossFill').style.width = `${((B.hp / B.max) * 100).toFixed(1)}%`;
+  fillPoise();
+  // the boss music builds with the share of health left, while the bar shows
+  if (B && !$('bossBar').hidden) emit('boss-health', { share: B.hp / B.max, phase: B.phase });
+}
+// the Reeve's poise line under the health (gloam-downs-fair-fight "The Reeve's poise"), each frame while the bar shows
+let poiseShown = -1;
+function fillPoise() {
+  const B = fight?.boss;
+  if (!B || $('bossBar').hidden) return;
+  const k = Math.round((B.poiseNow() / B.poiseMax) * 1000);
+  if (k !== poiseShown) { poiseShown = k; $('bossPoise').style.width = `${(k / 10).toFixed(1)}%`; }
 }
 function bossBar(on) {
   if (!RUN) return;
   $('bossBar').hidden = !on;
   // in the boss fight the hint hides, so the HUD fits the rects the boss camera keeps clear
   hud.classList.toggle('boss', on);
+  // the ticks at the phases' ends: 61.5% and 26.9%, or 40% for phase 3 at Ember 5 (boss.js bossLines)
+  const B = fight?.boss;
+  if (B?.lines) $('bossBar').querySelectorAll('.tick').forEach((t, i) => { t.style.left = `${((B.lines[i] / B.max) * 100).toFixed(1)}%`; });
   placeBossBar();
   fillBossBar();
   measureScreen();
@@ -276,12 +354,18 @@ function measureScreen() {
   bossScreen.w = innerWidth;
   bossScreen.h = innerHeight;
   bossScreen.bar = $('menu').getBoundingClientRect().bottom || 52;
-  bossScreen.rects = [hud, tools, jumpBtn, ...actBtns].filter(el => !el.hidden).map(el => el.getBoundingClientRect()).filter(r => r.width > 0).map(r => [r.left, r.top, r.width, r.height]);
+  bossScreen.rects = [hud, tools, jumpBtn, ...actBtns, ...abBtns, $('gear')].filter(el => el && !el.hidden).map(el => el.getBoundingClientRect()).filter(r => r.width > 0).map(r => [r.left, r.top, r.width, r.height]);
 }
 function showHud(on) {
   hud.hidden = tools.hidden = !on;
   jumpBtn.hidden = !(on && coarse);
   for (const b of actBtns) b.hidden = !(on && coarse && RUN);
+  // the off-hand's touch button, beside the abilities' (the gear builder fills its mark); in the hall the List tool, and no pause
+  $('bOff').hidden = !(on && coarse && RUN);
+  $('bList').hidden = !(on && hallOn());
+  $('bMap').hidden = on && hallOn();
+  if (!on || !hallOn()) $('bUse').hidden = true;
+  updateAbilities();
 }
 function updateHud() {
   if (RUN) return updateRunHud();
@@ -292,16 +376,32 @@ function updateHud() {
 }
 // the run's HUD: the health bar with its number and a pip for each flask, then the wisps of this place and the glim carried
 function updateRunHud() {
+  updateGrowth();
+  updateRelics();
   const h = hudOf(rs, runner?.wisps.size || 0);
   $('where').textContent = meta.name;
+  // the hall: its name, the glim banked and how to use it
+  if (hallOn()) {
+    $('life').hidden = true;
+    $('count').hidden = false;
+    $('count').innerHTML = `<em>● ${rs.bank | 0}</em> glim banked`;
+    $('hint').hidden = false;
+    $('hint').textContent = meta.hint || '';
+    hud.classList.remove('low');
+    updateCombo();
+    updateAbilities();
+    return;
+  }
   $('life').hidden = !h;
   hud.classList.toggle('low', !!h?.low);
   $('count').hidden = !h;
   $('hint').hidden = !h;
   $('hint').textContent = beaconLit ? 'The beacon burns.' : 'Put out the keepers, then light the beacon.';
+  updateCombo();
   if (!h) return;
   $('hpN').textContent = h.text;
   $('hpFill').style.width = `${(h.share * 100).toFixed(1)}%`;
+  $('shell').style.width = (100 * shellShare(build)).toFixed(1) + '%';
   const pips = $('pips');
   while (pips.children.length < h.pips.length) pips.appendChild(document.createElement('i'));
   while (pips.children.length > h.pips.length) pips.lastChild.remove();
@@ -309,6 +409,118 @@ function updateRunHud() {
   $('life').setAttribute('aria-label', `Health ${h.text}, ${h.pips.filter(Boolean).length} of ${h.pips.length} flasks`);
   $('count').innerHTML = `<b>◆ ${h.wisps}/5</b> wisps · <em>● ${h.glim}</em> glim`;
   $('healN').textContent = String(Math.min(5, rs.run.flasks));
+  updateAbilities();
+}
+/* ---------------- the abilities on the page (gloam-downs-growth) ----------------
+   The HUD's row of the two slots ("1 Lantern bomb", or the seconds left while it cools) with a mouse, keys or a pad; on a touch screen
+   the two round buttons over Attack and Heal, with the cooldown as a dark sweep. A slot with nothing in it shows nothing */
+const AB_SHORT = { bomb: 'BOMB', step: 'STEP', snare: 'SNARE', moth: 'MOTH', crook: 'CROOK', rime: 'RIME', flare: 'FLARE', pitch: 'PITCH', guard: 'GUARD' };
+const abKeys = () => (padSeen ? ['LB', 'LT'] : ['F', 'G']);
+// glows: the steady dabs of the last draw by kind (fight.js glows: pattern, ability, cache, stone, snare, ...), for ?test
+const abilityView = () => ({ glows: fight ? fight.halo.reduce((m, g) => ((m[g.kind] = (m[g.kind] || 0) + 1), m), {}) : {}, abilities: runner?.abilities ? runner.abilities.view() : (rs?.run?.abilities || [null, null]).map(a => (a ? { ...a, left: 0, share: 0 } : null)), ...(runner?.keys ? runner.keys.view() : { keys: (rs?.keys || []).slice(), caches: (rs?.run?.caches || []).slice() }) });
+function updateAbilities() {
+  // in the hall the runner plays the ability post's practice run (hallRs), so the row shows it there too
+  const on = RUN && (rs?.run || (hallOn() && runner)) && !hud.hidden;
+  const v = on ? abilityView().abilities : [null, null], touch = coarse && !inp.mouse;
+  // the gear row (hud-gear.js) in place of the abilities' row, and the compare toast over a ground item
+  gearRow($('gear'), on ? runner : null, hallOn() ? hallRs : rs, Date.now(), touch ? null : abKeys());
+  compareToast($('compare'), on && rs?.run && mode === 'play' ? runner : null);
+  abBtns.forEach((b, i) => {
+    const a = v[i];
+    b.hidden = !(a && touch && mode !== 'loading');
+    if (!a) return;
+    // a cooling button is dimmed, its sweep is a pale arc, and its label gives the seconds left
+    const cls = `act ab ab${i + 1} ${a.colour || ''}${a.bright ? ' bright' : ''}${a.left > 0 ? ' cool' : ''}`;
+    if (b.className.replace(' on', '') !== cls) b.className = cls + (b.classList.contains('on') ? ' on' : '');
+    b.style.setProperty('--cd', a.share.toFixed(3));
+    const t = a.left > 0 ? `${Math.ceil(a.left)}` : AB_SHORT[a.id] || a.name;
+    if (b.lastChild.textContent !== t) b.lastChild.textContent = t;
+    b.setAttribute('aria-label', `${a.name}${a.left > 0 ? `, ready in ${Math.ceil(a.left)} s` : ''}`);
+  });
+}
+/* ---------------- the builds on the page (builder BC) ----------------
+   The HUD's relic marks: a short mark for each relic held, ember when it kindles with a wick, and "Kindled" after them once one does */
+function updateRelics() {
+  const el = $('relics');
+  if (!el) return;
+  const marks = RUN && rs.run ? relicMarks(rs.run) : [];
+  el.hidden = !marks.length;
+  const html = marks.map(m => `<i class="rl${m.kindled ? ' k' : ''}" title="${m.name}${m.kindled ? ' · Kindled' : ''}">${m.mark}</i>`).join('') + (marks.some(m => m.kindled) ? '<em>Kindled</em>' : '');
+  if (el.innerHTML !== html) el.innerHTML = html;
+  el.setAttribute('aria-label', marks.length ? `Relics: ${marks.map(m => m.name + (m.kindled ? ', kindled' : '')).join('; ')}` : 'No relics');
+}
+// what the builds' events show on the page (relics.js relicEvent)
+const buildPage = { toast: (html, ms) => toast(html, ms), hud: () => updateHud() };
+// the Lamp-room's Unlocks list and Ember row (fillLamp)
+function fillBuilds() {
+  const list = $('unlocks');
+  for (const row of unlockRows(rs)) {
+    let li = list.querySelector(`li[data-unlock="${row.id}"]`);
+    if (!li) {
+      li = document.createElement('li');
+      li.dataset.unlock = row.id;
+      li.innerHTML = '<span></span><button type="button"></button>';
+      li.querySelector('button').addEventListener('click', () => buyUnlockRow(row.id));
+      list.appendChild(li);
+    }
+    li.classList.toggle('top', row.got);
+    li.querySelector('span').textContent = row.label;
+    const btn = li.querySelector('button');
+    btn.hidden = row.got;
+    btn.textContent = row.buy || '';
+    btn.setAttribute('aria-disabled', String(!!row.need));
+    btn.setAttribute('aria-label', row.need ? `${row.label}: ${row.need} more glim needed` : `Buy ${row.label}`);
+  }
+  const box = $('emberRow'), levels = emberRow(rs);
+  box.hidden = !levels.length || !!rs.run;
+  const want = levels.map(l => l.n).join();
+  if (box.dataset.levels !== want) {
+    box.dataset.levels = want;
+    box.innerHTML = '';
+    for (const l of levels) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.dataset.ember = String(l.n);
+      b.textContent = l.label;
+      b.title = l.text;
+      b.addEventListener('click', () => { if (setEmber(rs, l.n)) { audio?.cue('choice'); storeRun(); fillLamp(); } });
+      box.appendChild(b);
+    }
+  }
+  for (const b of box.querySelectorAll('button')) b.setAttribute('aria-pressed', String(Number(b.dataset.ember) === (rs.ember | 0)));
+  $('emberLine').hidden = box.hidden;
+  $('emberLine').textContent = levels.length ? `Ember ${rs.ember | 0}: ${levels[rs.ember | 0].text}.` : '';
+}
+function buyUnlockRow(id) {
+  const btn = $('unlocks').querySelector(`li[data-unlock="${id}"] button`), had = document.activeElement === btn;
+  if (!buyUnlock(rs, id)) { audio?.cue('refuse'); return; }
+  audio?.cue('buy');
+  storeRun();
+  fillLamp();
+  flashTile($('unlocks').querySelector(`li[data-unlock="${id}"]`));
+  showControls();
+  // a bought row has no Buy button: the focus goes on to the next Buy button, or to the main button
+  if (had && btn.hidden) {
+    const all = [...$('lamp').querySelectorAll('.ups li button')], at = all.indexOf(btn);
+    const next = [...all.slice(at + 1), ...all.slice(0, at)].find(b => !b.hidden);
+    next ? next.focus({ preventScroll: true }) : cards.focusMain();
+  }
+}
+// ?test: what the builds are now, for __gloam.run()
+function buildsView() {
+  const run = rs?.run, E = fight?.foes.elite?.();
+  return {
+    relics: run?.relics?.slice() ?? [], unlocks: (rs?.unlocks || []).slice(), ember: run ? emberOf(run) : rs?.ember ?? 0, emberTop: rs?.emberTop ?? 0, route: run ? routeOfRun(run).slice() : null,
+    kindled: run ? relicMarks(run).filter(m => m.kindled).map(m => m.id) : [], ground: runner?.relics ? runner.relics.view().ground : [],
+    elite: E ? { id: E.id, name: E.elite.name, zone: E.zone.id, c: E.zone.c.slice(), hp: E.hp, max: E.T.hp, size: E.size, state: E.state, out: E.out, special: E.special ? E.special.def.kind : null } : null
+  };
+}
+// ?test: __gloam.set's build fields
+function setBuilds(o) {
+  if (Array.isArray(o.unlocks)) rs.unlocks = [...new Set(o.unlocks.filter(u => UNLOCK_IDS.includes(u)))];
+  if (Number.isInteger(o.emberTop)) rs.emberTop = Math.max(0, Math.min(5, o.emberTop));
+  if (Number.isInteger(o.ember)) { rs.emberTop = Math.max(rs.emberTop | 0, o.ember); setEmber(rs, Math.max(0, Math.min(5, o.ember))); if (rs.run) rs.run.ember = rs.ember; }
+  if (Array.isArray(o.relics) && rs.run) rs.run.relics = [...new Set(o.relics.filter(r => RELIC_IDS.includes(r)))].slice(0, 5);
 }
 // in a run the toast sits 8 px under the HUD's measured bottom, at every width, and again whenever the HUD changes size
 function placeToast() {
@@ -368,6 +580,15 @@ const CONTROLS = {
   pad: ['Left stick: move. A light tilt walks. Right stick: look.', '<kbd>A</kbd> jump · <kbd>X</kbd> attack · <kbd>B</kbd> roll · <kbd>Y</kbd> heal',
     '<kbd>RB</kbd> face the foe · <kbd>Start</kbd> pause']
 };
+// the two ability slots and the keys held, in the words of the input in use (gloam-downs-growth)
+const ABILITY_LINES = {
+  keys: '<kbd>F</kbd> <kbd>G</kbd> abilities',
+  drag: '<kbd>F</kbd> <kbd>G</kbd> abilities',
+  touch: 'The two round buttons over ATTACK use your abilities. Stand on an ability lamp and press one to swap.',
+  pad: '<kbd>LB</kbd> ability 1 · <kbd>LT</kbd> ability 2 · on an ability lamp, a swap'
+};
+const MOUSE_LINE = 'Mouse buttons 4 and 5 use the abilities too. On an ability lamp, an ability\'s key swaps it.';
+const keyLines = rs => [...(rs.keys || []).includes('leap') ? ['Jump again in the air: Crow step.'] : [], ...(rs.keys || []).includes('drop') ? ['Plunge onto a sealed stone from 2 m up: Bell drop.'] : []];
 // a phone with a mouse plugged in shows the mouse's lines
 const controlsKind = () => (padSeen ? 'pad' : coarse && !inp.mouse ? 'touch' : inp.canLock ? 'keys' : 'drag');
 // the explorer's help card: the keys and the mouse on a desktop or a phone with a mouse, the touch lines on a touch screen
@@ -379,8 +600,18 @@ function helpLines() {
 }
 function showControls() {
   if (!RUN) return;
-  const html = CONTROLS[controlsKind()].map(l => `<li>${l}</li>`).join('');
-  for (const id of ['runControls', 'pauseControls']) $(id).innerHTML = html;
+  // the moves that unlocks add use the Attack input of every device: one line each once bought
+  // with keys the abilities' line joins the last line (Pause), so the pause panel keeps its height at 800 by 600
+  const kind = controlsKind(), base = CONTROLS[kind].slice();
+  if (kind === 'keys' || kind === 'drag') base[base.length - 1] += ` ${ABILITY_LINES[kind]}.`;
+  else base.push(ABILITY_LINES[kind]);
+  const lines = [...base, ...moveLines(rs), ...keyLines(rs)], li = l => `<li>${l}</li>`;
+  // the run's help card also names the mouse's side buttons and the swap on a lamp; the pause panel keeps its height at 800 by 600
+  const more = kind === 'keys' || kind === 'drag' ? [MOUSE_LINE] : [];
+  $('runControls').innerHTML = [...lines, ...more].map(li).join('');
+  $('pauseControls').innerHTML = lines.map(li).join('');
+  // the hall's prompt names the key of the input in use now
+  if (hallOn() && hall.near) showUse(hall.near);
 }
 /* a mouse found or lost changes the mouse lines, and so the height of the card they are on. Under an open card a change in the press
    that switched the input (a finger's pointerdown on a phone that has seen a mouse, or a mouse's first press with no move before it)
@@ -464,8 +695,14 @@ function openCard(id, m, main, backFn = null) {
   audio?.cue('card');
 }
 document.addEventListener('focusin', e => {
-  if (!audio || quietFocus || !(e.target instanceof HTMLButtonElement) || !cards.current()?.el.contains(e.target)) return;
-  audio.cue('focus');
+  if (quietFocus || !(e.target instanceof HTMLButtonElement) || !cards.current()?.el.contains(e.target)) return;
+  // a lamp card or a title lamp plays hover (and tells the world, for the beacon's glow); other buttons keep focus
+  if (e.target.closest('.lcard, .lamp')) {
+    // a touch's press focuses the card it picks: no hover cue and no screen-hover for it (a title lamp still shows its line)
+    if (cards.pressFocus()) { if (e.target.classList.contains('lamp')) lampLine(e.target); return; }
+    return hovered(e.target);
+  }
+  audio?.cue('focus');
 });
 function hideCard(id) { $(id).hidden = true; cards.shut($(id)); if (linesStale && !cards.current()) setLines(); }
 function closeCard(id) {
@@ -478,33 +715,210 @@ function closeCard(id) {
   canvas.focus?.();
   retake();
 }
-function openRunHelp() { openCard('runHelp', 'help', () => $('bBegin')); }
+// fromTitle: opened from the title, so Back (and Escape or B) goes back to it
+function openRunHelp(fromTitle = false) {
+  $('bHelpBack').hidden = !fromTitle;
+  openCard('runHelp', 'help', () => $('bBegin'), fromTitle ? () => helpBack() : undefined);
+}
+function helpBack() { audio?.cue('choice'); hideCard('runHelp'); openTitle(); }
+$('bHelpBack').addEventListener('click', helpBack);
+
+/* ---------------- the selection screens (gloam-downs-screens-life) ----------------
+   The title screen over the live place: the title, the place line, the places as lamps, the seed and Ember line, Begin the run (the
+   explorer: Walk, Fight, How to play). The place drifts behind it (menu-scene.js titleView, in draw). With ?test the old first cards
+   open unless &title is in the address, so the older checks keep their flow */
+const TITLED = !q.has('test') || q.has('title');
+let titleAt = 0, titleSeed = null;
+const screenLog = [];
+// the bus's screen events, kept for ?test (__gloam.screens)
+for (const k of ['screen-hover', 'screen-pick']) on(k, d => { if (screenLog.length < 200) screenLog.push({ name: k, ...d }); });
+let hoverAt = -1e9, hoverBusAt = -1e9;
+// hover and focus on a lamp card or a title lamp: hover at most once each 60 ms, screen-hover at most once each 150 ms
+function hovered(b) {
+  const now = performance.now();
+  if (now - hoverAt >= 60) { hoverAt = now; audio?.cue('hover'); }
+  const kind = b.dataset.wick ? 'wick' : b.dataset.spark ? 'spark' : b.dataset.ability ? 'ability' : null;
+  if (kind && now - hoverBusAt >= 150) { hoverBusAt = now; emit('screen-hover', { kind, colour: pickColour(kind, b.dataset[kind]) }); }
+  if (b.classList.contains('lamp')) lampLine(b);
+}
+document.addEventListener('pointerover', e => {
+  const b = e.target instanceof Element ? e.target.closest('.lcard, .lamp') : null;
+  if (!b || b.disabled || !cards.current()?.el.contains(b) || (e.relatedTarget instanceof Node && b.contains(e.relatedTarget))) return;
+  // the mouse takes the focus: one card is lit, the one Enter or A takes (focusin plays hover)
+  if (e.pointerType === 'mouse' && document.activeElement !== b) return b.focus({ preventScroll: true });
+  if (e.pointerType === 'mouse') hovered(b);
+});
+// a pick: on the press itself; then the card flares, pick plays, and the bus hears screen-pick (Builder E's life lights the beacon)
+function picked(kind, id, b) {
+  audio?.cue('pick');
+  emit('screen-pick', { kind, colour: pickColour(kind, id) });
+  cards.flare(b, [...(b.parentNode?.children || [])], still);
+  if (!still) pickAt = performance.now();
+}
+// the next set of cards deals in 200 ms after a pick (the pick itself is never delayed). It is kept as the pick's time, so a pick
+// that closed its card leaves no wait for a card opened later
+let pickAt = -1e9;
+function deal(box) {
+  const list = [...box.querySelectorAll('button.lcard')];
+  if (!list.length) return;
+  audio?.cue('reveal');
+  const a = cards.dealIn(list, still);
+  const wait = Math.max(0, 200 - (performance.now() - pickAt));
+  pickAt = -1e9;
+  if (wait) for (const x of a) if (x) x.effect.updateTiming({ delay: (x.effect.getTiming().delay || 0) + wait });
+}
+// the title's lamps: in a run the route of five, lit for each place reached in any run; in the explorer the places to go to
+function titleSet(el, rows, group) {
+  el.textContent = '';
+  if (group) { const g = document.createElement('p'); g.className = 'gname'; g.textContent = group; el.appendChild(g); }
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'path'); svg.setAttribute('viewBox', '0 0 100 20'); svg.setAttribute('preserveAspectRatio', 'none'); svg.setAttribute('aria-hidden', 'true');
+  svg.innerHTML = '<path d="M0 12 C 15 4, 30 18, 50 10 S 85 4, 100 11"/>';
+  el.appendChild(svg);
+  for (const r of rows) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = `lamp${r.lit ? ' lit' : ''}`;
+    b.dataset.place = r.id;
+    b.dataset.line = r.line;
+    b.disabled = !!r.locked;
+    b.setAttribute('aria-label', `${r.line}${r.lit ? ', reached' : ''}`);
+    b.innerHTML = '<i class="glass" aria-hidden="true"><i class="flame"></i></i><span class="n"></span>';
+    b.querySelector('.n').textContent = r.n;
+    b.addEventListener('click', () => (RUN ? lampLine(b) : titleGo(r.id)));
+    el.appendChild(b);
+  }
+}
+// the line under the lamps names the lamp under the pointer or the focus, and that lamp lights fully
+function lampLine(b) {
+  for (const x of $('title').querySelectorAll('.lamp.on')) if (x !== b) x.classList.remove('on');
+  b.classList.add('on');
+  const [head, ...rest] = b.dataset.line.split('. ');
+  $('titleLine').innerHTML = '';
+  const hb = document.createElement('b');
+  hb.textContent = head;
+  $('titleLine').append(hb, rest.length ? `. ${rest.join('. ')}` : '');
+}
+const TITLE_REST = { run: 'Five dark places on the downs. Light the beacon in each.', explore: 'Choose a place to walk, with no foes.' };
+/* the title's view: the drift (menu-scene.js titleView), then moved so the lamplighter stands in the clear space between the title's
+   words and its lamps (titleSpot, frameAt). The spot is found again when the title opens or fills, and on a resize; the cutaway and
+   the near-fade use this same view */
+let titleWant = null, titleStale = true;
+const FOV0 = (38 * Math.PI) / 180;
+const figPoint = () => { const b = body.s; return [b.x, b.y + 0.9, b.z]; };
+function titleRects() {
+  const R = el => el.getBoundingClientRect(), out = [];
+  for (const el of $('title').querySelectorAll('.tbrand h1, .tbrand .brush, .tbrand .tplace, .tfoot')) {
+    if (!el.getClientRects().length) continue;
+    const r = R(el), pad = el.classList.contains('tfoot') ? 24 : 6;
+    out.push({ left: r.left - 6, top: r.top - pad, right: r.right + 6, bottom: r.bottom + 6 });
+  }
+  return out;
+}
+function spotFor(v) {
+  const b = body.s, mid = project(figPoint(), v), head = project([b.x, b.y + 1.9, b.z], v), feet = project([b.x, b.y, b.z], v);
+  if (!mid || !head || !feet) return null;
+  const at = titleSpot(titleRects(), innerWidth, innerHeight, mid, Math.abs(feet[1] - head[1]));
+  if (!at) return null;
+  const r = canvas.getBoundingClientRect();
+  return [((at[0] - r.left) / r.width) * 2 - 1, 1 - ((at[1] - r.top) / r.height) * 2];
+}
+function titleDrawn(v) {
+  let tv = titleView(v, time - titleAt, still);
+  if (titleStale && !$('title').hidden) { titleStale = false; titleWant = spotFor(tv); }
+  if (titleWant) tv = frameAt(tv, figPoint(), titleWant, Math.tan((tv.fov ?? FOV0) / 2), art.w / art.h, world.anim?.zoom || 1);
+  return tv;
+}
+addEventListener('resize', () => { titleStale = true; });
+function fillTitle() {
+  titleStale = true;
+  const here = meta?.id, explorer = !RUN;
+  // the place the lamplighter stands in, marked Here, so a focused lamp's line under the lamps reads as another place, not this one
+  $('titlePlace').textContent = here ? `Here: ${ORDER.includes(here) ? titleLine(here) : `${placeName(here)}. ${meta.sub || ''}`}` : '';
+  if (RUN) {
+    titleSet($('titleLamps'), titleLamps(rs));
+    $('titleLattice').hidden = true;
+    titleSeed ??= seed();
+    $('titleSeed').textContent = seedLine(seedCode(titleSeed), rs.ember | 0);
+    $('bEmberDown').hidden = $('bEmberUp').hidden = (rs.emberTop | 0) < 1;
+    $('bEmberDown').setAttribute('aria-disabled', String(emberStep(rs, -1) === null));
+    $('bEmberUp').setAttribute('aria-disabled', String(emberStep(rs, 1) === null));
+  } else {
+    const [downs, lattice] = mapGroups(save, here);
+    const rowsOf = g => g.rows.map(r => ({ id: r.id, n: r.n, line: r.open ? (ORDER.includes(r.id) ? titleLine(r.id) : `${r.n} · ${r.name}`) : `${r.n} · Locked. Light the beacon before it`, lit: r.open, locked: !r.open }));
+    titleSet($('titleLamps'), rowsOf(downs), 'The downs');
+    titleSet($('titleLattice'), rowsOf(lattice), 'The Gilt Lattice');
+    $('titleLattice').hidden = false;
+  }
+  $('seedRow').hidden = explorer;
+  $('titleRun').hidden = $('titleMore').hidden = explorer;
+  $('titleWalkRow').hidden = $('titleWalkMore').hidden = !explorer;
+  $('titleLine').textContent = TITLE_REST[explorer ? 'explore' : 'run'];
+}
+function openTitle() {
+  fillTitle();
+  titleAt = time;
+  emit('lamp-room', { wait: 0 });
+  openCard('title', 'title', () => $(RUN ? 'bTitleBegin' : 'bTitleWalk'));
+}
+// Begin the run: on a first visit the help card first (its own Begin starts the run); after that at once
+$('bTitleBegin').addEventListener('click', () => {
+  if (!rs) return;
+  if (!rs.seen) { hideCard('title'); soundPress(); audio?.cue('choice'); return openRunHelp(true); }
+  beginRun('title');
+});
+// the title's Lamp-room: the hall, a place to walk (gloam-downs-hub)
+$('bTitleLamp').addEventListener('click', () => { audio?.cue('choice'); hideCard('title'); go(HUB); });
+$('bTitleHelp').addEventListener('click', () => { audio?.cue('choice'); hideCard('title'); openRunHelp(true); });
+$('bTitleExplore').addEventListener('click', () => toMode('explore'));
+for (const [id, d] of [['bEmberDown', -1], ['bEmberUp', 1]]) $(id).addEventListener('click', () => {
+  const n = emberStep(rs, d);
+  if (n === null || !setEmber(rs, n)) { audio?.cue('refuse'); return; }
+  audio?.cue('choice');
+  storeRun();
+  fillTitle();
+});
+// the explorer's title: Walk closes it, Fight opens the run, How to play the help card, and a lamp goes to its place
+function titleClose() { save.seen = true; store(disk, save); hideCard('title'); mode = 'play'; inp.swallowAll(); canvas.focus?.(); retake(); }
+function titleGo(id) { titleClose(); if (id !== meta.id) go(id); }
+$('bTitleWalk').addEventListener('click', titleClose);
+$('bTitleFight').addEventListener('click', () => toMode('run'));
+$('bTitleHelp2').addEventListener('click', () => { hideCard('title'); helpLines(); $('help').hidden = false; mode = 'help'; showCard({ el: $('help'), main: () => $('bStart') }); });
 // a new run starts in the Gaol: on the place as it loaded, or on the Gaol loaded again once this place has been played
 function beginRun(card) {
   lampFromWander = false;
   soundPress();
   audio?.cue('choice');
   rs.seen = true;
-  startRun(rs, seed());
+  // at the Ember level chosen in the Lamp-room, in its route; with Wick shelf the beacon card first offers two starting wicks
+  startRun(rs, titleSeed ?? seed(), rs.ember | 0);
+  titleSeed = null;
   storeRun();
-  closeCard(card);
+  if (card) closeCard(card);
   if (meta.id !== rs.run.place || !placeFresh) return go(rs.run.place);
   newRunner();
   updateHud();
+  // the start picks: the shelf's wick, First spark's sparks and Belt's ability, on the beacon card's buttons
+  if (startPicks(rs.run)) openBeacon();
 }
 $('bBegin').addEventListener('click', () => beginRun('runHelp'));
 // Explore: the run's first card also opens the explorer, the places with no foes
 $('bExplore').addEventListener('click', () => toMode('explore'));
 // the run's help says to click the view: a click round its box begins the run, as Begin the run does
 $('runHelp').addEventListener('click', e => { if (e.target === $('runHelp') && mode === 'help' && mouseClick(e)) beginRun('runHelp'); });
-const seed = () => (q.has('seed') ? Number(q.get('seed')) >>> 0 || 1 : newSeed(rs.runs));
+// ?seed= takes a seed's code or its number (mix.js parseSeed); a new run draws a seed small enough for a code of six letters
+const seed = () => (q.has('seed') && parseSeed(q.get('seed'))) || smallSeed(newSeed(rs.runs));
 
 // the pause panel: the run's places, its time, Resume, the sound switch (stage 3 makes the sound), Back to the start and End the run
 function openPause() {
   if (!rs.run) return;
   asking = null;
-  $('route').innerHTML = routeOf(rs.run.place).map(p => `<li class="${p.state}"><span>${p.n}</span> ${p.name}<em>${p.state === 'here' ? 'now' : p.state}</em></li>`).join('');
+  $('route').innerHTML = routeOf(rs.run.place, routeOfRun(rs.run)).map(p => `<li class="${p.state}"><span>${p.n}</span> ${p.name}<em>${p.state === 'here' ? 'now' : p.state}</em></li>`).join('');
   $('pauseLine').textContent = `Run time ${fmt(rs.run.time)}`;
+  $('seedLine').textContent = `Seed ${seedCode(rs.run.seed)}`;
+  // the keys held, on the seed's line's own row only once there is one (the panel keeps its height on a phone)
+  $('keysLine').hidden = !(rs.keys || []).length;
+  $('keysLine').textContent = keysLine(rs);
   soundLabel();
   $('pauseRow').hidden = false;
   $('askRow').hidden = true;
@@ -531,10 +945,13 @@ function soundLabel() {
   $('bSound').setAttribute('aria-pressed', String(rs.sound));
   $('bMusic').textContent = rs.music ? 'Music on' : 'Music off';
   $('bMusic').setAttribute('aria-pressed', String(rs.music));
+  $('bShake').textContent = fx.kick ? 'Shake on' : 'Shake off';
+  $('bShake').setAttribute('aria-pressed', String(!!fx.kick));
 }
 $('bResume').addEventListener('click', resume);
 $('bSound').addEventListener('click', () => { rs.sound = !rs.sound; storeRun(); audio?.switches(); soundLabel(); });
 $('bMusic').addEventListener('click', () => { rs.music = !rs.music; storeRun(); audio?.switches(); soundLabel(); });
+$('bShake').addEventListener('click', () => { rs.shake = !fx.kick; fx.kick = rs.shake; storeRun(); soundLabel(); });
 $('bEnd').addEventListener('click', () => ask('end'));
 $('bRestart').addEventListener('click', () => ask('restart'));
 $('bNo').addEventListener('click', no);
@@ -552,31 +969,68 @@ $('pause').addEventListener('pointerdown', e => { if (e.target === $('pause') &&
 
 // the beacon card: two wicks to choose from, then Spend glim (the Lamp-room) and Walk on. Its offer is in the save, so a reload before
 // the choice shows the same two wicks over the next place
+/* growth: after the wick, the spark picks (#sparks), then the patterns kept (#beaconKept), then Lamp-room and Walk on. The start card
+   asks for the shelf's wick, First spark's sparks and Belt's ability; a cache's spark opens the card for its one pick */
 function openBeacon() {
-  const run = rs.run, offer = run.offer, box = $('wicks');
+  const run = rs.run, offer = run.offer, box = $('wicks'), shelf = !!run.shelf, cache = !shelf && !!run.sparkNow && !offer;
+  const sparks = !offer && (run.sparkPicks | 0) > 0, ability = !offer && !sparks && !!run.abilityOffer, waiting = !!offer || sparks || ability;
+  // a pick taken: the start card and a cache's card close once nothing more is asked; the beacon card shows its next part
+  const next = () => {
+    if (!rs.run) return;
+    if ((shelf || cache) && !startPicks(rs.run)) { rs.run.shelf = false; rs.run.sparkNow = false; storeRun(); return closeCard('beaconCard'); }
+    openBeacon();
+  };
   box.textContent = '';
+  $('sparks').hidden = !sparks;
+  if (sparks) sparkButtons($('sparks'), next);
+  if (ability) abilityButtons(box, run.abilityOffer, next);
+  $('beaconKept').textContent = keptLine(run.kept);
+  $('beaconKept').hidden = shelf || cache || waiting || !run.kept?.length;
+  $('bSpend').textContent = 'Go to the shrine';
+  if (cache) {
+    $('beaconT').textContent = 'A spark';
+    $('beaconLine').textContent = 'Choose a spark. It raises one colour for the rest of the run.';
+    $('beaconBank').hidden = $('beaconRow').hidden = true;
+    $('sparks').classList.add('cards');
+    openCard('beaconCard', 'beacon', () => $('sparks').querySelector('button'));
+    deal($('beaconCard'));
+    return;
+  }
   for (const id of offer || []) {
     const b = document.createElement('button'), name = document.createElement('b');
     b.type = 'button';
     b.className = 'wick';
     b.dataset.wick = id;
     name.textContent = wickName(id);
-    b.append(name, wickLine(id).slice(name.textContent.length));
+    // a lamp card in the wick's amber (gloam-downs-screens-life "Lamp cards")
+    cards.lampCard(b, { name: name.textContent, text: wickLine(id).slice(name.textContent.length + 3), hue: '#ff9a32', label: wickLine(id) });
+    // a wick that kindles a relic the run holds says so
+    const k = kindleLine(run, id);
+    if (k) { const em = document.createElement('em'); em.className = 'kindle'; em.textContent = k; b.append(em); }
     b.addEventListener('click', () => {
       if (!rs.run?.offer || !chooseWick(rs, id)) return;
-      audio?.cue('choice');
+      picked('wick', id, b);
       storeRun();
       updateHud();
-      openBeacon();
+      // Wick shelf's starting wick: the card closes and the run starts in the Gaol, unless First spark or Belt still ask
+      next();
     });
     box.appendChild(b);
   }
-  $('beaconLine').textContent = offer ? 'Choose a wick. It burns for the rest of the run.' : `${wickName(run.wicks.at(-1))} burns in the lamp.`;
-  $('beaconBank').innerHTML = `Banked: <b class="bank">${rs.bank} glim</b>. Spend it in the Lamp-room, or walk on.`;
-  $('beaconBank').hidden = $('beaconRow').hidden = !!offer;
-  // before the wick is chosen only a wick button closes the card: it has no back action. The Lamp-room theme follows the stinger
-  audio?.setScene('lamp');
-  openCard('beaconCard', 'beacon', () => (rs.run?.offer ? box.querySelector('button') : $('bWalkOn')));
+  $('beaconT').textContent = shelf ? (offer ? 'The Wick shelf' : 'The run begins') : 'The beacon burns';
+  const lit = run.wicks.at(-1), kl = lit ? kindleLine(run, lit) : '';
+  $('beaconLine').textContent = offer ? (shelf ? 'Choose a wick to start the run with. It burns for the whole run.' : 'Choose a wick. It burns for the rest of the run.')
+    : sparks ? `Choose a spark. It raises one colour for the rest of the run.${run.sparkPicks > 1 ? ` ${run.sparkPicks} picks left.` : ''}`
+    : ability ? 'Choose an ability for slot 1. It is yours for the whole run.'
+    : lit ? `${wickName(lit)} burns in the lamp.${kl ? ` Kindled: ${kl.split(': ')[1]}.` : ''}` : 'The beacon burns.';
+  $('beaconBank').innerHTML = glimLine(rs, 'beacon').replace(/(\d+ glim)/, '<b class="bank">$1</b>');
+  $('beaconBank').hidden = $('beaconRow').hidden = waiting;
+  // before the picks are made only a pick button closes the card: it has no back action. The Lamp-room theme follows the stinger
+  emit('lamp-room', { wait: 0 });
+  box.classList.toggle('cards', !!box.children.length);
+  $('sparks').classList.add('cards');
+  openCard('beaconCard', 'beacon', () => (rs.run?.offer || rs.run?.abilityOffer ? box.querySelector('button') : (rs.run?.sparkPicks | 0) > 0 ? $('sparks').querySelector('button') : $('bWalkOn')));
+  deal($('beaconCard'));
 }
 // Walk on loads the next place; after a reload at the card, the card already shows over it
 $('bWalkOn').addEventListener('click', () => { audio?.cue('choice'); if (meta.id === rs.run.place) return closeCard('beaconCard'); hideCard('beaconCard'); retake(); go(rs.run.place); });
@@ -588,37 +1042,132 @@ const LAMP = { back: 'bLampBack', begin: 'bLampBegin', goon: 'bLampGoOn', wander
 // Wander opens after the first win, or for a player whose explorer save shows a finished walk (Wander itself is built behind ?wander)
 const wanderOpen = () => rs.wins > 0 || save.done >= 1;
 const toWander = () => toMode('wander');
+/* from a beacon card it is the shrine (gloam-downs-hub "Decision 1"): the same card with three tabs (Wares, Patterns, Panes), beside the
+   lit beacon; nothing loads. Elsewhere (Wander's Map, a test) the whole card in the middle, as the quick list */
 function openLamp(from = null) {
   lampFromWander = from === 'wander';
-  if (!lampFromWander) audio?.setScene('lamp');
-  const b = lampButtons(rs, from, wanderOpen());
+  if (!lampFromWander) emit('lamp-room', { wait: 0 });
+  const b = lampButtons(rs, from, wanderOpen()), card = $('lamp'), shrine = from === 'beacon';
   for (const [k, id] of Object.entries(LAMP)) $(id).hidden = !b.list.includes(k);
+  delete card.dataset.station;
+  $('bLampClose').hidden = $('bLampDone').hidden = true;
+  $('lampT').textContent = shrine ? 'The shrine' : 'The Lamp-room';
+  if (shrine) shrineTabs(); else $('shrineTabs').hidden = true;
+  lampParts(shrine ? hall.tab : null);
+  cards.freshLamp();
   fillLamp();
   openCard('lamp', 'lamp', () => $(LAMP[b.main]), b.back ? () => $(LAMP[b.back]).click() : null);
+  lampAnchor = shrine && meta?.beacon ? () => project([meta.beacon.p[0], meta.beacon.p[1] + 1, meta.beacon.p[2]]) : null;
+  anchorLamp();
 }
+/* the anchored card's point on the screen, again on each resize (a phone turned, a window sized): the shrine's beacon or the open
+   station; null lays the card in the middle */
+let lampAnchor = null, sheetTilt = false, tiltCam = null;
+/* a station's bottom sheet on an upright phone covers the lower half of the view: the camera aims lower on the lamplighter and looks a
+   little further down (the layout's aim and pitch, through play.js's own layout(), so play.js is unchanged), so the station shows
+   above the sheet; the layout comes back when the card closes */
+const SHEET_TILT = { aim: -1.7, pitch: 0.2 };
+function tiltFor(kind) {
+  const on = kind === 'sheet' && hallOn() && !!$('lamp').dataset.station;
+  // (a new place has a new camera, with its own layout)
+  if (!cam || (on === sheetTilt && tiltCam === cam)) return;
+  sheetTilt = on; tiltCam = cam;
+  const L = layoutNow();
+  cam.layout(on ? { ...L, aim: L.aim + SHEET_TILT.aim, pitch: L.pitch + SHEET_TILT.pitch } : L);
+}
+function anchorLamp() {
+  const card = $('lamp');
+  if (!lampAnchor) { tiltFor(null); return cards.anchor(card, null); }
+  const at = lampAnchor(), kind = cards.anchor(card, at ? at[0] : innerWidth / 2, at ? at[1] : innerHeight / 2);
+  tiltFor(kind);
+  return kind;
+}
+// (the page's own resize has just put the window's layout back on the camera)
+addEventListener('resize', () => { sheetTilt = false; if (!$('lamp').hidden && lampAnchor) anchorLamp(); });
+/* the Lamp-room's wares as lamp tiles (screens.js wareTile): a glass that fills by level / levels, "Mantle 2 of 8", the next gift, its
+   cost and Buy. The glim line's numbers roll from the old count to the new over 400 ms with tally ticks (at most 12); with reduced
+   motion they change at once */
 function fillLamp() {
-  $('lampLine').innerHTML = `Banked: <b class="bank">${rs.bank} glim</b>. What you buy here lasts for every run.`;
+  const was = [...$('lampLine').querySelectorAll('b.bank')].map(b => parseInt(b.textContent, 10));
+  $('lampLine').innerHTML = glimLine(rs, 'lamp').replace(/(\d+ glim)/g, '<b class="bank">$1</b>');
+  rollGlim(was);
+  fillGrowthLamp();
   const list = $('ups');
-  for (const row of upgradeRows(rs)) {
+  for (const row of wareTiles(rs)) {
     let li = list.querySelector(`li[data-up="${row.id}"]`);
     if (!li) {
       li = document.createElement('li');
+      li.className = 'tile';
       li.dataset.up = row.id;
-      li.innerHTML = '<span></span><b class="lv"></b><button type="button"></button>';
+      li.innerHTML = '<i class="glass" aria-hidden="true"><i class="fill"></i><i class="flame"></i></i><b class="nm"></b><span class="gift"></span><span class="cost"></span><button type="button"></button><i class="flash" aria-hidden="true"></i>';
       li.querySelector('button').addEventListener('click', () => buyUp(row.id));
       list.appendChild(li);
     }
     li.classList.toggle('top', row.top);
-    li.querySelector('span').textContent = row.label;
-    const lv = li.querySelector('.lv');
-    lv.innerHTML = Array.from({ length: row.max }, (_, i) => `<i${i < row.lvl ? ' class="on"' : ''}></i>`).join('');
-    lv.setAttribute('aria-label', `level ${row.lvl} of ${row.max}`);
+    li.dataset.label = row.label;
+    li.dataset.fill = row.fill.toFixed(4);
+    li.style.setProperty('--fill', row.fill.toFixed(4));
+    // the name, then "2 of 8" on its own line (the tile's text still reads "Mantle 2 of 8")
+    const of = row.level.slice(row.name.length + 1);
+    li.querySelector('.nm').innerHTML = '';
+    li.querySelector('.nm').append(row.name, ...(of ? [' ', Object.assign(document.createElement('span'), { className: 'of', textContent: of })] : []));
+    li.querySelector('.gift').textContent = row.gift;
+    li.querySelector('.cost').textContent = row.costText;
+    li.querySelector('.cost').hidden = !row.costText;
     const btn = li.querySelector('button');
     btn.hidden = row.top;
     btn.textContent = row.buy || '';
     btn.setAttribute('aria-disabled', String(!!row.need));
     btn.setAttribute('aria-label', row.need ? `${row.label}: ${row.need} more glim needed` : `Buy ${row.label}`);
   }
+  fillBuilds();
+  fillMarks();
+  fillHall();
+  hallGrow();
+}
+// every row of the card starts with its category mark (screens.js rows: mark)
+function fillMarks() {
+  const put = (li, m, sel) => {
+    if (!li || !m) return;
+    let el = li.querySelector(':scope > .catw');
+    const html = cards.markHtml(m);
+    if (!el) { li.querySelector(sel)?.insertAdjacentHTML('beforebegin', html); return; }
+    if (el.outerHTML !== html) el.outerHTML = html;
+  };
+  for (const r of upgradeRows(rs)) put($('ups').querySelector(`li[data-up="${r.id}"]`), r.mark, '.nm');
+  for (const r of unlockRows(rs)) put($('unlocks').querySelector(`li[data-unlock="${r.id}"]`), r.mark, 'span');
+}
+let rolls = [];
+function rollGlim(was) {
+  for (const r of rolls) cancelAnimationFrame(r);
+  rolls = [];
+  const els = [...$('lampLine').querySelectorAll('b.bank')];
+  let ticks = 0;
+  els.forEach((el, i) => {
+    const to = parseInt(el.textContent, 10), from = was[i];
+    if (!Number.isFinite(from) || from === to || still) return;
+    // the text is the new count at once (for a reader and the checks); what shows is data-roll, drawn over it (index.html)
+    const t0 = performance.now(), tail = el.textContent.replace(/^\d+/, ''), n = Math.min(12 - ticks, Math.abs(to - from), 12);
+    let shown = 0;
+    ticks += n;
+    el.dataset.roll = `${from}${tail}`;
+    const stepRoll = now => {
+      const k = Math.min(1, (now - t0) / 400), v = Math.round(from + (to - from) * k);
+      if (k < 1) el.dataset.roll = `${v}${tail}`; else delete el.dataset.roll;
+      while (shown < Math.floor(k * n)) { shown++; audio?.cue('tally'); }
+      if (k < 1) rolls.push(requestAnimationFrame(stepRoll));
+    };
+    rolls.push(requestAnimationFrame(stepRoll));
+  });
+}
+// a buy's flash on its tile: a white-gold burst over 180 ms (a 150 ms fade with reduced motion)
+function flashTile(li) {
+  li?.querySelector('.flash')?.animate?.([{ opacity: 0 }, { opacity: 1, offset: still ? 0.5 : 0.25 }, { opacity: 0 }], { duration: still ? 150 : 180, easing: 'ease-out' });
+}
+// a kindle: kindle plays and the tile's lamp catches (index.html: its flame grows from nothing over 400 ms, at once with reduced motion)
+function kindledTile(id) {
+  audio?.cue('kindle');
+  queueMicrotask(() => flashTile($('patterns').querySelector(`li[data-pattern="${id}"]`)));
 }
 function buyUp(id) {
   const btn = $('ups').querySelector(`li[data-up="${id}"] button`), had = document.activeElement === btn;
@@ -626,6 +1175,7 @@ function buyUp(id) {
   audio?.cue('buy');
   storeRun();
   fillLamp();
+  flashTile($('ups').querySelector(`li[data-up="${id}"]`));
   updateHud();
   // at its top level a row has no Buy button: the focus goes on to the next Buy button, or to the main button
   if (had && btn.hidden) {
@@ -634,8 +1184,8 @@ function buyUp(id) {
     next ? next.focus({ preventScroll: true }) : cards.focusMain();
   }
 }
-$('bLampBack').addEventListener('click', () => { hideCard('lamp'); openBeacon(); });
-$('bLampBegin').addEventListener('click', () => beginRun('lamp'));
+$('bLampBack').addEventListener('click', () => { hideCard('lamp'); lampAnchor = null; cards.anchor($('lamp'), null); $('shrineTabs').hidden = true; openBeacon(); });
+$('bLampBegin').addEventListener('click', () => { lampAnchor = null; cards.anchor($('lamp'), null); beginRun('lamp'); });
 // Go on with the run goes on as a reload does, at the start of the run's place
 $('bLampGoOn').addEventListener('click', () => { lampFromWander = false; soundPress(); audio?.cue('choice'); reload(rs.run); storeRun(); hideCard('lamp'); retake(); go(rs.run.place); });
 $('bLampWander').addEventListener('click', toWander);
@@ -647,38 +1197,124 @@ $('bLampExplore').addEventListener('click', () => toMode('explore'));
 // Lamp-room follows over the Gaol, where the next run starts with every foe back
 function openSummary() {
   // the run summary plays the Lamp-room theme after 2 s of silence
-  audio?.setScene('lamp', { wait: 2 });
-  const s = summaryOf(rs.ended), dds = $('summary').querySelectorAll('dd');
+  emit('lamp-room', { wait: 2 });
+  // the recap (screens.js recapOf): the path as lamps, then the rows; a save from before the recap shows summaryOf's rows
+  const s = recapOf(rs.ended), dl = $('summary').querySelector('dl');
   $('sumT').textContent = s.title;
-  s.rows.forEach(([, v], i) => { dds[i].textContent = v; });
+  fillPath($('sumPath'), s.path);
+  $('sumBy').hidden = !s.by;
+  $('sumBy').textContent = s.by || '';
+  fillRows(dl, s.rows, s.sparks);
+  $('sumSeed').textContent = seedLineOf(rs.ended);
   openCard('summary', 'ended', () => $('bSumLamp'));
+  recapIn($('summary'));
 }
+// the recap's path: a lamp a place, lit, snuffed, bright or dark, with its time and foes under it
+function fillPath(ol, path) {
+  ol.hidden = !path.length;
+  ol.textContent = '';
+  for (const p of path) {
+    const li = document.createElement('li');
+    li.className = p.state;
+    li.dataset.place = p.id;
+    li.setAttribute('aria-label', `${p.n} · ${p.name}: ${p.state === 'snuffed' ? 'the lamp went out here' : p.state === 'bright' ? 'lit, the win' : p.state === 'lit' ? 'passed' : 'not reached'}${p.time ? `, ${p.time}, ${p.foes} foes` : ''}`);
+    li.innerHTML = '<i class="glass" aria-hidden="true"><i class="flame"></i></i><span class="n"></span><span class="ft t"></span><span class="ft f"></span>';
+    li.querySelector('.n').textContent = p.n;
+    li.querySelector('.t').textContent = p.time;
+    li.querySelector('.f').textContent = p.foes ? `${p.foes} foes` : '';
+    ol.appendChild(li);
+  }
+}
+function fillRows(dl, rows, sparks) {
+  dl.textContent = '';
+  for (const [k, v] of rows) {
+    const dt = document.createElement('dt'), dd = document.createElement('dd');
+    dt.textContent = k;
+    // the sparks in their hues
+    if (k === 'Sparks' && sparks) sparks.forEach((c, i) => { const x = document.createElement('i'); x.style.cssText = `color:${c.hue};font-style:normal`; x.textContent = `${c.name} ${c.n}`; dd.append(...(i ? [' · '] : []), x); });
+    else dd.textContent = v;
+    dl.append(dt, dd);
+  }
+}
+/* the recap comes in: the lamps light one after another, 180 ms apart, then the rows fade in and their numbers count up over 600 ms
+   with tally. The main button works at once, and a press ends the motion. Reduced motion: all at once, one 150 ms fade */
+let recapAnims = [];
+function recapIn(panel) {
+  for (const a of recapAnims) a?.finish?.();
+  recapAnims = [];
+  const box = panel.querySelector('.box');
+  if (still) { recapAnims.push(box.animate?.([{ opacity: 0 }, { opacity: 1 }], { duration: 150 })); return; }
+  const lamps = [...panel.querySelectorAll('.rpath li')], rows = [...panel.querySelectorAll('dl dt, dl dd, p.by')];
+  lamps.forEach((li, i) => recapAnims.push(li.animate?.([{ opacity: 0.25, filter: 'brightness(0.4)' }, { opacity: 1, filter: 'brightness(1)' }], { duration: 260, delay: i * 180, fill: 'backwards', easing: 'ease-out' })));
+  const after = lamps.length * 180;
+  rows.forEach(el => recapAnims.push(el.animate?.([{ opacity: 0 }, { opacity: 1 }], { duration: 240, delay: after, fill: 'backwards' })));
+  // the numbers count up: each dd that is a plain number, over 600 ms after the rows show, with up to 12 tally ticks in all
+  const nums = [...panel.querySelectorAll('dl dd')].filter(d => /^\d+$/.test(d.textContent));
+  let ticks = 0;
+  for (const dd of nums) {
+    const to = +dd.textContent, n = Math.min(12 - ticks, to);
+    ticks += n;
+    if (!to) continue;
+    let shown = 0;
+    const t0 = performance.now() + after, done = () => { delete dd.dataset.roll; shown = n; };
+    // the text is the count at once; data-roll is what shows while it counts up (index.html)
+    dd.dataset.roll = '0';
+    const stepN = now => {
+      if (!panel.hidden && dd.isConnected) {
+        const k = Math.max(0, Math.min(1, (now - t0) / 600));
+        dd.dataset.roll = String(Math.round(to * k));
+        while (shown < Math.floor(k * n)) { shown++; audio?.cue('tally'); }
+        if (k < 1) { recapAnims.push({ finish: done, id: requestAnimationFrame(stepN) }); return; }
+      }
+      done();
+    };
+    recapAnims.push({ finish: done, id: requestAnimationFrame(stepN) });
+  }
+}
+// a press during the motion ends it
+const recapEnd = () => { for (const a of recapAnims) { if (a?.id) cancelAnimationFrame(a.id); a?.finish?.(); } recapAnims = []; };
+for (const id of ['summary', 'winCard']) $(id).addEventListener('pointerdown', recapEnd, true);
+addEventListener('keydown', () => { if (mode === 'ended') recapEnd(); }, true);
+// To the Lamp-room keeps its word: over the Gaol the Lamp-room opens, not the title (afterEnd)
+let afterEnd = null;
+// To the Lamp-room walks into the hall (gloam-downs-hub); the well keeps the run's recap for this visit
 $('bSumLamp').addEventListener('click', () => {
+  hall.last = rs.ended;
   rs.ended = null;
   storeRun();
   hideCard('summary');
-  go(ORDER[0]);
+  go(HUB);
 });
 /* the win card: the time, the best winning time, the glim banked in this run, the runs and the deaths. It opens the Lamp-room, where
    Wander shows from the first win, or Wander. The win is stored already, so a reload before it closes shows it again */
 function openWin() {
-  audio?.setScene('lamp');
-  const w = winOf(rs), dds = $('winCard').querySelectorAll('dd');
-  w.rows.forEach(([, v], i) => { dds[i].textContent = v; });
+  emit('lamp-room', { wait: 0 });
+  // the rows as winOf gives them: above Ember 0 the level first, and that level's best time; and the level a win opened
+  const w = winOf(rs), dl = $('winCard').querySelector('dl'), r = recapOf(rs.ended || {});
+  // the win's recap: the path with every place lit and the last bright, then winOf's rows and the recap's patterns, sparks and combo
+  fillPath($('winPath'), r.path);
+  fillRows(dl, [...w.rows, ...r.old ? [] : r.rows.filter(([k]) => ['Patterns kept', 'Sparks', 'Best combo'].includes(k))], r.sparks);
+  $('winOpened').hidden = !w.opened;
+  $('winOpened').textContent = w.opened;
   $('bWinWander').hidden = !wanderOpen();
   openCard('winCard', 'ended', () => $('bWinLamp'));
+  recapIn($('winCard'));
 }
 $('bWinLamp').addEventListener('click', () => {
+  hall.last = rs.ended;
   rs.ended = null;
   storeRun();
   hideCard('winCard');
-  go(ORDER[0]);
+  go(HUB);
 });
 $('bWinWander').addEventListener('click', () => { rs.ended = null; storeRun(); toWander(); });
 // the card that a load of the page opens over the place (screens.js cardOnLoad)
 function openOnLoad() {
-  const card = cardOnLoad(rs);
-  if (card === 'win') openWin();
+  const card = cardOnLoad(rs, { title: TITLED }), was = afterEnd;
+  afterEnd = null;
+  if (card === 'title' && was === 'lamp') openLamp();
+  else if (card === 'title') openTitle();
+  else if (card === 'win') openWin();
   else if (card === 'summary') openSummary();
   else if (card === 'help') openRunHelp();
   else if (card === 'lamp') openLamp();
@@ -771,13 +1407,20 @@ function lightBeacon() {
 
 /* ---------------- a run in a place ---------------- */
 function newRunner() {
-  // the foes of this place, with the place: every foe back, and the foes put out kept for this place only
-  fight = pool && !LOOK && rs.run ? makeFight({ walk, meta, world, pool, rs, max: () => maxOf(rs), still, fx, project, doc: document }) : null;
+  // the foes of this place, with the place: every foe back, and the foes put out kept for this place only. The seed mixes them
+  // (mix.js); with ?test they stand as baked (the checks of each place rely on them) unless &mix asks for the mix
+  fight = pool && !LOOK && rs.run ? makeFight({ walk, meta, world, pool, rs, max: () => maxOf(rs), still, fx, project, doc: document, mix: q.has('test') && !q.has('mix') ? false : { ember: rs.run.ember ?? 0, depth: depthOf(rs.run) },
+    emit, dressOf, clipOf: eliteClip, groundRelics: () => groundRelics(runner),
+    groundAbilities: () => [...groundAbilities(runner), ...groundGear(runner)], groundPatterns: () => groundPatterns(runner), groundSpots: () => groundSpots(runner) }) : null;
+  lastRun = { seed: rs.run?.seed ?? lastRun.seed, combo: rs.run?.combo ?? 0 };
   foeTargets = fight ? () => fight.targets() : () => [];
+  // in the hall the runner plays the ability post's practice run, never rs.run
+  if (hallOn()) { hall.practice = practiceRun(rs, hall.tried); hall.tried = hall.practice.abilities.filter(Boolean).map(a => a.id); }
   runner = makeRunner({
-    walk, meta, body, rs, targets, still, log: cues, fx,
+    walk, meta, body, rs: hallOn() ? hallRs : rs, targets, still, log: cues, fx, abilities: makeAbilities, keys: makeKeys,
     ...(fight ? { lightable: fight.lightable, drop: fight.foes.drop, think: fight.think, onLight: fight.foes.bank } : {})
   });
+  build = makeBuild(runner);
   fight?.bind(runner);
   /* the boss camera (cameras.js), at Barrow Crown: on within 7.0 m of the arena's centre while the fight has started and the boss is
      up, framing the two with the page's own controls kept clear; its step goes after the follow camera's */
@@ -790,21 +1433,22 @@ function newRunner() {
 // what the runner's step did, on the page
 function runEvent(e) {
   fight?.event(e);
+  relicEvent(e, buildPage);
   switch (e.type) {
     case 'wisp':
       setLit([meta.wisps[e.i].ids], false);
       toast(`<b>◆</b> Wisp ${e.n} of 5 · +4 glim${e.n === 5 ? ' · a flask fills' : ''}`);
       break;
     case 'beacon':
-      audio?.sting('beacon');
+      emit('beacon-lit', { place: meta.id });
       beaconLit = true;
       setLit(meta.beacon.fire, true);
-      toast('The beacon burns. Its glim is banked, and the flasks are full.', 2400);
+      toast('The beacon burns, and the flasks are full. Spend the glim you carry, or carry it on.', 2400);
       endAt = steps + 90;
       mode = 'lit';
       break;
     case 'win':
-      audio?.sting('win');
+      emit('run-win', { ember: rs.run?.ember ?? rs.ended?.ember ?? 0 });
       // the run clock stops, the win is stored at once (run.js win and the store that follows), and the win card shows 1.8 s later
       beaconLit = true;
       setLit(meta.beacon.fire, true);
@@ -817,19 +1461,20 @@ function runEvent(e) {
     case 'toast': toast(e.what === 'full' ? 'Health is full' : 'No flask left. A lit beacon fills the flasks.', 2200); break;
     case 'fall': cam.snap(body.s, body.s.yaw + Math.PI); toast('A fall · −10 health'); break;
     // the fade to ink over 72 steps, then the summary; the ended run is already stored
-    case 'dead': audio?.sting('death'); endAt = steps + INK; deadAt = steps; mode = 'dying'; arriveLeft = 0; $('arrive').classList.add('off'); break;
+    case 'dead': emit('run-death'); endAt = steps + INK; deadAt = steps; mode = 'dying'; arriveLeft = 0; $('arrive').classList.add('off'); break;
     case 'store': storeRun(); break;
   }
-  if (['wisp', 'drink', 'hurt', 'fall', 'beacon', 'win', 'store', 'glim', 'foeOut'].includes(e.type)) updateHud();
+  // an ability's events too: the swap hint on a lamp shows as the feet touch it, and a take or a swap at once
+  if (['wisp', 'drink', 'hurt', 'fall', 'beacon', 'win', 'store', 'glim', 'foeOut', 'ability', 'cache', 'key'].includes(e.type)) updateHud();
 }
 /* the boss on the page: the intro stops the game for 2.4 s with its card (the bars and the zoom are fight.js's); then the boss bar
    shows and the fight starts; at the fall the bar goes, and when the light comes to the lantern a toast says where to take it */
 function bossEvent(e) {
   switch (e.what) {
-    case 'intro': mode = 'intro'; arriveBoss(); audio?.boss('intro'); break;
-    case 'start': if (mode === 'intro') mode = 'play'; bossBar(true); audio?.boss('phase', 1); break;
-    case 'phase': audio?.boss('phase', e.phase); break;
-    case 'fall': bossBar(false); audio?.boss('fall'); break;
+    case 'intro': mode = 'intro'; arriveBoss(); emit('boss-intro'); break;
+    case 'start': if (mode === 'intro') mode = 'play'; bossBar(true); emit('boss-phase', { phase: 1 }); break;
+    case 'phase': emit('boss-phase', { phase: e.phase }); break;
+    case 'fall': bossBar(false); emit('boss-fall'); break;
     case 'light': toast(REEVE_TEXT.carry, 2600); break;
     case 'hp': fillBossBar(); break;
   }
@@ -907,6 +1552,318 @@ function stepBack() {
   bossResume();
 }
 
+/* ---------------- the Lamp-room as a place (gloam-downs-hub design.md "Part H") ----------------
+   Between runs the lamplighter walks a baked hall (worlds/lamproom.*). A station in reach shows its prompt (#bUse); Use (E or Enter,
+   A on a pad, the prompt itself) opens its card beside it: the #lamp card with only that station's parts. Tab, View on a pad or the
+   List button open every station's rows in one card, the quick list. The run door begins the run. Each growth object of the hall
+   (meta.grow) shows when the save owns it (hub.js shown). The ability post tries any two kindled abilities on a practice run that is
+   never stored, with cooldowns at a quarter. In a run the Lamp-room is the beacon's shrine: the same card, three tabs, beside the beacon */
+const hall = { near: null, list: [], shown: new Map(), tried: [], practice: null, last: null, walkAway: 0, door: 0, tab: 'shelf', hits: 0, fetched: false, opened: 0, cool: [] };
+const hallOn = () => RUN && meta?.id === HUB;
+let hallCam = null;
+// the station the hall camera frames: the open card's, else the one in reach (its object at the height of its middle)
+function hallFocus() {
+  if (!hallOn()) return null;
+  const id = !$('lamp').hidden ? $('lamp').dataset.station : null, st = id ? hall.list.find(x => x.id === id) : hall.near;
+  return st ? { obj: st.obj, y: STATION_Y[st.id] ?? 1.3, open: !!id } : null;
+}
+// the height of each station's object's middle, over the floor
+const STATION_Y = { well: 1.0, map: 1.0, post: 1.2, kiln: 1.6, trophy: 2.2, bell: 1.9, door: 1.8, shelf: 1.4, window: 1.8, blades: 1.6, offhand: 1.3, wick: 1.5 };
+// the practice run's save: the real one, but its run is the practice run (so nothing in the hall touches rs.run or is stored with it)
+const hallRs = new Proxy({}, {
+  get: (_, k) => (k === 'run' ? hall.practice : rs[k]),
+  set: (_, k, v) => { if (k === 'run') hall.practice = v; else rs[k] = v; return true; },
+  has: (_, k) => k === 'run' || k in rs
+});
+// the stations as baked (meta.stations), with hub.js's names and categories
+function hallEnter() {
+  hall.list = (meta.stations || []).map(m => ({ ...stationOf(m.id), at: [m.at[0], m.at[2]], obj: m.obj, y: m.at[1] }));
+  hall.shown.clear();
+  hall.near = null;
+  hall.door = hall.walkAway = 0;
+  hall.cool = [];
+  hallGrow();
+  // the ability post: a post to hit, beside its object
+  const p = hall.list.find(s => s.id === 'post');
+  /* the target stands on the post's near face, on the floor at the station's height: the baked post is solid on the walk map, so a
+     target at its middle would be out of the blade's sight and the map's top there is the post's own top */
+  if (p) {
+    const dx = p.obj[0] - p.at[0], dz = p.obj[1] - p.at[1], l = Math.hypot(dx, dz) || 1, face = 0.5;
+    const post = makePost(walk, p.obj[0] - (dx / l) * face, p.obj[1] - (dz / l) * face, { id: 'post', r: 0.35 });
+    post.y = p.y ?? 0;
+    posts.push(post);
+  }
+  hall.hits = 0;
+  showUse(null);
+  updateHud();
+  // while the hall shows, the bytes of the run's first place come into the browser's cache (not onto the GPU), so Begin is quick
+  if (!hall.fetched && !manual) { hall.fetched = true; for (const f of ['.json', '.bin.gz', '.walk.bin.gz']) fetch(`./worlds/${ORDER[0]}${f}`).catch(() => {}); }
+}
+// put each growth object out or back by the save; only the ranges that change are written
+function hallGrow() {
+  if (!hallOn() || !meta.grow) return;
+  for (const g of meta.grow) {
+    const on = growShown(rs, g.id);
+    if (hall.shown.get(g.id) === on) continue;
+    hall.shown.set(g.id, on);
+    setLit([[g.first, g.first + g.n]], on);
+  }
+}
+// the prompt: the station's name and the key of the input in use; on touch the prompt is the Use button
+function showUse(st) {
+  const b = $('bUse'), on = !!st && mode === 'play';
+  const kind = controlsKind(), p = promptOf(st, kind);
+  document.body.classList.toggle('touchUse', kind === 'touch');
+  if (b.hidden === on) b.hidden = !on;
+  if (!on) return;
+  if ($('useName').textContent !== p.name) $('useName').textContent = p.name;
+  if ($('useKey').textContent !== p.key) $('useKey').textContent = p.key;
+  b.setAttribute('aria-label', `${p.name}: ${p.text}`);
+}
+// one play step in the hall: the station in reach, the door walked into, the post's cooldowns at a quarter, the post's hits shown
+function hallStep() {
+  const s = body.s;
+  const st = mode === 'play' ? stationNear({ x: s.x, z: s.z, yaw: s.yaw }, hall.list) : null;
+  if (st !== hall.near) { hall.near = st; showUse(st); }
+  // the run door: walked into (within 0.8 m of its point, facing it, moving) for 0.2 s, it begins the run
+  const d = hall.list.find(x => x.id === 'door');
+  const moving = Math.hypot(input.mx || 0, input.mz || 0) > 0.2;
+  hall.door = d && st?.id === 'door' && moving && Math.hypot(s.x - d.at[0], s.z - d.at[1]) < 0.8 ? hall.door + STEP : 0;
+  if (hall.door >= 0.2) { hall.door = 0; hallBegin(); return; }
+  // the off-hand cools at a quarter in the hall too (the post), as the abilities do
+  const pr = hall.practice, G = runner?.gear;
+  if (pr && G) {
+    const c = pr.offCool | 0;
+    if (c > (hall.offWas | 0)) { pr.offCool = Math.ceil(c / USE.quarter); G.full = Math.max(1, pr.offCool); }
+    hall.offWas = pr.offCool | 0;
+  }
+  const A = runner?.abilities;
+  if (A?.cool) {
+    quarterCool(A.cool, hall.cool).forEach((c, i) => { if (c !== A.cool[i]) { A.cool[i] = c; A.full[i] = Math.max(1, c); } });
+    hall.cool = A.cool.slice();
+  }
+  const post = posts.find(p => p.id === 'post');
+  while (post && hall.hits < post.hits.length) floatHit(post, post.hits[hall.hits++].dmg);
+}
+// a damage number floats up over the post (no motion: it shows and goes)
+function floatHit(post, dmg) {
+  const at = project([post.x, post.y + 2.1, post.z]);
+  if (!at) return;
+  const el = document.createElement('b');
+  el.className = 'hitnum';
+  el.textContent = String(Math.round(dmg));
+  el.style.left = `${at[0]}px`; el.style.top = `${at[1]}px`;
+  document.body.appendChild(el);
+  if (still) setTimeout(() => el.remove(), 700);
+  else el.animate([{ transform: 'translate(-50%, 0)', opacity: 1 }, { transform: 'translate(-50%, -28px)', opacity: 0 }], { duration: 700, easing: 'ease-out' }).finished.then(() => el.remove(), () => el.remove());
+}
+// Use: the station in reach opens its card; at the run door the run begins
+function hallUse(st = hall.near) {
+  if (!st || mode !== 'play') return false;
+  if (st.id === 'door') { hallBegin(); return true; }
+  openStation(st.id);
+  return true;
+}
+function hallBegin() {
+  if (!$('lamp').hidden) hideCard('lamp');
+  mode = 'play';
+  showUse(null);
+  beginRun(null);
+}
+// which parts of the #lamp card show: a station's own (data-st names them), every part (the quick list), or a shrine's tab
+function lampParts(st) {
+  for (const el of $('lamp').querySelectorAll('[data-st]')) el.classList.toggle('stOff', !!st && !el.dataset.st.split(' ').includes(st));
+}
+function openStation(id) {
+  const st = hall.list.find(s => s.id === id) || stationOf(id);
+  if (!st) return;
+  lampFromWander = false;
+  const card = $('lamp');
+  card.dataset.station = id;
+  $('lampT').textContent = st.name;
+  $('shrineTabs').hidden = true;
+  $('bLampClose').hidden = false;
+  lampParts(id);
+  const b = lampButtons(rs, null, wanderOpen());
+  for (const [k, bid] of Object.entries(LAMP)) $(bid).hidden = id === 'map' ? !b.list.includes(k) : true;
+  $('bLampDone').hidden = id === 'map';
+  cards.freshLamp();
+  fillLamp();
+  hall.walkAway = 0;
+  hall.opened = steps;
+  showUse(null);
+  openCard('lamp', 'station', () => (id === 'map' ? $(LAMP[b.main]) : firstButton(card)), () => closeStation());
+  const y = (st.y ?? body.s.y) + 1.3;
+  lampAnchor = () => project([st.obj[0], y, st.obj[1]]);
+  anchorLamp();
+  emit('station-open', { id });
+}
+// the first button of the card's parts that show (the main one for a station's card)
+const firstButton = card => cards.buttonsOf(card).find(b => !b.closest('.stOff') && b.id !== 'bLampClose') || $('bLampClose');
+// the quick list: every station's rows in one card, under the category headings (hub.js QUICK's order is the card's own)
+function openQuick() {
+  if (!hallOn() || mode !== 'play') return;
+  lampFromWander = false;
+  const card = $('lamp');
+  delete card.dataset.station;
+  $('lampT').textContent = 'The Lamp-room';
+  $('shrineTabs').hidden = true;
+  $('bLampClose').hidden = false;
+  lampParts(null);
+  const b = lampButtons(rs, null, wanderOpen());
+  for (const [k, bid] of Object.entries(LAMP)) $(bid).hidden = !b.list.includes(k);
+  $('bLampDone').hidden = true;
+  cards.freshLamp();
+  fillLamp();
+  showUse(null);
+  lampAnchor = null;
+  anchorLamp();
+  openCard('lamp', 'station', () => $(LAMP[b.main]), () => closeStation());
+}
+function closeStation() {
+  const card = $('lamp');
+  delete card.dataset.station;
+  lampAnchor = null;
+  anchorLamp();
+  lampParts(null);
+  $('bLampClose').hidden = $('bLampDone').hidden = true;
+  closeCard('lamp');
+  hall.near = null;
+}
+// a station card's own step: the lamplighter stands still; a move held 0.3 s on keys walks away from it (a pad's stick moves the focus)
+/* (W, S and the arrows move the focus in the card, so only a move across, A or D, or the touch stick walks away; a lamplighter pushed
+   more than USE.shut m from the station's point shuts it too) */
+function stationStep() {
+  const pad = readPads(navigator.getGamepads?.() || [], RUN), padMove = Math.hypot(pad.mx, pad.mz) >= 0.2;
+  const touch = controlsKind() === 'touch', mx = input.mx || 0, mz = input.mz || 0;
+  const held = !padMove && (touch ? Math.hypot(mx, mz) > 0.2 : Math.abs(mx) > 0.2) && steps - hall.opened > 6;
+  hall.walkAway = held ? hall.walkAway + STEP : 0;
+  const st = hall.list.find(x => x.id === $('lamp').dataset.station), s = body.s;
+  if (hall.walkAway >= USE.away || (st && Math.hypot(s.x - st.at[0], s.z - st.at[1]) > USE.shut)) { hall.walkAway = 0; closeStation(); }
+}
+// the shrine's tabs (Wares, Patterns, Panes) at a beacon; Left and Right (cards.js setTabKeys), LB and RB (pollPad) switch them
+function shrineTab(dir) {
+  if ($('shrineTabs').hidden || $('lamp').hidden) return false;
+  const i = SHRINE_TABS.findIndex(t => t.id === hall.tab), n = SHRINE_TABS.length, t = SHRINE_TABS[(i + dir + n) % n];
+  hall.tab = t.id;
+  audio?.cue('choice');
+  shrineTabs();
+  lampParts(t.id);
+  const b = firstButton($('lamp'));
+  if (b && b.closest('#shrineTabs') === null) b.focus({ preventScroll: true });
+  return true;
+}
+cards.setTabKeys(shrineTab);
+function shrineTabs() {
+  const box = $('shrineTabs');
+  box.textContent = '';
+  for (const t of SHRINE_TABS) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.setAttribute('role', 'tab');
+    b.dataset.tab = t.id;
+    b.textContent = t.label;
+    b.setAttribute('aria-selected', String(hall.tab === t.id));
+    b.addEventListener('click', () => { hall.tab = t.id; audio?.cue('choice'); shrineTabs(); lampParts(t.id); });
+    box.appendChild(b);
+  }
+  box.hidden = false;
+}
+/* the hall's own rows in the card: the blade rack, the off-hand stand, the ability post, the trophy wall and the well. A row starts
+   with its category mark; Pick and the post's slots store at once and the hall shows the change */
+function growRow(list, key, row, click, text) {
+  let li = list.querySelector(`li[data-${key}="${row.id}"]`);
+  if (!li) {
+    li = document.createElement('li');
+    li.dataset[key] = String(row.id);
+    li.innerHTML = '<span></span><button type="button"></button><em></em>';
+    li.querySelector('button').addEventListener('click', click);
+    list.appendChild(li);
+  }
+  li.style.setProperty('--hue', row.mark?.hue || 'var(--edge)');
+  const html = `${cards.markHtml(row.mark)}<b>${esc(row.name)}</b>`;
+  if (li.querySelector('span').innerHTML !== html) li.querySelector('span').innerHTML = html;
+  li.querySelector('em').textContent = text;
+  return li;
+}
+const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+function fillHall() {
+  const pick = (list, key, rows, fn) => {
+    for (const li of [...list.children]) if (!rows.some(r => String(r.id) === li.dataset[key])) li.remove();
+    for (const r of rows) {
+      const li = growRow(list, key, r, () => fn(r.id), r.text), b = li.querySelector('button');
+      b.textContent = r.pick;
+      b.setAttribute('aria-pressed', String(r.start));
+      // a locked item shows greyed with where it comes from; its button only says no
+      li.classList.toggle('locked', !!r.locked);
+      b.setAttribute('aria-disabled', String(!!r.locked));
+      b.setAttribute('aria-label', `${r.mark?.word || ''} ${r.name}: ${r.locked ? r.text : r.start ? 'the start pick' : 'pick it to start with'}`);
+    }
+  };
+  // a pick also goes to the hall's practice run, so the gear row and the post show the new start blade or off-hand at once
+  const pickGear = () => { if (hall.practice) { const g = practiceRun(rs, hall.tried); hall.practice.blade = g.blade; hall.practice.offhand = g.offhand; } };
+  pick($('bladeRows'), 'blade', bladeRows(rs), id => { if (bladeRows(rs).find(r => r.id === id)?.locked || !chooseBlade(rs, id)) return audio?.cue('refuse'); audio?.cue('choice'); pickGear(); storeRun(); fillLamp(); });
+  pick($('offRows'), 'off', offhandRows(rs), id => { if (offhandRows(rs).find(r => r.id === id)?.locked || !chooseOffhand(rs, id)) return audio?.cue('refuse'); audio?.cue('choice'); pickGear(); storeRun(); fillLamp(); });
+  const post = postRows(rs, hall.tried), pl = $('postRows');
+  $('postLine').textContent = hallOn() ? 'Put any two in the post\'s slots to try them here. They cool four times as fast, and nothing is spent.' : 'Try them at the ability post in the Lamp-room.';
+  for (const li of [...pl.children]) if (!post.some(r => r.id === li.dataset.ab)) li.remove();
+  for (const r of post) {
+    const li = growRow(pl, 'ab', r, () => tryPost(r.id), r.text), b = li.querySelector('button');
+    b.textContent = r.slot >= 0 ? `Slot ${r.slot + 1}` : 'Try';
+    b.setAttribute('aria-pressed', String(r.slot >= 0));
+    // away from the hall the post's slots cannot be tried: the rows show the abilities, with no button
+    b.hidden = !hallOn();
+  }
+  const kl = $('keyRows');
+  for (const r of keyRows(rs)) {
+    const li = growRow(kl, 'key', r, () => {}, r.label.slice(r.name.length + 3));
+    li.querySelector('button').hidden = true;
+    li.classList.toggle('top', !r.got);
+  }
+  $('kilnEmpty').hidden = !!$('patterns').children.length;
+  $('wellRecap').textContent = wellLines({ ...rs, ended: rs.ended || hall.last }).join('\n');
+}
+// the post's slots: a press puts an ability in, or takes it out; the practice run's slots follow at once
+function tryPost(id) {
+  if (!hallOn()) return;
+  hall.tried = tryAbility(hall.tried, id);
+  if (hall.practice) hall.practice.abilities = practiceRun(rs, hall.tried).abilities;
+  audio?.cue('choice');
+  fillLamp();
+  updateAbilities();
+}
+const hallView = () => ({
+  on: hallOn(), near: hall.near?.id ?? null, station: $('lamp').dataset.station ?? null, quick: hallOn() && !$('lamp').hidden && !$('lamp').dataset.station,
+  layout: ['sheet', 'side', 'beside'].find(k => $('lamp').classList.contains(k)) ?? null, tried: hall.tried.slice(),
+  shown: [...hall.shown].filter(([, on]) => on).map(([id]) => id), stations: hall.list.map(s => ({ id: s.id, at: s.at.slice(), obj: s.obj.slice(), y: s.y, face: s.face })),
+  prompt: $('bUse').hidden ? null : $('bUse').textContent, blade: rs ? startBladeOf(rs) : null, offhand: rs ? startOffhandOf(rs) : null,
+  post: posts.find(p => p.id === 'post')?.taken ?? null, shrine: !$('shrineTabs').hidden ? hall.tab : null
+});
+// a click on a station within 3 m (its object within 56 px of the click) opens it; a click beside an open station card shuts it
+function stationAt(cx, cy) {
+  let best = null, bd = 56;
+  for (const s of hall.list) {
+    if (Math.hypot(body.s.x - s.at[0], body.s.z - s.at[1]) > USE.click) continue;
+    const at = project([s.obj[0], (s.y ?? 0) + 1.2, s.obj[1]]);
+    if (!at) continue;
+    const d = Math.hypot(at[0] - cx, at[1] - cy);
+    if (d < bd) { bd = d; best = s; }
+  }
+  return best;
+}
+canvas.addEventListener('pointerdown', e => {
+  if (!hallOn()) return;
+  if (mode === 'station') { closeStation(); return; }
+  if (mode !== 'play' || e.pointerType !== 'mouse' || e.button !== 0 || inp.locked) return;
+  const s = stationAt(e.clientX, e.clientY);
+  if (s) { e.preventDefault(); s.id === 'door' ? hallBegin() : openStation(s.id); }
+}, true);
+$('lamp').addEventListener('pointerdown', e => { if (e.target === $('lamp') && mode === 'station') closeStation(); });
+$('bUse').addEventListener('click', () => { soundPress(); hallUse(); });
+$('bList').addEventListener('click', () => { soundPress(); openQuick(); });
+$('bLampClose').addEventListener('click', () => { audio?.cue('choice'); mode === 'station' ? closeStation() : cards.current()?.back?.(); });
+$('bLampDone').addEventListener('click', () => { audio?.cue('choice'); closeStation(); });
+
 /* ---------------- loading a place ---------------- */
 function progress(f) {
   barFill.style.width = `${Math.round(f * 100)}%`;
@@ -937,7 +1894,9 @@ async function go(id) {
     return;
   }
   // in a run, the foe files load with the first place (and stay), and each place gets its pool of foes
-  if (RUN) {
+  // the hall has no foes: no pool (and the foe files wait for the first place of the run)
+  if (RUN && id === HUB) slots = null;
+  else if (RUN) {
     try {
       const foes = await figures('./worlds/', 'foes'), boss = LOOK ? await figures('./worlds/', 'boss') : bossFile;
       slots = poolFor(id, foes, boss, LOOK ? LINEUP : undefined);
@@ -959,7 +1918,10 @@ async function go(id) {
   walk = makeWalk(meta.walk, place.walk);
   // a run's moves drive the body through its own copy of PARAMS
   body = makeBody(walk, meta.spawn, meta.bounds, RUN ? { ...PARAMS } : PARAMS);
-  cam = makeCamera(walk, { yaw: meta.spawn.yaw + Math.PI, auto: !still, ...layoutNow() });
+  // (in the hall the view does not swing behind a running lamplighter: the hall camera keeps it on the open front's side)
+  cam = makeCamera(walk, { yaw: meta.spawn.yaw + Math.PI, auto: !still && !(RUN && id === HUB), ...layoutNow() });
+  // the hall camera (cameras.js makeHallCam): the three-quarter view from the open front, framing the station in reach
+  hallCam = RUN && id === HUB ? makeHallCam(cam, { box: HALL, still, focus: hallFocus }) : null;
   blend = makeBlend(cam);
   // a run that goes on after the boss's fall starts at the arena, facing the beacon, with the light at the lantern
   const arena = RUN && rs.run?.bossDown ? meta.zones?.find(z => z.boss) : null;
@@ -969,7 +1931,8 @@ async function go(id) {
   }
   cam.snap(body.s, body.s.yaw + Math.PI);
   // in a run, the combat camera turns the view toward the foes (cameras.js); reduced motion keeps it still
-  combat = RUN ? makeCombat({ foes: awake, still }) : null;
+  // (not in the hall: the ability post is a target, but the view never turns to it by itself)
+  combat = RUN && id !== HUB ? makeCombat({ foes: awake, still }) : null;
   // a held move keeps its world direction while a camera turns by itself: a run's cameras, and the framed shot's lean (play.js)
   held = makeMoveLock();
   // the fog: the bake set it for a camera 9 back; keep it at the same depths whatever the distance
@@ -978,14 +1941,15 @@ async function go(id) {
   const n = meta.bones.names.length;
   world.anim = { bones: new Float32Array(12 * n), boned: Int32Array.from({ length: meta.bones.end - meta.bones.first }, (_, i) => meta.bones.first + i) };
   const placeCount = world.count;
+  life = makeLife(world, meta, { walk, still, rows: pendingRows, on: !LOOK && !q.has('nolife') });
   // its slots parked (at density 0 and off the bones), and the spark pool's splats after them
-  pool = RUN ? makePool(world, meta, slots, { extra: LOOK ? 0 : SPARKS }) : null;
+  pool = RUN && slots ? makePool(world, meta, slots, { extra: LOOK ? 0 : SPARKS }) : null;
   // where the walls bring the eye close, the lamplighter thins out (play.js fadeOf), its blade kept; after the pool, which may give
   // the world a new data array
   lampFade = makeFade(world.data, meta.bones);
   // in a run, the mist and haze sheets that lie in front of an awake figure fade out (veil.js); the beacon and the wisps are left alone
   const pack = c => ((c >> 16) & 255) + ((c >> 8) & 255) * 256 + (c & 255) * 65536;
-  veils = RUN ? makeVeils(world, findVeils(world, { count: placeCount, skip: [...meta.beacon.fire, ...meta.wisps.map(w => w.ids)], shared: meta.pal.slice(32).map(pack) })) : null;
+  veils = RUN && pool ? makeVeils(world, findVeils(world, { count: placeCount, skip: [...meta.beacon.fire, ...meta.wisps.map(w => w.ids)], shared: meta.pal.slice(32).map(pack) })) : null;
   // at Barrow Crown in a run, the pieces of scenery round the arena that fade while they hide the boss's marker (veil.js)
   const arenaZone = RUN && !LOOK ? (meta.zones || []).find(z => z.boss) : null;
   occluders = arenaZone ? makeOccluders(world, findOccluders(world, walk, { count: placeCount, skip: [...meta.beacon.fire, ...meta.wisps.map(w => w.ids)],
@@ -995,7 +1959,7 @@ async function go(id) {
   const faded = new Set([...(veils?.list || []), ...(occluders?.list || [])].flatMap(v => v.ids ?? [v.i]));
   cut = makeCut(world.data, { count: placeCount, skip: [[meta.bones.first, meta.bones.end], ...meta.beacon.fire, ...meta.wisps.map(w => w.ids)], except: faded.size ? faded : null });
   saved.clear();
-  pendingRows = new Set();
+  pendingRows.clear(); // cleared in place: life.js (makeLife rows) holds this set
   if (RUN) {
     // in a run the place starts again: every wisp is back and the beacon is dark
     beaconLit = false;
@@ -1011,10 +1975,12 @@ async function go(id) {
     $('toast').classList.remove('on');
     $('ink').style.background = hex(meta.pal?.[0] ?? 0x05060c);
     $('ink').style.opacity = '0';
+    if (id === HUB) hall.shown.clear();
     newRunner();
     gallery = null;
     if (LOOK && !manual) startGallery();
-    rs.furthest = Math.max(rs.furthest, ORDER.indexOf(id));
+    reach(rs, id);
+    if (id === HUB) hallEnter();
   } else {
     for (const i of save.wisps[id] || []) setLit([meta.wisps[i].ids], false);
     beaconLit = !!save.lit[id];
@@ -1023,7 +1989,7 @@ async function go(id) {
     if (ORDER.includes(id) && !save.reached.includes(id)) save.reached.push(id);
     store(disk, save);
   }
-  pendingRows = new Set(); // the whole world is uploaded on its first frame anyway
+  pendingRows.clear(); // the whole world is uploaded on its first frame anyway
   updateHud();
   progress(1);
   loading.classList.add('done');
@@ -1034,14 +2000,21 @@ async function go(id) {
   showHud(true);
   bossCard = false;
   arrive();
-  audio?.setScene('arrive', { id });
+  if (id === HUB) emit('lamp-room', { wait: 0 });
+  else audio?.setScene('arrive', { id });
+  emit('place-enter', { id, index: ORDER.indexOf(id), ember: rs?.run?.ember ?? 0 });
   if (manual && !nodraw) draw();
   if (RUN) {
     if (!rs.run && rs.ended?.won && rs.ended.place === id) { beaconLit = true; setLit(meta.beacon.fire, true); }
-    openOnLoad();
+    // the hall opens no card: the lamplighter wakes on the mat (an ended run's card still shows first, as on any load)
+    if (id !== HUB || rs.ended) openOnLoad();
     storeRun();
     // the boss files come while The Bell Knoll plays, or once play starts in Barrow Crown; never after the boss's fall
-    if (!LOOK && rs.run && (id === 'bells' || id === 'barrows') && !rs.run.bossDown) fetchBoss();
+    if (!LOOK && rs.run && routeOfRun(rs.run).indexOf(id) >= 3 && !rs.run.bossDown) fetchBoss();
+  } else if (!save.seen && TITLED) {
+    // the explorer's first visit opens the title, where the lamps choose the place
+    helpLines();
+    openTitle();
   } else if (!save.seen) {
     helpLines();
     $('help').hidden = false;
@@ -1064,9 +2037,12 @@ function update() {
       // while a camera turns by itself, a held move keeps its world direction
       const yaw = play && held ? held.yaw(input, cam.c) : cam.c.yaw;
       for (const e of runner.step(play ? input : {}, yaw)) runEvent(e);
+      if (hallOn()) hallStep();
+      build?.step();
       if (rs.run && ++sinceStore >= 120) storeRun();
       if (mode === 'play' && fight?.boss) bossWatch();
     }
+    if (mode === 'station' && hallOn()) stationStep();
     if (gallery) stepGallery();
     if (runner && TIMED.includes(mode)) screensTick();
     if (endAt && steps >= endAt && ['dying', 'won', 'lit'].includes(mode)) {
@@ -1087,6 +2063,7 @@ function update() {
     if (s.y < -25) { body.place(meta.spawn.p, meta.spawn.yaw); cam.snap(body.s, meta.spawn.yaw + Math.PI); toast('Back to the start'); }
   }
   view = cam.follow(body.s, STEP, input, RUN && mode === 'play' ? runTurn : RUN && mode === 'intro' ? introTurn : null);
+  if (hallCam) view = hallCam.step(body.s, STEP, view);
   if (bossCam) {
     view = bossCam.step(body.s, STEP, view);
     if (bossCam.b.on && steps % 30 === 0) measureScreen();
@@ -1098,12 +2075,24 @@ function update() {
   if (veils) unveil();
   if (occluders) clearMarker();
 }
-/* after the steps of a frame (or of a test's tick): the combat layer follows the awake foes (a guard zone adds its part), low health
-   takes the score down, and the frame's cues are laid on the context clock */
+/* after the steps of a frame (or of a test's tick): the bus hears foes-alert when foes wake (and again when a guard zone wakes) and
+   fight-calm when none is awake, low health takes the score down, and the frame's cues are laid on the context clock */
+let alertWas = { awake: false, guard: false };
 function soundTick() {
-  const awakeNow = fight ? fight.foes.awake().length > 0 : false;
-  audio.combat(awakeNow && mode !== 'dying', awakeNow && !!fight?.foes.zones?.some(Z => Z.awake && Z.guard));
+  const awakeNow = fight ? fight.foes.awake().length > 0 && mode !== 'dying' : false;
+  const guardZ = awakeNow ? fight?.foes.zones?.find(Z => Z.awake && Z.guard) : null;
+  // the elite's drone stays with any wake of its zone: foes-alert says so while a live elite is awake
+  const E = awakeNow ? fight?.foes.elite?.() : null, eliteNow = !!(E && E.zone?.awake && !E.out && E.hp > 0);
+  if (awakeNow && (!alertWas.awake || (guardZ && !alertWas.guard))) emit('foes-alert', { zone: guardZ?.id ?? fight.foes.zones?.find(Z => Z.awake)?.id ?? null, guard: !!guardZ, elite: eliteNow });
+  else if (!awakeNow && alertWas.awake) emit('fight-calm');
+  alertWas = { awake: awakeNow, guard: !!guardZ };
   audio.setLow(!!fight?.feel.low && !!rs.run);
+  // the hall's own bed under the Lamp-room's theme (beds.js BEDS.lamproom); run-sound.js stops the beds in the 'lamp' scene
+  if (audio.beds && rs.sound) {
+    const bed = audio.beds.view();
+    if (hallOn() && audio.scene.kind === 'lamp' && bed.id !== HUB) audio.beds.place(HUB);
+    else if (!hallOn() && bed.id === HUB) audio.bedScene();
+  }
   audio.flush();
 }
 // the scenery in front of the boss's marker fades out while the marker is laid, seen from where the eye is now
@@ -1149,20 +2138,26 @@ function seen(v, b, dt) {
 /* o.time draws at that game time (the clips and the flicker); o.pool false parks every foe for this one draw (?test); o.view and o.body
    are the frame's blend of the last two steps (play.js makeBlend: the loop's frames between steps) */
 function draw(o = {}) {
-  if (!view) { view = cam.follow(body.s, 0, input); blend.reset(); }
+  if (!view) { view = cam.follow(body.s, 0, input); if (hallCam) view = hallCam.step(body.s, 0, view); blend.reset(); }
   const t = Number.isFinite(o.time) ? o.time : time, view0 = view;
   if (o.view) view = o.view;
+  // behind the title the place drifts (menu-scene.js); the follow camera is not stepped by it
+  if (mode === 'title') view = titleDrawn(view);
   drawn = view; { const db = o.body || body.s; drawnBody = { x: db.x, y: db.y, z: db.z }; }
   pose(world.anim.bones, meta.bones, o.body || body.s, t, still);
   if (fight) {
     fight.draw(view, { time: Number.isFinite(o.time) ? o.time : undefined, pool: o.pool, art: art.h });
+    fillPoise();
     fxNow.kick = fight.kick; fxNow.zoom = fight.zoom; fxNow.bars = fight.bars;
     fight.showNotches(view, mode === 'play');
+    // the abilities' cooldown sweeps and seconds, each frame (only what changed is written)
+    if (RUN) updateAbilities();
   } else if (RUN) { fxNow.kick = [0, 0, 0]; fxNow.zoom = 1; fxNow.bars = 0; world.anim.grade = null; }
   if (RUN) { world.anim.kick = fxNow.kick; world.anim.zoom = fxNow.zoom; world.anim.bars = fxNow.bars; }
   // the fog stays at fogNear..fogFar whatever the camera's distance (the renderer spreads it over dist ± radius)
   world.radius = Math.max(6, meta.fogFar - view.dist);
   world.fog.start = Math.max(0, Math.min(0.97, (fogNear - 2 * view.dist + meta.fogFar) / (2 * world.radius)));
+  life?.draw(view, t, o.body || body.s, fightView().foes);
   try {
     renderer.render(world, { width: art.w, height: art.h, time: t, camera: view, changedRows: pool ? [...pendingRows, ...pool.rows] : [...pendingRows], colored: true });
     pendingRows.clear();
@@ -1182,6 +2177,7 @@ function frame(now) {
   last = now;
   // a cue logged outside the frame's steps (a test hook, a card) is laid now
   audio?.flush();
+  awayCheck();
   if (manual || paused || lost || document.hidden || window.GameSwitch?.isOpen) return;
   // the pads are read on the loading screen and in the cards too
   pollPad(dtRaw);
@@ -1198,7 +2194,7 @@ function frame(now) {
   // the frame between two steps: blended by the share of a step since the last one, with the mouse's turn not yet stepped on top
   const k = acc / STEP, v = blend.view(k, input.dyaw, input.dpitch) ?? view, b = blend.body(body.s, k);
   // the cut eases by the frame's own time (no more than a slow frame's 15 steps)
-  if (v) seen(v, b, Math.min(dtRaw, 15 * STEP));
+  if (v) seen(mode === 'title' ? titleDrawn(v) : v, b, Math.min(dtRaw, 15 * STEP));
   draw({ view: v ?? undefined, body: b });
   if (!RUN && frames % 120 === 0) store(disk, save);
   // slow machine: if frames come slower than 45 ms for two seconds, draw a smaller picture
@@ -1215,19 +2211,40 @@ function frame(now) {
 canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); lost = true; });
 canvas.addEventListener('webglcontextrestored', () => { lost = false; });
 const keep = () => { if (!place) return; if (RUN) storeRun(); else store(disk, save); };
-document.addEventListener('visibilitychange', () => { last = 0; if (document.hidden) keep(); });
+// a hidden tab or the open game switcher freezes the frame loop; the sound bed and the score stop with it
+let wasAway = false;
+function awayCheck() { const a = document.hidden || !!window.GameSwitch?.isOpen; if (a !== wasAway) { wasAway = a; audio?.away(a); } }
+document.addEventListener('visibilitychange', () => { last = 0; awayCheck(); if (document.hidden) keep(); });
 addEventListener('pagehide', keep);
 
 // where a world point lands on the screen, in CSS px (null behind the eye)
-function project([x, y, z]) {
-  if (!view) view = cam.follow(body.s, 0, input);
-  const c = viewCamera(world, { camera: view }, art.w, art.h), V = c.view, Pm = c.projection;
+function project([x, y, z], v = null) {
+  if (!view) { view = cam.follow(body.s, 0, input); if (hallCam) view = hallCam.step(body.s, 0, view); }
+  const c = viewCamera(world, { camera: v || view }, art.w, art.h), V = c.view, Pm = c.projection;
   const mv = i => V[i] * x + V[4 + i] * y + V[8 + i] * z + V[12 + i], e = [mv(0), mv(1), mv(2), mv(3)];
   const cl = i => Pm[i] * e[0] + Pm[4 + i] * e[1] + Pm[8 + i] * e[2] + Pm[12 + i] * e[3], w = cl(3);
   if (w <= 1e-6) return null;
   const r = canvas.getBoundingClientRect();
   return [r.left + (cl(0) / w * 0.5 + 0.5) * r.width, r.top + (0.5 - cl(1) / w * 0.5) * r.height];
 }
+/* ---------------- the feel's HUD and hooks (builder D) ----------------
+   The combo meter: "×N" from 2 hits, a pip for the tier and a bar for the 3 s left; it fades 0.4 s after the combo ends (fight.js
+   showCombo does it each frame). The seed and the best combo of the run that ended, for the summary */
+function updateCombo() {
+  if (rs?.run) lastRun = { seed: rs.run.seed, combo: Math.max(rs.run.combo || 0, fight?.combo.best || 0) };
+  fight ? fight.showCombo(mode === 'play') : ($('combo') && ($('combo').hidden = true));
+}
+function seedLineOf(ended) {
+  const seed = ended?.seed ?? lastRun.seed, best = ended?.combo ?? lastRun.combo;
+  return `Seed ${seedCode(seed)}${best >= 2 ? ` · Best combo ×${best}` : ''}`;
+}
+const feelView = () => {
+  const c = fight?.combo, run = rs?.run;
+  return {
+    combo: c ? c.view() : { n: 0, tier: 0, left: 0 }, bestCombo: Math.max(run?.combo || 0, c?.best || 0), next: runner?.fighter.nextHit() ?? 0,
+    seed: run?.seed ?? null, seedCode: run ? seedCode(run.seed) : null, shake: fx.kick, mix: fight ? fight.zones.filter(z => !z.boss).map(z => ({ id: z.id, foes: z.foes, baked: z.baked, elite: z.elite ?? null })) : null
+  };
+};
 const runState = () => {
   const run = rs?.run, f = runner?.fighter.f, k = runner?.clock;
   return {
@@ -1235,11 +2252,22 @@ const runState = () => {
     carried: run?.carried ?? 0, bank: rs?.bank ?? 0, wisps: runner?.wisps.size ?? 0, wicks: run?.wicks.slice() ?? [], offer: run?.offer?.slice() ?? null,
     foes: run?.foes ?? 0, banked: run?.banked ?? 0, bossDown: !!run?.bossDown, time: run?.time ?? 0, entry: run ? { ...run.entry } : null,
     step: k?.step ?? 0, playStep: k?.play ?? 0, stop: k?.stop ?? 0, ended: rs?.ended ? { ...rs.ended } : null,
-    move: f?.move ?? null, hit: f?.move === 'hit' ? HITS[f.hit].id : null, t: f ? f.t / 60 : 0, safe: runner?.fighter.safe() ?? null, combo: runner?.fighter.nextHit() ?? 0,
+    ...buildsView(),
+    ...growthView(),
+    ...abilityView(),
+    move: f?.move ?? null, hit: f?.move === 'hit' ? hitOf(f.hit).id : null, t: f ? f.t / 60 : 0, safe: runner?.fighter.safe() ?? null, combo: runner?.fighter.nextHit() ?? 0,
     fx: {
       kick: fxNow.kick.slice(), zoom: fight ? fight.feel.zoom() : fxNow.zoom, bars: fight ? fight.feel.bars() : fxNow.bars, grade: (fight?.cols || meta?.pal || []).slice(), blink: !!body?.s.hide,
-      low: !!fight?.feel.low, beats: fight?.feel.beats ?? 0, tell: fight?.grow ?? 1
-    }
+      low: !!fight?.feel.low, beats: fight?.feel.beats ?? 0, tell: fight?.grow ?? 1,
+      shakes: fight ? fight.feel.shakes() : !!fx.kick, lamp: fight ? fight.lamp ?? 1 : 1, halo: fight ? fight.halo.filter(g => g.kind === 'halo').map(g => g.ci) : [],
+      // the armor rims' dabs of this draw (gloam-downs-fair-fight "Armor that shows"): slot and size
+      armor: fight ? fight.halo.filter(g => g.kind === 'armor').map(g => ({ ci: g.ci, s: +g.s.toFixed(4), x: +g.x.toFixed(2), y: +g.y.toFixed(2), z: +g.z.toFixed(2) })) : [],
+      // the hooks' ground tells of this draw (gloam-downs-fair-fight "A hook that shows")
+      hookTell: fight ? fight.halo.filter(g => g.kind === 'tell').map(g => ({ ci: g.ci, s: +g.s.toFixed(4), x: +g.x.toFixed(2), y: +g.y.toFixed(2), z: +g.z.toFixed(2) })) : []
+    },
+    // the attack tokens: melee held of max, the coal, and the steps before any foe may start a wind-up
+    tokens: fight ? fight.foes.tokenView() : null,
+    ...feelView()
   };
 };
 let lookWas = false;
@@ -1254,8 +2282,8 @@ window.__gloam = {
     // pitch is the player's; view is what is drawn (with the rise over walls), want the layout's distance, foe the combat camera's
     // drawn: the view the last frame drew (between steps, the blend of the last two with the mouse's turn since on top), and where it
     // drew the lamplighter
-    cam: cam ? { drawn: drawn ? { yaw: drawn.yaw, pitch: drawn.pitch, dist: drawn.dist, target: drawn.target.slice(), cut: !!drawn.cut, body: drawnBody && { ...drawnBody } } : null, yaw: cam.c.yaw, dist: cam.c.dist, pitch: cam.c.pitch, want: cam.c.want, fov: cam.c.fov, aim: cam.c.aim, lift: cam.c.lift, view: view ? view.pitch : null, foe: combat?.foe?.id ?? null, turning: cam.c.turning, idle: cam.c.idle,
-      boss: bossCam ? { on: bossCam.b.on, w: bossCam.b.w, dist: view?.dist ?? null, aim: view?.target ?? null } : null } : null,
+    cam: cam ? { drawn: drawn ? { yaw: drawn.yaw, pitch: drawn.pitch, dist: drawn.dist, fov: drawn.fov, target: drawn.target.slice(), cut: !!drawn.cut, body: drawnBody && { ...drawnBody } } : null, yaw: cam.c.yaw, dist: cam.c.dist, pitch: cam.c.pitch, want: cam.c.want, fov: cam.c.fov, aim: cam.c.aim, lift: cam.c.lift, view: view ? view.pitch : null, foe: combat?.foe?.id ?? null, turning: cam.c.turning, idle: cam.c.idle,
+      boss: bossCam ? { on: bossCam.b.on, w: bossCam.b.w, dist: view?.dist ?? null, aim: view?.target ?? null, goal: bossCam.b.goal?.dist ?? null, cur: bossCam.b.cur?.dist ?? null, room: bossCam.b.dist, lift: bossCam.b.lift, clear: bossCam.b.goal?.clear ?? null } : null } : null,
     // the pieces of scenery faded in front of the boss's marker (veil.js makeOccluders), or null away from Barrow Crown's run
     occluded: occluders ? occluders.faded() : null,
     // the near fade's share now (play.js fadeOf: 0 to 1, or NEAR_FADE.all with the whole figure left out)
@@ -1276,7 +2304,8 @@ window.__gloam = {
   // in a run, light() acts as a touch on the beacon, so it obeys the run's rules
   light: () => (RUN ? runner.light([]).forEach(runEvent) : lightBeacon()),
   points: () => (meta ? { spawn: meta.spawn, beacon: meta.beacon.p, wisps: meta.wisps.map(w => w.p) } : null),
-  close: () => closePanels(),
+  // the title counts as a panel here, so the checks that open the page without ?test can close it as they close the help
+  close: () => { if (!$('title').hidden) titleClose(); closePanels(); },
   // ?test: free the mouse as a card does (no pause panel), so a test can click the tools with the cursor
   release: () => { inp.free(); return inp.locked; },
   /* ?test only: step the game by `seconds` at 60 steps a second with these held (mx, mz, jump, slow, ox, attack, roll, heal, look),
@@ -1287,7 +2316,7 @@ window.__gloam = {
     for (let i = 0; i < n; i++) {
       if (held === 'live') { pollPad(STEP); if (mode !== 'loading') inp.read(); }
       else {
-        Object.assign(input, { mx: 0, mz: 0, jump: false, slow: false, ox: 0, oy: 0, attack: false, roll: false, heal: false }, held);
+        Object.assign(input, { mx: 0, mz: 0, jump: false, slow: false, ox: 0, oy: 0, attack: false, roll: false, heal: false, ab1: false, ab2: false }, held);
         if (held.look && !lookWas && mode === 'play') face();
         lookWas = !!held.look;
       }
@@ -1338,15 +2367,31 @@ window.__gloam = {
       if (Number.isFinite(o.hp)) run.hp = Math.max(1, Math.min(maxOf(rs), Math.round(o.hp)));
       if (Number.isFinite(o.flasks)) run.flasks = Math.max(0, Math.min(flasksOf(rs), Math.round(o.flasks)));
       if (Number.isFinite(o.carried)) run.carried = Math.max(0, Math.round(o.carried));
+      // the combo now, with the full 3 s left (fight.js combo)
+      if (Number.isFinite(o.combo) && fight) { fight.combo.set(o.combo); run.combo = Math.max(run.combo || 0, fight.combo.best); }
     }
     // the boss's health: the phase of that health at once, with one hit stop of 9 steps and one stumble of 2 s
     if (Number.isFinite(o.bossHp) && fight?.boss) { fight.hooks.bossHp(o.bossHp); fillBossBar(); }
+    setBuilds(o);
+    setGrowth(o);
+    // the abilities: slots ([{ id, bright } | null, same]), the seconds of cooldown left on each, and the keys held
+    if (run && Array.isArray(o.abilities)) run.abilities = [0, 1].map(i => { const a = o.abilities[i]; return a && abilityOf(a.id) ? gearCopy(a) : null; });
+    if (Array.isArray(o.cool)) runner?.abilities?.setCool(o.cool);
+    if (Array.isArray(o.keys)) rs.keys = [...new Set(o.keys.filter(k => k === 'leap' || k === 'drop'))];
+    // the title's lamps: the furthest place reached and the runs played
+    if (Number.isInteger(o.furthest)) { rs.furthest = Math.max(0, Math.min(ORDER.length - 1, o.furthest)); rs.reached = ORDER.slice(0, rs.furthest + 1); }
+    if (Array.isArray(o.reached)) { rs.reached = []; for (const id of o.reached) reach(rs, id); }
+    if (Number.isInteger(o.runs)) rs.runs = Math.max(0, o.runs);
+    if (o.seen === true || o.seen === false) rs.seen = o.seen;
+    if (mode === 'title') fillTitle();
+    if (run && Array.isArray(o.abilityLamps)) run.abilityLamps = o.abilityLamps.filter(l => abilityOf(l.id)).map(l => ({ ...gearCopy(l), place: run.place, x: +l.x, y: +l.y, z: +l.z }));
+    if (Array.isArray(o.abilities) || Array.isArray(o.keys)) showControls();
     updateHud();
-    if (mode === 'lamp') fillLamp();
+    if (mode === 'lamp' || mode === 'station') fillLamp();
     storeRun();
     return runState();
   },
-  fx: (flags = {}) => { for (const k of ['stop', 'flash', 'kick', 'zoom', 'grade', 'shake', 'trail']) if (k in flags) fx[k] = !!flags[k]; return { ...fx }; },
+  fx: (flags = {}) => { for (const k of ['stop', 'flash', 'kick', 'zoom', 'grade', 'shake', 'trail', 'combo', 'lamp']) if (k in flags) fx[k] = !!flags[k]; return { ...fx }; },
   sounds: () => cues.map(c => ({ ...c })),
   // the score's state (run-sound.js view): state, place, theme, layers, phase, bpm, bar, the last 32 changes, the mix and the buses
   music: () => (audio ? audio.view() : null),
@@ -1370,6 +2415,13 @@ window.__gloam = {
   kill: () => { if (RUN && runner) runner.kill([]).forEach(runEvent); return RUN ? runState() : null; },
   toast: (text, ms = 1800) => { toast(String(text).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]), ms); return $('toast').getBoundingClientRect().toJSON(); },
   lamp: (from = null) => { if (RUN) openLamp(from); return mode; },
+  // the hall (gloam-downs-hub): its state, Use at the station in reach, a station's card by id, and the quick list
+  hall: () => hallView(),
+  use: () => hallUse(),
+  station: id => { if (hallOn() && mode === 'play') openStation(id); return hallView(); },
+  quick: () => { openQuick(); return hallView(); },
+  // the gear (gear-play.js gearTest): the held blade and off-hand, an item laid on the ground, an Off-hand press, its cooldown
+  gear: (o = {}) => { const v = RUN ? gearTest(runner, o) : null; updateHud(); updateAbilities(); return v; },
   project,
   // stage 2 hands the page its foes as targets
   setTargets: fn => { foeTargets = fn; },
@@ -1397,7 +2449,14 @@ window.__gloam = {
   notches: () => (fight ? fight.showNotches(view || cam.follow(body.s, 0, input), mode === 'play').map(n => ({ kind: n.kind, foe: n.foe, edge: n.edge, x: n.x, y: n.y, fill: n.fill, bearing: n.bearing, rect: { ...n.rect } })) : []),
   combat: fightView,
   // ?run: the pool's slots, and (with ?test&lineup) one of each figure stood in a row in front of the lamplighter
+  // the selection screens (?test): the bus's screen events, the title's lamps and its line, and the open card's motion
+  screens: () => ({
+    bus: screenLog.map(e => ({ ...e })), titleAt, line: $('titleLine').textContent, seed: $('titleSeed').textContent,
+    lamps: [...$('titleLamps').querySelectorAll('.lamp')].map(b => ({ id: b.dataset.place, lit: b.classList.contains('lit'), on: b.classList.contains('on'), disabled: b.disabled })),
+    anims: document.getAnimations().filter(a => a.playState === 'running').map(a => ({ id: a.effect?.target?.id || a.effect?.target?.className || '', ms: a.effect?.getComputedTiming().endTime ?? 0 }))
+  }),
   pool: () => pool && { count: world.count, boned: world.anim.boned.length, extra: pool.extra.end - pool.extra.first, slots: pool.slots.map(s => ({ i: s.i, code: s.code, awake: s.awake, first: s.first, end: s.end, base: s.base, at: s.at })) },
+  life: o => life?.test(o) ?? null,
   lineup: (o = {}) => { const r = lineup(pool, walk, { x: body.s.x, z: body.s.z, yaw: body.s.yaw }, o); if (o.draw) draw(); return r; },
   // one slot: { clip, t } poses it where it stands, { flash: true | false } and { park: true } as the run will
   slot: (i, o = {}) => {
@@ -1441,6 +2500,8 @@ window.__gloam = {
   if (RUN) {
     // a reload in a run restarts its place: health and flasks no higher than they were, the glim carried and the foes as they entered
     if (rs.run) reload(rs.run);
+    // ?hall (gloam-downs-hub) opens straight into the Lamp-room when no run is in progress and no ended run waits
+    if (q.has('hall') && !rs.run && !rs.ended) return go(HUB);
     // a reload on the win card shows it over the place that was won, with its beacon burning
     return go(rs.run?.place || (rs.ended?.won && ORDER.includes(rs.ended.place) ? rs.ended.place : ORDER[0]));
   }

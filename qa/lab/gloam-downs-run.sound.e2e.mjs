@@ -1,10 +1,11 @@
 // Gloam Downs: the run's sound and music in a real browser (public/lab/gloam-downs/?run&test), on software WebGL 2:
 //   no AudioContext and no file of audio/ before the first press, one running context after it; the arrival card's silence, then the
 //   place's theme; a cut in the sound log with its wind-up, its target types, its context time and its variant; the duck of a finisher;
-//   a zone that wakes and is put out: the combat layer in on the beat and out on the bar 2 s after; the beacon's stinger, then the
+//   a zone that wakes and is put out: the drums in on the next bar line, the strings on the bar after the first tell or hit, both out
+//   on the bar 2 s after; the elite's drone from the bus; a guard zone's part; the beacon's stinger, then the
 //   Lamp-room theme; the Lamp-room's card, focus, buy and refused buy; the pause panel's filter and its Sound and Music switches, both
-//   off suspending the context, and Music off kept over a reload; a hidden page suspended with no new notes; the boss's intro, phases
-//   and fall; the swing's whoosh keyed to the wind-up (rendered offline); the bank failing; the phone mix; no sound in the explorer,
+//   off suspending the context, and Music off kept over a reload; a hidden page suspended with no new notes; the boss's intro, its six
+//   levels as its health falls, and the fall sting; the swing's whoosh keyed to the wind-up (rendered offline); the bank failing; the phone mix; no sound in the explorer,
 //   in Wander or in a Lamp-room opened from Wander's Map; the effects' lag behind the picture; Sound off with Music on lays no effect;
 //   a roll that cuts a swing leaves no swing voice; and a phone tap on a browser that only lets touchend or click start sound (an
 //   AudioContext stub that starts suspended and refuses resume() outside those events), which must end with a running context.
@@ -83,6 +84,8 @@ if (part('run')) {
     assert.equal(m.mix, 'desktop');
     assert(m.samples > 20, `${m.samples} samples in the bank`);
     assert(audio.length > 20 && audio.every(u => !u.includes('README')));
+    // the four instruments made offline load with the rest
+    for (const inst of ['cello', 'gurdy', 'drum-lo', 'drum-mid']) assert(audio.some(u => u.includes(`/audio/${inst}/`)), `no ${inst} sample loaded`);
     pass('no AudioContext and no audio/ file before the first press; one running context and the bank after Enter', { samples: m.samples, label });
   }
   { // the arrival card's silence, then the theme on the first bar line after it closes
@@ -147,27 +150,84 @@ if (part('run')) {
     assert(back.length && back.every(v => v > -1), `the duck 300 ms after: ${back}`);
     pass('a finisher ducks the music 4 dB through its hit stop, and it is back within 1 dB 300 ms later', { held: [Math.min(...held), Math.max(...held)], back: Math.min(...back) });
   }
-  { // the combat layer: in on a beat when G2 wakes, full on the bar; out on the first bar line 2 s or more after its foes go out
-    // the Snuffer of the cut had the combat layer in: it leaves first
-    await page.waitForFunction(() => !window.__gloam.music().layers.includes('combat'), null, { timeout: 12000 });
+  { /* a fight in the Gaol: G2 wakes and the drums come in on the next bar line; while its foes walk with no attack the strings stay
+       out; the first tell or hit brings the strings in on the next bar line; 2 s after its foes are out, both leave on a bar line */
+    // the Snuffer of the cut had the drums in: they leave first
+    await page.waitForFunction(() => !window.__gloam.music().layers.includes('drums'), null, { timeout: 12000 });
     await wait(3200);
-    // the zone's cracks show for 0.6 s, then its foes rise: the layer follows the awake foes
+    // the zone's cracks show for 0.6 s, then its foes rise
     const wake = await G(page, () => { const g = window.__gloam; g.wake('G2'); for (let i = 0; i < 120 && !g.foes().length; i++) g.tick(1 / 60, {}); return g.music().time; });
-    await wait(4000);
-    const quiet = await G(page, () => { const g = window.__gloam; g.out('G2'); g.tick(1.0, {}); return g.music().time; });
-    await wait(6500);
-    const m = await music(page), cin = m.changes.findLast(c => c.what === 'combat in'), full = m.changes.findLast(c => c.what === 'combat full'), out = m.changes.findLast(c => c.what === 'combat out');
-    const beat = m.bar / 4;
-    assert(cin && cin.at >= wake - 0.01 && cin.at - wake <= beat + 0.2 && onGrid(m, cin.at, beat), `combat in ${JSON.stringify(cin)} for a wake at ${wake}`);
-    assert(full && onGrid(m, full.at), 'combat full on a bar line');
-    assert(out && out.at >= quiet + 2 - 0.05 && onGrid(m, out.at), `combat out ${JSON.stringify(out)}, the foes out at ${quiet}`);
+    await wait(3000);
+    const calm = await music(page);
+    const din = calm.changes.findLast(c => c.what === 'drums in');
+    assert(din && din.at >= wake - 0.01 && din.at - wake <= calm.bar + 0.25 && onGrid(calm, din.at), `drums in ${JSON.stringify(din)} for a wake at ${wake}`);
+    // a wake with no attack: drums and no strings (unless a foe has started a tell in the 3 s)
+    const TELLS = ['scrape', 'whistle', 'hum', 'rear', 'crouch', 'paw', 'chime'];
+    const told = await G(page, T => window.__gloam.sounds().slice(-40).some(c => T.includes(c.cue)), TELLS);
+    if (!told) assert(calm.layers.includes('drums') && !calm.layers.includes('strings'), `a wake with no attack: ${JSON.stringify(calm.layers)}`);
+    // the fight begins: tick the foes until one starts a tell, or the lamplighter's cut lands
+    const begun = await G(page, T => {
+      const g = window.__gloam, from = g.sounds().length;
+      // the lamplighter steps up to a foe of G2, facing it
+      const f = g.foes().find(x => x.zone === 'G2');
+      if (f) { const s = g.state(), d = Math.hypot(s.x - f.x, s.z - f.z) || 1, ux = (s.x - f.x) / d, uz = (s.z - f.z) / d; g.teleport(f.x + ux * 1.6, f.z + uz * 1.6, Math.atan2(-ux, -uz)); }
+      for (let i = 0; i < 360; i++) {
+        g.tick(1 / 60, i % 30 === 0 ? { attack: true } : {});
+        const c = g.sounds().slice(from).find(x => T.includes(x.cue) || x.cue === 'hit' || x.cue === 'hurt');
+        if (c) return { cue: c.cue, time: g.music().time };
+      }
+      return null;
+    }, TELLS);
+    assert(begun, 'no tell or hit in 6 s of the fight');
+    await wait(3200);
+    const fought = await music(page), sin = fought.changes.findLast(c => c.what === 'strings in');
+    assert(sin && onGrid(fought, sin.at) && sin.at - begun.time <= fought.bar + 0.3, `strings in ${JSON.stringify(sin)} after the ${begun.cue} at ${begun.time}`);
+    assert(fought.layers.includes('drums') && fought.layers.includes('strings') && !fought.layers.includes('combat'), JSON.stringify(fought.layers));
+    // G2 and any zone the step up woke: every awake foe goes out
+    const quiet = await G(page, () => { const g = window.__gloam; for (const z of new Set(['G2', ...g.foes().map(f => f.zone)])) g.out(z); g.tick(1.0, {}); return g.music().time; });
+    await wait(8000);
+    const m = await music(page), dout = m.changes.findLast(c => c.what === 'drums out'), sout = m.changes.findLast(c => c.what === 'strings out');
+    const order = m.changes.map(c => c.what).filter(w => ['drums in', 'strings in', 'drums out', 'strings out'].includes(w)).slice(-4);
+    assert.deepEqual(order, ['drums in', 'strings in', 'drums out', 'strings out']);
+    assert(dout && sout && dout.at >= quiet + 2 - 0.05 && onGrid(m, dout.at) && Math.abs(sout.at - dout.at) < 1e-6, `out ${JSON.stringify([dout, sout])}, the foes out at ${quiet}`);
     assert.deepEqual(m.layers, ['explore']);
-    pass('G2 wakes: the combat layer comes in on a beat and is full on the bar; 2 s after its foes are out it leaves on the bar', { in: +(cin.at - wake).toFixed(3), out: +(out.at - quiet).toFixed(3) });
+    pass('G2 wakes: the drums come in on the next bar line, the strings on the bar after the first tell or hit; 2 s after its foes are out both leave on the bar', { drums: +(din.at - wake).toFixed(3), strings: +(sin.at - begun.time).toFixed(3), by: begun.cue, out: +(dout.at - quiet).toFixed(3) });
+  }
+  { // the elite's drone, from the bus as elites.js sends it: in on the next bar line after elite-alert, out on the next after elite-fall
+    const r = await G(page, async () => {
+      const { emit } = await import('./bus.js'), g = window.__gloam;
+      const t0 = g.music().time;
+      emit('foes-alert', { zone: 'G3', guard: false, elite: true }); emit('elite-alert', { place: 'gaol', type: 'S', name: 'Wardmother' });
+      await new Promise(r => setTimeout(r, 3500));
+      const on = g.music();
+      const t1 = on.time;
+      emit('elite-fall', { place: 'gaol', relic: null });
+      await new Promise(r => setTimeout(r, 3500));
+      const off = g.music();
+      emit('fight-calm');
+      return { t0, t1, on, off };
+    });
+    const ein = r.on.changes.findLast(c => c.what === 'elite in'), eout = r.off.changes.findLast(c => c.what === 'elite out');
+    assert(r.on.layers.includes('elite') && ein && onGrid(r.on, ein.at) && ein.at - r.t0 <= r.on.bar + 0.1, JSON.stringify(ein));
+    assert(!r.off.layers.includes('elite') && eout && onGrid(r.off, eout.at) && eout.at - r.t1 <= r.off.bar + 0.1, JSON.stringify(eout));
+    await wait(6000);
+    pass('elite-alert brings the hurdy-gurdy drone in on the next bar line, and elite-fall takes it out on the next', { in: +(ein.at - r.t0).toFixed(3), out: +(eout.at - r.t1).toFixed(3) });
+  }
+  { // a guard zone: G5 wakes, and the drums and the guard part come in on the next bar line
+    const wake = await G(page, () => { const g = window.__gloam; g.wake('G5'); for (let i = 0; i < 120 && !g.foes().some(f => f.zone === 'G5'); i++) g.tick(1 / 60, {}); return g.music().time; });
+    await wait(3200);
+    const m = await music(page), gin = m.changes.findLast(c => c.what === 'guard in');
+    assert(m.layers.includes('drums') && m.layers.includes('guard') && !m.layers.includes('combat'), JSON.stringify(m.layers));
+    assert(gin && onGrid(m, gin.at) && gin.at - wake <= m.bar + 0.25, JSON.stringify(gin));
+    await G(page, () => { const g = window.__gloam; g.out('G5'); g.tick(1.0, {}); });
+    await wait(6500);
+    pass('G5, a guard zone, wakes: drums and the guard part on the next bar line, never combat', { guard: +(gin.at - wake).toFixed(3) });
   }
   { // every layer and theme change on a bar line, within 5 ms
     const m = await music(page);
-    for (const c of m.changes.filter(c => ['place', 'combat full', 'combat out'].includes(c.what))) assert(onGrid(m, c.at), `${c.what} at ${c.at}`);
-    pass('every place, combat full and combat out change is on a bar line within 5 ms', { changes: m.changes.length });
+    const KINDS = ['place', 'drums in', 'drums out', 'strings in', 'strings out', 'guard in', 'guard out', 'elite in', 'elite out'];
+    for (const c of m.changes.filter(c => KINDS.includes(c.what))) assert(onGrid(m, c.at), `${c.what} at ${c.at}`);
+    pass('every place, drums, strings, guard and elite change is on a bar line within 5 ms', { changes: m.changes.length });
   }
   { // the beacon: its stinger, then the Lamp-room theme on the beacon card
     await G(page, () => { const g = window.__gloam; for (const z of ['G1', 'G2', 'G3', 'G5']) g.out(z); g.tick(1.2, {}); g.light(); g.tick(1.6, {}); });
@@ -199,7 +259,7 @@ if (part('run')) {
     pass('the Lamp-room logs card, focus twice, buy and refuse, in that order', log);
   }
   { // the pause panel: its filter and its switches
-    await G(page, () => { document.getElementById('bLampBack').click(); document.querySelector('#wicks button')?.click(); document.getElementById('bWalkOn').click(); });
+    await G(page, () => { document.getElementById('bLampBack').click(); document.querySelector('#wicks button')?.click(); document.querySelector('#sparks button')?.click(); document.getElementById('bWalkOn').click(); });
     await page.waitForFunction(() => window.__gloam.ready() && window.__gloam.state().place === 'ramparts', null, { timeout: 120000 });
     await G(page, () => { const g = window.__gloam; for (let i = 0; i < 400 && !document.getElementById('arrive').classList.contains('off'); i++) g.tick(1 / 60, {}); });
     await G(page, () => window.__gloam.set({ hp: 30 }));
@@ -210,9 +270,9 @@ if (part('run')) {
     const p = await G(page, () => ({ m: window.__gloam.music(), sound: document.getElementById('bSound').textContent, mus: document.getElementById('bMusic').textContent, n: window.__gloam.sounds().length }));
     assert.equal(low, 900); assert.equal(p.m.filter, 600);
     assert.equal(p.sound, 'Sound on'); assert.equal(p.mus, 'Music on');
-    // focus order: Resume, Sound, Music, Back to the start, End the run
+    // focus order: Resume, Sound, Music, Shake, Back to the start, End the run
     const order = await G(page, () => [...document.querySelectorAll('#pauseRow button')].map(b => b.id));
-    assert.deepEqual(order, ['bResume', 'bSound', 'bMusic', 'bRestart', 'bEnd']);
+    assert.deepEqual(order, ['bResume', 'bSound', 'bMusic', 'bShake', 'bRestart', 'bEnd']);
     await page.click('#bMusic');
     await wait(300);
     const off = await music(page);
@@ -319,25 +379,33 @@ if (part('boss')) {
   await wait(3000);
   const p1 = await music(page);
   assert.equal(p1.phase, 1);
+  assert.equal(p1.level, 1);
+  // the boss music builds: 85, 61, 44, 26 and 11% of its health, 3 s apart; levels 3 and 5 are its phases 2 and 3
   const log = [];
-  for (const hp of [700, 300]) {
-    const t = await G(page, hp => { const g = window.__gloam; g.hold('B', null); g.set({ bossHp: hp }); g.tick(0.05, {}); return g.music().time; }, hp);
+  for (const share of [0.85, 0.61, 0.44, 0.26, 0.11]) {
+    const t = await G(page, hp => { const g = window.__gloam; g.hold('B', null); g.set({ bossHp: hp }); g.tick(0.05, {}); return g.music().time; }, Math.round(1300 * share));
     await wait(3000);
-    const m = await music(page), c = m.changes.findLast(x => x.what.startsWith('boss '));
-    assert(c.at - t <= 2.0, `the phase starts ${c.at - t} s after the stumble`);
-    assert(onGrid(m, c.at), `phase ${m.phase} not on a bar line`);
-    log.push({ phase: m.phase, bpm: m.bpm, after: +(c.at - t).toFixed(3) });
+    const m = await music(page), c = m.changes.findLast(x => x.what.startsWith('level '));
+    assert.equal(c.what, `level ${m.level}`);
+    assert(onGrid(m, c.at), `level ${m.level} not on a bar line`);
+    if (m.level === 3 || m.level === 5) assert(c.at - t <= 2.0, `level ${m.level} starts ${c.at - t} s after the stumble`);
+    log.push({ share, level: m.level, phase: m.phase, bpm: m.bpm, after: +(c.at - t).toFixed(3) });
   }
-  assert.deepEqual(log.map(x => x.phase), [2, 3]);
-  assert(log[1].bpm > log[0].bpm);
-  const tail = await G(page, () => { const g = window.__gloam; g.set({ bossHp: 0 }); g.tick(0.1, {}); return g.boss().state; });
+  assert.deepEqual(log.map(x => x.level), [2, 3, 4, 5, 6]);
+  assert.deepEqual(log.map(x => x.phase), [1, 2, 2, 3, 3]);
+  assert(log[3].bpm > log[2].bpm);
+  // the fall: the score stops and the fall sting plays at once; the light 2.5 s after
+  const fall = await G(page, () => { const g = window.__gloam, t0 = g.music().time; g.set({ bossHp: 0 }); g.tick(0.1, {}); return { t0, t1: g.music().time, state: g.boss().state }; });
+  const sm = await music(page), sf = sm.changes.findLast(c => c.what === 'sting fall');
+  assert(sf && sf.at >= fall.t0 && sf.at - fall.t1 <= 0.02, `sting fall at ${sf?.at}, the fall between ${fall.t0} and ${fall.t1}`);
   await wait(1500);
-  assert.equal((await music(page)).state, 'silent');
+  assert.equal((await music(page)).state, 'sting');
   await wait(2000);
-  const after = await music(page);
+  const after = await music(page), light = after.changes.findLast(c => c.what === 'light');
   assert.equal(after.theme, 'light');
-  // the tells of the boss's attacks: each on the first step of its wind-up
-  pass('the boss: the intro\'s drone, phase 1 with the boss bar, phases 2 and 3 on bar lines inside the stumble, faster in phase 3, silence after the fall, then the light', { log, tail });
+  assert(light && Math.abs(light.at - sf.at - 2.5) <= 0.1, `light ${light?.at}, sting ${sf.at}`);
+  const tail = fall.state;
+  pass('the boss: the intro\'s drone, level 1 with the boss bar, levels 2 to 6 on bar lines as its health falls (3 and 5 inside the stumble), faster from 5; the fall sting at once, then the light 2.5 s after', { log, tail });
   assert(!errors.length, errors.join(' | '));
   await ctx.close();
 }
@@ -390,9 +458,9 @@ if (part('more')) {
     await G(page, () => { const g = window.__gloam; for (let i = 0; i < 400 && !document.getElementById('arrive').classList.contains('off'); i++) g.tick(1 / 60, {}); g.wake('G2'); for (let i = 0; i < 120 && !g.foes().length; i++) g.tick(1 / 60, {}); });
     await wait(4500);
     const m = await music(page);
-    assert.equal(m.state, 'place'); assert(m.layers.includes('combat'), JSON.stringify(m.layers)); assert(m.notes > 10);
+    assert.equal(m.state, 'place'); assert(m.layers.includes('drums'), JSON.stringify(m.layers)); assert(m.notes > 10);
     assert(!errors.length, errors.join(' | '));
-    pass('with every audio/ request failing, the score plays with its code voices and the combat layer, with no error', { notes: m.notes });
+    pass('with every audio/ request failing, the score plays with its code voices and the drums layer, with no error', { notes: m.notes });
     await ctx.close();
   }
   { // the phone mix

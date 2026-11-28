@@ -4,8 +4,9 @@
 //   roll to the camera's left, the arrows with X, Z and C roll, swing and drink, L with no flask says so; W held through the pause
 //   walks on; a roll, a drink, Heal at full health, a hit that is stored at once and a fall; the pause panel with its focus, End the
 //   run asking again, Escape and M; the beacon card, its wicks, Escape that cannot pass them and a reload at it; a mocked gamepad
-//   alone on the cards and in play (a stick held into a card moves nothing, RB faces, a tilt and B roll its way, three X make the
-//   string); and a phone with real touches: the touch buttons at the design's sizes, Look, and Roll with the stick held left.
+//   alone on the cards and in play (a stick held into a card moves nothing, R3 faces, a tilt and B roll its way, three X make the
+//   string); and a phone with real touches: the touch buttons at the design's sizes, Look, and Roll with the stick held left. First, a
+//   first visit through the title (?title): its Begin the run opens the help card, whose own Begin the run starts the run.
 // Stage 1 of the combat run: the later stages add Wander's cards, the Lamp-room and the sound log to this file.
 // The page runs with ?test: the game is stepped by __gloam.tick() and drawn by __gloam.draw(), because software WebGL takes about a
 // second a frame. Needs the site served: python3 -m http.server 8765 --bind 0.0.0.0 --directory public
@@ -52,6 +53,23 @@ const viewOff = async page => {
 };
 
 try {
+  /* ---------------- a first visit through the title (gloam-downs-screens-life): Begin the run opens the help card ---------------- */
+  {
+    const { ctx, page, errors } = await open({ viewport: { width: 390, height: 844 } }, '?run&test&fresh&seed=7&title');
+    assert(await page.isVisible('#title'), 'a first visit opens the title');
+    assert.equal(await active(page), 'bTitleBegin', 'Begin the run has the focus');
+    await page.keyboard.press('Enter');
+    assert(await page.isVisible('#runHelp') && !(await page.isVisible('#title')), 'Begin the run opens the help card on a first visit');
+    assert.match(await page.textContent('#runHelp p'), /one flask/);
+    assert.equal(await active(page), 'bBegin');
+    await page.keyboard.press('Enter');
+    const r = await run(page);
+    assert.deepEqual([r.mode, r.place, r.flasks], ['play', 'gaol', 1]);
+    assert.deepEqual(errors, []);
+    pass('a first visit: the title\'s Begin the run opens the help card ("one flask"), and its own Begin the run starts the run');
+    await ctx.close();
+  }
+
   /* ---------------- desktop: keys and mouse ---------------- */
   {
     const { ctx, page, errors } = await open({ viewport: { width: 1280, height: 720 } }, '?run&test&fresh&seed=7');
@@ -66,10 +84,12 @@ try {
     await page.focus('#bBegin');
     await page.keyboard.press('Enter');
     let r = await run(page);
-    assert.deepEqual([r.mode, r.place, r.hp, r.max, r.flasks, r.flasksMax], ['play', 'gaol', 100, 100, 2, 2]);
+    assert.deepEqual([r.mode, r.place, r.hp, r.max, r.flasks, r.flasksMax], ['play', 'gaol', 100, 100, 1, 1]);
     for (const id of ['#bAttack', '#bRoll', '#bHeal', '#bJump']) assert(!(await page.isVisible(id)), `${id} is hidden with a mouse`);
     const tb = await page.locator('#tools').boundingBox();
-    pass('the run starts from its help card with 100 health and 2 flasks; Tab stays in the card', { tools1280: [tb.x, tb.y, tb.width, tb.height].map(v => +v.toFixed(1)) });
+    pass('the run starts from its help card with 100 health and 1 flask; Tab stays in the card', { tools1280: [tb.x, tb.y, tb.width, tb.height].map(v => +v.toFixed(1)) });
+    // the checks below drink at 2 flasks: Flask 1 gives the second
+    await G(page, () => window.__gloam.set({ up: { flask: 1 }, flasks: 2 }));
 
     // swing: J on the keys, then a left click on the view, at a training post 2 m ahead
     await postAhead(page, 2.0);
@@ -189,6 +209,21 @@ try {
     await tick(page, 0.5, {});
     pass('a direction held through the pause panel walks on after Resume');
 
+    // an arrow in a card moves the card's focus; held when Enter closes the card, it does not walk the lamplighter
+    await page.keyboard.press('p');
+    assert(await page.isVisible('#pause'));
+    await page.keyboard.down('ArrowUp');
+    await G(page, () => document.getElementById('bResume').focus());
+    await page.keyboard.press('Enter');
+    assert(!(await page.isVisible('#pause')));
+    const a0 = await state(page);
+    await tick(page, 0.5, 'live');
+    const a1 = await state(page);
+    await page.keyboard.up('ArrowUp');
+    assert(Math.hypot(a1.x - a0.x, a1.z - a0.z) < 0.05, `an arrow held from a card walked: ${Math.hypot(a1.x - a0.x, a1.z - a0.z)}`);
+    await tick(page, 0.3, {});
+    pass('an arrow held in a card does not walk the lamplighter after Enter closes it');
+
     // the roll: no direction held, straight back from the facing
     // open ground more than 10 m from every zone, so no foe wakes and hooks the lamplighter in these checks (the yard by the cells, used
     // before the foes fought back, wakes two Snuffers now)
@@ -222,7 +257,7 @@ try {
     await G(page, () => window.__gloam.hurt(16));
     r = await run(page);
     assert.deepEqual([r.hp, r.stop], [84, 5]);
-    const saved = await G(page, () => JSON.parse(localStorage.getItem('gloam-downs.run.v1')));
+    const saved = await G(page, () => JSON.parse(localStorage.getItem('gloam-downs.run.v4')));
     assert.equal(saved.run.hp, 84, 'the hit is stored at once');
     await tick(page, 1.0, {});
     a = await state(page);
@@ -237,8 +272,8 @@ try {
     await page.keyboard.press('p');
     assert(await page.isVisible('#pause'));
     assert.equal(await active(page), 'bResume');
-    for (let i = 0; i < 5; i++) await page.keyboard.press('Tab');
-    assert.equal(await active(page), 'bResume', "Tab wraps through the panel's five buttons");
+    for (let i = 0; i < 6; i++) await page.keyboard.press('Tab');
+    assert.equal(await active(page), 'bResume', "Tab wraps through the panel's six buttons");
     await page.click('#bEnd');
     assert(await page.isVisible('#askRow'));
     assert.equal(await active(page), 'bNo');
@@ -259,7 +294,7 @@ try {
     pass('the pause panel: focus, Tab, End the run asks again, Escape and M behave, the tool opens it');
 
     // the beacon: light() acts as a touch; the card offers two wicks; Escape cannot leave it; a reload shows the same two. Its keepers
-    // in the keep are put out first (the guard rule), and their 9 glim are banked with the 9 carried
+    // in the keep are put out first (the guard rule), and their 9 glim are carried on with the 9 carried (a lit beacon no longer banks)
     await G(page, () => window.__gloam.set({ carried: 9 }));
     await G(page, () => window.__gloam.out('G5'));
     await G(page, () => window.__gloam.light());
@@ -268,7 +303,7 @@ try {
     const offer = await page.$$eval('#wicks button', bs => bs.map(b => b.textContent));
     assert(offer.length === 2 && offer.every(t => / · /.test(t)), JSON.stringify(offer));
     r = await run(page);
-    assert.deepEqual([r.bank, r.carried, r.place, r.flasks], [18, 0, 'ramparts', 2]);
+    assert.deepEqual([r.bank, r.carried, r.place, r.flasks], [0, 18, 'ramparts', 2]);
     await page.keyboard.press('Escape');
     assert(await page.isVisible('#beaconCard'), 'Escape does not close the card before a wick is chosen');
     await page.goto(`${SITE}/lab/gloam-downs/worlds/gaol.json`);
@@ -277,12 +312,15 @@ try {
     assert.equal((await state(page)).place, 'ramparts');
     assert.deepEqual(await page.$$eval('#wicks button', bs => bs.map(b => b.textContent)), offer, 'the same two wicks after a reload');
     await page.keyboard.press('Enter');
-    assert.equal(await active(page), 'bWalkOn', 'after the choice Walk on has the focus');
+    // then the beacon's spark pick (gloam-downs-growth): Enter takes the first, Flame
+    assert.equal(await G(page, () => document.activeElement.dataset.spark), 'flame', 'after the wick the first spark has the focus');
+    await page.keyboard.press('Enter');
+    assert.equal(await active(page), 'bWalkOn', 'after the choices Walk on has the focus');
     r = await run(page);
-    assert(r.wicks.length === 1 && r.offer === null);
+    assert(r.wicks.length === 1 && r.offer === null && r.sparks.flame === 1);
     await page.keyboard.press('Enter');
     await page.waitForFunction(() => window.__gloam.ready() && window.__gloam.run().mode === 'play', null, { timeout: 120000 });
-    pass('the beacon, its keepers out, banks the 9 carried and their 9, fills the flasks and offers two wicks; Escape cannot pass them; a reload shows the same two', { offer, wick: r.wicks });
+    pass('the beacon, its keepers out, carries the 9 carried and their 9 on, fills the flasks and offers two wicks; Escape cannot pass them; a reload shows the same two', { offer, wick: r.wicks });
     assert.deepEqual(errors, []);
     await ctx.close();
   }
@@ -342,7 +380,7 @@ try {
     const down = async () => { await G(page, () => window.__press(13, true)); await tick(page, 0.05, 'live'); await G(page, () => window.__press(13, false)); await tick(page, 0.05, 'live'); };
     await down();
     assert.equal(await active(page), 'bSound');
-    for (let i = 0; i < 4; i++) await down();
+    for (let i = 0; i < 5; i++) await down();
     assert.equal(await active(page), 'bResume', 'the focus wraps');
     await G(page, () => window.__press(8, true)); await tick(page, 0.05, 'live'); await G(page, () => window.__press(8, false)); await tick(page, 0.05, 'live');
     assert.equal((await run(page)).mode, 'play', "the pad's Back closes the pause panel");
@@ -362,13 +400,13 @@ try {
     assert.equal(await active(page), 'bSound', 'back to centre, a new tilt moves it');
     await G(page, () => window.__press(1, true)); await tick(page, 0.1, 'live'); await G(page, () => window.__press(1, false)); await tick(page, 0.1, 'live');
     assert.equal((await run(page)).mode, 'play');
-    // RB faces a post 6 m behind
+    // R3 (the right stick's press) faces a post 6 m behind; RB is the off-hand (gloam-downs-hub)
     await G(page, () => window.__gloam.clearPosts());
     await postAhead(page, 6, Math.PI);
-    await G(page, () => window.__press(5, true)); await tick(page, 0.1, 'live'); await G(page, () => window.__press(5, false));
+    await G(page, () => window.__press(11, true)); await tick(page, 0.1, 'live'); await G(page, () => window.__press(11, false));
     await tick(page, 0.4, 'live');
     const offRB = await viewOff(page);
-    assert(offRB <= 10 * Math.PI / 180, `RB faced the post behind: ${offRB}`);
+    assert(offRB <= 10 * Math.PI / 180, `R3 faced the post behind: ${offRB}`);
     // a full tilt and B: the roll goes the tilt's way (to the camera's right)
     await G(page, () => window.__gloam.clearPosts());
     await tick(page, 0.5, 'live');
@@ -386,10 +424,10 @@ try {
     await tick(page, 1.0, 'live');
     const string = (await G(page, () => window.__gloam.sounds())).slice(n0).filter(c => c.cue === 'swing').map(c => c.hit);
     assert.deepEqual(string, ['cut1', 'cut2', 'fin'], `three X: ${string}`);
-    // RT swings, LT rolls and Y drinks, as main.js wires the pads' run buttons
+    // RT swings and Y drinks, as main.js wires the pads' run buttons; LT is ability 2 now, and with slot 2 empty it does nothing
     const btn = async (i, sec = 1.0) => { const k = (await G(page, () => window.__gloam.sounds())).length; await G(page, i => window.__press(i, true), i); await tick(page, 0.1, 'live'); await G(page, i => window.__press(i, false), i); await tick(page, sec, 'live'); return (await G(page, () => window.__gloam.sounds())).slice(k).map(c => c.cue); };
     assert((await btn(7)).includes('swing'), 'RT swings');
-    assert((await btn(6)).includes('roll'), 'LT rolls');
+    assert(!(await btn(6)).includes('roll'), 'LT no longer rolls');
     await G(page, () => window.__gloam.set({ hp: 50 }));
     const fl = (await run(page)).flasks;
     assert((await btn(3)).includes('drink') && (await run(page)).flasks === fl - 1, 'Y drinks a flask');
@@ -403,7 +441,7 @@ try {
     await stick(0, 0);
     await tick(page, 0.1, 'live');
     assert.deepEqual(errors, []);
-    pass('a stick held into a card moves nothing; RB faces the foe behind; a tilt and B roll its way; three X give cut1, cut2 and the finisher; RT, LT and Y swing, roll and drink', { rb: +offRB.toFixed(3), right: +right.toFixed(2), string });
+    pass('a stick held into a card moves nothing; R3 faces the foe behind; a tilt and B roll its way; three X give cut1, cut2 and the finisher; RT, LT and Y swing, roll and drink', { r3: +offRB.toFixed(3), right: +right.toFixed(2), string });
     await ctx.close();
   }
 
@@ -441,7 +479,7 @@ try {
     const box = async sel => { const b = await page.locator(sel).boundingBox(); return b && [Math.round(b.x), Math.round(b.y), Math.round(b.width)]; };
     const want = { '#bAttack': [290, 664, 84], '#bRoll': [214, 750, 64], '#bJump': [302, 756, 72], '#bHeal': [226, 682, 52] };
     for (const [sel, w] of Object.entries(want)) assert.deepEqual(await box(sel), w, `${sel} at 390x844`);
-    assert.match(await page.textContent('#bHeal'), /2/);
+    assert.match(await page.textContent('#bHeal'), /1/, 'the run starts with 1 flask');
     assert.equal(await page.textContent('#bMap'), 'Pause');
     const cdp = await ctx.newCDPSession(page);
     const touch = (type, pts = []) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: pts.map(([x, y, id]) => ({ x, y, id: id ?? 1 })) });

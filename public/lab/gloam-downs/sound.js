@@ -17,7 +17,8 @@ const STEP = 1 / 60;
    Each cue the game emits, by the name in __gloam.sounds(). rank: a voice of a lower rank gives way first when the voices run out
    (0 the cards and glim, 1 the lamplighter's moves, 2 a foe's sounds, 3 a hit, a tell or a hit taken). tell: a warning sound, which
    varies by ±2% only and never falls more than 10 dB with distance. duck: how far the music ducks (dB) and for how long (steps, the
-   hit stop; a cue's own `stop` wins). hit: one of the layered hits. */
+   hit stop; a cue's own `stop` wins). hit: one of the layered hits. A tell from a foe off screen (off: true) takes the rank over all
+   (TELL_RANK), so the voice limit never drops it: it gives way only to another such tell. */
 export const CUES = {
   // the lamplighter
   swing: { rank: 1 }, strike: { rank: 2 }, whiff: { rank: 1 }, recover: { rank: 0 }, hit: { rank: 3, hit: true }, roll: { rank: 1 },
@@ -31,16 +32,22 @@ export const CUES = {
   // the foes' other cues
   coal: { rank: 2 }, pulse: { rank: 2, duck: [2, 3] }, charge: { rank: 2 }, slam: { rank: 3, hit: true, duck: [6, 6] }, clang: { rank: 2, duck: [3, 4] },
   cracks: { rank: 2 }, rise: { rank: 2 }, out: { rank: 3, hit: true, duck: [5, 5] },
+  // a hit that stops a foe's attack or breaks its poise (gloam-downs-fair-fight "Interrupt feel"): a dry knock and a short crackle
+  snap: { rank: 3, hit: true, duck: [3, 5] },
   // the Barrow Reeve: its tells, its hits, the intro, the bar, the phase change, the fall and the light
   crook: { rank: 3, tell: true }, cage: { rank: 3, tell: true }, chime: { rank: 3, tell: true }, crouch: { rank: 3, tell: true },
   sweep: { rank: 3, hit: true, duck: [4, 4] }, shards: { rank: 2 }, shard: { rank: 2 }, lunge: { rank: 3 },
   stumble: { rank: 3, hit: true, duck: [8, 9] }, reeve: { rank: 3 }, bossBar: { rank: 2 }, light: { rank: 2 },
   // the cards
-  card: { rank: 0 }, focus: { rank: 0 }, choice: { rank: 0 }, buy: { rank: 0 }, refuse: { rank: 0 }
+  card: { rank: 0 }, focus: { rank: 0 }, choice: { rank: 0 }, buy: { rank: 0 }, refuse: { rank: 0 },
+  /* the selection screens (gloam-downs-screens-life): a glass tick on a lamp card's hover or focus (at most one each 60 ms), a shimmer
+     as a set of cards deals in, a lamp catching on a pick, a longer catch with a rising fifth on a kindle, and the tick of a number
+     that rolls (at most 12 a roll). Each is quieter than choice at its peak */
+  hover: { rank: 0, every: 0.06 }, reveal: { rank: 0 }, pick: { rank: 0 }, kindle: { rank: 0 }, tally: { rank: 0, most: 12 }
 };
 // the duck of a hit landed, by the blade's hit id
 const HIT_DUCK = { cut1: 2, cut2: 2, fin: 4, plunge: 4 };
-export const FX_VOICES = 24;
+export const FX_VOICES = 24, TELL_RANK = 4;
 // how much harder a body's soft clip is driven on a phone (more mid harmonics for a small speaker)
 const PHONE_DRIVE = 1.6;
 // the materials of the targets: the crunch of a hit takes the first target's
@@ -616,6 +623,15 @@ export function createSound(ctx, { mix, seed = 1, key = 50 } = {}) {
       hiss(V, t, { f: 6000, q: 0.6, dur: 0.06, gain: 1.1 * k, type: 'highpass' });
       return 1.0;
     },
+    // a dry wooden knock (a 40 ms burst of band-passed noise over a short low body) with sparse crackle clicks over 120 ms
+    snap(V, t, o, x) {
+      hiss(V, t, { f: 1700 * x, q: 1.2, dur: 0.06, gain: 1.2, attack: 0.0008 });
+      body(V, t, { f0: 210 * x, f1: 90 * x, dur: 0.11, gain: 0.85, clip: 1.8, attack: 0.001, drop: 0.5 });
+      body(V, t, { f0: 120 * x, f1: 55 * x, dur: 0.14, gain: 0.4, clip: 1.4, attack: 0.002, drop: 0.6 });
+      hiss(V, t, { f: 5200, q: 0.7, dur: 0.03, gain: 1.0, type: 'highpass', attack: 0.0005 });
+      for (let i = 0; i < 7; i++) hiss(V, t + 0.03 + (i / 7) * 0.12 + r() * 0.015, { f: 3000 + r() * 3000, q: 2.2, dur: 0.016, gain: 0.8 * (1 - i / 8), attack: 0.0005 });
+      return 0.25;
+    },
     clang(V, t, o, x) {
       ring(V, t, { f: 410 * x, parts: [[1, 0.3], [2.32, 0.2, 0.8], [3.17, 0.15, 0.6], [4.53, 0.1, 0.45], [5.9, 0.06, 0.3]], dur: 1.5, gain: 1 });
       body(V, t, { f0: 110, f1: 60, dur: 0.12, gain: 0.6, clip: 1.6 });
@@ -723,6 +739,34 @@ export function createSound(ctx, { mix, seed = 1, key = 50 } = {}) {
       body(V, t, { f0: 140, f1: 90, dur: 0.1, gain: 0.35, clip: 1.4 });
       hiss(V, t, { f: 400, q: 1, dur: 0.06, gain: 0.25 });
       return 0.2;
+    },
+    // the selection screens, all in the place's key: a glass tick two octaves and a fifth up
+    hover(V, t, o, x) {
+      ring(V, t, { f: hz(S.key + 31) * x, parts: [[1, 0.05], [2.76, 0.02, 0.5]], dur: 0.12, gain: 1 });
+      return 0.15;
+    },
+    // a shimmer: the key's triad, high, rising one after another
+    reveal(V, t, o, x) {
+      [0, 4, 7].forEach((k, i) => tone(V, t + i * 0.05, { f0: hz(S.key + 36 + k) * x, dur: 0.35, gain: 0.035, attack: 0.03 }));
+      hiss(V, t, { f: 6000, q: 0.7, dur: 0.3, gain: 0.04, attack: 0.08, type: 'highpass' });
+      return 0.5;
+    },
+    // a lamp catching: a breath of noise, then a low bell on the key
+    pick(V, t, o, x) {
+      hiss(V, t, { f: 900 * x, f1: 2400 * x, q: 0.7, dur: 0.18, gain: 0.12, attack: 0.03 });
+      ring(V, t + 0.05, { f: hz(S.key + 12) * x, parts: [[1, 0.09], [2.01, 0.04, 0.7], [3.01, 0.02, 0.5]], dur: 0.8, gain: 1 });
+      return 0.9;
+    },
+    // a longer catch and a rising fifth
+    kindle(V, t, o, x) {
+      hiss(V, t, { f: 600 * x, f1: 3000 * x, q: 0.6, dur: 0.4, gain: 0.1, attack: 0.12 });
+      tone(V, t + 0.1, { f0: hz(S.key + 19) * x, dur: 0.5, gain: 0.06, attack: 0.01, type: 'triangle' });
+      tone(V, t + 0.28, { f0: hz(S.key + 26) * x, dur: 0.7, gain: 0.06, attack: 0.01, type: 'triangle' });
+      return 1.0;
+    },
+    tally(V, t, o, x) {
+      tone(V, t, { f0: hz(S.key + 43) * x, dur: 0.025, gain: 0.05, attack: 0.001 });
+      return 0.04;
     }
   };
   // a low-pass for a voice's buzzy tone
@@ -736,12 +780,13 @@ export function createSound(ctx, { mix, seed = 1, key = 50 } = {}) {
   const LEVEL = {
     swing: 3, strike: 2, whiff: 8, recover: -8, drop: 1, hit: -2, land: -1, out: -2, hurt: -1, roll: 2, miss: 4, plunge: 2, drink: 0, heal: 2, fall: 0, death: -8, heart: 4,
     glim: -4, wisp: 2, beacon: -2, scrape: 4, whistle: 3, hum: 4, paw: 5, rear: 1, coal: 2, pulse: 2, charge: 4, slam: 3,
-    clang: -4, cracks: 2, rise: 1, reeve: -4, bossBar: -4, crook: 5, sweep: -1, cage: 5, chime: 4, shards: 3, shard: 2, crouch: 5,
-    lunge: 3, stumble: -7, light: 2, card: -2, focus: -4, choice: 0, buy: 0, refuse: 0
+    clang: -4, snap: 2, cracks: 2, rise: 1, reeve: -4, bossBar: -4, crook: 5, sweep: -1, cage: 5, chime: 4, shards: 3, shard: 2, crouch: 5,
+    lunge: 3, stumble: -7, light: 2, card: -2, focus: -4, choice: 0, buy: 0, refuse: 0,
+    hover: -4, reveal: -4, pick: -2, kindle: -2, tally: -4
   };
 
   // the shaper's ceiling (voice units) of each heavy cue: the body sits near 0.8, so the spike over about 1 is shaped away
-  const SHAPE = { hit: 1, land: 1, hurt: 1, out: 1, slam: 1, sweep: 1, stumble: 1, fall: 1, death: 1, beacon: 1, clang: 1, pulse: 1, coal: 1 };
+  const SHAPE = { hit: 1, land: 1, hurt: 1, out: 1, slam: 1, sweep: 1, stumble: 1, fall: 1, death: 1, beacon: 1, clang: 1, pulse: 1, coal: 1, snap: 1 };
   const HIT_LEVEL = { cut1: -4, cut2: -3, fin: 0.5, plunge: 0 };
   S.LEVEL = LEVEL;
 
@@ -763,7 +808,8 @@ export function createSound(ctx, { mix, seed = 1, key = 50 } = {}) {
     if (name === 'hurt' && (o.dmg || 0) >= 20) lvl += 1;
     // the variants: each moves the pitch and the level a little, and the hit cues pick one of 4 bodies
     const x = va.rate * (info.hit ? [1, 0.96, 1.035, 0.93][va.v] : 1);
-    const V = voice(t, t + 4, info.rank, sp.pan, lvl, name, SHAPE[name] || 0);
+    // a tell from off screen keeps its voice (TELL_RANK), and its pan to the foe's side
+    const V = voice(t, t + 4, info.tell && o.off ? TELL_RANK : info.rank, sp.pan, lvl, name, SHAPE[name] || 0);
     if (!V) return null;
     V.g.k = V.g.gain.value;
     // a tell ranks over the lamplighter's whoosh: the whoosh steps 5 dB down, so the warning is heard through a string

@@ -17,11 +17,13 @@ import fs from 'node:fs';
 import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 import { makeWalk, makeBody, makeCamera, camLayout, PARAMS } from '../../public/lab/gloam-downs/play.js';
-import { STEP, stepCount, startRun, makeRunner, maxOf, reload, goTo, BASE } from '../../public/lab/gloam-downs/run.js';
+import { STEP, stepCount, startRun, makeRunner, maxOf, reload, goTo, BASE, ember } from '../../public/lab/gloam-downs/run.js';
 import { HITS, clearLine } from '../../public/lab/gloam-downs/moves.js';
 import * as RS from '../../public/lab/gloam-downs/run-save.js';
-import { makeBoss, REEVE, REEVE_TEXT, ATTACKS, choose, phaseFor, segAt, segStart, inSlices, inLane, lengthOf, lightAt } from '../../public/lab/gloam-downs/boss.js';
-import { inRing } from '../../public/lab/gloam-downs/foes.js';
+import { makeBoss, bossLines, REEVE, REEVE_TEXT, ATTACKS, choose, phaseFor, segAt, segStart, inSlices, inLane, lengthOf, lightAt } from '../../public/lab/gloam-downs/boss.js';
+import { inRing, FOE_HARD } from '../../public/lab/gloam-downs/foes.js';
+// these checks test the rules at the numbers of the foes' table; Ember 0's harder factors (FOE_HARD, REEVE.hard) are checked in gloam-downs-foes.test.mjs
+FOE_HARD.dmg = 1; FOE_HARD.hp = 1; REEVE.hard = 1;
 import { makeFight } from '../../public/lab/gloam-downs/fight.js';
 import { readFigures, makePool } from '../../public/lab/gloam-downs/pool.js';
 import { poolFor } from '../../public/lab/gloam-downs/figures.js';
@@ -98,6 +100,52 @@ const cues = (Wd, name) => Wd.log.filter(c => c.cue === name).map(c => c.play);
 const damage = Wd => Wd.hurts.filter(h => h.r === 'hit' || h.r === 'dead');
 // a held lamplighter: it does not move while the boss attacks (its body stands; a hit still pushes it)
 const still = () => ({});
+
+/* ---------------- the Reeve's poise (gloam-downs-fair-fight) ---------------- */
+{ /* break the Reeve: hits of 150 in all in the wind-up of its cage slam, 9 s after its last break: the slam does not land, the Reeve
+     flinches for 60 steps, and its poise is full again 4 s after the last hit */
+  const Wd = bossOn(FLAT, { z: 5, hp: 1000 });
+  begin(Wd);
+  assert.deepEqual([Wd.B.view().poise, Wd.B.view().poiseMax], [150, 150]);
+  stand(Wd, { byaw: 0, lx: 0, lz: -2.5 });
+  Wd.B.breakAt = Wd.B.step - 9 * 60;
+  run(Wd, 1);
+  assert.equal(Wd.B.move, 'slam');
+  run(Wd, 10);
+  for (const raw of [50, 50, 50]) Wd.B.hit(raw, {});
+  const v = Wd.B.view();
+  assert.equal(v.state, 'flinch');
+  assert.equal(v.move, null, 'the slam is cut off');
+  assert.equal(v.flinch, 60);
+  let flinch = 0;
+  run(Wd, 60, still, () => { if (Wd.B.state === 'flinch') flinch++; });
+  assert(flinch >= 54 && flinch <= 60, `flinch ${flinch} steps`);
+  assert.equal(damage(Wd).length, 0, 'the slam did not land');
+  assert(!Wd.log.some(c => c.cue === 'slam'), 'no slam');
+  assert(Wd.log.some(c => c.cue === 'snap' && c.kind === 'B'), 'the snap');
+  assert.equal(Wd.B.view().poise < 150, true);
+  Wd.body.place([0, 0.01, 12], 0);
+  run(Wd, 4 * 60 + 2, still);
+  assert.equal(Wd.B.view().poise, 150, 'full again 4 s after the last hit');
+  // no break within 8 s of the last: 150 more at once does not flinch it
+  const W2 = bossOn(FLAT, { z: 5, hp: 1000 });
+  begin(W2);
+  stand(W2, { byaw: 0, lx: 0, lz: 2.5 });
+  for (const raw of [50, 50, 50]) W2.B.hit(raw, {});
+  assert.equal(W2.B.state, 'flinch');
+  run(W2, 70, still);
+  for (const raw of [50, 50, 50, 50]) W2.B.hit(raw, {});
+  assert.notEqual(W2.B.state, 'flinch', 'no second break within 8 s');
+  // none in a stumble: hits there do no damage and wear no poise
+  const W3 = bossOn(FLAT, { z: 5, hp: 1000 });
+  begin(W3);
+  W3.B.setHp(801); W3.B.hit(10, {}); run(W3, 1);
+  assert.equal(W3.B.state, 'stumble');
+  const p = W3.B.poise;
+  for (const raw of [50, 50, 50, 50]) W3.B.hit(raw, {});
+  assert.equal(W3.B.poise, p, 'a stumble wears no poise');
+  pass('break the Reeve: 150 in its slam wind-up cuts the slam off and it flinches 60 steps; no break within 8 s or in a stumble; full 4 s after', { flinch });
+}
 
 /* ---------------- the numbers ---------------- */
 {
@@ -276,11 +324,22 @@ function attackAt(rate, setup) {
   run(Wd, 300, still, () => { if (Wd.B.mt >= 60 && Wd.B.mt < 96) R.set(Wd.B.mt, Wd.B.mk?.R ?? 0); return Wd.B.mt < 95; });
   assert(near(R.get(60), 4.0 / 36, 1e-6) && near(R.get(95), 4.0, 1e-9), `the second slices ${R.get(60)} to ${R.get(95)}`);
   run(Wd, 14, still);
-  // each sweep hits for 16: the second tests its later active steps, and lands once the 0.9 s of safe time after the first are over
-  assert.deepEqual(damage(Wd).map(h => h.dmg), [16, 16]);
-  const [h1, h2] = damage(Wd), safe = Wd.hurts.filter(h => h.r === 'safe').length;
-  assert(h2.play - h1.play === 54 && safe >= 1, `the second sweep landed ${h2.play - h1.play} play steps after the first, ${safe} tries in the safe time`);
-  pass('the double sweep: its second sweep grows its own slices over 0.6 s, and each sweep hits for 16', { apart: h2.play - h1.play });
+  // each sweep hits for 16; the second, on a lamplighter that stood still and took the first, meets the 1.0 s of safe time after
+  // it (gloam-downs-fair-fight "Health and hits"): it tries on each of its active steps and passes
+  assert.deepEqual(damage(Wd).map(h => h.dmg), [16]);
+  const safe = Wd.hurts.filter(h => h.r === 'safe').length;
+  assert(safe >= 1, `${safe} tries in the safe time`);
+  // on a lamplighter that the first missed, the second hits for 16
+  const W2 = bossOn(FLAT, { z: 5, hp: 1000, bossHp: 200 });
+  begin(W2);
+  stand(W2, { byaw: 0, lx: 0, lz: 2.5, last: ['sweep', 'sweep'] });
+  run(W2, 1);
+  const hurt = W2.R.hurt;
+  let first = true;
+  W2.R.hurt = (...a) => { if (first) { first = false; return 'safe'; } return hurt(...a); };
+  run(W2, 300, still, () => W2.B.mt < 110);
+  assert.deepEqual(damage(W2).map(h => h.dmg), [16]);
+  pass('the double sweep: its second sweep grows its own slices over 0.6 s, and each sweep hits for 16 (the second passes in the safe time after the first)', { safe });
 }
 { // step out of the warning: once the shard rings stand still (0.6 s of 0.9 s), a walk of 1.5 m away from the boss leaves all three;
   // once the lunge's lane stands still (0.4 s of 0.7 s), a walk of 1.5 m to its side leaves it. Standing still, each hits
@@ -750,6 +809,17 @@ if (process.env.GLOAM_WORLDS !== '0') {
     assert(Math.max(...worst) <= 0.35, `the west ring lies on the ground beside the yew (worst ${Math.max(...worst).toFixed(2)} m)`);
     pass("the shard ring beside the yew lies on the ground under the crown's edge, not on its top", { worst: Math.round(Math.max(...worst) * 100) / 100 });
   }
+}
+
+{ // Ember 5: the Barrow Reeve has 25% more health, phase 2 starts at the same share as ever, and phase 3 starts at 40%
+  assert.deepEqual(bossLines(), { max: 1300, lines: [800, 350] }, 'below Ember 5 the lines stand as they were');
+  const E = ember(5), B = makeBoss({ walk: FLAT, arena: ARENA0, seed: 3, hpScale: E.bossHp, phase3: E.phase3 });
+  assert.deepEqual([B.hp, B.max, B.lines], [1625, 1625, [1000, 650]]);
+  const at = hp => { B.setHp(hp); return B.phase; };
+  assert.deepEqual([at(1625), at(1001), at(999), at(651), at(649)], [1, 1, 2, 2, 3]);
+  const E4 = ember(4), B4 = makeBoss({ walk: FLAT, arena: ARENA0, seed: 3, hpScale: E4.bossHp, phase3: E4.phase3 });
+  assert.deepEqual([B4.max, B4.lines], [1300, [800, 350]], 'Ember 4 keeps the boss as it was');
+  pass('at Ember 5 the Barrow Reeve has 1,625 health, phase 2 at 1,000 and phase 3 at 650 (40%); Ember 4 keeps 1,300', { lines: B.lines });
 }
 
 console.log(`\n${n} checks passed`);

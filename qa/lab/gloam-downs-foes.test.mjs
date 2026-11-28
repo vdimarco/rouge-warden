@@ -23,7 +23,12 @@ import { findVeils, makeVeils, conicOf, coverOf, VEIL } from '../../public/lab/g
 import { makeCamera } from '../../public/lab/gloam-downs/ink/webgl/view.mjs';
 import { ZONES, POOLS, zoneJson, poolTypes } from '../../games/gloam-downs/lib/zones.mjs';
 import { survey, fits, makeRoom, walkRoute, walkPath, ironWalls } from './gloam-downs-zones.mjs';
-import { makeWalk } from '../../public/lab/gloam-downs/play.js';
+import { makeWalk, makeBody, PARAMS } from '../../public/lab/gloam-downs/play.js';
+import { makeFoes, FOE_HARD, TYPES } from '../../public/lab/gloam-downs/foes.js';
+import { REEVE } from '../../public/lab/gloam-downs/boss.js';
+import { startRun, makeRunner, PACE, depthOf, foeScale, sparkCount, bossScale } from '../../public/lab/gloam-downs/run.js';
+import { bossLines } from '../../public/lab/gloam-downs/boss.js';
+import * as RS from '../../public/lab/gloam-downs/run-save.js';
 
 const DIR = fileURLToPath(new URL('../../public/lab/gloam-downs/', import.meta.url)), W = DIR + 'worlds/';
 const SplatCodec = new Function(fs.readFileSync(DIR + 'ink/splat-codec.js', 'utf8') + '\nreturn SplatCodec;')();
@@ -513,5 +518,96 @@ if (check) {
     assert(!bad2.length, bad2.map(q => q.what).join('\n'));
     pass('the Gaol baked with and without its zones: the same splat and walk files, the JSON differs only in zones', { s: ((Date.now() - t) / 1000).toFixed(1) });
   }
+}
+{ /* the guard's second wave (mix.js mixWave, foes.js): on the baked Gaol, the lamplighter puts out G5's three Snuffers one by one; 1.5 s
+     (90 play steps) later two Snuffers rise at the keep, cracks first, and the beacon stays dark until they are out too. A zone put out
+     whole by the test hook has no second wave, and the arena has none */
+  const { loadWalk } = await import('./gloam-downs-zones.mjs');
+  const { makeFoes } = await import('../../public/lab/gloam-downs/foes.js');
+  const { startRun, makeRunner } = await import('../../public/lab/gloam-downs/run.js');
+  const RS = await import('../../public/lab/gloam-downs/run-save.js');
+  const { makeBody, PARAMS } = await import('../../public/lab/gloam-downs/play.js');
+  const { meta, walk } = loadWalk('gaol');
+  const rs = RS.fresh();
+  startRun(rs, 3);
+  rs.run.hp = 1e5;
+  const g5 = meta.zones.find(z => z.id === 'G5');
+  const body = makeBody(walk, { p: [g5.c[0], g5.c[1] + 0.5, g5.c[2] + 6], yaw: 0 }, meta.bounds, { ...PARAMS });
+  const F = makeFoes({ walk, meta, slots: POOLS.gaol, seed: 3 });
+  const R = makeRunner({ walk, meta: { wisps: [], beacon: { p: [90, 0, 90], r: 1 } }, body, rs, targets: F.targets, lightable: F.lightable, drop: F.drop, think: F.think, onLight: F.bank });
+  F.bind(R);
+  const run = k => { const all = []; for (let i = 0; i < k; i++) all.push(...R.step({}, 0)); return all; };
+  assert(F.wake('G5').ok);
+  run(60);
+  const Z = F.zones.find(z => z.id === 'G5');
+  for (const f of Z.members.slice()) F.putOut(f.id);
+  assert.equal(F.lightable().ok, false, 'dark while the wave waits');
+  const early = run(88);
+  assert(!early.some(e => e.type === 'wave'), 'not before 1.5 s');
+  const ev = run(4);
+  const wave = Z.members.filter(f => !f.out);
+  assert.equal(wave.length, 2, `${wave.length} foes rose again`);
+  assert(wave.every(f => f.type === 'S'));
+  assert(ev.some(e => e.type === 'cracks' && e.zone === 'G5'), 'the ember cracks come first');
+  assert(ev.some(e => e.type === 'wave' && e.zone === 'G5' && e.n === 2));
+  assert.equal(F.lightable().ok, false, 'the beacon stays dark');
+  run(100);
+  assert(wave.every(f => f.alive), `the wave has risen: ${wave.map(f => f.state)}`);
+  for (const f of wave) F.putOut(f.id);
+  run(200);
+  assert.equal(Z.members.filter(f => !f.out).length, 0, 'no third wave');
+  assert.equal(F.lightable().ok, true, 'the beacon lights once the wave is out');
+  // the test hook putting out a whole zone skips its wave
+  const F2 = makeFoes({ walk, meta, slots: POOLS.gaol, seed: 3 });
+  assert.equal(F2.putOut('G5'), 3);
+  assert.equal(F2.lightable().ok, true);
+  pass('the guard\'s second wave: G5\'s three Snuffers out, two rise 1.5 s later with cracks first, and the beacon waits for them');
+}
+
+// the curve's numbers (gloam-downs-fair-fight design.md "A natural curve"), as the spec's scenarios quote them
+const CURVE = { hard: [1.25, 1.3, 1.2], pace: [1, [1, 1.45, 1.72, 2.3, 2.05], 0.35, 1, 0.015, 0.03, 12, 0.05], hook0: 20, crow: { hp: 88, hook: 29 }, crown: { hook: 41, hp: 156 } };
+{ // Harder Ember 0: a Snuffer's hook deals 20 (16 × 1.25), it has 65 health (50 × 1.3), and the Reeve's blows deal 20% more
+  assert.deepEqual([FOE_HARD.dmg, FOE_HARD.hp, REEVE.hard], CURVE.hard);
+  const info = { x0: -20, z0: -20, step: 0.25, nx: 161, nz: 161 }, walk = makeWalk(info, new Int16Array(2 * 161 * 161));
+  const rs = RS.fresh(); startRun(rs, 3);
+  const body = makeBody(walk, { p: [0, 0.5, 0], yaw: 0 }, 20, { ...PARAMS });
+  const F = makeFoes({ walk, meta: { zones: [], spawn: { p: [0, 0, 10] } }, slots: 'S', seed: 3, bounds: 20 });
+  const R = makeRunner({ walk, meta: { wisps: [], beacon: { p: [90, 0, 90], r: 1 } }, body, rs, targets: F.targets, think: F.think });
+  F.bind(R);
+  const f = F.find(F.spawn('S', 0, 1.6, Math.PI).id);
+  assert.equal(f.hp, Math.round(TYPES.S.hp * 1.3));
+  let hurt = null;
+  for (let i = 0; i < 240 && !hurt; i++) hurt = R.step({}, 0).find(e => e.type === 'hurt') || null;
+  assert(hurt && hurt.dmg === CURVE.hook0, `the hook dealt ${hurt?.dmg}`);
+  pass(`Harder Ember 0: a Snuffer has 65 health and its hook deals ${CURVE.hook0}; the Reeve deals 20% more`, { hook: hurt.dmg, hp: f.hp });
+}
+
+{ /* Harder later places: at place depth d foes deal ×[1, 1.45, 1.72, 2.3, 2.05][d] and have ×(1 + 0.35 d) health, the Gaol is as
+     before, and the Reeve has 5% more health for each spark the run holds */
+  assert.deepEqual([PACE.blade, PACE.dmgAt, PACE.depthHp, PACE.depthPow, PACE.sparkDmg, PACE.sparkHp, PACE.sparkCap, PACE.bossSpark], CURVE.pace);
+  const rs = RS.fresh(); startRun(rs, 3);
+  assert.deepEqual([depthOf(rs.run), foeScale(rs.run)], [0, { dmg: 1, hp: 1 }], 'the Gaol: no change');
+  rs.run.place = 'barrows';
+  const top = foeScale(rs.run);
+  assert.equal(depthOf(rs.run), 4);
+  assert.equal(Math.round(16 * FOE_HARD.dmg * top.dmg), CURVE.crown.hook, 'Barrow Crown: the hook');
+  assert.equal(Math.round(50 * FOE_HARD.hp * top.hp), CURVE.crown.hp, 'Barrow Crown: a Snuffer');
+  assert(Math.ceil(100 / CURVE.crown.hook) >= 3, 'three hooks or more to go down from 100');
+  rs.run.sparks = { flame: 4, ward: 2, gloam: 2 };
+  assert.deepEqual([sparkCount(rs.run), +bossScale(rs.run).toFixed(2), bossLines(bossScale(rs.run)).max], [8, 1.4, 1820], 'the Reeve with 8 sparks: 1,820 health');
+  // a Snuffer in The Crow Wall (the second place), no spark
+  rs.run.place = 'ramparts'; rs.run.sparks = { flame: 0, ward: 0, gloam: 0 };
+  const sc = foeScale(rs.run);
+  const info = { x0: -20, z0: -20, step: 0.25, nx: 161, nz: 161 }, walk = makeWalk(info, new Int16Array(2 * 161 * 161));
+  const body = makeBody(walk, { p: [0, 0.5, 0], yaw: 0 }, 20, { ...PARAMS });
+  const F = makeFoes({ walk, meta: { zones: [], spawn: { p: [0, 0, 10] } }, slots: 'S', seed: 3, bounds: 20, scale: sc });
+  const R = makeRunner({ walk, meta: { wisps: [], beacon: { p: [90, 0, 90], r: 1 } }, body, rs, targets: F.targets, think: F.think });
+  F.bind(R);
+  const f = F.find(F.spawn('S', 0, 1.6, Math.PI).id);
+  assert.equal(f.hp, CURVE.crow.hp);
+  let hurt = null;
+  for (let i = 0; i < 240 && !hurt; i++) hurt = R.step({}, 0).find(e => e.type === 'hurt') || null;
+  assert(hurt && hurt.dmg === CURVE.crow.hook, `the hook dealt ${hurt?.dmg}`);
+  pass(`Harder later places: the Gaol as before; a Crow Wall Snuffer has ${CURVE.crow.hp} health and its hook deals ${CURVE.crow.hook}; at Barrow Crown a hook deals ${CURVE.crown.hook} and a Snuffer has ${CURVE.crown.hp}; the Reeve +5% a spark`, { hook: hurt.dmg, hp: f.hp });
 }
 console.log(`${n} checks passed`);

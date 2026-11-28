@@ -3,7 +3,8 @@
 //   move and jump the lamplighter; a wisp counts; the map shows the places and Space presses its buttons; the beacon opens the next
 //   place; the save comes back after a reload and a bad save is ignored; after Walk again one beacon is not the end of the walk;
 //   blocked site data does not stop the page; Space and Enter on Try again load a place that failed; on a phone the stick moves and the controls are 44 px and inside the screen; 320 and
-//   1280 wide have no sideways scroll; without WebGL or DecompressionStream the page says so.
+//   1280 wide have no sideways scroll; without WebGL or DecompressionStream the page says so. First, with ?title, the explorer's title,
+//   where a press on a place's lamp loads it.
 // The page runs with ?test: the game is stepped by __gloam.tick() and drawn by __gloam.draw(), because software WebGL takes about a
 // second a frame. Needs the site served: python3 -m http.server 8765 --bind 0.0.0.0 --directory public
 // Run: node qa/lab/gloam-downs.e2e.mjs   (SITE_URL to point elsewhere, SHOTS=<dir> to keep pictures)
@@ -48,6 +49,25 @@ async function reloadWith(page, edit, query = '?explore&test') {
 }
 
 try {
+  /* ---------------- the explorer's title (gloam-downs-screens-life): the lamps choose the place ---------------- */
+  {
+    const init = `localStorage.setItem('${KEY}', ${JSON.stringify(JSON.stringify({ v: 1, reached: ['gaol', 'ramparts', 'fen'], at: 'gaol', wisps: {}, lit: { gaol: true, ramparts: true }, seen: false }))});`;
+    const { ctx, page, errors } = await open({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true }, '?explore&test&title', init);
+    assert(await page.isVisible('#title'), 'a first visit to the explorer opens the title');
+    assert.equal(await page.evaluate(() => document.activeElement?.id), 'bTitleWalk', 'Walk has the focus');
+    const lamps = await page.$$eval('#titleLamps .lamp', bs => bs.map(b => [b.dataset.place, b.disabled]));
+    assert.deepEqual(lamps, [['gaol', false], ['ramparts', false], ['fen', false], ['bells', true], ['barrows', true]]);
+    assert.equal(await page.$$eval('#titleLattice .lamp', bs => bs.length), 3, 'the Gilt Lattice follows in its own group');
+    await page.tap('#titleLamps .lamp[data-place="fen"]');
+    await page.waitForFunction(() => window.__gloam.ready() && window.__gloam.state().place === 'fen', null, { timeout: 120000 });
+    assert.equal((await state(page)).mode, 'play');
+    assert(!(await page.isVisible('#title')));
+    assert.equal((await saved(page)).seen, true, 'the title counts as read');
+    assert.deepEqual(errors, []);
+    pass('the explorer\'s title: the five places as lamps (two locked) and the Lattice\'s three; a press on Lantern Fen\'s lamp loads it');
+    await ctx.close();
+  }
+
   /* ---------------- desktop ---------------- */
   const { ctx, page, errors } = await open({ viewport: { width: 960, height: 540 } });
   {

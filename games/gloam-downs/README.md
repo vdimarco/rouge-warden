@@ -137,6 +137,36 @@ export default {
 - The pools and the figure colour checks are for the five places only (`PLACES` in `lib/check.mjs`).
 - In the page, `places.js` gives the names, the Map's rows and the choice of `?place=`. The first Lattice place is always open. A lit Lattice beacon opens the next Lattice place. The walk's time, best time and end card count the downs only.
 
+## The Lamp-room: the hall between runs
+
+`lamproom` is the hall you walk through between runs (`HUB` in `bake.mjs` and in `public/lab/gloam-downs/save.js`; the change is `openspec/changes/gloam-downs-hub/`). It is not in the run's route, the Map or the explorer.
+
+```sh
+node games/gloam-downs/bake.mjs lamproom --check                            # bake the hall and check it
+node games/gloam-downs/bake.mjs lamproom --check --preview --out /tmp/hall  # with CPU pictures (every growth object shown)
+node games/gloam-downs/bake.mjs hub                                         # the same; `all` bakes the eight places and the hall
+```
+
+- **The look.** A stone hall 14 m wide, lit by torches and the stations' own lamps, with no front wall, so the follow camera sees in (the cut-away room). A flagstone terrace with two braziers lies before the open front, so the foreground of that view is a lit floor and not the dark moor. The same stone, fire and painted look as the Sunken Gaol.
+- **The plan.** `public/lab/gloam-downs/hub.js` `STATIONS` holds each station's point, face and object. The biome reads it, so the bake and the page agree. Every station is within 6 m of the walk from the spawn to the run door, and any two are 3.2 m apart or more.
+- **Its marks.** `ctx.door(p)` marks the run door, and `ctx.mark('station', { id, at, face, obj })` marks each station. The hall has a spawn and a door, and no beacon or wisps. Its JSON keeps `beacon` as the door's point with no radius and no fire, so the page's beacon code passes it by.
+- **Growth objects.** `ctx.grow(id, fn)` draws one object into a range of splats of its own, after everything else glows. The JSON lists them in `grow: [{ id, first, n }]`. `hub.js` `growIds()` names every one (a ware's rings, a pattern's lamp, a pane's glass, an unlock's wick, a blade, an off-hand, a key, an elite's plaque, an Ember ring), and `shown(rs, id)` says when the save owns it. The page sets a range's density to 0 or back, as it does for a wisp.
+- **Its life and bed.** `life.js` `LIFE.lamproom` (dust at the lamps, embers, the well's water; no crows or gusts) and `beds.js` `BEDS.lamproom` (a room tone, a drip and the kiln's crackle).
+
+`--check` holds the hall to its own rules (`checkHub()` in `lib/check.mjs`), not to a place's:
+
+| Rule | Limit | Now |
+|---|---|---|
+| splats | 210,000 or fewer | 162,900 |
+| the hall's scenery | 160,000 or fewer | 151,482 |
+| growth objects | 46,000 or fewer | 4,334 (205 ranges) |
+| download (splats, walk map, JSON) | 0.40 MB or less | 0.397 MB |
+| walk file | 4 KB or less | 1.8 KB |
+| bake | 20 s or less | about 5 s |
+| start view | mean luminance 0.07 to 0.16, 0.3% bright or more | 0.114, 0.76% |
+
+It also checks that the start stands on the ground, that no reached cell is a trap, that the door and every station can be reached, that each station is within 6 m of the path, and that every growth id of `hub.js` is baked once and has splats. The five places of the downs and the Lattice still bake byte for byte as before.
+
 ## The combat run: zones, foes and the boss
 
 The page plays the combat run by default (and with `?run` or `#run`). With `?explore` (or `?wander`) it is the explorer, with no foes. The run's first card has an Explore button, and the explorer has Fight. Stage 1 of the run baked these files and data, and stage 2 made the foes fight back, fixed the camera and built the run's HUD and cards. `openspec/changes/add-gloam-downs/design.md` ("The combat run") has the numbers.
@@ -166,6 +196,9 @@ These modules have no DOM unless the list says so, so the Node tests use them as
 - **`feel.js`**: the camera kick, the zoom, the hurt tint, the low-health grade with its heartbeat, the fade to ink, the boss's fall (`fall()`) and its shocks (`shock()`), and reduced motion.
 - **`cameras.js`**: the combat camera, the move lock, and the boss camera (wired to the Barrow Reeve in `main.js`; on in the arena, and out to 16 m while an attack is under way), on top of `play.js`'s follow camera. `camLayout(w, h)` in `play.js` gives each window's framing.
 - **`screens.js`**: what each screen shows, as pure functions: the HUD's health line, the wick buttons, the Lamp-room's rows and buttons, the summary, the pause panel's places and questions, the game-time waits, and the card that a load opens.
+- **`menu-scene.js`**: the title's slow drift over a place (`titleView(base, t, still)`); `play.js`'s camera does not change.
+- **`life.js`**: the places that live (`makeLife(world, meta, o)`): tufts, motes, fireflies, moths, crows and what falls, in a block of rows after the place's splats, at most 1,200 a place. Gusts, crows that lift, lamps that brighten, the hush near awake foes, and answers to the screens (`screen-hover`, `screen-pick`, `spark-take`, `pattern-kindled`, `beacon-lit`). No life dab uses the fire slots 34 to 37. With reduced motion it stands still. It emits `life-stir` on the bus. `?nolife` turns it off.
+- **`beds.js`** (Web Audio): a quiet bed per place under the music (`makeBeds(ctx, mix, o)`), with a swell on each gust and wings and caws at a flock. `run-sound.js` makes it with the run's sound; it ducks in a fight and stops in the boss fight and the Lamp-room.
 - **`main.js`** wires them: `newRunner()` builds the fight with each place, `fightView()` hands the awake foes to the combat camera, and the `?test` hooks (`foes`, `wake`, `spawn`, `hold`, `out`, `notches`, `combat`, `draw({ time, pool })`, `layout`, `kill`, `toast`, `lamp`) let the checks set up each picture.
 
 ## Checks
@@ -181,7 +214,9 @@ These modules have no DOM unless the list says so, so the Node tests use them as
 - `node qa/lab/gloam-downs-foes.test.mjs`: the figures, their clips and poses, the pool, the colours, the budgets, the zones on the baked walk maps, and the bake of the Gaol with and without its zones (`GLOAM_BAKE=0` skips that bake).
 - `node qa/lab/gloam-downs-zones.mjs`: the zones on the walk maps: the wake rule, the guard rule, the cap of 6, the pool slots, the routes, the Ironback walls and the beacon distances.
 - `node qa/lab/gloam-downs-bake-zones.mjs [place ...]`: each place baked with and without its zones into the system's temp folder, one bake at a time (about 1.5 minutes for all five).
-- With the site served: `node qa/lab/gloam-downs.e2e.mjs` (the explorer), `node qa/lab/gloam-downs-run.input.e2e.mjs` (the run's inputs and first cards), `node qa/lab/gloam-downs-run.lineup.e2e.mjs` (the pool and the figures), `node qa/lab/gloam-downs-run.fight.e2e.mjs` (a fight in four places and on a phone), `node qa/lab/gloam-downs-run.cards.e2e.mjs` (the HUD and every card at five layouts; `ONLY=keys|pad|layout`) `node qa/lab/gloam-downs-camera.e2e.mjs` (the cameras at five layouts) and `node qa/lab/gloam-downs-run.boss.e2e.mjs` (port 8831: the boss fight from the intro to the win card, reloads after the fall and on the win card, the boss bar at the five layouts, and boss files that fail; `ONLY=fight|layout|fail`). Each takes 1 to 7 minutes in software WebGL.
+- `node qa/lab/gloam-downs-screens.test.mjs`: the title, the Lamp-room's shelves, the run recap and the grid move of the cards.
+- `node qa/lab/gloam-downs-life.test.mjs`: each place's life, its count, its answers, the fire rule and reduced motion; it prints each place's count (`GLOAM_WORLDS=0` skips the baked places).
+- With the site served: `node qa/lab/gloam-downs-screens.e2e.mjs` (the title, the beacon card, the Lamp-room and the recap at six layouts with every input and reduced motion; `SHOTS=<dir>`, `ONLY=title,beacon,lamp,recap,layout,away,still`, `SIZES=844x390,...` for the layout part; it also checks the pause card, How to play, the map, the place's name and the lamplighter clear of the title, and the bed stopping under the game switcher; about 30 minutes), `node qa/lab/gloam-downs-screen-sound.e2e.mjs` (the screen cues rendered offline), `node qa/lab/gloam-downs-life.e2e.mjs` (life seen, crows, the hush, reduced motion, and life's own time with a gust in each timed block, with the frame time on and off as a gross check; `WARM`, `DRAWS` and `BLOCK` lower the counts, `SHOTS=<dir>` keeps a picture of each place), `node qa/lab/gloam-downs.e2e.mjs` (the explorer), `node qa/lab/gloam-downs-run.input.e2e.mjs` (the run's inputs and first cards), `node qa/lab/gloam-downs-run.lineup.e2e.mjs` (the pool and the figures), `node qa/lab/gloam-downs-run.fight.e2e.mjs` (a fight in four places and on a phone), `node qa/lab/gloam-downs-run.cards.e2e.mjs` (the HUD and every card at five layouts; `ONLY=keys|pad|layout`) `node qa/lab/gloam-downs-camera.e2e.mjs` (the cameras at five layouts) and `node qa/lab/gloam-downs-run.boss.e2e.mjs` (port 8831: the boss fight from the intro to the win card, reloads after the fall and on the win card, the boss bar at the five layouts, and boss files that fail; `ONLY=fight|layout|fail`). Each takes 1 to 7 minutes in software WebGL.
 
 ## Design tools
 

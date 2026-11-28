@@ -22,7 +22,10 @@ import { makeWalk, makeBody, PARAMS, reachable, camLayout, SWINGS } from '../../
 import { STEP, stepCount, startRun, makeRunner, maxOf } from '../../public/lab/gloam-downs/run.js';
 import { HITS, MOVES } from '../../public/lab/gloam-downs/moves.js';
 import * as RS from '../../public/lab/gloam-downs/run-save.js';
-import { makeFoes, TYPES, RULES, phaseOf, ringAt, laneAt, keeperLine, fits, makeRoom } from '../../public/lab/gloam-downs/foes.js';
+import { makeFoes, TYPES, RULES, phaseOf, ringAt, laneAt, keeperLine, fits, makeRoom, FOE_HARD } from '../../public/lab/gloam-downs/foes.js';
+import { REEVE as REEVE_HARD } from '../../public/lab/gloam-downs/boss.js';
+// these checks test the rules at the numbers of the foes' table; Ember 0's harder factors (FOE_HARD, REEVE.hard) are checked in gloam-downs-foes.test.mjs
+FOE_HARD.dmg = 1; FOE_HARD.hp = 1; REEVE_HARD.hard = 1;
 import { makeFight, tellGrow, TELL } from '../../public/lab/gloam-downs/fight.js';
 import { makeFeel, FEEL } from '../../public/lab/gloam-downs/feel.js';
 import { WATER, ringResiduals, laneResiduals } from '../../public/lab/gloam-downs/markers.js';
@@ -59,13 +62,13 @@ const CLIFF = layered((x, z) => (z > 1 ? -10 : 0));
 
 /* a fight on a walk map: a run with seed 7, the lamplighter at (x, z) facing yaw, the foes with these zones and pool slots, the
    runner stepping them. hp sets the health (over the maximum, so a long check does not end in death) */
-function fightOn(walk, { x = 0, z = 0, yaw = Math.PI, slots = 'SSSSSPMI', zones = [], seed = 7, hp, meta = {}, onScreen } = {}) {
+function fightOn(walk, { x = 0, z = 0, yaw = Math.PI, slots = 'SSSSSPMI', zones = [], seed = 7, hp, meta = {}, onScreen, tokens = 1 } = {}) {
   const rs = RS.fresh();
   startRun(rs, seed);
   if (hp) rs.run.hp = hp;
   const bounds = meta.bounds ?? 20;
   const body = makeBody(walk, { p: [x, walk.top(x, z) + 0.5, z], yaw }, bounds, { ...PARAMS });
-  const F = makeFoes({ walk, meta: { zones, bounds, id: meta.id, spawn: meta.spawn }, slots, seed, onScreen, water: WATER[meta.id] });
+  const F = makeFoes({ walk, meta: { zones, bounds, id: meta.id, spawn: meta.spawn }, slots, seed, onScreen, water: WATER[meta.id], tokens });
   const hurts = [];
   const R = makeRunner({ walk, meta: { wisps: meta.wisps || [], beacon: meta.beacon || { p: [90, 0, 90], r: 1 } }, body, rs, targets: F.targets, lightable: F.lightable, drop: F.drop, think: F.think, onLight: F.bank });
   const hurt = R.hurt;
@@ -155,19 +158,13 @@ const damage = W => W.hurts.filter(h => h.r === 'hit' || h.r === 'dead');
   assert.equal(downFor, 36, `down for ${downFor} steps`);
   pass('the finisher stops a hook: knocked down for 0.6 s, and the hook does not land', { downFor, hp: S.hp });
 }
-{ // no endless flinch: a bot with seed 7 swings at three Snuffers for 10 s and never rolls: at least 3 hooks take health
-  const W = fightOn(FLAT, { hp: 1000 });
-  for (let k = 0; k < 3; k++) spawn(W, 'S', Math.sin((k * 2 * Math.PI) / 3) * 2.6, Math.cos((k * 2 * Math.PI) / 3) * 2.6, (k * 2 * Math.PI) / 3 + Math.PI);
-  run(W, 600, { attack: true });
-  const n3 = damage(W).length;
-  assert(n3 >= 3, `${n3} hooks took health`);
-  pass('no endless flinch: at least 3 hooks hit a bot that swings at three Snuffers for 10 s', { hooks: n3, out: W.rs.run.foes });
-}
+// no endless flinch: gloam-downs-fair.test.mjs checks it (the brace, gloam-downs-fair-fight)
 { /* hit it while it recovers: a hook misses (the lamplighter steps back in the wind-up); 1.5 m from the Snuffer's edge the player
      holds Attack. It stands open for 0.7 s, two cuts land in that time, the finisher lands after it and knocks it down for 0.6 s, and
      the next cut puts it out */
   const W = fightOn(FLAT);
-  const S = spawn(W, 'S', 0, -3.0, 0);
+  // 2.8 m: a Snuffer starts its hook within 2.9 m (it steps in from the circle first)
+  const S = spawn(W, 'S', 0, -2.8, 0);
   run(W, 1);
   run(W, 30, { mz: -1, slow: true });
   run(W, 3 + 9, {});
@@ -340,31 +337,35 @@ const damage = W => W.hurts.filter(h => h.r === 'hit' || h.r === 'dead');
 }
 
 /* ---------------- tokens, leash, home, ledges, the edge, glim ---------------- */
-{ // a group: three Snuffers and a Pitchrook. No more than two hooks wind up or land at once, and one coal in the air
-  const W = fightOn(FLAT, { hp: 1e4 });
+/* Fair crowds (gloam-downs-fair-fight): a group in the Gaol (1 melee token): three Snuffers for 30 s, and no two hooks are under way
+   (wind-up, active time or recovery) at the same step; a group in The Fen (depth 2, 2 tokens): three Snuffers and a Pitchrook, no more
+   than two hooks under way at once, and one coal in the air */
+for (const [tokens, pitch] of [[1, false], [2, true]]) {
+  const W = fightOn(FLAT, { hp: 1e4, tokens });
   for (let k = 0; k < 3; k++) spawn(W, 'S', Math.sin(k * 2.1) * 3, Math.cos(k * 2.1) * 3, 0);
-  spawn(W, 'P', 0, -7, 0);
+  if (pitch) spawn(W, 'P', 0, -7, 0);
   let most = 0, coals = 0, hooks = 0;
-  run(W, 1200, {}, () => {
-    const now = W.F.foes.filter(f => f.move === 'hook' && ['wind', 'act'].includes(phaseOf(f.T.moves.hook, f.mt))).length;
+  run(W, 1800, {}, () => {
+    const now = W.F.foes.filter(f => f.move === 'hook').length;
     most = Math.max(most, now);
     coals = Math.max(coals, W.F.coals.length);
     hooks += now ? 1 : 0;
   });
-  assert(most <= 2 && most >= 2, `at most ${most} hooks at once`);
-  assert.equal(coals, 1);
-  pass('a group: no more than two hooks wind up or land at once, and only one coal is in the air', { most, coals });
+  assert.equal(most, tokens, `at most ${most} hooks at once`);
+  if (pitch) assert.equal(coals, 1);
+  pass(`a group with ${tokens} melee token${tokens > 1 ? 's' : ''}: no more than ${tokens} hook${tokens > 1 ? 's' : ''} under way at once${pitch ? ', and only one coal in the air' : ''}`, { most, coals });
 }
-{ // a foe off screen waits 0.4 s longer for its token
-  const starts = [true, false].map(seen => {
+{ // a foe off screen starts as soon, and winds up 0.25 s longer
+  const acts = [true, false].map(seen => {
     const W = fightOn(FLAT, { onScreen: () => seen });
     const S = spawn(W, 'S', 0, -2.5, 0);
-    let at = null;
-    run(W, 60, {}, i => { if (at === null && S.move === 'hook') at = i; });
-    return at;
+    let at = null, act = null;
+    run(W, 90, {}, i => { if (at === null && S.move === 'hook') at = i; if (act === null && S.move === 'hook' && phaseOf(S.T.moves.hook, S.mt) === 'act') act = i; });
+    return [at, act];
   });
-  assert.equal(starts[1] - starts[0], RULES.offWait, `on screen at ${starts[0]}, off screen at ${starts[1]}`);
-  pass('a foe whose chest is off screen waits 0.4 s longer before it takes an attack token', { onScreen: starts[0], offScreen: starts[1] });
+  assert.equal(acts[1][0], acts[0][0], 'it starts as soon');
+  assert.equal(acts[1][1] - acts[0][1], 15, `on screen at ${acts[0]}, off screen at ${acts[1]}`);
+  pass('a foe whose chest is off screen winds up 0.25 s longer', { onScreen: acts[0], offScreen: acts[1] });
 }
 { // foes that wait for a token hold 3.2 to 3.8 m away and spread round the lamplighter: both melee tokens are taken
   const W = fightOn(FLAT, { hp: 1e4 });
@@ -777,7 +778,7 @@ if (process.env.GLOAM_WORLDS !== '0') {
     assert(sink !== null && sink === cracks, `the sink and the cracks start together (${sink}, ${cracks})`);
     assert.equal(asleep - sink, RULES.sink);
     assert(rise - cracks >= RULES.cracks && rise - cracks <= RULES.cracks + 1, `the rise ${rise - cracks} steps after the cracks`);
-    assert.equal(R3.members[0].hp, 30);
+    assert.equal(R3.members[0].hp, R3.members[0].T.hp, 'it sinks with its health (the Rookchief, the elite, stands in R3)');
     pass("the guards of The Crow Wall: R3's Pitchrook sinks while R4's cracks show, then R4 rises", { sink, rise });
   }
   { /* every guard can wake: from points 2 m apart within 10 m of each guard zone's centre that can be reached, with the other zones
@@ -810,13 +811,15 @@ if (process.env.GLOAM_WORLDS !== '0') {
     const dark = ev.find(e => e.type === 'dark');
     assert(dark && /in the keep/.test(dark.why), JSON.stringify(dark));
     assert.deepEqual(dark.at.map(v => +v.toFixed(2)), [2.3, 4.21, -23.8]);
-    const bank = W.rs.bank;
+    const bank = W.rs.bank, carried = W.rs.run.carried;
     W.F.putOut('G5');
     const lit = W.R.light([]);
     assert(lit.some(e => e.type === 'beacon'), 'the beacon lights');
-    assert.equal(W.rs.bank - bank, 9, 'the 9 glim of its keepers are banked');
+    // gloam-downs-growth: a lit beacon no longer banks; the 9 glim of its keepers stay carried
+    assert.equal(W.rs.run.carried - carried, 9, 'the 9 glim of its keepers are carried');
+    assert.equal(W.rs.bank, bank, 'the beacon banks nothing');
     for (const z of Object.values(ZONES).flat().filter(z => z.keeper)) assert(!/\b(north|south|east|west)\b/i.test(keeperLine(z.keeper)), keeperLine(z.keeper));
-    pass("the guard rule: the beacon stays dark while its keepers stand, and the toast names where; out('G5') and light() bank their 9 glim", { why: dark.why });
+    pass("the guard rule: the beacon stays dark while its keepers stand, and the toast names where; out('G5') and light() carry their 9 glim on", { why: dark.why });
   }
   { /* pushed off the terrace: a finisher knocks a Snuffer of the terrace guard (B4) off the terrace. On the committed walk map the
        terrace (y 4.5) falls in shelves of 3.9 and 3.6 to the ground at 2.3, so the Snuffer lands there, 2.2 m below and outside its

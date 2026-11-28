@@ -4,13 +4,16 @@
 // cracks, the bursts and the glim motes, and shows the ember notches at the screen's edge for wind-ups out of view and toward a dark
 // beacon's keepers. At Barrow Crown it does the same for the Barrow Reeve (boss.js): its slot, its markers and shards, the grave
 // candles, and the caged light that rides at the lantern after the fall. main.js makes one for each place of a run.
-import { makeFoes, poseOf, phaseOf, ringAt, laneAt, MARKERS } from './foes.js';
+import { makeFoes, poseOf, phaseOf, ringAt, laneAt, MARKERS, rimOf, ARMOR, hookWind } from './foes.js';
 import { makeBoss, poseOfBoss, lightAt, lanternOf, REEVE, ATTACKS } from './boss.js';
 import { makeSparks, OVER } from './sparks.js';
 import { makeFeel, gradeFloats, FEEL } from './feel.js';
 import { fitRing, fitLane, WATER } from './markers.js';
 import { writeBone, rotX, rotZ } from './pool.js';
 import { bladeAt, SWINGS } from './play.js';
+import { makeCombo, COMBO } from './combo.js';
+import { mixZones } from './mix.js';
+import { ember, emberOf, foeScale, bossScale, tokensOf } from './run.js';
 
 
 const STEP = 1 / 60;
@@ -43,10 +46,84 @@ const mul = (a, b) => [
 ];
 const app = (a, v) => [a[0] * v[0] + a[1] * v[1] + a[2] * v[2], a[3] * v[0] + a[4] * v[1] + a[5] * v[2], a[6] * v[0] + a[7] * v[1] + a[8] * v[2]];
 
-/* makeFight({ walk, meta, world, pool, rs, max, still, fx, project, doc }): max() is the run's maximum health; fx holds the effect
-   flags (stop, flash, kick, zoom, grade, shake); project([x, y, z]) gives the screen point in CSS px or null; doc is the page's
-   document (null in Node: no notches) */
-export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still = false, fx = {}, project = null, doc = null }) {
+/* the lamp's halo at a combo tier (combo.js): its dabs ring the lantern in lamp slots 46 and 47, never fire 37, so fire stays the
+   brightest colour; an elite's crown of 6 dabs in slot 34 circles its head; a relic on the ground is a small lamp of 5 dabs (46, 47).
+   With reduced motion the halo and the crown stand still */
+// the armor rim: its dabs' size, how far out from the body (m), its lift, and its spin; in an armored wind-up larger by 1.3 and up to 40% more
+export const RIM = { s: 0.032, out: 0.18, lift: 0.08, spin: 0.6, spinArmor: 2.2, armorS: 1.3, grow: 0.4 };
+export const HALO = { r: 0.24, s: 0.028, spin: 1.6, bob: 0.03, crown: 6, crownR: 0.2, crownS: 0.03, relic: 5, relicR: 0.1, relicS: 0.035 };
+/* the hook's ground tell (gloam-downs-fair-fight "A hook that shows"): in a Snuffer's hook wind-up, an arc of 7 fire dabs (slot 35) on
+   the ground in front of it, across the hook's 120 degrees at 1.3 m, growing from 0.6 to 1 of their size over the wind-up (with
+   reduced motion they hold their full size). It says which foe of a group is about to hook */
+export const HOOK_TELL = { n: 7, r: 1.3, arc: 60 * (Math.PI / 180), s: 0.075, lift: 0.08, slot: 35 };
+
+/* makeFight({ walk, meta, world, pool, rs, max, still, fx, project, doc, mix, emit, dressOf, groundRelics }): max() is the run's
+   maximum health; fx holds the effect flags (stop, flash, kick, zoom, grade, shake; kick is the Shake switch); project([x, y, z])
+   gives the screen point in CSS px or null; doc is the page's document (null in Node: no notches). mix false keeps the baked foes,
+   else the seed mixes them (mix.js) at mix.ember. emit is the bus (bus.js) for combo-tier. dressOf(f) -> { size, crown } or null and
+   groundRelics(run) -> [{ id, x, y, z }] are the builds' (elites.js, relics.js): the fight draws what they give. clipOf(f) -> { clip, t }
+   or null poses an elite in its special move (elites.js eliteClip) */
+/* growth (gloam-downs-growth): the colours' spark slots on the ground (Flame the dark ember 33, Ward the Mirelight's deep 38, Gloam its
+   pale pulse 39). None is a fire slot (34 to 37) or the lamp's warm 46, which the grade brings near them: fire is the colour of a foe's
+   tell, so a lamp lying near a foe never reads as one; and what a lamp on the ground looks like: a pattern lamp is a ring of 4 dabs round a pale core, an ability lamp 5 dabs in its
+   colour (a bright one with a larger core), a ledge cache a lamp of 4 pale lamp dabs, a sealed stone a ring of 6 lamp dabs whose core glows ember once Bell drop is held (fire is
+   the colour of a foe's tell, so the caches stay in the lamp's colours) */
+export const GROWTH_CI = { flame: 33, ward: 38, gloam: 39 };
+export const LAMPS = { r: 0.16, s: 0.04, lift: 0.4, stoneR: 0.5 };
+/* what an ability leaves on the ground, as steady dabs that read from the follow camera (8.5 m back): a snare is a ring of 14 ember dabs
+   as wide as its reach with a pale centre that blinks, a pool of pitch is three rings of dark and ember dabs that fill its 2 m, so it
+   reads as a pool and not as glim. Both stand 0.15 m over the ground */
+export const GROUND_FX = { snare: { n: 14, s: 0.07, lift: 0.15 }, pitch: { rings: [[0.35, 5], [0.65, 9], [0.95, 13]], s: 0.065, lift: 0.15 },
+  /* the hub's (gloam-downs-hub design.md "New abilities"): an oil slick is three rings of large dark dabs (Flame's dark ember 33, never
+     the pale of glim or a wisp's teal) that fill its 3 m as one dark pool and turn to fire (34, 35) once lit; a tack is one small pale
+     dab; the post lamp a column of 3 warm dabs with a ring at its reach; the moths of the swarm 6 Gloam dabs (39) over the lamplighter,
+     or at the foe they seek */
+  slick: { rings: [[0.3, 5], [0.65, 8], [0.95, 10]], s: 0.13, lift: 0.08 }, tack: { s: 0.045, lift: 0.1 }, post: { n: 10, s: 0.045, lift: 0.12 }, moth: { s: 0.03 } };
+export function effectDabs(e, t = 0) {
+  const out = [];
+  if (e.kind === 'snare') {
+    const G = GROUND_FX.snare;
+    for (let i = 0; i < G.n; i++) { const a = (i / G.n) * Math.PI * 2; out.push({ kind: 'snare', x: e.at[0] + Math.sin(a) * e.r, y: e.at[1] + G.lift, z: e.at[2] + Math.cos(a) * e.r, ci: i % 2 ? 34 : 46, s: G.s }); }
+    out.push({ kind: 'snare', x: e.at[0], y: e.at[1] + G.lift, z: e.at[2], ci: 47 - (Math.floor(t * 4) % 2), s: G.s * 1.4 });
+  } else if (e.kind === 'pitch') {
+    const G = GROUND_FX.pitch;
+    G.rings.forEach(([k, n], r) => { for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2 + t * 0.5 * (r % 2 ? -1 : 1); out.push({ kind: 'pitch', x: e.at[0] + Math.sin(a) * e.r * k, y: e.at[1] + G.lift, z: e.at[2] + Math.cos(a) * e.r * k, ci: (i + r) % 2 ? 33 : 34, s: G.s }); } });
+  } else if (e.kind === 'slick') {
+    const G = GROUND_FX.slick, lit = e.lit > 0;
+    G.rings.forEach(([k, n], r) => { for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2 + (lit ? t * 0.8 : 0); out.push({ kind: 'slick', x: e.at[0] + Math.sin(a) * e.r * k, y: e.at[1] + G.lift, z: e.at[2] + Math.cos(a) * e.r * k, ci: lit ? ((i + r) % 2 ? 34 : 35) : 33, s: G.s }); } });
+  } else if (e.kind === 'tacks') {
+    for (const p of e.pts) out.push({ kind: 'tack', x: p[0], y: p[1] + GROUND_FX.tack.lift, z: p[2], ci: 47, s: GROUND_FX.tack.s });
+  } else if (e.kind === 'post') {
+    const G = GROUND_FX.post;
+    for (let k = 0; k < 3; k++) out.push({ kind: 'post', x: e.at[0], y: e.at[1] + 0.5 + k * 0.4, z: e.at[2], ci: k === 2 ? 46 : 47, s: G.s * (k === 2 ? 1.8 : 1) });
+    for (let i = 0; i < G.n; i++) { const a = (i / G.n) * Math.PI * 2 + t * 0.4; out.push({ kind: 'post', x: e.at[0] + Math.sin(a) * e.r, y: e.at[1] + G.lift, z: e.at[2] + Math.cos(a) * e.r, ci: 46, s: G.s }); }
+  }
+  return out;
+}
+/* a foe's state, as abilities put it on (status.js), drawn on the foe: stunned, 5 pale dabs circling over the head; held by a snare, a
+   ring of 6 warm lamp dabs at the feet (not a fire slot, so it never reads as a tell); slowed, 4 frost dabs (Ward's deep 38) at the chest; burning, 3 dark ember dabs rising. Each shows
+   while its count runs and goes when it ends */
+export const STATE_DABS = { stun: { n: 5, r: 0.32, s: 0.05 }, hold: { n: 6, r: 0.55, s: 0.055 }, slow: { n: 4, r: 0.4, s: 0.05 }, burn: { n: 3, r: 0.22, s: 0.05 },
+  /* the hub's states (status.js): Char, one dark ember dab a stack in a short arc over the head, so 5 read as a full row; Soot, 3 dark
+     dabs that sink round the body; Blind, a pale bar of 3 dabs at the eyes; Mark, 4 Gloam dabs (39) turning round the chest */
+  char: { r: 0.18, s: 0.05 }, soot: { n: 3, r: 0.3, s: 0.05 }, blind: { n: 3, s: 0.04 }, mark: { n: 4, r: 0.35, s: 0.05 } };
+export function stateDabs(f, t = 0) {
+  const st = f?.status, out = [];
+  if (!st || !f.alive) return out;
+  const chest = f.T?.chest ?? 1, r = f.T?.r ?? 0.45;
+  const ring = (kind, y, rr, ci, spin = 0) => { const D = STATE_DABS[kind]; for (let i = 0; i < D.n; i++) { const a = (i / D.n) * Math.PI * 2 + t * spin; out.push({ kind: `state-${kind}`, x: f.x + Math.sin(a) * rr, y, z: f.z + Math.cos(a) * rr, ci, s: D.s }); } };
+  if (st.stun > 0) ring('stun', f.y + chest + 0.75, STATE_DABS.stun.r, 47, 4);
+  if (st.hold > 0) ring('hold', f.y + 0.12, Math.max(STATE_DABS.hold.r, r + 0.15), 46, 1);
+  if (st.slow > 0) ring('slow', f.y + chest, Math.max(STATE_DABS.slow.r, r + 0.1), 38, -0.8);
+  if (st.burn > 0) for (let i = 0; i < STATE_DABS.burn.n; i++) { const u = (t * 0.9 + i / STATE_DABS.burn.n) % 1, a = i * 2.1; out.push({ kind: 'state-burn', x: f.x + Math.sin(a) * STATE_DABS.burn.r, y: f.y + 0.4 + u * (chest + 0.4), z: f.z + Math.cos(a) * STATE_DABS.burn.r, ci: 33, s: STATE_DABS.burn.s * (1 - 0.5 * u) }); }
+  if (st.char > 0) for (let i = 0; i < st.char; i++) { const a = (i - 2) * 0.45; out.push({ kind: 'state-char', x: f.x + Math.sin(a) * STATE_DABS.char.r, y: f.y + chest + 0.55 + Math.cos(a) * 0.08, z: f.z + Math.cos(a) * STATE_DABS.char.r * 0.3, ci: 33, s: STATE_DABS.char.s }); }
+  if (st.soot > 0) for (let i = 0; i < STATE_DABS.soot.n; i++) { const u = (t * 0.6 + i / STATE_DABS.soot.n) % 1, a = i * 2.1 + 1; out.push({ kind: 'state-soot', x: f.x + Math.sin(a) * STATE_DABS.soot.r, y: f.y + chest + 0.3 - u * chest, z: f.z + Math.cos(a) * STATE_DABS.soot.r, ci: 33, s: STATE_DABS.soot.s * (0.6 + 0.4 * u) }); }
+  if (st.blind > 0) for (let i = 0; i < STATE_DABS.blind.n; i++) out.push({ kind: 'state-blind', x: f.x + Math.sin((f.yaw ?? 0) + Math.PI / 2) * (i - 1) * 0.1, y: f.y + (f.T?.eye ?? chest + 0.3), z: f.z + Math.cos((f.yaw ?? 0) + Math.PI / 2) * (i - 1) * 0.1, ci: 47, s: STATE_DABS.blind.s });
+  if (st.mark > 0) ring('mark', f.y + chest, Math.max(STATE_DABS.mark.r, r + 0.1), 39, 2);
+  return out;
+}
+export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still = false, fx = {}, project = null, doc = null, mix = { ember: 0 }, emit = null, dressOf = () => null, clipOf = () => null, groundRelics = () => [],
+  groundPatterns = () => [], groundAbilities = () => [], groundSpots = () => [] }) {
   const water = WATER[meta.id];
   const W = () => (doc ? doc.defaultView.innerWidth : 1280), H = () => (doc ? doc.defaultView.innerHeight : 720);
   const onScreen = (x, y, z) => {
@@ -54,18 +131,23 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
     const q = project([x, y, z]);
     return !!q && q[0] >= 0 && q[0] <= W() && q[1] >= 0 && q[1] <= H();
   };
-  const foes = makeFoes({ walk, meta, slots: pool.slots.map(s => s.code), seed: rs.run?.seed ?? 1, onScreen, water });
-  const sparks = pool.extra && pool.extra.end > pool.extra.first ? makeSparks(world, pool.extra.first, pool.extra.end - pool.extra.first, meta.pal) : null;
+  const codes = pool.slots.map(s => s.code), seed = rs.run?.seed ?? 1;
+  // the seed's foe mix and the elite's zone; the arena and the guard zones stay as baked
+  const zones = mix && meta.zones ? mixZones(meta.id, meta.zones, codes.join(''), seed, mix) : meta.zones;
+  const combo = makeCombo({ emit, best: rs.run?.combo ?? 0 });
+  const foes = makeFoes({ walk, meta: { ...meta, zones }, slots: codes, seed, onScreen, water, combo, scale: rs.run ? foeScale(rs.run) : null, tokens: rs.run ? tokensOf(rs.run) : 1 });
+  const sparks = pool.extra && pool.extra.end > pool.extra.first ? makeSparks(world, pool.extra.first, pool.extra.end - pool.extra.first, meta.pal, { glow: 80 }) : null; // 80 steady dabs: an Oil slick, a ring of tacks and a ledge's lamps fit together
   const feel = makeFeel({ pal: meta.pal, still, fx });
   const fits = new Map(); // a foe's marker laid on the ground: its fit, kept while the marker stands where it is
-  const G = { foes, sparks, feel, runner: null, game: 0, keeperTo: -1, keeperAt: null, beatTo: -1, lift: MARK_LIFT, bars: 0 };
+  const G = { foes, sparks, feel, combo, zones, runner: null, game: 0, keeperTo: -1, keeperAt: null, beatTo: -1, lift: MARK_LIFT, bars: 0, halo: [] };
   const slotOf = f => (f.slot >= 0 ? pool.slots[f.slot] : null);
   /* the Barrow Reeve, at Barrow Crown: its slot (from the boss files, reserved until they come in), the candles' slot, and the slot of
      the light carried after the fall (from the foe files, so a reload after the fall needs no boss file) */
   const codeSlot = code => pool.slots.find(s => s.code === code) || null;
+  const EMB = ember(emberOf(rs.run));
   const bossSlot = codeSlot('B'), candleSlot = codeSlot('C'), lightSlot = codeSlot('L');
   const arena = (meta.zones || []).find(z => z.boss);
-  const boss = (G.boss = arena && (bossSlot || lightSlot) ? makeBoss({ walk, arena, seed: rs.run?.seed ?? 1, bounds: meta.bounds, down: !!rs.run?.bossDown, water }) : null);
+  const boss = (G.boss = arena && (bossSlot || lightSlot) ? makeBoss({ walk, arena, seed: rs.run?.seed ?? 1, bounds: meta.bounds, down: !!rs.run?.bossDown, water, hpScale: rs.run ? bossScale(rs.run) : EMB.bossHp, phase3: EMB.phase3 }) : null);
   const fire = meta.beacon?.p ? [meta.beacon.p[0], meta.beacon.p[1] + 1.2, meta.beacon.p[2]] : null;
   // the twelve candles stand on the ground round the ring of 7.0 m; they light (their slot wakes) at the intro
   function placeCandles() {
@@ -97,6 +179,9 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
     if (boss) { boss.think(ev, play); embers(); }
     const run = rs.run, share = run ? run.hp / Math.max(1, max()) : 1;
     for (const c of feel.tick(share)) { ev.push({ type: 'cue', cue: c }); if (!still) G.beatTo = G.game + 12; }
+    combo.tick(play);
+    if (run && combo.best > (run.combo || 0)) run.combo = combo.best;
+    cracksGlow();
     if (play) trail();
     sparks?.update(STEP, play);
     syncSlots();
@@ -110,6 +195,16 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
     const p = G.cageAt || [boss.x + Math.sin(boss.yaw) * 0.3, boss.y + 2.12, boss.z + Math.cos(boss.yaw) * 0.3], k = g.at / g.n;
     sparks.flash(p[0], p[1], p[2], 36, 0.2 + 0.22 * k, 0.11);
     sparks.sparks(p[0], p[1], p[2], 35, 1 + Math.round(2 * k), 1.4);
+  }
+  // a staggered foe's crack glows ember (slot 33) at its chest, with a few sparks, every 6 steps
+  function cracksGlow() {
+    if (!sparks || G.game % 6) return;
+    for (const f of foes.foes) {
+      if (f.state !== 'stagger') continue;
+      const y = f.y + f.T.chest * (dressOf(f)?.size || 1);
+      sparks.flash(f.x, y, f.z, 33, 0.22 + 0.06 * Math.sin(G.game * 0.4), 0.11);
+      if (G.game % 12 === 0) sparks.sparks(f.x, y, f.z, 34, 2, 1.2);
+    }
   }
   function trail() {
     const s = G.runner?.fighter.body.s, a = s?.act, S = a && SWINGS[a.move];
@@ -186,7 +281,10 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
     const s = G.runner?.fighter.body.s;
     switch (e.type) {
       case 'hit': {
+        // a tick (a burn, a moth, Char) is never a hit: no feel, no sparks, nothing for the combo (status.js tickHit)
+        if (e.tick) break;
         feel.hit(e.kind);
+        if (fx.combo !== false) combo.hit(e.kind === 'relic' ? 'relic' : boss && e.target === boss ? 'boss' : e.kind);
         const t = e.target;
         if (t && sparks) {
           const dx = t.x - s.x, dz = t.z - s.z, l = Math.hypot(dx, dz) || 1;
@@ -196,6 +294,7 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
       }
       case 'hurt':
         feel.hurt(e.dmg);
+        combo.end();
         if (sparks && s) sparks.sparks(s.x, s.y + 0.9, s.z, 34, 8, 3.5);
         break;
       case 'ring': sparks?.ring(e.x, e.y + OVER, e.z, 35, 0.3, e.r, 0.32, 22, 0.05); sparks?.drops(e.x, e.y + OVER, e.z, 33, 6, 2.5, 2.5); break;
@@ -217,6 +316,25 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
         }
         break;
       case 'foeOut': sparks?.drops(e.x, e.y + 0.6, e.z, 33, 10, 1.8, 2.5); break;
+      // a hit stops an attack, or breaks a poise: a kick of 0.06 (none with reduced motion) and a burst of fire sparks at the chest
+      // the kick comes once a step (foes.js marks the others first: false); a ring of sparks bursts on the ground round the foe, so a cancel
+      // reads when the foe stands behind the lamplighter or its trail
+      case 'snap':
+        if (e.first !== false) feel.snap();
+        if (sparks) {
+          sparks.sparks(e.x, e.y, e.z, 35, 12, 3.8); sparks.flash(e.x, e.y, e.z, 35, 0.3, 0.08);
+          if (e.gy !== undefined) sparks.ring(e.x, e.gy + OVER, e.z, 36, 0.3, 1.3, 0.3, 16, 0.04);
+        }
+        break;
+      // a poise broken: a kick of 0.08, and an ember ring at its chest
+      case 'stagger':
+        feel.stagger();
+        if (sparks) { sparks.ring(e.x, e.y, e.z, 33, 0.2, 0.9, 0.3, 14, 0.04); sparks.sparks(e.x, e.y, e.z, 34, 8, 3); }
+        break;
+      /* what a relic does, as the builds send it (relics.js): a line of fire along a roll (kind 'line': a, b, life), a burning ring
+         (kind 'ring': x, y, z, r, life), and a thrown spark (kind 'spark': from, to). Fire slots 34 and 35, under fire 37 */
+      case 'relicFx': relicFx(e); break;
+      case 'abilityFx': abilityFx(e); break;
       case 'dark': G.keeperTo = G.game + NOTCH.keepers; G.keeperAt = e.at; break;
     }
   };
@@ -232,13 +350,63 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
         if (sparks) for (let k = 0; k < 4; k++) sparks.cracks(boss.x + Math.sin(k * 1.6) * 0.7, boss.y, boss.z + Math.cos(k * 1.6) * 0.7, (x, z) => walk.support(x, z, boss.y + 0.6));
         break;
       case 'start': feel.barsTo([0, 30]); feel.intro(false); break;
-      case 'phase': case 'slam': feel.shock(e.kick); break;
+      // the slam kicks by 0.22 and a phase change by its own kick, both under the 0.15 m cap (feel.js)
+      case 'phase': feel.shock(e.kick); break;
+      case 'slam': feel.shock(FEEL.add.slam); break;
       case 'fall':
         foes.hush();
         feel.fall();
         feel.barsTo([FEEL.bars, REEVE.stop], [0, 30]);
         if (sparks) { sparks.sparks(e.x, e.y + 1.8, e.z, 36, 14, 4.5); sparks.drops(e.x, e.y + 0.4, e.z, 33, 14, 2.4, 2.5); }
         break;
+    }
+  }
+
+  function relicFx(e) {
+    if (!sparks) return;
+    const ground = (x, z, y) => walk.support(x, z, y + 0.6) ?? y;
+    if (e.kind === 'line' && e.a && e.b) {
+      const n = Math.max(2, Math.round(Math.hypot(e.b[0] - e.a[0], e.b[2] - e.a[2]) / 0.5));
+      for (let i = 0; i <= n; i++) {
+        const x = e.a[0] + ((e.b[0] - e.a[0]) * i) / n, z = e.a[2] + ((e.b[2] - e.a[2]) * i) / n, y = e.a[1] + ((e.b[1] - e.a[1]) * i) / n;
+        sparks.cracks(x, ground(x, z, y), z, (px, pz) => ground(px, pz, y), 3, e.life ?? 1.5);
+      }
+    } else if (e.kind === 'ring') {
+      sparks.ring(e.x, ground(e.x, e.z, e.y) + OVER, e.z, 35, e.r * 0.8, e.r, e.life ?? 2, Math.round(10 + e.r * 8), 0.05);
+      sparks.cracks(e.x, ground(e.x, e.z, e.y), e.z, (px, pz) => ground(px, pz, e.y), 12, e.life ?? 2);
+    } else if (e.kind === 'spark' && e.from && e.to) {
+      sparks.smear(e.from, e.to, 36, 0.05, 0.16);
+      sparks.sparks(e.to[0], e.to[1], e.to[2], 35, 6, 3);
+    }
+  }
+
+  /* what an ability does, as abilities.js sends it: a throw or a pull (a smear of dabs), the bomb's ring before it bursts and its burst,
+     Smoke step's puffs, Rime lamp's cone, Flare's core and flash, a snare's snap and Bell guard's ring. All under fire 37 */
+  function abilityFx(e) {
+    if (!sparks) return;
+    const at = e.at, ground = (x, z, y) => walk.support(x, z, y + 0.6) ?? y;
+    switch (e.kind) {
+      case 'throw': sparks.smear(e.from, e.to, 35, 0.05, 0.3); break;
+      // a line: the moth's seek in Gloam, Wick lash in fire, a shard of the fan pale, the Crook line gold
+      case 'line': sparks.smear(e.a, e.b, e.id === 'moth' ? 39 : e.id === 'lash' ? 35 : e.id === 'fan' ? 47 : 36, 0.03, e.life ?? 0.2); break;
+      // a ring that tells an effect: the bomb's in ember, as it always was; the lamplighter's own (Bell toll, Oil slick) in pale lamp
+      case 'tell': sparks.ring(at[0], ground(at[0], at[2], at[1]) + OVER, at[2], e.id === 'bomb' ? 34 : 47, e.r * 0.9, e.r, e.life ?? 0.6, Math.round(10 + e.r * 6), 0.04); break;
+      case 'burst':
+        sparks.ring(at[0], ground(at[0], at[2], at[1]) + OVER, at[2], 35, e.r * 0.3, e.r, 0.35, Math.round(12 + e.r * 6), 0.05);
+        sparks.flash(at[0], at[1] + 0.4, at[2], 36, 0.5, 0.12);
+        sparks.drops(at[0], at[1] + 0.3, at[2], 34, 10, 2.5, 2.5);
+        break;
+      case 'puff': sparks.drops(at[0], at[1] + 0.5, at[2], e.id === 'blink' || e.id === 'shutter' || e.id === 'swarm' ? 39 : 46, 8, 1.2, 1.5); break;
+      case 'cone':
+        for (let i = 0; i < 9; i++) {
+          const a = e.yaw + ((i / 8) - 0.5) * (e.arc * Math.PI / 180), r = e.r * 0.9;
+          sparks.smear([at[0], at[1] + 0.3, at[2]], [at[0] + Math.sin(a) * r, at[1] + 0.3, at[2] + Math.cos(a) * r], 47, 0.03, 0.25);
+        }
+        break;
+      case 'core': sparks.flash(at[0], at[1], at[2], 47, 0.4, e.life ?? 0.25); break;
+      case 'flash': sparks.flash(at[0], at[1], at[2], 36, 0.9, 0.12); sparks.ring(at[0], at[1] - 0.9 + OVER, at[2], 47, 0.4, e.r, 0.3, 24, 0.04); break;
+      case 'snap': sparks.sparks(at[0], at[1] + 0.3, at[2], 34, 10, 3); break;
+      case 'ring': sparks.ring(at[0], at[1] + 0.9, at[2], 36, 0.6, e.r, 0.25, 16, 0.04); break;
     }
   }
 
@@ -360,8 +528,10 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
       if (o.pool === false) { for (let b = 0; b < s.type.bones.length; b++) writeBone(pool.bones, s.base + b, { A: [0, 0, 0, 0, 0, 0, 0, 0, 0], t: [0, -500, 0] }); return; }
       if (f.state === 'dying') { parts(f, s); return; }
       f.partsFrom = null;
-      const p = poseOf(f, time), clip = s.type.clips[p.clip] ? p.clip : 'rest';
-      pool.pose(s, atOf(f), clip, p.t, grow > 1 ? { grow: { tell: grow, core: grow } } : undefined);
+      const p = clipOf(f) || poseOf(f, time), clip = s.type.clips[p.clip] ? p.clip : 'rest', size = dressOf(f)?.size || 1;
+      const po = grow > 1 ? { grow: { tell: grow, core: grow } } : {};
+      if (size !== 1) po.size = size;
+      pool.pose(s, atOf(f), clip, p.t, Object.keys(po).length ? po : undefined);
       markers(f, s);
     });
     if (o.pool !== false) for (const c of foes.coals) {
@@ -375,8 +545,10 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
       if (o.pool === false) { for (const s of [bossSlot, lightSlot]) if (s?.awake) for (let b = 0; b < s.type.bones.length; b++) writeBone(pool.bones, s.base + b, { A: [0, 0, 0, 0, 0, 0, 0, 0, 0], t: [0, -500, 0] }); }
       else { drawBoss(time, grow); drawLight(); }
     }
+    G.halo = o.pool === false ? [] : glows(time);
     if (sparks && o.pool === false) { sparks.hide(); for (const r of sparks.rows()) pool.rows.add(r); }
-    else if (sparks && sparks.write(foes.motes, time)) for (const r of sparks.rows()) pool.rows.add(r);
+    else if (sparks && sparks.write(foes.motes, time, G.halo)) for (const r of sparks.rows()) pool.rows.add(r);
+    G.lamp = fx.lamp === false ? 1 : combo.lamp();
     G.kick = feel.kick(view.yaw, view.pitch);
     G.zoom = feel.zoom();
     G.bars = feel.bars();
@@ -384,12 +556,97 @@ export function makeFight({ walk, meta, world, pool, rs, max = () => 100, still 
     world.anim.grade = G.cols ? gradeFloats(G.cols, G.gradeBuf ||= new Float32Array(64 * 3)) : null;
   };
 
+  /* the steady dabs of this draw: the lamp's halo for the combo's tier, each elite's crown, and the relics on the ground. Each is
+     { x, y, z, ci, s, kind } */
+  function glows(time) {
+    const out = [], t = still ? 0 : time, n = fx.lamp === false ? 0 : combo.dabs(), k = combo.lamp();
+    const L = n ? lantern() : null;
+    if (L) for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 + t * HALO.spin, r = HALO.r * k, b = still ? 0 : HALO.bob * Math.sin(t * 5 + i);
+      out.push({ kind: 'halo', x: L[0] + Math.sin(a) * r, y: L[1] + b + (i % 2 ? 0.05 : -0.05), z: L[2] + Math.cos(a) * r, ci: i % 2 ? 47 : 46, s: HALO.s * k });
+    }
+    /* the armor rim (gloam-downs-fair-fight "Armor that shows"): a ring of cold dabs in slot 39 round a heavy or braced foe's body at
+       its chest, one for each 10 poise left; in an armored wind-up twice as many, growing a little over the wind-up and turning (with
+       reduced motion it holds its size and stands still). It comes before the crowns, so the cap of steady dabs never cuts it */
+    for (const f of foes.foes) {
+      if (f.state === 'dying' || !foes.shown(f)) continue;
+      const rim = rimOf(f, foes.step);
+      if (!rim) continue;
+      const size = dressOf(f)?.size || 1, y = f.y + f.T.chest * size, R = (f.T.r + RIM.out) * (f.elite ? 1 : size);
+      const s = RIM.s * (rim.armor && !still ? 1 + RIM.grow * rim.k : 1) * (rim.armor ? RIM.armorS : 1);
+      for (let i = 0; i < rim.n; i++) {
+        const a = (i / rim.n) * Math.PI * 2 + (still ? 0 : t * (rim.armor ? RIM.spinArmor : RIM.spin));
+        out.push({ kind: 'armor', x: f.x + Math.sin(a) * R, y: y + (i % 2 ? RIM.lift : -RIM.lift), z: f.z + Math.cos(a) * R, ci: ARMOR.slot, s });
+      }
+    }
+    // the hook's ground tell: which foe is about to hook (a plain hook's wind-up, or the Wardmother's)
+    for (const f of foes.foes) {
+      if (f.state === 'dying' || !foes.shown(f)) continue;
+      const k = hookWind(f);
+      if (k === null) continue;
+      const size = dressOf(f)?.size || 1, s = HOOK_TELL.s * (still ? 1 : 0.6 + 0.4 * k), gy = foes.floorUnder(f) + HOOK_TELL.lift;
+      for (let i = 0; i < HOOK_TELL.n; i++) {
+        const a = f.yaw + HOOK_TELL.arc * (2 * i / (HOOK_TELL.n - 1) - 1), R = HOOK_TELL.r * size;
+        out.push({ kind: 'tell', x: f.x + Math.sin(a) * R, y: gy, z: f.z + Math.cos(a) * R, ci: HOOK_TELL.slot, s });
+      }
+    }
+    for (const f of foes.foes) {
+      const d = f.state !== 'dying' && foes.shown(f) ? dressOf(f) : null;
+      if (!d?.crown) continue;
+      const size = d.size || 1, y = f.y + (f.T.chest + 0.55) * size;
+      for (let i = 0; i < HALO.crown; i++) {
+        const a = (i / HALO.crown) * Math.PI * 2 + t * 1.1;
+        out.push({ kind: 'crown', x: f.x + Math.sin(a) * HALO.crownR * size, y, z: f.z + Math.cos(a) * HALO.crownR * size, ci: 34, s: HALO.crownS });
+      }
+    }
+    for (const q of groundRelics(rs.run) || []) {
+      out.push({ kind: 'relic', x: q.x, y: q.y + 0.45, z: q.z, ci: 47, s: HALO.relicS * 1.4 });
+      for (let i = 0; i < HALO.relic - 1; i++) {
+        const a = (i / (HALO.relic - 1)) * Math.PI * 2 + t * 2;
+        out.push({ kind: 'relic', x: q.x + Math.sin(a) * HALO.relicR, y: q.y + 0.45 + (still ? 0 : 0.04 * Math.sin(t * 3)), z: q.z + Math.cos(a) * HALO.relicR, ci: 46, s: HALO.relicS });
+      }
+    }
+    // growth: the pattern lamps and the ability lamps (bobbing a little), the caches on the ledges and the sealed stones, and what an
+    // ability leaves standing (a snare, a pool of pitch, a moth wisp, Bell guard's ring)
+    const bob = i => (still ? 0 : 0.04 * Math.sin(t * 3 + i));
+    for (const [n, q] of (groundPatterns() || []).entries()) {
+      out.push({ kind: 'pattern', x: q.x, y: q.y + LAMPS.lift + bob(n), z: q.z, ci: 39, s: LAMPS.s * 1.3 });
+      for (let i = 0; i < 4; i++) { const a = (i / 4) * Math.PI * 2 + t * 1.5; out.push({ kind: 'pattern', x: q.x + Math.sin(a) * LAMPS.r, y: q.y + LAMPS.lift + bob(n), z: q.z + Math.cos(a) * LAMPS.r, ci: GROWTH_CI[q.colour] ?? 39, s: LAMPS.s }); }
+    }
+    for (const [n, q] of (groundAbilities() || []).entries()) {
+      out.push({ kind: 'ability', x: q.x, y: q.y + LAMPS.lift + bob(n + 3), z: q.z, ci: GROWTH_CI[q.colour] ?? 39, s: LAMPS.s * (q.bright ? 2 : 1.4) });
+      for (let i = 0; i < 4; i++) { const a = (i / 4) * Math.PI * 2 - t * 2; out.push({ kind: 'ability', x: q.x + Math.sin(a) * LAMPS.r * 1.2, y: q.y + LAMPS.lift + bob(n + 3), z: q.z + Math.cos(a) * LAMPS.r * 1.2, ci: GROWTH_CI[q.colour] ?? 39, s: LAMPS.s }); }
+    }
+    for (const q of groundSpots() || []) {
+      const [x, y, z] = q.at;
+      if (q.kind === 'stone') {
+        for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; out.push({ kind: 'stone', x: x + Math.sin(a) * LAMPS.stoneR, y: y + 0.08, z: z + Math.cos(a) * LAMPS.stoneR, ci: 46, s: LAMPS.s }); }
+        out.push({ kind: 'stone', x, y: y + 0.1, z, ci: q.open ? 33 : 46, s: LAMPS.s * (q.open ? 1.6 : 1) });
+      } else for (let i = 0; i < 4; i++) { const a = (i / 4) * Math.PI * 2 + t; out.push({ kind: 'cache', x: x + Math.sin(a) * 0.12, y: y + 0.35 + (still ? 0 : 0.03 * Math.sin(t * 2)), z: z + Math.cos(a) * 0.12, ci: 47, s: LAMPS.s }); }
+    }
+    const A = G.runner?.abilities;
+    for (const e of A?.effects || []) {
+      if (e.kind === 'snare' || e.kind === 'pitch' || e.kind === 'slick' || e.kind === 'tacks' || e.kind === 'post') out.push(...effectDabs(e, t));
+      else if (e.kind === 'swarm' && s0() && e.t >= e.tell) {
+        // the moths: round the foe they seek, else round the lamplighter's head
+        const q = e.targets?.find(x => x?.alive), L = s0(), cx = q ? q.x : L.x, cy = q ? q.y + (q.T?.chest ?? 1) + 0.3 : L.y + 1.6, cz = q ? q.z : L.z;
+        for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2 + t * 5; out.push({ kind: 'moth', x: cx + Math.sin(a) * 0.35, y: cy + 0.08 * Math.sin(t * 9 + i), z: cz + Math.cos(a) * 0.35, ci: 39, s: GROUND_FX.moth.s }); }
+      }
+      else if (e.kind === 'moth' && s0()) { const L = s0(); for (let i = 0; i < 3; i++) out.push({ kind: 'moth', x: L.x + 0.45 + 0.06 * Math.sin(t * 9 + i), y: L.y + 1.5 + 0.05 * i, z: L.z + 0.06 * Math.cos(t * 7 + i), ci: 39, s: 0.03 }); }
+    }
+    // the foes' states: stunned, held, slowed, burning
+    for (const f of foes.foes) if (f.status && f.state !== 'dying' && foes.shown(f)) out.push(...stateDabs(f, t));
+    if (A?.guard && s0()) { const L = s0(); for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2 + t * 3; out.push({ kind: 'guard', x: L.x + Math.sin(a) * 0.7, y: L.y + 0.9, z: L.z + Math.cos(a) * 0.7, ci: 36, s: 0.03 }); } }
+    return sparks ? out.slice(0, sparks.glow) : out;
+  }
+  const s0 = () => G.runner?.fighter.body.s ?? null;
+
   /* ---------------- notches ----------------
    An ember notch at the screen's edge for each wind-up whose foe's chest is out of the view (the 3 nearest their hit), filling from
    empty to full over the wind-up; and for 3 s toward a dark beacon's keepers. A notch sits where the line from the screen's middle
    toward the foe meets the edge, slid along the edge clear of the controls: on a touch screen a notch at the bottom sits 8 px over
    the buttons, and one at the top 8 px under the Lab bar and clear of the HUD and the tools */
-  const AVOID = ['.labbar .back', '#menu', '#hud', '#tools', '#toast.on', '#bAttack', '#bRoll', '#bHeal', '#bJump', '.bossbar', '#bossBar'];
+  const AVOID = ['.labbar .back', '#menu', '#hud', '#tools', '#toast.on', '#bAttack', '#bRoll', '#bHeal', '#bAb1', '#bAb2', '#bJump', '.bossbar', '#bossBar'];
   function rects() {
     if (!doc) return [];
     return AVOID.flatMap(sel => [...doc.querySelectorAll(sel)]).filter(el => !el.hidden && el.offsetParent !== null).map(el => el.getBoundingClientRect()).filter(r => r.width && r.height);
@@ -479,16 +736,37 @@ transform-origin:3px 6px;transform:rotate(var(--a)) translateX(14px)}
     });
     // the health bar pulses for 12 steps after each heartbeat (the HUD sets .low itself, below 30% health)
     doc.getElementById('hud')?.classList.toggle('beat', G.game < G.beatTo);
+    G.showCombo(playing);
     G.shown = list;
     return list;
+  };
+
+  /* the combo meter in the HUD (#combo): "×N" from 2 hits, the tier's pip, and the bar of the 3 s left; it fades over 0.4 s after the
+     combo ends. -> what it shows */
+  let meter = null;
+  G.showCombo = (playing = true) => {
+    if (!doc) return null;
+    meter ||= { box: doc.getElementById('combo'), n: doc.getElementById('comboN'), pip: doc.getElementById('comboPip'), fill: doc.getElementById('comboFill') };
+    if (!meter.box) return null;
+    const m = combo.meter(), show = playing && fx.combo !== false && m.show;
+    if (meter.box.hidden === show) meter.box.hidden = !show;
+    if (!show) return m;
+    const txt = `×${m.n}`;
+    if (meter.n.textContent !== txt) meter.n.textContent = txt;
+    meter.box.dataset.tier = String(m.tier);
+    meter.box.classList.toggle('fading', m.fading);
+    meter.box.setAttribute('aria-label', `Combo ${m.n}${m.tier ? `, tier ${m.tier}` : ''}`);
+    meter.fill.style.width = `${(m.left * 100).toFixed(1)}%`;
+    return m;
   };
 
   /* ---------------- ?test ---------------- */
   // __gloam.foes(): each awake foe with its pose's shake
   G.list = () => [
-    ...foes.list().map(({ ref, ...f }) => ({ ...f, shake: shakeOf(ref) })),
+    ...foes.list().map(({ ref, ...f }) => ({ ...f, shake: shakeOf(ref), size: dressOf(ref)?.size || 1, pose: (clipOf(ref) || poseOf(ref, G.game / 60)).clip })),
     ...(boss?.shown() ? [{ id: boss.id, type: 'B', zone: 'arena', x: boss.x, y: boss.y, z: boss.z, yaw: boss.yaw, hp: boss.hp, state: boss.state, phase: boss.phase,
-      move: boss.move || boss.state, t: (boss.move ? boss.mt : boss.t) / 60, flash: boss.flash, held: !!boss.hold, shake: shakeOf(boss) }] : [])
+      move: boss.move || boss.state, t: (boss.move ? boss.mt : boss.t) / 60, flash: boss.flash, held: !!boss.hold, shake: shakeOf(boss),
+      weight: 'boss', poise: boss.poiseNow(), poiseMax: boss.poiseMax, flinch: boss.state === 'flinch' ? REEVE.poise.flinch - boss.t : 0 }] : [])
   ];
   const isBoss = q => !!boss && (q === boss.id || q === 'B' || q === boss);
   G.hooks = {
